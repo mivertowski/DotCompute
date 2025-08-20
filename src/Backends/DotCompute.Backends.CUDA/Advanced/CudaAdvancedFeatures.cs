@@ -282,9 +282,9 @@ public sealed class CudaAdvancedFeatures : IDisposable
         };
     }
 
-    private double EstimatePerformanceGain(List<string> optimizations)
+    private static double EstimatePerformanceGain(List<string> optimizations)
     {
-        double gain = 1.0;
+        var gain = 1.0;
 
         foreach (var optimization in optimizations)
         {
@@ -524,7 +524,7 @@ public sealed class CudaAdaOptimizationOptions
     /// <summary>
     /// 
     /// </summary>
-    public bool EnableDynamicParallelism { get; set; } = false; // More conservative default
+    public bool EnableDynamicParallelism { get; set; }  // More conservative default
 
     /// <summary>
     /// 

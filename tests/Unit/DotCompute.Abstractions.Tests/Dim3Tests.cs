@@ -4,6 +4,7 @@
 using Xunit;
 using FluentAssertions;
 
+using DotCompute.Abstractions.Types;
 namespace DotCompute.Abstractions.Tests;
 
 

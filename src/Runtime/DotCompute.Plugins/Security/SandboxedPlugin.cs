@@ -95,11 +95,13 @@ public class SandboxedPlugin : IDisposable
 
 
         _isolated = true;
-        
+
         // Stop any ongoing operations
+
         await TerminateOperationsAsync().ConfigureAwait(false);
-        
+
         // Clear sensitive data
+
         ClearSensitiveData();
     }
 
@@ -115,11 +117,13 @@ public class SandboxedPlugin : IDisposable
 
 
         await IsolateAsync().ConfigureAwait(false);
-        
+
         // Unregister from monitoring
+
         _resourceMonitor.UnregisterPlugin(this);
-        
+
         // Dispose the plugin instance if it implements IDisposable
+
         if (Instance is IDisposable disposable)
         {
             try
@@ -139,10 +143,11 @@ public class SandboxedPlugin : IDisposable
     /// <summary>
     /// Terminates any ongoing operations in the plugin.
     /// </summary>
-    private async Task TerminateOperationsAsync() =>
+    private async Task TerminateOperationsAsync()
         // This would terminate any active threads or tasks within the plugin
         // Implementation would depend on the specific threading model used
-        await Task.CompletedTask.ConfigureAwait(false);
+
+        => await Task.CompletedTask.ConfigureAwait(false);
 
     /// <summary>
     /// Clears any sensitive data that might be held by the plugin.

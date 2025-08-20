@@ -2,6 +2,8 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 namespace DotCompute.Tests.Implementations.Pipelines;
 
 
@@ -195,7 +197,8 @@ public sealed class TestKernelStage : IPipelineStage
 
         var gridDim = (Dim3)(configuration.Options.TryGetValue("GridDimension", out var grid) ? grid : new Dim3(1));
         var blockDim = (Dim3)(configuration.Options.TryGetValue("BlockDimension", out var block) ? block : new Dim3(256));
-        
+
+
         return gridDim.X * blockDim.X;
     }
 
@@ -274,6 +277,7 @@ public sealed class TestKernelStageBuilder(TestKernelStage stage) : IKernelStage
     /// <returns></returns>
     public IKernelStageBuilder WithName(string name)
         // Name is set in constructor
+
         => this;
 
     /// <summary>

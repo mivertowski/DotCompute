@@ -22,7 +22,7 @@ namespace DotCompute.Core.Memory.P2P
         private readonly P2PTransferScheduler _scheduler;
         private readonly ConcurrentDictionary<string, P2PTransferSession> _activeSessions;
         private readonly SemaphoreSlim _transferSemaphore;
-        private P2PTransferStatistics _statistics;
+        private readonly P2PTransferStatistics _statistics;
         private bool _disposed;
 
         // Transfer configuration
@@ -72,15 +72,17 @@ namespace DotCompute.Core.Memory.P2P
                 await _capabilityMatrix.BuildMatrixAsync(devices, cancellationToken);
 
                 // Validate all device pairs
-                for (int i = 0; i < devices.Length; i++)
+                for (var i = 0; i < devices.Length; i++)
                 {
-                    for (int j = i + 1; j < devices.Length; j++)
+                    for (var j = i + 1; j < devices.Length; j++)
                     {
                         var device1 = devices[i];
                         var device2 = devices[j];
-                        
+
+
                         var capability = await _capabilityMatrix.GetP2PCapabilityAsync(device1, device2, cancellationToken);
-                        
+
+
                         var pair = new P2PDevicePair
                         {
                             Device1 = device1,
@@ -274,7 +276,8 @@ namespace DotCompute.Core.Memory.P2P
                 {
                     session.Status = P2PTransferStatus.Failed;
                     session.ErrorMessage = ex.Message;
-                    _logger.LogError(ex, "P2P transfer failed: {Source} -> {Destination}", 
+                    _logger.LogError(ex, "P2P transfer failed: {Source} -> {Destination}",
+
                         sourceBuffer.Accelerator.Info.Name, destinationBuffer.Accelerator.Info.Name);
 
                     return new P2PTransferResult
@@ -288,12 +291,12 @@ namespace DotCompute.Core.Memory.P2P
                 }
                 finally
                 {
-                    _activeSessions.TryRemove(sessionId, out _);
+                    _ = _activeSessions.TryRemove(sessionId, out _);
                 }
             }
             finally
             {
-                _transferSemaphore.Release();
+                _ = _transferSemaphore.Release();
             }
         }
 
@@ -331,14 +334,16 @@ namespace DotCompute.Core.Memory.P2P
                 var scatterTasks = new List<Task<P2PTransferResult>>();
 
                 // Execute parallel scatter operations
-                for (int i = 0; i < destinationBuffers.Length; i++)
+                for (var i = 0; i < destinationBuffers.Length; i++)
                 {
                     var destBuffer = destinationBuffers[i];
                     var scatterChunk = scatterPlan.Chunks[i];
-                    
+
+
                     var scatterTask = ExecuteScatterChunkAsync(
                         sourceBuffer, destBuffer, scatterChunk, options.TransferOptions, cancellationToken);
-                    
+
+
                     scatterTasks.Add(scatterTask);
                 }
 
@@ -394,14 +399,16 @@ namespace DotCompute.Core.Memory.P2P
                 var gatherTasks = new List<Task<P2PTransferResult>>();
 
                 // Execute parallel gather operations
-                for (int i = 0; i < sourceBuffers.Length; i++)
+                for (var i = 0; i < sourceBuffers.Length; i++)
                 {
                     var srcBuffer = sourceBuffers[i];
                     var gatherChunk = gatherPlan.Chunks[i];
-                    
+
+
                     var gatherTask = ExecuteGatherChunkAsync(
                         srcBuffer, destinationBuffer, gatherChunk, options.TransferOptions, cancellationToken);
-                    
+
+
                     gatherTasks.Add(gatherTask);
                 }
 
@@ -488,15 +495,16 @@ namespace DotCompute.Core.Memory.P2P
             }
         }
 
-        private async Task ExecuteDirectP2PTransferAsync<T>(
+        private static async Task ExecuteDirectP2PTransferAsync<T>(
             IBuffer<T> source,
             IBuffer<T> destination,
             P2PTransferPlan plan,
-            CancellationToken cancellationToken) where T : unmanaged =>
+            CancellationToken cancellationToken) where T : unmanaged
             // Single direct P2P transfer
-            await source.CopyToAsync(destination, cancellationToken);
 
-        private async Task ExecuteChunkedP2PTransferAsync<T>(
+            => await source.CopyToAsync(destination, cancellationToken);
+
+        private static async Task ExecuteChunkedP2PTransferAsync<T>(
             IBuffer<T> source,
             IBuffer<T> destination,
             P2PTransferPlan plan,
@@ -509,7 +517,7 @@ namespace DotCompute.Core.Memory.P2P
 
             var chunkTasks = new List<Task>();
 
-            for (int offset = 0; offset < totalElements; offset += elementsPerChunk)
+            for (var offset = 0; offset < totalElements; offset += elementsPerChunk)
             {
                 var chunkElements = Math.Min(elementsPerChunk, totalElements - offset);
                 var chunkTask = source.CopyToAsync(offset, destination, offset, chunkElements, cancellationToken);
@@ -540,7 +548,7 @@ namespace DotCompute.Core.Memory.P2P
             await pipeline.ExecuteAsync(cancellationToken);
         }
 
-        private async Task ExecuteHostMediatedTransferAsync<T>(
+        private static async Task ExecuteHostMediatedTransferAsync<T>(
             IBuffer<T> source,
             IBuffer<T> destination,
             P2PTransferPlan plan,
@@ -750,7 +758,7 @@ namespace DotCompute.Core.Memory.P2P
         public double TotalTransferTimeMs { get; set; }
         public double AverageThroughputGBps { get; set; }
         public string? ErrorMessage { get; set; }
-        public P2PTransferResult[] TransferResults { get; set; } = Array.Empty<P2PTransferResult>();
+        public P2PTransferResult[] TransferResults { get; set; } = [];
     }
 
     /// <summary>
@@ -763,7 +771,7 @@ namespace DotCompute.Core.Memory.P2P
         public double TotalTransferTimeMs { get; set; }
         public double AverageThroughputGBps { get; set; }
         public string? ErrorMessage { get; set; }
-        public P2PTransferResult[] TransferResults { get; set; } = Array.Empty<P2PTransferResult>();
+        public P2PTransferResult[] TransferResults { get; set; } = [];
     }
 
     /// <summary>

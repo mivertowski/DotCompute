@@ -100,6 +100,7 @@ public sealed class PluginSystemTests : IDisposable
     [Fact]
     public async Task LoadPluginAsync_WithNullPlugin_ThrowsArgumentNullException()
         // Act & Assert
+
         => await Assert.ThrowsAsync<ArgumentNullException>(() => _pluginSystem.LoadPluginAsync((string)null!));
 
     [Fact]

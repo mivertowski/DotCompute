@@ -29,8 +29,9 @@ public sealed class LogBuffer : IDisposable
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly Task _processingTask;
     private volatile bool _disposed;
-    
+
     // Metrics
+
     private long _totalEnqueued;
     private long _totalProcessed;
     private long _totalDropped;
@@ -42,8 +43,9 @@ public sealed class LogBuffer : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options?.Value ?? new LogBufferOptions();
         _sinks = sinks?.ToList() ?? new List<ILogSink>();
-        
+
         // Create bounded channel for backpressure handling
+
         var channelOptions = new BoundedChannelOptions(_options.MaxBufferSize)
         {
             FullMode = _options.DropOnFull ? BoundedChannelFullMode.DropOldest : BoundedChannelFullMode.Wait,
@@ -51,23 +53,29 @@ public sealed class LogBuffer : IDisposable
             SingleWriter = false,
             AllowSynchronousContinuations = false
         };
-        
+
+
         _logChannel = Channel.CreateBounded<StructuredLogEntry>(channelOptions);
         _writer = _logChannel.Writer;
         _reader = _logChannel.Reader;
-        
+
+
         _flushSemaphore = new SemaphoreSlim(1, 1);
         _cancellationTokenSource = new CancellationTokenSource();
-        
+
         // Start background processing task
+
         _processingTask = Task.Run(ProcessLogEntriesAsync, _cancellationTokenSource.Token);
-        
+
         // Start batch processing timer
-        _batchTimer = new Timer(TriggerBatchFlush, null, 
+
+        _batchTimer = new Timer(TriggerBatchFlush, null,
+
             TimeSpan.FromMilliseconds(_options.BatchIntervalMs),
             TimeSpan.FromMilliseconds(_options.BatchIntervalMs));
-        
+
         // Initialize sinks
+
         InitializeSinks();
     }
 
@@ -79,7 +87,8 @@ public sealed class LogBuffer : IDisposable
     public bool AddLogEntry(StructuredLogEntry logEntry)
     {
         ThrowIfDisposed();
-        
+
+
         if (logEntry == null)
         {
             return false;
@@ -91,26 +100,30 @@ public sealed class LogBuffer : IDisposable
         {
             return true; // Entry was filtered, but not an error
         }
-        
+
+
         try
         {
             var success = _writer.TryWrite(logEntry);
-            
+
+
             if (success)
             {
-                Interlocked.Increment(ref _totalEnqueued);
+                _ = Interlocked.Increment(ref _totalEnqueued);
             }
             else
             {
-                Interlocked.Increment(ref _totalDropped);
-                
+                _ = Interlocked.Increment(ref _totalDropped);
+
+
                 if (_options.LogDroppedEntries)
                 {
                     _logger.LogWarning("Log entry dropped due to full buffer: {Category} - {Message}",
                         logEntry.Category, logEntry.Message);
                 }
             }
-            
+
+
             return success;
         }
         catch (InvalidOperationException)
@@ -127,7 +140,8 @@ public sealed class LogBuffer : IDisposable
     public async Task FlushAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         await _flushSemaphore.WaitAsync(cancellationToken);
         try
         {
@@ -136,15 +150,17 @@ public sealed class LogBuffer : IDisposable
             {
                 await ProcessBatchAsync(entries, cancellationToken);
             }
-            
+
             // Flush all sinks
+
             await FlushSinksAsync(cancellationToken);
-            
+
+
             _lastFlush = DateTimeOffset.UtcNow;
         }
         finally
         {
-            _flushSemaphore.Release();
+            _ = _flushSemaphore.Release();
         }
     }
 
@@ -155,7 +171,8 @@ public sealed class LogBuffer : IDisposable
     public LogBufferStatistics GetStatistics()
     {
         ThrowIfDisposed();
-        
+
+
         return new LogBufferStatistics
         {
             TotalEnqueued = Interlocked.Read(ref _totalEnqueued),
@@ -177,7 +194,8 @@ public sealed class LogBuffer : IDisposable
     public void AddSink(ILogSink sink)
     {
         ThrowIfDisposed();
-        
+
+
         if (sink == null)
         {
             throw new ArgumentNullException(nameof(sink));
@@ -185,7 +203,8 @@ public sealed class LogBuffer : IDisposable
 
 
         _sinks.Add(sink);
-        
+
+
         try
         {
             sink.Initialize();
@@ -205,7 +224,8 @@ public sealed class LogBuffer : IDisposable
     public bool RemoveSink(ILogSink sink)
     {
         ThrowIfDisposed();
-        
+
+
         if (sink == null)
         {
             return false;
@@ -225,7 +245,8 @@ public sealed class LogBuffer : IDisposable
                 _logger.LogError(ex, "Error disposing log sink: {SinkType}", sink.GetType().Name);
             }
         }
-        
+
+
         return removed;
     }
 
@@ -233,25 +254,29 @@ public sealed class LogBuffer : IDisposable
     {
         var batch = new List<StructuredLogEntry>(_options.BatchSize);
         var batchTimer = new Timer(async _ => await ProcessCurrentBatch(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-        
+
+
         try
         {
             await foreach (var logEntry in _reader.ReadAllAsync(_cancellationTokenSource.Token))
             {
                 batch.Add(logEntry);
-                
+
                 // Process batch when it reaches the configured size
+
                 if (batch.Count >= _options.BatchSize)
                 {
                     await ProcessBatchAsync(batch, _cancellationTokenSource.Token);
                     batch.Clear();
                 }
-                
+
                 // Reset the batch timer
-                batchTimer.Change(TimeSpan.FromMilliseconds(_options.BatchIntervalMs), Timeout.InfiniteTimeSpan);
+
+                _ = batchTimer.Change(TimeSpan.FromMilliseconds(_options.BatchIntervalMs), Timeout.InfiniteTimeSpan);
             }
-            
+
             // Process any remaining entries
+
             if (batch.Any())
             {
                 await ProcessBatchAsync(batch, _cancellationTokenSource.Token);
@@ -269,7 +294,8 @@ public sealed class LogBuffer : IDisposable
         {
             batchTimer.Dispose();
         }
-        
+
+
         async Task ProcessCurrentBatch()
         {
             if (batch.Any())
@@ -292,41 +318,49 @@ public sealed class LogBuffer : IDisposable
         {
             // Apply batch-level transformations
             var processedBatch = await PreprocessBatchAsync(batch, cancellationToken);
-            
+
             // Write to all configured sinks in parallel
+
             var sinkTasks = _sinks.Select(sink => WriteBatchToSinkAsync(sink, processedBatch, cancellationToken));
             await Task.WhenAll(sinkTasks);
-            
-            Interlocked.Add(ref _totalProcessed, batch.Count);
-            Interlocked.Increment(ref _batchesProcessed);
-            
-            _logger.LogTrace("Processed batch of {Count} log entries across {SinkCount} sinks", 
+
+
+            _ = Interlocked.Add(ref _totalProcessed, batch.Count);
+            _ = Interlocked.Increment(ref _batchesProcessed);
+
+
+            _logger.LogTrace("Processed batch of {Count} log entries across {SinkCount} sinks",
+
                 batch.Count, _sinks.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to process log batch of {Count} entries", batch.Count);
-            
+
             // Attempt individual entry processing for resilience
+
             await ProcessIndividualEntriesAsync(batch, cancellationToken);
         }
     }
 
-    private async Task<List<StructuredLogEntry>> PreprocessBatchAsync(List<StructuredLogEntry> batch, 
+    private async Task<List<StructuredLogEntry>> PreprocessBatchAsync(List<StructuredLogEntry> batch,
+
         CancellationToken cancellationToken)
     {
         // Add batch-level metadata
         var batchId = Guid.NewGuid().ToString("N")[..8];
         var batchTimestamp = DateTimeOffset.UtcNow;
-        
+
+
         foreach (var entry in batch)
         {
             entry.Properties["_batchId"] = batchId;
             entry.Properties["_batchTimestamp"] = batchTimestamp;
             entry.Properties["_batchSize"] = batch.Count;
         }
-        
+
         // Apply compression if enabled and batch is large enough
+
         if (_options.EnableCompression && batch.Count >= _options.CompressionThreshold)
         {
             foreach (var entry in batch)
@@ -335,12 +369,14 @@ public sealed class LogBuffer : IDisposable
                 // Actual compression would happen in the sink
             }
         }
-        
+
+
         await Task.Yield(); // Allow other operations to continue
         return batch;
     }
 
-    private async Task WriteBatchToSinkAsync(ILogSink sink, List<StructuredLogEntry> batch, 
+    private async Task WriteBatchToSinkAsync(ILogSink sink, List<StructuredLogEntry> batch,
+
         CancellationToken cancellationToken)
     {
         try
@@ -350,8 +386,9 @@ public sealed class LogBuffer : IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to write batch to sink: {SinkType}", sink.GetType().Name);
-            
+
             // Mark sink as unhealthy
+
             if (sink is IHealthCheckable healthCheckable)
             {
                 healthCheckable.MarkUnhealthy(ex);
@@ -359,7 +396,8 @@ public sealed class LogBuffer : IDisposable
         }
     }
 
-    private async Task ProcessIndividualEntriesAsync(List<StructuredLogEntry> batch, 
+    private async Task ProcessIndividualEntriesAsync(List<StructuredLogEntry> batch,
+
         CancellationToken cancellationToken)
     {
         foreach (var entry in batch)
@@ -372,7 +410,8 @@ public sealed class LogBuffer : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogTrace(ex, "Failed to write individual entry to sink: {SinkType}", 
+                    _logger.LogTrace(ex, "Failed to write individual entry to sink: {SinkType}",
+
                         sink.GetType().Name);
                 }
             }
@@ -382,13 +421,15 @@ public sealed class LogBuffer : IDisposable
     private async Task<List<StructuredLogEntry>> CollectPendingEntriesAsync(CancellationToken cancellationToken)
     {
         var entries = new List<StructuredLogEntry>();
-        
+
         // Collect all currently available entries without blocking
+
         while (_reader.TryRead(out var entry) && entries.Count < _options.MaxFlushBatchSize)
         {
             entries.Add(entry);
         }
-        
+
+
         await Task.Yield(); // Allow other operations to continue
         return entries;
     }
@@ -434,15 +475,18 @@ public sealed class LogBuffer : IDisposable
         {
             return false;
         }
-        
+
         // Apply category filtering
-        if (_options.ExcludedCategories.Any(cat => 
+
+        if (_options.ExcludedCategories.Any(cat =>
+
             logEntry.Category.Contains(cat, StringComparison.OrdinalIgnoreCase)))
         {
             return false;
         }
-        
+
         // Apply custom filters
+
         foreach (var filter in _options.CustomFilters)
         {
             if (!filter(logEntry))
@@ -450,7 +494,8 @@ public sealed class LogBuffer : IDisposable
                 return false;
             }
         }
-        
+
+
         return true;
     }
 
@@ -459,20 +504,23 @@ public sealed class LogBuffer : IDisposable
         // Check if processing is keeping up
         var currentBufferSize = _logChannel.Reader.CanCount ? _logChannel.Reader.Count : 0;
         var bufferUtilization = (double)currentBufferSize / _options.MaxBufferSize;
-        
+
+
         if (bufferUtilization > 0.8) // Buffer is >80% full
         {
             return false;
         }
-        
+
         // Check if we haven't flushed recently
+
         var timeSinceLastFlush = DateTimeOffset.UtcNow - _lastFlush;
         if (timeSinceLastFlush > TimeSpan.FromMinutes(5))
         {
             return false;
         }
-        
+
         // Check sink health
+
         var healthyScenarios = _sinks.Count(s => s is IHealthCheckable hc ? hc.IsHealthy : true);
         return healthyScenarios > 0; // At least one sink is healthy
     }
@@ -500,7 +548,7 @@ public sealed class LogBuffer : IDisposable
                 }
                 finally
                 {
-                    _flushSemaphore.Release();
+                    _ = _flushSemaphore.Release();
                 }
             }
             catch (Exception ex)
@@ -528,25 +576,30 @@ public sealed class LogBuffer : IDisposable
 
 
         _disposed = true;
-        
+
+
         try
         {
             // Stop accepting new entries
             _writer.Complete();
-            
+
             // Cancel background processing
+
             _cancellationTokenSource.Cancel();
-            
+
             // Wait for processing to complete (with timeout)
+
             if (!_processingTask.Wait(TimeSpan.FromSeconds(30)))
             {
                 _logger.LogWarning("Log processing task did not complete within timeout");
             }
-            
+
             // Final flush
+
             FlushAsync().GetAwaiter().GetResult();
-            
+
             // Dispose sinks
+
             foreach (var sink in _sinks)
             {
                 try
@@ -596,7 +649,8 @@ public sealed class LogBufferOptions
     public int MaxFlushBatchSize { get; set; } = 1000;
     public bool DropOnFull { get; set; } = true;
     public bool LogDroppedEntries { get; set; } = true;
-    public bool EnableCompression { get; set; } = false;
+    public bool EnableCompression { get; set; }
+
     public int CompressionThreshold { get; set; } = 50;
     public LogLevel MinimumLogLevel { get; set; } = LogLevel.Debug;
     public List<string> ExcludedCategories { get; set; } = new();
@@ -614,7 +668,8 @@ public sealed class LogBufferStatistics
     public DateTimeOffset LastFlushTime { get; set; }
     public int ActiveSinks { get; set; }
     public bool IsHealthy { get; set; }
-    
+
+
     public double DropRate => TotalEnqueued > 0 ? (double)TotalDropped / TotalEnqueued : 0;
     public double ProcessingRate => TotalEnqueued > 0 ? (double)TotalProcessed / TotalEnqueued : 0;
     public double BufferUtilization => MaxBufferSize > 0 ? (double)CurrentBufferSize / MaxBufferSize : 0;
@@ -624,9 +679,11 @@ public sealed class LogBufferStatistics
 public sealed class ConsoleSink : ILogSink, IHealthCheckable
 {
     public bool IsHealthy { get; private set; } = true;
-    
+
+
     public void Initialize() { }
-    
+
+
     public Task WriteAsync(StructuredLogEntry entry, CancellationToken cancellationToken = default)
     {
         try
@@ -640,7 +697,8 @@ public sealed class ConsoleSink : ILogSink, IHealthCheckable
             throw;
         }
     }
-    
+
+
     public async Task WriteBatchAsync(List<StructuredLogEntry> entries, CancellationToken cancellationToken = default)
     {
         foreach (var entry in entries)
@@ -648,16 +706,19 @@ public sealed class ConsoleSink : ILogSink, IHealthCheckable
             await WriteAsync(entry, cancellationToken);
         }
     }
-    
+
+
     public Task FlushAsync(CancellationToken cancellationToken = default)
     {
         Console.Out.Flush();
         return Task.CompletedTask;
     }
-    
+
+
     public void MarkUnhealthy(Exception? exception = null) => IsHealthy = false;
     public void MarkHealthy() => IsHealthy = true;
-    
+
+
     public void Dispose() { }
 }
 
@@ -665,20 +726,23 @@ public sealed class FileSink : ILogSink, IHealthCheckable
 {
     private readonly string _filePath;
     private readonly SemaphoreSlim _writeSemaphore = new(1, 1);
-    
+
+
     public bool IsHealthy { get; private set; } = true;
-    
+
+
     public FileSink(string filePath)
     {
         _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
     }
-    
+
+
     public void Initialize()
     {
         var directory = Path.GetDirectoryName(_filePath);
         if (!string.IsNullOrEmpty(directory))
         {
-            Directory.CreateDirectory(directory);
+            _ = Directory.CreateDirectory(directory);
         }
     }
 
@@ -702,14 +766,15 @@ public sealed class FileSink : ILogSink, IHealthCheckable
         }
         finally
         {
-            _writeSemaphore.Release();
+            _ = _writeSemaphore.Release();
         }
     }
 
 
-    public Task FlushAsync(CancellationToken cancellationToken = default) =>
+    public Task FlushAsync(CancellationToken cancellationToken = default)
         // File writes are immediately flushed
-        Task.CompletedTask;
+
+        => Task.CompletedTask;
 
 
     public void MarkUnhealthy(Exception? exception = null) => IsHealthy = false;

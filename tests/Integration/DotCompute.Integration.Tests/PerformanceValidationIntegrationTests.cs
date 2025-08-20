@@ -398,6 +398,7 @@ public sealed class PerformanceValidationIntegrationTests : ComputeWorkflowTestB
 
     private static double CalculateExpectedMinBandwidth(int dataSize)
         // Expected minimum memory bandwidth scales with transfer size
+
         => Math.Max(20, Math.Min(100, dataSize / 100.0));
 
     private static double CalculateScalingEfficiency(int concurrency, double totalThroughput,
@@ -873,7 +874,7 @@ public record PipelinePerformanceMetrics
     public int StageCount { get; init; }
     public double TotalThroughput { get; init; }
     public ResourceUtilization ResourceUtilization { get; init; } = new();
-    public double[] StageLatencies { get; init; } = Array.Empty<double>();
+    public double[] StageLatencies { get; init; } = [];
 }
 
 /// <summary>

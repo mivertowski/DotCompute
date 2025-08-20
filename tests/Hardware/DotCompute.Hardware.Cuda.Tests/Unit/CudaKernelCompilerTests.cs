@@ -11,6 +11,7 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Hardware.Cuda.Tests.Unit;
 
 

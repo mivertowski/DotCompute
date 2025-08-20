@@ -22,12 +22,14 @@ public static class MemoryOptimizations
     private const int L3_CACHE_SIZE = 8 * 1024 * 1024; // 8MB L3 cache
     private const int CACHE_LINE_SIZE = 64;            // 64-byte cache line
     private const int PAGE_SIZE = 4096;                // 4KB memory page
-    
+
     // Prefetch distances (empirically determined)
+
     private const int PREFETCH_DISTANCE_L1 = 64;
     private const int PREFETCH_DISTANCE_L2 = 512;
     private const int PREFETCH_DISTANCE_L3 = 4096;
-    
+
+
     /// <summary>
     /// NUMA-aware memory allocator with optimal placement strategies.
     /// </summary>
@@ -36,7 +38,8 @@ public static class MemoryOptimizations
         private readonly Dictionary<int, IntPtr> _numaBuffers = new();
         private readonly object _lock = new();
         private bool _disposed;
-        
+
+
         /// <summary>
         /// Allocates memory on the specified NUMA node with alignment.
         /// </summary>
@@ -56,9 +59,11 @@ public static class MemoryOptimizations
 
             var size = count * sizeof(T);
             var alignedSize = AlignUp(size, alignment);
-            
+
+
             IntPtr ptr;
-            
+
+
             if (numaNode >= 0 && IsNumaAvailable())
             {
                 ptr = AllocateOnNumaNode(alignedSize, numaNode, alignment);
@@ -67,15 +72,18 @@ public static class MemoryOptimizations
             {
                 ptr = AllocateAligned(alignedSize, alignment);
             }
-            
+
+
             lock (_lock)
             {
                 _numaBuffers[ptr.ToInt32()] = ptr;
             }
-            
+
+
             return new Span<T>(ptr.ToPointer(), count);
         }
-        
+
+
         /// <summary>
         /// Deallocates previously allocated memory.
         /// </summary>
@@ -91,30 +99,33 @@ public static class MemoryOptimizations
             fixed (T* ptr = span)
             {
                 var intPtr = new IntPtr(ptr);
-                
+
+
                 lock (_lock)
                 {
                     if (_numaBuffers.TryGetValue(intPtr.ToInt32(), out var originalPtr))
                     {
                         NativeMemory.AlignedFree(originalPtr.ToPointer());
-                        _numaBuffers.Remove(intPtr.ToInt32());
+                        _ = _numaBuffers.Remove(intPtr.ToInt32());
                     }
                 }
             }
         }
 
 
-        private static unsafe IntPtr AllocateOnNumaNode(int size, int numaNode, int alignment) =>
+        private static unsafe IntPtr AllocateOnNumaNode(int size, int numaNode, int alignment)
             // Platform-specific NUMA allocation would go here
             // For now, fall back to regular aligned allocation
-            AllocateAligned(size, alignment);
+
+            => AllocateAligned(size, alignment);
 
 
         private static unsafe IntPtr AllocateAligned(int size, int alignment) => new IntPtr(NativeMemory.AlignedAlloc((uint)size, (uint)alignment));
 
-        private static bool IsNumaAvailable() =>
+        private static bool IsNumaAvailable()
             // Platform-specific NUMA detection would go here
-            false;
+
+            => false;
 
         private static int AlignUp(int value, int alignment) => (value + alignment - 1) & ~(alignment - 1);
 
@@ -138,7 +149,8 @@ public static class MemoryOptimizations
             }
         }
     }
-    
+
+
     /// <summary>
     /// High-performance memory pool with cache-aligned allocation and reuse.
     /// </summary>
@@ -150,25 +162,29 @@ public static class MemoryOptimizations
         private readonly int _maxBuffers;
         private readonly NumaAllocator _allocator;
         private bool _disposed;
-        
+
+
         private readonly struct PooledBuffer
         {
             public readonly Memory<T> Buffer;
             public readonly int Size;
-            
+
+
             public PooledBuffer(Memory<T> buffer, int size)
             {
                 Buffer = buffer;
                 Size = size;
             }
         }
-        
+
+
         public OptimizedMemoryPool(int maxBuffers = 100)
         {
             _maxBuffers = maxBuffers;
             _allocator = new NumaAllocator();
         }
-        
+
+
         /// <summary>
         /// Rents a buffer of the specified size with cache-line alignment.
         /// </summary>
@@ -187,19 +203,23 @@ public static class MemoryOptimizations
             {
                 return pooledBuffer.Buffer.Span.Slice(0, size);
             }
-            
+
             // Allocate new buffer if pool is not full
+
             var alignedSize = AlignToNextPowerOf2(size);
             var buffer = _allocator.Allocate<T>(alignedSize);
-            
+
             // Convert Span<T> to Memory<T> for storage
+
             var memory = new Memory<T>(buffer.ToArray());
             var newBuffer = new PooledBuffer(memory, alignedSize);
             _allBuffers.Add(newBuffer);
-            
+
+
             return buffer.Slice(0, size);
         }
-        
+
+
         /// <summary>
         /// Returns a rented buffer to the pool for reuse.
         /// </summary>
@@ -221,13 +241,15 @@ public static class MemoryOptimizations
                     fixed (T* bufferPtr = buffer)
                     fixed (T* pooledPtr = pooledSpan)
                     {
-                        if (bufferPtr >= pooledPtr && 
+                        if (bufferPtr >= pooledPtr &&
+
                             bufferPtr < pooledPtr + pooledBuffer.Size)
                         {
                             // Clear the buffer for security
                             pooledSpan.Clear();
-                            
+
                             // Return to available pool
+
                             if (_availableBuffers.Count < _maxBuffers)
                             {
                                 _availableBuffers.Push(pooledBuffer);
@@ -238,7 +260,8 @@ public static class MemoryOptimizations
                 }
             }
         }
-        
+
+
         private static int AlignToNextPowerOf2(int size)
         {
             size--;
@@ -249,7 +272,8 @@ public static class MemoryOptimizations
             size |= size >> 16;
             return size + 1;
         }
-        
+
+
         public void Dispose()
         {
             if (!_disposed)
@@ -260,13 +284,15 @@ public static class MemoryOptimizations
                     var span = buffer.Buffer.Span;
                     _allocator.Deallocate(span);
                 }
-                
+
+
                 _allocator.Dispose();
                 _disposed = true;
             }
         }
     }
-    
+
+
     /// <summary>
     /// Cache-oblivious data layout optimizer for maximum memory bandwidth.
     /// </summary>
@@ -281,24 +307,28 @@ public static class MemoryOptimizations
         /// <param name="cols">Number of columns</param>
         /// <param name="blockSize">Block size (0 for auto-detect)</param>
         /// <returns>Blocked layout data</returns>
-        public static float[] ToBlockedLayout(ReadOnlySpan<float> source, int rows, int cols, 
+        public static float[] ToBlockedLayout(ReadOnlySpan<float> source, int rows, int cols,
+
             int blockSize = 0)
         {
             if (blockSize <= 0)
             {
                 blockSize = CalculateOptimalBlockSize(rows, cols);
             }
-            
+
+
             var blocked = new float[source.Length];
             var destIndex = 0;
-            
+
+
             for (var ii = 0; ii < rows; ii += blockSize)
             {
                 for (var jj = 0; jj < cols; jj += blockSize)
                 {
                     var iEnd = Math.Min(ii + blockSize, rows);
                     var jEnd = Math.Min(jj + blockSize, cols);
-                    
+
+
                     for (var i = ii; i < iEnd; i++)
                     {
                         for (var j = jj; j < jEnd; j++)
@@ -308,10 +338,12 @@ public static class MemoryOptimizations
                     }
                 }
             }
-            
+
+
             return blocked;
         }
-        
+
+
         /// <summary>
         /// Converts blocked layout back to row-major format.
         /// </summary>
@@ -320,19 +352,22 @@ public static class MemoryOptimizations
         /// <param name="cols">Number of columns</param>
         /// <param name="blockSize">Block size</param>
         /// <returns>Row-major layout data</returns>
-        public static float[] FromBlockedLayout(ReadOnlySpan<float> blocked, int rows, int cols, 
+        public static float[] FromBlockedLayout(ReadOnlySpan<float> blocked, int rows, int cols,
+
             int blockSize)
         {
             var rowMajor = new float[blocked.Length];
             var srcIndex = 0;
-            
+
+
             for (var ii = 0; ii < rows; ii += blockSize)
             {
                 for (var jj = 0; jj < cols; jj += blockSize)
                 {
                     var iEnd = Math.Min(ii + blockSize, rows);
                     var jEnd = Math.Min(jj + blockSize, cols);
-                    
+
+
                     for (var i = ii; i < iEnd; i++)
                     {
                         for (var j = jj; j < jEnd; j++)
@@ -342,10 +377,12 @@ public static class MemoryOptimizations
                     }
                 }
             }
-            
+
+
             return rowMajor;
         }
-        
+
+
         /// <summary>
         /// Optimizes array layout for vectorized operations.
         /// Ensures alignment and padding for SIMD efficiency.
@@ -354,42 +391,49 @@ public static class MemoryOptimizations
         /// <param name="source">Source array</param>
         /// <param name="vectorSize">SIMD vector size</param>
         /// <returns>Optimized layout array</returns>
-        public static T[] OptimizeForVectorization<T>(T[] source, int vectorSize = 0) 
+        public static T[] OptimizeForVectorization<T>(T[] source, int vectorSize = 0)
+
             where T : unmanaged
         {
             if (vectorSize <= 0)
             {
                 vectorSize = Vector<T>.Count;
             }
-            
+
+
             var alignedLength = AlignUp(source.Length, vectorSize);
             if (alignedLength == source.Length)
             {
                 return source;
             }
-            
+
+
             var aligned = new T[alignedLength];
             Array.Copy(source, aligned, source.Length);
-            
+
             // Fill padding with appropriate values (zeros for numeric types)
+
             return aligned;
         }
-        
+
+
         private static int CalculateOptimalBlockSize(int rows, int cols)
         {
             // Calculate block size based on L2 cache capacity
             var elementSize = sizeof(float);
             var elementsInL2 = L2_CACHE_SIZE / elementSize;
             var optimalBlock = (int)Math.Sqrt(elementsInL2 / 3); // Account for 3 matrices (A, B, C)
-            
+
             // Clamp to reasonable range
+
             return Math.Max(32, Math.Min(optimalBlock, 256));
         }
 
 
         private static int AlignUp(int value, int alignment) => (value + alignment - 1) & ~(alignment - 1);
     }
-    
+
+
     /// <summary>
     /// Memory prefetching utilities for improved cache performance.
     /// </summary>
@@ -416,7 +460,8 @@ public static class MemoryOptimizations
                 Sse.Prefetch0(ptr + i * stride);
             }
         }
-        
+
+
         /// <summary>
         /// Prefetches memory with non-temporal hint (bypass cache).
         /// </summary>
@@ -429,14 +474,16 @@ public static class MemoryOptimizations
                 Sse.PrefetchNonTemporal(address);
             }
         }
-        
+
+
         /// <summary>
         /// Optimized memory copy with prefetching for large blocks.
         /// </summary>
         /// <param name="source">Source span</param>
         /// <param name="destination">Destination span</param>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public static unsafe void PrefetchedCopy<T>(ReadOnlySpan<T> source, Span<T> destination) 
+        public static unsafe void PrefetchedCopy<T>(ReadOnlySpan<T> source, Span<T> destination)
+
             where T : unmanaged
         {
             if (source.Length != destination.Length)
@@ -455,7 +502,8 @@ public static class MemoryOptimizations
             fixed (T* srcPtr = source, dstPtr = destination)
             {
                 var byteCount = source.Length * sizeof(T);
-                
+
+
                 if (byteCount <= L1_CACHE_SIZE)
                 {
                     // Small copy: use simple memcpy
@@ -468,15 +516,17 @@ public static class MemoryOptimizations
                 }
             }
         }
-        
+
+
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private static unsafe void PrefetchedMemoryCopy(void* source, void* destination, int byteCount)
         {
             var src = (byte*)source;
             var dst = (byte*)destination;
             var remaining = byteCount;
-            
+
             // Prefetch first blocks
+
             var prefetchDistance = Math.Min(PREFETCH_DISTANCE_L2, remaining);
             for (var i = 0; i < prefetchDistance; i += CACHE_LINE_SIZE)
             {
@@ -485,7 +535,8 @@ public static class MemoryOptimizations
                     Sse.Prefetch0(src + i);
                 }
             }
-            
+
+
             var offset = 0;
             while (remaining >= CACHE_LINE_SIZE)
             {
@@ -494,8 +545,9 @@ public static class MemoryOptimizations
                 {
                     Sse.Prefetch0(src + offset + prefetchDistance);
                 }
-                
+
                 // Copy cache line using SIMD if available
+
                 if (Avx2.IsSupported && remaining >= 32)
                 {
                     var vec = Avx.LoadVector256(src + offset);
@@ -518,8 +570,9 @@ public static class MemoryOptimizations
                     remaining -= 8;
                 }
             }
-            
+
             // Copy remaining bytes
+
             while (remaining > 0)
             {
                 dst[offset] = src[offset];
@@ -528,7 +581,8 @@ public static class MemoryOptimizations
             }
         }
     }
-    
+
+
     /// <summary>
     /// Cache-friendly iteration patterns for optimal memory access.
     /// </summary>
@@ -543,21 +597,24 @@ public static class MemoryOptimizations
         /// <param name="cols">Number of columns</param>
         /// <param name="action">Action to perform on each element</param>
         /// <param name="tileSize">Tile size for blocking (0 for auto)</param>
-        public static void IterateTiled<T>(Span<T> array, int rows, int cols, 
+        public static void IterateTiled<T>(Span<T> array, int rows, int cols,
+
             RefAction<T> action, int tileSize = 0)
         {
             if (tileSize <= 0)
             {
                 tileSize = CalculateOptimalTileSize();
             }
-            
+
+
             for (var ii = 0; ii < rows; ii += tileSize)
             {
                 for (var jj = 0; jj < cols; jj += tileSize)
                 {
                     var iEnd = Math.Min(ii + tileSize, rows);
                     var jEnd = Math.Min(jj + tileSize, cols);
-                    
+
+
                     for (var i = ii; i < iEnd; i++)
                     {
                         for (var j = jj; j < jEnd; j++)
@@ -568,7 +625,8 @@ public static class MemoryOptimizations
                 }
             }
         }
-        
+
+
         /// <summary>
         /// Processes array with optimal cache blocking for reduction operations.
         /// </summary>
@@ -586,26 +644,32 @@ public static class MemoryOptimizations
                 blockSize = L1_CACHE_SIZE / (Unsafe.SizeOf<T>() * 2); // Leave room for result accumulation
                 blockSize = Math.Max(64, Math.Min(blockSize, 4096));
             }
-            
+
+
             var result = identity;
-            
+
+
             for (var i = 0; i < array.Length; i += blockSize)
             {
                 var blockEnd = Math.Min(i + blockSize, array.Length);
                 var blockResult = identity;
-                
+
                 // Process block with good locality
+
                 for (var j = i; j < blockEnd; j++)
                 {
                     blockResult = reducer(blockResult, array[j]);
                 }
-                
+
+
                 result = reducer(result, blockResult);
             }
-            
+
+
             return result;
         }
-        
+
+
         private static int CalculateOptimalTileSize()
         {
             // Tile size that fits comfortably in L1 cache

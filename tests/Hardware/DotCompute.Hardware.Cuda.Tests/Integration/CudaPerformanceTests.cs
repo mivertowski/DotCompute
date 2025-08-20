@@ -14,6 +14,7 @@ using Xunit.Abstractions;
 using FluentAssertions;
 using DotCompute.Tests.Common;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Hardware.Cuda.Tests.Integration;
 
 
@@ -495,6 +496,7 @@ public sealed class CudaPerformanceTests : IDisposable
     public void CudaPerformance_RunBenchmarkSuite()
         // This would run the full benchmark suite
         // BenchmarkRunner.Run<CudaBenchmarkSuite>();
+
         => _output.WriteLine("Benchmark suite skipped - requires explicit BenchmarkDotNet runner");
 
     // Helper Methods

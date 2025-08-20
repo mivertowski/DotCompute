@@ -6,110 +6,110 @@ using DotCompute.Abstractions;
 namespace DotCompute.Plugins.Interfaces
 {
 
-/// <summary>
-/// Factory interface for creating accelerator backend instances.
-/// </summary>
-public interface IBackendFactory
-{
     /// <summary>
-    /// Gets the name of this backend.
+    /// Factory interface for creating accelerator backend instances.
     /// </summary>
-    public string Name { get; }
+    public interface IBackendFactory
+    {
+        /// <summary>
+        /// Gets the name of this backend.
+        /// </summary>
+        public string Name { get; }
+
+        /// <summary>
+        /// Gets the description of this backend.
+        /// </summary>
+        public string Description { get; }
+
+        /// <summary>
+        /// Gets the version of this backend.
+        /// </summary>
+        public Version Version { get; }
+
+        /// <summary>
+        /// Determines if this backend is available on the current system.
+        /// </summary>
+        public bool IsAvailable();
+
+        /// <summary>
+        /// Creates all available accelerators for this backend.
+        /// </summary>
+        public IEnumerable<IAccelerator> CreateAccelerators();
+
+        /// <summary>
+        /// Creates the default accelerator for this backend.
+        /// </summary>
+        public IAccelerator? CreateDefaultAccelerator();
+
+        /// <summary>
+        /// Gets the capabilities of this backend.
+        /// </summary>
+        public BackendCapabilities GetCapabilities();
+    }
 
     /// <summary>
-    /// Gets the description of this backend.
+    /// Describes the capabilities of a compute backend.
     /// </summary>
-    public string Description { get; }
+    public class BackendCapabilities
+    {
+        /// <summary>
+        /// Indicates if the backend supports float16 operations.
+        /// </summary>
+        public bool SupportsFloat16 { get; set; }
 
-    /// <summary>
-    /// Gets the version of this backend.
-    /// </summary>
-    public Version Version { get; }
+        /// <summary>
+        /// Indicates if the backend supports float32 operations.
+        /// </summary>
+        public bool SupportsFloat32 { get; set; }
 
-    /// <summary>
-    /// Determines if this backend is available on the current system.
-    /// </summary>
-    public bool IsAvailable();
+        /// <summary>
+        /// Indicates if the backend supports float64 operations.
+        /// </summary>
+        public bool SupportsFloat64 { get; set; }
 
-    /// <summary>
-    /// Creates all available accelerators for this backend.
-    /// </summary>
-    public IEnumerable<IAccelerator> CreateAccelerators();
+        /// <summary>
+        /// Indicates if the backend supports int8 operations.
+        /// </summary>
+        public bool SupportsInt8 { get; set; }
 
-    /// <summary>
-    /// Creates the default accelerator for this backend.
-    /// </summary>
-    public IAccelerator? CreateDefaultAccelerator();
+        /// <summary>
+        /// Indicates if the backend supports int16 operations.
+        /// </summary>
+        public bool SupportsInt16 { get; set; }
 
-    /// <summary>
-    /// Gets the capabilities of this backend.
-    /// </summary>
-    public BackendCapabilities GetCapabilities();
-}
+        /// <summary>
+        /// Indicates if the backend supports int32 operations.
+        /// </summary>
+        public bool SupportsInt32 { get; set; }
 
-/// <summary>
-/// Describes the capabilities of a compute backend.
-/// </summary>
-public class BackendCapabilities
-{
-    /// <summary>
-    /// Indicates if the backend supports float16 operations.
-    /// </summary>
-    public bool SupportsFloat16 { get; set; }
+        /// <summary>
+        /// Indicates if the backend supports int64 operations.
+        /// </summary>
+        public bool SupportsInt64 { get; set; }
 
-    /// <summary>
-    /// Indicates if the backend supports float32 operations.
-    /// </summary>
-    public bool SupportsFloat32 { get; set; }
+        /// <summary>
+        /// Indicates if the backend supports asynchronous execution.
+        /// </summary>
+        public bool SupportsAsyncExecution { get; set; }
 
-    /// <summary>
-    /// Indicates if the backend supports float64 operations.
-    /// </summary>
-    public bool SupportsFloat64 { get; set; }
+        /// <summary>
+        /// Indicates if the backend supports multiple devices.
+        /// </summary>
+        public bool SupportsMultiDevice { get; set; }
 
-    /// <summary>
-    /// Indicates if the backend supports int8 operations.
-    /// </summary>
-    public bool SupportsInt8 { get; set; }
+        /// <summary>
+        /// Indicates if the backend supports unified memory.
+        /// </summary>
+        public bool SupportsUnifiedMemory { get; set; }
 
-    /// <summary>
-    /// Indicates if the backend supports int16 operations.
-    /// </summary>
-    public bool SupportsInt16 { get; set; }
+        /// <summary>
+        /// Maximum number of devices supported.
+        /// </summary>
+        public int MaxDevices { get; set; }
 
-    /// <summary>
-    /// Indicates if the backend supports int32 operations.
-    /// </summary>
-    public bool SupportsInt32 { get; set; }
-
-    /// <summary>
-    /// Indicates if the backend supports int64 operations.
-    /// </summary>
-    public bool SupportsInt64 { get; set; }
-
-    /// <summary>
-    /// Indicates if the backend supports asynchronous execution.
-    /// </summary>
-    public bool SupportsAsyncExecution { get; set; }
-
-    /// <summary>
-    /// Indicates if the backend supports multiple devices.
-    /// </summary>
-    public bool SupportsMultiDevice { get; set; }
-
-    /// <summary>
-    /// Indicates if the backend supports unified memory.
-    /// </summary>
-    public bool SupportsUnifiedMemory { get; set; }
-
-    /// <summary>
-    /// Maximum number of devices supported.
-    /// </summary>
-    public int MaxDevices { get; set; }
-
-    /// <summary>
-    /// List of supported features specific to this backend.
-    /// </summary>
-    public IReadOnlyList<string> SupportedFeatures { get; set; } = Array.Empty<string>();
-}
+        /// <summary>
+        /// List of supported features specific to this backend.
+        /// </summary>
+        public IReadOnlyList<string> SupportedFeatures { get; set; } = Array.Empty<string>();
+    }
 }

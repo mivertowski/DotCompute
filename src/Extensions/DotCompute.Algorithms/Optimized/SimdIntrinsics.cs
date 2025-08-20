@@ -23,18 +23,22 @@ public static class SimdIntrinsics
     public static readonly bool HasFma = Fma.IsSupported;
     public static readonly bool HasSse42 = Sse42.IsSupported;
     public static readonly bool HasNeon = AdvSimd.IsSupported;
-    
+
     // Vector sizes for different architectures
+
     public static readonly int Vector512Size = HasAvx512 ? Vector512<float>.Count : 0;
     public static readonly int Vector256Size = HasAvx2 ? Vector256<float>.Count : 0;
     public static readonly int Vector128Size = Vector128<float>.Count;
     public static readonly int VectorSize = Vector<float>.Count;
-    
+
     // Optimal vector size for current architecture
-    public static readonly int OptimalVectorSize = HasAvx512 ? Vector512Size : 
-                                                    HasAvx2 ? Vector256Size : 
+
+    public static readonly int OptimalVectorSize = HasAvx512 ? Vector512Size :
+
+                                                    HasAvx2 ? Vector256Size :
                                                     Vector128Size;
-    
+
+
     /// <summary>
     /// Cross-platform SIMD vector addition with optimal instruction selection.
     /// </summary>
@@ -82,7 +86,8 @@ public static class SimdIntrinsics
             }
         }
     }
-    
+
+
     /// <summary>
     /// Cross-platform SIMD vector multiplication with FMA support.
     /// </summary>
@@ -130,7 +135,8 @@ public static class SimdIntrinsics
             }
         }
     }
-    
+
+
     /// <summary>
     /// Cross-platform SIMD fused multiply-add (FMA) operation: result = (a * b) + c
     /// </summary>
@@ -139,7 +145,8 @@ public static class SimdIntrinsics
     /// <param name="c">Addend</param>
     /// <param name="result">Result span</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe void FusedMultiplyAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, 
+    public static unsafe void FusedMultiplyAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b,
+
         ReadOnlySpan<float> c, Span<float> result)
     {
         if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
@@ -180,7 +187,8 @@ public static class SimdIntrinsics
             }
         }
     }
-    
+
+
     /// <summary>
     /// Cross-platform SIMD dot product with horizontal reduction.
     /// </summary>
@@ -228,7 +236,8 @@ public static class SimdIntrinsics
             }
         }
     }
-    
+
+
     /// <summary>
     /// Cross-platform SIMD matrix transpose with cache-friendly blocking.
     /// </summary>
@@ -266,7 +275,8 @@ public static class SimdIntrinsics
             }
         }
     }
-    
+
+
     /// <summary>
     /// Cross-platform SIMD horizontal sum with optimal reduction.
     /// </summary>
@@ -306,15 +316,17 @@ public static class SimdIntrinsics
             }
         }
     }
-    
+
     #region AVX-512 Implementations
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void AddAvx512(float* left, float* right, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector512Size);
-        
+
+
         for (; i < vectorCount; i += Vector512Size)
         {
             var leftVec = Avx512F.LoadVector512(left + i);
@@ -322,20 +334,23 @@ public static class SimdIntrinsics
             var resultVec = Avx512F.Add(leftVec, rightVec);
             Avx512F.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = left[i] + right[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void MultiplyAvx512(float* left, float* right, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector512Size);
-        
+
+
         for (; i < vectorCount; i += Vector512Size)
         {
             var leftVec = Avx512F.LoadVector512(left + i);
@@ -343,20 +358,23 @@ public static class SimdIntrinsics
             var resultVec = Avx512F.Multiply(leftVec, rightVec);
             Avx512F.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = left[i] * right[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void FmaAvx512(float* a, float* b, float* c, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector512Size);
-        
+
+
         for (; i < vectorCount; i += Vector512Size)
         {
             var aVec = Avx512F.LoadVector512(a + i);
@@ -365,64 +383,76 @@ public static class SimdIntrinsics
             var resultVec = Avx512F.FusedMultiplyAdd(aVec, bVec, cVec);
             Avx512F.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = a[i] * b[i] + c[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float DotProductAvx512(float* left, float* right, int length)
     {
         var sum = Vector512<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector512Size);
-        
+
+
         for (; i < vectorCount; i += Vector512Size)
         {
             var leftVec = Avx512F.LoadVector512(left + i);
             var rightVec = Avx512F.LoadVector512(right + i);
             sum = Avx512F.FusedMultiplyAdd(leftVec, rightVec, sum);
         }
-        
+
         // Horizontal sum of vector
+
         var result = HorizontalSumVector512(sum);
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result += left[i] * right[i];
         }
-        
+
+
         return result;
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float HorizontalSumAvx512(float* values, int length)
     {
         var sum = Vector512<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector512Size);
-        
+
+
         for (; i < vectorCount; i += Vector512Size)
         {
             var vec = Avx512F.LoadVector512(values + i);
             sum = Avx512F.Add(sum, vec);
         }
-        
+
+
         var result = HorizontalSumVector512(sum);
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result += values[i];
         }
-        
+
+
         return result;
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float HorizontalSumVector512(Vector512<float> vec)
     {
@@ -431,17 +461,19 @@ public static class SimdIntrinsics
         var sum256 = Avx.Add(hi256, lo256);
         return HorizontalSumVector256(sum256);
     }
-    
+
     #endregion
-    
+
     #region AVX2 Implementations
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void AddAvx2(float* left, float* right, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector256Size);
-        
+
+
         for (; i < vectorCount; i += Vector256Size)
         {
             var leftVec = Avx.LoadVector256(left + i);
@@ -449,20 +481,23 @@ public static class SimdIntrinsics
             var resultVec = Avx.Add(leftVec, rightVec);
             Avx.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = left[i] + right[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void MultiplyAvx2(float* left, float* right, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector256Size);
-        
+
+
         for (; i < vectorCount; i += Vector256Size)
         {
             var leftVec = Avx.LoadVector256(left + i);
@@ -470,27 +505,31 @@ public static class SimdIntrinsics
             var resultVec = Avx.Multiply(leftVec, rightVec);
             Avx.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = left[i] * right[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void FmaAvx2(float* a, float* b, float* c, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector256Size);
-        
+
+
         for (; i < vectorCount; i += Vector256Size)
         {
             var aVec = Avx.LoadVector256(a + i);
             var bVec = Avx.LoadVector256(b + i);
             var cVec = Avx.LoadVector256(c + i);
             Vector256<float> resultVec;
-            
+
+
             if (HasFma)
             {
                 resultVec = Fma.MultiplyAdd(aVec, bVec, cVec);
@@ -499,29 +538,34 @@ public static class SimdIntrinsics
             {
                 resultVec = Avx.Add(Avx.Multiply(aVec, bVec), cVec);
             }
-            
+
+
             Avx.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = a[i] * b[i] + c[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float DotProductAvx2(float* left, float* right, int length)
     {
         var sum = Vector256<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector256Size);
-        
+
+
         for (; i < vectorCount; i += Vector256Size)
         {
             var leftVec = Avx.LoadVector256(left + i);
             var rightVec = Avx.LoadVector256(right + i);
-            
+
+
             if (HasFma)
             {
                 sum = Fma.MultiplyAdd(leftVec, rightVec, sum);
@@ -531,43 +575,52 @@ public static class SimdIntrinsics
                 sum = Avx.Add(sum, Avx.Multiply(leftVec, rightVec));
             }
         }
-        
+
         // Horizontal sum of vector
+
         var result = HorizontalSumVector256(sum);
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result += left[i] * right[i];
         }
-        
+
+
         return result;
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float HorizontalSumAvx2(float* values, int length)
     {
         var sum = Vector256<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector256Size);
-        
+
+
         for (; i < vectorCount; i += Vector256Size)
         {
             var vec = Avx.LoadVector256(values + i);
             sum = Avx.Add(sum, vec);
         }
-        
+
+
         var result = HorizontalSumVector256(sum);
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result += values[i];
         }
-        
+
+
         return result;
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float HorizontalSumVector256(Vector256<float> vec)
     {
@@ -576,13 +629,15 @@ public static class SimdIntrinsics
         var sum128 = Sse.Add(hi128, lo128);
         return HorizontalSumVector128(sum128);
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void TransposeAvx2(float* source, float* dest, int rows, int cols)
     {
         // 8x8 transpose using AVX2
         const int blockSize = 8;
-        
+
+
         for (var ii = 0; ii < rows; ii += blockSize)
         {
             for (var jj = 0; jj < cols; jj += blockSize)
@@ -591,35 +646,41 @@ public static class SimdIntrinsics
             }
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void TransposeBlock8x8Avx2(float* src, float* dst, 
+    private static unsafe void TransposeBlock8x8Avx2(float* src, float* dst,
+
         int blockRow, int blockCol, int srcRows, int srcCols, int srcStride, int dstStride)
     {
         var effectiveRows = Math.Min(8, srcRows - blockRow);
         var effectiveCols = Math.Min(8, srcCols - blockCol);
-        
+
         // Fallback to scalar for partial blocks
+
         for (var i = 0; i < effectiveRows; i++)
         {
             for (var j = 0; j < effectiveCols; j++)
             {
-                dst[(blockCol + j) * dstStride + (blockRow + i)] = 
+                dst[(blockCol + j) * dstStride + (blockRow + i)] =
+
                     src[(blockRow + i) * srcStride + (blockCol + j)];
             }
         }
     }
-    
+
     #endregion
-    
+
     #region ARM NEON Implementations
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void AddNeon(float* left, float* right, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
-        
+
+
         for (; i < vectorCount; i += Vector128Size)
         {
             var leftVec = AdvSimd.LoadVector128(left + i);
@@ -627,20 +688,23 @@ public static class SimdIntrinsics
             var resultVec = AdvSimd.Add(leftVec, rightVec);
             AdvSimd.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = left[i] + right[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void MultiplyNeon(float* left, float* right, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
-        
+
+
         for (; i < vectorCount; i += Vector128Size)
         {
             var leftVec = AdvSimd.LoadVector128(left + i);
@@ -648,20 +712,23 @@ public static class SimdIntrinsics
             var resultVec = AdvSimd.Multiply(leftVec, rightVec);
             AdvSimd.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = left[i] * right[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void FmaNeon(float* a, float* b, float* c, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
-        
+
+
         for (; i < vectorCount; i += Vector128Size)
         {
             var aVec = AdvSimd.LoadVector128(a + i);
@@ -670,70 +737,83 @@ public static class SimdIntrinsics
             var resultVec = AdvSimd.FusedMultiplyAdd(cVec, aVec, bVec);
             AdvSimd.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = a[i] * b[i] + c[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float DotProductNeon(float* left, float* right, int length)
     {
         var sum = Vector128<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
-        
+
+
         for (; i < vectorCount; i += Vector128Size)
         {
             var leftVec = AdvSimd.LoadVector128(left + i);
             var rightVec = AdvSimd.LoadVector128(right + i);
             sum = AdvSimd.FusedMultiplyAdd(sum, leftVec, rightVec);
         }
-        
+
         // Horizontal sum of vector
+
         var result = HorizontalSumVector128(sum);
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result += left[i] * right[i];
         }
-        
+
+
         return result;
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float HorizontalSumNeon(float* values, int length)
     {
         var sum = Vector128<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
-        
+
+
         for (; i < vectorCount; i += Vector128Size)
         {
             var vec = AdvSimd.LoadVector128(values + i);
             sum = AdvSimd.Add(sum, vec);
         }
-        
+
+
         var result = HorizontalSumVector128(sum);
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result += values[i];
         }
-        
+
+
         return result;
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void TransposeNeon(float* source, float* dest, int rows, int cols)
     {
         // 4x4 transpose using NEON
         const int blockSize = 4;
-        
+
+
         for (var ii = 0; ii < rows; ii += blockSize)
         {
             for (var jj = 0; jj < cols; jj += blockSize)
@@ -742,35 +822,41 @@ public static class SimdIntrinsics
             }
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void TransposeBlock4x4Neon(float* src, float* dst, 
+    private static unsafe void TransposeBlock4x4Neon(float* src, float* dst,
+
         int blockRow, int blockCol, int srcRows, int srcCols, int srcStride, int dstStride)
     {
         var effectiveRows = Math.Min(4, srcRows - blockRow);
         var effectiveCols = Math.Min(4, srcCols - blockCol);
-        
+
         // Fallback to scalar for now
+
         for (var i = 0; i < effectiveRows; i++)
         {
             for (var j = 0; j < effectiveCols; j++)
             {
-                dst[(blockCol + j) * dstStride + (blockRow + i)] = 
+                dst[(blockCol + j) * dstStride + (blockRow + i)] =
+
                     src[(blockRow + i) * srcStride + (blockCol + j)];
             }
         }
     }
-    
+
     #endregion
-    
+
     #region SSE Implementations
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void AddSse(float* left, float* right, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
-        
+
+
         for (; i < vectorCount; i += Vector128Size)
         {
             var leftVec = Sse.LoadVector128(left + i);
@@ -778,20 +864,23 @@ public static class SimdIntrinsics
             var resultVec = Sse.Add(leftVec, rightVec);
             Sse.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = left[i] + right[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void MultiplySse(float* left, float* right, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
-        
+
+
         for (; i < vectorCount; i += Vector128Size)
         {
             var leftVec = Sse.LoadVector128(left + i);
@@ -799,20 +888,23 @@ public static class SimdIntrinsics
             var resultVec = Sse.Multiply(leftVec, rightVec);
             Sse.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = left[i] * right[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void FmaSse(float* a, float* b, float* c, float* result, int length)
     {
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
-        
+
+
         for (; i < vectorCount; i += Vector128Size)
         {
             var aVec = Sse.LoadVector128(a + i);
@@ -821,64 +913,76 @@ public static class SimdIntrinsics
             var resultVec = Sse.Add(Sse.Multiply(aVec, bVec), cVec);
             Sse.Store(result + i, resultVec);
         }
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result[i] = a[i] * b[i] + c[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float DotProductSse(float* left, float* right, int length)
     {
         var sum = Vector128<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
-        
+
+
         for (; i < vectorCount; i += Vector128Size)
         {
             var leftVec = Sse.LoadVector128(left + i);
             var rightVec = Sse.LoadVector128(right + i);
             sum = Sse.Add(sum, Sse.Multiply(leftVec, rightVec));
         }
-        
+
         // Horizontal sum of vector
+
         var result = HorizontalSumVector128(sum);
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result += left[i] * right[i];
         }
-        
+
+
         return result;
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float HorizontalSumSse(float* values, int length)
     {
         var sum = Vector128<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
-        
+
+
         for (; i < vectorCount; i += Vector128Size)
         {
             var vec = Sse.LoadVector128(values + i);
             sum = Sse.Add(sum, vec);
         }
-        
+
+
         var result = HorizontalSumVector128(sum);
-        
+
         // Handle remaining elements
+
         for (; i < length; i++)
         {
             result += values[i];
         }
-        
+
+
         return result;
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static float HorizontalSumVector128(Vector128<float> vec)
     {
@@ -886,13 +990,15 @@ public static class SimdIntrinsics
         temp = Sse.Add(temp, Sse.Shuffle(temp, temp, 0b_01_00_11_10));
         return temp.ToScalar();
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void TransposeSse2(float* source, float* dest, int rows, int cols)
     {
         // 4x4 transpose using SSE2
         const int blockSize = 4;
-        
+
+
         for (var ii = 0; ii < rows; ii += blockSize)
         {
             for (var jj = 0; jj < cols; jj += blockSize)
@@ -901,14 +1007,17 @@ public static class SimdIntrinsics
             }
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void TransposeBlock4x4Sse2(float* src, float* dst, 
+    private static unsafe void TransposeBlock4x4Sse2(float* src, float* dst,
+
         int blockRow, int blockCol, int srcRows, int srcCols, int srcStride, int dstStride)
     {
         var effectiveRows = Math.Min(4, srcRows - blockRow);
         var effectiveCols = Math.Min(4, srcCols - blockCol);
-        
+
+
         if (effectiveRows == 4 && effectiveCols == 4)
         {
             // Full 4x4 block - use SSE2 transpose
@@ -916,18 +1025,21 @@ public static class SimdIntrinsics
             var row1 = Sse.LoadVector128(src + (blockRow + 1) * srcStride + blockCol);
             var row2 = Sse.LoadVector128(src + (blockRow + 2) * srcStride + blockCol);
             var row3 = Sse.LoadVector128(src + (blockRow + 3) * srcStride + blockCol);
-            
+
             // Transpose 4x4 using shuffle operations
+
             var tmp0 = Sse.UnpackLow(row0, row1);
             var tmp2 = Sse.UnpackLow(row2, row3);
             var tmp1 = Sse.UnpackHigh(row0, row1);
             var tmp3 = Sse.UnpackHigh(row2, row3);
-            
+
+
             var col0 = Sse.MoveLowToHigh(tmp0, tmp2);
             var col1 = Sse.MoveHighToLow(tmp2, tmp0);
             var col2 = Sse.MoveLowToHigh(tmp1, tmp3);
             var col3 = Sse.MoveHighToLow(tmp3, tmp1);
-            
+
+
             Sse.Store(dst + (blockCol + 0) * dstStride + blockRow, col0);
             Sse.Store(dst + (blockCol + 1) * dstStride + blockRow, col1);
             Sse.Store(dst + (blockCol + 2) * dstStride + blockRow, col2);
@@ -940,17 +1052,19 @@ public static class SimdIntrinsics
             {
                 for (var j = 0; j < effectiveCols; j++)
                 {
-                    dst[(blockCol + j) * dstStride + (blockRow + i)] = 
+                    dst[(blockCol + j) * dstStride + (blockRow + i)] =
+
                         src[(blockRow + i) * srcStride + (blockCol + j)];
                 }
             }
         }
     }
-    
+
     #endregion
-    
+
     #region Fallback Implementations
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void AddFallback(float* left, float* right, float* result, int length)
     {
@@ -959,7 +1073,8 @@ public static class SimdIntrinsics
             result[i] = left[i] + right[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void MultiplyFallback(float* left, float* right, float* result, int length)
     {
@@ -968,7 +1083,8 @@ public static class SimdIntrinsics
             result[i] = left[i] * right[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void FmaFallback(float* a, float* b, float* c, float* result, int length)
     {
@@ -977,7 +1093,8 @@ public static class SimdIntrinsics
             result[i] = a[i] * b[i] + c[i];
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float DotProductFallback(float* left, float* right, int length)
     {
@@ -988,7 +1105,8 @@ public static class SimdIntrinsics
         }
         return sum;
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float HorizontalSumFallback(float* values, int length)
     {
@@ -999,7 +1117,8 @@ public static class SimdIntrinsics
         }
         return sum;
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void TransposeFallback(float* source, float* dest, int rows, int cols)
     {
@@ -1011,6 +1130,7 @@ public static class SimdIntrinsics
             }
         }
     }
-    
+
+
     #endregion
 }

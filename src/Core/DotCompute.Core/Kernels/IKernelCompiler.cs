@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Kernels
 {
@@ -166,7 +168,7 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
         
         // Simulate work based on kernel complexity
         var complexity = 100; // Default complexity
-        for (int i = 0; i < complexity && !cancellationToken.IsCancellationRequested; i++)
+        for (var i = 0; i < complexity && !cancellationToken.IsCancellationRequested; i++)
         {
             // Simulate computation
             await Task.Delay(0, cancellationToken).ConfigureAwait(false);
@@ -196,7 +198,7 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
         {
             // Simulate CPU kernel execution
             var workSize = RequiredWorkGroupSize?[0] ?? 256;
-            for (int i = 0; i < workSize && !cancellationToken.IsCancellationRequested; i++)
+            for (var i = 0; i < workSize && !cancellationToken.IsCancellationRequested; i++)
             {
                 // Process work item
                 cancellationToken.ThrowIfCancellationRequested();
@@ -260,23 +262,23 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
     /// <summary>
     /// Converts to the Abstractions CompiledKernel struct.
     /// </summary>
-    public DotCompute.Abstractions.CompiledKernel ToCompiledKernel()
+    public DotCompute.Abstractions.Kernels.CompiledKernel ToCompiledKernel()
     {
         // Calculate shared memory size from parameters
         var sharedMemSize = SharedMemorySize > 0 ? SharedMemorySize : 1024; // Default shared memory
         
         // Create kernel configuration based on work group size
         var blockDims = RequiredWorkGroupSize != null && RequiredWorkGroupSize.Length > 0
-            ? new DotCompute.Abstractions.Dim3(RequiredWorkGroupSize[0], 
+            ? new Dim3(RequiredWorkGroupSize[0], 
                 RequiredWorkGroupSize.Length > 1 ? RequiredWorkGroupSize[1] : 1,
                 RequiredWorkGroupSize.Length > 2 ? RequiredWorkGroupSize[2] : 1)
-            : new DotCompute.Abstractions.Dim3(256); // Default block size
+            : new Dim3(256); // Default block size
             
-        var config = new DotCompute.Abstractions.KernelConfiguration(
-            new DotCompute.Abstractions.Dim3(1), // Grid dimensions will be set during execution
+        var config = new DotCompute.Abstractions.Kernels.KernelConfiguration(
+            new Dim3(1), // Grid dimensions will be set during execution
             blockDims);
             
-        return new DotCompute.Abstractions.CompiledKernel
+        return new DotCompute.Abstractions.Kernels.CompiledKernel
         {
             Name = Guid.NewGuid().ToString(),
             CompiledBinary = null // Handle conversion would need backend-specific implementation

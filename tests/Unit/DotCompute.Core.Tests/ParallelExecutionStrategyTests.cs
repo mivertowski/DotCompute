@@ -13,6 +13,8 @@ using CommunicationBackend = DotCompute.Core.Execution.CommunicationBackend;
 using MemoryOptimizationLevel = DotCompute.Core.Execution.MemoryOptimizationLevel;
 using StealingStrategy = DotCompute.Core.Execution.StealingStrategy;
 
+using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Core.Tests;
 
 

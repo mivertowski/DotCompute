@@ -582,6 +582,7 @@ public sealed class MemoryTransferTests(ITestOutputHelper output) : IntegrationT
         IAccelerator accelerator,
         float[] testData)
         // Regular memory allocation and transfer
+
         => await PerformHostToDeviceTransfer(memoryManager, accelerator, testData);
 
     private async Task<TransferResult> PerformPinnedMemoryTransfer(

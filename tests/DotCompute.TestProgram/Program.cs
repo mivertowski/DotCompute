@@ -6,6 +6,7 @@ using DotCompute.Backends.CPU;
 using DotCompute.Backends.CUDA;
 using Microsoft.Extensions.Logging;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Tests
 {
     internal static class TestProgram

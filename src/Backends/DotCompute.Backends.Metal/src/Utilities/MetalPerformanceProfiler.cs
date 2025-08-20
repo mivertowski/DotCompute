@@ -33,7 +33,8 @@ public sealed class MetalPerformanceProfiler : IDisposable
     public IDisposable Profile(string operationName)
     {
         ObjectDisposedException.ThrowIf(_disposed > 0, this);
-        
+
+
         if (string.IsNullOrWhiteSpace(operationName))
         {
             throw new ArgumentException("Operation name cannot be null or empty", nameof(operationName));
@@ -65,12 +66,14 @@ public sealed class MetalPerformanceProfiler : IDisposable
             // Log slow operations
             if (elapsed.TotalMilliseconds > 100) // Log operations > 100ms
             {
-                _logger.LogWarning("Slow Metal operation detected: {Operation} took {Duration:F2}ms", 
+                _logger.LogWarning("Slow Metal operation detected: {Operation} took {Duration:F2}ms",
+
                     operationName, elapsed.TotalMilliseconds);
             }
             else if (_logger.IsEnabled(LogLevel.Trace))
             {
-                _logger.LogTrace("Metal operation completed: {Operation} took {Duration:F2}ms", 
+                _logger.LogTrace("Metal operation completed: {Operation} took {Duration:F2}ms",
+
                     operationName, elapsed.TotalMilliseconds);
             }
         }
@@ -87,7 +90,7 @@ public sealed class MetalPerformanceProfiler : IDisposable
 
         lock (_lock)
         {
-            _metrics.TryGetValue(operationName, out var metrics);
+            _ = _metrics.TryGetValue(operationName, out var metrics);
             return metrics;
         }
     }
@@ -136,26 +139,26 @@ public sealed class MetalPerformanceProfiler : IDisposable
             }
 
             var report = new System.Text.StringBuilder();
-            report.AppendLine("Metal Performance Report");
-            report.AppendLine(new string('=', 50));
+            _ = report.AppendLine("Metal Performance Report");
+            _ = report.AppendLine(new string('=', 50));
 
             foreach (var kvp in _metrics.OrderByDescending(x => x.Value.TotalTime))
             {
                 var metrics = kvp.Value;
-                report.AppendLine();
-                report.AppendLine($"Operation: {metrics.OperationName}");
-                report.AppendLine($"  Executions: {metrics.ExecutionCount:N0}");
-                report.AppendLine($"  Success Rate: {metrics.SuccessRate:P2}");
-                report.AppendLine($"  Total Time: {metrics.TotalTime.TotalMilliseconds:F2} ms");
-                report.AppendLine($"  Average Time: {metrics.AverageTime.TotalMilliseconds:F2} ms");
-                report.AppendLine($"  Min Time: {metrics.MinTime.TotalMilliseconds:F2} ms");
-                report.AppendLine($"  Max Time: {metrics.MaxTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine();
+                _ = report.AppendLine($"Operation: {metrics.OperationName}");
+                _ = report.AppendLine($"  Executions: {metrics.ExecutionCount:N0}");
+                _ = report.AppendLine($"  Success Rate: {metrics.SuccessRate:P2}");
+                _ = report.AppendLine($"  Total Time: {metrics.TotalTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine($"  Average Time: {metrics.AverageTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine($"  Min Time: {metrics.MinTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine($"  Max Time: {metrics.MaxTime.TotalMilliseconds:F2} ms");
 
                 if (metrics.ExecutionCount > 1)
                 {
                     var variance = metrics.TimeVariance;
                     var stdDev = Math.Sqrt(variance);
-                    report.AppendLine($"  Std Dev: {stdDev:F2} ms");
+                    _ = report.AppendLine($"  Std Dev: {stdDev:F2} ms");
                 }
             }
 
@@ -176,7 +179,8 @@ public sealed class MetalPerformanceProfiler : IDisposable
             {
                 _logger.LogInformation("Metal Performance Summary:\n{Report}", GenerateReport());
             }
-            
+
+
             _metrics.Clear();
         }
 
@@ -259,8 +263,10 @@ public sealed class PerformanceMetrics
     /// <summary>
     /// Gets the average execution time.
     /// </summary>
-    public TimeSpan AverageTime => ExecutionCount > 0 
-        ? TimeSpan.FromMilliseconds(TotalTime.TotalMilliseconds / ExecutionCount) 
+    public TimeSpan AverageTime => ExecutionCount > 0
+
+        ? TimeSpan.FromMilliseconds(TotalTime.TotalMilliseconds / ExecutionCount)
+
         : TimeSpan.Zero;
 
     /// <summary>

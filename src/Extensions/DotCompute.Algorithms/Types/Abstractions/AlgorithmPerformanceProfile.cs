@@ -9,81 +9,81 @@ namespace DotCompute.Algorithms.Types.Abstractions;
 /// </summary>
 public class AlgorithmPerformanceProfile
 {
-/// <summary>
-/// Gets or sets the algorithm identifier.
-/// </summary>
-public string AlgorithmId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the algorithm identifier.
+    /// </summary>
+    public string AlgorithmId { get; set; } = string.Empty;
 
-/// <summary>
-/// Gets or sets the estimated execution time in milliseconds.
-/// </summary>
-public double EstimatedExecutionTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the estimated execution time in milliseconds.
+    /// </summary>
+    public double EstimatedExecutionTimeMs { get; set; }
 
-/// <summary>
-/// Gets or sets the estimated memory requirement in megabytes.
-/// </summary>
-public double MemoryRequirementMB { get; set; }
+    /// <summary>
+    /// Gets or sets the estimated memory requirement in megabytes.
+    /// </summary>
+    public double MemoryRequirementMB { get; set; }
 
-/// <summary>
-/// Gets or sets the computational complexity level.
-/// </summary>
-public ComputeComplexity ComputeComplexity { get; set; } = ComputeComplexity.Medium;
+    /// <summary>
+    /// Gets or sets the computational complexity level.
+    /// </summary>
+    public ComputeComplexity ComputeComplexity { get; set; } = ComputeComplexity.Medium;
 
-/// <summary>
-/// Gets or sets whether the algorithm is parallelizable.
-/// </summary>
-public bool IsParallelizable { get; set; } = true;
+    /// <summary>
+    /// Gets or sets whether the algorithm is parallelizable.
+    /// </summary>
+    public bool IsParallelizable { get; set; } = true;
 
-/// <summary>
-/// Gets or sets the optimal batch size for processing.
-/// </summary>
-public int OptimalBatchSize { get; set; } = 1;
+    /// <summary>
+    /// Gets or sets the optimal batch size for processing.
+    /// </summary>
+    public int OptimalBatchSize { get; set; } = 1;
 
-/// <summary>
-/// Gets or sets additional performance metrics.
-/// </summary>
-public Dictionary<string, object> AdditionalMetrics { get; set; } = new();
+    /// <summary>
+    /// Gets or sets additional performance metrics.
+    /// </summary>
+    public Dictionary<string, object> AdditionalMetrics { get; set; } = new();
 
-/// <summary>
-/// Gets or sets the benchmark scores for different input sizes.
-/// </summary>
-public Dictionary<int, double> BenchmarkScores { get; set; } = new();
+    /// <summary>
+    /// Gets or sets the benchmark scores for different input sizes.
+    /// </summary>
+    public Dictionary<int, double> BenchmarkScores { get; set; } = new();
 
-/// <summary>
-/// Gets the estimated execution time for a given input size.
-/// </summary>
-/// <param name="inputSize">The size of the input data.</param>
-/// <returns>Estimated execution time in milliseconds.</returns>
-public double GetEstimatedTime(int inputSize)
-{
-    if (BenchmarkScores.Count == 0)
+    /// <summary>
+    /// Gets the estimated execution time for a given input size.
+    /// </summary>
+    /// <param name="inputSize">The size of the input data.</param>
+    /// <returns>Estimated execution time in milliseconds.</returns>
+    public double GetEstimatedTime(int inputSize)
     {
-        return EstimatedExecutionTimeMs;
+        if (BenchmarkScores.Count == 0)
+        {
+            return EstimatedExecutionTimeMs;
+        }
+
+        // Simple linear interpolation for now
+        var closestSize = BenchmarkScores.Keys.OrderBy(k => Math.Abs(k - inputSize)).First();
+        var factor = (double)inputSize / closestSize;
+
+        return ComputeComplexity switch
+        {
+            ComputeComplexity.Low => BenchmarkScores[closestSize] * Math.Log(factor + 1),
+            ComputeComplexity.Medium => BenchmarkScores[closestSize] * factor,
+            ComputeComplexity.High => BenchmarkScores[closestSize] * factor * factor,
+            ComputeComplexity.VeryHigh => BenchmarkScores[closestSize] * Math.Pow(factor, 3),
+            _ => BenchmarkScores[closestSize] * factor
+        };
     }
 
-    // Simple linear interpolation for now
-    var closestSize = BenchmarkScores.Keys.OrderBy(k => Math.Abs(k - inputSize)).First();
-    var factor = (double)inputSize / closestSize;
-    
-    return ComputeComplexity switch
+    /// <summary>
+    /// Gets the estimated memory usage for a given input size.
+    /// </summary>
+    /// <param name="inputSize">The size of the input data.</param>
+    /// <returns>Estimated memory usage in megabytes.</returns>
+    public double GetEstimatedMemory(int inputSize)
     {
-        ComputeComplexity.Low => BenchmarkScores[closestSize] * Math.Log(factor + 1),
-        ComputeComplexity.Medium => BenchmarkScores[closestSize] * factor,
-        ComputeComplexity.High => BenchmarkScores[closestSize] * factor * factor,
-        ComputeComplexity.VeryHigh => BenchmarkScores[closestSize] * Math.Pow(factor, 3),
-        _ => BenchmarkScores[closestSize] * factor
-    };
-}
-
-/// <summary>
-/// Gets the estimated memory usage for a given input size.
-/// </summary>
-/// <param name="inputSize">The size of the input data.</param>
-/// <returns>Estimated memory usage in megabytes.</returns>
-public double GetEstimatedMemory(int inputSize)
-{
-    // Assume linear memory scaling by default
-    var baseSizeAssumption = 1000; // Assume base measurement is for 1000 elements
-    return MemoryRequirementMB * ((double)inputSize / baseSizeAssumption);
-}
+        // Assume linear memory scaling by default
+        var baseSizeAssumption = 1000; // Assume base measurement is for 1000 elements
+        return MemoryRequirementMB * ((double)inputSize / baseSizeAssumption);
+    }
 }

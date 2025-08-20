@@ -118,8 +118,10 @@ public readonly struct MemoryAccessMetrics
         FragmentationEvents = fragmentationEvents;
 
         // Calculate derived metrics
-        BandwidthBytesPerSecond = duration.TotalSeconds > 0 
-            ? bytesTransferred / duration.TotalSeconds 
+        BandwidthBytesPerSecond = duration.TotalSeconds > 0
+
+            ? bytesTransferred / duration.TotalSeconds
+
             : 0.0;
 
         EfficiencyScore = CalculateEfficiencyScore(
@@ -194,13 +196,13 @@ public readonly struct MemoryAccessMetrics
 
 
         long totalBytes = 0;
-        TimeSpan totalDuration = TimeSpan.Zero;
-        int totalAccess = 0;
-        int totalCacheMisses = 0;
+        var totalDuration = TimeSpan.Zero;
+        var totalAccess = 0;
+        var totalCacheMisses = 0;
         long totalLatency = 0;
         double weightedCacheHitRate = 0;
         long totalPeakMemory = 0;
-        int totalFragmentation = 0;
+        var totalFragmentation = 0;
 
         foreach (var metric in metrics)
         {
@@ -233,12 +235,14 @@ public readonly struct MemoryAccessMetrics
     }
 
     private static double CalculateEfficiencyScore(
-        double cacheHitRate, 
-        bool isCoalesced, 
+        double cacheHitRate,
+
+        bool isCoalesced,
+
         MemoryAccessPattern pattern,
         int alignment)
     {
-        double score = 0.0;
+        var score = 0.0;
 
         // Cache hit rate contributes 40%
         score += cacheHitRate * 0.4;
@@ -281,12 +285,12 @@ public readonly struct MemoryAccessMetrics
         return Math.Clamp(score, 0.0, 1.0);
     }
 
-    public override string ToString() =>
-        $"Bytes={BytesTransferred:N0}, Duration={Duration.TotalMilliseconds:F2}ms, " +
+    public override string ToString()
+        => $"Bytes={BytesTransferred:N0}, Duration={Duration.TotalMilliseconds:F2}ms, " +
         $"Bandwidth={BandwidthMBPerSecond:F1}MB/s, Efficiency={EfficiencyScore:P1}";
 
-    public string ToDetailedString() =>
-        $"Transfer: {BytesTransferred:N0} bytes in {Duration.TotalMilliseconds:F2}ms\n" +
+    public string ToDetailedString()
+        => $"Transfer: {BytesTransferred:N0} bytes in {Duration.TotalMilliseconds:F2}ms\n" +
         $"Bandwidth: {BandwidthMBPerSecond:F1} MB/s ({BandwidthGBPerSecond:F2} GB/s)\n" +
         $"Access: {AccessCount} operations, {AverageBytesPerAccess:F0} bytes/op\n" +
         $"Pattern: {AccessPattern}, Coalesced: {IsCoalesced}\n" +

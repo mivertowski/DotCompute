@@ -436,7 +436,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
             return new MockCompilationResult
             {
                 Success = false,
-                CompiledCode = Array.Empty<byte>(),
+                CompiledCode = [],
                 CompilationTime = TimeSpan.FromMilliseconds(500),
                 ErrorMessage = "Compilation failed: syntax error",
                 CompilerLog = "error: expected ';' before '{' token"
@@ -591,7 +591,7 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
     private sealed class MockCompilationResult
     {
         public bool Success { get; set; }
-        public byte[] CompiledCode { get; set; } = Array.Empty<byte>();
+        public byte[] CompiledCode { get; set; } = [];
         public TimeSpan CompilationTime { get; set; }
         public string CompilerLog { get; set; } = string.Empty;
         public string? ErrorMessage { get; set; }

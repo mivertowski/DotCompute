@@ -103,7 +103,8 @@ public class RecoveryOptions
     public int MaxRetries { get; set; } = 3;
     public TimeSpan RetryDelay { get; set; } = TimeSpan.FromMilliseconds(100);
     public bool AllowFallback { get; set; } = true;
-    public bool ForceGarbageCollection { get; set; } = false;
+    public bool ForceGarbageCollection { get; set; }
+
     public TimeSpan MaxRecoveryTime { get; set; } = TimeSpan.FromSeconds(30);
     public Dictionary<string, object> Context { get; set; } = new();
 }
@@ -121,7 +122,8 @@ public class RecoveryResult
     public int RetryAttempt { get; set; }
     public bool RequiresManualIntervention { get; set; }
     public Dictionary<string, object> Metadata { get; set; } = new();
-    
+
+
 }
 
 /// <summary>
@@ -155,11 +157,12 @@ public class RecoveryMetrics
     {
         lock (_lock)
         {
-            Interlocked.Increment(ref _totalAttempts);
-            Interlocked.Increment(ref _successfulRecoveries);
+            _ = Interlocked.Increment(ref _totalAttempts);
+            _ = Interlocked.Increment(ref _successfulRecoveries);
             _recoveryTimes.Add(duration);
-            
+
             // Keep only recent times (last 100)
+
             if (_recoveryTimes.Count > 100)
             {
                 _recoveryTimes.RemoveAt(0);
@@ -171,12 +174,13 @@ public class RecoveryMetrics
     {
         lock (_lock)
         {
-            Interlocked.Increment(ref _totalAttempts);
-            Interlocked.Increment(ref _failedRecoveries);
+            _ = Interlocked.Increment(ref _totalAttempts);
+            _ = Interlocked.Increment(ref _failedRecoveries);
             _recoveryTimes.Add(duration);
             _recentExceptions.Add(exception);
-            
+
             // Keep only recent data
+
             if (_recoveryTimes.Count > 100)
             {
                 _recoveryTimes.RemoveAt(0);

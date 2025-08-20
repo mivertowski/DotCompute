@@ -7,11 +7,11 @@ using DotCompute.Abstractions;
 namespace DotCompute.Core.Memory
 {
 
-/// <summary>
-/// Helper utilities for working with IBuffer interface compatibility.
-/// </summary>
-public static class BufferHelpers
-{
+    /// <summary>
+    /// Helper utilities for working with IBuffer interface compatibility.
+    /// </summary>
+    public static class BufferHelpers
+    {
         /// <summary>
         /// Gets the element count from an IBuffer based on its SizeInBytes.
         /// </summary>
@@ -31,26 +31,31 @@ public static class BufferHelpers
         /// Safely copies data between buffers with type checking.
         /// </summary>
         public static async ValueTask CopyBetweenBuffersAsync<T>(
-        IBuffer<T> source, 
-        IBuffer<T> destination, 
-        int sourceOffset = 0, 
-        int destOffset = 0, 
+        IBuffer<T> source,
+
+        IBuffer<T> destination,
+
+        int sourceOffset = 0,
+
+        int destOffset = 0,
+
         int? count = null,
         CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        var actualCount = count ?? Math.Min(GetElementCount(source) - sourceOffset, GetElementCount(destination) - destOffset);
-        
-        if (source is P2PBuffer<T> && destination is P2PBuffer<T>)
         {
-            // P2P buffer copy
-            await source.CopyToAsync(sourceOffset, destination, destOffset, actualCount, cancellationToken);
-        }
-        else
-        {
-            // Standard copy via host memory
-            var hostData = new T[actualCount];
-            // Would implement actual copy logic here
-            await Task.CompletedTask; // Placeholder
+            var actualCount = count ?? Math.Min(GetElementCount(source) - sourceOffset, GetElementCount(destination) - destOffset);
+
+            if (source is P2PBuffer<T> && destination is P2PBuffer<T>)
+            {
+                // P2P buffer copy
+                await source.CopyToAsync(sourceOffset, destination, destOffset, actualCount, cancellationToken);
+            }
+            else
+            {
+                // Standard copy via host memory
+                var hostData = new T[actualCount];
+                // Would implement actual copy logic here
+                await Task.CompletedTask; // Placeholder
+            }
         }
     }
-}}
+}

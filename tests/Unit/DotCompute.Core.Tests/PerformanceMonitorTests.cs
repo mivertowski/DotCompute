@@ -31,6 +31,7 @@ public sealed class PerformanceMonitorTests : IDisposable
     [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         // Act & Assert
+
         => Assert.Throws<ArgumentNullException>(() => new PerformanceMonitor(null!));
 
     [Fact]

@@ -398,6 +398,7 @@ public sealed class PluginLifecycleTests : IDisposable
 
         protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
             // Simulate slow operation
+
             => await Task.Delay(1000, cancellationToken);
     }
 
@@ -494,6 +495,7 @@ public sealed class PluginSecurityTests
 
         public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
             // Only register basic services, no system access
+
             => base.ConfigureServices(services, configuration);
 
         protected override Task OnConfigurationUpdatedAsync(IConfiguration configuration, CancellationToken cancellationToken)

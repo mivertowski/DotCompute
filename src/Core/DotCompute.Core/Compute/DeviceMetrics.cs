@@ -8,177 +8,177 @@ using PipelineMonitor = DotCompute.Core.Pipelines.PerformanceMonitor;
 namespace DotCompute.Core.Compute
 {
 
-/// <summary>
-/// Default implementation of device metrics.
-/// </summary>
-public class DeviceMetrics : IDeviceMetrics
-{
-    private long _kernelExecutionCount;
-    private long _totalComputeTimeMs;
-    private readonly MemoryTransferStats _transferStats = new();
-
-    /// <inheritdoc/>
-    public double Utilization => PipelineMonitor.GetCpuUtilization();
-
-    /// <inheritdoc/>
-    public double MemoryUsage
+    /// <summary>
+    /// Default implementation of device metrics.
+    /// </summary>
+    public class DeviceMetrics : IDeviceMetrics
     {
-        get
+        private long _kernelExecutionCount;
+        private long _totalComputeTimeMs;
+        private readonly MemoryTransferStats _transferStats = new();
+
+        /// <inheritdoc/>
+        public double Utilization => PipelineMonitor.GetCpuUtilization();
+
+        /// <inheritdoc/>
+        public double MemoryUsage
         {
-            var (workingSet, _, _) = PipelineMonitor.GetMemoryStats();
-            var totalAvailable = Environment.WorkingSet;
-            return totalAvailable > 0 ? (double)workingSet / totalAvailable : 0.0;
+            get
+            {
+                var (workingSet, _, _) = PipelineMonitor.GetMemoryStats();
+                var totalAvailable = Environment.WorkingSet;
+                return totalAvailable > 0 ? (double)workingSet / totalAvailable : 0.0;
+            }
+        }
+
+        /// <inheritdoc/>
+        public double? Temperature => null; // Not available through standard APIs
+
+        /// <inheritdoc/>
+        public double? PowerConsumption => null; // Not available through standard APIs
+
+        /// <inheritdoc/>
+        public long KernelExecutionCount => _kernelExecutionCount;
+
+        /// <inheritdoc/>
+        public TimeSpan TotalComputeTime => TimeSpan.FromMilliseconds(_totalComputeTimeMs);
+
+        /// <inheritdoc/>
+        public TimeSpan AverageKernelTime
+        {
+            get
+            {
+                var count = _kernelExecutionCount;
+                return count > 0
+                    ? TimeSpan.FromMilliseconds((double)_totalComputeTimeMs / count)
+                    : TimeSpan.Zero;
+            }
+        }
+
+        /// <inheritdoc/>
+        public IMemoryTransferStats TransferStats => _transferStats;
+
+        /// <summary>
+        /// Records a kernel execution.
+        /// </summary>
+        public void RecordKernelExecution(TimeSpan duration)
+        {
+            _ = Interlocked.Increment(ref _kernelExecutionCount);
+            _ = Interlocked.Add(ref _totalComputeTimeMs, (long)duration.TotalMilliseconds);
+        }
+
+        /// <summary>
+        /// Records a memory transfer.
+        /// </summary>
+        public void RecordMemoryTransfer(long bytes, TimeSpan duration, bool toDevice) => _transferStats.RecordTransfer(bytes, duration, toDevice);
+
+        /// <summary>
+        /// Resets all metrics.
+        /// </summary>
+        public void Reset()
+        {
+            _kernelExecutionCount = 0;
+            _totalComputeTimeMs = 0;
+            _transferStats.Reset();
         }
     }
 
-    /// <inheritdoc/>
-    public double? Temperature => null; // Not available through standard APIs
-
-    /// <inheritdoc/>
-    public double? PowerConsumption => null; // Not available through standard APIs
-
-    /// <inheritdoc/>
-    public long KernelExecutionCount => _kernelExecutionCount;
-
-    /// <inheritdoc/>
-    public TimeSpan TotalComputeTime => TimeSpan.FromMilliseconds(_totalComputeTimeMs);
-
-    /// <inheritdoc/>
-    public TimeSpan AverageKernelTime
+    /// <summary>
+    /// Implementation of memory transfer statistics.
+    /// </summary>
+    public class MemoryTransferStats : IMemoryTransferStats
     {
-        get
+        private long _bytesToDevice;
+        private long _bytesFromDevice;
+        private long _transfersToDevice;
+        private long _transfersFromDevice;
+        private long _totalTransferTimeMs;
+        private readonly Lock _lock = new();
+
+        /// <inheritdoc/>
+        public long BytesToDevice => _bytesToDevice;
+
+        /// <inheritdoc/>
+        public long BytesFromDevice => _bytesFromDevice;
+
+        /// <inheritdoc/>
+        public double AverageRateToDevice
         {
-            var count = _kernelExecutionCount;
-            return count > 0
-                ? TimeSpan.FromMilliseconds((double)_totalComputeTimeMs / count)
-                : TimeSpan.Zero;
+            get
+            {
+                lock (_lock)
+                {
+                    if (_transfersToDevice == 0 || _totalTransferTimeMs == 0)
+                    {
+                        return 0.0;
+                    }
+
+                    // Calculate GB/s
+                    var gbTransferred = _bytesToDevice / (1024.0 * 1024.0 * 1024.0);
+                    var seconds = _totalTransferTimeMs / 1000.0;
+                    return gbTransferred / seconds;
+                }
+            }
         }
-    }
 
-    /// <inheritdoc/>
-    public IMemoryTransferStats TransferStats => _transferStats;
+        /// <inheritdoc/>
+        public double AverageRateFromDevice
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    if (_transfersFromDevice == 0 || _totalTransferTimeMs == 0)
+                    {
+                        return 0.0;
+                    }
 
-    /// <summary>
-    /// Records a kernel execution.
-    /// </summary>
-    public void RecordKernelExecution(TimeSpan duration)
-    {
-        Interlocked.Increment(ref _kernelExecutionCount);
-        Interlocked.Add(ref _totalComputeTimeMs, (long)duration.TotalMilliseconds);
-    }
+                    // Calculate GB/s
+                    var gbTransferred = _bytesFromDevice / (1024.0 * 1024.0 * 1024.0);
+                    var seconds = _totalTransferTimeMs / 1000.0;
+                    return gbTransferred / seconds;
+                }
+            }
+        }
 
-    /// <summary>
-    /// Records a memory transfer.
-    /// </summary>
-    public void RecordMemoryTransfer(long bytes, TimeSpan duration, bool toDevice) => _transferStats.RecordTransfer(bytes, duration, toDevice);
+        /// <inheritdoc/>
+        public TimeSpan TotalTransferTime => TimeSpan.FromMilliseconds(_totalTransferTimeMs);
 
-    /// <summary>
-    /// Resets all metrics.
-    /// </summary>
-    public void Reset()
-    {
-        _kernelExecutionCount = 0;
-        _totalComputeTimeMs = 0;
-        _transferStats.Reset();
-    }
-}
-
-/// <summary>
-/// Implementation of memory transfer statistics.
-/// </summary>
-public class MemoryTransferStats : IMemoryTransferStats
-{
-    private long _bytesToDevice;
-    private long _bytesFromDevice;
-    private long _transfersToDevice;
-    private long _transfersFromDevice;
-    private long _totalTransferTimeMs;
-    private readonly Lock _lock = new();
-
-    /// <inheritdoc/>
-    public long BytesToDevice => _bytesToDevice;
-
-    /// <inheritdoc/>
-    public long BytesFromDevice => _bytesFromDevice;
-
-    /// <inheritdoc/>
-    public double AverageRateToDevice
-    {
-        get
+        /// <summary>
+        /// Records a memory transfer.
+        /// </summary>
+        public void RecordTransfer(long bytes, TimeSpan duration, bool toDevice)
         {
             lock (_lock)
             {
-                if (_transfersToDevice == 0 || _totalTransferTimeMs == 0)
+                if (toDevice)
                 {
-                    return 0.0;
+                    _bytesToDevice += bytes;
+                    _transfersToDevice++;
+                }
+                else
+                {
+                    _bytesFromDevice += bytes;
+                    _transfersFromDevice++;
                 }
 
-                // Calculate GB/s
-                var gbTransferred = _bytesToDevice / (1024.0 * 1024.0 * 1024.0);
-                var seconds = _totalTransferTimeMs / 1000.0;
-                return gbTransferred / seconds;
+                _totalTransferTimeMs += (long)duration.TotalMilliseconds;
             }
         }
-    }
 
-    /// <inheritdoc/>
-    public double AverageRateFromDevice
-    {
-        get
+        /// <summary>
+        /// Resets all statistics.
+        /// </summary>
+        public void Reset()
         {
             lock (_lock)
             {
-                if (_transfersFromDevice == 0 || _totalTransferTimeMs == 0)
-                {
-                    return 0.0;
-                }
-
-                // Calculate GB/s
-                var gbTransferred = _bytesFromDevice / (1024.0 * 1024.0 * 1024.0);
-                var seconds = _totalTransferTimeMs / 1000.0;
-                return gbTransferred / seconds;
+                _bytesToDevice = 0;
+                _bytesFromDevice = 0;
+                _transfersToDevice = 0;
+                _transfersFromDevice = 0;
+                _totalTransferTimeMs = 0;
             }
         }
     }
-
-    /// <inheritdoc/>
-    public TimeSpan TotalTransferTime => TimeSpan.FromMilliseconds(_totalTransferTimeMs);
-
-    /// <summary>
-    /// Records a memory transfer.
-    /// </summary>
-    public void RecordTransfer(long bytes, TimeSpan duration, bool toDevice)
-    {
-        lock (_lock)
-        {
-            if (toDevice)
-            {
-                _bytesToDevice += bytes;
-                _transfersToDevice++;
-            }
-            else
-            {
-                _bytesFromDevice += bytes;
-                _transfersFromDevice++;
-            }
-
-            _totalTransferTimeMs += (long)duration.TotalMilliseconds;
-        }
-    }
-
-    /// <summary>
-    /// Resets all statistics.
-    /// </summary>
-    public void Reset()
-    {
-        lock (_lock)
-        {
-            _bytesToDevice = 0;
-            _bytesFromDevice = 0;
-            _transfersToDevice = 0;
-            _transfersFromDevice = 0;
-            _totalTransferTimeMs = 0;
-        }
-    }
-}
 }

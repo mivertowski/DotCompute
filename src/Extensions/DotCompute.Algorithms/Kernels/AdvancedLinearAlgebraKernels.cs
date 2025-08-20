@@ -3,6 +3,7 @@
 
 using DotCompute.Core.Kernels;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Algorithms.Kernels;
 
 
@@ -12,12 +13,12 @@ namespace DotCompute.Algorithms.Kernels;
 /// </summary>
 public static class AdvancedLinearAlgebraKernels
 {
-#region Sparse Matrix Operations
+    #region Sparse Matrix Operations
 
-/// <summary>
-/// OpenCL kernel for Compressed Sparse Row (CSR) matrix-vector multiplication.
-/// </summary>
-public const string OpenCLSparseMatrixVectorKernel = @"
+    /// <summary>
+    /// OpenCL kernel for Compressed Sparse Row (CSR) matrix-vector multiplication.
+    /// </summary>
+    public const string OpenCLSparseMatrixVectorKernel = @"
 __kernel void csr_matrix_vector_multiply(
     __global const float* values,     // Non-zero values
     __global const int* col_indices,  // Column indices
@@ -42,10 +43,10 @@ __kernel void csr_matrix_vector_multiply(
     y[row] = sum;
 }";
 
-/// <summary>
-/// CUDA kernel for sparse matrix operations with warp-level optimizations.
-/// </summary>
-public const string CUDASparseMatrixKernel = @"
+    /// <summary>
+    /// CUDA kernel for sparse matrix operations with warp-level optimizations.
+    /// </summary>
+    public const string CUDASparseMatrixKernel = @"
 extern ""C"" __global__ void csr_matrix_vector_cuda(
     const float* values,      // Non-zero values
     const int* col_indices,   // Column indices  
@@ -71,14 +72,14 @@ extern ""C"" __global__ void csr_matrix_vector_cuda(
     y[row] = sum;
 }";
 
-#endregion
+    #endregion
 
-#region Iterative Solvers
+    #region Iterative Solvers
 
-/// <summary>
-/// OpenCL kernel for Conjugate Gradient iteration.
-/// </summary>
-public const string OpenCLConjugateGradientKernel = @"
+    /// <summary>
+    /// OpenCL kernel for Conjugate Gradient iteration.
+    /// </summary>
+    public const string OpenCLConjugateGradientKernel = @"
 __kernel void cg_iteration_step(
     __global float* x,          // Current solution
     __global float* r,          // Current residual
@@ -103,10 +104,10 @@ __kernel void cg_iteration_step(
     p[i] = new_r + beta * p[i];
 }";
 
-/// <summary>
-/// CUDA kernel for BiCGSTAB iteration with preconditioning.
-/// </summary>
-public const string CUDABiCGSTABKernel = @"
+    /// <summary>
+    /// CUDA kernel for BiCGSTAB iteration with preconditioning.
+    /// </summary>
+    public const string CUDABiCGSTABKernel = @"
 extern ""C"" __global__ void bicgstab_iteration_cuda(
     float* x,              // Solution vector
     float* r,              // Residual vector
@@ -141,14 +142,14 @@ extern ""C"" __global__ void bicgstab_iteration_cuda(
     p[i] = new_r + beta_next * (p[i] - omega * v[i]);
 }";
 
-#endregion
+    #endregion
 
-#region Power Method and Eigenvalue Kernels
+    #region Power Method and Eigenvalue Kernels
 
-/// <summary>
-/// OpenCL kernel for power method iteration.
-/// </summary>
-public const string OpenCLPowerMethodKernel = @"
+    /// <summary>
+    /// OpenCL kernel for power method iteration.
+    /// </summary>
+    public const string OpenCLPowerMethodKernel = @"
 __kernel void power_method_iteration(
     __global const float* A,    // Matrix A (n x n)
     __global float* v,          // Current eigenvector estimate  
@@ -188,10 +189,10 @@ __kernel void power_method_iteration(
     }
 }";
 
-/// <summary>
-/// CUDA kernel for inverse power method with shift.
-/// </summary>
-public const string CUDAInversePowerMethodKernel = @"
+    /// <summary>
+    /// CUDA kernel for inverse power method with shift.
+    /// </summary>
+    public const string CUDAInversePowerMethodKernel = @"
 extern ""C"" __global__ void inverse_power_method_cuda(
     const float* A,         // Matrix A
     float* v,               // Current vector
@@ -227,14 +228,14 @@ extern ""C"" __global__ void inverse_power_method_cuda(
     work[i] = sum;
 }";
 
-#endregion
+    #endregion
 
-#region cuBLAS Integration Kernels
+    #region cuBLAS Integration Kernels
 
-/// <summary>
-/// CUDA kernel wrapper for cuBLAS SGEMM integration with custom preprocessing.
-/// </summary>
-public const string CUDAcuBLASGEMMKernel = @"
+    /// <summary>
+    /// CUDA kernel wrapper for cuBLAS SGEMM integration with custom preprocessing.
+    /// </summary>
+    public const string CUDAcuBLASGEMMKernel = @"
 extern ""C"" __global__ void cublas_gemm_wrapper_cuda(
     const float* A,           // Matrix A (M x K)
     const float* B,           // Matrix B (K x N)
@@ -281,10 +282,10 @@ extern ""C"" __global__ void cublas_gemm_wrapper_cuda(
     }
 }";
 
-/// <summary>
-/// CUDA kernel for mixed-precision GEMM with Tensor Core utilization.
-/// </summary>
-public const string CUDATensorCoreGEMMKernel = @"
+    /// <summary>
+    /// CUDA kernel for mixed-precision GEMM with Tensor Core utilization.
+    /// </summary>
+    public const string CUDATensorCoreGEMMKernel = @"
 #include <cuda_fp16.h>
 #include <mma.h>
 using namespace nvcuda;
@@ -349,10 +350,10 @@ extern ""C"" __global__ void tensor_core_mixed_gemm_cuda(
     wmma::store_matrix_sync(C + globalM * N + globalN, frag_acc, N, wmma::mem_row_major);
 }";
 
-/// <summary>
-/// CUDA kernel for batched GEMM operations with stream parallelism.
-/// </summary>
-public const string CUDABatchedGEMMKernel = @"
+    /// <summary>
+    /// CUDA kernel for batched GEMM operations with stream parallelism.
+    /// </summary>
+    public const string CUDABatchedGEMMKernel = @"
 extern ""C"" __global__ void batched_gemm_cuda(
     float** A_array,         // Array of A matrix pointers
     float** B_array,         // Array of B matrix pointers  
@@ -394,14 +395,14 @@ extern ""C"" __global__ void batched_gemm_cuda(
     C[tid] = alpha * sum + beta * C[tid];
 }";
 
-#endregion
+    #endregion
 
-#region Advanced QR Decomposition with GPU Optimization
+    #region Advanced QR Decomposition with GPU Optimization
 
-/// <summary>
-/// CUDA kernel for parallel QR decomposition using modified Gram-Schmidt.
-/// </summary>
-public const string CUDAParallelQRKernel = @"
+    /// <summary>
+    /// CUDA kernel for parallel QR decomposition using modified Gram-Schmidt.
+    /// </summary>
+    public const string CUDAParallelQRKernel = @"
 extern ""C"" __global__ void parallel_qr_decomposition_cuda(
     float* A,                // Input matrix (modified in-place to R)
     float* Q,                // Output orthogonal matrix Q
@@ -528,10 +529,10 @@ extern ""C"" __global__ void parallel_qr_decomposition_cuda(
     }
 }";
 
-/// <summary>
-/// CUDA kernel for iterative QR refinement with Householder reflectors.
-/// </summary>
-public const string CUDAIterativeQRRefinementKernel = @"
+    /// <summary>
+    /// CUDA kernel for iterative QR refinement with Householder reflectors.
+    /// </summary>
+    public const string CUDAIterativeQRRefinementKernel = @"
 extern ""C"" __global__ void iterative_qr_refinement_cuda(
     const float* A_original, // Original matrix
     float* Q,               // Current Q matrix
@@ -603,14 +604,14 @@ extern ""C"" __global__ void iterative_qr_refinement_cuda(
     }
 }";
 
-#endregion
+    #endregion
 
-#region GPU-Optimized LU Decomposition with Pivoting
+    #region GPU-Optimized LU Decomposition with Pivoting
 
-/// <summary>
-/// CUDA kernel for parallel LU decomposition with atomic pivoting.
-/// </summary>
-public const string CUDAAtomicLUKernel = @"
+    /// <summary>
+    /// CUDA kernel for parallel LU decomposition with atomic pivoting.
+    /// </summary>
+    public const string CUDAAtomicLUKernel = @"
 extern ""C"" __global__ void atomic_lu_decomposition_cuda(
     float* A,               // Matrix to decompose (modified in-place)
     int* P,                 // Permutation array
@@ -714,14 +715,14 @@ extern ""C"" __global__ void atomic_lu_decomposition_cuda(
     }
 }";
 
-#endregion
+    #endregion
 
-#region Specialized Decomposition Kernels
+    #region Specialized Decomposition Kernels
 
-/// <summary>
-/// OpenCL kernel for rank-1 update in QR decomposition.
-/// </summary>
-public const string OpenCLQRRank1UpdateKernel = @"
+    /// <summary>
+    /// OpenCL kernel for rank-1 update in QR decomposition.
+    /// </summary>
+    public const string OpenCLQRRank1UpdateKernel = @"
 __kernel void qr_rank1_update(
     __global float* Q,          // Q matrix
     __global float* R,          // R matrix  
@@ -753,10 +754,10 @@ __kernel void qr_rank1_update(
     }
 }";
 
-/// <summary>
-/// CUDA kernel for Bidiagonal SVD step.
-/// </summary>
-public const string CUDABidiagonalSVDKernel = @"
+    /// <summary>
+    /// CUDA kernel for Bidiagonal SVD step.
+    /// </summary>
+    public const string CUDABidiagonalSVDKernel = @"
 extern ""C"" __global__ void bidiagonal_svd_step_cuda(
     float* B,               // Bidiagonal matrix
     float* U,               // Left singular vectors
@@ -807,14 +808,14 @@ extern ""C"" __global__ void bidiagonal_svd_step_cuda(
     }
 }";
 
-#endregion
+    #endregion
 
-#region Memory-Optimized Kernels
+    #region Memory-Optimized Kernels
 
-/// <summary>
-/// OpenCL kernel for cache-blocked matrix operations.
-/// </summary>
-public const string OpenCLBlockedOperationsKernel = @"
+    /// <summary>
+    /// OpenCL kernel for cache-blocked matrix operations.
+    /// </summary>
+    public const string OpenCLBlockedOperationsKernel = @"
 __kernel void blocked_matrix_operation(
     __global const float* A,    // Input matrix A
     __global const float* B,    // Input matrix B  
@@ -891,14 +892,14 @@ __kernel void blocked_matrix_operation(
     }
 }";
 
-#endregion
+    #endregion
 
-#region Double Precision Kernels
+    #region Double Precision Kernels
 
-/// <summary>
-/// CUDA kernel for high-precision matrix operations.
-/// </summary>
-public const string CUDADoublePrecisionKernel = @"
+    /// <summary>
+    /// CUDA kernel for high-precision matrix operations.
+    /// </summary>
+    public const string CUDADoublePrecisionKernel = @"
 extern ""C"" __global__ void matrix_multiply_double_cuda(
     const double* A,        // Matrix A (double precision)
     const double* B,        // Matrix B (double precision)
@@ -928,10 +929,10 @@ extern ""C"" __global__ void matrix_multiply_double_cuda(
     C[row * N + col] = sum;
 }";
 
-/// <summary>
-/// OpenCL kernel for mixed precision operations.
-/// </summary>
-public const string OpenCLMixedPrecisionKernel = @"
+    /// <summary>
+    /// OpenCL kernel for mixed precision operations.
+    /// </summary>
+    public const string OpenCLMixedPrecisionKernel = @"
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
 __kernel void mixed_precision_solve(
@@ -960,14 +961,14 @@ __kernel void mixed_precision_solve(
     // Iterative refinement step would go here
 }";
 
-#endregion
+    #endregion
 
-#region GPU Cholesky Decomposition Kernels
+    #region GPU Cholesky Decomposition Kernels
 
-/// <summary>
-/// CUDA kernel for parallel Cholesky decomposition with optimized memory access.
-/// </summary>
-public const string CUDAParallelCholeskyKernel = @"
+    /// <summary>
+    /// CUDA kernel for parallel Cholesky decomposition with optimized memory access.
+    /// </summary>
+    public const string CUDAParallelCholeskyKernel = @"
 extern ""C"" __global__ void parallel_cholesky_decomposition_cuda(
     float* A,               // Input matrix (modified to L)
     float* temp_buffer,     // Temporary buffer for computations
@@ -1024,10 +1025,10 @@ extern ""C"" __global__ void parallel_cholesky_decomposition_cuda(
     }
 }";
 
-/// <summary>
-/// CUDA kernel for blocked Cholesky with shared memory optimization.
-/// </summary>
-public const string CUDABlockedCholeskyKernel = @"
+    /// <summary>
+    /// CUDA kernel for blocked Cholesky with shared memory optimization.
+    /// </summary>
+    public const string CUDABlockedCholeskyKernel = @"
 extern ""C"" __global__ void blocked_cholesky_cuda(
     float* A,               // Matrix to decompose
     float* workspace,       // Workspace for block operations
@@ -1121,14 +1122,14 @@ extern ""C"" __global__ void blocked_cholesky_cuda(
     }
 }";
 
-#endregion
+    #endregion
 
-#region Multi-Precision Support Kernels
+    #region Multi-Precision Support Kernels
 
-/// <summary>
-/// CUDA kernel for double precision matrix operations with Kahan summation.
-/// </summary>
-public const string CUDADoublePrecisionMatrixKernel = @"
+    /// <summary>
+    /// CUDA kernel for double precision matrix operations with Kahan summation.
+    /// </summary>
+    public const string CUDADoublePrecisionMatrixKernel = @"
 extern ""C"" __global__ void double_precision_matrix_multiply_cuda(
     const double* A,        // Matrix A (double precision)
     const double* B,        // Matrix B (double precision)
@@ -1164,10 +1165,10 @@ extern ""C"" __global__ void double_precision_matrix_multiply_cuda(
     }
 }";
 
-/// <summary>
-/// CUDA kernel for half precision operations with Tensor Core support.
-/// </summary>
-public const string CUDAHalfPrecisionKernel = @"
+    /// <summary>
+    /// CUDA kernel for half precision operations with Tensor Core support.
+    /// </summary>
+    public const string CUDAHalfPrecisionKernel = @"
 #include <cuda_fp16.h>
 
 extern ""C"" __global__ void half_precision_operations_cuda(
@@ -1208,10 +1209,10 @@ extern ""C"" __global__ void half_precision_operations_cuda(
     }
 }";
 
-/// <summary>
-/// CUDA kernel for mixed precision operations with automatic precision selection.
-/// </summary>
-public const string CUDAMixedPrecisionKernel = @"
+    /// <summary>
+    /// CUDA kernel for mixed precision operations with automatic precision selection.
+    /// </summary>
+    public const string CUDAMixedPrecisionKernel = @"
 extern ""C"" __global__ void mixed_precision_adaptive_cuda(
     const float* A,         // Input matrix A
     const float* B,         // Input matrix B
@@ -1270,14 +1271,14 @@ extern ""C"" __global__ void mixed_precision_adaptive_cuda(
     condition_est[idx] = local_condition;
 }";
 
-#endregion
+    #endregion
 
-#region Stream-based Memory Optimization Kernels
+    #region Stream-based Memory Optimization Kernels
 
-/// <summary>
-/// CUDA kernel for asynchronous matrix operations with stream coordination.
-/// </summary>
-public const string CUDAStreamOptimizedKernel = @"
+    /// <summary>
+    /// CUDA kernel for asynchronous matrix operations with stream coordination.
+    /// </summary>
+    public const string CUDAStreamOptimizedKernel = @"
 extern ""C"" __global__ void stream_optimized_matrix_ops_cuda(
     const float* __restrict__ A,  // Input matrix A
     const float* __restrict__ B,  // Input matrix B  
@@ -1339,10 +1340,10 @@ extern ""C"" __global__ void stream_optimized_matrix_ops_cuda(
     C[global_idx] = temp[global_idx];
 }";
 
-/// <summary>
-/// CUDA kernel for memory-coalesced transpose operations.
-/// </summary>
-public const string CUDACoalescedTransposeKernel = @"
+    /// <summary>
+    /// CUDA kernel for memory-coalesced transpose operations.
+    /// </summary>
+    public const string CUDACoalescedTransposeKernel = @"
 #define TILE_DIM 32
 #define BLOCK_ROWS 8
 
@@ -1384,14 +1385,14 @@ extern ""C"" __global__ void coalesced_transpose_cuda(
     }
 }";
 
-#endregion
+    #endregion
 
-#region Architecture-Specific Optimizations
+    #region Architecture-Specific Optimizations
 
-/// <summary>
-/// CUDA kernel optimized for Tensor Core operations (Ampere architecture).
-/// </summary>
-public const string CUDATensorCoreKernel = @"
+    /// <summary>
+    /// CUDA kernel optimized for Tensor Core operations (Ampere architecture).
+    /// </summary>
+    public const string CUDATensorCoreKernel = @"
 #include <mma.h>
 using namespace nvcuda;
 
@@ -1432,282 +1433,283 @@ extern ""C"" __global__ void tensor_core_gemm_cuda(
     }
 }";
 
-#endregion
+    #endregion
 
-#region Kernel Selection Helper
+    #region Kernel Selection Helper
 
-/// <summary>
-/// Gets specialized kernel source for advanced operations.
-/// </summary>
-/// <param name="operation">The advanced operation type.</param>
-/// <param name="acceleratorType">Target accelerator type.</param>
-/// <param name="precision">Precision requirements.</param>
-/// <param name="architecture">Specific GPU architecture optimizations.</param>
-/// <returns>Optimized kernel source code.</returns>
-public static string GetAdvancedKernelSource(
-    AdvancedLinearAlgebraOperation operation, 
-    string acceleratorType, 
-    string precision = "single",
-    string architecture = "generic")
-{
-    var type = acceleratorType.ToUpperInvariant();
-    var arch = architecture.ToUpperInvariant();
-    
-    return operation switch
+    /// <summary>
+    /// Gets specialized kernel source for advanced operations.
+    /// </summary>
+    /// <param name="operation">The advanced operation type.</param>
+    /// <param name="acceleratorType">Target accelerator type.</param>
+    /// <param name="precision">Precision requirements.</param>
+    /// <param name="architecture">Specific GPU architecture optimizations.</param>
+    /// <returns>Optimized kernel source code.</returns>
+    public static string GetAdvancedKernelSource(
+        AdvancedLinearAlgebraOperation operation,
+        string acceleratorType,
+        string precision = "single",
+        string architecture = "generic")
     {
-        AdvancedLinearAlgebraOperation.SparseMatrixVector => type switch
-        {
-            "OPENCL" => OpenCLSparseMatrixVectorKernel,
-            "CUDA" => CUDASparseMatrixKernel,
-            _ => throw new NotSupportedException($"Sparse operations not supported for {acceleratorType}")
-        },
-        
-        AdvancedLinearAlgebraOperation.ConjugateGradient => type switch
-        {
-            "OPENCL" => OpenCLConjugateGradientKernel,
-            "CUDA" => CUDABiCGSTABKernel,
-            _ => throw new NotSupportedException($"Iterative solvers not supported for {acceleratorType}")
-        },
-        
-        AdvancedLinearAlgebraOperation.PowerMethod => type switch
-        {
-            "OPENCL" => OpenCLPowerMethodKernel,
-            "CUDA" => CUDAInversePowerMethodKernel,
-            _ => throw new NotSupportedException($"Power method not supported for {acceleratorType}")
-        },
-        
-        AdvancedLinearAlgebraOperation.BlockedOperations => type switch
-        {
-            "OPENCL" => OpenCLBlockedOperationsKernel,
-            _ => throw new NotSupportedException($"Blocked operations not supported for {acceleratorType}")
-        },
-        
-        AdvancedLinearAlgebraOperation.DoublePrecision => type switch
-        {
-            "CUDA" => CUDADoublePrecisionKernel,
-            "OPENCL" => OpenCLMixedPrecisionKernel,
-            _ => throw new NotSupportedException($"Double precision not supported for {acceleratorType}")
-        },
-        
-        AdvancedLinearAlgebraOperation.TensorCore => type switch
-        {
-            "CUDA" when arch.Contains("AMPERE") || arch.Contains("TENSOR") => CUDATensorCoreKernel,
-            _ => throw new NotSupportedException($"Tensor Core operations require CUDA and compatible hardware")
-        },
-        
-        AdvancedLinearAlgebraOperation.CuBLASGEMM => type switch
-        {
-            "CUDA" => CUDAcuBLASGEMMKernel,
-            _ => throw new NotSupportedException($"cuBLAS GEMM requires CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.TensorCoreGEMM => type switch
-        {
-            "CUDA" when arch.Contains("AMPERE") || arch.Contains("TENSOR") => CUDATensorCoreGEMMKernel,
-            _ => throw new NotSupportedException($"Tensor Core GEMM requires CUDA and Ampere+ GPU")
-        },
-        
-        AdvancedLinearAlgebraOperation.BatchedGEMM => type switch
-        {
-            "CUDA" => CUDABatchedGEMMKernel,
-            _ => throw new NotSupportedException($"Batched GEMM requires CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.ParallelQR => type switch
-        {
-            "CUDA" => CUDAParallelQRKernel,
-            _ => throw new NotSupportedException($"Parallel QR requires CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.QRRefinement => type switch
-        {
-            "CUDA" => CUDAIterativeQRRefinementKernel,
-            _ => throw new NotSupportedException($"QR refinement requires CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.AtomicLU => type switch
-        {
-            "CUDA" => CUDAAtomicLUKernel,
-            _ => throw new NotSupportedException($"Atomic LU requires CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.ParallelCholesky => type switch
-        {
-            "CUDA" => CUDAParallelCholeskyKernel,
-            _ => throw new NotSupportedException($"Parallel Cholesky requires CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.BlockedCholesky => type switch
-        {
-            "CUDA" => CUDABlockedCholeskyKernel,
-            _ => throw new NotSupportedException($"Blocked Cholesky requires CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.DoublePrecisionMatrix => type switch
-        {
-            "CUDA" => CUDADoublePrecisionMatrixKernel,
-            _ => throw new NotSupportedException($"Double precision matrix ops require CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.HalfPrecision => type switch
-        {
-            "CUDA" => CUDAHalfPrecisionKernel,
-            _ => throw new NotSupportedException($"Half precision requires CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.MixedPrecision => type switch
-        {
-            "CUDA" => CUDAMixedPrecisionKernel,
-            _ => throw new NotSupportedException($"Mixed precision requires CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.StreamOptimized => type switch
-        {
-            "CUDA" => CUDAStreamOptimizedKernel,
-            _ => throw new NotSupportedException($"Stream optimization requires CUDA")
-        },
-        
-        AdvancedLinearAlgebraOperation.CoalescedTranspose => type switch
-        {
-            "CUDA" => CUDACoalescedTransposeKernel,
-            _ => throw new NotSupportedException($"Coalesced transpose requires CUDA")
-        },
-        
-        _ => throw new ArgumentException($"Unknown advanced operation: {operation}")
-    };
-}
+        var type = acceleratorType.ToUpperInvariant();
+        var arch = architecture.ToUpperInvariant();
 
-/// <summary>
-/// Determines optimal kernel variant based on matrix properties and hardware.
-/// </summary>
-/// <param name="matrixProperties">Matrix characteristics.</param>
-/// <param name="hardwareInfo">Hardware capabilities.</param>
-/// <returns>Recommended kernel configuration.</returns>
-public static KernelConfiguration GetOptimalConfiguration(
-    MatrixProperties matrixProperties,
-    HardwareInfo hardwareInfo)
-{
-    var config = new KernelConfiguration();
-    
-    // Choose precision based on requirements
-    if (matrixProperties.RequiresHighPrecision)
-    {
-        config.Precision = hardwareInfo.SupportsDoublePrecision ? "double" : "mixed";
+        return operation switch
+        {
+            AdvancedLinearAlgebraOperation.SparseMatrixVector => type switch
+            {
+                "OPENCL" => OpenCLSparseMatrixVectorKernel,
+                "CUDA" => CUDASparseMatrixKernel,
+                _ => throw new NotSupportedException($"Sparse operations not supported for {acceleratorType}")
+            },
+
+            AdvancedLinearAlgebraOperation.ConjugateGradient => type switch
+            {
+                "OPENCL" => OpenCLConjugateGradientKernel,
+                "CUDA" => CUDABiCGSTABKernel,
+                _ => throw new NotSupportedException($"Iterative solvers not supported for {acceleratorType}")
+            },
+
+            AdvancedLinearAlgebraOperation.PowerMethod => type switch
+            {
+                "OPENCL" => OpenCLPowerMethodKernel,
+                "CUDA" => CUDAInversePowerMethodKernel,
+                _ => throw new NotSupportedException($"Power method not supported for {acceleratorType}")
+            },
+
+            AdvancedLinearAlgebraOperation.BlockedOperations => type switch
+            {
+                "OPENCL" => OpenCLBlockedOperationsKernel,
+                _ => throw new NotSupportedException($"Blocked operations not supported for {acceleratorType}")
+            },
+
+            AdvancedLinearAlgebraOperation.DoublePrecision => type switch
+            {
+                "CUDA" => CUDADoublePrecisionKernel,
+                "OPENCL" => OpenCLMixedPrecisionKernel,
+                _ => throw new NotSupportedException($"Double precision not supported for {acceleratorType}")
+            },
+
+            AdvancedLinearAlgebraOperation.TensorCore => type switch
+            {
+                "CUDA" when arch.Contains("AMPERE") || arch.Contains("TENSOR") => CUDATensorCoreKernel,
+                _ => throw new NotSupportedException($"Tensor Core operations require CUDA and compatible hardware")
+            },
+
+            AdvancedLinearAlgebraOperation.CuBLASGEMM => type switch
+            {
+                "CUDA" => CUDAcuBLASGEMMKernel,
+                _ => throw new NotSupportedException($"cuBLAS GEMM requires CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.TensorCoreGEMM => type switch
+            {
+                "CUDA" when arch.Contains("AMPERE") || arch.Contains("TENSOR") => CUDATensorCoreGEMMKernel,
+                _ => throw new NotSupportedException($"Tensor Core GEMM requires CUDA and Ampere+ GPU")
+            },
+
+            AdvancedLinearAlgebraOperation.BatchedGEMM => type switch
+            {
+                "CUDA" => CUDABatchedGEMMKernel,
+                _ => throw new NotSupportedException($"Batched GEMM requires CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.ParallelQR => type switch
+            {
+                "CUDA" => CUDAParallelQRKernel,
+                _ => throw new NotSupportedException($"Parallel QR requires CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.QRRefinement => type switch
+            {
+                "CUDA" => CUDAIterativeQRRefinementKernel,
+                _ => throw new NotSupportedException($"QR refinement requires CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.AtomicLU => type switch
+            {
+                "CUDA" => CUDAAtomicLUKernel,
+                _ => throw new NotSupportedException($"Atomic LU requires CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.ParallelCholesky => type switch
+            {
+                "CUDA" => CUDAParallelCholeskyKernel,
+                _ => throw new NotSupportedException($"Parallel Cholesky requires CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.BlockedCholesky => type switch
+            {
+                "CUDA" => CUDABlockedCholeskyKernel,
+                _ => throw new NotSupportedException($"Blocked Cholesky requires CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.DoublePrecisionMatrix => type switch
+            {
+                "CUDA" => CUDADoublePrecisionMatrixKernel,
+                _ => throw new NotSupportedException($"Double precision matrix ops require CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.HalfPrecision => type switch
+            {
+                "CUDA" => CUDAHalfPrecisionKernel,
+                _ => throw new NotSupportedException($"Half precision requires CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.MixedPrecision => type switch
+            {
+                "CUDA" => CUDAMixedPrecisionKernel,
+                _ => throw new NotSupportedException($"Mixed precision requires CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.StreamOptimized => type switch
+            {
+                "CUDA" => CUDAStreamOptimizedKernel,
+                _ => throw new NotSupportedException($"Stream optimization requires CUDA")
+            },
+
+            AdvancedLinearAlgebraOperation.CoalescedTranspose => type switch
+            {
+                "CUDA" => CUDACoalescedTransposeKernel,
+                _ => throw new NotSupportedException($"Coalesced transpose requires CUDA")
+            },
+
+            _ => throw new ArgumentException($"Unknown advanced operation: {operation}")
+        };
     }
-    else
+
+    /// <summary>
+    /// Determines optimal kernel variant based on matrix properties and hardware.
+    /// </summary>
+    /// <param name="matrixProperties">Matrix characteristics.</param>
+    /// <param name="hardwareInfo">Hardware capabilities.</param>
+    /// <returns>Recommended kernel configuration.</returns>
+    public static KernelConfiguration GetOptimalConfiguration(
+        MatrixProperties matrixProperties,
+        HardwareInfo hardwareInfo)
     {
-        config.Precision = "single";
+        var config = new KernelConfiguration();
+
+        // Choose precision based on requirements
+        if (matrixProperties.RequiresHighPrecision)
+        {
+            config.Precision = hardwareInfo.SupportsDoublePrecision ? "double" : "mixed";
+        }
+        else
+        {
+            config.Precision = "single";
+        }
+
+        // Configure for sparse matrices
+        if (matrixProperties.SparsityRatio > 0.7f)
+        {
+            config.UseSpecializedSparseKernels = true;
+            config.OptimalBlockSize = 32; // Smaller blocks for sparse data
+        }
+
+        // Configure for large matrices
+        if (matrixProperties.Size > hardwareInfo.GlobalMemorySize / 2)
+        {
+            config.UseMemoryTiling = true;
+            config.TileSize = CalculateOptimalTileSize(matrixProperties.Size, hardwareInfo);
+        }
+
+        // Use Tensor Cores if available and beneficial
+        if (hardwareInfo.SupportsTensorCores &&
+            matrixProperties.Size > 1024 &&
+            config.Precision != "double")
+        {
+            config.UseTensorCores = true;
+            config.OptimalBlockSize = 16; // Tensor Core requirement
+        }
+
+        return config;
     }
-    
-    // Configure for sparse matrices
-    if (matrixProperties.SparsityRatio > 0.7f)
+
+    private static int CalculateOptimalTileSize(long matrixSize, HardwareInfo hardware)
     {
-        config.UseSpecializedSparseKernels = true;
-        config.OptimalBlockSize = 32; // Smaller blocks for sparse data
+        // Calculate tile size based on available memory and compute units
+        var availableMemory = hardware.GlobalMemorySize / 4; // Use 25% of memory
+        var maxTileSize = (int)Math.Sqrt(availableMemory / sizeof(float));
+
+        // Align to warp/wavefront size
+        var alignment = hardware.WarpSize ?? 32;
+        return ((Math.Min(maxTileSize, 128) + alignment - 1) / alignment) * alignment;
     }
-    
-    // Configure for large matrices
-    if (matrixProperties.Size > hardwareInfo.GlobalMemorySize / 2)
+
+    #endregion
+
+    #region Supporting Types for Advanced Operations
+
+    /// <summary>
+    /// Advanced linear algebra operations.
+    /// </summary>
+    public enum AdvancedLinearAlgebraOperation
     {
-        config.UseMemoryTiling = true;
-        config.TileSize = CalculateOptimalTileSize(matrixProperties.Size, hardwareInfo);
+        SparseMatrixVector,
+        ConjugateGradient,
+        PowerMethod,
+        BlockedOperations,
+        DoublePrecision,
+        TensorCore,
+        BidiagonalSVD,
+        QRRank1Update,
+        CuBLASGEMM,
+        TensorCoreGEMM,
+        BatchedGEMM,
+        ParallelQR,
+        QRRefinement,
+        AtomicLU,
+        ParallelCholesky,
+        BlockedCholesky,
+        DoublePrecisionMatrix,
+        HalfPrecision,
+        MixedPrecision,
+        StreamOptimized,
+        CoalescedTranspose
     }
-    
-    // Use Tensor Cores if available and beneficial
-    if (hardwareInfo.SupportsTensorCores && 
-        matrixProperties.Size > 1024 && 
-        config.Precision != "double")
+
+    /// <summary>
+    /// Extended matrix properties for advanced optimizations.
+    /// </summary>
+    public class MatrixProperties
     {
-        config.UseTensorCores = true;
-        config.OptimalBlockSize = 16; // Tensor Core requirement
+        public long Size { get; set; }
+        public float SparsityRatio { get; set; }
+        public bool RequiresHighPrecision { get; set; }
+        public bool IsSymmetric { get; set; }
+        public bool IsPositiveDefinite { get; set; }
+        public float ConditionNumber { get; set; }
+        public string StorageFormat { get; set; } = "Dense"; // Dense, CSR, CSC, etc.
     }
-    
-    return config;
-}
 
-private static int CalculateOptimalTileSize(long matrixSize, HardwareInfo hardware)
-{
-    // Calculate tile size based on available memory and compute units
-    var availableMemory = hardware.GlobalMemorySize / 4; // Use 25% of memory
-    var maxTileSize = (int)Math.Sqrt(availableMemory / sizeof(float));
-    
-    // Align to warp/wavefront size
-    var alignment = hardware.WarpSize ?? 32;
-    return ((Math.Min(maxTileSize, 128) + alignment - 1) / alignment) * alignment;
-}
+    /// <summary>
+    /// Extended hardware information.
+    /// </summary>
+    public class HardwareInfo
+    {
+        public long GlobalMemorySize { get; set; }
+        public bool SupportsDoublePrecision { get; set; }
+        public bool SupportsTensorCores { get; set; }
+        public int? WarpSize { get; set; }
+        public string Architecture { get; set; } = "Generic";
+        public int ComputeCapability { get; set; }
+    }
 
-#endregion
+    /// <summary>
+    /// Kernel configuration for advanced operations.
+    /// </summary>
+    public class KernelConfiguration
+    {
+        public string Precision { get; set; } = "single";
+        public bool UseSpecializedSparseKernels { get; set; }
+        public bool UseMemoryTiling { get; set; }
+        public bool UseTensorCores { get; set; }
+        public int OptimalBlockSize { get; set; } = 64;
+        public int TileSize { get; set; } = 16;
+    }
 
-#region Supporting Types for Advanced Operations
+    #endregion
 
-/// <summary>
-/// Advanced linear algebra operations.
-/// </summary>
-public enum AdvancedLinearAlgebraOperation
-{
-SparseMatrixVector,
-ConjugateGradient,
-PowerMethod,
-BlockedOperations,
-DoublePrecision,
-TensorCore,
-BidiagonalSVD,
-QRRank1Update,
-CuBLASGEMM,
-TensorCoreGEMM,
-BatchedGEMM,
-ParallelQR,
-QRRefinement,
-AtomicLU,
-ParallelCholesky,
-BlockedCholesky,
-DoublePrecisionMatrix,
-HalfPrecision,
-MixedPrecision,
-StreamOptimized,
-CoalescedTranspose
-}
-
-/// <summary>
-/// Extended matrix properties for advanced optimizations.
-/// </summary>
-public class MatrixProperties
-{
-public long Size { get; set; }
-public float SparsityRatio { get; set; }
-public bool RequiresHighPrecision { get; set; }
-public bool IsSymmetric { get; set; }
-public bool IsPositiveDefinite { get; set; }
-public float ConditionNumber { get; set; }
-public string StorageFormat { get; set; } = "Dense"; // Dense, CSR, CSC, etc.
-}
-
-/// <summary>
-/// Extended hardware information.
-/// </summary>
-public class HardwareInfo
-{
-public long GlobalMemorySize { get; set; }
-public bool SupportsDoublePrecision { get; set; }
-public bool SupportsTensorCores { get; set; }
-public int? WarpSize { get; set; }
-public string Architecture { get; set; } = "Generic";
-public int ComputeCapability { get; set; }
-}
-
-/// <summary>
-/// Kernel configuration for advanced operations.
-/// </summary>
-public class KernelConfiguration
-{
-public string Precision { get; set; } = "single";
-public bool UseSpecializedSparseKernels { get; set; }
-public bool UseMemoryTiling { get; set; }
-public bool UseTensorCores { get; set; }
-public int OptimalBlockSize { get; set; } = 64;
-public int TileSize { get; set; } = 16;
-}
-
-#endregion
 
 } // namespace DotCompute.Algorithms.Kernels

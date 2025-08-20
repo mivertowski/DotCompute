@@ -11,6 +11,7 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using DotCompute.Abstractions.Kernels;
 namespace CpuKernelCompilationExample;
 
 

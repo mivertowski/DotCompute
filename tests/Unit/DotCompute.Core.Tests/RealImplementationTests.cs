@@ -5,6 +5,8 @@ using DotCompute.Tests.Implementations.Accelerators;
 using DotCompute.Tests.Implementations.Memory;
 using DotCompute.Tests.Implementations.Kernels;
 
+using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Core.Tests;
 
 /// <summary>

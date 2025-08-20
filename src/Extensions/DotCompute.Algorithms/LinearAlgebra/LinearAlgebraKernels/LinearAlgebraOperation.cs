@@ -9,12 +9,12 @@ namespace DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels;
 /// </summary>
 public enum LinearAlgebraOperation
 {
-MatrixMultiply,
-MatrixAdd,
-MatrixSubtract,
-VectorAdd,
-VectorDotProduct,
-Transpose
+    MatrixMultiply,
+    MatrixAdd,
+    MatrixSubtract,
+    VectorAdd,
+    VectorDotProduct,
+    Transpose
 }
 
 /// <summary>
@@ -22,9 +22,9 @@ Transpose
 /// </summary>
 public sealed class HardwareInfo
 {
-public int ComputeUnits { get; init; }
-public long MemorySize { get; init; }
-public string Architecture { get; init; } = "Unknown";
+    public int ComputeUnits { get; init; }
+    public long MemorySize { get; init; }
+    public string Architecture { get; init; } = "Unknown";
 }
 
 /// <summary>
@@ -32,7 +32,7 @@ public string Architecture { get; init; } = "Unknown";
 /// </summary>
 public sealed class KernelExecutionParameters
 {
-public int BlockSize { get; init; } = 256;
-public int GridSize { get; init; } = 1;
-public long SharedMemorySize { get; init; }
+    public int BlockSize { get; init; } = 256;
+    public int GridSize { get; init; } = 1;
+    public long SharedMemorySize { get; init; }
 }

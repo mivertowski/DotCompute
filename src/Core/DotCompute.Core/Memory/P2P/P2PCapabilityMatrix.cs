@@ -19,7 +19,7 @@ namespace DotCompute.Core.Memory.P2P
         private readonly ConcurrentDictionary<string, DeviceTopologyInfo> _deviceTopology;
         private readonly SemaphoreSlim _matrixSemaphore;
         private readonly Timer? _refreshTimer;
-        private P2PMatrixStatistics _statistics;
+        private readonly P2PMatrixStatistics _statistics;
         private bool _disposed;
 
         // Matrix configuration
@@ -47,7 +47,8 @@ namespace DotCompute.Core.Memory.P2P
         /// Builds the complete P2P capability matrix for the provided devices.
         /// </summary>
         public async Task BuildMatrixAsync(
-            IAccelerator[] devices, 
+            IAccelerator[] devices,
+
             CancellationToken cancellationToken = default)
         {
             if (devices == null || devices.Length == 0)
@@ -74,14 +75,15 @@ namespace DotCompute.Core.Memory.P2P
                 }
 
                 // Detect capabilities for all device pairs
-                for (int i = 0; i < devices.Length; i++)
+                for (var i = 0; i < devices.Length; i++)
                 {
                     var device1 = devices[i];
-                    
-                    // Ensure device1 has an entry in the matrix
-                    _matrix.TryAdd(device1.Info.Id, new ConcurrentDictionary<string, P2PConnectionCapability>());
 
-                    for (int j = 0; j < devices.Length; j++)
+                    // Ensure device1 has an entry in the matrix
+
+                    _ = _matrix.TryAdd(device1.Info.Id, new ConcurrentDictionary<string, P2PConnectionCapability>());
+
+                    for (var j = 0; j < devices.Length; j++)
                     {
                         if (i == j)
                         {
@@ -91,7 +93,8 @@ namespace DotCompute.Core.Memory.P2P
 
                         var device2 = devices[j];
                         var detectionTask = DetectAndStoreCapabilityAsync(device1, device2, cancellationToken)
-                            .ContinueWith(_ => 
+                            .ContinueWith(_ =>
+
                             {
                                 var completed = Interlocked.Increment(ref completedPairs);
                                 if (completed % 5 == 0 || completed == totalPairs)
@@ -116,7 +119,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _matrixSemaphore.Release();
+                _ = _matrixSemaphore.Release();
             }
         }
 
@@ -164,8 +167,9 @@ namespace DotCompute.Core.Memory.P2P
 
             // Not in cache or expired, detect capability
             var capability = await _detector.DetectP2PCapabilityAsync(device1, device2, cancellationToken);
-            
+
             // Store in matrix
+
             await StoreCapabilityAsync(device1.Info.Id, device2.Info.Id, capability);
 
             return capability;
@@ -194,7 +198,7 @@ namespace DotCompute.Core.Memory.P2P
                 {
                     SourceDevice = sourceDevice,
                     TargetDevice = targetDevice,
-                    IntermediateDevices = Array.Empty<IAccelerator>(),
+                    IntermediateDevices = [],
                     TotalBandwidthGBps = directCapability.EstimatedBandwidthGBps,
                     EstimatedLatencyMs = EstimateLatency(directCapability.ConnectionType),
                     Hops = 1,
@@ -244,12 +248,14 @@ namespace DotCompute.Core.Memory.P2P
         public P2PTopologyAnalysis GetTopologyAnalysis()
         {
             var analysis = new P2PTopologyAnalysis();
-            
+
             // Calculate topology metrics
+
             var totalDevices = _deviceTopology.Count;
             var totalConnections = _statistics.TotalConnections;
             var p2pConnections = _statistics.P2PEnabledConnections;
-            
+
+
             analysis.TotalDevices = totalDevices;
             analysis.TotalPossibleConnections = totalDevices * (totalDevices - 1);
             analysis.P2PEnabledConnections = p2pConnections;
@@ -322,14 +328,15 @@ namespace DotCompute.Core.Memory.P2P
                 validationResult.IsValid = issues.Count == 0;
                 validationResult.ValidationTime = DateTimeOffset.UtcNow;
 
-                _logger.LogDebug("Matrix validation completed: {IsValid}, {IssueCount} issues found", 
+                _logger.LogDebug("Matrix validation completed: {IsValid}, {IssueCount} issues found",
+
                     validationResult.IsValid, issues.Count);
 
                 return validationResult;
             }
             finally
             {
-                _matrixSemaphore.Release();
+                _ = _matrixSemaphore.Release();
             }
         }
 
@@ -362,7 +369,8 @@ namespace DotCompute.Core.Memory.P2P
         private async Task InitializeDeviceTopologyAsync(IAccelerator device, CancellationToken cancellationToken)
         {
             var capabilities = await _detector.GetDeviceCapabilitiesAsync(device, cancellationToken);
-            
+
+
             var topologyInfo = new DeviceTopologyInfo
             {
                 DeviceId = device.Info.Id,
@@ -383,8 +391,9 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken)
         {
             var capability = await _detector.DetectP2PCapabilityAsync(device1, device2, cancellationToken);
-            
+
             // Add timestamp for cache management
+
             var timestampedCapability = new P2PConnectionCapability
             {
                 IsSupported = capability.IsSupported,
@@ -399,8 +408,8 @@ namespace DotCompute.Core.Memory.P2P
         private async Task StoreCapabilityAsync(string device1Id, string device2Id, P2PConnectionCapability capability)
         {
             // Ensure both devices have matrix entries
-            _matrix.TryAdd(device1Id, new ConcurrentDictionary<string, P2PConnectionCapability>());
-            _matrix.TryAdd(device2Id, new ConcurrentDictionary<string, P2PConnectionCapability>());
+            _ = _matrix.TryAdd(device1Id, new ConcurrentDictionary<string, P2PConnectionCapability>());
+            _ = _matrix.TryAdd(device2Id, new ConcurrentDictionary<string, P2PConnectionCapability>());
 
             // Store bidirectional capability
             _matrix[device1Id][device2Id] = capability;
@@ -417,7 +426,8 @@ namespace DotCompute.Core.Memory.P2P
             // Simplified multi-hop pathfinding using breadth-first search
             var visited = new HashSet<string>();
             var queue = new Queue<P2PPathCandidate>();
-            
+
+
             queue.Enqueue(new P2PPathCandidate
             {
                 CurrentDevice = sourceDevice,
@@ -429,14 +439,15 @@ namespace DotCompute.Core.Memory.P2P
             while (queue.Count > 0)
             {
                 var current = queue.Dequeue();
-                
+
+
                 if (visited.Contains(current.CurrentDevice.Info.Id))
                 {
                     continue;
                 }
 
 
-                visited.Add(current.CurrentDevice.Info.Id);
+                _ = visited.Add(current.CurrentDevice.Info.Id);
 
                 // Check all connections from current device
                 if (_matrix.TryGetValue(current.CurrentDevice.Info.Id, out var connections))
@@ -456,7 +467,8 @@ namespace DotCompute.Core.Memory.P2P
                         {
                             // Found path to target
                             var intermediatePath = current.Path.Skip(1).Take(current.Path.Count - 2).ToArray();
-                            
+
+
                             return Task.FromResult<P2PPath?>(new P2PPath
                             {
                                 SourceDevice = sourceDevice,
@@ -505,7 +517,8 @@ namespace DotCompute.Core.Memory.P2P
                     foreach (var capability in device1Connections.Values)
                     {
                         _statistics.TotalConnections++;
-                        
+
+
                         if (capability.IsSupported)
                         {
                             _statistics.P2PEnabledConnections++;
@@ -538,14 +551,16 @@ namespace DotCompute.Core.Memory.P2P
             }
         }
 
-        private static bool IsCapabilityFresh(P2PConnectionCapability capability) =>
+        private static bool IsCapabilityFresh(P2PConnectionCapability capability)
             // In a real implementation, capabilities would have timestamps
             // For now, assume all cached capabilities are fresh
-            true;
 
-        private static DateTimeOffset GetCapabilityTimestamp(P2PConnectionCapability capability) =>
+            => true;
+
+        private static DateTimeOffset GetCapabilityTimestamp(P2PConnectionCapability capability)
             // Placeholder - would return actual timestamp in real implementation
-            DateTimeOffset.UtcNow;
+
+            => DateTimeOffset.UtcNow;
 
         private static double EstimateLatency(P2PConnectionType connectionType)
         {
@@ -562,8 +577,9 @@ namespace DotCompute.Core.Memory.P2P
         {
             // Simplified cluster identification
             var clusters = new List<P2PTopologyCluster>();
-            
+
             // Group devices by connection type affinity
+
             var nvlinkDevices = new List<string>();
             var pcieDevices = new List<string>();
             var infinibandDevices = new List<string>();
@@ -572,7 +588,8 @@ namespace DotCompute.Core.Memory.P2P
             {
                 var hasNVLink = deviceEntry.Value.Any(c => c.Value.ConnectionType == P2PConnectionType.NVLink && c.Value.IsSupported);
                 var hasInfiniBand = deviceEntry.Value.Any(c => c.Value.ConnectionType == P2PConnectionType.InfiniBand && c.Value.IsSupported);
-                
+
+
                 if (hasNVLink)
                 {
                     nvlinkDevices.Add(deviceEntry.Key);
@@ -752,9 +769,12 @@ namespace DotCompute.Core.Memory.P2P
             {
                 if (_matrix.TryGetValue(device1Id, out var connections))
                 {
-                    actualConnections += deviceIds.Count(device2Id => 
-                        device1Id != device2Id && 
-                        connections.TryGetValue(device2Id, out var cap) && 
+                    actualConnections += deviceIds.Count(device2Id =>
+
+                        device1Id != device2Id &&
+
+                        connections.TryGetValue(device2Id, out var cap) &&
+
                         cap.IsSupported);
                 }
             }
@@ -762,13 +782,15 @@ namespace DotCompute.Core.Memory.P2P
             return possibleConnections > 0 ? (double)actualConnections / possibleConnections : 0.0;
         }
 
-        private int CountExpiredCapabilities() =>
+        private static int CountExpiredCapabilities()
             // Placeholder - in real implementation would check timestamps
-            0;
 
-        private double CalculateCacheHitRatio() =>
+            => 0;
+
+        private static double CalculateCacheHitRatio()
             // Placeholder - would track cache hits/misses in real implementation
-            0.95; // Assume 95% cache hit ratio
+
+            => 0.95; // Assume 95% cache hit ratio
 
         private void RefreshExpiredCapabilities(object? state)
         {

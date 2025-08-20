@@ -158,8 +158,10 @@ public readonly struct SystemPerformanceSnapshot
         AvailableMemoryBytes = Math.Max(0, availableMemory);
         TotalMemoryBytes = Math.Max(0, totalMemory);
         UsedMemoryBytes = Math.Max(0, totalMemory - availableMemory);
-        MemoryUtilizationPercent = totalMemory > 0 
-            ? Math.Clamp((double)UsedMemoryBytes / totalMemory * 100.0, 0.0, 100.0) 
+        MemoryUtilizationPercent = totalMemory > 0
+
+            ? Math.Clamp((double)UsedMemoryBytes / totalMemory * 100.0, 0.0, 100.0)
+
             : 0.0;
         ProcessWorkingSetBytes = Math.Max(0, processWorkingSet);
         ProcessPrivateMemoryBytes = Math.Max(0, processPrivateMemory);
@@ -234,8 +236,10 @@ public readonly struct SystemPerformanceSnapshot
     /// <summary>
     /// CPU utilization per logical processor
     /// </summary>
-    public double CpuUtilizationPerProcessor => LogicalProcessorCount > 0 
-        ? CpuUtilizationPercent / LogicalProcessorCount 
+    public double CpuUtilizationPerProcessor => LogicalProcessorCount > 0
+
+        ? CpuUtilizationPercent / LogicalProcessorCount
+
         : 0.0;
 
     /// <summary>
@@ -261,7 +265,8 @@ public readonly struct SystemPerformanceSnapshot
         try
         {
             using var process = Process.GetCurrentProcess();
-            
+
+
             return new SystemPerformanceSnapshot(
                 cpuUtilization: GetCpuUsage(),
                 availableMemory: GetAvailableMemory(),
@@ -383,12 +388,12 @@ public readonly struct SystemPerformanceSnapshot
         }
     }
 
-    public override string ToString() =>
-        $"CPU: {CpuUtilizationPercent:F1}%, Memory: {MemoryUtilizationPercent:F1}% " +
+    public override string ToString()
+        => $"CPU: {CpuUtilizationPercent:F1}%, Memory: {MemoryUtilizationPercent:F1}% " +
         $"({UsedMemoryMB:F0}/{TotalMemoryMB:F0}MB), Load: {SystemLoadFactor:F2}";
 
-    public string ToDetailedString() =>
-        $"System Performance Snapshot @ {Timestamp:yyyy-MM-dd HH:mm:ss} UTC\n" +
+    public string ToDetailedString()
+        => $"System Performance Snapshot @ {Timestamp:yyyy-MM-dd HH:mm:ss} UTC\n" +
         $"CPU: {CpuUtilizationPercent:F1}% ({LogicalProcessorCount} cores)\n" +
         $"Memory: {UsedMemoryMB:F0}/{TotalMemoryMB:F0}MB ({MemoryUtilizationPercent:F1}%)\n" +
         $"Process: WS={ProcessWorkingSetMB:F0}MB, Private={ProcessPrivateMemoryMB:F0}MB\n" +

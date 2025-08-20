@@ -144,10 +144,12 @@ public class CompatibilityChecker
             var currentOS = _runtimeEnvironment.OSDescription;
             var currentArch = _runtimeEnvironment.Architecture.ToString();
 
-            var isOSCompatible = manifest.SupportedPlatforms.Any(platform => 
+            var isOSCompatible = manifest.SupportedPlatforms.Any(platform =>
+
                 IsOperatingSystemCompatible(currentOS, platform));
 
-            var isArchCompatible = manifest.SupportedPlatforms.Any(platform => 
+            var isArchCompatible = manifest.SupportedPlatforms.Any(platform =>
+
                 IsArchitectureCompatible(currentArch, platform));
 
             if (!isOSCompatible)
@@ -325,7 +327,7 @@ public class CompatibilityChecker
         };
 
         // Cache the result
-        _compatibilityCache.TryAdd(cacheKey, new CompatibilityMatrix { FrameworkCompatibility = compatibility });
+        _ = _compatibilityCache.TryAdd(cacheKey, new CompatibilityMatrix { FrameworkCompatibility = compatibility });
 
         return compatibility;
     }
@@ -337,7 +339,8 @@ public class CompatibilityChecker
     {
         // Simplified compatibility check
         // In a real implementation, this would use NuGet.Frameworks library
-        
+
+
         var currentFramework = _runtimeEnvironment.FrameworkDescription;
 
         // Handle common TFM patterns
@@ -346,7 +349,8 @@ public class CompatibilityChecker
             targetFramework.StartsWith("net7.0", StringComparison.OrdinalIgnoreCase) ||
             targetFramework.StartsWith("net6.0", StringComparison.OrdinalIgnoreCase))
         {
-            return currentFramework.Contains(".NET 9.") || 
+            return currentFramework.Contains(".NET 9.") ||
+
                    currentFramework.Contains(".NET 8.") ||
                    currentFramework.Contains(".NET 7.") ||
                    currentFramework.Contains(".NET 6.");
@@ -419,21 +423,24 @@ public class CompatibilityChecker
         await Task.CompletedTask; // Placeholder for async signature
 
         // Check for Windows-specific features
-        if (manifest.Metadata?.ContainsKey("RequiresWindows") == true && 
+        if (manifest.Metadata?.ContainsKey("RequiresWindows") == true &&
+
             !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             result.CompatibilityErrors.Add("Plugin requires Windows platform");
         }
 
         // Check for Linux-specific features
-        if (manifest.Metadata?.ContainsKey("RequiresLinux") == true && 
+        if (manifest.Metadata?.ContainsKey("RequiresLinux") == true &&
+
             !RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             result.CompatibilityErrors.Add("Plugin requires Linux platform");
         }
 
         // Check for macOS-specific features
-        if (manifest.Metadata?.ContainsKey("RequiresMacOS") == true && 
+        if (manifest.Metadata?.ContainsKey("RequiresMacOS") == true &&
+
             !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             result.CompatibilityErrors.Add("Plugin requires macOS platform");
@@ -455,8 +462,10 @@ public class CompatibilityChecker
 
         // Check for known AOT-incompatible features in metadata
         var aotIncompatibleFeatures = new[] { "UsesDynamicCode", "UsesReflection", "UsesEmit" };
-        if (aotIncompatibleFeatures.Any(feature => 
-            manifest.Metadata?.ContainsKey(feature) == true && 
+        if (aotIncompatibleFeatures.Any(feature =>
+
+            manifest.Metadata?.ContainsKey(feature) == true &&
+
             bool.TryParse(manifest.Metadata[feature], out var uses) && uses))
         {
             return false;
@@ -492,8 +501,10 @@ public class CompatibilityChecker
 
         // Check for features that require JIT
         var jitRequiredFeatures = new[] { "UsesDynamicCode", "UsesEmit", "UsesExpression" };
-        return jitRequiredFeatures.Any(feature => 
-            manifest.Metadata?.ContainsKey(feature) == true && 
+        return jitRequiredFeatures.Any(feature =>
+
+            manifest.Metadata?.ContainsKey(feature) == true &&
+
             bool.TryParse(manifest.Metadata[feature], out var uses) && uses);
     }
 
@@ -508,8 +519,9 @@ public class CompatibilityChecker
         {
             // Load assembly metadata for analysis
             var assembly = Assembly.LoadFrom(assemblyPath);
-            
+
             // Get target framework from assembly attributes
+
             var targetFrameworkAttr = assembly.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>();
             if (targetFrameworkAttr != null)
             {
@@ -517,13 +529,16 @@ public class CompatibilityChecker
             }
 
             // Check for unsafe code usage
-            info.UsesUnsafeCode = assembly.GetTypes().Any(t => 
+            info.UsesUnsafeCode = assembly.GetTypes().Any(t =>
+
                 t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
                  .Any(m => m.GetMethodBody()?.LocalVariables?.Any(v => v.LocalType.IsPointer) == true));
 
             // Check for reflection usage (simplified)
-            info.UsesReflection = assembly.GetTypes().Any(t => 
-                t.GetMethods().Any(m => m.ReturnType == typeof(Type) || 
+            info.UsesReflection = assembly.GetTypes().Any(t =>
+
+                t.GetMethods().Any(m => m.ReturnType == typeof(Type) ||
+
                                        m.GetParameters().Any(p => p.ParameterType == typeof(Type))));
 
             // Check for dynamic code generation
@@ -591,7 +606,8 @@ public class CompatibilitySettings
     /// <summary>
     /// Gets or sets whether to fail on framework mismatch.
     /// </summary>
-    public bool FailOnFrameworkMismatch { get; set; } = false;
+    public bool FailOnFrameworkMismatch { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to check AOT compatibility.
@@ -601,7 +617,8 @@ public class CompatibilitySettings
     /// <summary>
     /// Gets or sets whether to fail on AOT incompatibility.
     /// </summary>
-    public bool FailOnAotIncompatibility { get; set; } = false;
+    public bool FailOnAotIncompatibility { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to check trimming compatibility.
@@ -611,7 +628,8 @@ public class CompatibilitySettings
     /// <summary>
     /// Gets or sets whether to allow unsafe code.
     /// </summary>
-    public bool AllowUnsafeCode { get; set; } = false;
+    public bool AllowUnsafeCode { get; set; }
+
 
     /// <summary>
     /// Gets or sets the compatibility check timeout.

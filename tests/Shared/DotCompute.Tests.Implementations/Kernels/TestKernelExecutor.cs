@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 namespace DotCompute.Tests.Implementations.Kernels;
 
 

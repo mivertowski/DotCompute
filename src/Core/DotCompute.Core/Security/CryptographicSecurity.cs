@@ -47,12 +47,16 @@ public sealed class CryptographicSecurity : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? CryptographicConfiguration.Default;
         _randomGenerator = RandomNumberGenerator.Create();
-        
+
         // Initialize key rotation timer
-        _keyRotationTimer = new Timer(PerformKeyRotation, null, 
+
+        _keyRotationTimer = new Timer(PerformKeyRotation, null,
+
             _configuration.KeyRotationInterval, _configuration.KeyRotationInterval);
-        
-        _logger.LogInformation("CryptographicSecurity initialized with configuration: {Configuration}", 
+
+
+        _logger.LogInformation("CryptographicSecurity initialized with configuration: {Configuration}",
+
             _configuration.ToString());
     }
 
@@ -64,7 +68,8 @@ public sealed class CryptographicSecurity : IDisposable
     /// <param name="identifier">Unique identifier for the key</param>
     /// <param name="purpose">Intended purpose of the key</param>
     /// <returns>Result containing the generated key information</returns>
-    public async Task<KeyGenerationResult> GenerateKeyAsync(KeyType keyType, int keySize, 
+    public async Task<KeyGenerationResult> GenerateKeyAsync(KeyType keyType, int keySize,
+
         string identifier, string purpose)
     {
         if (_disposed)
@@ -100,9 +105,10 @@ public sealed class CryptographicSecurity : IDisposable
 
             // Generate the key based on type
             var keyContainer = await GenerateKeyContainerAsync(keyType, keySize, identifier, purpose);
-            
+
             // Store the key securely
-            _keyStore.AddOrUpdate(identifier, keyContainer, (key, existing) =>
+
+            _ = _keyStore.AddOrUpdate(identifier, keyContainer, (key, existing) =>
             {
                 existing.Dispose(); // Securely dispose old key
                 return keyContainer;
@@ -110,7 +116,8 @@ public sealed class CryptographicSecurity : IDisposable
 
             result.IsSuccessful = true;
             result.KeyFingerprint = await CalculateKeyFingerprintAsync(keyContainer);
-            
+
+
             _logger.LogInformation("Cryptographic key generated successfully: Id={Identifier}, Fingerprint={Fingerprint}",
                 identifier, result.KeyFingerprint);
 
@@ -118,7 +125,7 @@ public sealed class CryptographicSecurity : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -130,7 +137,8 @@ public sealed class CryptographicSecurity : IDisposable
     /// <param name="algorithm">Encryption algorithm to use</param>
     /// <param name="associatedData">Optional associated data for authenticated encryption</param>
     /// <returns>Encryption result with encrypted data and metadata</returns>
-    public async Task<EncryptionResult> EncryptAsync(ReadOnlyMemory<byte> data, string keyIdentifier, 
+    public async Task<EncryptionResult> EncryptAsync(ReadOnlyMemory<byte> data, string keyIdentifier,
+
         string algorithm = "AES-256-GCM", ReadOnlyMemory<byte> associatedData = default)
     {
         if (_disposed)
@@ -179,7 +187,7 @@ public sealed class CryptographicSecurity : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -194,7 +202,8 @@ public sealed class CryptographicSecurity : IDisposable
     /// <param name="associatedData">Optional associated data for authenticated encryption</param>
     /// <returns>Decryption result with decrypted data</returns>
     public async Task<DecryptionResult> DecryptAsync(ReadOnlyMemory<byte> encryptedData, string keyIdentifier,
-        string algorithm, ReadOnlyMemory<byte> nonce, ReadOnlyMemory<byte> tag = default, 
+        string algorithm, ReadOnlyMemory<byte> nonce, ReadOnlyMemory<byte> tag = default,
+
         ReadOnlyMemory<byte> associatedData = default)
     {
         if (_disposed)
@@ -243,7 +252,7 @@ public sealed class CryptographicSecurity : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -254,7 +263,8 @@ public sealed class CryptographicSecurity : IDisposable
     /// <param name="keyIdentifier">Identifier of the signing key</param>
     /// <param name="hashAlgorithm">Hash algorithm to use</param>
     /// <returns>Digital signature result</returns>
-    public async Task<SignatureResult> SignDataAsync(ReadOnlyMemory<byte> data, string keyIdentifier, 
+    public async Task<SignatureResult> SignDataAsync(ReadOnlyMemory<byte> data, string keyIdentifier,
+
         string hashAlgorithm = "SHA-256")
     {
         if (_disposed)
@@ -310,7 +320,7 @@ public sealed class CryptographicSecurity : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -322,7 +332,8 @@ public sealed class CryptographicSecurity : IDisposable
     /// <param name="keyIdentifier">Identifier of the verification key</param>
     /// <param name="hashAlgorithm">Hash algorithm used for signing</param>
     /// <returns>Signature verification result</returns>
-    public async Task<SignatureVerificationResult> VerifySignatureAsync(ReadOnlyMemory<byte> data, 
+    public async Task<SignatureVerificationResult> VerifySignatureAsync(ReadOnlyMemory<byte> data,
+
         ReadOnlyMemory<byte> signature, string keyIdentifier, string hashAlgorithm = "SHA-256")
     {
         if (_disposed)
@@ -372,7 +383,7 @@ public sealed class CryptographicSecurity : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -488,13 +499,14 @@ public sealed class CryptographicSecurity : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
     #region Private Implementation
 
-    private async Task<SecureKeyContainer> GenerateKeyContainerAsync(KeyType keyType, int keySize, 
+    private async Task<SecureKeyContainer> GenerateKeyContainerAsync(KeyType keyType, int keySize,
+
         string identifier, string purpose)
     {
         return keyType switch
@@ -507,7 +519,7 @@ public sealed class CryptographicSecurity : IDisposable
         };
     }
 
-    private async Task<SecureKeyContainer> GenerateAESKeyAsync(int keySize, string identifier, string purpose)
+    private static async Task<SecureKeyContainer> GenerateAESKeyAsync(int keySize, string identifier, string purpose)
     {
         return await Task.Run(() =>
         {
@@ -528,7 +540,7 @@ public sealed class CryptographicSecurity : IDisposable
         });
     }
 
-    private async Task<SecureKeyContainer> GenerateRSAKeyAsync(int keySize, string identifier, string purpose)
+    private static async Task<SecureKeyContainer> GenerateRSAKeyAsync(int keySize, string identifier, string purpose)
     {
         return await Task.Run(() =>
         {
@@ -549,7 +561,7 @@ public sealed class CryptographicSecurity : IDisposable
         });
     }
 
-    private async Task<SecureKeyContainer> GenerateECDSAKeyAsync(int keySize, string identifier, string purpose)
+    private static async Task<SecureKeyContainer> GenerateECDSAKeyAsync(int keySize, string identifier, string purpose)
     {
         return await Task.Run(() =>
         {
@@ -590,7 +602,7 @@ public sealed class CryptographicSecurity : IDisposable
         });
     }
 
-    private async Task<string> CalculateKeyFingerprintAsync(SecureKeyContainer keyContainer)
+    private static async Task<string> CalculateKeyFingerprintAsync(SecureKeyContainer keyContainer)
     {
         return await Task.Run(() =>
         {
@@ -600,7 +612,7 @@ public sealed class CryptographicSecurity : IDisposable
         });
     }
 
-    private bool ValidateKeyParameters(KeyType keyType, int keySize, KeyGenerationResult result)
+    private static bool ValidateKeyParameters(KeyType keyType, int keySize, KeyGenerationResult result)
     {
         var validSizes = keyType switch
         {
@@ -608,7 +620,7 @@ public sealed class CryptographicSecurity : IDisposable
             KeyType.RSA => new[] { 2048, 3072, 4096 },
             KeyType.ECDSA => new[] { 256, 384, 521 },
             KeyType.ChaCha20 => new[] { 256 },
-            _ => Array.Empty<int>()
+            _ => []
         };
 
         if (!validSizes.Contains(keySize))
@@ -620,7 +632,7 @@ public sealed class CryptographicSecurity : IDisposable
         return true;
     }
 
-    private bool ValidateAlgorithm<T>(string algorithm, T result) where T : ICryptographicResult
+    private static bool ValidateAlgorithm<T>(string algorithm, T result) where T : ICryptographicResult
     {
         if (WeakAlgorithms.Contains(algorithm))
         {
@@ -637,8 +649,10 @@ public sealed class CryptographicSecurity : IDisposable
         return true;
     }
 
-    private async Task<EncryptionResult> PerformEncryptionAsync(ReadOnlyMemory<byte> data, 
-        SecureKeyContainer keyContainer, string algorithm, ReadOnlyMemory<byte> associatedData, 
+    private async Task<EncryptionResult> PerformEncryptionAsync(ReadOnlyMemory<byte> data,
+
+        SecureKeyContainer keyContainer, string algorithm, ReadOnlyMemory<byte> associatedData,
+
         EncryptionResult result)
     {
         try
@@ -658,32 +672,39 @@ public sealed class CryptographicSecurity : IDisposable
         }
     }
 
-    private async Task<EncryptionResult> EncryptWithAESGCMAsync(ReadOnlyMemory<byte> data, 
+    private async Task<EncryptionResult> EncryptWithAESGCMAsync(ReadOnlyMemory<byte> data,
+
         SecureKeyContainer keyContainer, ReadOnlyMemory<byte> associatedData, EncryptionResult result)
     {
         return await Task.Run(() =>
         {
             using var aes = new AesGcm(keyContainer.RawKeyData, AesGcm.TagByteSizes.MaxSize);
-            
+
+
             var nonce = new byte[AesGcm.NonceByteSizes.MaxSize];
             var tag = new byte[AesGcm.TagByteSizes.MaxSize];
             var ciphertext = new byte[data.Length];
-            
+
+
             _randomGenerator.GetBytes(nonce);
-            
+
             // Perform constant-time encryption
+
             aes.Encrypt(nonce, data.Span, ciphertext, tag, associatedData.Span);
-            
+
+
             result.EncryptedData = ciphertext;
             result.Nonce = nonce;
             result.AuthenticationTag = tag;
             result.IsSuccessful = true;
-            
+
+
             return result;
         });
     }
 
-    private async Task<EncryptionResult> EncryptWithAESCBCAsync(ReadOnlyMemory<byte> data, 
+    private static async Task<EncryptionResult> EncryptWithAESCBCAsync(ReadOnlyMemory<byte> data,
+
         SecureKeyContainer keyContainer, EncryptionResult result)
     {
         return await Task.Run(() =>
@@ -715,7 +736,8 @@ public sealed class CryptographicSecurity : IDisposable
             var nonce = new byte[12];
             var tag = new byte[16];
             var ciphertext = new byte[data.Length];
-            
+
+
             _randomGenerator.GetBytes(nonce);
             _randomGenerator.GetBytes(tag);
             _randomGenerator.GetBytes(ciphertext);
@@ -730,7 +752,8 @@ public sealed class CryptographicSecurity : IDisposable
     }
 
     private async Task<DecryptionResult> PerformDecryptionAsync(ReadOnlyMemory<byte> encryptedData,
-        SecureKeyContainer keyContainer, string algorithm, ReadOnlyMemory<byte> nonce, 
+        SecureKeyContainer keyContainer, string algorithm, ReadOnlyMemory<byte> nonce,
+
         ReadOnlyMemory<byte> tag, ReadOnlyMemory<byte> associatedData, DecryptionResult result)
     {
         try
@@ -750,16 +773,18 @@ public sealed class CryptographicSecurity : IDisposable
         }
     }
 
-    private async Task<DecryptionResult> DecryptWithAESGCMAsync(ReadOnlyMemory<byte> encryptedData,
+    private static async Task<DecryptionResult> DecryptWithAESGCMAsync(ReadOnlyMemory<byte> encryptedData,
         SecureKeyContainer keyContainer, ReadOnlyMemory<byte> nonce, ReadOnlyMemory<byte> tag,
         ReadOnlyMemory<byte> associatedData, DecryptionResult result)
     {
         return await Task.Run(() =>
         {
             using var aes = new AesGcm(keyContainer.RawKeyData, AesGcm.TagByteSizes.MaxSize);
-            
+
+
             var plaintext = new byte[encryptedData.Length];
-            
+
+
             try
             {
                 aes.Decrypt(nonce.Span, encryptedData.Span, tag.Span, plaintext, associatedData.Span);
@@ -770,12 +795,13 @@ public sealed class CryptographicSecurity : IDisposable
             {
                 result.ErrorMessage = "AES-GCM decryption failed - invalid data or authentication tag";
             }
-            
+
+
             return result;
         });
     }
 
-    private async Task<DecryptionResult> DecryptWithAESCBCAsync(ReadOnlyMemory<byte> encryptedData,
+    private static async Task<DecryptionResult> DecryptWithAESCBCAsync(ReadOnlyMemory<byte> encryptedData,
         SecureKeyContainer keyContainer, ReadOnlyMemory<byte> nonce, DecryptionResult result)
     {
         return await Task.Run(() =>
@@ -787,7 +813,8 @@ public sealed class CryptographicSecurity : IDisposable
             aes.IV = nonce.ToArray();
 
             using var decryptor = aes.CreateDecryptor();
-            
+
+
             try
             {
                 var decrypted = decryptor.TransformFinalBlock(encryptedData.ToArray(), 0, encryptedData.Length);
@@ -840,7 +867,7 @@ public sealed class CryptographicSecurity : IDisposable
         }
     }
 
-    private async Task<SignatureResult> SignWithRSAAsync(ReadOnlyMemory<byte> data,
+    private static async Task<SignatureResult> SignWithRSAAsync(ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer, string hashAlgorithm, SignatureResult result)
     {
         return await Task.Run(() =>
@@ -871,7 +898,7 @@ public sealed class CryptographicSecurity : IDisposable
         });
     }
 
-    private async Task<SignatureResult> SignWithECDSAAsync(ReadOnlyMemory<byte> data,
+    private static async Task<SignatureResult> SignWithECDSAAsync(ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer, string hashAlgorithm, SignatureResult result)
     {
         return await Task.Run(() =>
@@ -921,13 +948,14 @@ public sealed class CryptographicSecurity : IDisposable
         }
     }
 
-    private async Task<SignatureVerificationResult> VerifyWithRSAAsync(ReadOnlyMemory<byte> data,
+    private static async Task<SignatureVerificationResult> VerifyWithRSAAsync(ReadOnlyMemory<byte> data,
         ReadOnlyMemory<byte> signature, SecureKeyContainer keyContainer, string hashAlgorithm, SignatureVerificationResult result)
     {
         return await Task.Run(() =>
         {
             using var rsa = RSA.Create();
-            
+
+
             if (keyContainer.PublicKeyData != null)
             {
                 rsa.ImportRSAPublicKey(keyContainer.PublicKeyData, out _);
@@ -961,13 +989,14 @@ public sealed class CryptographicSecurity : IDisposable
         });
     }
 
-    private async Task<SignatureVerificationResult> VerifyWithECDSAAsync(ReadOnlyMemory<byte> data,
+    private static async Task<SignatureVerificationResult> VerifyWithECDSAAsync(ReadOnlyMemory<byte> data,
         ReadOnlyMemory<byte> signature, SecureKeyContainer keyContainer, string hashAlgorithm, SignatureVerificationResult result)
     {
         return await Task.Run(() =>
         {
             using var ecdsa = ECDsa.Create();
-            
+
+
             if (keyContainer.PublicKeyData != null)
             {
                 ecdsa.ImportSubjectPublicKeyInfo(keyContainer.PublicKeyData, out _);
@@ -1001,7 +1030,7 @@ public sealed class CryptographicSecurity : IDisposable
         });
     }
 
-    private bool IsTimingAttackSafe(string algorithm)
+    private static bool IsTimingAttackSafe(string algorithm)
     {
         // Algorithms known to have constant-time implementations
         var constantTimeAlgorithms = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -1039,19 +1068,22 @@ public sealed class CryptographicSecurity : IDisposable
     private async Task RotateKeyAsync(SecureKeyContainer keyContainer)
     {
         // Generate new key with same parameters
-        var newKeyContainer = await GenerateKeyContainerAsync(keyContainer.KeyType, keyContainer.KeySize, 
+        var newKeyContainer = await GenerateKeyContainerAsync(keyContainer.KeyType, keyContainer.KeySize,
+
             keyContainer.Identifier, keyContainer.Purpose);
 
         // Replace the old key
-        _keyStore.TryUpdate(keyContainer.Identifier, newKeyContainer, keyContainer);
-        
+        _ = _keyStore.TryUpdate(keyContainer.Identifier, newKeyContainer, keyContainer);
+
         // Securely dispose old key
+
         keyContainer.Dispose();
-        
+
+
         _logger.LogDebug("Key rotated successfully: {KeyId}", keyContainer.Identifier);
     }
 
-    private bool ValidateAESConfiguration(string algorithm, int keySize, AlgorithmValidationResult result)
+    private static bool ValidateAESConfiguration(string algorithm, int keySize, AlgorithmValidationResult result)
     {
         var validKeySizes = new[] { 128, 192, 256 };
         if (!validKeySizes.Contains(keySize))
@@ -1071,7 +1103,7 @@ public sealed class CryptographicSecurity : IDisposable
         return true;
     }
 
-    private bool ValidateRSAConfiguration(int keySize, AlgorithmValidationResult result)
+    private static bool ValidateRSAConfiguration(int keySize, AlgorithmValidationResult result)
     {
         if (keySize < 2048)
         {
@@ -1083,7 +1115,7 @@ public sealed class CryptographicSecurity : IDisposable
         return true;
     }
 
-    private bool ValidateECDSAConfiguration(int keySize, AlgorithmValidationResult result)
+    private static bool ValidateECDSAConfiguration(int keySize, AlgorithmValidationResult result)
     {
         var validSizes = new[] { 256, 384, 521 };
         if (!validSizes.Contains(keySize))
@@ -1096,7 +1128,7 @@ public sealed class CryptographicSecurity : IDisposable
         return true;
     }
 
-    private bool ValidateSHAConfiguration(string algorithm, AlgorithmValidationResult result)
+    private static bool ValidateSHAConfiguration(string algorithm, AlgorithmValidationResult result)
     {
         if (algorithm.Equals("SHA-1", StringComparison.OrdinalIgnoreCase))
         {
@@ -1108,7 +1140,7 @@ public sealed class CryptographicSecurity : IDisposable
         return true;
     }
 
-    private bool ValidateGenericAlgorithm(string algorithm, int keySize, AlgorithmValidationResult result)
+    private static bool ValidateGenericAlgorithm(string algorithm, int keySize, AlgorithmValidationResult result)
     {
         // Add basic validation for other algorithms
         if (string.IsNullOrWhiteSpace(algorithm))
@@ -1171,8 +1203,8 @@ public sealed class CryptographicConfiguration
     public bool RequireApprovedAlgorithms { get; init; } = true;
     public bool SecureKeyStorage { get; init; } = true;
 
-    public override string ToString() =>
-        $"KeyRotation={KeyRotationInterval.Days}d, MaxAge={KeyMaxAge.Days}d, TimingProtection={EnableTimingAttackProtection}";
+    public override string ToString()
+        => $"KeyRotation={KeyRotationInterval.Days}d, MaxAge={KeyMaxAge.Days}d, TimingProtection={EnableTimingAttackProtection}";
 }
 
 /// <summary>
@@ -1199,7 +1231,8 @@ internal sealed class SecureKeyContainer : IDisposable
     public required SecureString KeyData { get; init; }
     public required byte[] RawKeyData { get; init; }
     public byte[]? PublicKeyData { get; init; }
-    
+
+
     private bool _disposed;
 
     public void Dispose()
@@ -1212,13 +1245,15 @@ internal sealed class SecureKeyContainer : IDisposable
 
         _disposed = true;
         KeyData?.Dispose();
-        
+
         // Securely wipe key data
+
         if (RawKeyData != null)
         {
             Array.Clear(RawKeyData, 0, RawKeyData.Length);
         }
-        
+
+
         if (PublicKeyData != null)
         {
             Array.Clear(PublicKeyData, 0, PublicKeyData.Length);
@@ -1333,5 +1368,6 @@ public sealed class KeyRotationResult
     public List<string> SuccessfulRotations { get; } = new();
     public Dictionary<string, string> FailedRotations { get; } = new();
 }
+
 
 #endregion

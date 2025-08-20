@@ -33,7 +33,8 @@ public class NuGetPluginManager : IDisposable
     {
         _logger = logger ?? new NullLogger<NuGetPluginManager>();
         _options = options ?? new NuGetPluginManagerOptions();
-        
+
+
         var loaderOptions = new NuGetPluginLoaderOptions
         {
             PluginDirectories = _options.PluginDirectories,
@@ -41,16 +42,19 @@ public class NuGetPluginManager : IDisposable
             DependencyResolution = _options.DependencyResolution,
             CompatibilitySettings = _options.CompatibilitySettings
         };
-        
+
         // Note: We'd need a logger factory to create a specific logger for NuGetPluginLoader
         // For now, we'll cast the logger if possible or create a null logger
-        var pluginLoaderLogger = _logger as ILogger<NuGetPluginLoader> ?? 
+
+        var pluginLoaderLogger = _logger as ILogger<NuGetPluginLoader> ??
+
                                  Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance;
         _pluginLoader = new NuGetPluginLoader(pluginLoaderLogger, loaderOptions);
         _healthMonitor = new PluginHealthMonitor(_logger);
         _metricsCollector = new PluginMetricsCollector(_logger);
-        
+
         // Set up periodic maintenance
+
         _periodicMaintenanceTimer = new Timer(PeriodicMaintenance, null, Timeout.Infinite, Timeout.Infinite);
     }
 
@@ -108,7 +112,7 @@ public class NuGetPluginManager : IDisposable
             await _metricsCollector.StartAsync(cancellationToken);
 
             // Start periodic maintenance
-            _periodicMaintenanceTimer.Change(_options.MaintenanceInterval, _options.MaintenanceInterval);
+            _ = _periodicMaintenanceTimer.Change(_options.MaintenanceInterval, _options.MaintenanceInterval);
 
             // Auto-discover and load plugins if enabled
             if (_options.AutoDiscoverPlugins)
@@ -121,7 +125,7 @@ public class NuGetPluginManager : IDisposable
         }
         finally
         {
-            _operationSemaphore.Release();
+            _ = _operationSemaphore.Release();
         }
     }
 
@@ -213,10 +217,10 @@ public class NuGetPluginManager : IDisposable
             }
 
             // Unload from the loader
-            await _pluginLoader.UnloadPluginAsync(pluginId, cancellationToken);
+            _ = await _pluginLoader.UnloadPluginAsync(pluginId, cancellationToken);
 
             // Remove from managed plugins
-            _managedPlugins.TryRemove(pluginId, out _);
+            _ = _managedPlugins.TryRemove(pluginId, out _);
 
             // Stop health monitoring for this plugin
             _healthMonitor.StopMonitoring(pluginId);
@@ -234,7 +238,7 @@ public class NuGetPluginManager : IDisposable
         }
         finally
         {
-            _operationSemaphore.Release();
+            _ = _operationSemaphore.Release();
         }
     }
 
@@ -445,7 +449,8 @@ public class NuGetPluginManager : IDisposable
                     if (plugin.LoadedPluginInfo!.Manifest.Id == scanResult.PluginId)
                     {
                         report.PluginScans.Add(scanResult);
-                        
+
+
                         if (scanResult.HasCriticalVulnerabilities)
                         {
                             report.CriticalVulnerabilityCount += scanResult.CriticalVulnerabilities.Count;
@@ -484,7 +489,8 @@ public class NuGetPluginManager : IDisposable
             _logger.LogDebug("Loading plugin: {PluginId}", manifest.Id);
 
             var loadResult = await _pluginLoader.LoadPluginAsync(manifest, cancellationToken);
-            
+
+
             if (!loadResult.IsLoaded || loadResult.Plugin == null)
             {
                 _logger.LogError("Failed to load plugin {PluginId}: {Error}", manifest.Id, loadResult.ErrorMessage);
@@ -508,7 +514,7 @@ public class NuGetPluginManager : IDisposable
                 managedPlugin.Plugin.HealthChanged += OnPluginHealthChanged;
             }
 
-            _managedPlugins.TryAdd(manifest.Id, managedPlugin);
+            _ = _managedPlugins.TryAdd(manifest.Id, managedPlugin);
 
             // Start health monitoring
             _healthMonitor.StartMonitoring(manifest.Id, managedPlugin);
@@ -571,7 +577,7 @@ public class NuGetPluginManager : IDisposable
                 if (health.Health == PluginHealth.Critical && _options.AutoRestartFailedPlugins)
                 {
                     _logger.LogWarning("Plugin {PluginId} is critical, attempting restart", pluginId);
-                    await ReloadPluginAsync(pluginId);
+                    _ = await ReloadPluginAsync(pluginId);
                 }
             }
             catch (Exception ex)
@@ -631,13 +637,14 @@ public class NuGetPluginManager : IDisposable
         _disposed = true;
 
         _periodicMaintenanceTimer?.Dispose();
-        
+
         // Unload all plugins
+
         foreach (var (pluginId, _) in _managedPlugins.ToList())
         {
             try
             {
-                UnloadPluginAsync(pluginId).GetAwaiter().GetResult();
+                _ = UnloadPluginAsync(pluginId).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
@@ -672,12 +679,14 @@ public class NuGetPluginManagerOptions
     /// <summary>
     /// Gets or sets whether to check for plugin updates.
     /// </summary>
-    public bool CheckForUpdates { get; set; } = false;
+    public bool CheckForUpdates { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to auto-restart failed plugins.
     /// </summary>
-    public bool AutoRestartFailedPlugins { get; set; } = false;
+    public bool AutoRestartFailedPlugins { get; set; }
+
 
     /// <summary>
     /// Gets or sets the periodic maintenance interval.
@@ -712,7 +721,8 @@ public class NuGetPluginManagerOptions
     /// <summary>
     /// Gets or sets whether to enable hot reloading.
     /// </summary>
-    public bool EnableHotReloading { get; set; } = false;
+    public bool EnableHotReloading { get; set; }
+
 
     /// <summary>
     /// Gets or sets the maximum number of concurrent plugin operations.

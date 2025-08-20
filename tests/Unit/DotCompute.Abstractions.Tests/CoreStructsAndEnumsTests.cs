@@ -5,6 +5,10 @@ using Xunit;
 using FluentAssertions;
 using System.Globalization;
 
+using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Accelerators;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 namespace DotCompute.Abstractions.Tests;
 
 
@@ -14,8 +18,9 @@ namespace DotCompute.Abstractions.Tests;
 public sealed class CoreStructsAndEnumsTests
 {
     private static readonly string[] OptimizationFlags = new[] { "-O3", "-ffast-math" };
-    
+
     #region CompiledKernel Struct Tests
+
 
     [Fact]
     public void CompiledKernel_Constructor_ShouldInitializeAllProperties()
@@ -444,6 +449,7 @@ public sealed class CoreStructsAndEnumsTests
     [InlineData(AcceleratorType.Custom, 100)]
     public void AcceleratorType_ShouldHaveCorrectIntegerValues(AcceleratorType type, int expectedValue)
         // Act & Assert
+
         => ((int)type).Should().Be(expectedValue);
 
     [Fact]

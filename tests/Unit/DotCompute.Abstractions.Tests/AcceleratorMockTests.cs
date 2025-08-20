@@ -3,6 +3,8 @@ using NSubstitute;
 using Xunit;
 using FluentAssertions;
 
+using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Kernels;
 #pragma warning disable CA2012 // Use ValueTasks correctly - NSubstitute mock setup requires storing ValueTask
 
 namespace DotCompute.Abstractions.Tests;

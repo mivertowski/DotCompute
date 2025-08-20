@@ -6,6 +6,7 @@ using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Types.Management;
 using Microsoft.Extensions.Logging;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Algorithms.Examples
 {
 

@@ -9,9 +9,9 @@ namespace DotCompute.Algorithms.Types.SignalProcessing;
 /// </summary>
 public sealed class ConvolutionKernel
 {
-public required float[] Coefficients { get; init; }
-public required int Size { get; init; }
-public string? Name { get; init; }
+    public required float[] Coefficients { get; init; }
+    public required int Size { get; init; }
+    public string? Name { get; init; }
 }
 
 /// <summary>
@@ -19,9 +19,9 @@ public string? Name { get; init; }
 /// </summary>
 public sealed class ConvolutionConfig
 {
-public required int InputSize { get; init; }
-public required int KernelSize { get; init; }
-public ConvolutionMode Mode { get; init; } = ConvolutionMode.Valid;
+    public required int InputSize { get; init; }
+    public required int KernelSize { get; init; }
+    public ConvolutionMode Mode { get; init; } = ConvolutionMode.Valid;
 }
 
 /// <summary>
@@ -29,7 +29,7 @@ public ConvolutionMode Mode { get; init; } = ConvolutionMode.Valid;
 /// </summary>
 public enum ConvolutionMode
 {
-Valid,
-Same,
-Full
+    Valid,
+    Same,
+    Full
 }

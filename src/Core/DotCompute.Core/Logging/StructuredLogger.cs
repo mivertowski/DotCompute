@@ -35,17 +35,21 @@ public sealed class StructuredLogger : ILogger, IDisposable
         _options = options?.Value ?? new StructuredLoggingOptions();
         _logBuffer = logBuffer ?? throw new ArgumentNullException(nameof(logBuffer));
         _logEnricher = logEnricher ?? throw new ArgumentNullException(nameof(logEnricher));
-        
+
+
         _globalContext = new ConcurrentDictionary<string, object>();
-        
+
         // Initialize global context
+
         _globalContext["MachineName"] = Environment.MachineName;
         _globalContext["ProcessId"] = Environment.ProcessId;
         _globalContext["Application"] = "DotCompute";
         _globalContext["Version"] = typeof(StructuredLogger).Assembly.GetName().Version?.ToString() ?? "Unknown";
-        
+
         // Start periodic flush timer
-        _flushTimer = new Timer(FlushLogs, null, 
+
+        _flushTimer = new Timer(FlushLogs, null,
+
             TimeSpan.FromSeconds(_options.FlushIntervalSeconds),
             TimeSpan.FromSeconds(_options.FlushIntervalSeconds));
     }
@@ -57,7 +61,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
     /// <summary>
     /// Logs a structured message with performance metrics and correlation context.
     /// </summary>
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, 
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+
         Func<TState, Exception?, string> formatter)
     {
         if (!IsEnabled(logLevel) || _disposed)
@@ -70,14 +75,17 @@ public sealed class StructuredLogger : ILogger, IDisposable
         {
             // Create structured log entry
             var logEntry = CreateStructuredLogEntry(logLevel, eventId, state, exception, formatter);
-            
+
             // Enrich with contextual data
+
             _logEnricher.EnrichLogEntry(logEntry);
-            
+
             // Add to buffer for async processing
-            _logBuffer.AddLogEntry(logEntry);
-            
+
+            _ = _logBuffer.AddLogEntry(logEntry);
+
             // Also log through base logger for immediate visibility if needed
+
             if (_options.EnableSynchronousLogging || logLevel >= LogLevel.Error)
             {
                 _baseLogger.Log(logLevel, eventId, logEntry, exception, (entry, ex) => entry.FormattedMessage);
@@ -97,7 +105,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
         KernelPerformanceMetrics metrics, string? correlationId = null, Exception? exception = null)
     {
         ThrowIfDisposed();
-        
+
+
         var logEntry = new StructuredLogEntry
         {
             Timestamp = DateTimeOffset.UtcNow,
@@ -107,7 +116,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
             FormattedMessage = $"Kernel '{kernelName}' executed on device '{deviceId}' in {executionTime.TotalMilliseconds:F2}ms",
             Exception = exception,
             EventId = new EventId(1001, "KernelExecution"),
-            
+
+
             Properties = new Dictionary<string, object>
             {
                 ["KernelName"] = kernelName,
@@ -123,7 +133,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
                 ["PowerConsumption"] = metrics.PowerConsumption,
                 ["Success"] = exception == null
             },
-            
+
+
             PerformanceMetrics = new LogPerformanceMetrics
             {
                 ExecutionTimeMs = executionTime.TotalMilliseconds,
@@ -133,14 +144,16 @@ public sealed class StructuredLogger : ILogger, IDisposable
                 DeviceUtilizationPercentage = metrics.DeviceUtilization
             }
         };
-        
+
+
         if (!string.IsNullOrEmpty(correlationId))
         {
             logEntry.CorrelationId = correlationId;
             logEntry.Properties["CorrelationId"] = correlationId;
         }
-        
+
         // Add trace context if available
+
         var activity = Activity.Current;
         if (activity != null)
         {
@@ -149,11 +162,13 @@ public sealed class StructuredLogger : ILogger, IDisposable
             logEntry.Properties["TraceId"] = logEntry.TraceId;
             logEntry.Properties["SpanId"] = logEntry.SpanId;
         }
-        
+
+
         _logEnricher.EnrichLogEntry(logEntry);
-        _logBuffer.AddLogEntry(logEntry);
-        
+        _ = _logBuffer.AddLogEntry(logEntry);
+
         // Log critical kernel failures immediately
+
         if (exception != null)
         {
             _baseLogger.LogError(exception, "Kernel execution failed: {KernelName} on {DeviceId} after {ExecutionTime}ms",
@@ -168,9 +183,11 @@ public sealed class StructuredLogger : ILogger, IDisposable
         MemoryAccessMetrics metrics, string? correlationId = null, Exception? exception = null)
     {
         ThrowIfDisposed();
-        
+
+
         var bandwidthGBPerSec = bytes / (1024.0 * 1024 * 1024) / duration.TotalSeconds;
-        
+
+
         var logEntry = new StructuredLogEntry
         {
             Timestamp = DateTimeOffset.UtcNow,
@@ -181,7 +198,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
                               $"{bytes:N0} bytes in {duration.TotalMilliseconds:F2}ms ({bandwidthGBPerSec:F2} GB/s)",
             Exception = exception,
             EventId = new EventId(1002, "MemoryOperation"),
-            
+
+
             Properties = new Dictionary<string, object>
             {
                 ["OperationType"] = operationType,
@@ -198,15 +216,17 @@ public sealed class StructuredLogger : ILogger, IDisposable
                 ["Success"] = exception == null
             }
         };
-        
+
+
         if (!string.IsNullOrEmpty(correlationId))
         {
             logEntry.CorrelationId = correlationId;
             logEntry.Properties["CorrelationId"] = correlationId;
         }
-        
+
+
         _logEnricher.EnrichLogEntry(logEntry);
-        _logBuffer.AddLogEntry(logEntry);
+        _ = _logBuffer.AddLogEntry(logEntry);
     }
 
     /// <summary>
@@ -215,7 +235,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
     public void LogSystemPerformance(SystemPerformanceSnapshot snapshot, string? correlationId = null)
     {
         ThrowIfDisposed();
-        
+
+
         var logEntry = new StructuredLogEntry
         {
             Timestamp = snapshot.Timestamp,
@@ -226,7 +247,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
                               $"Memory {snapshot.UsedMemoryBytes:N0} bytes, " +
                               $"Threads {snapshot.ProcessThreadCount}",
             EventId = new EventId(1003, "SystemPerformance"),
-            
+
+
             Properties = new Dictionary<string, object>
             {
                 ["CpuUtilization"] = snapshot.CpuUtilizationPercent,
@@ -245,27 +267,31 @@ public sealed class StructuredLogger : ILogger, IDisposable
                 ["LogicalProcessorCount"] = snapshot.LogicalProcessorCount
             }
         };
-        
+
         // Note: Hardware counters would be added here if available
-        
+
+
         if (!string.IsNullOrEmpty(correlationId))
         {
             logEntry.CorrelationId = correlationId;
             logEntry.Properties["CorrelationId"] = correlationId;
         }
-        
+
+
         _logEnricher.EnrichLogEntry(logEntry);
-        _logBuffer.AddLogEntry(logEntry);
+        _ = _logBuffer.AddLogEntry(logEntry);
     }
 
     /// <summary>
     /// Logs distributed operation traces for cross-device analysis.
     /// </summary>
-    public void LogDistributedOperation(string operationName, string correlationId, 
+    public void LogDistributedOperation(string operationName, string correlationId,
+
         DistributedOperationMetrics metrics, Exception? exception = null)
     {
         ThrowIfDisposed();
-        
+
+
         var logEntry = new StructuredLogEntry
         {
             Timestamp = DateTimeOffset.UtcNow,
@@ -278,7 +304,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
             Exception = exception,
             EventId = new EventId(1004, "DistributedOperation"),
             CorrelationId = correlationId,
-            
+
+
             Properties = new Dictionary<string, object>
             {
                 ["OperationName"] = operationName,
@@ -292,26 +319,30 @@ public sealed class StructuredLogger : ILogger, IDisposable
                 ["Success"] = exception == null
             }
         };
-        
+
         // Add device-specific metrics
+
         foreach (var deviceMetric in metrics.DeviceMetrics)
         {
             logEntry.Properties[$"Device_{deviceMetric.Key}_Operations"] = deviceMetric.Value.OperationCount;
             logEntry.Properties[$"Device_{deviceMetric.Key}_Utilization"] = deviceMetric.Value.UtilizationPercentage;
         }
-        
+
+
         _logEnricher.EnrichLogEntry(logEntry);
-        _logBuffer.AddLogEntry(logEntry);
+        _ = _logBuffer.AddLogEntry(logEntry);
     }
 
     /// <summary>
     /// Logs security events for auditing and compliance.
     /// </summary>
-    public void LogSecurityEvent(SecurityEventType eventType, string description, 
+    public void LogSecurityEvent(SecurityEventType eventType, string description,
+
         Dictionary<string, object>? context = null, string? correlationId = null)
     {
         ThrowIfDisposed();
-        
+
+
         var logEntry = new StructuredLogEntry
         {
             Timestamp = DateTimeOffset.UtcNow,
@@ -320,7 +351,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
             Message = "Security event occurred",
             FormattedMessage = $"Security event: {eventType} - {description}",
             EventId = new EventId(2001, "SecurityEvent"),
-            
+
+
             Properties = new Dictionary<string, object>
             {
                 ["SecurityEventType"] = eventType.ToString(),
@@ -328,7 +360,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
                 ["Severity"] = GetSecuritySeverity(eventType)
             }
         };
-        
+
+
         if (context != null)
         {
             foreach (var item in context)
@@ -336,17 +369,20 @@ public sealed class StructuredLogger : ILogger, IDisposable
                 logEntry.Properties[item.Key] = item.Value;
             }
         }
-        
+
+
         if (!string.IsNullOrEmpty(correlationId))
         {
             logEntry.CorrelationId = correlationId;
             logEntry.Properties["CorrelationId"] = correlationId;
         }
-        
+
+
         _logEnricher.EnrichLogEntry(logEntry);
-        _logBuffer.AddLogEntry(logEntry);
-        
+        _ = _logBuffer.AddLogEntry(logEntry);
+
         // Log security violations immediately
+
         if (eventType == SecurityEventType.SecurityViolation)
         {
             _baseLogger.LogWarning("Security violation detected: {Description} with context {@Context}",
@@ -360,7 +396,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
     public async Task FlushAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         await _logBuffer.FlushAsync(cancellationToken);
     }
 
@@ -370,8 +407,9 @@ public sealed class StructuredLogger : ILogger, IDisposable
     public void AddGlobalProperty(string key, object value)
     {
         ThrowIfDisposed();
-        
-        _globalContext.AddOrUpdate(key, value, (k, v) => value);
+
+
+        _ = _globalContext.AddOrUpdate(key, value, (k, v) => value);
     }
 
     /// <summary>
@@ -380,11 +418,13 @@ public sealed class StructuredLogger : ILogger, IDisposable
     public void RemoveGlobalProperty(string key)
     {
         ThrowIfDisposed();
-        
-        _globalContext.TryRemove(key, out _);
+
+
+        _ = _globalContext.TryRemove(key, out _);
     }
 
-    private StructuredLogEntry CreateStructuredLogEntry<TState>(LogLevel logLevel, EventId eventId, 
+    private StructuredLogEntry CreateStructuredLogEntry<TState>(LogLevel logLevel, EventId eventId,
+
         TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         var logEntry = new StructuredLogEntry
@@ -398,24 +438,28 @@ public sealed class StructuredLogger : ILogger, IDisposable
             EventId = eventId,
             Properties = new Dictionary<string, object>()
         };
-        
+
         // Add global context
+
         foreach (var contextItem in _globalContext)
         {
             logEntry.Properties[contextItem.Key] = contextItem.Value;
         }
-        
+
         // Extract properties from state if it's a structured type
+
         ExtractPropertiesFromState(state, logEntry.Properties);
-        
+
         // Add trace context
+
         var activity = Activity.Current;
         if (activity != null)
         {
             logEntry.TraceId = activity.TraceId.ToString();
             logEntry.SpanId = activity.SpanId.ToString();
         }
-        
+
+
         return logEntry;
     }
 
@@ -507,7 +551,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
 
 
         _disposed = true;
-        
+
+
         try
         {
             // Final flush
@@ -517,7 +562,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
         {
             _baseLogger.LogError(ex, "Failed to perform final flush during dispose");
         }
-        
+
+
         _flushTimer?.Dispose();
     }
 }
@@ -525,7 +571,8 @@ public sealed class StructuredLogger : ILogger, IDisposable
 // Supporting data structures and enums
 public sealed class StructuredLoggingOptions
 {
-    public bool EnableSynchronousLogging { get; set; } = false;
+    public bool EnableSynchronousLogging { get; set; }
+
     public int FlushIntervalSeconds { get; set; } = 5;
     public int MaxBufferSize { get; set; } = 10000;
     public bool EnableSensitiveDataRedaction { get; set; } = true;

@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 using FluentAssertions;
 using DotCompute.Core.Compute;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Tests
 {
 

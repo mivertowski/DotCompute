@@ -19,7 +19,7 @@ namespace DotCompute.Core.Memory.P2P
         private readonly ConcurrentDictionary<string, P2PTransferHistory> _transferHistory;
         private readonly SemaphoreSlim _optimizerSemaphore;
         private readonly Timer? _adaptiveOptimizationTimer;
-        private P2POptimizationStatistics _statistics;
+        private readonly P2POptimizationStatistics _statistics;
         private bool _disposed;
 
         // Optimization configuration
@@ -62,7 +62,8 @@ namespace DotCompute.Core.Memory.P2P
                     if (pair.IsEnabled && pair.Capability.IsSupported)
                     {
                         var profileKey = GetOptimizationProfileKey(pair.Device1.Info.Id, pair.Device2.Info.Id);
-                        
+
+
                         var profile = new P2POptimizationProfile
                         {
                             SourceDeviceId = pair.Device1.Info.Id,
@@ -77,8 +78,9 @@ namespace DotCompute.Core.Memory.P2P
                         };
 
                         _optimizationProfiles[profileKey] = profile;
-                        
+
                         // Initialize transfer history
+
                         _transferHistory[profileKey] = new P2PTransferHistory
                         {
                             DevicePairKey = profileKey,
@@ -95,7 +97,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _optimizerSemaphore.Release();
+                _ = _optimizerSemaphore.Release();
             }
         }
 
@@ -195,10 +197,11 @@ namespace DotCompute.Core.Memory.P2P
             var remainingElements = totalElements % destinationBuffers.Length;
 
             var currentOffset = 0;
-            for (int i = 0; i < destinationBuffers.Length; i++)
+            for (var i = 0; i < destinationBuffers.Length; i++)
             {
                 var chunkSize = elementsPerBuffer + (i < remainingElements ? 1 : 0);
-                
+
+
                 var chunk = new P2PTransferChunk
                 {
                     ChunkId = i,
@@ -206,7 +209,8 @@ namespace DotCompute.Core.Memory.P2P
                     DestinationOffset = 0,
                     ElementCount = chunkSize,
                     EstimatedTimeMs = await EstimateChunkTransferTimeAsync(
-                        sourceBuffer.Accelerator, destinationBuffers[i].Accelerator, 
+                        sourceBuffer.Accelerator, destinationBuffers[i].Accelerator,
+
                         chunkSize * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken)
                 };
 
@@ -255,10 +259,11 @@ namespace DotCompute.Core.Memory.P2P
 
             // Calculate optimal gather strategy
             var currentDestOffset = 0;
-            for (int i = 0; i < sourceBuffers.Length; i++)
+            for (var i = 0; i < sourceBuffers.Length; i++)
             {
                 var sourceBuffer = sourceBuffers[i];
-                
+
+
                 var chunk = new P2PTransferChunk
                 {
                     ChunkId = i,
@@ -342,12 +347,13 @@ namespace DotCompute.Core.Memory.P2P
                 }
 
                 _logger.LogTrace("Transfer result recorded: {TransferSize} bytes, {ActualTime:F1}ms, {Throughput:F2} GB/s, efficiency {Efficiency:P1}",
-                    transferPlan.TransferSize, actualTransferTimeMs, actualThroughputGBps, 
+                    transferPlan.TransferSize, actualTransferTimeMs, actualThroughputGBps,
+
                     Math.Min(1.0, transferPlan.EstimatedTransferTimeMs / actualTransferTimeMs));
             }
             finally
             {
-                _optimizerSemaphore.Release();
+                _ = _optimizerSemaphore.Release();
             }
         }
 
@@ -423,7 +429,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _optimizerSemaphore.Release();
+                _ = _optimizerSemaphore.Release();
             }
         }
 
@@ -438,7 +444,8 @@ namespace DotCompute.Core.Memory.P2P
                 {
                     TotalOptimizedTransfers = _statistics.TotalOptimizedTransfers,
                     OptimizationProfilesActive = _optimizationProfiles.Count,
-                    AverageOptimizationScore = _optimizationProfiles.Values.Any() 
+                    AverageOptimizationScore = _optimizationProfiles.Values.Any()
+
                         ? _optimizationProfiles.Values.Average(p => p.OptimizationScore) : 0.0,
                     AverageEfficiencyScore = _optimizationProfiles.Values.Any()
                         ? _optimizationProfiles.Values.Average(p => p.EfficiencyScore) : 0.0,
@@ -481,8 +488,9 @@ namespace DotCompute.Core.Memory.P2P
             };
 
             _optimizationProfiles[profileKey] = profile;
-            
+
             // Initialize transfer history
+
             _transferHistory[profileKey] = new P2PTransferHistory
             {
                 DevicePairKey = profileKey,
@@ -496,7 +504,7 @@ namespace DotCompute.Core.Memory.P2P
             return profile;
         }
 
-        private P2PTransferStrategy SelectOptimalStrategy(
+        private static P2PTransferStrategy SelectOptimalStrategy(
             P2POptimizationProfile profile,
             long transferSize,
             P2PTransferOptions options)
@@ -530,7 +538,7 @@ namespace DotCompute.Core.Memory.P2P
             return strategy;
         }
 
-        private int SelectOptimalChunkSize(
+        private static int SelectOptimalChunkSize(
             P2POptimizationProfile profile,
             long transferSize,
             P2PTransferOptions options)
@@ -556,7 +564,7 @@ namespace DotCompute.Core.Memory.P2P
             return Math.Min(baseChunkSize, options.PreferredChunkSize);
         }
 
-        private int SelectOptimalPipelineDepth(
+        private static int SelectOptimalPipelineDepth(
             P2POptimizationProfile profile,
             long transferSize,
             P2PTransferOptions options)
@@ -576,11 +584,12 @@ namespace DotCompute.Core.Memory.P2P
             return Math.Min(basePipelineDepth, options.PipelineDepth);
         }
 
-        private double EstimateTransferTime(P2POptimizationProfile profile, long transferSize)
+        private static double EstimateTransferTime(P2POptimizationProfile profile, long transferSize)
         {
             var bandwidthGBps = profile.P2PCapability.EstimatedBandwidthGBps * profile.EfficiencyScore;
             var transferSizeGB = transferSize / (1024.0 * 1024.0 * 1024.0);
-            
+
+
             var baseTransferTime = (transferSizeGB / bandwidthGBps) * 1000; // ms
 
             // Add latency overhead
@@ -595,7 +604,7 @@ namespace DotCompute.Core.Memory.P2P
             return baseTransferTime + latencyOverhead;
         }
 
-        private double CalculateOptimizationScore(P2POptimizationProfile profile, long transferSize)
+        private static double CalculateOptimizationScore(P2POptimizationProfile profile, long transferSize)
         {
             var bandwidthScore = Math.Min(1.0, profile.P2PCapability.EstimatedBandwidthGBps / 100.0);
             var efficiencyScore = profile.EfficiencyScore;
@@ -627,12 +636,14 @@ namespace DotCompute.Core.Memory.P2P
                 {
                     // Get best performing configuration
                     var bestTransfer = similarTransfers.OrderByDescending(r => r.ThroughputGBps).First();
-                    
+
+
                     if (bestTransfer.Strategy != transferPlan.Strategy && bestTransfer.ThroughputGBps > 0)
                     {
                         transferPlan.Strategy = bestTransfer.Strategy;
                         transferPlan.ChunkSize = bestTransfer.ChunkSize;
-                        
+
+
                         _logger.LogTrace("Applied history-based optimization: strategy changed to {Strategy} based on past performance",
                             bestTransfer.Strategy);
                     }
@@ -689,10 +700,12 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken)
         {
             var capability = await _capabilityMatrix.GetP2PCapabilityAsync(sourceDevice, targetDevice, cancellationToken);
-            
+
+
             var transferSizeGB = transferSize / (1024.0 * 1024.0 * 1024.0);
             var baseTime = (transferSizeGB / capability.EstimatedBandwidthGBps) * 1000; // ms
-            
+
+
             var latency = capability.ConnectionType switch
             {
                 P2PConnectionType.NVLink => 0.5,
@@ -757,7 +770,7 @@ namespace DotCompute.Core.Memory.P2P
             };
         }
 
-        private double CalculateInitialOptimizationScore(P2PConnectionCapability capability)
+        private static double CalculateInitialOptimizationScore(P2PConnectionCapability capability)
         {
             if (!capability.IsSupported)
             {
@@ -778,7 +791,7 @@ namespace DotCompute.Core.Memory.P2P
             return (bandwidthScore + connectionScore) / 2.0;
         }
 
-        private P2PTransferStrategy SuggestAlternativeStrategy(P2POptimizationProfile profile)
+        private static P2PTransferStrategy SuggestAlternativeStrategy(P2POptimizationProfile profile)
         {
             return profile.PreferredStrategy switch
             {
@@ -790,7 +803,7 @@ namespace DotCompute.Core.Memory.P2P
             };
         }
 
-        private double EstimateImprovementPotential(P2POptimizationProfile profile) => (1.0 - profile.EfficiencyScore) * 0.5; // Up to 50% improvement potential
+        private static double EstimateImprovementPotential(P2POptimizationProfile profile) => (1.0 - profile.EfficiencyScore) * 0.5; // Up to 50% improvement potential
 
         private void UpdateOptimizationStatistics(P2PTransferPlan transferPlan)
         {

@@ -21,7 +21,8 @@ public static class MetalValidation
     public static ValidationResult ValidateConfiguration(ILogger? logger = null)
     {
         var result = new ValidationResult();
-        
+
+
         try
         {
             // Check platform compatibility
@@ -40,7 +41,8 @@ public static class MetalValidation
                 result.AddError($"macOS 10.13 or later required, found {osVersion}");
                 return result;
             }
-            
+
+
             result.AddInfo($"macOS version: {osVersion}");
 
             // Check Metal availability
@@ -52,7 +54,8 @@ public static class MetalValidation
                     result.AddError("Metal is not supported on this system");
                     return result;
                 }
-                
+
+
                 result.AddInfo("Metal framework is available");
             }
             catch (DllNotFoundException ex)
@@ -73,11 +76,12 @@ public static class MetalValidation
                 result.AddError("No Metal devices found");
                 return result;
             }
-            
+
+
             result.AddInfo($"Found {deviceCount} Metal device(s)");
 
             // Validate each device
-            for (int i = 0; i < deviceCount; i++)
+            for (var i = 0; i < deviceCount; i++)
             {
                 var deviceResult = ValidateDevice(i, logger);
                 result.Merge(deviceResult);
@@ -115,7 +119,7 @@ public static class MetalValidation
     public static ValidationResult ValidateDevice(int deviceIndex, ILogger? logger = null)
     {
         var result = new ValidationResult();
-        IntPtr device = IntPtr.Zero;
+        var device = IntPtr.Zero;
 
         try
         {
@@ -188,9 +192,9 @@ public static class MetalValidation
     public static ValidationResult TestBasicFunctionality(ILogger? logger = null)
     {
         var result = new ValidationResult();
-        IntPtr device = IntPtr.Zero;
-        IntPtr commandQueue = IntPtr.Zero;
-        IntPtr buffer = IntPtr.Zero;
+        var device = IntPtr.Zero;
+        var commandQueue = IntPtr.Zero;
+        var buffer = IntPtr.Zero;
 
         try
         {
@@ -276,9 +280,9 @@ public static class MetalValidation
     public static ValidationResult TestShaderCompilation(IntPtr device, ILogger? logger = null)
     {
         var result = new ValidationResult();
-        IntPtr library = IntPtr.Zero;
-        IntPtr function = IntPtr.Zero;
-        IntPtr pipelineState = IntPtr.Zero;
+        var library = IntPtr.Zero;
+        var function = IntPtr.Zero;
+        var pipelineState = IntPtr.Zero;
 
         try
         {
@@ -466,42 +470,43 @@ public sealed class ValidationResult
     public string GenerateReport()
     {
         var report = new StringBuilder();
-        
-        report.AppendLine("Metal Backend Validation Report");
-        report.AppendLine(new string('=', 40));
-        report.AppendLine();
 
-        report.AppendLine($"Status: {(IsValid ? "PASSED" : "FAILED")}");
-        report.AppendLine($"Errors: {ErrorCount}");
-        report.AppendLine($"Warnings: {WarningCount}");
-        report.AppendLine();
+
+        _ = report.AppendLine("Metal Backend Validation Report");
+        _ = report.AppendLine(new string('=', 40));
+        _ = report.AppendLine();
+
+        _ = report.AppendLine($"Status: {(IsValid ? "PASSED" : "FAILED")}");
+        _ = report.AppendLine($"Errors: {ErrorCount}");
+        _ = report.AppendLine($"Warnings: {WarningCount}");
+        _ = report.AppendLine();
 
         if (_errors.Count > 0)
         {
-            report.AppendLine("ERRORS:");
+            _ = report.AppendLine("ERRORS:");
             foreach (var error in _errors)
             {
-                report.AppendLine($"  ❌ {error}");
+                _ = report.AppendLine($"  ❌ {error}");
             }
-            report.AppendLine();
+            _ = report.AppendLine();
         }
 
         if (_warnings.Count > 0)
         {
-            report.AppendLine("WARNINGS:");
+            _ = report.AppendLine("WARNINGS:");
             foreach (var warning in _warnings)
             {
-                report.AppendLine($"  ⚠️  {warning}");
+                _ = report.AppendLine($"  ⚠️  {warning}");
             }
-            report.AppendLine();
+            _ = report.AppendLine();
         }
 
         if (_info.Count > 0)
         {
-            report.AppendLine("INFORMATION:");
+            _ = report.AppendLine("INFORMATION:");
             foreach (var info in _info)
             {
-                report.AppendLine($"  ℹ️  {info}");
+                _ = report.AppendLine($"  ℹ️  {info}");
             }
         }
 

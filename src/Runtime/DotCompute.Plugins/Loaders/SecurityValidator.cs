@@ -119,10 +119,13 @@ public class SecurityValidator
             await CheckVulnerabilityDatabaseAsync(manifest, scanResult, cancellationToken);
 
             // Cache the scan result
-            _scanCache.TryAdd(cacheKey, new SecurityScanCache 
-            { 
-                ScanResult = scanResult, 
-                CachedAt = DateTimeOffset.UtcNow 
+            _ = _scanCache.TryAdd(cacheKey, new SecurityScanCache
+            {
+
+                ScanResult = scanResult,
+
+                CachedAt = DateTimeOffset.UtcNow
+
             });
 
             _logger.LogInformation("Vulnerability scan completed for plugin: {PluginId}. Vulnerabilities found: {Count}",
@@ -150,7 +153,8 @@ public class SecurityValidator
         // Check if plugin is from allowed sources
         if (_securityPolicy.AllowedSources?.Any() == true)
         {
-            if (string.IsNullOrEmpty(manifest.PackageSource) || 
+            if (string.IsNullOrEmpty(manifest.PackageSource) ||
+
                 !_securityPolicy.AllowedSources.Contains(manifest.PackageSource, StringComparer.OrdinalIgnoreCase))
             {
                 result.ValidationErrors.Add($"Plugin source '{manifest.PackageSource}' is not in the allowed sources list");
@@ -160,7 +164,8 @@ public class SecurityValidator
         // Check if plugin is from blocked sources
         if (_securityPolicy.BlockedSources?.Any() == true)
         {
-            if (!string.IsNullOrEmpty(manifest.PackageSource) && 
+            if (!string.IsNullOrEmpty(manifest.PackageSource) &&
+
                 _securityPolicy.BlockedSources.Contains(manifest.PackageSource, StringComparer.OrdinalIgnoreCase))
             {
                 result.ValidationErrors.Add($"Plugin source '{manifest.PackageSource}' is blocked");
@@ -178,7 +183,8 @@ public class SecurityValidator
         }
 
         // Check for unsafe features
-        if (_securityPolicy.BlockUnsafeCode && manifest.Metadata?.ContainsKey("AllowUnsafeBlocks") == true && 
+        if (_securityPolicy.BlockUnsafeCode && manifest.Metadata?.ContainsKey("AllowUnsafeBlocks") == true &&
+
             manifest.Metadata["AllowUnsafeBlocks"].Equals("true", StringComparison.OrdinalIgnoreCase))
         {
             result.ValidationErrors.Add("Plugin uses unsafe code which is not allowed");
@@ -223,7 +229,8 @@ public class SecurityValidator
                 // Check against trusted publishers
                 if (_securityPolicy.TrustedPublishers?.Any() == true)
                 {
-                    if (string.IsNullOrEmpty(signatureInfo.Publisher) || 
+                    if (string.IsNullOrEmpty(signatureInfo.Publisher) ||
+
                         !_securityPolicy.TrustedPublishers.Contains(signatureInfo.Publisher, StringComparer.OrdinalIgnoreCase))
                     {
                         result.ValidationErrors.Add($"Assembly publisher '{signatureInfo.Publisher}' is not in the trusted publishers list");
@@ -268,14 +275,16 @@ public class SecurityValidator
             // Load and validate the assembly using proper PE parsing
             using var fileStream = new FileStream(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var authenticodeResult = ValidateAuthenticode(fileStream);
-            
+
+
             signature.IsSigned = authenticodeResult.IsSigned;
             signature.IsValid = authenticodeResult.IsValid;
             signature.Publisher = authenticodeResult.Publisher;
             signature.CertificateThumbprint = authenticodeResult.CertificateThumbprint;
             signature.SigningAlgorithm = authenticodeResult.SigningAlgorithm;
-            
+
             // Validate strong name if required
+
             if (_securityPolicy?.RequireStrongName == true)
             {
                 var strongNameResult = ValidateStrongName(assemblyPath);
@@ -290,7 +299,8 @@ public class SecurityValidator
             // Check against trusted publishers
             if (signature.IsSigned && _securityPolicy?.TrustedPublishers?.Any() == true)
             {
-                if (string.IsNullOrEmpty(signature.CertificateThumbprint) || 
+                if (string.IsNullOrEmpty(signature.CertificateThumbprint) ||
+
                     !_securityPolicy.TrustedPublishers.Contains(signature.CertificateThumbprint, StringComparer.OrdinalIgnoreCase))
                 {
                     signature.ValidationErrors.Add($"Publisher certificate thumbprint '{signature.CertificateThumbprint}' is not in the trusted publishers list");
@@ -303,8 +313,11 @@ public class SecurityValidator
         catch (Exception ex)
         {
             _logger.LogError(ex, "Critical error during signature verification for assembly: {AssemblyPath}", assemblyPath);
-            return new PluginSignature { 
-                IsSigned = false, 
+            return new PluginSignature
+            {
+
+                IsSigned = false,
+
                 IsValid = false,
                 ValidationErrors = new List<string> { $"Signature verification failed: {ex.Message}" }
             };
@@ -320,9 +333,11 @@ public class SecurityValidator
         {
             var fullPath = Path.GetFullPath(filePath);
             var fileName = Path.GetFileName(fullPath);
-            
+
             // Check for directory traversal patterns
-            if (filePath.Contains("..") || filePath.Contains("~") || 
+
+            if (filePath.Contains("..") || filePath.Contains("~") ||
+
                 fileName.StartsWith(".") || fileName.Contains(":"))
             {
                 return false;
@@ -381,13 +396,15 @@ public class SecurityValidator
     private AuthenticodeResult ValidatePESignature(Stream stream)
     {
         var result = new AuthenticodeResult();
-        
+
+
         try
         {
             // Basic PE header validation
             using var reader = new BinaryReader(stream);
-            
+
             // Check DOS header
+
             stream.Position = 0;
             var dosSignature = reader.ReadUInt16();
             if (dosSignature != 0x5A4D) // "MZ"
@@ -399,8 +416,9 @@ public class SecurityValidator
             // Get PE header offset
             stream.Position = 0x3C;
             var peOffset = reader.ReadInt32();
-            
+
             // Validate PE offset bounds
+
             if (peOffset < 0x40 || peOffset >= stream.Length - 4)
             {
                 result.ErrorMessage = "Invalid PE header offset";
@@ -420,7 +438,8 @@ public class SecurityValidator
             // In production, this would check certificate table and validate signatures
             result.IsSigned = false; // Would check certificate table
             result.IsValid = true;   // Basic PE structure is valid
-            
+
+
             return result;
         }
         catch (Exception ex)
@@ -439,11 +458,13 @@ public class SecurityValidator
         {
             var assembly = Assembly.LoadFrom(assemblyPath);
             var publicKey = assembly.GetName().GetPublicKey();
-            
+
+
             return new StrongNameResult
             {
                 IsValid = publicKey != null && publicKey.Length > 0,
-                PublicKeyToken = assembly.GetName().GetPublicKeyToken() != null ? 
+                PublicKeyToken = assembly.GetName().GetPublicKeyToken() != null ?
+
                     Convert.ToHexString(assembly.GetName().GetPublicKeyToken()!) : null,
                 ErrorMessage = publicKey == null ? "No public key found" : null
             };
@@ -471,7 +492,8 @@ public class SecurityValidator
         try
         {
             var analysis = await _codeAnalyzer.AnalyzeAssemblyAsync(manifest.AssemblyPath, cancellationToken);
-            
+
+
             foreach (var finding in analysis.SuspiciousPatterns)
             {
                 switch (finding.Severity)
@@ -526,7 +548,8 @@ public class SecurityValidator
     private async Task ScanPackageAsync(string packageId, string version, SecurityScanResult scanResult, CancellationToken cancellationToken)
     {
         var vulnerabilities = await _vulnerabilityDatabase.GetVulnerabilitiesAsync(packageId, version, cancellationToken);
-        
+
+
         foreach (var vulnerability in vulnerabilities)
         {
             switch (vulnerability.Severity)
@@ -554,7 +577,8 @@ public class SecurityValidator
     {
         // Parse version range to get specific versions to scan
         var versionsToScan = await GetVersionsToScanAsync(dependency, cancellationToken);
-        
+
+
         foreach (var version in versionsToScan)
         {
             await ScanPackageAsync(dependency.Id, version, scanResult, cancellationToken);
@@ -575,9 +599,10 @@ public class SecurityValidator
     /// <summary>
     /// Checks the vulnerability database for known issues.
     /// </summary>
-    private async Task CheckVulnerabilityDatabaseAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken) =>
+    private async Task CheckVulnerabilityDatabaseAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken)
         // Check if the plugin or its dependencies have known vulnerabilities
-        await _vulnerabilityDatabase.CheckPluginAsync(manifest, scanResult, cancellationToken);
+
+        => await _vulnerabilityDatabase.CheckPluginAsync(manifest, scanResult, cancellationToken);
 }
 
 /// <summary>
@@ -704,8 +729,9 @@ public class SecurityScanResult
     /// <summary>
     /// Gets all vulnerabilities found.
     /// </summary>
-    public IEnumerable<SecurityVulnerability> AllVulnerabilities => 
-        CriticalVulnerabilities.Concat(HighRiskVulnerabilities)
+    public IEnumerable<SecurityVulnerability> AllVulnerabilities
+
+        => CriticalVulnerabilities.Concat(HighRiskVulnerabilities)
             .Concat(MediumRiskVulnerabilities)
             .Concat(LowRiskVulnerabilities);
 
@@ -862,8 +888,9 @@ internal class VulnerabilityDatabase
     {
         // This would query a real vulnerability database (NVD, GitHub Advisory Database, etc.)
         await Task.Delay(10, cancellationToken);
-        
+
         // Return mock vulnerabilities for testing
+
         return packageId.ToUpperInvariant() switch
         {
             "VULNERABLEPACKAGE" => [
@@ -883,9 +910,10 @@ internal class VulnerabilityDatabase
         };
     }
 
-    public async Task CheckPluginAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken) =>
+    public async Task CheckPluginAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken)
         // Check plugin-specific vulnerabilities
-        await Task.CompletedTask;
+
+        => await Task.CompletedTask;
 }
 
 /// <summary>

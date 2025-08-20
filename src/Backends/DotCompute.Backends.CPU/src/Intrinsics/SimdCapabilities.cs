@@ -14,186 +14,186 @@ namespace DotCompute.Backends.CPU.Intrinsics;
 /// </summary>
 public static class SimdCapabilities
 {
-/// <summary>
-/// Gets whether any form of SIMD is supported.
-/// </summary>
-public static bool IsSupported { get; } = Vector.IsHardwareAccelerated;
+    /// <summary>
+    /// Gets whether any form of SIMD is supported.
+    /// </summary>
+    public static bool IsSupported { get; } = Vector.IsHardwareAccelerated;
 
-/// <summary>
-/// Gets the preferred vector width in bits.
-/// </summary>
-public static int PreferredVectorWidth { get; } = Vector256.IsHardwareAccelerated ? 256 :
-                                                  Vector128.IsHardwareAccelerated ? 128 :
-                                                  Vector.IsHardwareAccelerated ? Vector<byte>.Count * 8 : 64;
+    /// <summary>
+    /// Gets the preferred vector width in bits.
+    /// </summary>
+    public static int PreferredVectorWidth { get; } = Vector256.IsHardwareAccelerated ? 256 :
+                                                      Vector128.IsHardwareAccelerated ? 128 :
+                                                      Vector.IsHardwareAccelerated ? Vector<byte>.Count * 8 : 64;
 
-/// <summary>
-/// Gets information about x86/x64 SIMD support.
-/// </summary>
-public static X86SimdInfo X86 { get; } = new();
+    /// <summary>
+    /// Gets information about x86/x64 SIMD support.
+    /// </summary>
+    public static X86SimdInfo X86 { get; } = new();
 
-/// <summary>
-/// Gets information about ARM SIMD support.
-/// </summary>
-public static ArmSimdInfo Arm { get; } = new();
+    /// <summary>
+    /// Gets information about ARM SIMD support.
+    /// </summary>
+    public static ArmSimdInfo Arm { get; } = new();
 
-/// <summary>
-/// Gets a summary of all supported SIMD instruction sets.
-/// </summary>
-public static SimdSummary GetSummary() => new()
-{
-    IsHardwareAccelerated = IsSupported,
-    PreferredVectorWidth = PreferredVectorWidth,
-    SupportedInstructionSets = GetSupportedInstructionSets()
-};
-
-private static HashSet<string> GetSupportedInstructionSets()
-{
-    var sets = new HashSet<string>();
-
-    // x86/x64 instruction sets
-    if (Sse.IsSupported)
+    /// <summary>
+    /// Gets a summary of all supported SIMD instruction sets.
+    /// </summary>
+    public static SimdSummary GetSummary() => new()
     {
-        sets.Add("SSE");
-    }
+        IsHardwareAccelerated = IsSupported,
+        PreferredVectorWidth = PreferredVectorWidth,
+        SupportedInstructionSets = GetSupportedInstructionSets()
+    };
 
-    if (Sse2.IsSupported)
+    private static HashSet<string> GetSupportedInstructionSets()
     {
-        sets.Add("SSE2");
-    }
+        var sets = new HashSet<string>();
 
-    if (Sse3.IsSupported)
-    {
-        sets.Add("SSE3");
-    }
+        // x86/x64 instruction sets
+        if (Sse.IsSupported)
+        {
+            _ = sets.Add("SSE");
+        }
 
-    if (Ssse3.IsSupported)
-    {
-        sets.Add("SSSE3");
-    }
+        if (Sse2.IsSupported)
+        {
+            _ = sets.Add("SSE2");
+        }
 
-    if (Sse41.IsSupported)
-    {
-        sets.Add("SSE4.1");
-    }
+        if (Sse3.IsSupported)
+        {
+            _ = sets.Add("SSE3");
+        }
 
-    if (Sse42.IsSupported)
-    {
-        sets.Add("SSE4.2");
-    }
+        if (Ssse3.IsSupported)
+        {
+            _ = sets.Add("SSSE3");
+        }
 
-    if (Avx.IsSupported)
-    {
-        sets.Add("AVX");
-    }
+        if (Sse41.IsSupported)
+        {
+            _ = sets.Add("SSE4.1");
+        }
 
-    if (Avx2.IsSupported)
-    {
-        sets.Add("AVX2");
-    }
+        if (Sse42.IsSupported)
+        {
+            _ = sets.Add("SSE4.2");
+        }
 
-    if (Avx512F.IsSupported)
-    {
-        sets.Add("AVX512F");
-    }
+        if (Avx.IsSupported)
+        {
+            _ = sets.Add("AVX");
+        }
 
-    if (Avx512BW.IsSupported)
-    {
-        sets.Add("AVX512BW");
-    }
+        if (Avx2.IsSupported)
+        {
+            _ = sets.Add("AVX2");
+        }
 
-    if (Avx512CD.IsSupported)
-    {
-        sets.Add("AVX512CD");
-    }
+        if (Avx512F.IsSupported)
+        {
+            _ = sets.Add("AVX512F");
+        }
 
-    if (Avx512DQ.IsSupported)
-    {
-        sets.Add("AVX512DQ");
-    }
+        if (Avx512BW.IsSupported)
+        {
+            _ = sets.Add("AVX512BW");
+        }
 
-    if (Avx512Vbmi.IsSupported)
-    {
-        sets.Add("AVX512VBMI");
-    }
+        if (Avx512CD.IsSupported)
+        {
+            _ = sets.Add("AVX512CD");
+        }
 
-    if (Fma.IsSupported)
-    {
-        sets.Add("FMA");
-    }
+        if (Avx512DQ.IsSupported)
+        {
+            _ = sets.Add("AVX512DQ");
+        }
 
-    if (Bmi1.IsSupported)
-    {
-        sets.Add("BMI1");
-    }
+        if (Avx512Vbmi.IsSupported)
+        {
+            _ = sets.Add("AVX512VBMI");
+        }
 
-    if (Bmi2.IsSupported)
-    {
-        sets.Add("BMI2");
-    }
+        if (Fma.IsSupported)
+        {
+            _ = sets.Add("FMA");
+        }
 
-    if (Popcnt.IsSupported)
-    {
-        sets.Add("POPCNT");
-    }
+        if (Bmi1.IsSupported)
+        {
+            _ = sets.Add("BMI1");
+        }
 
-    if (Lzcnt.IsSupported)
-    {
-        sets.Add("LZCNT");
-    }
+        if (Bmi2.IsSupported)
+        {
+            _ = sets.Add("BMI2");
+        }
 
-    // ARM instruction sets
-    if (AdvSimd.IsSupported)
-    {
-        sets.Add("NEON");
-    }
+        if (Popcnt.IsSupported)
+        {
+            _ = sets.Add("POPCNT");
+        }
 
-    if (AdvSimd.Arm64.IsSupported)
-    {
-        sets.Add("NEON-ARM64");
-    }
+        if (Lzcnt.IsSupported)
+        {
+            _ = sets.Add("LZCNT");
+        }
 
-    if (ArmBase.IsSupported)
-    {
-        sets.Add("ARM-BASE");
-    }
+        // ARM instruction sets
+        if (AdvSimd.IsSupported)
+        {
+            _ = sets.Add("NEON");
+        }
 
-    if (ArmBase.Arm64.IsSupported)
-    {
-        sets.Add("ARM64-BASE");
-    }
+        if (AdvSimd.Arm64.IsSupported)
+        {
+            _ = sets.Add("NEON-ARM64");
+        }
 
-    if (Crc32.IsSupported)
-    {
-        sets.Add("CRC32");
-    }
+        if (ArmBase.IsSupported)
+        {
+            _ = sets.Add("ARM-BASE");
+        }
 
-    if (Crc32.Arm64.IsSupported)
-    {
-        sets.Add("CRC32-ARM64");
-    }
+        if (ArmBase.Arm64.IsSupported)
+        {
+            _ = sets.Add("ARM64-BASE");
+        }
 
-    if (Dp.IsSupported)
-    {
-        sets.Add("DP");
-    }
+        if (Crc32.IsSupported)
+        {
+            _ = sets.Add("CRC32");
+        }
 
-    if (Rdm.IsSupported)
-    {
-        sets.Add("RDM");
-    }
+        if (Crc32.Arm64.IsSupported)
+        {
+            _ = sets.Add("CRC32-ARM64");
+        }
 
-    if (Sha1.IsSupported)
-    {
-        sets.Add("SHA1");
-    }
+        if (Dp.IsSupported)
+        {
+            _ = sets.Add("DP");
+        }
 
-    if (Sha256.IsSupported)
-    {
-        sets.Add("SHA256");
-    }
+        if (Rdm.IsSupported)
+        {
+            _ = sets.Add("RDM");
+        }
 
-    return sets;
-}
+        if (Sha1.IsSupported)
+        {
+            _ = sets.Add("SHA1");
+        }
+
+        if (Sha256.IsSupported)
+        {
+            _ = sets.Add("SHA256");
+        }
+
+        return sets;
+    }
 }
 
 /// <summary>
@@ -201,23 +201,23 @@ private static HashSet<string> GetSupportedInstructionSets()
 /// </summary>
 public sealed class X86SimdInfo
 {
-public static bool HasSse => Sse.IsSupported;
-public static bool HasSse2 => Sse2.IsSupported;
-public static bool HasSse3 => Sse3.IsSupported;
-public static bool HasSsse3 => Ssse3.IsSupported;
-public static bool HasSse41 => Sse41.IsSupported;
-public static bool HasSse42 => Sse42.IsSupported;
-public static bool HasAvx => Avx.IsSupported;
-public static bool HasAvx2 => Avx2.IsSupported;
-public static bool HasAvx512F => Avx512F.IsSupported;
-public static bool HasAvx512BW => Avx512BW.IsSupported;
-public static bool HasFma => Fma.IsSupported;
-public static bool HasBmi1 => Bmi1.IsSupported;
-public static bool HasBmi2 => Bmi2.IsSupported;
-public static bool HasPopcnt => Popcnt.IsSupported;
-public static bool HasLzcnt => Lzcnt.IsSupported;
+    public static bool HasSse => Sse.IsSupported;
+    public static bool HasSse2 => Sse2.IsSupported;
+    public static bool HasSse3 => Sse3.IsSupported;
+    public static bool HasSsse3 => Ssse3.IsSupported;
+    public static bool HasSse41 => Sse41.IsSupported;
+    public static bool HasSse42 => Sse42.IsSupported;
+    public static bool HasAvx => Avx.IsSupported;
+    public static bool HasAvx2 => Avx2.IsSupported;
+    public static bool HasAvx512F => Avx512F.IsSupported;
+    public static bool HasAvx512BW => Avx512BW.IsSupported;
+    public static bool HasFma => Fma.IsSupported;
+    public static bool HasBmi1 => Bmi1.IsSupported;
+    public static bool HasBmi2 => Bmi2.IsSupported;
+    public static bool HasPopcnt => Popcnt.IsSupported;
+    public static bool HasLzcnt => Lzcnt.IsSupported;
 
-public static int MaxVectorWidth => HasAvx512F ? 512 : HasAvx ? 256 : HasSse ? 128 : 0;
+    public static int MaxVectorWidth => HasAvx512F ? 512 : HasAvx ? 256 : HasSse ? 128 : 0;
 }
 
 /// <summary>
@@ -225,16 +225,16 @@ public static int MaxVectorWidth => HasAvx512F ? 512 : HasAvx ? 256 : HasSse ? 1
 /// </summary>
 public sealed class ArmSimdInfo
 {
-public static bool HasNeon => AdvSimd.IsSupported;
-public static bool HasNeonArm64 => AdvSimd.Arm64.IsSupported;
-public static bool HasCrc32 => Crc32.IsSupported;
-public static bool HasAes => System.Runtime.Intrinsics.Arm.Aes.IsSupported;
-public static bool HasSha1 => Sha1.IsSupported;
-public static bool HasSha256 => Sha256.IsSupported;
-public static bool HasDp => Dp.IsSupported;
-public static bool HasRdm => Rdm.IsSupported;
+    public static bool HasNeon => AdvSimd.IsSupported;
+    public static bool HasNeonArm64 => AdvSimd.Arm64.IsSupported;
+    public static bool HasCrc32 => Crc32.IsSupported;
+    public static bool HasAes => System.Runtime.Intrinsics.Arm.Aes.IsSupported;
+    public static bool HasSha1 => Sha1.IsSupported;
+    public static bool HasSha256 => Sha256.IsSupported;
+    public static bool HasDp => Dp.IsSupported;
+    public static bool HasRdm => Rdm.IsSupported;
 
-public static int MaxVectorWidth => HasNeon ? 128 : 0;
+    public static int MaxVectorWidth => HasNeon ? 128 : 0;
 }
 
 /// <summary>
@@ -242,23 +242,23 @@ public static int MaxVectorWidth => HasNeon ? 128 : 0;
 /// </summary>
 public sealed class SimdSummary
 {
-public required bool IsHardwareAccelerated { get; init; }
-public required int PreferredVectorWidth { get; init; }
-public required IReadOnlySet<string> SupportedInstructionSets { get; init; }
+    public required bool IsHardwareAccelerated { get; init; }
+    public required int PreferredVectorWidth { get; init; }
+    public required IReadOnlySet<string> SupportedInstructionSets { get; init; }
 
-// Helper properties for quick checks
-public bool SupportsSse2 => SupportedInstructionSets.Contains("SSE2");
-public bool SupportsAvx2 => SupportedInstructionSets.Contains("AVX2");
-public bool SupportsAvx512 => SupportedInstructionSets.Contains("AVX512F");
-public bool SupportsAdvSimd => SupportedInstructionSets.Contains("NEON");
+    // Helper properties for quick checks
+    public bool SupportsSse2 => SupportedInstructionSets.Contains("SSE2");
+    public bool SupportsAvx2 => SupportedInstructionSets.Contains("AVX2");
+    public bool SupportsAvx512 => SupportedInstructionSets.Contains("AVX512F");
+    public bool SupportsAdvSimd => SupportedInstructionSets.Contains("NEON");
 
-public override string ToString()
-{
-    if (!IsHardwareAccelerated)
+    public override string ToString()
     {
-        return "No SIMD support detected";
-    }
+        if (!IsHardwareAccelerated)
+        {
+            return "No SIMD support detected";
+        }
 
-    return $"SIMD: {PreferredVectorWidth}-bit vectors, Instructions: {string.Join(", ", SupportedInstructionSets)}";
-}
+        return $"SIMD: {PreferredVectorWidth}-bit vectors, Instructions: {string.Join(", ", SupportedInstructionSets)}";
+    }
 }

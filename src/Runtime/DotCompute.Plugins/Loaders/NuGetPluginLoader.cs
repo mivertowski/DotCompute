@@ -190,10 +190,12 @@ public class NuGetPluginLoader : IDisposable
 
             // Load the plugin assembly
             var assembly = await LoadAssemblyAsync(loadContext, manifest.AssemblyPath, cancellationToken);
-            
+
             // Create plugin instance
+
             var plugin = await CreatePluginInstanceAsync(assembly, manifest, cancellationToken);
-            
+
+
             var loadedPlugin = new LoadedNuGetPlugin
             {
                 Manifest = manifest,
@@ -204,7 +206,7 @@ public class NuGetPluginLoader : IDisposable
                 LoadedAt = DateTimeOffset.UtcNow
             };
 
-            _loadedPlugins.TryAdd(manifest.Id, loadedPlugin);
+            _ = _loadedPlugins.TryAdd(manifest.Id, loadedPlugin);
 
             LogSuccessfullyLoadedPlugin(_logger, manifest.Id, null);
             return NuGetPluginLoadResult.Success(loadedPlugin);
@@ -216,7 +218,7 @@ public class NuGetPluginLoader : IDisposable
         }
         finally
         {
-            _loadSemaphore.Release();
+            _ = _loadSemaphore.Release();
         }
     }
 
@@ -234,14 +236,17 @@ public class NuGetPluginLoader : IDisposable
         {
             // Basic manifest validation
             ValidateManifest(manifest, result);
-            
+
             // Security validation
+
             await _securityValidator.ValidateAsync(manifest, result, cancellationToken);
-            
+
             // Compatibility validation
+
             await _compatibilityChecker.ValidateAsync(manifest, result, cancellationToken);
-            
+
             // Dependency validation
+
             await ValidateDependenciesAsync(manifest, result, cancellationToken);
 
             result.IsValid = result.ValidationErrors.Count == 0;
@@ -293,7 +298,7 @@ public class NuGetPluginLoader : IDisposable
         }
         finally
         {
-            _loadSemaphore.Release();
+            _ = _loadSemaphore.Release();
         }
     }
 
@@ -375,7 +380,8 @@ public class NuGetPluginLoader : IDisposable
             {
                 LogFailedToParseManifest(_logger, file, ex);
             }
-            
+
+
             if (manifest != null)
             {
                 yield return manifest;
@@ -398,7 +404,8 @@ public class NuGetPluginLoader : IDisposable
             {
                 LogFailedToExtractManifest(_logger, packageFile, ex);
             }
-            
+
+
             if (manifest != null)
             {
                 yield return manifest;
@@ -409,9 +416,11 @@ public class NuGetPluginLoader : IDisposable
     private async Task<NuGetPluginManifest?> ExtractManifestFromPackageAsync(string packagePath, CancellationToken cancellationToken)
     {
         using var archive = ZipFile.OpenRead(packagePath);
-        
+
         // Look for plugin manifest in the package
-        var manifestEntry = archive.Entries.FirstOrDefault(e => 
+
+        var manifestEntry = archive.Entries.FirstOrDefault(e =>
+
             e.FullName.EndsWith(".plugin.json", StringComparison.OrdinalIgnoreCase) ||
             e.FullName.EndsWith("plugin.json", StringComparison.OrdinalIgnoreCase));
 
@@ -438,7 +447,8 @@ public class NuGetPluginLoader : IDisposable
         // This would parse the .nuspec XML and create a plugin manifest
         // For now, return a basic manifest
         await Task.CompletedTask;
-        
+
+
         var packageName = Path.GetFileNameWithoutExtension(packagePath);
         return new NuGetPluginManifest
         {
@@ -516,8 +526,9 @@ public class NuGetPluginLoader : IDisposable
         // This is a simplified implementation
         // In a real system, this would check NuGet repositories, local packages, etc.
         await Task.Delay(1, cancellationToken);
-        
+
         // For testing purposes, return false for "NonExistentDep"
+
         return !dependency.Id.Equals("NonExistentDep", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -535,7 +546,7 @@ public class NuGetPluginLoader : IDisposable
             var dependencyManifest = await LoadDependencyManifestAsync(dependency, cancellationToken);
             if (dependencyManifest != null)
             {
-                await LoadPluginAsync(dependencyManifest, cancellationToken);
+                _ = await LoadPluginAsync(dependencyManifest, cancellationToken);
             }
         }
     }
@@ -566,8 +577,10 @@ public class NuGetPluginLoader : IDisposable
     /// Loads an assembly with enhanced security context and validation.
     /// </summary>
     private async Task<Assembly> LoadAssemblyWithSecurityContextAsync(
-        NuGetPluginLoadContext loadContext, 
-        string assemblyPath, 
+        NuGetPluginLoadContext loadContext,
+
+        string assemblyPath,
+
         CancellationToken cancellationToken)
     {
         try
@@ -651,9 +664,11 @@ public class NuGetPluginLoader : IDisposable
             var fullPath = Path.GetFullPath(assemblyPath);
             var fileName = Path.GetFileName(fullPath);
             var directory = Path.GetDirectoryName(fullPath);
-            
+
             // Check for directory traversal attacks
-            if (assemblyPath.Contains("..") || assemblyPath.Contains("~") || 
+
+            if (assemblyPath.Contains("..") || assemblyPath.Contains("~") ||
+
                 fileName.StartsWith(".") || fileName.Contains(":") ||
                 assemblyPath.Contains("//") || assemblyPath.Contains("\\\\"))
             {
@@ -703,12 +718,14 @@ public class NuGetPluginLoader : IDisposable
         {
             using var fileStream = File.OpenRead(assemblyPath);
             using var sha256 = SHA256.Create();
-            
+
             // Calculate hash
+
             var hashBytes = await sha256.ComputeHashAsync(fileStream, cancellationToken);
             var hash = Convert.ToHexString(hashBytes);
-            
+
             // Basic integrity checks
+
             if (hashBytes.Length != 32)
             {
                 return false; // SHA-256 should be 32 bytes
@@ -740,15 +757,18 @@ public class NuGetPluginLoader : IDisposable
             {
                 var assembly = Assembly.LoadFrom(assemblyPath);
                 var assemblyName = assembly.GetName();
-                
+
+
                 var publicKey = assemblyName.GetPublicKey();
                 var publicKeyToken = assemblyName.GetPublicKeyToken();
-                
+
+
                 if (publicKey == null || publicKey.Length == 0)
                 {
                     throw new SecurityException($"Assembly does not have a strong name: {assemblyPath}");
                 }
-                
+
+
                 if (publicKeyToken == null || publicKeyToken.Length == 0)
                 {
                     throw new SecurityException($"Assembly strong name public key token is invalid: {assemblyPath}");
@@ -772,7 +792,8 @@ public class NuGetPluginLoader : IDisposable
             {
                 using var fileStream = File.OpenRead(assemblyPath);
                 using var peReader = new System.Reflection.PortableExecutable.PEReader(fileStream);
-                
+
+
                 if (!peReader.HasMetadata)
                 {
                     return;
@@ -783,32 +804,34 @@ public class NuGetPluginLoader : IDisposable
                 {
                     var metadataBlock = peReader.GetMetadata();
                     var metadataReader = new System.Reflection.Metadata.MetadataReader(metadataBlock.Pointer, metadataBlock.Length);
-                
-                    
+
+
                     // Check assembly references for suspicious dependencies
+
                     foreach (var asmRefHandle in metadataReader.AssemblyReferences)
-                {
-                    var asmRef = metadataReader.GetAssemblyReference(asmRefHandle);
-                    var asmName = metadataReader.GetString(asmRef.Name);
-                    
-                    // Block dangerous assemblies
-                    var dangerousAssemblies = new[]
                     {
-                        "System.Management", "Microsoft.Win32.Registry", 
+                        var asmRef = metadataReader.GetAssemblyReference(asmRefHandle);
+                        var asmName = metadataReader.GetString(asmRef.Name);
+
+                        // Block dangerous assemblies
+                        var dangerousAssemblies = new[]
+                        {
+                        "System.Management", "Microsoft.Win32.Registry",
+
                         "System.Diagnostics.Process", "System.DirectoryServices",
                         "System.Security.Principal", "System.ServiceProcess"
                     };
-                    
-                    if (dangerousAssemblies.Any(dangerous => 
-                        asmName.StartsWith(dangerous, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        if (!IsAssemblyAllowed(asmName))
+
+                        if (dangerousAssemblies.Any(dangerous =>
+                            asmName.StartsWith(dangerous, StringComparison.OrdinalIgnoreCase)))
                         {
-                            throw new SecurityException(
-                                $"Assembly references blocked dependency: {asmName}");
+                            if (!IsAssemblyAllowed(asmName))
+                            {
+                                throw new SecurityException(
+                                    $"Assembly references blocked dependency: {asmName}");
+                            }
                         }
                     }
-                }
                 }
             }
             catch (Exception ex) when (!(ex is SecurityException))
@@ -829,7 +852,8 @@ public class NuGetPluginLoader : IDisposable
             {
                 using var fileStream = File.OpenRead(assemblyPath);
                 using var peReader = new System.Reflection.PortableExecutable.PEReader(fileStream);
-                
+
+
                 if (!peReader.HasMetadata)
                 {
                     return;
@@ -837,46 +861,49 @@ public class NuGetPluginLoader : IDisposable
 
 
                 var suspiciousPatterns = new List<string>();
-                
+
+
                 unsafe
                 {
                     var metadataBlock = peReader.GetMetadata();
                     var metadataReader = new System.Reflection.Metadata.MetadataReader(metadataBlock.Pointer, metadataBlock.Length);
-                    
+
                     // Analyze string literals for suspicious content  
+
                     var userStrings = typeof(System.Reflection.Metadata.MetadataReader).GetProperty("UserStrings")?.GetValue(metadataReader);
                     if (userStrings is System.Collections.Generic.IEnumerable<System.Reflection.Metadata.UserStringHandle> handles)
                     {
                         foreach (var stringHandle in handles)
-                {
-                    var stringValue = metadataReader.GetUserString(stringHandle).ToLowerInvariant();
-                    
-                    var maliciousPatterns = new[]
-                    {
-                        "createprocess", "loadlibrary", "getprocaddress", 
+                        {
+                            var stringValue = metadataReader.GetUserString(stringHandle).ToLowerInvariant();
+
+                            var maliciousPatterns = new[]
+                            {
+                        "createprocess", "loadlibrary", "getprocaddress",
+
                         "virtualalloc", "writeprocessmemory", "createremotethread",
                         "cmd.exe", "powershell.exe", "rundll32.exe"
                     };
-                    
-                    foreach (var pattern in maliciousPatterns)
-                    {
-                        if (stringValue.Contains(pattern, StringComparison.OrdinalIgnoreCase))
-                        {
-                            suspiciousPatterns.Add($"Suspicious string: {pattern}");
-                            break;
+
+                            foreach (var pattern in maliciousPatterns)
+                            {
+                                if (stringValue.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    suspiciousPatterns.Add($"Suspicious string: {pattern}");
+                                    break;
+                                }
                             }
                         }
                     }
-                }
-                
-                if (suspiciousPatterns.Count > 0)
-                {
-                    var patterns = string.Join(", ", suspiciousPatterns);
-                    _logger.LogWarning("Suspicious patterns detected in assembly {AssemblyPath}: {Patterns}", 
-                        assemblyPath, patterns);
-                    
-                    if (_options.SecurityPolicy?.BlockSuspiciousAssemblies == true)
+
+                    if (suspiciousPatterns.Count > 0)
                     {
+                        var patterns = string.Join(", ", suspiciousPatterns);
+                        _logger.LogWarning("Suspicious patterns detected in assembly {AssemblyPath}: {Patterns}",
+                            assemblyPath, patterns);
+
+                        if (_options.SecurityPolicy?.BlockSuspiciousAssemblies == true)
+                        {
                             throw new SecurityException(
                                 $"Assembly contains suspicious patterns: {patterns}");
                         }
@@ -900,7 +927,8 @@ public class NuGetPluginLoader : IDisposable
         // This would verify the assembly's digital signature
         // For now, just simulate the verification
         await Task.Delay(10, cancellationToken);
-        
+
+
         if (_options.SecurityPolicy?.TrustedPublishers?.Any() == true)
         {
             // In a real implementation, this would check the assembly's signature
@@ -912,8 +940,9 @@ public class NuGetPluginLoader : IDisposable
     {
         // This would scan the assembly for potentially malicious patterns
         await Task.Delay(50, cancellationToken);
-        
+
         // Simple heuristic: check file size (malicious assemblies might be unusually large)
+
         var fileInfo = new FileInfo(assemblyPath);
         if (fileInfo.Length > _options.SecurityPolicy?.MaxAssemblySize)
         {
@@ -925,8 +954,10 @@ public class NuGetPluginLoader : IDisposable
     /// Validates loaded assembly structure and metadata for security compliance.
     /// </summary>
     private async Task ValidateLoadedAssemblyAsync(
-        Assembly assembly, 
-        PluginSecurityContext securityContext, 
+        Assembly assembly,
+
+        PluginSecurityContext securityContext,
+
         CancellationToken cancellationToken)
     {
         await Task.Run(() =>
@@ -944,11 +975,13 @@ public class NuGetPluginLoader : IDisposable
                 var dangerousAttributes = assembly.GetCustomAttributes()
                     .Where(attr => IsDangerousAttribute(attr.GetType()))
                     .ToList();
-                
+
+
                 if (dangerousAttributes.Any())
                 {
                     var attrNames = string.Join(", ", dangerousAttributes.Select(a => a.GetType().Name));
-                    _logger.LogWarning("Assembly {AssemblyName} contains dangerous attributes: {Attributes}", 
+                    _logger.LogWarning("Assembly {AssemblyName} contains dangerous attributes: {Attributes}",
+
                         assemblyName.Name, attrNames);
                 }
 
@@ -1020,29 +1053,33 @@ public class NuGetPluginLoader : IDisposable
     private HashSet<string> GetAllowedPermissions(string assemblyPath)
     {
         var permissions = new HashSet<string> { "Execution" };
-        
+
         // Add permissions based on security policy
+
         if (_options.SecurityPolicy != null)
         {
             var fileName = Path.GetFileName(assemblyPath);
-            
+
             // System assemblies get more permissions
+
             if (IsSystemAssembly(fileName))
             {
-                permissions.Add("FileIO");
-                permissions.Add("NetworkAccess");
+                _ = permissions.Add("FileIO");
+                _ = permissions.Add("NetworkAccess");
             }
-            
+
             // Add custom permissions based on configuration
+
             if (_options.SecurityPolicy.AllowedPermissions != null)
             {
                 foreach (var permission in _options.SecurityPolicy.AllowedPermissions)
                 {
-                    permissions.Add(permission);
+                    _ = permissions.Add(permission);
                 }
             }
         }
-        
+
+
         return permissions;
     }
 
@@ -1071,14 +1108,16 @@ public class NuGetPluginLoader : IDisposable
     private Task<IBackendPlugin> CreatePluginInstanceAsync(Assembly assembly, NuGetPluginManifest manifest, CancellationToken cancellationToken)
     {
         var pluginTypes = PluginSystem.DiscoverPluginTypes(assembly).ToList();
-        
+
+
         if (pluginTypes.Count == 0)
         {
             throw new PluginLoadException($"No plugin types found in assembly: {manifest.AssemblyPath}", manifest.Id, manifest.AssemblyPath);
         }
 
         var pluginType = pluginTypes.First();
-        
+
+
         if (pluginType.GetConstructor(Type.EmptyTypes) == null)
         {
             throw new PluginLoadException($"Plugin type must have a parameterless constructor: {pluginType.FullName}", manifest.Id, manifest.AssemblyPath);
@@ -1101,13 +1140,14 @@ public class NuGetPluginLoader : IDisposable
                 continue;
             }
 
-            await UnloadPluginAsync(dependency.Id, cancellationToken);
+            _ = await UnloadPluginAsync(dependency.Id, cancellationToken);
         }
     }
 
     private bool IsDependencyStillNeeded(string dependencyId)
     {
-        return _loadedPlugins.Values.Any(p => 
+        return _loadedPlugins.Values.Any(p =>
+
             p.DependencyGraph.Dependencies.Any(d => d.Id == dependencyId));
     }
 
@@ -1155,7 +1195,8 @@ public sealed class NuGetPluginLoadContext : AssemblyLoadContext
     /// </summary>
     /// <param name="manifest">The manifest.</param>
     /// <param name="dependencyGraph">The dependency graph.</param>
-    public NuGetPluginLoadContext(NuGetPluginManifest manifest, DependencyGraph dependencyGraph) 
+    public NuGetPluginLoadContext(NuGetPluginManifest manifest, DependencyGraph dependencyGraph)
+
         : base($"Plugin_{manifest.Id}_{manifest.Version}", isCollectible: true)
     {
         _manifest = manifest;
@@ -1181,7 +1222,8 @@ public sealed class NuGetPluginLoadContext : AssemblyLoadContext
         // Try to load from dependency graph
         var dependency = _dependencyGraph.Dependencies
             .FirstOrDefault(d => d.AssemblyName == assemblyName.Name);
-        
+
+
         if (dependency?.AssemblyPath != null)
         {
             return LoadFromAssemblyPath(dependency.AssemblyPath);

@@ -87,7 +87,8 @@ public class PluginSecurityContext
             Details = details,
             Timestamp = DateTimeOffset.UtcNow
         };
-        
+
+
         Violations.Add(violation);
     }
 

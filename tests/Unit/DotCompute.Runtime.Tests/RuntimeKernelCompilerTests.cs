@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Runtime.Tests
 {
 

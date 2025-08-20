@@ -9,9 +9,9 @@ namespace DotCompute.Algorithms.Types.Abstractions;
 /// </summary>
 public interface IAlgorithmProvider
 {
-string Name { get; }
-Version Version { get; }
-bool IsSupported { get; }
+    string Name { get; }
+    Version Version { get; }
+    bool IsSupported { get; }
 }
 
 /// <summary>
@@ -19,6 +19,6 @@ bool IsSupported { get; }
 /// </summary>
 public interface IPluginAlgorithmProvider : IAlgorithmProvider
 {
-Task<bool> InitializeAsync(CancellationToken cancellationToken = default);
-Task DisposeAsync();
+    Task<bool> InitializeAsync(CancellationToken cancellationToken = default);
+    Task DisposeAsync();
 }

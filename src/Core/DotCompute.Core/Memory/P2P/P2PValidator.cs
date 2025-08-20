@@ -18,7 +18,7 @@ namespace DotCompute.Core.Memory.P2P
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, P2PBenchmarkResult> _benchmarkCache;
         private readonly SemaphoreSlim _validationSemaphore;
-        private P2PValidationStatistics _statistics;
+        private readonly P2PValidationStatistics _statistics;
         private bool _disposed;
 
         // Validation configuration
@@ -111,7 +111,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _validationSemaphore.Release();
+                _ = _validationSemaphore.Release();
             }
         }
 
@@ -155,7 +155,8 @@ namespace DotCompute.Core.Memory.P2P
 
                 // Perform different integrity checks based on buffer size
                 var transferSize = sourceBuffer.SizeInBytes;
-                
+
+
                 if (transferSize <= 16 * 1024 * 1024) // <= 16MB - full validation
                 {
                     var integrityDetail = await ValidateFullDataIntegrityAsync(sourceBuffer, destinationBuffer, cancellationToken);
@@ -199,7 +200,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _validationSemaphore.Release();
+                _ = _validationSemaphore.Release();
             }
         }
 
@@ -241,7 +242,8 @@ namespace DotCompute.Core.Memory.P2P
             await _validationSemaphore.WaitAsync(cancellationToken);
             try
             {
-                _logger.LogInformation("Starting P2P benchmark: {Source} -> {Target}", 
+                _logger.LogInformation("Starting P2P benchmark: {Source} -> {Target}",
+
                     sourceDevice.Info.Name, targetDevice.Info.Name);
 
                 var benchmarkResult = new P2PBenchmarkResult
@@ -266,7 +268,8 @@ namespace DotCompute.Core.Memory.P2P
 
                         var transferBenchmark = await BenchmarkTransferSizeAsync<float>(
                             sourceDevice, targetDevice, sizeBytes, options, cancellationToken);
-                        
+
+
                         benchmarkResult.TransferSizes.Add(transferBenchmark);
 
                         _logger.LogDebug("Benchmarked {SizeKB} KB: {ThroughputGBps:F2} GB/s, {LatencyMs:F1} ms",
@@ -296,7 +299,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _validationSemaphore.Release();
+                _ = _validationSemaphore.Release();
             }
         }
 
@@ -395,7 +398,8 @@ namespace DotCompute.Core.Memory.P2P
                     PerformanceValidations = _statistics.PerformanceValidations,
                     BenchmarksExecuted = _statistics.BenchmarksExecuted,
                     TotalValidationTime = _statistics.TotalValidationTime,
-                    AverageValidationTime = _statistics.TotalValidations > 0 
+                    AverageValidationTime = _statistics.TotalValidations > 0
+
                         ? _statistics.TotalValidationTime / _statistics.TotalValidations
                         : TimeSpan.Zero,
                     CachedBenchmarkHits = _statistics.CachedBenchmarkHits,
@@ -408,7 +412,7 @@ namespace DotCompute.Core.Memory.P2P
 
         #region Private Implementation
 
-        private async Task<P2PValidationDetail> ValidateBufferCompatibilityAsync<T>(
+        private static async Task<P2PValidationDetail> ValidateBufferCompatibilityAsync<T>(
             IBuffer<T> sourceBuffer,
             IBuffer<T> destinationBuffer,
             CancellationToken cancellationToken) where T : unmanaged
@@ -432,7 +436,8 @@ namespace DotCompute.Core.Memory.P2P
             // Check element types (already guaranteed by generic constraint, but validate at runtime)
             var sourceElementSize = Unsafe.SizeOf<T>();
             var expectedDestSize = destinationBuffer.SizeInBytes / sourceBuffer.Length * sourceElementSize;
-            
+
+
             if (Math.Abs(destinationBuffer.SizeInBytes - expectedDestSize) > 1)
             {
                 detail.IsValid = false;
@@ -444,7 +449,7 @@ namespace DotCompute.Core.Memory.P2P
             return detail;
         }
 
-        private async Task<P2PValidationDetail> ValidateDeviceCapabilitiesAsync(
+        private static async Task<P2PValidationDetail> ValidateDeviceCapabilitiesAsync(
             IAccelerator sourceDevice,
             IAccelerator targetDevice,
             P2PTransferPlan transferPlan,
@@ -459,7 +464,8 @@ namespace DotCompute.Core.Memory.P2P
             };
 
             // Validate P2P capability based on transfer strategy
-            if (transferPlan.Strategy == P2PTransferStrategy.DirectP2P && 
+            if (transferPlan.Strategy == P2PTransferStrategy.DirectP2P &&
+
                 !transferPlan.Capability.IsSupported)
             {
                 detail.IsValid = false;
@@ -478,7 +484,7 @@ namespace DotCompute.Core.Memory.P2P
             return detail;
         }
 
-        private async Task<P2PValidationDetail> ValidateMemoryAvailabilityAsync<T>(
+        private static async Task<P2PValidationDetail> ValidateMemoryAvailabilityAsync<T>(
             IBuffer<T> sourceBuffer,
             IBuffer<T> destinationBuffer,
             P2PTransferPlan transferPlan,
@@ -504,7 +510,7 @@ namespace DotCompute.Core.Memory.P2P
             return detail;
         }
 
-        private async Task<P2PValidationDetail> ValidateTransferStrategyAsync(
+        private static async Task<P2PValidationDetail> ValidateTransferStrategyAsync(
             P2PTransferPlan transferPlan,
             CancellationToken cancellationToken)
         {
@@ -542,7 +548,7 @@ namespace DotCompute.Core.Memory.P2P
             return detail;
         }
 
-        private async Task<P2PValidationDetail> ValidateFullDataIntegrityAsync<T>(
+        private static async Task<P2PValidationDetail> ValidateFullDataIntegrityAsync<T>(
             IBuffer<T> sourceBuffer,
             IBuffer<T> destinationBuffer,
             CancellationToken cancellationToken) where T : unmanaged
@@ -571,7 +577,7 @@ namespace DotCompute.Core.Memory.P2P
                 if (!sourceBytes.SequenceEqual(destBytes))
                 {
                     // Find first difference
-                    for (int i = 0; i < Math.Min(sourceBytes.Length, destBytes.Length); i++)
+                    for (var i = 0; i < Math.Min(sourceBytes.Length, destBytes.Length); i++)
                     {
                         if (sourceBytes[i] != destBytes[i])
                         {
@@ -600,7 +606,7 @@ namespace DotCompute.Core.Memory.P2P
             }
         }
 
-        private async Task<P2PValidationDetail> ValidateSampledDataIntegrityAsync<T>(
+        private static async Task<P2PValidationDetail> ValidateSampledDataIntegrityAsync<T>(
             IBuffer<T> sourceBuffer,
             IBuffer<T> destinationBuffer,
             P2PTransferPlan transferPlan,
@@ -705,7 +711,7 @@ namespace DotCompute.Core.Memory.P2P
             }
         }
 
-        private async Task<ulong> CalculateBufferChecksumAsync<T>(
+        private static async Task<ulong> CalculateBufferChecksumAsync<T>(
             IBuffer<T> buffer,
             CancellationToken cancellationToken) where T : unmanaged
         {
@@ -721,12 +727,14 @@ namespace DotCompute.Core.Memory.P2P
             // Simple checksum calculation (in production would use xxHash or similar)
             var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(sampleData.AsSpan());
             ulong checksum = 0;
-            
-            for (int i = 0; i < bytes.Length; i += 8)
+
+
+            for (var i = 0; i < bytes.Length; i += 8)
             {
                 var remaining = Math.Min(8, bytes.Length - i);
                 var chunk = bytes.Slice(i, remaining);
-                
+
+
                 if (chunk.Length >= 8)
                 {
                     checksum ^= System.Runtime.InteropServices.MemoryMarshal.Read<ulong>(chunk);
@@ -734,7 +742,7 @@ namespace DotCompute.Core.Memory.P2P
                 else
                 {
                     // Handle remaining bytes
-                    for (int j = 0; j < chunk.Length; j++)
+                    for (var j = 0; j < chunk.Length; j++)
                     {
                         checksum ^= (ulong)chunk[j] << (j * 8);
                     }
@@ -762,13 +770,13 @@ namespace DotCompute.Core.Memory.P2P
             var latencies = new List<double>();
 
             // Warmup iterations
-            for (int i = 0; i < BenchmarkWarmupIterations; i++)
+            for (var i = 0; i < BenchmarkWarmupIterations; i++)
             {
                 await sourceBuffer.CopyToAsync(destBuffer, cancellationToken);
             }
 
             // Measurement iterations
-            for (int i = 0; i < BenchmarkMeasurementIterations; i++)
+            for (var i = 0; i < BenchmarkMeasurementIterations; i++)
             {
                 var startTime = DateTimeOffset.UtcNow;
                 await sourceBuffer.CopyToAsync(destBuffer, cancellationToken);
@@ -776,7 +784,8 @@ namespace DotCompute.Core.Memory.P2P
 
                 var duration = endTime - startTime;
                 var throughput = (transferSizeBytes / (1024.0 * 1024.0 * 1024.0)) / duration.TotalSeconds;
-                
+
+
                 measurements.Add(throughput);
                 latencies.Add(duration.TotalMilliseconds);
             }
@@ -793,7 +802,7 @@ namespace DotCompute.Core.Memory.P2P
             };
         }
 
-        private async Task<IBuffer<T>> CreateTestBufferAsync<T>(
+        private static async Task<IBuffer<T>> CreateTestBufferAsync<T>(
             IAccelerator device,
             int elementCount,
             CancellationToken cancellationToken) where T : unmanaged
@@ -807,9 +816,10 @@ namespace DotCompute.Core.Memory.P2P
         private static long[] GenerateTransferSizes(int minSizeMB, int maxSizeMB)
         {
             var sizes = new List<long>();
-            
+
             // Powers of 2 from minSize to maxSize
-            for (int sizeMB = minSizeMB; sizeMB <= maxSizeMB; sizeMB *= 2)
+
+            for (var sizeMB = minSizeMB; sizeMB <= maxSizeMB; sizeMB *= 2)
             {
                 sizes.Add(sizeMB * 1024L * 1024L);
                 if (sizeMB * 2 > maxSizeMB && sizeMB < maxSizeMB)
@@ -822,7 +832,7 @@ namespace DotCompute.Core.Memory.P2P
             return [.. sizes];
         }
 
-        private void CalculateAggregateStatistics(P2PBenchmarkResult benchmarkResult)
+        private static void CalculateAggregateStatistics(P2PBenchmarkResult benchmarkResult)
         {
             if (benchmarkResult.TransferSizes.Any())
             {
@@ -848,16 +858,17 @@ namespace DotCompute.Core.Memory.P2P
 
             var tasks = new List<Task>();
 
-            for (int i = 0; i < devices.Length; i++)
+            for (var i = 0; i < devices.Length; i++)
             {
-                for (int j = i + 1; j < devices.Length; j++)
+                for (var j = i + 1; j < devices.Length; j++)
                 {
                     var sourceDevice = devices[i];
                     var targetDevice = devices[j];
 
                     var task = ExecuteP2PBenchmarkAsync(sourceDevice, targetDevice, benchmarkOptions, cancellationToken)
                         .ContinueWith(t => benchmarkResult.PairwiseBenchmarks.Add(t.Result), TaskScheduler.Default);
-                    
+
+
                     tasks.Add(task);
                 }
             }
@@ -865,7 +876,7 @@ namespace DotCompute.Core.Memory.P2P
             await Task.WhenAll(tasks);
         }
 
-        private async Task ExecuteScatterBenchmarksAsync(
+        private static async Task ExecuteScatterBenchmarksAsync(
             IAccelerator[] devices,
             P2PMultiGpuBenchmarkResult benchmarkResult,
             P2PMultiGpuBenchmarkOptions options,
@@ -873,7 +884,8 @@ namespace DotCompute.Core.Memory.P2P
         {
             // Placeholder for scatter benchmarks
             await Task.CompletedTask;
-            
+
+
             benchmarkResult.ScatterBenchmarks.Add(new P2PScatterBenchmarkResult
             {
                 ScatterPattern = "1-to-all",
@@ -882,7 +894,7 @@ namespace DotCompute.Core.Memory.P2P
             });
         }
 
-        private async Task ExecuteGatherBenchmarksAsync(
+        private static async Task ExecuteGatherBenchmarksAsync(
             IAccelerator[] devices,
             P2PMultiGpuBenchmarkResult benchmarkResult,
             P2PMultiGpuBenchmarkOptions options,
@@ -890,7 +902,8 @@ namespace DotCompute.Core.Memory.P2P
         {
             // Placeholder for gather benchmarks
             await Task.CompletedTask;
-            
+
+
             benchmarkResult.GatherBenchmarks.Add(new P2PGatherBenchmarkResult
             {
                 GatherPattern = "all-to-1",
@@ -899,7 +912,7 @@ namespace DotCompute.Core.Memory.P2P
             });
         }
 
-        private async Task ExecuteAllToAllBenchmarksAsync(
+        private static async Task ExecuteAllToAllBenchmarksAsync(
             IAccelerator[] devices,
             P2PMultiGpuBenchmarkResult benchmarkResult,
             P2PMultiGpuBenchmarkOptions options,
@@ -907,7 +920,8 @@ namespace DotCompute.Core.Memory.P2P
         {
             // Placeholder for all-to-all benchmarks
             await Task.CompletedTask;
-            
+
+
             benchmarkResult.AllToAllBenchmarks.Add(new P2PAllToAllBenchmarkResult
             {
                 CommunicationPattern = "all-to-all",
@@ -916,7 +930,7 @@ namespace DotCompute.Core.Memory.P2P
             });
         }
 
-        private void CalculateMultiGpuAggregateStatistics(P2PMultiGpuBenchmarkResult benchmarkResult)
+        private static void CalculateMultiGpuAggregateStatistics(P2PMultiGpuBenchmarkResult benchmarkResult)
         {
             if (benchmarkResult.PairwiseBenchmarks.Any())
             {
@@ -932,7 +946,8 @@ namespace DotCompute.Core.Memory.P2P
             lock (_statistics)
             {
                 _statistics.TotalValidations++;
-                
+
+
                 if (validationResult.IsValid)
                 {
                     _statistics.SuccessfulValidations++;
@@ -1003,13 +1018,13 @@ namespace DotCompute.Core.Memory.P2P
         public MemoryOptions Options => new();
         public bool IsDisposed => false;
 
-        public ValueTask CopyFromHostAsync<TData>(TData[] source, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
+        public static ValueTask CopyFromHostAsync<TData>(TData[] source, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
             => ValueTask.CompletedTask;
 
         public ValueTask CopyFromHostAsync<TData>(ReadOnlyMemory<TData> source, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
             => ValueTask.CompletedTask;
 
-        public Task CopyToHostAsync<TData>(TData[] destination, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
+        public static Task CopyToHostAsync<TData>(TData[] destination, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
             => Task.CompletedTask;
 
         public ValueTask CopyToHostAsync<TData>(Memory<TData> destination, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
@@ -1027,7 +1042,7 @@ namespace DotCompute.Core.Memory.P2P
         public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
-        public Task ClearAsync(CancellationToken cancellationToken = default)
+        public static Task ClearAsync(CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
         public IBuffer<T> Slice(int offset, int count)

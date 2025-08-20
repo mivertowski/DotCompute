@@ -167,8 +167,9 @@ public class PluginRecoveryConfiguration
         }
     }
 
-    public override string ToString() => 
-        $"Timeout={RecoveryTimeout}, MaxAttempts={MaxRecoveryAttempts}, Interval={RecoveryInterval}";
+    public override string ToString()
+
+        => $"Timeout={RecoveryTimeout}, MaxAttempts={MaxRecoveryAttempts}, Interval={RecoveryInterval}";
 }
 
 /// <summary>
@@ -231,8 +232,9 @@ public class PluginHealthReport
     /// </summary>
     public double OverallHealth { get; set; }
 
-    public override string ToString() => 
-        $"Plugin={PluginId}, Status={Status}, Memory={MemoryUsageBytes / 1024.0 / 1024.0:F1}MB, CPU={CpuUsagePercent:F1}%";
+    public override string ToString()
+
+        => $"Plugin={PluginId}, Status={Status}, Memory={MemoryUsageBytes / 1024.0 / 1024.0:F1}MB, CPU={CpuUsagePercent:F1}%";
 }
 
 /// <summary>
@@ -283,6 +285,7 @@ public class PluginRecoveryStats
     /// </summary>
     public double SuccessRate => TotalRecoveryAttempts > 0 ? (double)SuccessfulRecoveries / TotalRecoveryAttempts : 0.0;
 
-    public override string ToString() => 
-        $"Total={TotalRecoveryAttempts}, Success={SuccessfulRecoveries}, Failed={FailedRecoveries}, Rate={SuccessRate:P1}";
+    public override string ToString()
+
+        => $"Total={TotalRecoveryAttempts}, Success={SuccessfulRecoveries}, Failed={FailedRecoveries}, Rate={SuccessRate:P1}";
 }

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
 
+using DotCompute.Abstractions.Enums;
 namespace DotCompute.Tests.Implementations.Kernels;
 
 

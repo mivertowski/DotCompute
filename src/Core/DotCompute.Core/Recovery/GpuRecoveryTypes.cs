@@ -46,8 +46,9 @@ public class GpuRecoveryConfiguration
 
     public static GpuRecoveryConfiguration Default => new();
 
-    public override string ToString() => 
-        $"HealthCheck={HealthCheckInterval}, KernelTimeout={DefaultKernelTimeout}, MaxFailures={MaxConsecutiveFailures}";
+    public override string ToString()
+
+        => $"HealthCheck={HealthCheckInterval}, KernelTimeout={DefaultKernelTimeout}, MaxFailures={MaxConsecutiveFailures}";
 }
 
 /// <summary>
@@ -119,15 +120,17 @@ public class DeviceRecoveryState
         var now = DateTimeOffset.UtcNow;
         var recentErrors = _recentErrors.ToArray()
             .Count(e => (now - _lastErrorTime).TotalMinutes < 60);
-        
+
+
         return recentErrors; // Errors per hour
     }
 
     public void UpdateHealthCheck()
     {
         LastHealthCheck = DateTimeOffset.UtcNow;
-        
+
         // Auto-recovery after some time without errors
+
         if (_consecutiveFailures > 0 && (DateTimeOffset.UtcNow - _lastErrorTime).TotalMinutes > 30)
         {
             lock (_lock)
@@ -147,8 +150,9 @@ public class DeviceRecoveryState
                 _consecutiveFailures = 0;
                 IsHealthy = true;
                 LastError = null;
-                
+
                 // Clear recent errors
+
                 while (_recentErrors.TryDequeue(out _))
                 {
                     // Clear queue
@@ -161,7 +165,8 @@ public class DeviceRecoveryState
     {
         // Platform-specific context reset would be implemented here
         await Task.Delay(100);
-        
+
+
         lock (_lock)
         {
             _consecutiveFailures = Math.Max(0, _consecutiveFailures - 1);
@@ -180,7 +185,8 @@ public interface IKernelExecutionMonitor : IDisposable
     TimeSpan ExecutionTime { get; }
     bool IsHanging { get; }
     bool IsCompleted { get; }
-    
+
+
     Task CancelAsync(CancellationToken cancellationToken = default);
     Task WaitForCompletionAsync(CancellationToken cancellationToken = default);
     void MarkCompleted();
@@ -223,10 +229,12 @@ public class KernelExecutionMonitor : IKernelExecutionMonitor
 
 
         _logger.LogInformation("Cancelling kernel execution {KernelId}", KernelId);
-        
+
+
         _cancellationTokenSource.Cancel();
         _completed = true;
-        
+
+
         await Task.Delay(100, cancellationToken); // Allow cleanup time
     }
 
@@ -282,6 +290,7 @@ public class DeviceHealthReport
     public long TotalRecoveryAttempts { get; set; }
     public double GlobalSuccessRate { get; set; }
 
-    public override string ToString() => 
-        $"Health={OverallHealth:P2}, Devices={DeviceHealth.Count}, ActiveKernels={ActiveKernels}, SuccessRate={GlobalSuccessRate:P2}";
+    public override string ToString()
+
+        => $"Health={OverallHealth:P2}, Devices={DeviceHealth.Count}, ActiveKernels={ActiveKernels}, SuccessRate={GlobalSuccessRate:P2}";
 }

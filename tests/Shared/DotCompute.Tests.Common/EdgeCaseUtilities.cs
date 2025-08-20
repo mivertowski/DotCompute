@@ -499,7 +499,7 @@ public enum TestPattern
 public record ConcurrencyTestResult
 {
     public bool TimedOut { get; init; }
-    public Exception[] Exceptions { get; init; } = Array.Empty<Exception>();
+    public Exception[] Exceptions { get; init; } = [];
     public int CompletedOperations { get; init; }
     public int ExpectedOperations { get; init; }
     public TimeSpan Duration { get; init; }

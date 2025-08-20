@@ -17,37 +17,45 @@ public interface ITelemetryService
     /// <summary>
     /// Records a kernel execution event with performance metrics.
     /// </summary>
-    void RecordKernelExecution(string kernelName, string deviceId, TimeSpan executionTime, 
+    void RecordKernelExecution(string kernelName, string deviceId, TimeSpan executionTime,
+
         KernelPerformanceMetrics metrics, string? correlationId = null, Exception? exception = null);
-    
+
+
     /// <summary>
     /// Records a memory operation with transfer metrics.
     /// </summary>
     void RecordMemoryOperation(string operationType, string deviceId, long bytes, TimeSpan duration,
         Types.MemoryAccessMetrics metrics, string? correlationId = null, Exception? exception = null);
-    
+
+
     /// <summary>
     /// Starts distributed tracing for cross-device operations.
     /// </summary>
     TraceContext StartDistributedTrace(string operationName, string? correlationId = null,
         Dictionary<string, object?>? tags = null);
-    
+
+
     /// <summary>
     /// Finishes a distributed trace and returns analysis results.
     /// </summary>
     Task<TraceData?> FinishDistributedTraceAsync(string correlationId, TraceStatus status = TraceStatus.Ok);
-    
+
+
     /// <summary>
     /// Creates a performance profile for detailed analysis.
     /// </summary>
-    Task<PerformanceProfile> CreatePerformanceProfileAsync(string correlationId, 
+    Task<PerformanceProfile> CreatePerformanceProfileAsync(string correlationId,
+
         ProfileOptions? options = null, CancellationToken cancellationToken = default);
-    
+
+
     /// <summary>
     /// Gets current system health metrics.
     /// </summary>
     SystemHealthMetrics GetSystemHealth();
-    
+
+
     /// <summary>
     /// Exports telemetry data to configured monitoring systems.
     /// </summary>
@@ -65,13 +73,15 @@ public sealed class TelemetryServiceOptions
     public bool EnablePerformanceProfiling { get; set; } = true;
     public bool EnableMetricsCollection { get; set; } = true;
     public bool EnableStructuredLogging { get; set; } = true;
-    
+
+
     public TelemetryOptions TelemetryProvider { get; set; } = new();
     public DistributedTracingOptions DistributedTracing { get; set; } = new();
     public PerformanceProfilerOptions PerformanceProfiling { get; set; } = new();
     public StructuredLoggingOptions StructuredLogging { get; set; } = new();
     public LogBufferOptions LogBuffer { get; set; } = new();
-    
+
+
     public PrometheusOptions Prometheus { get; set; } = new();
     public List<string> ExportEndpoints { get; set; } = new();
 }
@@ -101,52 +111,59 @@ public static class TelemetryServiceCollectionExtensions
         // Configure options
         if (configureOptions != null)
         {
-            services.Configure(configureOptions);
+            _ = services.Configure(configureOptions);
         }
-        
+
         // Core telemetry services
-        services.AddSingleton<ITelemetryService, TelemetryService>();
-        services.AddSingleton<TelemetryProvider>();
-        services.AddSingleton<MetricsCollector>();
-        services.AddSingleton<DistributedTracer>();
-        services.AddSingleton<PerformanceProfiler>();
-        
+
+        _ = services.AddSingleton<ITelemetryService, TelemetryService>();
+        _ = services.AddSingleton<TelemetryProvider>();
+        _ = services.AddSingleton<MetricsCollector>();
+        _ = services.AddSingleton<DistributedTracer>();
+        _ = services.AddSingleton<PerformanceProfiler>();
+
         // Logging services
-        services.AddSingleton<LogBuffer>();
-        services.AddSingleton<LogEnricher>();
-        
+
+        _ = services.AddSingleton<LogBuffer>();
+        _ = services.AddSingleton<LogEnricher>();
+
         // Log sinks
-        services.AddSingleton<ILogSink, ConsoleSink>();
-        
+
+        _ = services.AddSingleton<ILogSink, ConsoleSink>();
+
         // OpenTelemetry integration - simplified for compatibility
+
         try
         {
             // Add OpenTelemetry services if available
-            services.AddSingleton<OpenTelemetryIntegration>();
+            _ = services.AddSingleton<OpenTelemetryIntegration>();
         }
         catch (Exception)
         {
             // OpenTelemetry packages not available - continue without telemetry
         }
-        
+
+
         return services;
     }
-    
+
+
     /// <summary>
     /// Adds file-based logging sink.
     /// </summary>
     public static IServiceCollection AddFileLogging(this IServiceCollection services, string logFilePath)
     {
-        services.AddSingleton<ILogSink>(provider => new FileSink(logFilePath));
+        _ = services.AddSingleton<ILogSink>(provider => new FileSink(logFilePath));
         return services;
     }
-    
+
+
     /// <summary>
     /// Adds custom log sink.
     /// </summary>
     public static IServiceCollection AddLogSink<T>(this IServiceCollection services) where T : class, ILogSink
     {
-        services.AddSingleton<ILogSink, T>();
+        _ = services.AddSingleton<ILogSink, T>();
         return services;
     }
 }
@@ -156,7 +173,7 @@ public static class TelemetryServiceCollectionExtensions
 /// </summary>
 public sealed class OpenTelemetryIntegration
 {
-    public void Initialize()
+    public static void Initialize()
     {
         // Placeholder for OpenTelemetry initialization
     }
@@ -238,18 +255,21 @@ internal sealed class TelemetryService : ITelemetryService, IDisposable
         KernelPerformanceMetrics metrics, string? correlationId = null, Exception? exception = null)
     {
         ThrowIfDisposed();
-        
+
         // Record in metrics collector
+
         var metricData = new Dictionary<string, object>
         {
             ["throughput"] = metrics.AverageThroughput,
             ["occupancy"] = metrics.AverageOccupancy,
             ["efficiency"] = metrics.MemoryEfficiency
         };
-        
+
+
         _telemetryProvider.RecordKernelExecution(kernelName, executionTime, deviceId, exception == null, metricData);
-        
+
         // Log structured event - convert metrics to logging format
+
         var loggingMetrics = new Logging.KernelPerformanceMetrics
         {
             ThroughputOpsPerSecond = metrics.AverageThroughput,
@@ -265,11 +285,13 @@ internal sealed class TelemetryService : ITelemetryService, IDisposable
         Types.MemoryAccessMetrics metrics, string? correlationId = null, Exception? exception = null)
     {
         ThrowIfDisposed();
-        
+
         // Record in telemetry provider
+
         _telemetryProvider.RecordMemoryOperation(operationType, bytes, duration, deviceId, exception == null);
-        
+
         // Log structured event - convert metrics to logging format
+
         var loggingMemoryMetrics = new Logging.MemoryAccessMetrics
         {
             AccessPattern = operationType,
@@ -286,14 +308,16 @@ internal sealed class TelemetryService : ITelemetryService, IDisposable
         Dictionary<string, object?>? tags = null)
     {
         ThrowIfDisposed();
-        
+
+
         return _distributedTracer.StartTrace(operationName, correlationId, null, tags);
     }
 
     public async Task<TraceData?> FinishDistributedTraceAsync(string correlationId, TraceStatus status = TraceStatus.Ok)
     {
         ThrowIfDisposed();
-        
+
+
         return await _distributedTracer.FinishTraceAsync(correlationId, status);
     }
 
@@ -301,14 +325,16 @@ internal sealed class TelemetryService : ITelemetryService, IDisposable
         ProfileOptions? options = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         return await _performanceProfiler.CreateProfileAsync(correlationId, options, cancellationToken);
     }
 
     public SystemHealthMetrics GetSystemHealth()
     {
         ThrowIfDisposed();
-        
+
+
         return _telemetryProvider.GetSystemHealth();
     }
 
@@ -316,7 +342,8 @@ internal sealed class TelemetryService : ITelemetryService, IDisposable
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         await _telemetryProvider.ExportTelemetryAsync(format, cancellationToken);
     }
 

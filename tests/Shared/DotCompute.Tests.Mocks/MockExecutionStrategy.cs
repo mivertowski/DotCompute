@@ -58,7 +58,7 @@ public sealed class MockParallelExecutionStrategy : IDisposable
 
         var taskList = tasks.ToList();
         if (taskList.Count == 0)
-            return Enumerable.Empty<T>();
+            return [];
 
         cancellationToken.ThrowIfCancellationRequested();
 

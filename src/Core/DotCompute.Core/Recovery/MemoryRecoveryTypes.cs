@@ -32,8 +32,9 @@ public class MemoryRecoveryConfiguration
 
     public static MemoryRecoveryConfiguration Default => new();
 
-    public override string ToString() => 
-        $"Reserve={EmergencyReserveSizeMB}MB, DefragInterval={DefragmentationInterval}, PressureThreshold={MemoryPressureThreshold:P0}";
+    public override string ToString()
+
+        => $"Reserve={EmergencyReserveSizeMB}MB, DefragInterval={DefragmentationInterval}, PressureThreshold={MemoryPressureThreshold:P0}";
 }
 
 /// <summary>
@@ -61,8 +62,9 @@ public class MemoryDefragmentationResult
 
     public double CompressionRatio => MemoryBefore > 0 ? (double)MemoryFreed / MemoryBefore : 0.0;
 
-    public override string ToString() => 
-        Success 
+    public override string ToString()
+        => Success
+
             ? $"Success: Freed {MemoryFreed / 1024 / 1024}MB in {Duration.TotalMilliseconds}ms (ratio: {CompressionRatio:P1})"
             : $"Failed: {Error}";
 }
@@ -91,8 +93,9 @@ public class MemoryPressureInfo
     public DateTimeOffset Timestamp { get; set; }
     public double GCPressure { get; set; }
 
-    public override string ToString() => 
-        $"Level={Level}, Pressure={PressureRatio:P1}, Available={AvailableMemory / 1024 / 1024}MB";
+    public override string ToString()
+
+        => $"Level={Level}, Pressure={PressureRatio:P1}, Available={AvailableMemory / 1024 / 1024}MB";
 }
 
 /// <summary>
@@ -111,7 +114,8 @@ public sealed class MemoryPressureMonitor : IDisposable
     public MemoryPressureMonitor(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
+
         try
         {
 #if WINDOWS
@@ -124,8 +128,10 @@ public sealed class MemoryPressureMonitor : IDisposable
         }
 
         _currentPressure = CalculateMemoryPressure();
-        
-        _monitorTimer = new Timer(UpdateMemoryPressure, null, 
+
+
+        _monitorTimer = new Timer(UpdateMemoryPressure, null,
+
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
     }
 
@@ -149,11 +155,12 @@ public sealed class MemoryPressureMonitor : IDisposable
         }
     }
 
-    private MemoryPressureInfo CalculateMemoryPressure()
+    private static MemoryPressureInfo CalculateMemoryPressure()
     {
         var gcMemory = GC.GetTotalMemory(false);
         var totalMemory = GC.GetTotalMemory(true); // Force GC for more accurate reading
-        
+
+
         long availableMemory = 0;
         try
         {
@@ -173,7 +180,8 @@ public sealed class MemoryPressureMonitor : IDisposable
         var systemTotalMemory = availableMemory + gcMemory;
         var usedMemory = systemTotalMemory - availableMemory;
         var pressureRatio = systemTotalMemory > 0 ? (double)usedMemory / systemTotalMemory : 0.0;
-        
+
+
         var level = pressureRatio switch
         {
             >= 0.95 => MemoryPressureLevel.Critical,
@@ -216,7 +224,8 @@ public interface IMemoryPool : IDisposable
     long TotalAllocated { get; }
     long TotalAvailable { get; }
     int ActiveAllocations { get; }
-    
+
+
     Task CleanupAsync(CancellationToken cancellationToken = default);
     Task DefragmentAsync(CancellationToken cancellationToken = default);
     Task EmergencyCleanupAsync(CancellationToken cancellationToken = default);
@@ -231,8 +240,8 @@ public class MemoryPoolState
     private readonly object _lock = new();
     private DateTimeOffset _lastCleanup = DateTimeOffset.UtcNow;
     private DateTimeOffset _lastDefragmentation = DateTimeOffset.UtcNow;
-    private int _cleanupCount = 0;
-    private int _defragmentationCount = 0;
+    private int _cleanupCount;
+    private int _defragmentationCount;
 
     public string PoolId { get; }
     public DateTimeOffset LastCleanup => _lastCleanup;
@@ -249,7 +258,8 @@ public class MemoryPoolState
     public async Task PerformCleanupAsync(CancellationToken cancellationToken = default)
     {
         await _pool.CleanupAsync(cancellationToken);
-        
+
+
         lock (_lock)
         {
             _lastCleanup = DateTimeOffset.UtcNow;
@@ -260,7 +270,8 @@ public class MemoryPoolState
     public async Task PerformDefragmentationAsync(CancellationToken cancellationToken = default)
     {
         await _pool.DefragmentAsync(cancellationToken);
-        
+
+
         lock (_lock)
         {
             _lastDefragmentation = DateTimeOffset.UtcNow;
@@ -271,7 +282,8 @@ public class MemoryPoolState
     public async Task PerformEmergencyCleanupAsync(CancellationToken cancellationToken = default)
     {
         await _pool.EmergencyCleanupAsync(cancellationToken);
-        
+
+
         lock (_lock)
         {
             _lastCleanup = DateTimeOffset.UtcNow;
@@ -291,7 +303,8 @@ public class MemoryPoolState
             LastDefragmentation = _lastDefragmentation,
             CleanupCount = _cleanupCount,
             DefragmentationCount = _defragmentationCount,
-            UtilizationRatio = _pool.TotalAllocated + _pool.TotalAvailable > 0 
+            UtilizationRatio = _pool.TotalAllocated + _pool.TotalAvailable > 0
+
                 ? (double)_pool.TotalAllocated / (_pool.TotalAllocated + _pool.TotalAvailable)
                 : 0.0
         };
@@ -313,8 +326,9 @@ public class MemoryPoolStatistics
     public int DefragmentationCount { get; set; }
     public double UtilizationRatio { get; set; }
 
-    public override string ToString() => 
-        $"Pool {PoolId}: {TotalAllocated / 1024 / 1024}MB allocated, {ActiveAllocations} active, {UtilizationRatio:P1} utilized";
+    public override string ToString()
+
+        => $"Pool {PoolId}: {TotalAllocated / 1024 / 1024}MB allocated, {ActiveAllocations} active, {UtilizationRatio:P1} utilized";
 }
 
 /// <summary>

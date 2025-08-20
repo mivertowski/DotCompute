@@ -32,36 +32,46 @@ public sealed class SecurityLogger : IDisposable
 
     // Event correlation tracking
     private readonly ConcurrentDictionary<string, CorrelationContext> _correlationContexts = new();
-    
+
     // Security metrics
+
     private readonly SecurityMetrics _metrics = new();
 
     public SecurityLogger(ILogger<SecurityLogger> logger, SecurityLoggingConfiguration? configuration = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? SecurityLoggingConfiguration.Default;
-        
+
         // Initialize audit log path
-        _auditLogPath = Path.Combine(_configuration.AuditLogDirectory, 
+
+        _auditLogPath = Path.Combine(_configuration.AuditLogDirectory,
+
             $"security_audit_{DateTime.UtcNow:yyyyMMdd}.jsonl");
-        
+
         // Ensure audit directory exists
-        Directory.CreateDirectory(_configuration.AuditLogDirectory);
-        
+
+        _ = Directory.CreateDirectory(_configuration.AuditLogDirectory);
+
         // Initialize timers
-        _auditFlushTimer = new Timer(FlushAuditLogs, null, 
+
+        _auditFlushTimer = new Timer(FlushAuditLogs, null,
+
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
         _integrityCheckTimer = new Timer(PerformIntegrityCheck, null,
             TimeSpan.FromHours(1), TimeSpan.FromHours(1));
-        
+
         // Initialize session metadata
+
         InitializeSessionMetadata();
-        
+
+
         _logger.LogInformation("SecurityLogger initialized: AuditPath={AuditPath}", _auditLogPath);
-        
+
         // Log security logger startup
-        LogSecurityEvent(SecurityEventType.SecuritySystemStartup, 
-            "Security logging system initialized", 
+
+        LogSecurityEvent(SecurityEventType.SecuritySystemStartup,
+            "Security logging system initialized",
+
             SecurityLevel.Informational);
     }
 
@@ -78,10 +88,13 @@ public sealed class SecurityLogger : IDisposable
     /// <param name="callerName">Automatically captured caller method name</param>
     /// <param name="sourceFile">Automatically captured source file path</param>
     /// <param name="lineNumber">Automatically captured line number</param>
-    public async Task LogSecurityEventAsync(SecurityEventType eventType, string message, 
-        SecurityLevel level, string? userId = null, string? resourceId = null, 
+    public async Task LogSecurityEventAsync(SecurityEventType eventType, string message,
+
+        SecurityLevel level, string? userId = null, string? resourceId = null,
+
         IDictionary<string, object>? additionalData = null, string? correlationId = null,
-        [CallerMemberName] string callerName = "", [CallerFilePath] string sourceFile = "", 
+        [CallerMemberName] string callerName = "", [CallerFilePath] string sourceFile = "",
+
         [CallerLineNumber] int lineNumber = 0)
     {
         if (_disposed)
@@ -90,25 +103,31 @@ public sealed class SecurityLogger : IDisposable
         }
 
 
-        var entry = CreateSecurityLogEntry(eventType, message, level, userId, resourceId, 
+        var entry = CreateSecurityLogEntry(eventType, message, level, userId, resourceId,
+
             additionalData, correlationId, callerName, sourceFile, lineNumber);
-        
+
         // Queue for audit logging
+
         _auditQueue.Enqueue(entry);
-        
+
         // Log to standard logger based on level
+
         LogToStandardLogger(entry);
-        
+
         // Update metrics
+
         UpdateSecurityMetrics(entry);
-        
+
         // Handle critical events immediately
+
         if (level == SecurityLevel.Critical)
         {
             await HandleCriticalSecurityEventAsync(entry);
         }
-        
+
         // Update correlation context if provided
+
         if (!string.IsNullOrEmpty(correlationId))
         {
             UpdateCorrelationContext(correlationId, entry);
@@ -118,13 +137,17 @@ public sealed class SecurityLogger : IDisposable
     /// <summary>
     /// Logs a security event synchronously (convenience method).
     /// </summary>
-    public void LogSecurityEvent(SecurityEventType eventType, string message, 
-        SecurityLevel level, string? userId = null, string? resourceId = null, 
+    public void LogSecurityEvent(SecurityEventType eventType, string message,
+
+        SecurityLevel level, string? userId = null, string? resourceId = null,
+
         IDictionary<string, object>? additionalData = null, string? correlationId = null,
-        [CallerMemberName] string callerName = "", [CallerFilePath] string sourceFile = "", 
+        [CallerMemberName] string callerName = "", [CallerFilePath] string sourceFile = "",
+
         [CallerLineNumber] int lineNumber = 0)
     {
-        _ = Task.Run(async () => await LogSecurityEventAsync(eventType, message, level, userId, resourceId, 
+        _ = Task.Run(async () => await LogSecurityEventAsync(eventType, message, level, userId, resourceId,
+
             additionalData, correlationId, callerName, sourceFile, lineNumber));
     }
 
@@ -136,8 +159,10 @@ public sealed class SecurityLogger : IDisposable
     /// <param name="affectedResource">Resource that was affected</param>
     /// <param name="sourceInformation">Information about the violation source</param>
     /// <param name="correlationId">Correlation ID for related events</param>
-    public async Task LogSecurityViolationAsync(SecurityViolationType violationType, 
-        ThreatDetails threatDetails, string affectedResource, SourceInformation sourceInformation, 
+    public async Task LogSecurityViolationAsync(SecurityViolationType violationType,
+
+        ThreatDetails threatDetails, string affectedResource, SourceInformation sourceInformation,
+
         string? correlationId = null)
     {
         if (_disposed)
@@ -160,15 +185,18 @@ public sealed class SecurityLogger : IDisposable
             ["ThreadId"] = sourceInformation.ThreadId
         };
 
-        await LogSecurityEventAsync(SecurityEventType.SecurityViolation, 
+        await LogSecurityEventAsync(SecurityEventType.SecurityViolation,
+
             $"Security violation detected: {violationType} - {threatDetails.Description}",
             SecurityLevel.High, sourceInformation.UserId, affectedResource, additionalData, correlationId);
-        
+
         // Increment violation metrics
-        Interlocked.Increment(ref _metrics.TotalSecurityViolations);
-        _metrics.ViolationsByType.AddOrUpdate(violationType, 1, (key, value) => value + 1);
-        
+
+        _ = Interlocked.Increment(ref _metrics.TotalSecurityViolations);
+        _ = _metrics.ViolationsByType.AddOrUpdate(violationType, 1, (key, value) => value + 1);
+
         // Check for attack patterns
+
         await AnalyzeAttackPatternsAsync(violationType, sourceInformation, correlationId);
     }
 
@@ -179,7 +207,8 @@ public sealed class SecurityLogger : IDisposable
     /// <param name="authenticationMethod">Method used for authentication</param>
     /// <param name="sourceInformation">Source of the authentication request</param>
     /// <param name="sessionId">Session identifier</param>
-    public async Task LogAuthenticationSuccessAsync(string userId, string authenticationMethod, 
+    public async Task LogAuthenticationSuccessAsync(string userId, string authenticationMethod,
+
         SourceInformation sourceInformation, string sessionId)
     {
         var additionalData = new Dictionary<string, object>
@@ -193,8 +222,9 @@ public sealed class SecurityLogger : IDisposable
         await LogSecurityEventAsync(SecurityEventType.AuthenticationSuccess,
             $"User authentication successful: {userId} via {authenticationMethod}",
             SecurityLevel.Informational, userId, null, additionalData, sessionId);
-        
-        Interlocked.Increment(ref _metrics.SuccessfulAuthentications);
+
+
+        _ = Interlocked.Increment(ref _metrics.SuccessfulAuthentications);
     }
 
     /// <summary>
@@ -204,7 +234,8 @@ public sealed class SecurityLogger : IDisposable
     /// <param name="failureReason">Reason for authentication failure</param>
     /// <param name="sourceInformation">Source of the authentication request</param>
     /// <param name="attemptCount">Number of consecutive failed attempts</param>
-    public async Task LogAuthenticationFailureAsync(string userId, string failureReason, 
+    public async Task LogAuthenticationFailureAsync(string userId, string failureReason,
+
         SourceInformation sourceInformation, int attemptCount)
     {
         var additionalData = new Dictionary<string, object>
@@ -216,12 +247,14 @@ public sealed class SecurityLogger : IDisposable
         };
 
         var level = attemptCount > 3 ? SecurityLevel.High : SecurityLevel.Warning;
-        
+
+
         await LogSecurityEventAsync(SecurityEventType.AuthenticationFailure,
             $"User authentication failed: {userId} - {failureReason} (Attempt {attemptCount})",
             level, userId, null, additionalData);
-        
-        Interlocked.Increment(ref _metrics.FailedAuthentications);
+
+
+        _ = Interlocked.Increment(ref _metrics.FailedAuthentications);
     }
 
     /// <summary>
@@ -232,7 +265,8 @@ public sealed class SecurityLogger : IDisposable
     /// <param name="action">Action being performed</param>
     /// <param name="result">Access control result</param>
     /// <param name="reason">Reason for the result</param>
-    public async Task LogAccessControlAsync(string userId, string resource, string action, 
+    public async Task LogAccessControlAsync(string userId, string resource, string action,
+
         AccessResult result, string reason)
     {
         var additionalData = new Dictionary<string, object>
@@ -243,22 +277,25 @@ public sealed class SecurityLogger : IDisposable
             ["Reason"] = reason
         };
 
-        var eventType = result == AccessResult.Granted ? 
+        var eventType = result == AccessResult.Granted ?
+
             SecurityEventType.AccessGranted : SecurityEventType.AccessDenied;
-        var level = result == AccessResult.Granted ? 
+        var level = result == AccessResult.Granted ?
+
             SecurityLevel.Informational : SecurityLevel.Warning;
 
         await LogSecurityEventAsync(eventType,
             $"Access {result.ToString().ToLower()} for user {userId} to {resource} ({action}): {reason}",
             level, userId, resource, additionalData);
-        
+
+
         if (result == AccessResult.Granted)
         {
-            Interlocked.Increment(ref _metrics.AccessGrantedCount);
+            _ = Interlocked.Increment(ref _metrics.AccessGrantedCount);
         }
         else
         {
-            Interlocked.Increment(ref _metrics.AccessDeniedCount);
+            _ = Interlocked.Increment(ref _metrics.AccessDeniedCount);
         }
     }
 
@@ -272,9 +309,12 @@ public sealed class SecurityLogger : IDisposable
     /// <param name="fieldNames">Names of fields accessed/modified</param>
     /// <param name="originalValues">Original values (for modifications)</param>
     /// <param name="newValues">New values (for modifications)</param>
-    public async Task LogDataAccessAsync(string userId, DataOperation operation, string dataType, 
-        string recordId, IEnumerable<string>? fieldNames = null, 
-        IDictionary<string, object>? originalValues = null, 
+    public async Task LogDataAccessAsync(string userId, DataOperation operation, string dataType,
+
+        string recordId, IEnumerable<string>? fieldNames = null,
+
+        IDictionary<string, object>? originalValues = null,
+
         IDictionary<string, object>? newValues = null)
     {
         var additionalData = new Dictionary<string, object>
@@ -305,8 +345,9 @@ public sealed class SecurityLogger : IDisposable
         await LogSecurityEventAsync(SecurityEventType.DataAccess,
             $"Data {operation.ToString().ToLower()}: {dataType} record {recordId} by user {userId}",
             SecurityLevel.Informational, userId, $"{dataType}:{recordId}", additionalData);
-        
-        Interlocked.Increment(ref _metrics.DataAccessEvents);
+
+
+        _ = Interlocked.Increment(ref _metrics.DataAccessEvents);
     }
 
     /// <summary>
@@ -327,18 +368,21 @@ public sealed class SecurityLogger : IDisposable
             CriticalEventsCount = _metrics.CriticalEventsCount,
             LastEventTime = _metrics.LastEventTime
         };
-        
+
         // Copy dictionary contents
+
         foreach (var kvp in _metrics.EventsByType)
         {
             result.EventsByType[kvp.Key] = kvp.Value;
         }
-        
+
+
         foreach (var kvp in _metrics.ViolationsByType)
         {
             result.ViolationsByType[kvp.Key] = kvp.Value;
         }
-        
+
+
         return result;
     }
 
@@ -350,7 +394,8 @@ public sealed class SecurityLogger : IDisposable
     /// <param name="eventTypes">Optional filter for specific event types</param>
     /// <param name="format">Export format</param>
     /// <returns>Export result with file path and statistics</returns>
-    public async Task<AuditExportResult> ExportAuditLogsAsync(DateTime startDate, DateTime endDate, 
+    public async Task<AuditExportResult> ExportAuditLogsAsync(DateTime startDate, DateTime endDate,
+
         IEnumerable<SecurityEventType>? eventTypes = null, AuditExportFormat format = AuditExportFormat.Json)
     {
         if (_disposed)
@@ -371,23 +416,28 @@ public sealed class SecurityLogger : IDisposable
                 ExportStartTime = DateTimeOffset.UtcNow
             };
 
-            var exportPath = Path.Combine(_configuration.AuditLogDirectory, 
+            var exportPath = Path.Combine(_configuration.AuditLogDirectory,
+
                 $"audit_export_{DateTime.UtcNow:yyyyMMddHHmmss}.{GetFileExtension(format)}");
 
             // Read and filter audit logs
             var filteredEntries = await ReadAndFilterAuditLogsAsync(startDate, endDate, eventTypes);
-            
+
             // Export in requested format
+
             await ExportEntriesAsync(filteredEntries, exportPath, format);
-            
+
+
             exportResult.ExportPath = exportPath;
             exportResult.RecordCount = filteredEntries.Count;
             exportResult.ExportEndTime = DateTimeOffset.UtcNow;
             exportResult.IsSuccessful = true;
-            
+
+
             _logger.LogInformation("Audit log export completed: Path={ExportPath}, Records={RecordCount}",
                 exportPath, filteredEntries.Count);
-            
+
+
             return exportResult;
         }
         catch (Exception ex)
@@ -406,7 +456,7 @@ public sealed class SecurityLogger : IDisposable
         }
         finally
         {
-            _logWriteLock.Release();
+            _ = _logWriteLock.Release();
         }
     }
 
@@ -424,8 +474,10 @@ public sealed class SecurityLogger : IDisposable
         _sessionMetadata["CLRVersion"] = Environment.Version.ToString();
     }
 
-    private SecurityLogEntry CreateSecurityLogEntry(SecurityEventType eventType, string message, 
-        SecurityLevel level, string? userId, string? resourceId, 
+    private SecurityLogEntry CreateSecurityLogEntry(SecurityEventType eventType, string message,
+
+        SecurityLevel level, string? userId, string? resourceId,
+
         IDictionary<string, object>? additionalData, string? correlationId,
         string callerName, string sourceFile, int lineNumber)
     {
@@ -453,8 +505,10 @@ public sealed class SecurityLogger : IDisposable
                 SourceFile = Path.GetFileName(sourceFile),
                 LineNumber = lineNumber
             },
-            AdditionalData = additionalData != null ? 
-                new Dictionary<string, object>(additionalData) : 
+            AdditionalData = additionalData != null ?
+
+                new Dictionary<string, object>(additionalData) :
+
                 new Dictionary<string, object>()
         };
 
@@ -480,14 +534,16 @@ public sealed class SecurityLogger : IDisposable
 
     private void UpdateSecurityMetrics(SecurityLogEntry entry)
     {
-        Interlocked.Increment(ref _metrics.TotalSecurityEvents);
-        _metrics.EventsByType.AddOrUpdate(entry.EventType, 1, (key, value) => value + 1);
-        
+        _ = Interlocked.Increment(ref _metrics.TotalSecurityEvents);
+        _ = _metrics.EventsByType.AddOrUpdate(entry.EventType, 1, (key, value) => value + 1);
+
+
         if (entry.Level == SecurityLevel.Critical)
         {
-            Interlocked.Increment(ref _metrics.CriticalEventsCount);
+            _ = Interlocked.Increment(ref _metrics.CriticalEventsCount);
         }
-        
+
+
         _metrics.LastEventTime = entry.Timestamp;
     }
 
@@ -495,22 +551,25 @@ public sealed class SecurityLogger : IDisposable
     {
         // Immediately flush critical events to audit log
         await FlushSpecificEntryAsync(entry);
-        
+
         // Send alerts if configured
+
         if (_configuration.EnableCriticalEventAlerts)
         {
             await SendCriticalEventAlertAsync(entry);
         }
-        
+
+
         _logger.LogCritical("CRITICAL SECURITY EVENT: {EventType} - {Message} [Sequence: {SequenceNumber}]",
             entry.EventType, entry.Message, entry.SequenceNumber);
     }
 
     private void UpdateCorrelationContext(string correlationId, SecurityLogEntry entry)
     {
-        _correlationContexts.AddOrUpdate(correlationId, 
-            new CorrelationContext 
-            { 
+        _ = _correlationContexts.AddOrUpdate(correlationId,
+            new CorrelationContext
+            {
+
                 FirstEventTime = entry.Timestamp,
                 LastEventTime = entry.Timestamp,
                 EventCount = 1,
@@ -520,17 +579,18 @@ public sealed class SecurityLogger : IDisposable
             {
                 existing.LastEventTime = entry.Timestamp;
                 existing.EventCount++;
-                existing.EventTypes.Add(entry.EventType);
+                _ = existing.EventTypes.Add(entry.EventType);
                 return existing;
             });
     }
 
-    private async Task AnalyzeAttackPatternsAsync(SecurityViolationType violationType,
+    private static async Task AnalyzeAttackPatternsAsync(SecurityViolationType violationType,
 
-        SourceInformation sourceInfo, string? correlationId) =>
+        SourceInformation sourceInfo, string? correlationId)
         // Implement attack pattern analysis logic
         // This could include rate limiting, IP reputation checks, etc.
-        await Task.CompletedTask; // Placeholder for actual implementation
+
+        => await Task.CompletedTask; // Placeholder for actual implementation
 
     private void FlushAuditLogs(object? state)
     {
@@ -577,7 +637,8 @@ public sealed class SecurityLogger : IDisposable
         try
         {
             await using var writer = new StreamWriter(_auditLogPath, append: true, encoding: Encoding.UTF8);
-            
+
+
             foreach (var entry in entriesToFlush)
             {
                 var jsonEntry = JsonSerializer.Serialize(entry, new JsonSerializerOptions
@@ -585,15 +646,17 @@ public sealed class SecurityLogger : IDisposable
                     WriteIndented = false,
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 });
-                
+
+
                 await writer.WriteLineAsync(jsonEntry);
             }
-            
+
+
             await writer.FlushAsync();
         }
         finally
         {
-            _logWriteLock.Release();
+            _ = _logWriteLock.Release();
         }
     }
 
@@ -603,26 +666,29 @@ public sealed class SecurityLogger : IDisposable
         try
         {
             await using var writer = new StreamWriter(_auditLogPath, append: true, encoding: Encoding.UTF8);
-            
+
+
             var jsonEntry = JsonSerializer.Serialize(entry, new JsonSerializerOptions
             {
                 WriteIndented = false,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
-            
+
+
             await writer.WriteLineAsync(jsonEntry);
             await writer.FlushAsync();
         }
         finally
         {
-            _logWriteLock.Release();
+            _ = _logWriteLock.Release();
         }
     }
 
-    private async Task SendCriticalEventAlertAsync(SecurityLogEntry entry) =>
+    private static async Task SendCriticalEventAlertAsync(SecurityLogEntry entry)
         // Implementation for sending critical event alerts
         // This could include email, SMS, webhook notifications, etc.
-        await Task.CompletedTask; // Placeholder
+
+        => await Task.CompletedTask; // Placeholder
 
     private void PerformIntegrityCheck(object? state)
     {
@@ -645,19 +711,22 @@ public sealed class SecurityLogger : IDisposable
         });
     }
 
-    private async Task PerformAuditLogIntegrityCheckAsync() =>
+    private static async Task PerformAuditLogIntegrityCheckAsync()
         // Implementation for audit log integrity verification
         // This could include hash verification, digital signatures, etc.
-        await Task.CompletedTask; // Placeholder
 
-    private static bool IsSecurityCriticalContext() =>
+        => await Task.CompletedTask; // Placeholder
+
+    private static bool IsSecurityCriticalContext()
         // Check if we're running in a security-critical context
         // Note: SecurityManager is obsolete in .NET 9+, always return true for now
-        true;
 
-    private static string GetCurrentIntegrityLevel() =>
+        => true;
+
+    private static string GetCurrentIntegrityLevel()
         // Get current process integrity level (Windows-specific)
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Medium" : "Unknown";
+
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Medium" : "Unknown";
 
     private static Dictionary<string, object> GetExecutionContextInfo()
     {
@@ -670,11 +739,13 @@ public sealed class SecurityLogger : IDisposable
         };
     }
 
-    private async Task<List<SecurityLogEntry>> ReadAndFilterAuditLogsAsync(DateTime startDate, DateTime endDate, 
+    private async Task<List<SecurityLogEntry>> ReadAndFilterAuditLogsAsync(DateTime startDate, DateTime endDate,
+
         IEnumerable<SecurityEventType>? eventTypes)
     {
         var filteredEntries = new List<SecurityLogEntry>();
-        
+
+
         try
         {
             // Read from current audit log file
@@ -700,8 +771,10 @@ public sealed class SecurityLogger : IDisposable
                                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                             });
 
-                            if (entry != null && 
-                                entry.Timestamp.Date >= startDate.Date && 
+                            if (entry != null &&
+
+                                entry.Timestamp.Date >= startDate.Date &&
+
                                 entry.Timestamp.Date <= endDate.Date)
                             {
                                 if (eventTypes == null || eventTypes.Contains(entry.EventType))
@@ -718,13 +791,14 @@ public sealed class SecurityLogger : IDisposable
                 }
                 finally
                 {
-                    _logWriteLock.Release();
+                    _ = _logWriteLock.Release();
                 }
             }
 
             // TODO: Read from archived audit log files for the date range
             // This would involve scanning the audit directory for files matching the date pattern
-            
+
+
         }
         catch (Exception ex)
         {
@@ -761,7 +835,7 @@ public sealed class SecurityLogger : IDisposable
         }
     }
 
-    private async Task ExportAsJsonAsync(List<SecurityLogEntry> entries, string exportPath)
+    private static async Task ExportAsJsonAsync(List<SecurityLogEntry> entries, string exportPath)
     {
         await using var writer = new FileStream(exportPath, FileMode.Create, FileAccess.Write);
         await JsonSerializer.SerializeAsync(writer, entries, new JsonSerializerOptions
@@ -771,11 +845,12 @@ public sealed class SecurityLogger : IDisposable
         });
     }
 
-    private async Task ExportAsCsvAsync(List<SecurityLogEntry> entries, string exportPath)
+    private static async Task ExportAsCsvAsync(List<SecurityLogEntry> entries, string exportPath)
     {
         await using var writer = new StreamWriter(exportPath, false, Encoding.UTF8);
-        
+
         // Write CSV header
+
         await writer.WriteLineAsync("Timestamp,EventType,Level,Message,UserId,ResourceId,CorrelationId");
 
         // Write entries
@@ -788,15 +863,17 @@ public sealed class SecurityLogger : IDisposable
                       $"{EscapeCsv(entry.UserId ?? "")}," +
                       $"{EscapeCsv(entry.ResourceId ?? "")}," +
                       $"{EscapeCsv(entry.CorrelationId)}";
-            
+
+
             await writer.WriteLineAsync(line);
         }
     }
 
-    private async Task ExportAsXmlAsync(List<SecurityLogEntry> entries, string exportPath)
+    private static async Task ExportAsXmlAsync(List<SecurityLogEntry> entries, string exportPath)
     {
         await using var writer = new FileStream(exportPath, FileMode.Create, FileAccess.Write);
-        
+
+
         using var xmlWriter = XmlWriter.Create(writer, new XmlWriterSettings
         {
             Indent = true,
@@ -813,7 +890,8 @@ public sealed class SecurityLogger : IDisposable
             await xmlWriter.WriteAttributeStringAsync(null, "eventType", null, entry.EventType.ToString());
             await xmlWriter.WriteAttributeStringAsync(null, "level", null, entry.Level.ToString());
             await xmlWriter.WriteElementStringAsync(null, "Message", null, entry.Message);
-            
+
+
             if (!string.IsNullOrEmpty(entry.UserId))
             {
                 await xmlWriter.WriteElementStringAsync(null, "UserId", null, entry.UserId);
@@ -846,7 +924,8 @@ public sealed class SecurityLogger : IDisposable
         {
             return $"\"{value.Replace("\"", "\"\"")}\"";
         }
-        
+
+
         return value;
     }
 
@@ -919,7 +998,7 @@ public sealed class SecurityLoggingConfiguration
     public int AuditLogRetentionDays { get; init; } = 90;
     public bool EnableIntegrityChecking { get; init; } = true;
     public bool EnableCorrelationTracking { get; init; } = true;
-    public bool IncludeStackTraces { get; init; } = false;
+    public bool IncludeStackTraces { get; init; }
 }
 
 /// <summary>
@@ -931,34 +1010,40 @@ public enum SecurityEventType
     SecuritySystemStartup,
     SecuritySystemShutdown,
     ConfigurationChange,
-    
+
     // Authentication events
+
     AuthenticationSuccess,
     AuthenticationFailure,
     AccountLockout,
     PasswordChange,
-    
+
     // Authorization events
+
     AccessGranted,
     AccessDenied,
     PermissionElevation,
-    
+
     // Data access events
+
     DataAccess,
     DataModification,
     DataDeletion,
-    
+
     // Security violations
+
     SecurityViolation,
     SuspiciousActivity,
     AttackDetected,
-    
+
     // Cryptographic events
+
     KeyGeneration,
     KeyRotation,
     CryptographicOperation,
-    
+
     // Plugin/module events
+
     PluginLoaded,
     PluginValidation,
     PluginSecurityCheck
@@ -1137,5 +1222,6 @@ public sealed class AuditExportResult
     public int RecordCount { get; set; }
     public string? ErrorMessage { get; set; }
 }
+
 
 #endregion

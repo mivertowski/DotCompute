@@ -10,22 +10,22 @@ namespace DotCompute.Memory;
 /// </summary>
 internal interface IMemoryPoolInternal
 {
-/// <summary>
-/// Gets the performance statistics of the memory pool.
-/// </summary>
-/// <returns>The performance statistics.</returns>
-public MemoryPoolPerformanceStats GetPerformanceStats();
+    /// <summary>
+    /// Gets the performance statistics of the memory pool.
+    /// </summary>
+    /// <returns>The performance statistics.</returns>
+    public MemoryPoolPerformanceStats GetPerformanceStats();
 
-/// <summary>
-/// Handles memory pressure by releasing unused buffers.
-/// </summary>
-/// <param name="pressure">The memory pressure value between 0.0 and 1.0.</param>
-public void HandleMemoryPressure(double pressure);
+    /// <summary>
+    /// Handles memory pressure by releasing unused buffers.
+    /// </summary>
+    /// <param name="pressure">The memory pressure value between 0.0 and 1.0.</param>
+    public void HandleMemoryPressure(double pressure);
 
-/// <summary>
-/// Compacts the memory pool and releases unused memory.
-/// </summary>
-/// <param name="maxBytesToRelease">The maximum number of bytes to release.</param>
-/// <returns>The number of bytes released.</returns>
-public long Compact(long maxBytesToRelease = long.MaxValue);
+    /// <summary>
+    /// Compacts the memory pool and releases unused memory.
+    /// </summary>
+    /// <param name="maxBytesToRelease">The maximum number of bytes to release.</param>
+    /// <returns>The number of bytes released.</returns>
+    public long Compact(long maxBytesToRelease = long.MaxValue);
 }

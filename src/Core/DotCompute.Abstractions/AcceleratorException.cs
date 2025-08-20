@@ -4,31 +4,31 @@
 namespace DotCompute.Abstractions
 {
 
-/// <summary>
-/// Exception thrown when accelerator operations fail.
-/// </summary>
-public class AcceleratorException : Exception
-{
     /// <summary>
-    /// Initializes a new instance of the AcceleratorException class.
+    /// Exception thrown when accelerator operations fail.
     /// </summary>
-    public AcceleratorException() : base()
+    public class AcceleratorException : Exception
     {
-    }
+        /// <summary>
+        /// Initializes a new instance of the AcceleratorException class.
+        /// </summary>
+        public AcceleratorException() : base()
+        {
+        }
 
-    /// <summary>
-    /// Initializes a new instance of the AcceleratorException class with a specified error message.
-    /// </summary>
-    public AcceleratorException(string message) : base(message)
-    {
-    }
+        /// <summary>
+        /// Initializes a new instance of the AcceleratorException class with a specified error message.
+        /// </summary>
+        public AcceleratorException(string message) : base(message)
+        {
+        }
 
-    /// <summary>
-    /// Initializes a new instance of the AcceleratorException class with a specified error message
-    /// and a reference to the inner exception that is the cause of this exception.
-    /// </summary>
-    public AcceleratorException(string message, Exception innerException) : base(message, innerException)
-    {
+        /// <summary>
+        /// Initializes a new instance of the AcceleratorException class with a specified error message
+        /// and a reference to the inner exception that is the cause of this exception.
+        /// </summary>
+        public AcceleratorException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
-}
 }

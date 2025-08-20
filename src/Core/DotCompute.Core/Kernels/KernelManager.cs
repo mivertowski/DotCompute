@@ -4,6 +4,8 @@
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Kernels
@@ -108,7 +110,7 @@ public sealed partial class KernelManager : IDisposable
         }
         finally
         {
-            _compilationSemaphore.Release();
+                _ = _compilationSemaphore.Release();
         }
     }
 
@@ -160,7 +162,7 @@ public sealed partial class KernelManager : IDisposable
         }
         finally
         {
-            _compilationSemaphore.Release();
+                _ = _compilationSemaphore.Release();
         }
     }
 
@@ -558,18 +560,18 @@ public sealed partial class KernelManager : IDisposable
     /// <summary>
     /// Converts Core KernelLanguage to Abstractions KernelLanguage.
     /// </summary>
-    private static DotCompute.Abstractions.KernelLanguage ConvertKernelLanguage(KernelLanguage language)
+    private static DotCompute.Abstractions.Enums.KernelLanguage ConvertKernelLanguage(KernelLanguage language)
     {
         return language switch
         {
-            KernelLanguage.CSharp => DotCompute.Abstractions.KernelLanguage.CSharpIL,
-            KernelLanguage.OpenCL => DotCompute.Abstractions.KernelLanguage.OpenCL,
-            KernelLanguage.CUDA => DotCompute.Abstractions.KernelLanguage.Cuda,
-            KernelLanguage.Metal => DotCompute.Abstractions.KernelLanguage.Metal,
-            KernelLanguage.DirectCompute => DotCompute.Abstractions.KernelLanguage.HLSL,
-            KernelLanguage.Vulkan => DotCompute.Abstractions.KernelLanguage.SPIRV,
-            KernelLanguage.WebGPU => DotCompute.Abstractions.KernelLanguage.SPIRV,
-            _ => DotCompute.Abstractions.KernelLanguage.CSharpIL
+            KernelLanguage.CSharp => DotCompute.Abstractions.Enums.KernelLanguage.CSharpIL,
+            KernelLanguage.OpenCL => DotCompute.Abstractions.Enums.KernelLanguage.OpenCL,
+            KernelLanguage.CUDA => DotCompute.Abstractions.Enums.KernelLanguage.Cuda,
+            KernelLanguage.Metal => DotCompute.Abstractions.Enums.KernelLanguage.Metal,
+            KernelLanguage.DirectCompute => DotCompute.Abstractions.Enums.KernelLanguage.HLSL,
+            KernelLanguage.Vulkan => DotCompute.Abstractions.Enums.KernelLanguage.SPIRV,
+            KernelLanguage.WebGPU => DotCompute.Abstractions.Enums.KernelLanguage.SPIRV,
+            _ => DotCompute.Abstractions.Enums.KernelLanguage.CSharpIL
         };
     }
 

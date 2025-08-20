@@ -7,6 +7,7 @@ using Moq;
 using Xunit;
 using System.Collections.ObjectModel;
 
+using DotCompute.Abstractions.Enums;
 namespace DotCompute.Core.Tests;
 
 

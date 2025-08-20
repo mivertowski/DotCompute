@@ -6,132 +6,132 @@ using DotCompute.Abstractions;
 namespace DotCompute.Backends.CUDA.Memory
 {
 
-/// <summary>
-/// Adapts the synchronous CudaMemoryManager to the async IMemoryManager interface.
-/// </summary>
-public class CudaAsyncMemoryManagerAdapter(CudaMemoryManager syncMemoryManager) : IMemoryManager
-{
-    private readonly CudaMemoryManager _syncMemoryManager = syncMemoryManager ?? throw new ArgumentNullException(nameof(syncMemoryManager));
-
-    public ValueTask<IMemoryBuffer> AllocateAsync(
-        long sizeInBytes,
-        MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Adapts the synchronous CudaMemoryManager to the async IMemoryManager interface.
+    /// </summary>
+    public class CudaAsyncMemoryManagerAdapter(CudaMemoryManager syncMemoryManager) : IMemoryManager
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var buffer = _syncMemoryManager.Allocate(sizeInBytes, options);
-        return new ValueTask<IMemoryBuffer>(buffer);
-    }
+        private readonly CudaMemoryManager _syncMemoryManager = syncMemoryManager ?? throw new ArgumentNullException(nameof(syncMemoryManager));
 
-    public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
-        ReadOnlyMemory<T> source,
-        MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-        var sizeInBytes = source.Length * elementSize;
-
-        var buffer = _syncMemoryManager.Allocate(sizeInBytes, options);
-
-        try
+        public ValueTask<IMemoryBuffer> AllocateAsync(
+            long sizeInBytes,
+            MemoryOptions options = MemoryOptions.None,
+            CancellationToken cancellationToken = default)
         {
-            await buffer.CopyFromHostAsync(source, 0, cancellationToken).ConfigureAwait(false);
-            return buffer;
-        }
-        catch
-        {
-            _syncMemoryManager.Free(buffer);
-            throw;
-        }
-    }
-
-    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
-    {
-        if (buffer is ISyncMemoryBuffer syncBuffer)
-        {
-            return syncBuffer.Slice(offset, length);
+            cancellationToken.ThrowIfCancellationRequested();
+            var buffer = _syncMemoryManager.Allocate(sizeInBytes, options);
+            return new ValueTask<IMemoryBuffer>(buffer);
         }
 
-        throw new ArgumentException("Buffer must be a CUDA memory buffer", nameof(buffer));
-    }
-
-    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
-    {
-        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-        var sizeInBytes = count * elementSize;
-        return AllocateAsync(sizeInBytes);
-    }
-
-    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
-    {
-        ArgumentNullException.ThrowIfNull(buffer);
-        
-        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-        var sizeInBytes = data.Length * elementSize;
-        
-        if (sizeInBytes > buffer.SizeInBytes)
+        public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
+            ReadOnlyMemory<T> source,
+            MemoryOptions options = MemoryOptions.None,
+            CancellationToken cancellationToken = default) where T : unmanaged
         {
-            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
-        }
+            cancellationToken.ThrowIfCancellationRequested();
 
-        unsafe
-        {
-            fixed (T* dataPtr = data)
+            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var sizeInBytes = source.Length * elementSize;
+
+            var buffer = _syncMemoryManager.Allocate(sizeInBytes, options);
+
+            try
             {
-                if (buffer is ISyncMemoryBuffer syncBuffer)
-                {
-                    _syncMemoryManager.CopyFromHost(dataPtr, syncBuffer, sizeInBytes);
-                }
-                else
-                {
-                    throw new ArgumentException("Buffer must be a CUDA memory buffer", nameof(buffer));
-                }
+                await buffer.CopyFromHostAsync(source, 0, cancellationToken).ConfigureAwait(false);
+                return buffer;
+            }
+            catch
+            {
+                _syncMemoryManager.Free(buffer);
+                throw;
             }
         }
-    }
 
-    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
-    {
-        ArgumentNullException.ThrowIfNull(buffer);
-        
-        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-        var sizeInBytes = data.Length * elementSize;
-        
-        if (sizeInBytes > buffer.SizeInBytes)
+        public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
         {
-            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
-        }
-
-        unsafe
-        {
-            fixed (T* dataPtr = data)
+            if (buffer is ISyncMemoryBuffer syncBuffer)
             {
-                if (buffer is ISyncMemoryBuffer syncBuffer)
-                {
-                    _syncMemoryManager.CopyToHost(syncBuffer, dataPtr, sizeInBytes);
-                }
-                else
-                {
-                    throw new ArgumentException("Buffer must be a CUDA memory buffer", nameof(buffer));
-                }
+                return syncBuffer.Slice(offset, length);
             }
-        }
-    }
 
-    public void Free(IMemoryBuffer buffer)
-    {
-        ArgumentNullException.ThrowIfNull(buffer);
-        
-        if (buffer is ISyncMemoryBuffer syncBuffer)
-        {
-            _syncMemoryManager.Free(syncBuffer);
-        }
-        else
-        {
             throw new ArgumentException("Buffer must be a CUDA memory buffer", nameof(buffer));
         }
+
+        public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+        {
+            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var sizeInBytes = count * elementSize;
+            return AllocateAsync(sizeInBytes);
+        }
+
+        public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+
+            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var sizeInBytes = data.Length * elementSize;
+
+            if (sizeInBytes > buffer.SizeInBytes)
+            {
+                throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+            }
+
+            unsafe
+            {
+                fixed (T* dataPtr = data)
+                {
+                    if (buffer is ISyncMemoryBuffer syncBuffer)
+                    {
+                        _syncMemoryManager.CopyFromHost(dataPtr, syncBuffer, sizeInBytes);
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Buffer must be a CUDA memory buffer", nameof(buffer));
+                    }
+                }
+            }
+        }
+
+        public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+
+            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var sizeInBytes = data.Length * elementSize;
+
+            if (sizeInBytes > buffer.SizeInBytes)
+            {
+                throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+            }
+
+            unsafe
+            {
+                fixed (T* dataPtr = data)
+                {
+                    if (buffer is ISyncMemoryBuffer syncBuffer)
+                    {
+                        _syncMemoryManager.CopyToHost(syncBuffer, dataPtr, sizeInBytes);
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Buffer must be a CUDA memory buffer", nameof(buffer));
+                    }
+                }
+            }
+        }
+
+        public void Free(IMemoryBuffer buffer)
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+
+            if (buffer is ISyncMemoryBuffer syncBuffer)
+            {
+                _syncMemoryManager.Free(syncBuffer);
+            }
+            else
+            {
+                throw new ArgumentException("Buffer must be a CUDA memory buffer", nameof(buffer));
+            }
+        }
     }
-}
 }

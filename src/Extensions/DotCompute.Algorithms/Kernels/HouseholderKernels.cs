@@ -12,10 +12,10 @@ namespace DotCompute.Algorithms.Kernels;
 /// </summary>
 public static class HouseholderKernels
 {
-/// <summary>
-/// OpenCL kernel for computing Householder vector.
-/// </summary>
-public const string ComputeHouseholderVectorKernel = @"
+    /// <summary>
+    /// OpenCL kernel for computing Householder vector.
+    /// </summary>
+    public const string ComputeHouseholderVectorKernel = @"
 // Compute Householder vector for QR decomposition
 __kernel void compute_householder_vector(
     __global const float* column,     // Input column vector
@@ -66,10 +66,10 @@ __kernel void compute_householder_vector(
     }
 }";
 
-/// <summary>
-/// OpenCL kernel for applying Householder transformation to matrix.
-/// </summary>
-public const string ApplyHouseholderTransformationKernel = @"
+    /// <summary>
+    /// OpenCL kernel for applying Householder transformation to matrix.
+    /// </summary>
+    public const string ApplyHouseholderTransformationKernel = @"
 // Apply Householder transformation H = I - 2*v*v^T to matrix A
 __kernel void apply_householder_left(
     __global float* matrix,           // Input/output matrix (modified in place)
@@ -116,10 +116,10 @@ __kernel void apply_householder_left(
     }
 }";
 
-/// <summary>
-/// CUDA kernel for computing Householder vector.
-/// </summary>
-public const string CudaComputeHouseholderVectorKernel = @"
+    /// <summary>
+    /// CUDA kernel for computing Householder vector.
+    /// </summary>
+    public const string CudaComputeHouseholderVectorKernel = @"
 extern ""C"" __global__ void compute_householder_vector_cuda(
     const float* column,      // Input column vector
     float* householder,       // Output Householder vector
@@ -179,10 +179,10 @@ extern ""C"" __global__ void compute_householder_vector_cuda(
     }
 }";
 
-/// <summary>
-/// CUDA kernel for applying Householder transformation.
-/// </summary>
-public const string CudaApplyHouseholderTransformationKernel = @"
+    /// <summary>
+    /// CUDA kernel for applying Householder transformation.
+    /// </summary>
+    public const string CudaApplyHouseholderTransformationKernel = @"
 extern ""C"" __global__ void apply_householder_left_cuda(
     float* matrix,            // Input/output matrix
     const float* v,           // Householder vector
@@ -224,10 +224,10 @@ extern ""C"" __global__ void apply_householder_left_cuda(
     }
 }";
 
-/// <summary>
-/// DirectCompute/HLSL kernel for Householder transformations.
-/// </summary>
-public const string HLSLHouseholderKernel = @"
+    /// <summary>
+    /// DirectCompute/HLSL kernel for Householder transformations.
+    /// </summary>
+    public const string HLSLHouseholderKernel = @"
 // HLSL Compute Shader for Householder transformations
 [numthreads(16, 16, 1)]
 void CSHouseholderTransform(
@@ -270,10 +270,10 @@ void CSHouseholderTransform(
     }
 }";
 
-/// <summary>
-/// Metal kernel for Householder transformations (Apple Silicon).
-/// </summary>
-public const string MetalHouseholderKernel = @"
+    /// <summary>
+    /// Metal kernel for Householder transformations (Apple Silicon).
+    /// </summary>
+    public const string MetalHouseholderKernel = @"
 #include <metal_stdlib>
 using namespace metal;
 
@@ -332,31 +332,31 @@ kernel void compute_householder_vector_metal(
     }
 }";
 
-/// <summary>
-/// Gets kernel source code for the specified accelerator type.
-/// </summary>
-/// <param name="acceleratorType">Type of accelerator (OpenCL, CUDA, DirectCompute, Metal).</param>
-/// <param name="operation">Operation type (ComputeVector, ApplyTransformation).</param>
-/// <returns>Kernel source code string.</returns>
-public static string GetKernelSource(string acceleratorType, string operation)
-{
-    return acceleratorType.ToUpperInvariant() switch
+    /// <summary>
+    /// Gets kernel source code for the specified accelerator type.
+    /// </summary>
+    /// <param name="acceleratorType">Type of accelerator (OpenCL, CUDA, DirectCompute, Metal).</param>
+    /// <param name="operation">Operation type (ComputeVector, ApplyTransformation).</param>
+    /// <returns>Kernel source code string.</returns>
+    public static string GetKernelSource(string acceleratorType, string operation)
     {
-        "OPENCL" => operation switch
+        return acceleratorType.ToUpperInvariant() switch
         {
-            "ComputeVector" => ComputeHouseholderVectorKernel,
-            "ApplyTransformation" => ApplyHouseholderTransformationKernel,
-            _ => throw new ArgumentException($"Unknown OpenCL operation: {operation}")
-        },
-        "CUDA" => operation switch
-        {
-            "ComputeVector" => CudaComputeHouseholderVectorKernel,
-            "ApplyTransformation" => CudaApplyHouseholderTransformationKernel,
-            _ => throw new ArgumentException($"Unknown CUDA operation: {operation}")
-        },
-        "DIRECTCOMPUTE" => HLSLHouseholderKernel,
-        "METAL" => MetalHouseholderKernel,
-        _ => throw new NotSupportedException($"Accelerator type {acceleratorType} not supported")
-    };
-}
+            "OPENCL" => operation switch
+            {
+                "ComputeVector" => ComputeHouseholderVectorKernel,
+                "ApplyTransformation" => ApplyHouseholderTransformationKernel,
+                _ => throw new ArgumentException($"Unknown OpenCL operation: {operation}")
+            },
+            "CUDA" => operation switch
+            {
+                "ComputeVector" => CudaComputeHouseholderVectorKernel,
+                "ApplyTransformation" => CudaApplyHouseholderTransformationKernel,
+                _ => throw new ArgumentException($"Unknown CUDA operation: {operation}")
+            },
+            "DIRECTCOMPUTE" => HLSLHouseholderKernel,
+            "METAL" => MetalHouseholderKernel,
+            _ => throw new NotSupportedException($"Accelerator type {acceleratorType} not supported")
+        };
+    }
 }

@@ -20,14 +20,17 @@ public static class MatrixOptimizations
     private const int L1_CACHE_BLOCK_SIZE = 64;   // Typical L1 cache line size
     private const int L2_CACHE_BLOCK_SIZE = 256;  // L2 cache-friendly block
     private const int L3_CACHE_BLOCK_SIZE = 1024; // L3 cache-friendly block
-    
+
     // Strassen's algorithm threshold (empirically determined)
+
     private const int STRASSEN_THRESHOLD = 128;
-    
+
     // SIMD vector sizes
+
     private static readonly int Vector256Size = Vector256<float>.Count;
     private static readonly int Vector128Size = Vector128<float>.Count;
-    
+
+
     /// <summary>
     /// Optimized matrix multiplication with automatic algorithm selection.
     /// Achieves 10-50x performance improvement over naive implementation.
@@ -40,17 +43,20 @@ public static class MatrixOptimizations
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
-        
+
+
         if (a.Columns != b.Rows)
         {
             throw new ArgumentException("Matrix dimensions incompatible for multiplication");
         }
-        
+
+
         var result = new Matrix(a.Rows, b.Columns);
         OptimizedMultiply(a, b, result);
         return result;
     }
-    
+
+
     /// <summary>
     /// In-place optimized matrix multiplication with automatic algorithm selection.
     /// </summary>
@@ -59,9 +65,11 @@ public static class MatrixOptimizations
         var n = a.Rows;
         var m = b.Columns;
         var k = a.Columns;
-        
+
         // Algorithm selection based on matrix size and characteristics
-        if (n >= STRASSEN_THRESHOLD && m >= STRASSEN_THRESHOLD && k >= STRASSEN_THRESHOLD && 
+
+        if (n >= STRASSEN_THRESHOLD && m >= STRASSEN_THRESHOLD && k >= STRASSEN_THRESHOLD &&
+
             IsSquareAndPowerOfTwo(n) && IsSquareAndPowerOfTwo(m))
         {
             // Use Strassen's algorithm for large square matrices
@@ -78,7 +86,8 @@ public static class MatrixOptimizations
             SimdMultiply(a, b, result);
         }
     }
-    
+
+
     /// <summary>
     /// Strassen's algorithm implementation for O(n^2.807) complexity.
     /// Optimal for large square matrices that are powers of 2.
@@ -86,28 +95,33 @@ public static class MatrixOptimizations
     public static void StrassenMultiply(Matrix a, Matrix b, Matrix result)
     {
         var n = a.Rows;
-        
+
+
         if (n <= STRASSEN_THRESHOLD || !IsSquareAndPowerOfTwo(n))
         {
             // Fall back to optimized standard multiplication
             SimdMultiply(a, b, result);
             return;
         }
-        
+
+
         var half = n / 2;
-        
+
         // Partition matrices into quadrants
+
         var a11 = GetSubMatrix(a, 0, 0, half, half);
         var a12 = GetSubMatrix(a, 0, half, half, half);
         var a21 = GetSubMatrix(a, half, 0, half, half);
         var a22 = GetSubMatrix(a, half, half, half, half);
-        
+
+
         var b11 = GetSubMatrix(b, 0, 0, half, half);
         var b12 = GetSubMatrix(b, 0, half, half, half);
         var b21 = GetSubMatrix(b, half, 0, half, half);
         var b22 = GetSubMatrix(b, half, half, half, half);
-        
+
         // Compute Strassen's 7 products
+
         var s1 = MatrixSubtract(b12, b22);
         var s2 = MatrixAdd(a11, a12);
         var s3 = MatrixAdd(a21, a22);
@@ -118,7 +132,8 @@ public static class MatrixOptimizations
         var s8 = MatrixAdd(b21, b22);
         var s9 = MatrixSubtract(a11, a21);
         var s10 = MatrixAdd(b11, b12);
-        
+
+
         var p1 = new Matrix(half, half);
         var p2 = new Matrix(half, half);
         var p3 = new Matrix(half, half);
@@ -126,7 +141,8 @@ public static class MatrixOptimizations
         var p5 = new Matrix(half, half);
         var p6 = new Matrix(half, half);
         var p7 = new Matrix(half, half);
-        
+
+
         StrassenMultiply(a11, s1, p1);                    // P1 = A11 * S1
         StrassenMultiply(s2, b22, p2);                    // P2 = S2 * B22
         StrassenMultiply(s3, b11, p3);                    // P3 = S3 * B11
@@ -134,20 +150,23 @@ public static class MatrixOptimizations
         StrassenMultiply(s5, s6, p5);                     // P5 = S5 * S6
         StrassenMultiply(s7, s8, p6);                     // P6 = S7 * S8
         StrassenMultiply(s9, s10, p7);                    // P7 = S9 * S10
-        
+
         // Compute result quadrants
+
         var c11 = MatrixSubtract(MatrixAdd(MatrixAdd(p5, p4), p6), p2);  // C11 = P5 + P4 - P2 + P6
         var c12 = MatrixAdd(p1, p2);                                      // C12 = P1 + P2
         var c21 = MatrixAdd(p3, p4);                                      // C21 = P3 + P4
         var c22 = MatrixSubtract(MatrixSubtract(MatrixAdd(p5, p1), p3), p7); // C22 = P5 + P1 - P3 - P7
-        
+
         // Copy results back to output matrix
+
         CopySubMatrix(c11, result, 0, 0);
         CopySubMatrix(c12, result, 0, half);
         CopySubMatrix(c21, result, half, 0);
         CopySubMatrix(c22, result, half, half);
     }
-    
+
+
     /// <summary>
     /// Cache-oblivious matrix multiplication with recursive blocking.
     /// Automatically adapts to memory hierarchy for optimal cache utilization.
@@ -163,7 +182,8 @@ public static class MatrixOptimizations
             0, 0, 0, 0, 0, 0,
             a.Columns, b.Columns, result.Columns);
     }
-    
+
+
     /// <summary>
     /// SIMD-optimized matrix multiplication using AVX2/SSE instructions.
     /// Achieves near-theoretical peak performance for small to medium matrices.
@@ -173,14 +193,17 @@ public static class MatrixOptimizations
         var aSpan = a.AsMutableSpan();
         var bSpan = b.AsMutableSpan();
         var resultSpan = result.AsMutableSpan();
-        
+
+
         var rows = a.Rows;
         var cols = b.Columns;
         var inner = a.Columns;
-        
+
         // Clear result matrix
+
         result.AsMutableSpan().Clear();
-        
+
+
         if (Avx2.IsSupported && cols >= Vector256Size)
         {
             SimdMultiplyAvx2(aSpan, bSpan, resultSpan, rows, cols, inner, a.Columns, b.Columns, result.Columns);
@@ -194,7 +217,8 @@ public static class MatrixOptimizations
             SimdMultiplyFallback(aSpan, bSpan, resultSpan, rows, cols, inner, a.Columns, b.Columns, result.Columns);
         }
     }
-    
+
+
     /// <summary>
     /// Blocked matrix multiplication optimized for L1/L2 cache efficiency.
     /// Uses register blocking and memory prefetching for maximum performance.
@@ -204,28 +228,34 @@ public static class MatrixOptimizations
         var rows = a.Rows;
         var cols = b.Columns;
         var inner = a.Columns;
-        
+
+
         var aSpan = a.AsMutableSpan();
         var bSpan = b.AsMutableSpan();
         var resultSpan = result.AsMutableSpan();
-        
+
         // Clear result
+
         result.AsMutableSpan().Clear();
-        
+
         // Triple-nested loop with blocking
+
         for (var ii = 0; ii < rows; ii += blockSize)
         {
             var iEnd = Math.Min(ii + blockSize, rows);
-            
+
+
             for (var jj = 0; jj < cols; jj += blockSize)
             {
                 var jEnd = Math.Min(jj + blockSize, cols);
-                
+
+
                 for (var kk = 0; kk < inner; kk += blockSize)
                 {
                     var kEnd = Math.Min(kk + blockSize, inner);
-                    
+
                     // Multiply blocks
+
                     MultiplyBlock(aSpan, bSpan, resultSpan,
                         ii, iEnd, jj, jEnd, kk, kEnd,
                         a.Columns, b.Columns, result.Columns);
@@ -233,7 +263,8 @@ public static class MatrixOptimizations
             }
         }
     }
-    
+
+
     /// <summary>
     /// Transpose matrix with cache-friendly blocked algorithm.
     /// Optimized for minimal cache misses and maximum memory bandwidth utilization.
@@ -244,7 +275,8 @@ public static class MatrixOptimizations
         OptimizedTranspose(matrix, result);
         return result;
     }
-    
+
+
     /// <summary>
     /// In-place optimized matrix transpose using cache-friendly blocking.
     /// </summary>
@@ -254,10 +286,12 @@ public static class MatrixOptimizations
         var cols = source.Columns;
         var sourceSpan = source.AsSpan();
         var destSpan = dest.AsMutableSpan();
-        
+
+
         const int blockSize = L1_CACHE_BLOCK_SIZE;
-        
+
         // Use SIMD for small matrices or fallback to blocked transpose
+
         if (rows * cols <= blockSize * blockSize && Avx2.IsSupported)
         {
             SimdTranspose(sourceSpan, destSpan, rows, cols, source.Columns, dest.Columns);
@@ -291,15 +325,17 @@ public static class MatrixOptimizations
                     var aVal = a[(aRow + i) * aStride + (aCol + k)];
                     for (var j = 0; j < p; j++)
                     {
-                        c[(cRow + i) * cStride + (cCol + j)] += 
+                        c[(cRow + i) * cStride + (cCol + j)] +=
+
                             aVal * b[(bRow + k) * bStride + (bCol + j)];
                     }
                 }
             }
             return;
         }
-        
+
         // Recursive case: divide along largest dimension
+
         if (m >= Math.Max(n, p))
         {
             var m1 = m / 2;
@@ -328,7 +364,8 @@ public static class MatrixOptimizations
                 aRow, aCol, bRow, bCol + p1, cRow, cCol + p1, aStride, bStride, cStride);
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void SimdMultiplyAvx2(
         Span<float> a, Span<float> b, Span<float> c,
@@ -337,17 +374,20 @@ public static class MatrixOptimizations
         fixed (float* aPtr = a, bPtr = b, cPtr = c)
         {
             var vectorCols = cols - (cols % Vector256Size);
-            
+
+
             for (var i = 0; i < rows; i++)
             {
                 var aRowPtr = aPtr + i * aStride;
                 var cRowPtr = cPtr + i * cStride;
-                
+
+
                 for (var k = 0; k < inner; k++)
                 {
                     var aVal = Vector256.Create(aRowPtr[k]);
                     var bRowPtr = bPtr + k * bStride;
-                    
+
+
                     var j = 0;
                     // Process 8 elements at a time using AVX2
                     for (; j < vectorCols; j += Vector256Size)
@@ -357,8 +397,9 @@ public static class MatrixOptimizations
                         var result = Avx.Add(cVec, Avx.Multiply(aVal, bVec));
                         Avx.Store(cRowPtr + j, result);
                     }
-                    
+
                     // Handle remaining elements
+
                     for (; j < cols; j++)
                     {
                         cRowPtr[j] += aRowPtr[k] * bRowPtr[j];
@@ -367,7 +408,8 @@ public static class MatrixOptimizations
             }
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void SimdMultiplySse2(
         Span<float> a, Span<float> b, Span<float> c,
@@ -376,17 +418,20 @@ public static class MatrixOptimizations
         fixed (float* aPtr = a, bPtr = b, cPtr = c)
         {
             var vectorCols = cols - (cols % Vector128Size);
-            
+
+
             for (var i = 0; i < rows; i++)
             {
                 var aRowPtr = aPtr + i * aStride;
                 var cRowPtr = cPtr + i * cStride;
-                
+
+
                 for (var k = 0; k < inner; k++)
                 {
                     var aVal = Vector128.Create(aRowPtr[k]);
                     var bRowPtr = bPtr + k * bStride;
-                    
+
+
                     var j = 0;
                     // Process 4 elements at a time using SSE2
                     for (; j < vectorCols; j += Vector128Size)
@@ -396,8 +441,9 @@ public static class MatrixOptimizations
                         var result = Sse.Add(cVec, Sse.Multiply(aVal, bVec));
                         Sse.Store(cRowPtr + j, result);
                     }
-                    
+
                     // Handle remaining elements
+
                     for (; j < cols; j++)
                     {
                         cRowPtr[j] += aRowPtr[k] * bRowPtr[j];
@@ -406,7 +452,8 @@ public static class MatrixOptimizations
             }
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void SimdMultiplyFallback(
         Span<float> a, Span<float> b, Span<float> c,
@@ -414,13 +461,15 @@ public static class MatrixOptimizations
     {
         // Use System.Numerics.Vector for cross-platform SIMD
         var vectorCols = cols - (cols % Vector<float>.Count);
-        
+
+
         for (var i = 0; i < rows; i++)
         {
             for (var k = 0; k < inner; k++)
             {
                 var aVal = new Vector<float>(a[i * aStride + k]);
-                
+
+
                 var j = 0;
                 for (; j < vectorCols; j += Vector<float>.Count)
                 {
@@ -429,8 +478,9 @@ public static class MatrixOptimizations
                     var result = cVec + aVal * bVec;
                     result.CopyTo(c.Slice(i * cStride + j, Vector<float>.Count));
                 }
-                
+
                 // Handle remaining elements
+
                 for (; j < cols; j++)
                 {
                     c[i * cStride + j] += a[i * aStride + k] * b[k * bStride + j];
@@ -438,7 +488,8 @@ public static class MatrixOptimizations
             }
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void MultiplyBlock(
         Span<float> a, Span<float> b, Span<float> c,
@@ -457,7 +508,8 @@ public static class MatrixOptimizations
             }
         }
     }
-    
+
+
     private static unsafe void SimdTranspose(
         ReadOnlySpan<float> source, Span<float> dest,
         int rows, int cols, int sourceStride, int destStride)
@@ -488,7 +540,8 @@ public static class MatrixOptimizations
             }
         }
     }
-    
+
+
     private static void BlockedTranspose(
         ReadOnlySpan<float> source, Span<float> dest,
         int rows, int cols, int sourceStride, int destStride, int blockSize)
@@ -499,8 +552,9 @@ public static class MatrixOptimizations
             for (var jj = 0; jj < cols; jj += blockSize)
             {
                 var jEnd = Math.Min(jj + blockSize, cols);
-                
+
                 // Transpose block
+
                 for (var i = ii; i < iEnd; i++)
                 {
                     for (var j = jj; j < jEnd; j++)
@@ -511,7 +565,8 @@ public static class MatrixOptimizations
             }
         }
     }
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe void TransposeBlock8x8Avx2(
         float* src, float* dst, int blockRow, int blockCol,
@@ -519,14 +574,16 @@ public static class MatrixOptimizations
     {
         var effectiveRows = Math.Min(8, totalRows - blockRow);
         var effectiveCols = Math.Min(8, totalCols - blockCol);
-        
+
+
         if (effectiveRows == 8 && effectiveCols == 8)
         {
             // Full 8x8 block - use optimized AVX2 transpose
             var srcPtr = src + blockRow * srcStride + blockCol;
             var dstPtr = dst + blockCol * dstStride + blockRow;
-            
+
             // Load 8 rows
+
             var row0 = Avx.LoadVector256(srcPtr + 0 * srcStride);
             var row1 = Avx.LoadVector256(srcPtr + 1 * srcStride);
             var row2 = Avx.LoadVector256(srcPtr + 2 * srcStride);
@@ -535,24 +592,27 @@ public static class MatrixOptimizations
             var row5 = Avx.LoadVector256(srcPtr + 5 * srcStride);
             var row6 = Avx.LoadVector256(srcPtr + 6 * srcStride);
             var row7 = Avx.LoadVector256(srcPtr + 7 * srcStride);
-            
+
             // Transpose using AVX2 shuffle and permute operations
             // This is a complex operation that would require detailed AVX2 transpose implementation
             // For brevity, falling back to scalar for this block
         }
-        
+
         // Fallback to scalar transpose for partial blocks
+
         for (var i = 0; i < effectiveRows; i++)
         {
             for (var j = 0; j < effectiveCols; j++)
             {
-                dst[(blockCol + j) * dstStride + (blockRow + i)] = 
+                dst[(blockCol + j) * dstStride + (blockRow + i)] =
+
                     src[(blockRow + i) * srcStride + (blockCol + j)];
             }
         }
     }
-    
+
     // Helper methods for Strassen's algorithm
+
     private static Matrix GetSubMatrix(Matrix matrix, int startRow, int startCol, int rows, int cols)
     {
         var result = new Matrix(rows, cols);
@@ -565,7 +625,8 @@ public static class MatrixOptimizations
         }
         return result;
     }
-    
+
+
     private static void CopySubMatrix(Matrix source, Matrix dest, int startRow, int startCol)
     {
         for (var i = 0; i < source.Rows; i++)
@@ -576,34 +637,39 @@ public static class MatrixOptimizations
             }
         }
     }
-    
+
+
     private static Matrix MatrixAdd(Matrix a, Matrix b)
     {
         var result = new Matrix(a.Rows, a.Columns);
         var aSpan = a.AsMutableSpan();
         var bSpan = b.AsMutableSpan();
         var resultSpan = result.AsMutableSpan();
-        
+
+
         for (var i = 0; i < aSpan.Length; i++)
         {
             resultSpan[i] = aSpan[i] + bSpan[i];
         }
         return result;
     }
-    
+
+
     private static Matrix MatrixSubtract(Matrix a, Matrix b)
     {
         var result = new Matrix(a.Rows, a.Columns);
         var aSpan = a.AsMutableSpan();
         var bSpan = b.AsMutableSpan();
         var resultSpan = result.AsMutableSpan();
-        
+
+
         for (var i = 0; i < aSpan.Length; i++)
         {
             resultSpan[i] = aSpan[i] - bSpan[i];
         }
         return result;
     }
-    
+
+
     #endregion
 }

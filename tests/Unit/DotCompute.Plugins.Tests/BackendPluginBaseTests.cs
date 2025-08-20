@@ -106,6 +106,7 @@ public sealed class BackendPluginBaseTests : IDisposable
     [Fact]
     public async Task StartAsync_FromInvalidState_ThrowsInvalidOperationException()
         // Act & Assert
+
         => _ = await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.StartAsync());
 
     [Fact]

@@ -30,7 +30,7 @@ internal class PluginHealthMonitor : IDisposable
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         await Task.CompletedTask;
-        _healthCheckTimer.Change(TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+        _ = _healthCheckTimer.Change(TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
         _logger.LogInformation("Plugin health monitoring started");
     }
 
@@ -49,7 +49,7 @@ internal class PluginHealthMonitor : IDisposable
             ConsecutiveFailures = 0
         };
 
-        _healthStates.TryAdd(pluginId, healthState);
+        _ = _healthStates.TryAdd(pluginId, healthState);
         _logger.LogDebug("Started monitoring plugin: {PluginId}", pluginId);
     }
 
@@ -248,10 +248,12 @@ internal class PluginHealthMonitor : IDisposable
         try
         {
             var stopwatch = Stopwatch.StartNew();
-            
+
             // Simple responsiveness test - call GetMetrics()
+
             var metrics = managedPlugin.Plugin?.GetMetrics();
-            
+
+
             stopwatch.Stop();
             result.ResponseTime = stopwatch.Elapsed;
 
@@ -329,7 +331,7 @@ internal class PluginHealthMonitor : IDisposable
             {
                 if (healthState.Plugin != null)
                 {
-                    await CheckPluginHealthAsync(pluginId, healthState.Plugin);
+                    _ = await CheckPluginHealthAsync(pluginId, healthState.Plugin);
                 }
             }
         }
@@ -372,7 +374,7 @@ internal class PluginMetricsCollector : IDisposable
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         await Task.CompletedTask;
-        _metricsTimer.Change(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        _ = _metricsTimer.Change(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
         _logger.LogInformation("Plugin metrics collection started");
     }
 
@@ -389,7 +391,7 @@ internal class PluginMetricsCollector : IDisposable
             MetricsHistory = []
         };
 
-        _metricsStates.TryAdd(pluginId, metricsState);
+        _ = _metricsStates.TryAdd(pluginId, metricsState);
         _logger.LogDebug("Added plugin to metrics collection: {PluginId}", pluginId);
     }
 
@@ -418,19 +420,22 @@ internal class PluginMetricsCollector : IDisposable
         foreach (var plugin in plugins)
         {
             var pluginId = plugin.LoadedPluginInfo?.Manifest.Id ?? "Unknown";
-            
+
+
             if (_metricsStates.TryGetValue(pluginId, out var metricsState))
             {
                 var metrics = await CollectPluginMetricsAsync(pluginId, plugin);
                 if (metrics != null)
                 {
                     report.PluginMetrics.Add(metrics);
-                    
+
                     // Aggregate system-wide metrics
+
                     report.TotalRequests += metrics.RequestCount;
                     report.TotalErrors += metrics.ErrorCount;
                     report.TotalMemoryUsage += metrics.MemoryUsage;
-                    
+
+
                     if (metrics.AverageResponseTime > 0)
                     {
                         report.AverageResponseTime = (report.AverageResponseTime * (report.PluginMetrics.Count - 1) + metrics.AverageResponseTime) / report.PluginMetrics.Count;
@@ -463,7 +468,7 @@ internal class PluginMetricsCollector : IDisposable
 
             foreach (var oldMetric in oldMetrics)
             {
-                metricsState.MetricsHistory.Remove(oldMetric);
+                _ = metricsState.MetricsHistory.Remove(oldMetric);
             }
 
             _logger.LogDebug("Cleaned up {Count} old metrics for plugin: {PluginId}", oldMetrics.Count, pluginId);
@@ -482,8 +487,9 @@ internal class PluginMetricsCollector : IDisposable
                 {
                     metricsState.MetricsHistory.Add(metrics);
                     metricsState.LastCollection = DateTimeOffset.UtcNow;
-                    
+
                     // Keep only the last 1000 entries
+
                     if (metricsState.MetricsHistory.Count > 1000)
                     {
                         metricsState.MetricsHistory.RemoveRange(0, metricsState.MetricsHistory.Count - 1000);
@@ -509,7 +515,7 @@ internal class PluginMetricsCollector : IDisposable
             {
                 if (metricsState.Plugin != null)
                 {
-                    await CollectPluginMetricsAsync(pluginId, metricsState.Plugin);
+                    _ = await CollectPluginMetricsAsync(pluginId, metricsState.Plugin);
                 }
             }
         }

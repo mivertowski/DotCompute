@@ -5,6 +5,7 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Benchmarks;
 
 
@@ -129,6 +130,7 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
     [Benchmark]
     public async Task BackendComparison()
         // Execute same workload on both backends and compare
+
         => await ExecuteWorkloadType(BackendType);
 
     private async Task ExecuteWorkloadType(string backendType)

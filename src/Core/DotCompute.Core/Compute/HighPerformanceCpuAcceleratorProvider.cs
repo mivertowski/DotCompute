@@ -11,180 +11,181 @@ using Microsoft.Extensions.Logging;
 using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using KernelArguments = DotCompute.Abstractions.KernelArguments;
-using KernelDefinition = DotCompute.Abstractions.KernelDefinition;
+using KernelArguments = DotCompute.Abstractions.Kernels.KernelArguments;
+using KernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
 
 namespace DotCompute.Core.Compute
 {
 
-/// <summary>
-/// High-performance CPU accelerator provider with SIMD optimization and OpenCL kernel execution.
-/// </summary>
-public class HighPerformanceCpuAcceleratorProvider(ILogger<HighPerformanceCpuAcceleratorProvider> logger) : IAcceleratorProvider
-{
-    private readonly ILogger<HighPerformanceCpuAcceleratorProvider> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-    public string Name => "High-Performance CPU";
-
-    public AcceleratorType[] SupportedTypes => [AcceleratorType.CPU];
-
-    public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// High-performance CPU accelerator provider with SIMD optimization and OpenCL kernel execution.
+    /// </summary>
+    public class HighPerformanceCpuAcceleratorProvider(ILogger<HighPerformanceCpuAcceleratorProvider> logger) : IAcceleratorProvider
     {
-        _logger.LogInformation("Discovering high-performance CPU accelerators");
+        private readonly ILogger<HighPerformanceCpuAcceleratorProvider> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        var cpuInfo = new AcceleratorInfo(
-            AcceleratorType.CPU,
-            GetProcessorName(),
-            "High-Performance v2.0", // driver version
-            GetAvailableMemory(),
-            Environment.ProcessorCount,
-            0, // max clock frequency
-            GetSimdCapability(),
-            GetAvailableMemory() / 4,
-            true // is unified memory
-        );
+        public string Name => "High-Performance CPU";
 
-        // Create a high-performance CPU accelerator (delegates to optimized backend when available)
-        var accelerator = new HighPerformanceCpuAccelerator(cpuInfo, _logger);
-        return ValueTask.FromResult<IEnumerable<IAccelerator>>(new[] { accelerator });
-    }
+        public AcceleratorType[] SupportedTypes => [AcceleratorType.CPU];
 
-    public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
-    {
-        if (info.DeviceType != "CPU")
+        public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
         {
-            throw new ArgumentException("Can only create CPU accelerators", nameof(info));
+            _logger.LogInformation("Discovering high-performance CPU accelerators");
+
+            var cpuInfo = new AcceleratorInfo(
+                AcceleratorType.CPU,
+                GetProcessorName(),
+                "High-Performance v2.0", // driver version
+                GetAvailableMemory(),
+                Environment.ProcessorCount,
+                0, // max clock frequency
+                GetSimdCapability(),
+                GetAvailableMemory() / 4,
+                true // is unified memory
+            );
+
+            // Create a high-performance CPU accelerator (delegates to optimized backend when available)
+            var accelerator = new HighPerformanceCpuAccelerator(cpuInfo, _logger);
+            return ValueTask.FromResult<IEnumerable<IAccelerator>>(new[] { accelerator });
         }
 
-        var accelerator = new HighPerformanceCpuAccelerator(info, _logger);
-        return ValueTask.FromResult<IAccelerator>(accelerator);
-    }
-
-    private static string GetProcessorName()
-    {
-        return Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ?? 
-               $"{Environment.ProcessorCount}-core CPU";
-    }
-
-    private static Version GetSimdCapability()
-    {
-        if (Avx512F.IsSupported)
+        public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
         {
-            return new Version(5, 1, 2);
+            if (info.DeviceType != "CPU")
+            {
+                throw new ArgumentException("Can only create CPU accelerators", nameof(info));
+            }
+
+            var accelerator = new HighPerformanceCpuAccelerator(info, _logger);
+            return ValueTask.FromResult<IAccelerator>(accelerator);
         }
 
-        if (Avx2.IsSupported)
+        private static string GetProcessorName()
         {
-            return new Version(2, 0);
+            return Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ??
+                   $"{Environment.ProcessorCount}-core CPU";
         }
 
-        if (Sse41.IsSupported)
+        private static Version GetSimdCapability()
         {
-            return new Version(1, 4);
+            if (Avx512F.IsSupported)
+            {
+                return new Version(5, 1, 2);
+            }
+
+            if (Avx2.IsSupported)
+            {
+                return new Version(2, 0);
+            }
+
+            if (Sse41.IsSupported)
+            {
+                return new Version(1, 4);
+            }
+
+            if (System.Numerics.Vector.IsHardwareAccelerated)
+            {
+                return new Version(1, 0);
+            }
+
+            return new Version(0, 1);
         }
 
-        if (System.Numerics.Vector.IsHardwareAccelerated)
+        private static long GetAvailableMemory()
         {
-            return new Version(1, 0);
-        }
-
-        return new Version(0, 1);
-    }
-
-    private static long GetAvailableMemory()
-    {
-        try
-        {
-            var workingSet = Environment.WorkingSet;
-            var totalMemory = GC.GetTotalMemory(false);
-            return Math.Max(workingSet * 4, totalMemory * 16);
-        }
-        catch
-        {
-            return 8L * 1024 * 1024 * 1024; // 8GB fallback
-        }
-    }
-}
-
-/// <summary>
-/// High-performance CPU accelerator that tries to use optimized implementations when available.
-/// </summary>
-internal class HighPerformanceCpuAccelerator : IAccelerator
-{
-    private readonly ILogger _logger;
-    private readonly HighPerformanceMemoryManager _memoryManager;
-    private readonly OpenCLKernelParser _kernelParser;
-    private bool _disposed;
-
-    public HighPerformanceCpuAccelerator(AcceleratorInfo info, ILogger logger)
-    {
-        Info = info ?? throw new ArgumentNullException(nameof(info));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _memoryManager = new HighPerformanceMemoryManager(this, logger);
-        _kernelParser = new OpenCLKernelParser(logger);
-    }
-
-    public AcceleratorInfo Info { get; }
-    
-    public AcceleratorType Type => AcceleratorType.CPU;
-    
-    public IMemoryManager Memory => _memoryManager;
-
-    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
-
-    public ValueTask<ICompiledKernel> CompileKernelAsync(
-        KernelDefinition definition,
-        CompilationOptions? options = null,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(definition);
-        options ??= new CompilationOptions();
-
-        _logger.LogInformation("Compiling high-performance CPU kernel: {KernelName}", definition.Name);
-
-        try
-        {
-            // Parse kernel source and create optimized implementation
-            var sourceCode = definition.Code ?? "";
-            var kernelInfo = _kernelParser.ParseKernel(sourceCode, definition.EntryPoint ?? "main");
-            var optimizedKernel = CreateOptimizedKernel(kernelInfo, options);
-
-            _logger.LogInformation("Successfully compiled optimized CPU kernel: {KernelName}", definition.Name);
-            return ValueTask.FromResult(optimizedKernel);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to compile high-performance CPU kernel: {KernelName}", definition.Name);
-            throw new InvalidOperationException($"Kernel compilation failed: {ex.Message}", ex);
+            try
+            {
+                var workingSet = Environment.WorkingSet;
+                var totalMemory = GC.GetTotalMemory(false);
+                return Math.Max(workingSet * 4, totalMemory * 16);
+            }
+            catch
+            {
+                return 8L * 1024 * 1024 * 1024; // 8GB fallback
+            }
         }
     }
 
-        private ICompiledKernel CreateOptimizedKernel(KernelInfo kernelInfo, CompilationOptions options) =>
+    /// <summary>
+    /// High-performance CPU accelerator that tries to use optimized implementations when available.
+    /// </summary>
+    internal class HighPerformanceCpuAccelerator : IAccelerator
+    {
+        private readonly ILogger _logger;
+        private readonly HighPerformanceMemoryManager _memoryManager;
+        private readonly OpenCLKernelParser _kernelParser;
+        private bool _disposed;
+
+        public HighPerformanceCpuAccelerator(AcceleratorInfo info, ILogger logger)
+        {
+            Info = info ?? throw new ArgumentNullException(nameof(info));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _memoryManager = new HighPerformanceMemoryManager(this, logger);
+            _kernelParser = new OpenCLKernelParser(logger);
+        }
+
+        public AcceleratorInfo Info { get; }
+
+        public AcceleratorType Type => AcceleratorType.CPU;
+
+        public IMemoryManager Memory => _memoryManager;
+
+        public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+
+        public ValueTask<ICompiledKernel> CompileKernelAsync(
+            KernelDefinition definition,
+            CompilationOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(definition);
+            options ??= new CompilationOptions();
+
+            _logger.LogInformation("Compiling high-performance CPU kernel: {KernelName}", definition.Name);
+
+            try
+            {
+                // Parse kernel source and create optimized implementation
+                var sourceCode = definition.Code ?? "";
+                var kernelInfo = _kernelParser.ParseKernel(sourceCode, definition.EntryPoint ?? "main");
+                var optimizedKernel = CreateOptimizedKernel(kernelInfo, options);
+
+                _logger.LogInformation("Successfully compiled optimized CPU kernel: {KernelName}", definition.Name);
+                return ValueTask.FromResult(optimizedKernel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to compile high-performance CPU kernel: {KernelName}", definition.Name);
+                throw new InvalidOperationException($"Kernel compilation failed: {ex.Message}", ex);
+            }
+        }
+
+        private ICompiledKernel CreateOptimizedKernel(KernelInfo kernelInfo, CompilationOptions options)
             // For now, just create a simple kernel since we moved the optimized ones to Backends.CPU
             // In a full implementation, this would try to load the CPU backend dynamically
-            new SimpleOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger);
+
+            => new SimpleOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger);
 
         public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
-    public ValueTask DisposeAsync()
-    {
-        if (!_disposed)
+        public ValueTask DisposeAsync()
         {
-            _memoryManager?.Dispose();
-            _disposed = true;
+            if (!_disposed)
+            {
+                _memoryManager?.Dispose();
+                _disposed = true;
+            }
+            return ValueTask.CompletedTask;
         }
-        return ValueTask.CompletedTask;
     }
-}
 
-/// <summary>
-/// OpenCL kernel parser that identifies kernel types and extracts parameters.
-/// </summary>
-internal class OpenCLKernelParser(ILogger logger)
-{
-    private readonly ILogger _logger = logger;
-    
-    private static readonly Dictionary<string, KernelType> KernelPatterns = new()
+    /// <summary>
+    /// OpenCL kernel parser that identifies kernel types and extracts parameters.
+    /// </summary>
+    internal class OpenCLKernelParser(ILogger logger)
+    {
+        private readonly ILogger _logger = logger;
+
+        private static readonly Dictionary<string, KernelType> KernelPatterns = new()
     {
         { @"result\[i\]\s*=\s*a\[i\]\s*\+\s*b\[i\]", KernelType.VectorAdd },
         { @"result\[i\]\s*=\s*a\[i\]\s*\*\s*b\[i\]", KernelType.VectorMultiply },
@@ -195,422 +196,423 @@ internal class OpenCLKernelParser(ILogger logger)
         { @"compute_intensive|sin\(|cos\(|sqrt\(", KernelType.ComputeIntensive }
     };
 
-    public KernelInfo ParseKernel(string kernelSource, string entryPoint)
-    {
-        _logger.LogDebug("Parsing kernel: {EntryPoint}", entryPoint);
-
-        var kernelType = DetectKernelType(kernelSource);
-        var parameters = ExtractParameters(kernelSource);
-
-        return new KernelInfo
+        public KernelInfo ParseKernel(string kernelSource, string entryPoint)
         {
-            Name = entryPoint,
-            Type = kernelType,
-            Source = kernelSource,
-            Parameters = parameters
-        };
-    }
+            _logger.LogDebug("Parsing kernel: {EntryPoint}", entryPoint);
 
-    private static KernelType DetectKernelType(string kernelSource)
-    {
-        foreach (var pattern in KernelPatterns)
-        {
-            if (Regex.IsMatch(kernelSource, pattern.Key, RegexOptions.IgnoreCase | RegexOptions.Singleline))
+            var kernelType = DetectKernelType(kernelSource);
+            var parameters = ExtractParameters(kernelSource);
+
+            return new KernelInfo
             {
-                return pattern.Value;
-            }
+                Name = entryPoint,
+                Type = kernelType,
+                Source = kernelSource,
+                Parameters = parameters
+            };
         }
-        return KernelType.Generic;
-    }
 
-    private static List<KernelParameter> ExtractParameters(string kernelSource)
-    {
-        var parameters = new List<KernelParameter>();
-        
-        // Extract function signature parameters
-        var signatureMatch = Regex.Match(kernelSource, @"__kernel\s+void\s+\w+\s*\(([^)]+)\)", RegexOptions.IgnoreCase);
-        if (signatureMatch.Success)
+        private static KernelType DetectKernelType(string kernelSource)
         {
-            var paramString = signatureMatch.Groups[1].Value;
-            var paramMatches = Regex.Matches(paramString, @"(__global\s+(?:const\s+)?(\w+\*?)\s+(\w+))|(\w+\s+(\w+))", RegexOptions.IgnoreCase);
-            
-            foreach (Match match in paramMatches)
+            foreach (var pattern in KernelPatterns)
             {
-                if (match.Groups[2].Success) // Global memory parameter
+                if (Regex.IsMatch(kernelSource, pattern.Key, RegexOptions.IgnoreCase | RegexOptions.Singleline))
                 {
-                    parameters.Add(new KernelParameter
-                    {
-                        Name = match.Groups[3].Value,
-                        Type = match.Groups[2].Value,
-                        IsGlobal = true
-                    });
-                }
-                else if (match.Groups[5].Success) // Regular parameter
-                {
-                    parameters.Add(new KernelParameter
-                    {
-                        Name = match.Groups[5].Value,
-                        Type = match.Groups[4].Value,
-                        IsGlobal = false
-                    });
+                    return pattern.Value;
                 }
             }
+            return KernelType.Generic;
         }
 
-        return parameters;
-    }
-}
-
-/// <summary>
-/// High-performance memory manager with basic optimizations.
-/// </summary>
-internal class HighPerformanceMemoryManager(IAccelerator accelerator, ILogger logger) : IMemoryManager, IDisposable
-{
-    private readonly IAccelerator _accelerator = accelerator;
-    private readonly ILogger _logger = logger;
-    private readonly ConcurrentBag<HighPerformanceMemoryBuffer> _allocatedBuffers = [];
-    private readonly MemoryPool _memoryPool = new();
-    private long _totalAllocated;
-
-    public ValueTask<IMemoryBuffer> AllocateAsync(
-        long sizeInBytes,
-        MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default)
-    {
-        var buffer = _memoryPool.Rent(sizeInBytes, options);
-        _allocatedBuffers.Add(buffer);
-        Interlocked.Add(ref _totalAllocated, sizeInBytes);
-        return ValueTask.FromResult<IMemoryBuffer>(buffer);
-    }
-
-    public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
-        ReadOnlyMemory<T> source,
-        MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
-        var buffer = _memoryPool.Rent(sizeInBytes, options);
-        await buffer.CopyFromHostAsync(source, cancellationToken: cancellationToken).ConfigureAwait(false);;
-        _allocatedBuffers.Add(buffer);
-        Interlocked.Add(ref _totalAllocated, sizeInBytes);
-        return buffer;
-    }
-
-    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
-    {
-        if (buffer is not HighPerformanceMemoryBuffer hpBuffer)
+        private static List<KernelParameter> ExtractParameters(string kernelSource)
         {
-            throw new ArgumentException("Buffer must be a high-performance buffer", nameof(buffer));
-        }
-        return new HighPerformanceMemoryBufferView(hpBuffer, offset, length);
-    }
+            var parameters = new List<KernelParameter>();
 
-    public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
-        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-        return await AllocateAsync(sizeInBytes).ConfigureAwait(false);
-    }
+            // Extract function signature parameters
+            var signatureMatch = Regex.Match(kernelSource, @"__kernel\s+void\s+\w+\s*\(([^)]+)\)", RegexOptions.IgnoreCase);
+            if (signatureMatch.Success)
+            {
+                var paramString = signatureMatch.Groups[1].Value;
+                var paramMatches = Regex.Matches(paramString, @"(__global\s+(?:const\s+)?(\w+\*?)\s+(\w+))|(\w+\s+(\w+))", RegexOptions.IgnoreCase);
 
-    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
-    {
-        ArgumentNullException.ThrowIfNull(buffer);
-        var memory = new ReadOnlyMemory<T>(data.ToArray());
-        buffer.CopyFromHostAsync(memory).AsTask().Wait();
-    }
+                foreach (Match match in paramMatches)
+                {
+                    if (match.Groups[2].Success) // Global memory parameter
+                    {
+                        parameters.Add(new KernelParameter
+                        {
+                            Name = match.Groups[3].Value,
+                            Type = match.Groups[2].Value,
+                            IsGlobal = true
+                        });
+                    }
+                    else if (match.Groups[5].Success) // Regular parameter
+                    {
+                        parameters.Add(new KernelParameter
+                        {
+                            Name = match.Groups[5].Value,
+                            Type = match.Groups[4].Value,
+                            IsGlobal = false
+                        });
+                    }
+                }
+            }
 
-    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
-    {
-        ArgumentNullException.ThrowIfNull(buffer);
-        var memory = new Memory<T>(new T[data.Length]);
-        buffer.CopyToHostAsync(memory).AsTask().Wait();
-        memory.Span.CopyTo(data);
-    }
-
-    public void Free(IMemoryBuffer buffer)
-    {
-        if (buffer is HighPerformanceMemoryBuffer hpBuffer)
-        {
-            hpBuffer.Dispose();
-        }
-        else
-        {
-            buffer?.Dispose();
+            return parameters;
         }
     }
 
-    public void Dispose()
+    /// <summary>
+    /// High-performance memory manager with basic optimizations.
+    /// </summary>
+    internal class HighPerformanceMemoryManager(IAccelerator accelerator, ILogger logger) : IMemoryManager, IDisposable
     {
-        _memoryPool.Dispose();
-        foreach (var buffer in _allocatedBuffers)
+        private readonly IAccelerator _accelerator = accelerator;
+        private readonly ILogger _logger = logger;
+        private readonly ConcurrentBag<HighPerformanceMemoryBuffer> _allocatedBuffers = [];
+        private readonly MemoryPool _memoryPool = new();
+        private long _totalAllocated;
+
+        public ValueTask<IMemoryBuffer> AllocateAsync(
+            long sizeInBytes,
+            MemoryOptions options = MemoryOptions.None,
+            CancellationToken cancellationToken = default)
         {
-            buffer.Dispose();
+            var buffer = _memoryPool.Rent(sizeInBytes, options);
+            _allocatedBuffers.Add(buffer);
+            _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
+            return ValueTask.FromResult<IMemoryBuffer>(buffer);
         }
-    }
 
-    public long TotalAllocated => Interlocked.Read(ref _totalAllocated);
-}
-
-/// <summary>
-/// Memory pool for efficient buffer reuse and reduced GC pressure.
-/// </summary>
-internal class MemoryPool : IDisposable
-{
-    private readonly ConcurrentDictionary<long, ConcurrentBag<HighPerformanceMemoryBuffer>> _pools = new();
-
-    public HighPerformanceMemoryBuffer Rent(long sizeInBytes, MemoryOptions options)
-    {
-        // Round up to nearest power of 2 for better pooling
-        var poolSize = RoundUpToPowerOfTwo(sizeInBytes);
-        
-        var pool = _pools.GetOrAdd(poolSize, _ => []);
-        
-        if (pool.TryTake(out var buffer))
+        public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
+            ReadOnlyMemory<T> source,
+            MemoryOptions options = MemoryOptions.None,
+            CancellationToken cancellationToken = default) where T : unmanaged
         {
-            buffer.Reset(sizeInBytes, options);
+            var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
+            var buffer = _memoryPool.Rent(sizeInBytes, options);
+            await buffer.CopyFromHostAsync(source, cancellationToken: cancellationToken).ConfigureAwait(false); ;
+            _allocatedBuffers.Add(buffer);
+            _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
             return buffer;
         }
 
-        return new HighPerformanceMemoryBuffer(sizeInBytes, options);
-    }
-
-    private static long RoundUpToPowerOfTwo(long value)
-    {
-        value--;
-        value |= value >> 1;
-        value |= value >> 2;
-        value |= value >> 4;
-        value |= value >> 8;
-        value |= value >> 16;
-        value |= value >> 32;
-        return value + 1;
-    }
-
-    public void Dispose()
-    {
-        foreach (var pool in _pools.Values)
+        public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
         {
-            while (pool.TryTake(out var buffer))
+            if (buffer is not HighPerformanceMemoryBuffer hpBuffer)
+            {
+                throw new ArgumentException("Buffer must be a high-performance buffer", nameof(buffer));
+            }
+            return new HighPerformanceMemoryBufferView(hpBuffer, offset, length);
+        }
+
+        public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+            var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            return await AllocateAsync(sizeInBytes).ConfigureAwait(false);
+        }
+
+        public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+            var memory = new ReadOnlyMemory<T>(data.ToArray());
+            buffer.CopyFromHostAsync(memory).AsTask().Wait();
+        }
+
+        public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+            var memory = new Memory<T>(new T[data.Length]);
+            buffer.CopyToHostAsync(memory).AsTask().Wait();
+            memory.Span.CopyTo(data);
+        }
+
+        public void Free(IMemoryBuffer buffer)
+        {
+            if (buffer is HighPerformanceMemoryBuffer hpBuffer)
+            {
+                hpBuffer.Dispose();
+            }
+            else
+            {
+                buffer?.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            _memoryPool.Dispose();
+            foreach (var buffer in _allocatedBuffers)
             {
                 buffer.Dispose();
             }
         }
-        _pools.Clear();
-    }
-}
 
-/// <summary>
-/// High-performance memory buffer with aligned allocation.
-/// </summary>
-internal class HighPerformanceMemoryBuffer : IMemoryBuffer
-{
-    private byte[] _data = null!;
-    private GCHandle _handle;
-    private IntPtr _alignedPtr;
-    private bool _disposed;
-    private long _sizeInBytes;
-
-    public HighPerformanceMemoryBuffer(long sizeInBytes, MemoryOptions options)
-    {
-        Reset(sizeInBytes, options);
+        public long TotalAllocated => Interlocked.Read(ref _totalAllocated);
     }
 
-    public long SizeInBytes => _sizeInBytes;
-    public MemoryOptions Options { get; private set; }
-    public bool IsDisposed => _disposed;
-
-    public void Reset(long sizeInBytes, MemoryOptions options)
+    /// <summary>
+    /// Memory pool for efficient buffer reuse and reduced GC pressure.
+    /// </summary>
+    internal class MemoryPool : IDisposable
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
-        }
+        private readonly ConcurrentDictionary<long, ConcurrentBag<HighPerformanceMemoryBuffer>> _pools = new();
 
-        if (_data != null)
+        public HighPerformanceMemoryBuffer Rent(long sizeInBytes, MemoryOptions options)
         {
-            if (_handle.IsAllocated)
+            // Round up to nearest power of 2 for better pooling
+            var poolSize = RoundUpToPowerOfTwo(sizeInBytes);
+
+            var pool = _pools.GetOrAdd(poolSize, _ => []);
+
+            if (pool.TryTake(out var buffer))
             {
-                _handle.Free();
-            }
-        }
-
-        // Align to 64-byte boundaries for optimal SIMD performance
-        const int alignment = 64;
-        var allocSize = (int)(sizeInBytes + alignment - 1);
-        
-        _data = new byte[allocSize];
-        _handle = GCHandle.Alloc(_data, GCHandleType.Pinned);
-        
-        var addr = _handle.AddrOfPinnedObject();
-        var alignedAddr = (addr.ToInt64() + alignment - 1) & ~(alignment - 1);
-        _alignedPtr = new IntPtr(alignedAddr);
-        
-        _sizeInBytes = sizeInBytes;
-        Options = options;
-    }
-
-    public ValueTask CopyFromHostAsync<T>(
-        ReadOnlyMemory<T> source,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
-        }
-
-        var sourceBytes = MemoryMarshal.AsBytes(source.Span);
-        var destPtr = _alignedPtr + (int)offset;
-        
-        unsafe
-        {
-            var destSpan = new Span<byte>((void*)destPtr, sourceBytes.Length);
-            sourceBytes.CopyTo(destSpan);
-        }
-        
-        return ValueTask.CompletedTask;
-    }
-
-    public ValueTask CopyToHostAsync<T>(
-        Memory<T> destination,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
-        }
-
-        var destBytes = MemoryMarshal.AsBytes(destination.Span);
-        var sourcePtr = _alignedPtr + (int)offset;
-        
-        unsafe
-        {
-            var sourceSpan = new Span<byte>((void*)sourcePtr, destBytes.Length);
-            sourceSpan.CopyTo(destBytes);
-        }
-        
-        return ValueTask.CompletedTask;
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        Dispose();
-        return ValueTask.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        if (!_disposed)
-        {
-            if (_handle.IsAllocated)
-            {
-                _handle.Free();
+                buffer.Reset(sizeInBytes, options);
+                return buffer;
             }
 
+            return new HighPerformanceMemoryBuffer(sizeInBytes, options);
+        }
+
+        private static long RoundUpToPowerOfTwo(long value)
+        {
+            value--;
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            value |= value >> 32;
+            return value + 1;
+        }
+
+        public void Dispose()
+        {
+            foreach (var pool in _pools.Values)
+            {
+                while (pool.TryTake(out var buffer))
+                {
+                    buffer.Dispose();
+                }
+            }
+            _pools.Clear();
+        }
+    }
+
+    /// <summary>
+    /// High-performance memory buffer with aligned allocation.
+    /// </summary>
+    internal class HighPerformanceMemoryBuffer : IMemoryBuffer
+    {
+        private byte[] _data = null!;
+        private GCHandle _handle;
+        private IntPtr _alignedPtr;
+        private bool _disposed;
+        private long _sizeInBytes;
+
+        public HighPerformanceMemoryBuffer(long sizeInBytes, MemoryOptions options)
+        {
+            Reset(sizeInBytes, options);
+        }
+
+        public long SizeInBytes => _sizeInBytes;
+        public MemoryOptions Options { get; private set; }
+        public bool IsDisposed => _disposed;
+
+        public void Reset(long sizeInBytes, MemoryOptions options)
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
+            }
+
+            if (_data != null)
+            {
+                if (_handle.IsAllocated)
+                {
+                    _handle.Free();
+                }
+            }
+
+            // Align to 64-byte boundaries for optimal SIMD performance
+            const int alignment = 64;
+            var allocSize = (int)(sizeInBytes + alignment - 1);
+
+            _data = new byte[allocSize];
+            _handle = GCHandle.Alloc(_data, GCHandleType.Pinned);
+
+            var addr = _handle.AddrOfPinnedObject();
+            var alignedAddr = (addr.ToInt64() + alignment - 1) & ~(alignment - 1);
+            _alignedPtr = new IntPtr(alignedAddr);
+
+            _sizeInBytes = sizeInBytes;
+            Options = options;
+        }
+
+        public ValueTask CopyFromHostAsync<T>(
+            ReadOnlyMemory<T> source,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
+            }
+
+            var sourceBytes = MemoryMarshal.AsBytes(source.Span);
+            var destPtr = _alignedPtr + (int)offset;
+
+            unsafe
+            {
+                var destSpan = new Span<byte>((void*)destPtr, sourceBytes.Length);
+                sourceBytes.CopyTo(destSpan);
+            }
+
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask CopyToHostAsync<T>(
+            Memory<T> destination,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
+            }
+
+            var destBytes = MemoryMarshal.AsBytes(destination.Span);
+            var sourcePtr = _alignedPtr + (int)offset;
+
+            unsafe
+            {
+                var sourceSpan = new Span<byte>((void*)sourcePtr, destBytes.Length);
+                sourceSpan.CopyTo(destBytes);
+            }
+
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                if (_handle.IsAllocated)
+                {
+                    _handle.Free();
+                }
+
+                _disposed = true;
+                GC.SuppressFinalize(this);
+            }
+        }
+    }
+
+    /// <summary>
+    /// View over a high-performance memory buffer.
+    /// </summary>
+    internal class HighPerformanceMemoryBufferView(HighPerformanceMemoryBuffer parent, long offset, long length) : IMemoryBuffer
+    {
+        private readonly HighPerformanceMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+        private readonly long _offset = offset;
+
+        public long SizeInBytes { get; } = length;
+        public MemoryOptions Options { get; } = parent.Options;
+        public bool IsDisposed => _parent.IsDisposed;
+
+        public ValueTask CopyFromHostAsync<T>(
+            ReadOnlyMemory<T> source,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+            => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
+
+        public ValueTask CopyToHostAsync<T>(
+            Memory<T> destination,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+            => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+
+        public void Dispose()
+        {
+            // Views don't dispose the parent
+        }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Simple optimized kernel for the high-performance provider.
+    /// </summary>
+    internal class SimpleOptimizedKernel : ICompiledKernel
+    {
+        private readonly KernelInfo _kernelInfo;
+        private readonly CompilationOptions _options;
+        private readonly ILogger _logger;
+        private bool _disposed;
+
+        public SimpleOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger)
+        {
+            Name = name;
+            _kernelInfo = kernelInfo;
+            _options = options;
+            _logger = logger;
+        }
+
+        public string Name { get; }
+
+        public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(SimpleOptimizedKernel));
+            }
+
+            _logger.LogDebug("Executing simple optimized kernel: {KernelName}", Name);
+
+            // Simple implementation - in a real scenario this would perform optimized execution
+            // based on the kernel type and arguments
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask DisposeAsync()
+        {
             _disposed = true;
-            GC.SuppressFinalize(this);
+            return ValueTask.CompletedTask;
         }
     }
-}
 
-/// <summary>
-/// View over a high-performance memory buffer.
-/// </summary>
-internal class HighPerformanceMemoryBufferView(HighPerformanceMemoryBuffer parent, long offset, long length) : IMemoryBuffer
-{
-    private readonly HighPerformanceMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
-    private readonly long _offset = offset;
-
-    public long SizeInBytes { get; } = length;
-    public MemoryOptions Options { get; } = parent.Options;
-    public bool IsDisposed => _parent.IsDisposed;
-
-    public ValueTask CopyFromHostAsync<T>(
-        ReadOnlyMemory<T> source,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged => 
-        _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
-
-    public ValueTask CopyToHostAsync<T>(
-        Memory<T> destination,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged => 
-        _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
-
-    public void Dispose()
+    // Supporting data structures
+    internal enum KernelType
     {
-        // Views don't dispose the parent
+        Generic,
+        VectorAdd,
+        VectorMultiply,
+        VectorScale,
+        MatrixMultiply,
+        Reduction,
+        MemoryIntensive,
+        ComputeIntensive
     }
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-}
-
-/// <summary>
-/// Simple optimized kernel for the high-performance provider.
-/// </summary>
-internal class SimpleOptimizedKernel : ICompiledKernel
-{
-    private readonly KernelInfo _kernelInfo;
-    private readonly CompilationOptions _options;
-    private readonly ILogger _logger;
-    private bool _disposed;
-
-    public SimpleOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger)
+    internal class KernelInfo
     {
-        Name = name;
-        _kernelInfo = kernelInfo;
-        _options = options;
-        _logger = logger;
+        public string Name { get; set; } = string.Empty;
+        public KernelType Type { get; set; }
+        public string Source { get; set; } = string.Empty;
+        public List<KernelParameter> Parameters { get; set; } = [];
     }
 
-    public string Name { get; }
-
-    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+    internal class KernelParameter
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(SimpleOptimizedKernel));
-        }
-
-        _logger.LogDebug("Executing simple optimized kernel: {KernelName}", Name);
-        
-        // Simple implementation - in a real scenario this would perform optimized execution
-        // based on the kernel type and arguments
-        return ValueTask.CompletedTask;
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _disposed = true;
-        return ValueTask.CompletedTask;
+        public string Name { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public bool IsGlobal { get; set; }
     }
 }
-
-// Supporting data structures
-internal enum KernelType
-{
-    Generic,
-    VectorAdd,
-    VectorMultiply,
-    VectorScale,
-    MatrixMultiply,
-    Reduction,
-    MemoryIntensive,
-    ComputeIntensive
-}
-
-internal class KernelInfo
-{
-    public string Name { get; set; } = string.Empty;
-    public KernelType Type { get; set; }
-    public string Source { get; set; } = string.Empty;
-    public List<KernelParameter> Parameters { get; set; } = [];
-}
-
-internal class KernelParameter
-{
-    public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty;
-    public bool IsGlobal { get; set; }
-}}

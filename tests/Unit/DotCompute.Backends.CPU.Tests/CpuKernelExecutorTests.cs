@@ -9,6 +9,7 @@ using DotCompute.Backends.CPU.Tests.Helpers;
 using Microsoft.Extensions.Options;
 using FluentAssertions;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Backends.CPU
 {
 

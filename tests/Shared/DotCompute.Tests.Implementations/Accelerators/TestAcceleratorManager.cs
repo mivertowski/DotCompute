@@ -3,6 +3,7 @@ using DotCompute.Abstractions;
 using DotCompute.Tests.Implementations.Memory;
 using FluentAssertions;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Tests.Implementations.Accelerators;
 
 

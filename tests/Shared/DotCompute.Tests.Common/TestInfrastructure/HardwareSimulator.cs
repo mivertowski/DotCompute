@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Tests.Common.TestInfrastructure;
 
 
@@ -290,6 +291,7 @@ public class SimulatedAcceleratorContext(SimulatedAccelerator accelerator)
 {
     public static void Synchronize()
         // Simulate synchronization
+
         => Thread.Sleep(1);
 
     public static Task SynchronizeAsync(CancellationToken cancellationToken = default) => Task.Delay(1, cancellationToken);

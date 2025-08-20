@@ -288,7 +288,7 @@ public class OpenCLSimulationTests(ITestOutputHelper output)
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
         public string OpenCLVersion { get; set; } = string.Empty;
-        public string[] Extensions { get; set; } = Array.Empty<string>();
+        public string[] Extensions { get; set; } = [];
         public int GlobalMemMB { get; set; }
         public int LocalMemKB { get; set; }
         public int ComputeUnits { get; set; }

@@ -23,7 +23,7 @@ public class PluginSystem : IDisposable
     private readonly Lock _lock = new();
     private bool _disposed;
     private bool _isInitialized;
-    private IServiceProvider? _serviceProvider;
+    private readonly IServiceProvider? _serviceProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginSystem"/> class.
@@ -147,7 +147,7 @@ public class PluginSystem : IDisposable
             // Remove plugin from collection if initialization was cancelled
             lock (_lock)
             {
-                _plugins.Remove(plugin.Id);
+                _ = _plugins.Remove(plugin.Id);
             }
             _logger?.LogWarning("Plugin {Id} loading was cancelled", plugin.Id);
             throw;
@@ -157,7 +157,7 @@ public class PluginSystem : IDisposable
             // Remove plugin from collection on any failure
             lock (_lock)
             {
-                _plugins.Remove(plugin.Id);
+                _ = _plugins.Remove(plugin.Id);
             }
             _logger?.LogError(ex, "Failed to load plugin {Id}", plugin.Id);
             throw new PluginLoadException($"Failed to load plugin {plugin.Id}", plugin.Id, "", ex);
@@ -277,7 +277,7 @@ public class PluginSystem : IDisposable
                 }
 
                 // Remove from collection regardless of disposal result
-                _plugins.Remove(pluginId);
+                _ = _plugins.Remove(pluginId);
 
                 // Try to unload the context if it exists
                 try
@@ -294,7 +294,8 @@ public class PluginSystem : IDisposable
                 }
 
                 var success = disposalSucceeded && contextUnloadSucceeded;
-                
+
+
                 if (success)
                 {
                     _logger.LogInformation("Successfully unloaded plugin {Id}", pluginId);
@@ -303,23 +304,26 @@ public class PluginSystem : IDisposable
                 {
                     _logger.LogWarning("Plugin {Id} was removed but disposal/context unload had issues", pluginId);
                 }
-                
+
+
                 return Task.FromResult(success);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Critical error during plugin {Id} unload", pluginId);
-                
+
                 // Try to remove from collection as last resort
+
                 try
                 {
-                    _plugins.Remove(pluginId);
+                    _ = _plugins.Remove(pluginId);
                 }
                 catch
                 {
                     // Ignore - we tried our best
                 }
-                
+
+
                 return Task.FromResult(false);
             }
         }
@@ -446,7 +450,7 @@ public class PluginSystem : IDisposable
                 foreach (var plugin in _plugins.ToList())
                 {
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - acceptable in Dispose pattern
-                    UnloadPluginAsync(plugin.Key).GetAwaiter().GetResult();
+                    _ = UnloadPluginAsync(plugin.Key).GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
                 }
             }

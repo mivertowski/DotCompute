@@ -6,6 +6,8 @@ using Xunit;
 using FluentAssertions;
 using System.Globalization;
 
+using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Abstractions.Tests;
 
 
@@ -82,6 +84,7 @@ public sealed class IKernelCompilerTests
     [Fact]
     public void SupportedSourceTypes_ShouldNotReturnNull()
     {
+        []
         // Arrange
         _ = _mockCompiler.Setup(c => c.SupportedSourceTypes).Returns(Array.Empty<KernelSourceType>());
 

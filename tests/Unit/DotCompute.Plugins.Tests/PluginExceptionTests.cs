@@ -261,6 +261,7 @@ public sealed class PluginExceptionTests
     [InlineData(typeof(PluginNotFoundException))]
     public void AllPluginExceptions_InheritFromPluginException(Type exceptionType)
         // Assert
+
         => Assert.IsAssignableFrom<PluginException>(exceptionType);
 
     [Theory]
@@ -275,6 +276,7 @@ public sealed class PluginExceptionTests
     [InlineData(typeof(PluginNotFoundException))]
     public void AllPluginExceptions_AreSerializable(Type exceptionType)
         // Assert
+
         => exceptionType.Should().BeDecoratedWith<SerializableAttribute>();
 
     [Fact]

@@ -11,15 +11,15 @@ namespace DotCompute.Linq.Expressions;
 /// </summary>
 public sealed class FusionMetadataStore
 {
-private static readonly Lazy<FusionMetadataStore> _instance = new(() => new FusionMetadataStore());
-private readonly ConcurrentDictionary<string, Dictionary<string, object>> _metadataCache = new();
+    private static readonly Lazy<FusionMetadataStore> _instance = new(() => new FusionMetadataStore());
+    private readonly ConcurrentDictionary<string, Dictionary<string, object>> _metadataCache = new();
 
-private FusionMetadataStore() { }
+    private FusionMetadataStore() { }
 
-/// <summary>
-/// Gets the singleton instance of the metadata store.
-/// </summary>
-public static FusionMetadataStore Instance => _instance.Value;
+    /// <summary>
+    /// Gets the singleton instance of the metadata store.
+    /// </summary>
+    public static FusionMetadataStore Instance => _instance.Value;
 
     /// <summary>
     /// Gets metadata for the specified expression key.

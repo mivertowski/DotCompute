@@ -71,7 +71,7 @@ namespace DotCompute.Core.Memory.P2P
             try
             {
                 // Process all chunks with pipeline overlap
-                for (int chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++)
+                for (var chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++)
                 {
                     token.ThrowIfCancellationRequested();
 
@@ -85,9 +85,10 @@ namespace DotCompute.Core.Memory.P2P
                     var transferTask = TransferChunkAsync(startElement, chunkElements, chunkIndex, token)
                         .ContinueWith(t =>
                         {
-                            _pipelineSemaphore.Release();
+                            _ = _pipelineSemaphore.Release();
                             var completed = Interlocked.Increment(ref completedChunks);
-                            
+
+
                             if (completed % Math.Max(1, totalChunks / 10) == 0)
                             {
                                 var progress = (double)completed / totalChunks * 100.0;
@@ -109,7 +110,7 @@ namespace DotCompute.Core.Memory.P2P
                     if (transferTasks.Count >= _pipelineDepth * 2)
                     {
                         var completedTask = await Task.WhenAny(transferTasks);
-                        transferTasks.Remove(completedTask);
+                        _ = transferTasks.Remove(completedTask);
                         await completedTask; // Propagate any exceptions
                     }
                 }
@@ -201,10 +202,12 @@ namespace DotCompute.Core.Memory.P2P
             {
                 // Create source slice for the chunk
                 var sourceSlice = _sourceBuffer.Slice(startElement, elementCount);
-                
+
                 // Copy to host staging buffer
+
                 await sourceSlice.CopyToHostAsync(stage.StagingBuffer.AsMemory(0, elementCount), 0, cancellationToken);
-                
+
+
                 stage.StagingCompleted = DateTimeOffset.UtcNow;
             }
             catch (Exception ex)
@@ -227,10 +230,12 @@ namespace DotCompute.Core.Memory.P2P
             {
                 // Create destination slice for the chunk
                 var destinationSlice = _destinationBuffer.Slice(startElement, elementCount);
-                
+
                 // Copy from host staging buffer to destination
+
                 await destinationSlice.CopyFromHostAsync<T>(stage.StagingBuffer.AsMemory(0, elementCount), 0, cancellationToken);
-                
+
+
                 stage.TransferCompleted = DateTimeOffset.UtcNow;
             }
             catch (Exception ex)
@@ -248,7 +253,7 @@ namespace DotCompute.Core.Memory.P2P
             var elementSize = Unsafe.SizeOf<T>();
             var elementsPerChunk = _chunkSize / elementSize;
 
-            for (int i = 0; i < _pipelineDepth; i++)
+            for (var i = 0; i < _pipelineDepth; i++)
             {
                 var stage = new P2PPipelineStage
                 {

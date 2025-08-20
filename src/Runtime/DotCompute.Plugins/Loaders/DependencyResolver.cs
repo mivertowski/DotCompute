@@ -57,16 +57,19 @@ public class DependencyResolver
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to resolve dependencies for plugin: {PluginId}", manifest.Id);
-            return new DependencyGraph 
-            { 
-                RootPlugin = manifest, 
-                IsResolved = false, 
-                Errors = { $"Dependency resolution failed: {ex.Message}" } 
+            return new DependencyGraph
+            {
+
+                RootPlugin = manifest,
+
+                IsResolved = false,
+
+                Errors = { $"Dependency resolution failed: {ex.Message}" }
             };
         }
         finally
         {
-            _resolutionSemaphore.Release();
+            _ = _resolutionSemaphore.Release();
         }
     }
 
@@ -74,11 +77,16 @@ public class DependencyResolver
     /// Resolves dependencies recursively with cycle detection.
     /// </summary>
     private async Task ResolveDependenciesRecursiveAsync(
-        NuGetPluginManifest manifest, 
-        DependencyGraph graph, 
-        HashSet<string> visited, 
-        HashSet<string> resolving, 
-        int level, 
+        NuGetPluginManifest manifest,
+
+        DependencyGraph graph,
+
+        HashSet<string> visited,
+
+        HashSet<string> resolving,
+
+        int level,
+
         CancellationToken cancellationToken)
     {
         if (level > _settings.MaxDependencyDepth)
@@ -98,15 +106,16 @@ public class DependencyResolver
             return;
         }
 
-        resolving.Add(manifest.Id);
-        visited.Add(manifest.Id);
+        _ = resolving.Add(manifest.Id);
+        _ = visited.Add(manifest.Id);
 
         try
         {
             foreach (var dependency in manifest.Dependencies ?? [])
             {
                 var resolvedDependency = await ResolveSingleDependencyAsync(dependency, level + 1, cancellationToken);
-                
+
+
                 if (resolvedDependency != null)
                 {
                     graph.Dependencies.Add(resolvedDependency);
@@ -115,11 +124,13 @@ public class DependencyResolver
                     if (_settings.ResolveTransitiveDependencies && resolvedDependency.Manifest != null)
                     {
                         await ResolveDependenciesRecursiveAsync(
-                            resolvedDependency.Manifest, 
-                            graph, 
-                            visited, 
-                            resolving, 
-                            level + 1, 
+                            resolvedDependency.Manifest,
+                            graph,
+                            visited,
+                            resolving,
+
+                            level + 1,
+
                             cancellationToken);
                     }
                 }
@@ -131,7 +142,7 @@ public class DependencyResolver
         }
         finally
         {
-            resolving.Remove(manifest.Id);
+            _ = resolving.Remove(manifest.Id);
         }
     }
 
@@ -139,8 +150,10 @@ public class DependencyResolver
     /// Resolves a single dependency to the best available version.
     /// </summary>
     private async Task<ResolvedDependency?> ResolveSingleDependencyAsync(
-        NuGetPackageDependency dependency, 
-        int level, 
+        NuGetPackageDependency dependency,
+
+        int level,
+
         CancellationToken cancellationToken)
     {
         _logger.LogDebug("Resolving dependency: {DependencyId} {VersionRange}", dependency.Id, dependency.VersionRange);
@@ -181,7 +194,7 @@ public class DependencyResolver
         await LoadPackageMetadataAsync(resolvedPackage, cancellationToken);
 
         // Cache the resolved package
-        _packageCache.TryAdd(cacheKey, resolvedPackage);
+        _ = _packageCache.TryAdd(cacheKey, resolvedPackage);
 
         return CreateResolvedDependency(resolvedPackage, level);
     }
@@ -233,7 +246,8 @@ public class DependencyResolver
     {
         // Simplified version range parsing
         // In a real implementation, this would use NuGet.Versioning library
-        
+
+
         if (string.IsNullOrWhiteSpace(versionRange))
         {
             return new VersionConstraint { MinVersion = "0.0.0", IncludeMinVersion = true };
@@ -244,12 +258,17 @@ public class DependencyResolver
         {
             // Exact version: [1.0.0]
             var version = versionRange.Trim('[', ']');
-            return new VersionConstraint 
-            { 
-                MinVersion = version, 
-                MaxVersion = version, 
-                IncludeMinVersion = true, 
-                IncludeMaxVersion = true 
+            return new VersionConstraint
+            {
+
+                MinVersion = version,
+
+                MaxVersion = version,
+
+                IncludeMinVersion = true,
+
+                IncludeMaxVersion = true
+
             };
         }
 
@@ -267,10 +286,13 @@ public class DependencyResolver
         }
 
         // Default: minimum version
-        return new VersionConstraint 
-        { 
-            MinVersion = versionRange, 
-            IncludeMinVersion = true 
+        return new VersionConstraint
+        {
+
+            MinVersion = versionRange,
+
+            IncludeMinVersion = true
+
         };
     }
 
@@ -327,8 +349,9 @@ public class DependencyResolver
         package.AssemblyName = package.Id;
         package.AssemblyPath = $"/packages/{package.Id}.{package.Version}/{package.Id}.dll";
         package.IsPlugin = package.Id.Contains("Plugin", StringComparison.OrdinalIgnoreCase);
-        
+
         // Simulate loading manifest for plugin packages
+
         if (package.IsPlugin)
         {
             package.Manifest = new NuGetPluginManifest
@@ -378,7 +401,8 @@ public class DependencyResolver
             var versions = group.Select(d => d.Version).Distinct().ToList();
             if (versions.Count > 1)
             {
-                _logger.LogWarning("Version conflict detected for package: {PackageId}. Versions: {Versions}", 
+                _logger.LogWarning("Version conflict detected for package: {PackageId}. Versions: {Versions}",
+
                     group.Key, string.Join(", ", versions));
 
                 // Apply conflict resolution strategy
@@ -413,10 +437,11 @@ public class DependencyResolver
         // Remove all except the highest version
         foreach (var dependency in conflictingDependencies.Where(d => d != highestVersion))
         {
-            graph.Dependencies.Remove(dependency);
+            _ = graph.Dependencies.Remove(dependency);
         }
 
-        _logger.LogInformation("Resolved version conflict for {PackageId} using highest version: {Version}", 
+        _logger.LogInformation("Resolved version conflict for {PackageId} using highest version: {Version}",
+
             highestVersion.Id, highestVersion.Version);
     }
 
@@ -432,10 +457,11 @@ public class DependencyResolver
         // Remove all except the lowest version
         foreach (var dependency in conflictingDependencies.Where(d => d != lowestVersion))
         {
-            graph.Dependencies.Remove(dependency);
+            _ = graph.Dependencies.Remove(dependency);
         }
 
-        _logger.LogInformation("Resolved version conflict for {PackageId} using lowest version: {Version}", 
+        _logger.LogInformation("Resolved version conflict for {PackageId} using lowest version: {Version}",
+
             lowestVersion.Id, lowestVersion.Version);
     }
 
@@ -468,10 +494,11 @@ public class DependencyResolver
     /// <summary>
     /// Checks if a dependency is compatible with the current platform.
     /// </summary>
-    private bool IsPlatformCompatible(ResolvedDependency dependency) =>
+    private bool IsPlatformCompatible(ResolvedDependency dependency)
         // Simplified platform compatibility check
         // In a real implementation, this would check the package's supported frameworks
-        true;
+
+        => true;
 }
 
 /// <summary>
@@ -497,7 +524,8 @@ public class DependencyResolutionSettings
     /// <summary>
     /// Gets or sets whether to include prerelease versions.
     /// </summary>
-    public bool IncludePrereleaseVersions { get; set; } = false;
+    public bool IncludePrereleaseVersions { get; set; }
+
 
     /// <summary>
     /// Gets or sets the dependency resolution timeout.
@@ -559,7 +587,7 @@ public class VersionConstraint
     /// <summary>
     /// Gets or sets whether to include the maximum version.
     /// </summary>
-    public bool IncludeMaxVersion { get; set; } = false;
+    public bool IncludeMaxVersion { get; set; }
 }
 
 /// <summary>

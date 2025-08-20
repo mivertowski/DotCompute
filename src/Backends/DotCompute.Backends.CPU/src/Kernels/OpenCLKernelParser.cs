@@ -10,11 +10,11 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// <summary>
 /// OpenCL kernel parser that identifies kernel types and extracts parameters.
 /// </summary>
-internal class OpenCLKernelParser(ILogger logger)
+internal partial class OpenCLKernelParser(ILogger logger)
 {
-private readonly ILogger _logger = logger;
+    private readonly ILogger _logger = logger;
 
-private static readonly Dictionary<string, KernelType> KernelPatterns = new()
+    private static readonly Dictionary<string, KernelType> _kernelPatterns = new()
 {
     { @"result\[i\]\s*=\s*a\[i\]\s*\+\s*b\[i\]", KernelType.VectorAdd },
     { @"result\[i\]\s*=\s*a\[i\]\s*\*\s*b\[i\]", KernelType.VectorMultiply },
@@ -25,68 +25,73 @@ private static readonly Dictionary<string, KernelType> KernelPatterns = new()
     { @"compute_intensive|sin\(|cos\(|sqrt\(", KernelType.ComputeIntensive }
 };
 
-public KernelInfo ParseKernel(string kernelSource, string entryPoint)
-{
-    _logger.LogDebug("Parsing kernel: {EntryPoint}", entryPoint);
-
-    var kernelType = DetectKernelType(kernelSource);
-    var parameters = ExtractParameters(kernelSource);
-
-    return new KernelInfo
+    public KernelInfo ParseKernel(string kernelSource, string entryPoint)
     {
-        Name = entryPoint,
-        Type = kernelType,
-        Source = kernelSource,
-        Parameters = parameters
-    };
-}
+        _logger.LogDebug("Parsing kernel: {EntryPoint}", entryPoint);
 
-private static KernelType DetectKernelType(string kernelSource)
-{
-    foreach (var pattern in KernelPatterns)
-    {
-        if (Regex.IsMatch(kernelSource, pattern.Key, RegexOptions.IgnoreCase | RegexOptions.Singleline))
+        var kernelType = DetectKernelType(kernelSource);
+        var parameters = ExtractParameters(kernelSource);
+
+        return new KernelInfo
         {
-            return pattern.Value;
-        }
-    }
-    return KernelType.Generic;
-}
-
-private static List<KernelParameter> ExtractParameters(string kernelSource)
-{
-    var parameters = new List<KernelParameter>();
-    
-    // Extract function signature parameters
-    var signatureMatch = Regex.Match(kernelSource, @"__kernel\s+void\s+\w+\s*\(([^)]+)\)", RegexOptions.IgnoreCase);
-    if (signatureMatch.Success)
-    {
-        var paramString = signatureMatch.Groups[1].Value;
-        var paramMatches = Regex.Matches(paramString, @"(__global\s+(?:const\s+)?(\w+\*?)\s+(\w+))|(\w+\s+(\w+))", RegexOptions.IgnoreCase);
-        
-        foreach (Match match in paramMatches)
-        {
-            if (match.Groups[2].Success) // Global memory parameter
-            {
-                parameters.Add(new KernelParameter
-                {
-                    Name = match.Groups[3].Value,
-                    Type = match.Groups[2].Value,
-                    IsGlobal = true
-                });
-            }
-            else if (match.Groups[5].Success) // Regular parameter
-            {
-                parameters.Add(new KernelParameter
-                {
-                    Name = match.Groups[5].Value,
-                    Type = match.Groups[4].Value,
-                    IsGlobal = false
-                });
-            }
-        }
+            Name = entryPoint,
+            Type = kernelType,
+            Source = kernelSource,
+            Parameters = parameters
+        };
     }
 
-    return parameters;
-}
+    private static KernelType DetectKernelType(string kernelSource)
+    {
+        foreach (var pattern in _kernelPatterns)
+        {
+            if (Regex.IsMatch(kernelSource, pattern.Key, RegexOptions.IgnoreCase | RegexOptions.Singleline))
+            {
+                return pattern.Value;
+            }
+        }
+        return KernelType.Generic;
+    }
+
+    private static List<KernelParameter> ExtractParameters(string kernelSource)
+    {
+        var parameters = new List<KernelParameter>();
+
+        // Extract function signature parameters
+        var signatureMatch = MyRegex().Match(kernelSource);
+        if (signatureMatch.Success)
+        {
+            var paramString = signatureMatch.Groups[1].Value;
+            var paramMatches = MyRegex1().Matches(paramString);
+
+            foreach (Match match in paramMatches)
+            {
+                if (match.Groups[2].Success) // Global memory parameter
+                {
+                    parameters.Add(new KernelParameter
+                    {
+                        Name = match.Groups[3].Value,
+                        Type = match.Groups[2].Value,
+                        IsGlobal = true
+                    });
+                }
+                else if (match.Groups[5].Success) // Regular parameter
+                {
+                    parameters.Add(new KernelParameter
+                    {
+                        Name = match.Groups[5].Value,
+                        Type = match.Groups[4].Value,
+                        IsGlobal = false
+                    });
+                }
+            }
+        }
+
+        return parameters;
+    }
+
+    [GeneratedRegex(@"__kernel\s+void\s+\w+\s*\(([^)]+)\)", RegexOptions.IgnoreCase, "")]
+    private static partial Regex MyRegex();
+    [GeneratedRegex(@"(__global\s+(?:const\s+)?(\w+\*?)\s+(\w+))|(\w+\s+(\w+))", RegexOptions.IgnoreCase, "")]
+    private static partial Regex MyRegex1();
 }

@@ -23,9 +23,11 @@ public sealed class LogEnricher : IDisposable
     private readonly ThreadLocal<Dictionary<string, object>> _threadLocalContext;
     private readonly Timer _contextCleanupTimer;
     private volatile bool _disposed;
-    
+
     // Sensitive data patterns for redaction
-    private static readonly Regex[] SensitivePatterns = 
+
+    private static readonly Regex[] SensitivePatterns =
+
     {
         new(@"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", RegexOptions.Compiled), // Email
         new(@"\b(?:\d{4}[-\s]?){3}\d{4}\b", RegexOptions.Compiled), // Credit card
@@ -42,15 +44,19 @@ public sealed class LogEnricher : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options?.Value ?? new LogEnricherOptions();
-        
+
+
         _contextualData = new ConcurrentDictionary<string, object>();
         _threadLocalContext = new ThreadLocal<Dictionary<string, object>>(() => new Dictionary<string, object>());
-        
+
         // Initialize system context
+
         InitializeSystemContext();
-        
+
         // Start context cleanup timer
-        _contextCleanupTimer = new Timer(CleanupExpiredContext, null, 
+
+        _contextCleanupTimer = new Timer(CleanupExpiredContext, null,
+
             TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
     }
 
@@ -61,37 +67,46 @@ public sealed class LogEnricher : IDisposable
     public void EnrichLogEntry(StructuredLogEntry logEntry)
     {
         ThrowIfDisposed();
-        
+
+
         try
         {
             // Add correlation context
             EnrichWithCorrelationContext(logEntry);
-            
+
             // Add distributed tracing context
+
             EnrichWithDistributedTracingContext(logEntry);
-            
+
             // Add system context
+
             EnrichWithSystemContext(logEntry);
-            
+
             // Add performance context
+
             EnrichWithPerformanceContext(logEntry);
-            
+
             // Add thread context
+
             EnrichWithThreadContext(logEntry);
-            
+
             // Add security context
+
             EnrichWithSecurityContext(logEntry);
-            
+
             // Add custom contextual data
+
             EnrichWithContextualData(logEntry);
-            
+
             // Redact sensitive data if enabled
+
             if (_options.EnableSensitiveDataRedaction)
             {
                 RedactSensitiveData(logEntry);
             }
-            
+
             // Add metadata
+
             EnrichWithMetadata(logEntry);
         }
         catch (Exception ex)
@@ -108,11 +123,13 @@ public sealed class LogEnricher : IDisposable
     /// <param name="operationName">Name of the operation</param>
     /// <param name="userId">Optional user identifier</param>
     /// <param name="sessionId">Optional session identifier</param>
-    public void AddCorrelationContext(string correlationId, string? operationName = null, 
+    public void AddCorrelationContext(string correlationId, string? operationName = null,
+
         string? userId = null, string? sessionId = null)
     {
         ThrowIfDisposed();
-        
+
+
         var context = new CorrelationContext
         {
             CorrelationId = correlationId,
@@ -121,10 +138,12 @@ public sealed class LogEnricher : IDisposable
             SessionId = sessionId,
             Timestamp = DateTimeOffset.UtcNow
         };
-        
-        _contextualData.AddOrUpdate($"correlation_{correlationId}", context, (k, v) => context);
-        
+
+
+        _ = _contextualData.AddOrUpdate($"correlation_{correlationId}", context, (k, v) => context);
+
         // Also add to thread-local context for immediate access
+
         if (_threadLocalContext.Value != null)
         {
             _threadLocalContext.Value["CorrelationId"] = correlationId;
@@ -152,17 +171,19 @@ public sealed class LogEnricher : IDisposable
     public void RemoveCorrelationContext(string correlationId)
     {
         ThrowIfDisposed();
-        
-        _contextualData.TryRemove($"correlation_{correlationId}", out _);
-        
+
+
+        _ = _contextualData.TryRemove($"correlation_{correlationId}", out _);
+
         // Remove from thread-local context if it matches
+
         if (_threadLocalContext.Value?.TryGetValue("CorrelationId", out var currentId) == true &&
             currentId?.ToString() == correlationId)
         {
-            _threadLocalContext.Value.Remove("CorrelationId");
-            _threadLocalContext.Value.Remove("OperationName");
-            _threadLocalContext.Value.Remove("UserId");
-            _threadLocalContext.Value.Remove("SessionId");
+            _ = _threadLocalContext.Value.Remove("CorrelationId");
+            _ = _threadLocalContext.Value.Remove("OperationName");
+            _ = _threadLocalContext.Value.Remove("UserId");
+            _ = _threadLocalContext.Value.Remove("SessionId");
         }
     }
 
@@ -175,20 +196,23 @@ public sealed class LogEnricher : IDisposable
     public void AddContextualData(string key, object value, ContextScope scope = ContextScope.Global)
     {
         ThrowIfDisposed();
-        
+
+
         switch (scope)
         {
             case ContextScope.Global:
-                _contextualData.AddOrUpdate(key, value, (k, v) => value);
+                _ = _contextualData.AddOrUpdate(key, value, (k, v) => value);
                 break;
-                
+
+
             case ContextScope.Thread:
                 if (_threadLocalContext.Value != null)
                 {
                     _threadLocalContext.Value[key] = value;
                 }
                 break;
-                
+
+
             case ContextScope.Request:
                 // Request scope would typically use HttpContext or similar
                 // For now, treat as thread-local
@@ -208,19 +232,22 @@ public sealed class LogEnricher : IDisposable
     public void RemoveContextualData(string key, ContextScope scope = ContextScope.Global)
     {
         ThrowIfDisposed();
-        
+
+
         switch (scope)
         {
             case ContextScope.Global:
-                _contextualData.TryRemove(key, out _);
+                _ = _contextualData.TryRemove(key, out _);
                 break;
-                
+
+
             case ContextScope.Thread:
-                _threadLocalContext.Value?.Remove(key);
+                _ = (_threadLocalContext.Value?.Remove(key));
                 break;
-                
+
+
             case ContextScope.Request:
-                _threadLocalContext.Value?.Remove($"req_{key}");
+                _ = (_threadLocalContext.Value?.Remove($"req_{key}"));
                 break;
         }
     }
@@ -234,7 +261,8 @@ public sealed class LogEnricher : IDisposable
     public void AddDeviceContext(string deviceId, string deviceType, Dictionary<string, object>? capabilities = null)
     {
         ThrowIfDisposed();
-        
+
+
         var deviceContext = new DeviceContext
         {
             DeviceId = deviceId,
@@ -242,8 +270,9 @@ public sealed class LogEnricher : IDisposable
             Capabilities = capabilities ?? new Dictionary<string, object>(),
             Timestamp = DateTimeOffset.UtcNow
         };
-        
-        _contextualData.AddOrUpdate($"device_{deviceId}", deviceContext, (k, v) => deviceContext);
+
+
+        _ = _contextualData.AddOrUpdate($"device_{deviceId}", deviceContext, (k, v) => deviceContext);
     }
 
     /// <summary>
@@ -254,14 +283,16 @@ public sealed class LogEnricher : IDisposable
     public void AddKernelContext(string kernelName, KernelCompilationInfo compilationInfo)
     {
         ThrowIfDisposed();
-        
+
+
         var kernelContext = new KernelExecutionContext
         {
             KernelName = kernelName,
             CompilationInfo = compilationInfo,
             Timestamp = DateTimeOffset.UtcNow
         };
-        
+
+
         if (_threadLocalContext.Value != null)
         {
             _threadLocalContext.Value["CurrentKernel"] = kernelName;
@@ -281,14 +312,16 @@ public sealed class LogEnricher : IDisposable
             _contextualData["Environment.OSVersion"] = Environment.OSVersion.ToString();
             _contextualData["Environment.ProcessId"] = Environment.ProcessId;
             _contextualData["Environment.Is64BitProcess"] = Environment.Is64BitProcess;
-            
+
             // Runtime information
+
             _contextualData["Runtime.Framework"] = RuntimeInformation.FrameworkDescription;
             _contextualData["Runtime.Architecture"] = RuntimeInformation.ProcessArchitecture.ToString();
             _contextualData["Runtime.OSArchitecture"] = RuntimeInformation.OSArchitecture.ToString();
             _contextualData["Runtime.OSDescription"] = RuntimeInformation.OSDescription;
-            
+
             // Application context
+
             var assembly = typeof(LogEnricher).Assembly;
             _contextualData["Application.Name"] = "DotCompute";
             _contextualData["Application.Version"] = assembly.GetName().Version?.ToString() ?? "Unknown";
@@ -316,8 +349,9 @@ public sealed class LogEnricher : IDisposable
                 logEntry.CorrelationId = Guid.NewGuid().ToString("N")[..12];
             }
         }
-        
+
         // Find and add correlation context
+
         if (_contextualData.TryGetValue($"correlation_{logEntry.CorrelationId}", out var contextObj) &&
             contextObj is CorrelationContext context)
         {
@@ -338,20 +372,22 @@ public sealed class LogEnricher : IDisposable
         }
     }
 
-    private void EnrichWithDistributedTracingContext(StructuredLogEntry logEntry)
+    private static void EnrichWithDistributedTracingContext(StructuredLogEntry logEntry)
     {
         var activity = Activity.Current;
         if (activity != null)
         {
             logEntry.TraceId = activity.TraceId.ToString();
             logEntry.SpanId = activity.SpanId.ToString();
-            
+
+
             if (activity.Parent != null)
             {
                 logEntry.Properties["ParentSpanId"] = activity.Parent.SpanId.ToString();
             }
-            
+
             // Add activity tags
+
             foreach (var tag in activity.Tags)
             {
                 if (!logEntry.Properties.ContainsKey($"trace.{tag.Key}"))
@@ -359,8 +395,9 @@ public sealed class LogEnricher : IDisposable
                     logEntry.Properties[$"trace.{tag.Key}"] = tag.Value ?? string.Empty;
                 }
             }
-            
+
             // Add baggage
+
             foreach (var baggage in activity.Baggage)
             {
                 if (!logEntry.Properties.ContainsKey($"baggage.{baggage.Key}"))
@@ -375,7 +412,8 @@ public sealed class LogEnricher : IDisposable
     {
         // Add selected system context (avoid overwhelming the log)
         var systemKeys = new[] { "Environment.MachineName", "Environment.ProcessId", "Runtime.Framework" };
-        
+
+
         foreach (var key in systemKeys)
         {
             if (_contextualData.TryGetValue(key, out var value))
@@ -390,22 +428,26 @@ public sealed class LogEnricher : IDisposable
         try
         {
             var stopwatch = Stopwatch.StartNew();
-            
+
             // Memory information
+
             var memoryBefore = GC.GetTotalMemory(false);
             var gen0 = GC.CollectionCount(0);
             var gen1 = GC.CollectionCount(1);
             var gen2 = GC.CollectionCount(2);
-            
+
+
             logEntry.Properties["Performance.MemoryUsage"] = memoryBefore;
             logEntry.Properties["Performance.Gen0Collections"] = gen0;
             logEntry.Properties["Performance.Gen1Collections"] = gen1;
             logEntry.Properties["Performance.Gen2Collections"] = gen2;
-            
+
             // Thread information
+
             logEntry.Properties["Performance.ThreadId"] = Thread.CurrentThread.ManagedThreadId;
             logEntry.Properties["Performance.IsThreadPoolThread"] = Thread.CurrentThread.IsThreadPoolThread;
-            
+
+
             stopwatch.Stop();
             logEntry.Properties["Performance.EnrichmentTimeMs"] = stopwatch.Elapsed.TotalMilliseconds;
         }
@@ -435,8 +477,9 @@ public sealed class LogEnricher : IDisposable
         {
             // Add security-relevant context
             logEntry.Properties["Security.IsElevated"] = Environment.IsPrivilegedProcess;
-            
+
             // Add user context if available (in a secure way)
+
             if (!string.IsNullOrEmpty(Environment.UserName))
             {
                 var hashedUser = HashString(Environment.UserName);
@@ -472,30 +515,34 @@ public sealed class LogEnricher : IDisposable
         }
     }
 
-    private void EnrichWithMetadata(StructuredLogEntry logEntry)
+    private static void EnrichWithMetadata(StructuredLogEntry logEntry)
     {
         // Add enrichment metadata
         logEntry.Properties["_enriched"] = true;
         logEntry.Properties["_enrichedAt"] = DateTimeOffset.UtcNow;
         logEntry.Properties["_enricherVersion"] = typeof(LogEnricher).Assembly.GetName().Version?.ToString() ?? "Unknown";
-        
+
         // Add log size estimation for monitoring
+
         var estimatedSize = EstimateLogEntrySize(logEntry);
         logEntry.Properties["_estimatedSizeBytes"] = estimatedSize;
     }
 
-    private void RedactSensitiveData(StructuredLogEntry logEntry)
+    private static void RedactSensitiveData(StructuredLogEntry logEntry)
     {
         // Redact in formatted message
         logEntry.FormattedMessage = RedactString(logEntry.FormattedMessage);
-        
+
         // Redact in message
+
         logEntry.Message = RedactString(logEntry.Message);
-        
+
         // Redact in properties
+
         var keysToRedact = new List<string>();
         var redactedProperties = new Dictionary<string, object>();
-        
+
+
         foreach (var prop in logEntry.Properties)
         {
             if (prop.Value is string stringValue)
@@ -511,13 +558,15 @@ public sealed class LogEnricher : IDisposable
                 redactedProperties[prop.Key] = "[REDACTED]";
             }
         }
-        
+
+
         foreach (var redacted in redactedProperties)
         {
             logEntry.Properties[redacted.Key] = redacted.Value;
         }
-        
+
         // Redact exception details if present
+
         if (logEntry.Exception != null)
         {
             // Create a sanitized exception message
@@ -540,7 +589,8 @@ public sealed class LogEnricher : IDisposable
         {
             result = pattern.Replace(result, "[REDACTED]");
         }
-        
+
+
         return result;
     }
 
@@ -555,9 +605,10 @@ public sealed class LogEnricher : IDisposable
                lowerName.Contains("auth");
     }
 
-    private static string HashString(string input) =>
+    private static string HashString(string input)
         // Simple hash for user identification (not cryptographically secure)
-        input.GetHashCode().ToString("X8");
+
+        => input.GetHashCode().ToString("X8");
 
     private static int EstimateLogEntrySize(StructuredLogEntry logEntry)
     {
@@ -567,13 +618,15 @@ public sealed class LogEnricher : IDisposable
         size += logEntry.CorrelationId?.Length ?? 0;
         size += logEntry.TraceId?.Length ?? 0;
         size += logEntry.SpanId?.Length ?? 0;
-        
+
+
         foreach (var prop in logEntry.Properties)
         {
             size += prop.Key.Length;
             size += prop.Value?.ToString()?.Length ?? 0;
         }
-        
+
+
         return size;
     }
 
@@ -589,7 +642,8 @@ public sealed class LogEnricher : IDisposable
         {
             var expiredThreshold = DateTimeOffset.UtcNow - TimeSpan.FromHours(_options.ContextRetentionHours);
             var keysToRemove = new List<string>();
-            
+
+
             foreach (var item in _contextualData)
             {
                 if (item.Value is CorrelationContext context && context.Timestamp < expiredThreshold)
@@ -601,12 +655,14 @@ public sealed class LogEnricher : IDisposable
                     keysToRemove.Add(item.Key);
                 }
             }
-            
+
+
             foreach (var key in keysToRemove)
             {
-                _contextualData.TryRemove(key, out _);
+                _ = _contextualData.TryRemove(key, out _);
             }
-            
+
+
             if (keysToRemove.Count > 0)
             {
                 _logger.LogDebug("Cleaned up {Count} expired context entries", keysToRemove.Count);

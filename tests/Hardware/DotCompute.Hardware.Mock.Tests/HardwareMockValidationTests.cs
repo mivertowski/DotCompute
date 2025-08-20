@@ -38,11 +38,11 @@ public class HardwareMockValidationTests
             MaxGridSize = 65535
         };
 
-        mockDevice.Name.Should().NotBeNullOrEmpty();
-        mockDevice.ComputeCapability.Should().BeGreaterThan(new Version(3, 0));
-        mockDevice.TotalMemory.Should().BeGreaterThan(0);
-        mockDevice.MaxBlockSize.Should().BeGreaterThan(0);
-        mockDevice.MaxGridSize.Should().BeGreaterThan(0);
+        _ = mockDevice.Name.Should().NotBeNullOrEmpty();
+        _ = mockDevice.ComputeCapability.Should().BeGreaterThan(new Version(3, 0));
+        _ = mockDevice.TotalMemory.Should().BeGreaterThan(0);
+        _ = mockDevice.MaxBlockSize.Should().BeGreaterThan(0);
+        _ = mockDevice.MaxGridSize.Should().BeGreaterThan(0);
 
         _output.WriteLine($"Mock CUDA Device: {mockDevice.Name}");
         _output.WriteLine($"Compute Capability: {mockDevice.ComputeCapability}");
@@ -64,11 +64,11 @@ public class HardwareMockValidationTests
             GlobalMemorySize = 24 * 1024 * 1024 * 1024L
         };
 
-        mockDevice.Name.Should().NotBeNullOrEmpty();
-        mockDevice.DeviceType.Should().Be(OpenCLDeviceType.GPU);
-        mockDevice.MaxComputeUnits.Should().BeGreaterThan(0);
-        mockDevice.MaxWorkGroupSize.Should().BeGreaterThan(0);
-        mockDevice.GlobalMemorySize.Should().BeGreaterThan(0);
+        _ = mockDevice.Name.Should().NotBeNullOrEmpty();
+        _ = mockDevice.DeviceType.Should().Be(OpenCLDeviceType.GPU);
+        _ = mockDevice.MaxComputeUnits.Should().BeGreaterThan(0);
+        _ = mockDevice.MaxWorkGroupSize.Should().BeGreaterThan(0);
+        _ = mockDevice.GlobalMemorySize.Should().BeGreaterThan(0);
 
         _output.WriteLine($"Mock OpenCL Device: {mockDevice.Name}");
         _output.WriteLine($"Device Type: {mockDevice.DeviceType}");
@@ -88,9 +88,9 @@ public class HardwareMockValidationTests
             DedicatedVideoMemory = 16 * 1024 * 1024 * 1024L
         };
 
-        mockDevice.Name.Should().NotBeNullOrEmpty();
-        mockDevice.FeatureLevel.Should().Be(DirectComputeFeatureLevel.Level_11_0);
-        mockDevice.DedicatedVideoMemory.Should().BeGreaterThan(0);
+        _ = mockDevice.Name.Should().NotBeNullOrEmpty();
+        _ = mockDevice.FeatureLevel.Should().Be(DirectComputeFeatureLevel.Level_11_0);
+        _ = mockDevice.DedicatedVideoMemory.Should().BeGreaterThan(0);
 
         _output.WriteLine($"Mock DirectCompute Device: {mockDevice.Name}");
         _output.WriteLine($"Feature Level: {mockDevice.FeatureLevel}");
@@ -131,7 +131,7 @@ public class HardwareMockValidationTests
         // Verify results
         for (var i = 0; i < vectorSize; i++)
         {
-            result[i].Should().Be(a[i] + b[i], $"result[{i}] should equal a[{i}] + b[{i}]");
+            _ = result[i].Should().Be(a[i] + b[i], $"result[{i}] should equal a[{i}] + b[{i}]");
         }
 
         _output.WriteLine($"Vector size: {vectorSize}");
@@ -149,8 +149,9 @@ public class HardwareMockValidationTests
         var a = new float[matrixSize][];
         var b = new float[matrixSize][];
         var result = new float[matrixSize][];
-        
+
         // Initialize jagged arrays
+
         for (var i = 0; i < matrixSize; i++)
         {
             a[i] = new float[matrixSize];
@@ -203,7 +204,7 @@ public class HardwareMockValidationTests
             }
         }
 
-        hasNonZeroResults.Should().BeTrue("Matrix multiplication should produce non-zero results");
+        _ = hasNonZeroResults.Should().BeTrue("Matrix multiplication should produce non-zero results");
 
         _output.WriteLine($"Matrix size: {matrixSize}x{matrixSize}");
         _output.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds}ms");
@@ -238,7 +239,7 @@ public class HardwareMockValidationTests
         // Verify data integrity
         for (var i = 0; i < dataSize; i++)
         {
-            resultData[i].Should().Be(hostData[i], $"Data integrity check failed at index {i}");
+            _ = resultData[i].Should().Be(hostData[i], $"Data integrity check failed at index {i}");
         }
 
         var bandwidth = dataSize * 2 / (stopwatch.Elapsed.TotalSeconds * 1024 * 1024); // MB/s

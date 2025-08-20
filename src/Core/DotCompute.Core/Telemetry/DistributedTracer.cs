@@ -18,7 +18,8 @@ namespace DotCompute.Core.Telemetry;
 public sealed class DistributedTracer : IDisposable
 {
     private static readonly ActivitySource ActivitySource = new("DotCompute.DistributedTracer", "1.0.0");
-    
+
+
     private readonly ILogger<DistributedTracer> _logger;
     private readonly DistributedTracingOptions _options;
     private readonly ConcurrentDictionary<string, TraceContext> _activeTraces;
@@ -31,13 +32,16 @@ public sealed class DistributedTracer : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options?.Value ?? new DistributedTracingOptions();
-        
+
+
         _activeTraces = new ConcurrentDictionary<string, TraceContext>();
         _completedSpans = new ConcurrentDictionary<string, List<SpanData>>();
         _exportSemaphore = new SemaphoreSlim(1, 1);
-        
+
         // Start cleanup timer to prevent memory leaks
-        _cleanupTimer = new Timer(CleanupExpiredTraces, null, 
+
+        _cleanupTimer = new Timer(CleanupExpiredTraces, null,
+
             TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
     }
 
@@ -53,29 +57,34 @@ public sealed class DistributedTracer : IDisposable
         SpanContext? parentSpanContext = null, Dictionary<string, object?>? tags = null)
     {
         ThrowIfDisposed();
-        
+
+
         correlationId ??= GenerateCorrelationId();
-        
+
+
         var activity = ActivitySource.StartActivity($"dotcompute.{operationName}");
-        activity?.SetTag("correlation_id", correlationId);
-        activity?.SetTag("operation_name", operationName);
-        activity?.SetTag("component", "dotcompute.core");
-        activity?.SetTag("trace_start_time", DateTimeOffset.UtcNow.ToString("O"));
-        
+        _ = (activity?.SetTag("correlation_id", correlationId));
+        _ = (activity?.SetTag("operation_name", operationName));
+        _ = (activity?.SetTag("component", "dotcompute.core"));
+        _ = (activity?.SetTag("trace_start_time", DateTimeOffset.UtcNow.ToString("O")));
+
+
         if (parentSpanContext != null)
         {
-            activity?.SetTag("parent_span_id", parentSpanContext.SpanId);
-            activity?.SetTag("parent_trace_id", parentSpanContext.TraceId);
+            _ = (activity?.SetTag("parent_span_id", parentSpanContext.SpanId));
+            _ = (activity?.SetTag("parent_trace_id", parentSpanContext.TraceId));
         }
-        
+
+
         if (tags != null)
         {
             foreach (var tag in tags)
             {
-                activity?.SetTag(tag.Key, tag.Value?.ToString());
+                _ = (activity?.SetTag(tag.Key, tag.Value?.ToString()));
             }
         }
-        
+
+
         var traceContext = new TraceContext
         {
             TraceId = activity?.TraceId.ToString() ?? GenerateTraceId(),
@@ -88,12 +97,15 @@ public sealed class DistributedTracer : IDisposable
             Spans = new ConcurrentBag<SpanData>(),
             DeviceOperations = new ConcurrentDictionary<string, DeviceOperationTrace>()
         };
-        
-        _activeTraces.TryAdd(correlationId, traceContext);
-        
+
+
+        _ = _activeTraces.TryAdd(correlationId, traceContext);
+
+
         _logger.LogDebug("Started distributed trace {TraceId} for operation {OperationName} with correlation {CorrelationId}",
             traceContext.TraceId, operationName, correlationId);
-        
+
+
         return traceContext;
     }
 
@@ -110,16 +122,19 @@ public sealed class DistributedTracer : IDisposable
         SpanKind spanKind = SpanKind.Internal, Dictionary<string, object?>? attributes = null)
     {
         ThrowIfDisposed();
-        
+
+
         if (!_activeTraces.TryGetValue(correlationId, out var traceContext))
         {
             _logger.LogWarning("Attempted to start span for unknown correlation ID {CorrelationId}", correlationId);
             return null;
         }
-        
+
+
         var spanId = GenerateSpanId();
         var startTime = DateTimeOffset.UtcNow;
-        
+
+
         var spanContext = new SpanContext
         {
             SpanId = spanId,
@@ -132,26 +147,30 @@ public sealed class DistributedTracer : IDisposable
             Attributes = attributes?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new(),
             ParentSpanId = traceContext.Activity?.SpanId.ToString()
         };
-        
+
         // Create nested activity for detailed tracing
+
         var childActivity = ActivitySource.StartActivity($"{spanName}@{deviceId}");
-        childActivity?.SetTag("span_id", spanId);
-        childActivity?.SetTag("device_id", deviceId);
-        childActivity?.SetTag("span_kind", spanKind.ToString());
-        childActivity?.SetTag("correlation_id", correlationId);
-        
+        _ = (childActivity?.SetTag("span_id", spanId));
+        _ = (childActivity?.SetTag("device_id", deviceId));
+        _ = (childActivity?.SetTag("span_kind", spanKind.ToString()));
+        _ = (childActivity?.SetTag("correlation_id", correlationId));
+
+
         if (attributes != null)
         {
             foreach (var attr in attributes)
             {
-                childActivity?.SetTag(attr.Key, attr.Value?.ToString());
+                _ = (childActivity?.SetTag(attr.Key, attr.Value?.ToString()));
             }
         }
-        
+
+
         spanContext.Activity = childActivity;
-        
+
         // Track device-specific operations
-        traceContext.DeviceOperations.AddOrUpdate(deviceId,
+
+        _ = traceContext.DeviceOperations.AddOrUpdate(deviceId,
             new DeviceOperationTrace
             {
                 DeviceId = deviceId,
@@ -167,10 +186,12 @@ public sealed class DistributedTracer : IDisposable
                 existing.ActiveSpans.Add(spanContext);
                 return existing;
             });
-        
+
+
         _logger.LogTrace("Started span {SpanId} '{SpanName}' on device {DeviceId} for trace {TraceId}",
             spanId, spanName, deviceId, traceContext.TraceId);
-        
+
+
         return spanContext;
     }
 
@@ -180,23 +201,28 @@ public sealed class DistributedTracer : IDisposable
     /// <param name="spanContext">The span context to record the event in</param>
     /// <param name="eventName">Name of the event</param>
     /// <param name="attributes">Event attributes including performance metrics</param>
-    public void RecordEvent(SpanContext spanContext, string eventName, 
+    public void RecordEvent(SpanContext spanContext, string eventName,
+
         Dictionary<string, object?> attributes)
     {
         ThrowIfDisposed();
-        
+
+
         var eventData = new SpanEvent
         {
             Name = eventName,
             Timestamp = DateTimeOffset.UtcNow,
             Attributes = attributes
         };
-        
+
+
         spanContext.Events.Add(eventData);
-        spanContext.Activity?.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow,
-            new ActivityTagsCollection(attributes.Select(kvp => 
-                new KeyValuePair<string, object?>(kvp.Key, kvp.Value)))));
-        
+        _ = (spanContext.Activity?.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow,
+            new ActivityTagsCollection(attributes.Select(kvp =>
+
+                new KeyValuePair<string, object?>(kvp.Key, kvp.Value))))));
+
+
         _logger.LogTrace("Recorded event '{EventName}' in span {SpanId}", eventName, spanContext.SpanId);
     }
 
@@ -212,7 +238,8 @@ public sealed class DistributedTracer : IDisposable
         TimeSpan executionTime, long memoryUsage, KernelPerformanceData performanceMetrics)
     {
         ThrowIfDisposed();
-        
+
+
         var attributes = new Dictionary<string, object?>
         {
             ["kernel_name"] = kernelName,
@@ -224,14 +251,19 @@ public sealed class DistributedTracer : IDisposable
             ["instruction_throughput"] = performanceMetrics.InstructionThroughput,
             ["memory_bandwidth_gb_per_sec"] = performanceMetrics.MemoryBandwidthGBPerSecond
         };
-        
+
+
         RecordEvent(spanContext, "kernel_execution", attributes);
-        
+
         // Update span attributes with performance summary
-        spanContext.Attributes["kernel_execution_count"] = 
+
+        spanContext.Attributes["kernel_execution_count"] =
+
             (spanContext.Attributes.GetValueOrDefault("kernel_execution_count", 0) as int? ?? 0) + 1;
-        spanContext.Attributes["total_execution_time_ms"] = 
-            (spanContext.Attributes.GetValueOrDefault("total_execution_time_ms", 0.0) as double? ?? 0.0) + 
+        spanContext.Attributes["total_execution_time_ms"] =
+
+            (spanContext.Attributes.GetValueOrDefault("total_execution_time_ms", 0.0) as double? ?? 0.0) +
+
             executionTime.TotalMilliseconds;
     }
 
@@ -241,26 +273,32 @@ public sealed class DistributedTracer : IDisposable
     /// <param name="spanContext">The span context to finish</param>
     /// <param name="status">Final status of the operation</param>
     /// <param name="statusMessage">Optional status message</param>
-    public void FinishSpan(SpanContext spanContext, SpanStatus status = SpanStatus.Ok, 
+    public void FinishSpan(SpanContext spanContext, SpanStatus status = SpanStatus.Ok,
+
         string? statusMessage = null)
     {
         ThrowIfDisposed();
-        
+
+
         var endTime = DateTimeOffset.UtcNow;
         var duration = endTime - spanContext.StartTime;
-        
+
+
         spanContext.EndTime = endTime;
         spanContext.Duration = duration;
         spanContext.Status = status;
         spanContext.StatusMessage = statusMessage;
-        
+
         // Finalize activity
-        spanContext.Activity?.SetStatus(status == SpanStatus.Ok ? 
-            ActivityStatusCode.Ok : ActivityStatusCode.Error, statusMessage);
-        spanContext.Activity?.SetTag("duration_ms", duration.TotalMilliseconds);
+
+        _ = (spanContext.Activity?.SetStatus(status == SpanStatus.Ok ?
+
+            ActivityStatusCode.Ok : ActivityStatusCode.Error, statusMessage));
+        _ = (spanContext.Activity?.SetTag("duration_ms", duration.TotalMilliseconds));
         spanContext.Activity?.Dispose();
-        
+
         // Convert to completed span data
+
         var spanData = new SpanData
         {
             SpanId = spanContext.SpanId,
@@ -278,13 +316,15 @@ public sealed class DistributedTracer : IDisposable
             Events = [.. spanContext.Events],
             ParentSpanId = spanContext.ParentSpanId
         };
-        
+
         // Add to trace spans
+
         if (_activeTraces.TryGetValue(spanContext.CorrelationId, out var traceContext))
         {
             traceContext.Spans.Add(spanData);
         }
-        
+
+
         _logger.LogTrace("Finished span {SpanId} '{SpanName}' with status {Status} after {Duration}ms",
             spanContext.SpanId, spanContext.SpanName, status, duration.TotalMilliseconds);
     }
@@ -295,27 +335,32 @@ public sealed class DistributedTracer : IDisposable
     /// <param name="correlationId">Correlation ID of the trace to finish</param>
     /// <param name="status">Final status of the entire operation</param>
     /// <returns>Completed trace data for analysis</returns>
-    public async Task<TraceData?> FinishTraceAsync(string correlationId, 
+    public async Task<TraceData?> FinishTraceAsync(string correlationId,
+
         TraceStatus status = TraceStatus.Ok)
     {
         ThrowIfDisposed();
-        
+
+
         if (!_activeTraces.TryRemove(correlationId, out var traceContext))
         {
             _logger.LogWarning("Attempted to finish unknown trace with correlation ID {CorrelationId}", correlationId);
             return null;
         }
-        
+
+
         var endTime = DateTimeOffset.UtcNow;
         var totalDuration = endTime - traceContext.StartTime;
-        
-        traceContext.Activity?.SetStatus(status == TraceStatus.Ok ?
-            ActivityStatusCode.Ok : ActivityStatusCode.Error);
-        traceContext.Activity?.SetTag("total_duration_ms", totalDuration.TotalMilliseconds);
-        traceContext.Activity?.SetTag("span_count", traceContext.Spans.Count);
-        traceContext.Activity?.SetTag("device_count", traceContext.DeviceOperations.Count);
+
+
+        _ = (traceContext.Activity?.SetStatus(status == TraceStatus.Ok ?
+            ActivityStatusCode.Ok : ActivityStatusCode.Error));
+        _ = (traceContext.Activity?.SetTag("total_duration_ms", totalDuration.TotalMilliseconds));
+        _ = (traceContext.Activity?.SetTag("span_count", traceContext.Spans.Count));
+        _ = (traceContext.Activity?.SetTag("device_count", traceContext.DeviceOperations.Count));
         traceContext.Activity?.Dispose();
-        
+
+
         var traceData = new TraceData
         {
             TraceId = traceContext.TraceId,
@@ -329,18 +374,22 @@ public sealed class DistributedTracer : IDisposable
             DeviceOperations = traceContext.DeviceOperations.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
             Tags = new Dictionary<string, object?>(traceContext.Tags)
         };
-        
+
         // Perform trace analysis
+
         traceData.Analysis = await AnalyzeTraceAsync(traceData);
-        
+
         // Store completed trace
-        _completedSpans.TryAdd(correlationId, traceData.Spans);
-        
+
+        _ = _completedSpans.TryAdd(correlationId, traceData.Spans);
+
+
         _logger.LogInformation("Finished distributed trace {TraceId} for operation '{OperationName}' " +
             "after {Duration}ms with {SpanCount} spans across {DeviceCount} devices",
             traceData.TraceId, traceData.OperationName, totalDuration.TotalMilliseconds,
             traceData.Spans.Count, traceData.DeviceOperations.Count);
-        
+
+
         return traceData;
     }
 
@@ -352,9 +401,11 @@ public sealed class DistributedTracer : IDisposable
     public async Task<TraceAnalysis> AnalyzeTraceAsync(TraceData traceData)
     {
         ThrowIfDisposed();
-        
+
+
         await Task.Yield(); // Allow other operations to continue
-        
+
+
         var analysis = new TraceAnalysis
         {
             TraceId = traceData.TraceId,
@@ -363,27 +414,34 @@ public sealed class DistributedTracer : IDisposable
             SpanCount = traceData.Spans.Count,
             DeviceCount = traceData.DeviceOperations.Count
         };
-        
+
         // Analyze critical path
+
         analysis.CriticalPath = IdentifyCriticalPath(traceData.Spans);
         analysis.CriticalPathDuration = analysis.CriticalPath.Sum(span => span.Duration.TotalMilliseconds);
-        
+
         // Analyze device utilization
+
         analysis.DeviceUtilization = AnalyzeDeviceUtilization(new ConcurrentDictionary<string, DeviceOperationTrace>(traceData.DeviceOperations));
-        
+
         // Identify bottlenecks
+
         analysis.Bottlenecks = IdentifyBottlenecks(traceData.Spans);
-        
+
         // Analyze memory access patterns
+
         analysis.MemoryAccessPatterns = AnalyzeMemoryAccessPatterns(traceData.Spans);
-        
+
         // Calculate efficiency metrics
+
         analysis.ParallelismEfficiency = CalculateParallelismEfficiency(traceData);
         analysis.DeviceEfficiency = CalculateDeviceEfficiency(traceData);
-        
+
         // Generate optimization recommendations
+
         analysis.OptimizationRecommendations = GenerateOptimizationRecommendations(analysis);
-        
+
+
         return analysis;
     }
 
@@ -393,16 +451,19 @@ public sealed class DistributedTracer : IDisposable
     /// <param name="format">Export format (OpenTelemetry, Jaeger, Zipkin)</param>
     /// <param name="correlationIds">Specific traces to export, or null for all recent traces</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    public async Task ExportTracesAsync(TraceExportFormat format, 
+    public async Task ExportTracesAsync(TraceExportFormat format,
+
         IEnumerable<string>? correlationIds = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         await _exportSemaphore.WaitAsync(cancellationToken);
         try
         {
             var tracesToExport = correlationIds?.ToList() ?? [.. _completedSpans.Keys];
-            
+
+
             foreach (var correlationId in tracesToExport.Take(_options.MaxTracesPerExport))
             {
                 if (_completedSpans.TryGetValue(correlationId, out var spans))
@@ -413,7 +474,7 @@ public sealed class DistributedTracer : IDisposable
         }
         finally
         {
-            _exportSemaphore.Release();
+            _ = _exportSemaphore.Release();
         }
     }
 
@@ -477,35 +538,40 @@ public sealed class DistributedTracer : IDisposable
         _logger.LogDebug("Exported trace {CorrelationId} to custom format", correlationId);
     }
 
-    private List<SpanData> IdentifyCriticalPath(List<SpanData> spans) =>
+    private static List<SpanData> IdentifyCriticalPath(List<SpanData> spans)
         // Simplified critical path analysis - find the longest sequential chain
-        [.. spans.OrderByDescending(s => s.Duration).Take(5)];
 
-    private Dictionary<string, double> AnalyzeDeviceUtilization(
+        => [.. spans.OrderByDescending(s => s.Duration).Take(5)];
+
+    private static Dictionary<string, double> AnalyzeDeviceUtilization(
         ConcurrentDictionary<string, DeviceOperationTrace> deviceOps)
     {
         var utilization = new Dictionary<string, double>();
-        
+
+
         foreach (var deviceOp in deviceOps)
         {
             var totalTime = (deviceOp.Value.LastOperationTime - deviceOp.Value.FirstOperationTime).TotalMilliseconds;
             var utilizationRatio = totalTime > 0 ? deviceOp.Value.OperationCount / totalTime * 1000 : 0;
             utilization[deviceOp.Key] = Math.Min(1.0, utilizationRatio);
         }
-        
+
+
         return utilization;
     }
 
-    private List<PerformanceBottleneck> IdentifyBottlenecks(List<SpanData> spans)
+    private static List<PerformanceBottleneck> IdentifyBottlenecks(List<SpanData> spans)
     {
         var bottlenecks = new List<PerformanceBottleneck>();
-        
+
         // Find spans that took disproportionately long
+
         if (spans.Any())
         {
             var averageDuration = spans.Average(s => s.Duration.TotalMilliseconds);
             var threshold = averageDuration * 2;
-            
+
+
             foreach (var span in spans.Where(s => s.Duration.TotalMilliseconds > threshold))
             {
                 bottlenecks.Add(new PerformanceBottleneck
@@ -520,30 +586,34 @@ public sealed class DistributedTracer : IDisposable
                 });
             }
         }
-        
+
+
         return bottlenecks;
     }
 
-    private Dictionary<string, object> AnalyzeMemoryAccessPatterns(List<SpanData> spans)
+    private static Dictionary<string, object> AnalyzeMemoryAccessPatterns(List<SpanData> spans)
     {
         var patterns = new Dictionary<string, object>();
-        
+
+
         var memoryEvents = spans
             .SelectMany(s => s.Events)
             .Where(e => e.Name.Contains("memory", StringComparison.OrdinalIgnoreCase))
             .ToList();
-            
+
+
         patterns["total_memory_operations"] = memoryEvents.Count;
         patterns["unique_devices_with_memory_ops"] = spans
             .Where(s => s.Events.Any(e => e.Name.Contains("memory", StringComparison.OrdinalIgnoreCase)))
             .Select(s => s.DeviceId)
             .Distinct()
             .Count();
-        
+
+
         return patterns;
     }
 
-    private double CalculateParallelismEfficiency(TraceData traceData)
+    private static double CalculateParallelismEfficiency(TraceData traceData)
     {
         if (traceData.Spans.Count <= 1)
         {
@@ -553,11 +623,12 @@ public sealed class DistributedTracer : IDisposable
 
         var totalSpanTime = traceData.Spans.Sum(s => s.Duration.TotalMilliseconds);
         var actualTime = traceData.TotalDuration.TotalMilliseconds;
-        
+
+
         return actualTime > 0 ? Math.Min(1.0, totalSpanTime / (actualTime * traceData.DeviceOperations.Count)) : 0;
     }
 
-    private double CalculateDeviceEfficiency(TraceData traceData)
+    private static double CalculateDeviceEfficiency(TraceData traceData)
     {
         if (traceData.DeviceOperations.Count == 0)
         {
@@ -566,32 +637,38 @@ public sealed class DistributedTracer : IDisposable
 
 
         var deviceUtilizations = traceData.DeviceOperations.Values
-            .Select(d => (d.LastOperationTime - d.FirstOperationTime).TotalMilliseconds / 
+            .Select(d => (d.LastOperationTime - d.FirstOperationTime).TotalMilliseconds /
+
                         traceData.TotalDuration.TotalMilliseconds)
             .Where(u => u > 0);
-            
+
+
         return deviceUtilizations.Any() ? deviceUtilizations.Average() : 0;
     }
 
-    private List<string> GenerateOptimizationRecommendations(TraceAnalysis analysis)
+    private static List<string> GenerateOptimizationRecommendations(TraceAnalysis analysis)
     {
         var recommendations = new List<string>();
-        
+
+
         if (analysis.ParallelismEfficiency < 0.7)
         {
             recommendations.Add("Consider increasing parallelism or reducing sequential dependencies");
         }
-        
+
+
         if (analysis.DeviceEfficiency < 0.8)
         {
             recommendations.Add("Optimize device utilization through better load balancing");
         }
-        
+
+
         if (analysis.CriticalPathDuration > analysis.TotalOperationTime.TotalMilliseconds * 0.8)
         {
             recommendations.Add("Focus optimization efforts on critical path operations");
         }
-        
+
+
         return recommendations;
     }
 
@@ -610,7 +687,8 @@ public sealed class DistributedTracer : IDisposable
                 .Where(kvp => kvp.Value.StartTime < expiredThreshold)
                 .Select(kvp => kvp.Key)
                 .ToList();
-                
+
+
             foreach (var correlationId in expiredTraces)
             {
                 if (_activeTraces.TryRemove(correlationId, out var trace))
@@ -619,18 +697,21 @@ public sealed class DistributedTracer : IDisposable
                     _logger.LogWarning("Cleaned up expired active trace {CorrelationId}", correlationId);
                 }
             }
-            
+
             // Also cleanup completed spans
+
             var expiredCompleted = _completedSpans
                 .Where(kvp => kvp.Value.Any() && kvp.Value.Max(s => s.EndTime) < expiredThreshold)
                 .Select(kvp => kvp.Key)
                 .ToList();
-                
+
+
             foreach (var correlationId in expiredCompleted)
             {
-                _completedSpans.TryRemove(correlationId, out _);
+                _ = _completedSpans.TryRemove(correlationId, out _);
             }
-            
+
+
             if (expiredTraces.Any() || expiredCompleted.Any())
             {
                 _logger.LogInformation("Cleaned up {ActiveCount} expired active traces and {CompletedCount} completed traces",
@@ -666,17 +747,20 @@ public sealed class DistributedTracer : IDisposable
 
 
         _disposed = true;
-        
+
         // Dispose all active traces
+
         foreach (var trace in _activeTraces.Values)
         {
             trace.Activity?.Dispose();
         }
-        
+
+
         _cleanupTimer?.Dispose();
         _exportSemaphore?.Dispose();
         ActivitySource.Dispose();
     }
 }
+
 
 // Supporting classes and enums continue in next part due to length...

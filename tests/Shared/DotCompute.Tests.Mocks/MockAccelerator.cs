@@ -3,6 +3,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using DotCompute.Abstractions.Accelerators;
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Tests.Mocks;
 
 

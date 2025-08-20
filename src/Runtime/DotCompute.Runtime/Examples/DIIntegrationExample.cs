@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Accelerators;
+using DotCompute.Abstractions.Kernels;
 // using DotCompute.Algorithms.Types; // Temporarily commented out due to compilation issues
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.DependencyInjection;
@@ -22,214 +24,214 @@ namespace DotCompute.Runtime.Examples;
 /// </summary>
 public static class DIIntegrationExample
 {
-/// <summary>
-/// Example showing basic DI setup for DotCompute
-/// </summary>
-public static async Task BasicDISetupExample()
-{
-    var services = new ServiceCollection();
-    
-    // Add logging
-    services.AddLogging(builder => builder.AddConsole());
-    
-    // Add DotCompute with basic configuration
-    services.AddDotComputeRuntime(configureOptions: options =>
+    /// <summary>
+    /// Example showing basic DI setup for DotCompute
+    /// </summary>
+    public static async Task BasicDISetupExample()
     {
-        options.EnableAutoDiscovery = true;
-        options.PreferredAcceleratorType = AcceleratorType.CPU;
-        options.EnableKernelCaching = true;
-        options.EnableMemoryPooling = true;
-    });
-    
-    // Build service provider
-    var serviceProvider = services.BuildServiceProvider();
-    
-    // Get runtime and use it
-    var runtime = serviceProvider.GetRequiredService<AcceleratorRuntime>();
-    await runtime.InitializeAsync();
-    
-    // Get accelerator through DI
-    var acceleratorManager = serviceProvider.GetRequiredService<IAcceleratorManager>();
-    var defaultAccelerator = acceleratorManager.Default;
-    
-    Console.WriteLine($"Default accelerator: {defaultAccelerator.Info.Name} ({defaultAccelerator.Info.DeviceType})");
-    
-    await runtime.DisposeAsync();
-    serviceProvider.Dispose();
-}
+        var services = new ServiceCollection();
 
-/// <summary>
-/// Example showing advanced DI setup with configuration
-/// </summary>
-public static async Task AdvancedDISetupExample()
-{
-    // Build configuration
-    var configuration = new ConfigurationBuilder()
-        .AddInMemoryCollection(new Dictionary<string, string?>
+        // Add logging
+        _ = services.AddLogging(builder => builder.AddConsole());
+
+        // Add DotCompute with basic configuration
+        _ = services.AddDotComputeRuntime(configureOptions: options =>
         {
-            ["DotCompute:EnableAutoDiscovery"] = "true",
-            ["DotCompute:PreferredAcceleratorType"] = "CPU",
-            ["DotCompute:MaxAccelerators"] = "8",
-            ["DotCompute:EnableKernelCaching"] = "true",
-            ["DotCompute:KernelCacheDirectory"] = "./cache/kernels",
-            ["DotCompute:MaxCacheSizeMB"] = "512",
-            ["DotCompute:EnableMemoryPooling"] = "true",
-            ["DotCompute:InitialPoolSizeMB"] = "128",
-            ["DotCompute:EnableProfiling"] = "true",
-            ["DotCompute:Plugins:EnablePlugins"] = "true",
-            ["DotCompute:Plugins:PluginDirectories:0"] = "./plugins",
-            ["DotCompute:Plugins:EnableDependencyInjection"] = "true"
-        })
-        .Build();
-    
-    var services = new ServiceCollection();
-    
-    // Add configuration
-    services.AddSingleton<IConfiguration>(configuration);
-    
-    // Add logging with more detailed configuration
-    services.AddLogging(builder =>
-    {
-        builder.AddConsole();
-        builder.AddDebug();
-        builder.SetMinimumLevel(LogLevel.Debug);
-    });
-    
-    // Add complete DotCompute stack
-    services.AddDotComputeComplete(configuration);
-    
-    // Add custom services
-    services.AddTransient<ICustomComputeService, CustomComputeService>();
-    
-    // Build service provider
-    var serviceProvider = services.BuildServiceProvider();
-    
-    // Use the enhanced setup
-    var runtime = serviceProvider.GetRequiredService<AcceleratorRuntime>();
-    // var pluginManager = serviceProvider.GetRequiredService<IAlgorithmPluginManager>();
-    var memoryPool = serviceProvider.GetRequiredService<IMemoryPoolService>();
-    var customService = serviceProvider.GetRequiredService<ICustomComputeService>();
-    
-    await runtime.InitializeAsync();
-    // await pluginManager.LoadPluginsAsync();
-    
-    // Use memory pool
-    var stats = memoryPool.GetUsageStatistics();
-    Console.WriteLine($"Memory pools: {stats.PerAcceleratorStats.Count}");
-    
-    // Use custom service
-    await customService.PerformComputationAsync();
-    
-    await runtime.DisposeAsync();
-    serviceProvider.Dispose();
-}
+            options.EnableAutoDiscovery = true;
+            options.PreferredAcceleratorType = AcceleratorType.CPU;
+            options.EnableKernelCaching = true;
+            options.EnableMemoryPooling = true;
+        });
 
-/// <summary>
-/// Example showing plugin DI integration
-/// </summary>
-public static Task PluginDIExample()
-{
-    var services = new ServiceCollection();
-    services.AddLogging(builder => builder.AddConsole());
-    
-    // Add DotCompute with plugin support
-    services.AddDotComputeRuntime();
-    services.AddDotComputePlugins(configureOptions: options =>
-    {
-        options.EnablePlugins = true;
-        options.EnableDependencyInjection = true;
-        options.PluginLifetime = DotCompute.Runtime.Configuration.ServiceLifetime.Scoped;
-    });
-    
-    // Register services that plugins might depend on
-    services.AddSingleton<ICustomDataProvider, CustomDataProvider>();
-    services.AddTransient<IComputationLogger, ComputationLogger>();
-    
-    var serviceProvider = services.BuildServiceProvider();
-    
-    // Get plugin services
-    var pluginServiceProvider = serviceProvider.GetRequiredService<IPluginServiceProvider>();
-    var pluginLifecycleManager = serviceProvider.GetRequiredService<IPluginLifecycleManager>();
-    var pluginFactory = serviceProvider.GetRequiredService<IPluginFactory>();
-    
-    // Register plugin-specific services
-    pluginServiceProvider.RegisterPluginServices("MyPlugin", pluginServices =>
-    {
-        pluginServices.AddSingleton<IPluginSpecificService, PluginSpecificService>();
-    });
-    
-    // Create plugin with DI
-    var pluginScope = pluginServiceProvider.CreatePluginScope("MyPlugin");
-    // var plugin = await pluginFactory.CreateAsync<IAlgorithmPlugin>(
-    //     typeof(SampleAlgorithmPlugin), pluginScope);
-    
-    // Console.WriteLine($"Created plugin: {plugin.Name} v{plugin.Version}");
-    
-    pluginScope.Dispose();
-    serviceProvider.Dispose();
-    
-    return Task.CompletedTask;
-}
+        // Build service provider
+        var serviceProvider = services.BuildServiceProvider();
 
-/// <summary>
-/// Example showing hosted service integration
-/// </summary>
-public static Task HostedServiceExample()
-{
-    // This example requires Microsoft.Extensions.Hosting package
-    // Uncomment and install the package to enable this functionality
-    
-    Console.WriteLine("HostedServiceExample: Microsoft.Extensions.Hosting package required");
-    Console.WriteLine("Install with: dotnet add package Microsoft.Extensions.Hosting");
-    
-    return Task.CompletedTask;
-    /*
-    var host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
-        .ConfigureServices((context, services) =>
+        // Get runtime and use it
+        var runtime = serviceProvider.GetRequiredService<AcceleratorRuntime>();
+        await runtime.InitializeAsync();
+
+        // Get accelerator through DI
+        var acceleratorManager = serviceProvider.GetRequiredService<IAcceleratorManager>();
+        var defaultAccelerator = acceleratorManager.Default;
+
+        Console.WriteLine($"Default accelerator: {defaultAccelerator.Info.Name} ({defaultAccelerator.Info.DeviceType})");
+
+        await runtime.DisposeAsync();
+        serviceProvider.Dispose();
+    }
+
+    /// <summary>
+    /// Example showing advanced DI setup with configuration
+    /// </summary>
+    public static async Task AdvancedDISetupExample()
+    {
+        // Build configuration
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DotCompute:EnableAutoDiscovery"] = "true",
+                ["DotCompute:PreferredAcceleratorType"] = "CPU",
+                ["DotCompute:MaxAccelerators"] = "8",
+                ["DotCompute:EnableKernelCaching"] = "true",
+                ["DotCompute:KernelCacheDirectory"] = "./cache/kernels",
+                ["DotCompute:MaxCacheSizeMB"] = "512",
+                ["DotCompute:EnableMemoryPooling"] = "true",
+                ["DotCompute:InitialPoolSizeMB"] = "128",
+                ["DotCompute:EnableProfiling"] = "true",
+                ["DotCompute:Plugins:EnablePlugins"] = "true",
+                ["DotCompute:Plugins:PluginDirectories:0"] = "./plugins",
+                ["DotCompute:Plugins:EnableDependencyInjection"] = "true"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+
+        // Add configuration
+        _ = services.AddSingleton<IConfiguration>(configuration);
+
+        // Add logging with more detailed configuration
+        _ = services.AddLogging(builder =>
         {
-            // Add DotCompute as hosted service
-            services.AddDotComputeRuntime(context.Configuration);
-            
-            // Add custom background service
-            services.AddHostedService<ComputeBackgroundService>();
-        })
-        .Build();
-    
-    // Start host (will initialize DotCompute automatically)
-    await host.StartAsync();
-    
-    // Host is running with DotCompute initialized
-    Console.WriteLine("Host started with DotCompute runtime");
-    
-    // Simulate some work
-    await Task.Delay(1000);
-    
-    await host.StopAsync();
-    host.Dispose();\n        */
-}
+            _ = builder.AddConsole();
+            _ = builder.AddDebug();
+            _ = builder.SetMinimumLevel(LogLevel.Debug);
+        });
 
-/// <summary>
-/// Example showing custom accelerator factory
-/// </summary>
-public static async Task CustomFactoryExample()
-{
-    var services = new ServiceCollection();
-    services.AddLogging(builder => builder.AddConsole());
-    
-    // Use custom accelerator factory
-    services.AddDotComputeRuntimeWithFactory<CustomAcceleratorFactory>();
-    
-    var serviceProvider = services.BuildServiceProvider();
-    var runtime = serviceProvider.GetRequiredService<AcceleratorRuntime>();
-    
-    await runtime.InitializeAsync();
-    
-    var accelerators = runtime.GetAccelerators();
-    Console.WriteLine($"Found {accelerators.Count} accelerators using custom factory");
-    
-    await runtime.DisposeAsync();
-    serviceProvider.Dispose();
-}
+        // Add complete DotCompute stack
+        _ = services.AddDotComputeComplete(configuration);
+
+        // Add custom services
+        _ = services.AddTransient<ICustomComputeService, CustomComputeService>();
+
+        // Build service provider
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Use the enhanced setup
+        var runtime = serviceProvider.GetRequiredService<AcceleratorRuntime>();
+        // var pluginManager = serviceProvider.GetRequiredService<IAlgorithmPluginManager>();
+        var memoryPool = serviceProvider.GetRequiredService<IMemoryPoolService>();
+        var customService = serviceProvider.GetRequiredService<ICustomComputeService>();
+
+        await runtime.InitializeAsync();
+        // await pluginManager.LoadPluginsAsync();
+
+        // Use memory pool
+        var stats = memoryPool.GetUsageStatistics();
+        Console.WriteLine($"Memory pools: {stats.PerAcceleratorStats.Count}");
+
+        // Use custom service
+        await customService.PerformComputationAsync();
+
+        await runtime.DisposeAsync();
+        serviceProvider.Dispose();
+    }
+
+    /// <summary>
+    /// Example showing plugin DI integration
+    /// </summary>
+    public static Task PluginDIExample()
+    {
+        var services = new ServiceCollection();
+        _ = services.AddLogging(builder => builder.AddConsole());
+
+        // Add DotCompute with plugin support
+        _ = services.AddDotComputeRuntime();
+        _ = services.AddDotComputePlugins(configureOptions: options =>
+        {
+            options.EnablePlugins = true;
+            options.EnableDependencyInjection = true;
+            options.PluginLifetime = DotCompute.Runtime.Configuration.ServiceLifetime.Scoped;
+        });
+
+        // Register services that plugins might depend on
+        _ = services.AddSingleton<ICustomDataProvider, CustomDataProvider>();
+        _ = services.AddTransient<IComputationLogger, ComputationLogger>();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Get plugin services
+        var pluginServiceProvider = serviceProvider.GetRequiredService<IPluginServiceProvider>();
+        var pluginLifecycleManager = serviceProvider.GetRequiredService<IPluginLifecycleManager>();
+        var pluginFactory = serviceProvider.GetRequiredService<IPluginFactory>();
+
+        // Register plugin-specific services
+        pluginServiceProvider.RegisterPluginServices("MyPlugin", pluginServices =>
+        {
+            _ = pluginServices.AddSingleton<IPluginSpecificService, PluginSpecificService>();
+        });
+
+        // Create plugin with DI
+        var pluginScope = pluginServiceProvider.CreatePluginScope("MyPlugin");
+        // var plugin = await pluginFactory.CreateAsync<IAlgorithmPlugin>(
+        //     typeof(SampleAlgorithmPlugin), pluginScope);
+
+        // Console.WriteLine($"Created plugin: {plugin.Name} v{plugin.Version}");
+
+        pluginScope.Dispose();
+        serviceProvider.Dispose();
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Example showing hosted service integration
+    /// </summary>
+    public static Task HostedServiceExample()
+    {
+        // This example requires Microsoft.Extensions.Hosting package
+        // Uncomment and install the package to enable this functionality
+
+        Console.WriteLine("HostedServiceExample: Microsoft.Extensions.Hosting package required");
+        Console.WriteLine("Install with: dotnet add package Microsoft.Extensions.Hosting");
+
+        return Task.CompletedTask;
+        /*
+        var host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+            .ConfigureServices((context, services) =>
+            {
+                // Add DotCompute as hosted service
+                services.AddDotComputeRuntime(context.Configuration);
+
+                // Add custom background service
+                services.AddHostedService<ComputeBackgroundService>();
+            })
+            .Build();
+
+        // Start host (will initialize DotCompute automatically)
+        await host.StartAsync();
+
+        // Host is running with DotCompute initialized
+        Console.WriteLine("Host started with DotCompute runtime");
+
+        // Simulate some work
+        await Task.Delay(1000);
+
+        await host.StopAsync();
+        host.Dispose();\n        */
+    }
+
+    /// <summary>
+    /// Example showing custom accelerator factory
+    /// </summary>
+    public static async Task CustomFactoryExample()
+    {
+        var services = new ServiceCollection();
+        _ = services.AddLogging(builder => builder.AddConsole());
+
+        // Use custom accelerator factory
+        _ = services.AddDotComputeRuntimeWithFactory<CustomAcceleratorFactory>();
+
+        var serviceProvider = services.BuildServiceProvider();
+        var runtime = serviceProvider.GetRequiredService<AcceleratorRuntime>();
+
+        await runtime.InitializeAsync();
+
+        var accelerators = runtime.GetAccelerators();
+        Console.WriteLine($"Found {accelerators.Count} accelerators using custom factory");
+
+        await runtime.DisposeAsync();
+        serviceProvider.Dispose();
+    }
 }
 
 /// <summary>
@@ -237,41 +239,41 @@ public static async Task CustomFactoryExample()
 /// </summary>
 public interface ICustomComputeService
 {
-Task PerformComputationAsync();
+    Task PerformComputationAsync();
 }
 
 public class CustomComputeService : ICustomComputeService
 {
-private readonly IAcceleratorManager _acceleratorManager;
-private readonly IMemoryPoolService _memoryPool;
-private readonly ILogger<CustomComputeService> _logger;
+    private readonly IAcceleratorManager _acceleratorManager;
+    private readonly IMemoryPoolService _memoryPool;
+    private readonly ILogger<CustomComputeService> _logger;
 
-public CustomComputeService(
-    IAcceleratorManager acceleratorManager,
-    IMemoryPoolService memoryPool,
-    ILogger<CustomComputeService> logger)
-{
-    _acceleratorManager = acceleratorManager;
-    _memoryPool = memoryPool;
-    _logger = logger;
-}
+    public CustomComputeService(
+        IAcceleratorManager acceleratorManager,
+        IMemoryPoolService memoryPool,
+        ILogger<CustomComputeService> logger)
+    {
+        _acceleratorManager = acceleratorManager;
+        _memoryPool = memoryPool;
+        _logger = logger;
+    }
 
-public async Task PerformComputationAsync()
-{
-    _logger.LogInformation("Starting custom computation");
-    
-    var accelerator = _acceleratorManager.Default;
-    var pool = _memoryPool.GetPool(accelerator.Info.Id);
-    
-    using var buffer = await pool.AllocateAsync(1024 * 1024); // 1MB
-    
-    _logger.LogInformation("Allocated {SizeKB}KB from memory pool", buffer.SizeInBytes / 1024);
-    
-    // Simulate computation
-    await accelerator.SynchronizeAsync();
-    
-    _logger.LogInformation("Custom computation completed");
-}
+    public async Task PerformComputationAsync()
+    {
+        _logger.LogInformation("Starting custom computation");
+
+        var accelerator = _acceleratorManager.Default;
+        var pool = _memoryPool.GetPool(accelerator.Info.Id);
+
+        using var buffer = await pool.AllocateAsync(1024 * 1024); // 1MB
+
+        _logger.LogInformation("Allocated {SizeKB}KB from memory pool", buffer.SizeInBytes / 1024);
+
+        // Simulate computation
+        await accelerator.SynchronizeAsync();
+
+        _logger.LogInformation("Custom computation completed");
+    }
 }
 
 /// <summary>
@@ -381,51 +383,51 @@ public ValueTask DisposeAsync()
 // Supporting service interfaces and implementations
 public interface ICustomDataProvider
 {
-Task<byte[]> GetInitializationDataAsync();
+    Task<byte[]> GetInitializationDataAsync();
 }
 
 public class CustomDataProvider : ICustomDataProvider
 {
-public async Task<byte[]> GetInitializationDataAsync()
-{
-    await Task.Delay(10); // Simulate async work
-    return new byte[1024];
-}
+    public async Task<byte[]> GetInitializationDataAsync()
+    {
+        await Task.Delay(10); // Simulate async work
+        return new byte[1024];
+    }
 }
 
 public interface IComputationLogger
 {
-Task LogInitializationAsync(string pluginId, int dataSize);
-Task LogExecutionAsync(string pluginId, int inputSize);
+    Task LogInitializationAsync(string pluginId, int dataSize);
+    Task LogExecutionAsync(string pluginId, int inputSize);
 }
 
 public class ComputationLogger : IComputationLogger
 {
-private readonly ILogger<ComputationLogger> _logger;
+    private readonly ILogger<ComputationLogger> _logger;
 
-public ComputationLogger(ILogger<ComputationLogger> logger)
-{
-    _logger = logger;
-}
+    public ComputationLogger(ILogger<ComputationLogger> logger)
+    {
+        _logger = logger;
+    }
 
-public async Task LogInitializationAsync(string pluginId, int dataSize)
-{
-    _logger.LogInformation("Plugin {PluginId} initialized with {DataSize} bytes of data", 
-        pluginId, dataSize);
-    await Task.CompletedTask;
-}
+    public async Task LogInitializationAsync(string pluginId, int dataSize)
+    {
+        _logger.LogInformation("Plugin {PluginId} initialized with {DataSize} bytes of data",
+            pluginId, dataSize);
+        await Task.CompletedTask;
+    }
 
-public async Task LogExecutionAsync(string pluginId, int inputSize)
-{
-    _logger.LogInformation("Plugin {PluginId} executed with input size {InputSize}", 
-        pluginId, inputSize);
-    await Task.CompletedTask;
-}
+    public async Task LogExecutionAsync(string pluginId, int inputSize)
+    {
+        _logger.LogInformation("Plugin {PluginId} executed with input size {InputSize}",
+            pluginId, inputSize);
+        await Task.CompletedTask;
+    }
 }
 
 public interface IPluginSpecificService
 {
-Task ProcessAsync();
+    Task ProcessAsync();
 }
 
 public class PluginSpecificService : IPluginSpecificService
@@ -438,29 +440,29 @@ public class PluginSpecificService : IPluginSpecificService
 /// </summary>
 public class ComputeBackgroundService : BackgroundService
 {
-private readonly AcceleratorRuntime _runtime;
-private readonly ILogger<ComputeBackgroundService> _logger;
+    private readonly AcceleratorRuntime _runtime;
+    private readonly ILogger<ComputeBackgroundService> _logger;
 
-public ComputeBackgroundService(
-    AcceleratorRuntime runtime,
-    ILogger<ComputeBackgroundService> logger)
-{
-    _runtime = runtime;
-    _logger = logger;
-}
-
-protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-{
-    while (!stoppingToken.IsCancellationRequested)
+    public ComputeBackgroundService(
+        AcceleratorRuntime runtime,
+        ILogger<ComputeBackgroundService> logger)
     {
-        _logger.LogInformation("Background compute service running at: {Time}", DateTimeOffset.Now);
-        
-        var accelerators = _runtime.GetAccelerators();
-        _logger.LogInformation("Available accelerators: {Count}", accelerators.Count);
-        
-        await Task.Delay(5000, stoppingToken);
+        _runtime = runtime;
+        _logger = logger;
     }
-}
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            _logger.LogInformation("Background compute service running at: {Time}", DateTimeOffset.Now);
+
+            var accelerators = _runtime.GetAccelerators();
+            _logger.LogInformation("Available accelerators: {Count}", accelerators.Count);
+
+            await Task.Delay(5000, stoppingToken);
+        }
+    }
 }
 
 /// <summary>
@@ -468,15 +470,15 @@ protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 /// </summary>
 public class CustomAcceleratorFactory : DefaultAcceleratorFactory
 {
-public CustomAcceleratorFactory(
-    IServiceProvider serviceProvider,
-    IOptions<DotComputeRuntimeOptions> options,
-    ILogger<CustomAcceleratorFactory> logger) 
-    : base(serviceProvider, options, logger)
-{
-    // Register additional custom providers
-    RegisterProvider(typeof(CustomAcceleratorProvider), AcceleratorType.GPU);
-}
+    public CustomAcceleratorFactory(
+        IServiceProvider serviceProvider,
+        IOptions<DotComputeRuntimeOptions> options,
+        ILogger<CustomAcceleratorFactory> logger)
+        : base(serviceProvider, options, logger)
+    {
+        // Register additional custom providers
+        RegisterProvider(typeof(CustomAcceleratorProvider), AcceleratorType.GPU);
+    }
 }
 
 /// <summary>
@@ -484,30 +486,30 @@ public CustomAcceleratorFactory(
 /// </summary>
 public class CustomAcceleratorProvider : IAcceleratorProvider
 {
-private readonly ILogger<CustomAcceleratorProvider> _logger;
+    private readonly ILogger<CustomAcceleratorProvider> _logger;
 
-public CustomAcceleratorProvider(ILogger<CustomAcceleratorProvider> logger)
-{
-    _logger = logger;
-}
+    public CustomAcceleratorProvider(ILogger<CustomAcceleratorProvider> logger)
+    {
+        _logger = logger;
+    }
 
-public string Name => "Custom";
-public AcceleratorType[] SupportedTypes => new[] { AcceleratorType.GPU };
+    public string Name => "Custom";
+    public AcceleratorType[] SupportedTypes => new[] { AcceleratorType.GPU };
 
-public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
-{
-    _logger.LogInformation("Discovering custom accelerators");
-    
-    // Return empty collection for this example
-    return ValueTask.FromResult(Enumerable.Empty<IAccelerator>());
-}
+    public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Discovering custom accelerators");
 
-public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
-{
-    // For this example, we'll create a simple mock accelerator
-    var mockAccelerator = new ExampleMockAccelerator(info);
-    return ValueTask.FromResult<IAccelerator>(mockAccelerator);
-}
+        // Return empty collection for this example
+        return ValueTask.FromResult(Enumerable.Empty<IAccelerator>());
+    }
+
+    public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
+    {
+        // For this example, we'll create a simple mock accelerator
+        var mockAccelerator = new ExampleMockAccelerator(info);
+        return ValueTask.FromResult<IAccelerator>(mockAccelerator);
+    }
 }
 
 /// <summary>

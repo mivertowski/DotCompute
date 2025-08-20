@@ -24,8 +24,9 @@ public sealed class MetricsCollector : IDisposable
     private readonly Timer _collectionTimer;
     private readonly object _lockObject = new();
     private volatile bool _disposed;
-    
+
     // Performance counters
+
     private long _totalKernelExecutions;
     private long _totalMemoryAllocations;
     private long _totalErrors;
@@ -39,35 +40,43 @@ public sealed class MetricsCollector : IDisposable
         _kernelMetrics = new ConcurrentDictionary<string, KernelMetrics>();
         _memoryOperations = new ConcurrentQueue<MemoryOperation>();
         _performanceSnapshots = new ConcurrentQueue<PerformanceSnapshot>();
-        
+
         // Start collection timer (every 5 seconds for high-resolution metrics)
-        _collectionTimer = new Timer(CollectSystemMetrics, null, 
+
+        _collectionTimer = new Timer(CollectSystemMetrics, null,
+
             TimeSpan.Zero, TimeSpan.FromSeconds(5));
     }
 
     /// <summary>
     /// Records kernel execution metrics with detailed performance characteristics.
     /// </summary>
-    public void RecordKernelExecution(string kernelName, string deviceId, 
+    public void RecordKernelExecution(string kernelName, string deviceId,
+
         TimeSpan executionTime, long memoryUsed, bool success,
         KernelExecutionDetails details)
     {
         ThrowIfDisposed();
-        
-        Interlocked.Increment(ref _totalKernelExecutions);
-        
+
+
+        _ = Interlocked.Increment(ref _totalKernelExecutions);
+
+
         if (!success)
         {
-            Interlocked.Increment(ref _totalErrors);
+            _ = Interlocked.Increment(ref _totalErrors);
         }
-        
+
         // Update average kernel duration using exponential moving average
+
         var currentAvg = _averageKernelDuration;
         var newAvg = currentAvg + 0.1 * (executionTime.TotalMilliseconds - currentAvg);
-        Interlocked.Exchange(ref _averageKernelDuration, newAvg);
-        
+        _ = Interlocked.Exchange(ref _averageKernelDuration, newAvg);
+
         // Update kernel-specific metrics
-        _kernelMetrics.AddOrUpdate(kernelName, 
+
+        _ = _kernelMetrics.AddOrUpdate(kernelName,
+
             new KernelMetrics
             {
                 KernelName = kernelName,
@@ -83,8 +92,9 @@ public sealed class MetricsCollector : IDisposable
                 CacheHitRate = details.CacheHitRate
             },
             (key, existing) => UpdateKernelMetrics(existing, executionTime, memoryUsed, success, details));
-        
+
         // Update device-specific metrics
+
         UpdateDeviceMetrics(deviceId, executionTime, memoryUsed, success);
     }
 
@@ -95,21 +105,25 @@ public sealed class MetricsCollector : IDisposable
         long bytes, TimeSpan duration, bool success, MemoryOperationDetails details)
     {
         ThrowIfDisposed();
-        
-        Interlocked.Increment(ref _totalMemoryAllocations);
-        
+
+
+        _ = Interlocked.Increment(ref _totalMemoryAllocations);
+
+
         if (!success)
         {
-            Interlocked.Increment(ref _totalErrors);
+            _ = Interlocked.Increment(ref _totalErrors);
         }
-        
+
         // Track peak memory usage
+
         var currentPeak = _peakMemoryUsage;
         if (details.CurrentMemoryUsage > currentPeak)
         {
-            Interlocked.Exchange(ref _peakMemoryUsage, details.CurrentMemoryUsage);
+            _ = Interlocked.Exchange(ref _peakMemoryUsage, details.CurrentMemoryUsage);
         }
-        
+
+
         var operation = new MemoryOperation
         {
             OperationType = operationType,
@@ -122,13 +136,15 @@ public sealed class MetricsCollector : IDisposable
             AccessPattern = details.AccessPattern,
             CoalescingEfficiency = details.CoalescingEfficiency
         };
-        
+
+
         _memoryOperations.Enqueue(operation);
-        
+
         // Trim queue if it gets too large (keep last 10000 operations)
+
         if (_memoryOperations.Count > 10000)
         {
-            _memoryOperations.TryDequeue(out _);
+            _ = _memoryOperations.TryDequeue(out _);
         }
     }
 
@@ -138,7 +154,8 @@ public sealed class MetricsCollector : IDisposable
     public long GetCurrentMemoryUsage()
     {
         ThrowIfDisposed();
-        
+
+
         return _deviceMetrics.Values.Sum(d => d.CurrentMemoryUsage);
     }
 
@@ -148,7 +165,8 @@ public sealed class MetricsCollector : IDisposable
     public double GetDeviceUtilization()
     {
         ThrowIfDisposed();
-        
+
+
         var devices = _deviceMetrics.Values.ToArray();
         if (devices.Length == 0)
         {
@@ -165,7 +183,8 @@ public sealed class MetricsCollector : IDisposable
     public KernelPerformanceMetrics? GetKernelPerformanceMetrics(string kernelName)
     {
         ThrowIfDisposed();
-        
+
+
         if (!_kernelMetrics.TryGetValue(kernelName, out var metrics))
         {
 
@@ -195,7 +214,8 @@ public sealed class MetricsCollector : IDisposable
     public DevicePerformanceMetrics? GetDevicePerformanceMetrics(string deviceId)
     {
         ThrowIfDisposed();
-        
+
+
         if (!_deviceMetrics.TryGetValue(deviceId, out var metrics))
         {
 
@@ -225,30 +245,36 @@ public sealed class MetricsCollector : IDisposable
     public async Task<CollectedMetrics> CollectAllMetricsAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         await Task.Yield(); // Allow other operations to continue
-        
+
+
         var metrics = new CollectedMetrics();
-        
+
         // Collect counter metrics
+
         metrics.Counters["total_kernel_executions"] = Interlocked.Read(ref _totalKernelExecutions);
         metrics.Counters["total_memory_allocations"] = Interlocked.Read(ref _totalMemoryAllocations);
         metrics.Counters["total_errors"] = Interlocked.Read(ref _totalErrors);
-        
+
         // Collect gauge metrics  
+
         metrics.Gauges["average_kernel_duration_ms"] = _averageKernelDuration;
         metrics.Gauges["peak_memory_usage_bytes"] = _peakMemoryUsage;
         metrics.Gauges["current_memory_usage_bytes"] = GetCurrentMemoryUsage();
         metrics.Gauges["device_utilization_percentage"] = GetDeviceUtilization();
-        
+
         // Collect histogram data for response times
+
         var recentOperations = GetRecentMemoryOperations(TimeSpan.FromMinutes(5));
         if (recentOperations.Any())
         {
             var durations = recentOperations.Select(op => op.Duration.TotalMilliseconds).ToArray();
             metrics.Histograms["memory_operation_duration_ms"] = durations;
         }
-        
+
+
         return metrics;
     }
 
@@ -258,9 +284,11 @@ public sealed class MetricsCollector : IDisposable
     public MemoryAccessAnalysis GetMemoryAccessAnalysis(TimeSpan timeWindow)
     {
         ThrowIfDisposed();
-        
+
+
         var recentOperations = GetRecentMemoryOperations(timeWindow);
-        
+
+
         return new MemoryAccessAnalysis
         {
             TotalOperations = recentOperations.Count(),
@@ -269,7 +297,8 @@ public sealed class MetricsCollector : IDisposable
             AccessPatterns = recentOperations
                 .GroupBy(op => op.AccessPattern)
                 .ToDictionary(g => g.Key, g => g.Count()),
-            AverageCoalescingEfficiency = recentOperations.Any() ? 
+            AverageCoalescingEfficiency = recentOperations.Any() ?
+
                 recentOperations.Average(op => op.CoalescingEfficiency) : 0,
             TimeWindow = timeWindow,
             AnalysisTimestamp = DateTimeOffset.UtcNow
@@ -282,10 +311,12 @@ public sealed class MetricsCollector : IDisposable
     public List<PerformanceBottleneck> DetectBottlenecks()
     {
         ThrowIfDisposed();
-        
+
+
         var bottlenecks = new List<PerformanceBottleneck>();
-        
+
         // Check memory utilization
+
         foreach (var device in _deviceMetrics.Values)
         {
             var memoryUtilization = (double)device.CurrentMemoryUsage / device.MaxMemoryCapacity;
@@ -302,8 +333,9 @@ public sealed class MetricsCollector : IDisposable
                 });
             }
         }
-        
+
         // Check kernel performance
+
         foreach (var kernel in _kernelMetrics.Values)
         {
             var successRate = (double)kernel.SuccessCount / kernel.ExecutionCount;
@@ -320,7 +352,8 @@ public sealed class MetricsCollector : IDisposable
                 });
             }
         }
-        
+
+
         return bottlenecks;
     }
 
@@ -344,16 +377,19 @@ public sealed class MetricsCollector : IDisposable
                 ProcessorTime = GetProcessorTime(),
                 GcMemoryUsage = GC.GetTotalMemory(false)
             };
-            
+
+
             _performanceSnapshots.Enqueue(snapshot);
-            
+
             // Trim snapshots (keep last hour at 5-second intervals = 720 snapshots)
+
             if (_performanceSnapshots.Count > 720)
             {
-                _performanceSnapshots.TryDequeue(out _);
+                _ = _performanceSnapshots.TryDequeue(out _);
             }
-            
+
             // Update device metrics if available
+
             UpdateDeviceUtilizationFromSystem();
         }
         catch (Exception ex)
@@ -362,14 +398,15 @@ public sealed class MetricsCollector : IDisposable
         }
     }
 
-    private KernelMetrics UpdateKernelMetrics(KernelMetrics existing, TimeSpan executionTime,
+    private static KernelMetrics UpdateKernelMetrics(KernelMetrics existing, TimeSpan executionTime,
         long memoryUsed, bool success, KernelExecutionDetails details)
     {
         existing.ExecutionCount++;
         existing.TotalExecutionTime += executionTime;
         existing.TotalMemoryUsed += memoryUsed;
         existing.LastExecutionTime = DateTimeOffset.UtcNow;
-        
+
+
         if (success)
         {
             existing.SuccessCount++;
@@ -392,14 +429,16 @@ public sealed class MetricsCollector : IDisposable
         existing.Throughput = (existing.Throughput + CalculateThroughput(details)) / 2;
         existing.Occupancy = (existing.Occupancy + details.Occupancy) / 2;
         existing.CacheHitRate = (existing.CacheHitRate + details.CacheHitRate) / 2;
-        
+
+
         return existing;
     }
 
-    private void UpdateDeviceMetrics(string deviceId, TimeSpan executionTime, 
+    private void UpdateDeviceMetrics(string deviceId, TimeSpan executionTime,
+
         long memoryUsed, bool success)
     {
-        _deviceMetrics.AddOrUpdate(deviceId,
+        _ = _deviceMetrics.AddOrUpdate(deviceId,
             new DeviceMetrics
             {
                 DeviceId = deviceId,
@@ -418,7 +457,8 @@ public sealed class MetricsCollector : IDisposable
                 }
 
 
-                existing.AverageResponseTime = 
+                existing.AverageResponseTime =
+
                     (existing.AverageResponseTime + executionTime.TotalMilliseconds) / 2;
                 existing.LastUpdateTime = DateTimeOffset.UtcNow;
                 return existing;
@@ -437,7 +477,8 @@ public sealed class MetricsCollector : IDisposable
                 var recentActivity = _performanceSnapshots
                     .Where(s => s.Timestamp > DateTimeOffset.UtcNow.AddMinutes(-1))
                     .Count();
-                    
+
+
                 metrics.UtilizationPercentage = Math.Min(100, recentActivity * 2);
             }
         }
@@ -459,15 +500,17 @@ public sealed class MetricsCollector : IDisposable
         // Simplified efficiency calculation based on execution time vs memory usage
         var avgExecutionTime = metrics.TotalExecutionTime.TotalMilliseconds / metrics.ExecutionCount;
         var avgMemoryUsage = (double)metrics.TotalMemoryUsed / metrics.ExecutionCount;
-        
+
         // Higher efficiency means better performance per memory unit
+
         return avgMemoryUsage > 0 ? 1000.0 / (avgExecutionTime * Math.Log10(avgMemoryUsage + 1)) : 0;
     }
 
-    private double CalculateDeviceThroughput(DeviceMetrics metrics)
+    private static double CalculateDeviceThroughput(DeviceMetrics metrics)
     {
         var timeSinceFirstOperation = DateTimeOffset.UtcNow - metrics.LastUpdateTime;
-        return timeSinceFirstOperation.TotalSeconds > 0 ? 
+        return timeSinceFirstOperation.TotalSeconds > 0 ?
+
             metrics.TotalOperations / timeSinceFirstOperation.TotalSeconds : 0;
     }
 

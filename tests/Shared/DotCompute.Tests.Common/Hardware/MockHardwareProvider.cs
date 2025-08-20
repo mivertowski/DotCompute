@@ -46,7 +46,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
         ThrowIfDisposed();
         return _devicesByType.TryGetValue(type, out var devices)
             ? devices.Where(d => d.IsAvailable)
-            : Enumerable.Empty<IHardwareDevice>();
+            : [];
     }
 
     /// <inheritdoc/>

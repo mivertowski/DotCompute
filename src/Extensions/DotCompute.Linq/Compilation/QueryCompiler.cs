@@ -9,6 +9,8 @@ using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
 
+using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Linq.Compilation;
 
 
@@ -17,439 +19,439 @@ namespace DotCompute.Linq.Compilation;
 /// </summary>
 public class QueryCompiler : IQueryCompiler
 {
-private readonly IKernelFactory _kernelFactory;
-private readonly IExpressionOptimizer _optimizer;
-private readonly ILogger<QueryCompiler> _logger;
-
-/// <summary>
-/// Initializes a new instance of the <see cref="QueryCompiler"/> class.
-/// </summary>
-/// <param name="kernelFactory">The kernel factory for creating compute kernels.</param>
-/// <param name="optimizer">The expression optimizer.</param>
-/// <param name="logger">The logger instance.</param>
-public QueryCompiler(
-    IKernelFactory kernelFactory,
-    IExpressionOptimizer optimizer,
-    ILogger<QueryCompiler> logger)
-{
-    _kernelFactory = kernelFactory ?? throw new ArgumentNullException(nameof(kernelFactory));
-    _optimizer = optimizer ?? throw new ArgumentNullException(nameof(optimizer));
-    _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-}
-
-/// <inheritdoc/>
-public IComputePlan Compile(CompilationContext context)
-{
-    ArgumentNullException.ThrowIfNull(context);
-
-    _logger.LogDebug("Compiling expression of type {ExpressionType}", context.Expression.NodeType);
-
-    // Validate the expression
-    var validationResult = Validate(context.Expression);
-    if (!validationResult.IsValid)
-    {
-        throw new InvalidOperationException($"Expression validation failed: {validationResult.ErrorMessage}");
-    }
-
-    // Optimize the expression tree
-    var optimizedExpression = _optimizer.Optimize(context.Expression, context.Options);
-
-    // Visit the expression tree and build compute stages
-    var visitor = new ComputePlanVisitor(_kernelFactory, context.Accelerator, _logger);
-    var stages = visitor.Visit(optimizedExpression);
-
-    // Create the compute plan
-    var plan = new ComputePlan(
-        stages,
-        visitor.InputParameters,
-        visitor.OutputType,
-        visitor.EstimatedMemoryUsage);
-
-    _logger.LogInformation(
-        "Compiled expression into compute plan with {StageCount} stages, estimated memory: {MemoryMB:F2} MB",
-        plan.Stages.Count,
-        plan.EstimatedMemoryUsage / (1024.0 * 1024.0));
-
-    return plan;
-}
-
-/// <inheritdoc/>
-public DotCompute.Abstractions.ValidationResult Validate(Expression expression)
-{
-    ArgumentNullException.ThrowIfNull(expression);
-
-    var errors = new List<ValidationError>();
-    var validator = new ExpressionValidator();
-    
-    try
-    {
-        validator.Visit(expression, errors);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Expression validation failed with exception");
-        errors.Add(new ValidationError("VALIDATION_ERROR", ex.Message, expression));
-    }
-
-    if (errors.Count > 0)
-    {
-        var message = $"Expression validation failed with {errors.Count} errors";
-        return DotCompute.Abstractions.ValidationResult.Failure(message);
-    }
-
-    return DotCompute.Abstractions.ValidationResult.Success();
-}
-
-/// <summary>
-/// Visitor that builds compute stages from expression trees.
-/// </summary>
-private class ComputePlanVisitor : ExpressionVisitor
-{
     private readonly IKernelFactory _kernelFactory;
-    private readonly IAccelerator _accelerator;
-    private readonly ILogger _logger;
-    private readonly List<IComputeStage> _stages = [];
-    private readonly Dictionary<string, Type> _inputParameters = [];
-    private Type _outputType = typeof(object);
-    private long _estimatedMemoryUsage;
-    private int _stageCounter;
+    private readonly IExpressionOptimizer _optimizer;
+    private readonly ILogger<QueryCompiler> _logger;
 
-    public ComputePlanVisitor(IKernelFactory kernelFactory, IAccelerator accelerator, ILogger logger)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="QueryCompiler"/> class.
+    /// </summary>
+    /// <param name="kernelFactory">The kernel factory for creating compute kernels.</param>
+    /// <param name="optimizer">The expression optimizer.</param>
+    /// <param name="logger">The logger instance.</param>
+    public QueryCompiler(
+        IKernelFactory kernelFactory,
+        IExpressionOptimizer optimizer,
+        ILogger<QueryCompiler> logger)
     {
-        _kernelFactory = kernelFactory;
-        _accelerator = accelerator;
-        _logger = logger;
+        _kernelFactory = kernelFactory ?? throw new ArgumentNullException(nameof(kernelFactory));
+        _optimizer = optimizer ?? throw new ArgumentNullException(nameof(optimizer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public IReadOnlyList<IComputeStage> Stages => _stages;
-    public IReadOnlyDictionary<string, Type> InputParameters => _inputParameters;
-    public Type OutputType => _outputType;
-    public long EstimatedMemoryUsage => _estimatedMemoryUsage;
-
-    public new List<IComputeStage> Visit(Expression expression)
+    /// <inheritdoc/>
+    public IComputePlan Compile(CompilationContext context)
     {
-        base.Visit(expression);
-        return _stages;
-    }
+        ArgumentNullException.ThrowIfNull(context);
 
-    protected override Expression VisitMethodCall(MethodCallExpression node)
-    {
-        _logger.LogDebug("Visiting method call: {MethodName}", node.Method.Name);
+        _logger.LogDebug("Compiling expression of type {ExpressionType}", context.Expression.NodeType);
 
-        // Handle LINQ operators
-        if (node.Method.DeclaringType == typeof(Queryable) || node.Method.DeclaringType == typeof(Enumerable))
+        // Validate the expression
+        var validationResult = Validate(context.Expression);
+        if (!validationResult.IsValid)
         {
-            switch (node.Method.Name)
-            {
-                case "Select":
-                    return VisitSelect(node);
-                case "Where":
-                    return VisitWhere(node);
-                case "Sum":
-                case "Average":
-                case "Min":
-                case "Max":
-                    return VisitAggregate(node);
-                case "OrderBy":
-                case "OrderByDescending":
-                case "ThenBy":
-                case "ThenByDescending":
-                    return VisitOrderBy(node);
-                default:
-                    _logger.LogWarning("Unsupported LINQ method: {Method}", node.Method.Name);
-                    break;
-            }
+            throw new InvalidOperationException($"Expression validation failed: {validationResult.ErrorMessage}");
         }
 
-        return base.VisitMethodCall(node);
+        // Optimize the expression tree
+        var optimizedExpression = _optimizer.Optimize(context.Expression, context.Options);
+
+        // Visit the expression tree and build compute stages
+        var visitor = new ComputePlanVisitor(_kernelFactory, context.Accelerator, _logger);
+        var stages = visitor.Visit(optimizedExpression);
+
+        // Create the compute plan
+        var plan = new ComputePlan(
+            stages,
+            visitor.InputParameters,
+            visitor.OutputType,
+            visitor.EstimatedMemoryUsage);
+
+        _logger.LogInformation(
+            "Compiled expression into compute plan with {StageCount} stages, estimated memory: {MemoryMB:F2} MB",
+            plan.Stages.Count,
+            plan.EstimatedMemoryUsage / (1024.0 * 1024.0));
+
+        return plan;
     }
 
-    private Expression VisitSelect(MethodCallExpression node)
+    /// <inheritdoc/>
+    public DotCompute.Abstractions.ValidationResult Validate(Expression expression)
     {
-        // Visit the source
-        Visit(node.Arguments[0]);
+        ArgumentNullException.ThrowIfNull(expression);
 
-        // Extract the selector lambda
-        var selectorLambda = GetLambdaOperand(node.Arguments[1]);
-        var inputType = selectorLambda.Parameters[0].Type;
-        var outputType = selectorLambda.Body.Type;
+        var errors = new List<ValidationError>();
+        var validator = new ExpressionValidator();
 
-        // Create a map kernel
-        var kernelDefinition = new Operators.KernelDefinition
+        try
         {
-            Name = $"Select_{_stageCounter++}",
-            Parameters =
-            [
-                new Operators.KernelParameter("input", CreateArrayType(inputType), Operators.ParameterDirection.In),
+            validator.Visit(expression, errors);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Expression validation failed with exception");
+            errors.Add(new ValidationError("VALIDATION_ERROR", ex.Message, expression));
+        }
+
+        if (errors.Count > 0)
+        {
+            var message = $"Expression validation failed with {errors.Count} errors";
+            return DotCompute.Abstractions.ValidationResult.Failure(message);
+        }
+
+        return DotCompute.Abstractions.ValidationResult.Success();
+    }
+
+    /// <summary>
+    /// Visitor that builds compute stages from expression trees.
+    /// </summary>
+    private class ComputePlanVisitor : ExpressionVisitor
+    {
+        private readonly IKernelFactory _kernelFactory;
+        private readonly IAccelerator _accelerator;
+        private readonly ILogger _logger;
+        private readonly List<IComputeStage> _stages = [];
+        private readonly Dictionary<string, Type> _inputParameters = [];
+        private Type _outputType = typeof(object);
+        private long _estimatedMemoryUsage;
+        private int _stageCounter;
+
+        public ComputePlanVisitor(IKernelFactory kernelFactory, IAccelerator accelerator, ILogger logger)
+        {
+            _kernelFactory = kernelFactory;
+            _accelerator = accelerator;
+            _logger = logger;
+        }
+
+        public IReadOnlyList<IComputeStage> Stages => _stages;
+        public IReadOnlyDictionary<string, Type> InputParameters => _inputParameters;
+        public Type OutputType => _outputType;
+        public long EstimatedMemoryUsage => _estimatedMemoryUsage;
+
+        public new List<IComputeStage> Visit(Expression expression)
+        {
+            _ = base.Visit(expression);
+            return _stages;
+        }
+
+        protected override Expression VisitMethodCall(MethodCallExpression node)
+        {
+            _logger.LogDebug("Visiting method call: {MethodName}", node.Method.Name);
+
+            // Handle LINQ operators
+            if (node.Method.DeclaringType == typeof(Queryable) || node.Method.DeclaringType == typeof(Enumerable))
+            {
+                switch (node.Method.Name)
+                {
+                    case "Select":
+                        return VisitSelect(node);
+                    case "Where":
+                        return VisitWhere(node);
+                    case "Sum":
+                    case "Average":
+                    case "Min":
+                    case "Max":
+                        return VisitAggregate(node);
+                    case "OrderBy":
+                    case "OrderByDescending":
+                    case "ThenBy":
+                    case "ThenByDescending":
+                        return VisitOrderBy(node);
+                    default:
+                        _logger.LogWarning("Unsupported LINQ method: {Method}", node.Method.Name);
+                        break;
+                }
+            }
+
+            return base.VisitMethodCall(node);
+        }
+
+        private Expression VisitSelect(MethodCallExpression node)
+        {
+            // Visit the source
+            _ = Visit(node.Arguments[0]);
+
+            // Extract the selector lambda
+            var selectorLambda = GetLambdaOperand(node.Arguments[1]);
+            var inputType = selectorLambda.Parameters[0].Type;
+            var outputType = selectorLambda.Body.Type;
+
+            // Create a map kernel
+            var kernelDefinition = new Operators.KernelDefinition
+            {
+                Name = $"Select_{_stageCounter++}",
+                Parameters =
+                [
+                    new Operators.KernelParameter("input", CreateArrayType(inputType), Operators.ParameterDirection.In),
                 new Operators.KernelParameter("output", CreateArrayType(outputType), Operators.ParameterDirection.Out),
                 new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
-            ],
-            Language = Operators.KernelLanguage.CSharp
-        };
+                ],
+                Language = Operators.KernelLanguage.CSharp
+            };
 
-        var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
-        
-        var stage = new ComputeStage(
-            $"stage_{_stageCounter}",
-            kernel,
-            new[] { "input" },
-            "output",
-            new ExecutionConfiguration
-            {
-                BlockDimensions = (256, 1, 1),
-                GridDimensions = (1, 1, 1) // Will be calculated at runtime
-            });
+            var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
 
-        _stages.Add(stage);
-        _outputType = CreateArrayType(outputType);
+            var stage = new ComputeStage(
+                $"stage_{_stageCounter}",
+                kernel,
+                new[] { "input" },
+                "output",
+                new ExecutionConfiguration
+                {
+                    BlockDimensions = (256, 1, 1),
+                    GridDimensions = (1, 1, 1) // Will be calculated at runtime
+                });
 
-        // Estimate memory usage
-        _estimatedMemoryUsage += EstimateTypeSize(inputType) * 1000; // Assume 1000 elements
-        _estimatedMemoryUsage += EstimateTypeSize(outputType) * 1000;
+            _stages.Add(stage);
+            _outputType = CreateArrayType(outputType);
 
-        return node;
-    }
+            // Estimate memory usage
+            _estimatedMemoryUsage += EstimateTypeSize(inputType) * 1000; // Assume 1000 elements
+            _estimatedMemoryUsage += EstimateTypeSize(outputType) * 1000;
 
-    private Expression VisitWhere(MethodCallExpression node)
-    {
-        // Visit the source
-        Visit(node.Arguments[0]);
+            return node;
+        }
 
-        // Extract the predicate lambda
-        var predicateLambda = GetLambdaOperand(node.Arguments[1]);
-        var elementType = predicateLambda.Parameters[0].Type;
-
-        // Create a filter kernel
-        var kernelDefinition = new Operators.KernelDefinition
+        private Expression VisitWhere(MethodCallExpression node)
         {
-            Name = $"Where_{_stageCounter++}",
-            Parameters =
-            [
-                new Operators.KernelParameter("input", CreateArrayType(elementType), Operators.ParameterDirection.In),
+            // Visit the source
+            _ = Visit(node.Arguments[0]);
+
+            // Extract the predicate lambda
+            var predicateLambda = GetLambdaOperand(node.Arguments[1]);
+            var elementType = predicateLambda.Parameters[0].Type;
+
+            // Create a filter kernel
+            var kernelDefinition = new Operators.KernelDefinition
+            {
+                Name = $"Where_{_stageCounter++}",
+                Parameters =
+                [
+                    new Operators.KernelParameter("input", CreateArrayType(elementType), Operators.ParameterDirection.In),
                 new Operators.KernelParameter("output", CreateArrayType(elementType), Operators.ParameterDirection.Out),
                 new Operators.KernelParameter("predicate_results", typeof(bool[]), Operators.ParameterDirection.Out),
                 new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
-            ],
-            Language = Operators.KernelLanguage.CSharp
-        };
+                ],
+                Language = Operators.KernelLanguage.CSharp
+            };
 
-        var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
-        
-        var stage = new ComputeStage(
-            $"stage_{_stageCounter}",
-            kernel,
-            new[] { "input" },
-            "output",
-            new ExecutionConfiguration
-            {
-                BlockDimensions = (256, 1, 1),
-                GridDimensions = (1, 1, 1)
-            });
+            var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
 
-        _stages.Add(stage);
-        _outputType = CreateArrayType(elementType);
+            var stage = new ComputeStage(
+                $"stage_{_stageCounter}",
+                kernel,
+                new[] { "input" },
+                "output",
+                new ExecutionConfiguration
+                {
+                    BlockDimensions = (256, 1, 1),
+                    GridDimensions = (1, 1, 1)
+                });
 
-        // Estimate memory usage
-        _estimatedMemoryUsage += EstimateTypeSize(elementType) * 2000; // Input + output
-        _estimatedMemoryUsage += sizeof(bool) * 1000; // Predicate results
+            _stages.Add(stage);
+            _outputType = CreateArrayType(elementType);
 
-        return node;
-    }
+            // Estimate memory usage
+            _estimatedMemoryUsage += EstimateTypeSize(elementType) * 2000; // Input + output
+            _estimatedMemoryUsage += sizeof(bool) * 1000; // Predicate results
 
-    private Expression VisitAggregate(MethodCallExpression node)
-    {
-        // Visit the source
-        Visit(node.Arguments[0]);
+            return node;
+        }
 
-        var elementType = node.Arguments[0].Type.GetGenericArguments()[0];
-        var resultType = node.Type;
-
-        // Create an aggregation kernel
-        var kernelDefinition = new Operators.KernelDefinition
+        private Expression VisitAggregate(MethodCallExpression node)
         {
-            Name = $"{node.Method.Name}_{_stageCounter++}",
-            Parameters =
-            [
-                new Operators.KernelParameter("input", CreateArrayType(elementType), Operators.ParameterDirection.In),
+            // Visit the source
+            _ = Visit(node.Arguments[0]);
+
+            var elementType = node.Arguments[0].Type.GetGenericArguments()[0];
+            var resultType = node.Type;
+
+            // Create an aggregation kernel
+            var kernelDefinition = new Operators.KernelDefinition
+            {
+                Name = $"{node.Method.Name}_{_stageCounter++}",
+                Parameters =
+                [
+                    new Operators.KernelParameter("input", CreateArrayType(elementType), Operators.ParameterDirection.In),
                 new Operators.KernelParameter("result", resultType, Operators.ParameterDirection.Out),
                 new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
-            ],
-            Language = Operators.KernelLanguage.CSharp
-        };
+                ],
+                Language = Operators.KernelLanguage.CSharp
+            };
 
-        var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
-        
-        var stage = new ComputeStage(
-            $"stage_{_stageCounter}",
-            kernel,
-            new[] { "input" },
-            "result",
-            new ExecutionConfiguration
-            {
-                BlockDimensions = (256, 1, 1),
-                GridDimensions = (1, 1, 1),
-                SharedMemorySize = (int)(256 * EstimateTypeSize(elementType)) // For reduction
-            });
+            var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
 
-        _stages.Add(stage);
-        _outputType = resultType;
+            var stage = new ComputeStage(
+                $"stage_{_stageCounter}",
+                kernel,
+                new[] { "input" },
+                "result",
+                new ExecutionConfiguration
+                {
+                    BlockDimensions = (256, 1, 1),
+                    GridDimensions = (1, 1, 1),
+                    SharedMemorySize = (int)(256 * EstimateTypeSize(elementType)) // For reduction
+                });
 
-        // Estimate memory usage
-        _estimatedMemoryUsage += EstimateTypeSize(elementType) * 1000;
-        _estimatedMemoryUsage += EstimateTypeSize(resultType);
+            _stages.Add(stage);
+            _outputType = resultType;
 
-        return node;
-    }
+            // Estimate memory usage
+            _estimatedMemoryUsage += EstimateTypeSize(elementType) * 1000;
+            _estimatedMemoryUsage += EstimateTypeSize(resultType);
 
-    private Expression VisitOrderBy(MethodCallExpression node)
-    {
-        // Visit the source
-        Visit(node.Arguments[0]);
+            return node;
+        }
 
-        var keySelectorLambda = GetLambdaOperand(node.Arguments[1]);
-        var elementType = keySelectorLambda.Parameters[0].Type;
-        var keyType = keySelectorLambda.Body.Type;
-
-        // Create a sort kernel
-        var kernelDefinition = new Operators.KernelDefinition
+        private Expression VisitOrderBy(MethodCallExpression node)
         {
-            Name = $"{node.Method.Name}_{_stageCounter++}",
-            Parameters =
-            [
-                new Operators.KernelParameter("input", CreateArrayType(elementType), Operators.ParameterDirection.In),
+            // Visit the source
+            _ = Visit(node.Arguments[0]);
+
+            var keySelectorLambda = GetLambdaOperand(node.Arguments[1]);
+            var elementType = keySelectorLambda.Parameters[0].Type;
+            var keyType = keySelectorLambda.Body.Type;
+
+            // Create a sort kernel
+            var kernelDefinition = new Operators.KernelDefinition
+            {
+                Name = $"{node.Method.Name}_{_stageCounter++}",
+                Parameters =
+                [
+                    new Operators.KernelParameter("input", CreateArrayType(elementType), Operators.ParameterDirection.In),
                 new Operators.KernelParameter("output", CreateArrayType(elementType), Operators.ParameterDirection.Out),
                 new Operators.KernelParameter("keys", CreateArrayType(keyType), Operators.ParameterDirection.InOut),
                 new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
-            ],
-            Language = Operators.KernelLanguage.CSharp
-        };
-
-        var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
-        
-        var stage = new ComputeStage(
-            $"stage_{_stageCounter}",
-            kernel,
-            new[] { "input" },
-            "output",
-            new ExecutionConfiguration
-            {
-                BlockDimensions = (256, 1, 1),
-                GridDimensions = (1, 1, 1)
-            });
-
-        _stages.Add(stage);
-        _outputType = CreateArrayType(elementType);
-
-        // Estimate memory usage
-        _estimatedMemoryUsage += EstimateTypeSize(elementType) * 2000; // Input + output
-        _estimatedMemoryUsage += EstimateTypeSize(keyType) * 1000; // Keys
-
-        return node;
-    }
-
-    private static LambdaExpression GetLambdaOperand(Expression expression)
-    {
-        if (expression is UnaryExpression unary && unary.Operand is LambdaExpression lambda)
-        {
-            return lambda;
-        }
-        
-        if (expression is LambdaExpression directLambda)
-        {
-            return directLambda;
-        }
-
-        throw new InvalidOperationException($"Expected lambda expression, got {expression.GetType()}");
-    }
-
-    private static long EstimateTypeSize(Type type)
-    {
-        if (type.IsPrimitive)
-        {
-            return type.Name switch
-            {
-                "Boolean" => sizeof(bool),
-                "Byte" => sizeof(byte),
-                "SByte" => sizeof(sbyte),
-                "Int16" => sizeof(short),
-                "UInt16" => sizeof(ushort),
-                "Int32" => sizeof(int),
-                "UInt32" => sizeof(uint),
-                "Int64" => sizeof(long),
-                "UInt64" => sizeof(ulong),
-                "Single" => sizeof(float),
-                "Double" => sizeof(double),
-                "Decimal" => sizeof(decimal),
-                "Char" => sizeof(char),
-                _ => IntPtr.Size
+                ],
+                Language = Operators.KernelLanguage.CSharp
             };
+
+            var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
+
+            var stage = new ComputeStage(
+                $"stage_{_stageCounter}",
+                kernel,
+                new[] { "input" },
+                "output",
+                new ExecutionConfiguration
+                {
+                    BlockDimensions = (256, 1, 1),
+                    GridDimensions = (1, 1, 1)
+                });
+
+            _stages.Add(stage);
+            _outputType = CreateArrayType(elementType);
+
+            // Estimate memory usage
+            _estimatedMemoryUsage += EstimateTypeSize(elementType) * 2000; // Input + output
+            _estimatedMemoryUsage += EstimateTypeSize(keyType) * 1000; // Keys
+
+            return node;
         }
 
-        if (type.IsValueType)
+        private static LambdaExpression GetLambdaOperand(Expression expression)
         {
-            // Estimate for structs
-            return type.GetFields().Sum(f => EstimateTypeSize(f.FieldType));
+            if (expression is UnaryExpression unary && unary.Operand is LambdaExpression lambda)
+            {
+                return lambda;
+            }
+
+            if (expression is LambdaExpression directLambda)
+            {
+                return directLambda;
+            }
+
+            throw new InvalidOperationException($"Expected lambda expression, got {expression.GetType()}");
         }
 
-        // Reference types
-        return IntPtr.Size;
-    }
+        private static long EstimateTypeSize(Type type)
+        {
+            if (type.IsPrimitive)
+            {
+                return type.Name switch
+                {
+                    "Boolean" => sizeof(bool),
+                    "Byte" => sizeof(byte),
+                    "SByte" => sizeof(sbyte),
+                    "Int16" => sizeof(short),
+                    "UInt16" => sizeof(ushort),
+                    "Int32" => sizeof(int),
+                    "UInt32" => sizeof(uint),
+                    "Int64" => sizeof(long),
+                    "UInt64" => sizeof(ulong),
+                    "Single" => sizeof(float),
+                    "Double" => sizeof(double),
+                    "Decimal" => sizeof(decimal),
+                    "Char" => sizeof(char),
+                    _ => IntPtr.Size
+                };
+            }
+
+            if (type.IsValueType)
+            {
+                // Estimate for structs
+                return type.GetFields().Sum(f => EstimateTypeSize(f.FieldType));
+            }
+
+            // Reference types
+            return IntPtr.Size;
+        }
 
         [RequiresDynamicCode("MakeArrayType requires dynamic code generation")]
         private static Type CreateArrayType(Type elementType) => elementType.MakeArrayType();
     }
 
-/// <summary>
-/// Validates expressions for GPU compatibility.
-/// </summary>
-private class ExpressionValidator : ExpressionVisitor
-{
-    private List<ValidationError> _errors = [];
-
-    public void Visit(Expression expression, List<ValidationError> errors)
+    /// <summary>
+    /// Validates expressions for GPU compatibility.
+    /// </summary>
+    private class ExpressionValidator : ExpressionVisitor
     {
-        _errors = errors;
-        base.Visit(expression);
-    }
+        private List<ValidationError> _errors = [];
 
-    protected override Expression VisitMethodCall(MethodCallExpression node)
-    {
-        // Check for unsupported method calls
-        if (node.Method.DeclaringType?.Namespace?.StartsWith("System.IO") == true)
+        public void Visit(Expression expression, List<ValidationError> errors)
         {
-            _errors.Add(new ValidationError("UNSUPPORTED_IO", "I/O operations are not supported in GPU queries", node));
+            _errors = errors;
+            _ = base.Visit(expression);
         }
 
-        if (node.Method.DeclaringType?.Namespace?.StartsWith("System.Net") == true)
+        protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            _errors.Add(new ValidationError("UNSUPPORTED_NETWORK", "Network operations are not supported in GPU queries", node));
+            // Check for unsupported method calls
+            if (node.Method.DeclaringType?.Namespace?.StartsWith("System.IO") == true)
+            {
+                _errors.Add(new ValidationError("UNSUPPORTED_IO", "I/O operations are not supported in GPU queries", node));
+            }
+
+            if (node.Method.DeclaringType?.Namespace?.StartsWith("System.Net") == true)
+            {
+                _errors.Add(new ValidationError("UNSUPPORTED_NETWORK", "Network operations are not supported in GPU queries", node));
+            }
+
+            return base.VisitMethodCall(node);
         }
 
-        return base.VisitMethodCall(node);
-    }
-
-    protected override Expression VisitNew(NewExpression node)
-    {
-        // Check for unsupported types
-        if (!IsGpuCompatibleType(node.Type))
+        protected override Expression VisitNew(NewExpression node)
         {
-            _errors.Add(new ValidationError("UNSUPPORTED_TYPE", $"Type {node.Type} is not GPU-compatible", node));
+            // Check for unsupported types
+            if (!IsGpuCompatibleType(node.Type))
+            {
+                _errors.Add(new ValidationError("UNSUPPORTED_TYPE", $"Type {node.Type} is not GPU-compatible", node));
+            }
+
+            return base.VisitNew(node);
         }
 
-        return base.VisitNew(node);
-    }
-
-    private static bool IsGpuCompatibleType(Type type)
-    {
-        // Primitive types are GPU-compatible
-        if (type.IsPrimitive || type == typeof(decimal))
+        private static bool IsGpuCompatibleType(Type type)
+        {
+            // Primitive types are GPU-compatible
+            if (type.IsPrimitive || type == typeof(decimal))
             {
                 return true;
             }
 
             // Arrays of primitives are compatible
             var elementType = type.GetElementType();
-        if (type.IsArray && elementType != null && IsGpuCompatibleType(elementType))
+            if (type.IsArray && elementType != null && IsGpuCompatibleType(elementType))
             {
                 return true;
             }
@@ -461,8 +463,8 @@ private class ExpressionValidator : ExpressionVisitor
             }
 
             return false;
+        }
     }
-}
 }
 
 /// <summary>
@@ -470,30 +472,30 @@ private class ExpressionValidator : ExpressionVisitor
 /// </summary>
 internal class ComputePlan : IComputePlan
 {
-public ComputePlan(
-    IReadOnlyList<IComputeStage> stages,
-    IReadOnlyDictionary<string, Type> inputParameters,
-    Type outputType,
-    long estimatedMemoryUsage)
-{
-    Id = Guid.NewGuid();
-    Stages = stages;
-    InputParameters = inputParameters;
-    OutputType = outputType;
-    EstimatedMemoryUsage = estimatedMemoryUsage;
-    Metadata = new Dictionary<string, object>
+    public ComputePlan(
+        IReadOnlyList<IComputeStage> stages,
+        IReadOnlyDictionary<string, Type> inputParameters,
+        Type outputType,
+        long estimatedMemoryUsage)
     {
-        ["CreatedAt"] = DateTime.UtcNow,
-        ["Version"] = "1.0"
-    };
-}
+        Id = Guid.NewGuid();
+        Stages = stages;
+        InputParameters = inputParameters;
+        OutputType = outputType;
+        EstimatedMemoryUsage = estimatedMemoryUsage;
+        Metadata = new Dictionary<string, object>
+        {
+            ["CreatedAt"] = DateTime.UtcNow,
+            ["Version"] = "1.0"
+        };
+    }
 
-public Guid Id { get; }
-public IReadOnlyList<IComputeStage> Stages { get; }
-public IReadOnlyDictionary<string, Type> InputParameters { get; }
-public Type OutputType { get; }
-public long EstimatedMemoryUsage { get; }
-public IReadOnlyDictionary<string, object> Metadata { get; }
+    public Guid Id { get; }
+    public IReadOnlyList<IComputeStage> Stages { get; }
+    public IReadOnlyDictionary<string, Type> InputParameters { get; }
+    public Type OutputType { get; }
+    public long EstimatedMemoryUsage { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
 }
 
 /// <summary>
@@ -501,23 +503,23 @@ public IReadOnlyDictionary<string, object> Metadata { get; }
 /// </summary>
 internal class ComputeStage : IComputeStage
 {
-public ComputeStage(
-    string id,
-    Operators.IKernel kernel,
-    IReadOnlyList<string> inputBuffers,
-    string outputBuffer,
-    ExecutionConfiguration configuration)
-{
-    Id = id;
-    Kernel = kernel;
-    InputBuffers = inputBuffers;
-    OutputBuffer = outputBuffer;
-    Configuration = configuration;
-}
+    public ComputeStage(
+        string id,
+        Operators.IKernel kernel,
+        IReadOnlyList<string> inputBuffers,
+        string outputBuffer,
+        ExecutionConfiguration configuration)
+    {
+        Id = id;
+        Kernel = kernel;
+        InputBuffers = inputBuffers;
+        OutputBuffer = outputBuffer;
+        Configuration = configuration;
+    }
 
-public string Id { get; }
-public Operators.IKernel Kernel { get; }
-public IReadOnlyList<string> InputBuffers { get; }
-public string OutputBuffer { get; }
-public ExecutionConfiguration Configuration { get; }
+    public string Id { get; }
+    public Operators.IKernel Kernel { get; }
+    public IReadOnlyList<string> InputBuffers { get; }
+    public string OutputBuffer { get; }
+    public ExecutionConfiguration Configuration { get; }
 }

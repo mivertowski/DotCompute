@@ -28,22 +28,26 @@ public class ServiceCircuitState
     /// <summary>
     /// Number of consecutive failures
     /// </summary>
-    public int ConsecutiveFailures { get; set; } = 0;
+    public int ConsecutiveFailures { get; set; }
+
 
     /// <summary>
     /// Total number of requests made to this service
     /// </summary>
-    public long TotalRequests { get; set; } = 0;
+    public long TotalRequests { get; set; }
+
 
     /// <summary>
     /// Total number of failed requests
     /// </summary>
-    public long FailedRequests { get; set; } = 0;
+    public long FailedRequests { get; set; }
+
 
     /// <summary>
     /// Total number of successful requests
     /// </summary>
-    public long SuccessfulRequests { get; set; } = 0;
+    public long SuccessfulRequests { get; set; }
+
 
     /// <summary>
     /// Current failure rate (0.0 to 1.0)
@@ -78,7 +82,8 @@ public class ServiceCircuitState
     /// <summary>
     /// Number of times the circuit has been opened
     /// </summary>
-    public int OpenCount { get; set; } = 0;
+    public int OpenCount { get; set; }
+
 
     /// <summary>
     /// Total time the circuit has been open
@@ -102,7 +107,8 @@ public class ServiceCircuitState
 
     private readonly CircuitBreakerConfiguration _config;
     private readonly ILogger _logger;
-    
+
+
     /// <summary>
     /// Creates a new service circuit state
     /// </summary>
@@ -121,8 +127,9 @@ public class ServiceCircuitState
         TotalRequests++;
         SuccessfulRequests++;
         ConsecutiveFailures = 0;
-        
+
         // Update average response time using exponential moving average
+
         if (AverageResponseTime == TimeSpan.Zero)
         {
             AverageResponseTime = responseTime;
@@ -165,7 +172,8 @@ public class ServiceCircuitState
             if (newState == CircuitState.Open)
             {
                 OpenCount++;
-                NextRetryTime = openTimeout.HasValue 
+                NextRetryTime = openTimeout.HasValue
+
                     ? DateTimeOffset.UtcNow.Add(openTimeout.Value)
                     : DateTimeOffset.UtcNow.AddMinutes(1); // Default 1 minute
             }
@@ -182,7 +190,8 @@ public class ServiceCircuitState
     /// </summary>
     public bool CanAttemptRetry()
     {
-        return State == CircuitState.HalfOpen || 
+        return State == CircuitState.HalfOpen ||
+
                (State == CircuitState.Open && NextRetryTime.HasValue && DateTimeOffset.UtcNow >= NextRetryTime.Value);
     }
 
@@ -240,7 +249,8 @@ public class ServiceCircuitState
             _ => false
         };
     }
-    
+
+
     /// <summary>
     /// Forces the circuit to a specific state
     /// </summary>
@@ -249,7 +259,8 @@ public class ServiceCircuitState
         TransitionTo(state, _config?.OpenCircuitTimeout);
         _logger?.LogWarning("Service {ServiceName} circuit forced to {State}", ServiceName, state);
     }
-    
+
+
     /// <summary>
     /// Performs health check for the service
     /// </summary>
@@ -262,7 +273,8 @@ public class ServiceCircuitState
             _logger?.LogInformation("Service {ServiceName} transitioned to HalfOpen for testing", ServiceName);
         }
     }
-    
+
+
     /// <summary>
     /// Gets circuit breaker statistics
     /// </summary>
@@ -294,12 +306,13 @@ public class ServiceCircuitState
     }
 
 
-    public void Dispose() =>
+    public void Dispose()
         // Clean up any resources if needed
-        Metrics.Clear();
 
-    public override string ToString() =>
-        $"{ServiceName}: {State}, Failures={ConsecutiveFailures}, " +
+        => Metrics.Clear();
+
+    public override string ToString()
+        => $"{ServiceName}: {State}, Failures={ConsecutiveFailures}, " +
         $"Rate={FailureRate:P1}, Health={HealthStatus}";
 }
 
@@ -391,7 +404,7 @@ public class CircuitStateSummary
     /// </summary>
     public TimeSpan TotalOpenTime { get; set; }
 
-    public override string ToString() =>
-        $"{ServiceName}: {State}, {FailureRate:P1} failure rate, {TotalRequests} requests";
+    public override string ToString()
+        => $"{ServiceName}: {State}, {FailureRate:P1} failure rate, {TotalRequests} requests";
 }
 

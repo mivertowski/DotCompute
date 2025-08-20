@@ -22,7 +22,8 @@ public class Matrix
     /// </summary>
     /// <param name="rows">Number of rows.</param>
     /// <param name="cols">Number of columns.</param>
-    public Matrix(int rows, int cols) 
+    public Matrix(int rows, int cols)
+
     {
         Implementation = new DotCompute.Algorithms.LinearAlgebra.Matrix(rows, cols);
     }
@@ -33,7 +34,8 @@ public class Matrix
     /// <param name="rows">Number of rows.</param>
     /// <param name="cols">Number of columns.</param>
     /// <param name="data">Matrix data in row-major order.</param>
-    public Matrix(int rows, int cols, float[] data) 
+    public Matrix(int rows, int cols, float[] data)
+
     {
         Implementation = new DotCompute.Algorithms.LinearAlgebra.Matrix(rows, cols, data);
     }

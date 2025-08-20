@@ -7,37 +7,38 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace DotCompute.Backends.CUDA
 {
 
-/// <summary>
-/// Simple program to validate Phase 1 CUDA backend implementation.
-/// </summary>
-public static class Phase1ValidationProgram
-{
     /// <summary>
-    /// Entry point for Phase 1 validation.
+    /// Simple program to validate Phase 1 CUDA backend implementation.
     /// </summary>
-    /// <param name="args">Command line arguments.</param>
-    public static int Main(string[] args)
+    public static class Phase1ValidationProgram
     {
-        var logger = NullLogger.Instance;
-
-        Console.WriteLine("=== CUDA Phase 1 Implementation Validation ===");
-        Console.WriteLine();
-
-        try
+        /// <summary>
+        /// Entry point for Phase 1 validation.
+        /// </summary>
+        /// <param name="args">Command line arguments.</param>
+        public static int Main(string[] args)
         {
-            var result = CudaPhase1Validator.ValidatePhase1Implementation(logger);
-            
+            var logger = NullLogger.Instance;
+
+            Console.WriteLine("=== CUDA Phase 1 Implementation Validation ===");
             Console.WriteLine();
-            Console.WriteLine("=== Validation Results ===");
-            Console.WriteLine(result.GetSummary());
 
-            return result.Success ? 0 : 1;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Validation failed with exception: {ex.Message}");
-            logger.LogError(ex, "Phase 1 validation failed");
-            return 2;
+            try
+            {
+                var result = CudaPhase1Validator.ValidatePhase1Implementation(logger);
+
+                Console.WriteLine();
+                Console.WriteLine("=== Validation Results ===");
+                Console.WriteLine(result.GetSummary());
+
+                return result.Success ? 0 : 1;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Validation failed with exception: {ex.Message}");
+                logger.LogError(ex, "Phase 1 validation failed");
+                return 2;
+            }
         }
     }
-}}
+}

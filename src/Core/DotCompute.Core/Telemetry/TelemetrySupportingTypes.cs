@@ -161,7 +161,7 @@ public sealed class PerformanceProfilerOptions
     public int MaxConcurrentProfiles { get; set; } = 10;
     public bool EnableContinuousProfiling { get; set; } = true;
     public int SamplingIntervalMs { get; set; } = 100;
-    public bool AllowOrphanedRecords { get; set; } = false;
+    public bool AllowOrphanedRecords { get; set; }
 }
 
 public sealed class ProfileOptions

@@ -15,7 +15,8 @@ public class PluginRecoveryManager : IDisposable
     private bool _disposed;
 
     public PluginRecoveryManager(
-        ILogger<PluginRecoveryManager> logger, 
+        ILogger<PluginRecoveryManager> logger,
+
         PluginRecoveryConfiguration? config = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -37,10 +38,12 @@ public class PluginRecoveryManager : IDisposable
         try
         {
             _logger.LogInformation("Attempting recovery for plugin {PluginId}", context.PluginId);
-            
+
             // Basic recovery logic - would be expanded with real implementation
+
             await Task.Delay(100, cancellationToken);
-            
+
+
             return true;
         }
         catch (Exception ex)
@@ -54,9 +57,12 @@ public class PluginRecoveryManager : IDisposable
     /// Recovers from an error with the specified context and options
     /// </summary>
     public async Task<RecoveryResult> RecoverAsync(
-        Exception error, 
-        PluginRecoveryContext context, 
-        RecoveryOptions options, 
+        Exception error,
+
+        PluginRecoveryContext context,
+
+        RecoveryOptions options,
+
         CancellationToken cancellationToken = default)
     {
         if (_disposed)
@@ -68,12 +74,14 @@ public class PluginRecoveryManager : IDisposable
 
         try
         {
-            _logger.LogInformation("Recovering from error {ErrorType} for plugin {PluginId}", 
+            _logger.LogInformation("Recovering from error {ErrorType} for plugin {PluginId}",
+
                 error.GetType().Name, context.PluginId);
 
             var success = await AttemptRecoveryAsync(context, cancellationToken);
-            
-            return success 
+
+            return success
+
                 ? new RecoveryResult { Success = true, Message = "Plugin recovery successful", Duration = TimeSpan.FromMilliseconds(100) }
                 : new RecoveryResult { Success = false, Message = "Plugin recovery failed", Exception = error };
         }

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using FluentAssertions;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Tests.Unit.LinearAlgebra
 {
 

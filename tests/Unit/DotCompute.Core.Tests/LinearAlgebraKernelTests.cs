@@ -31,11 +31,13 @@ public sealed class LinearAlgebraKernelTests : IDisposable
     [Fact]
     public void Constructor_WithNullAccelerator_ShouldThrowArgumentNullException()
         // Act & Assert
+
         => Assert.Throws<ArgumentNullException>(() => new LinearAlgebraKernels(null!, _mockLogger.Object));
 
     [Fact]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
         // Act & Assert
+
         => Assert.Throws<ArgumentNullException>(() => new LinearAlgebraKernels(_mockAccelerator.Object, null!));
 
     #region Vector Operations Tests
@@ -897,7 +899,7 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
 
         var degree = coefficients.Length - 1;
         if (degree <= 0)
-            return Array.Empty<float>();
+            return [];
 
         return degree switch
         {
@@ -916,7 +918,7 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
         var b = coefficients[1];
 
         if (Math.Abs(a) < 1e-10f)
-            return Array.Empty<float>();
+            return [];
         return [-b / a];
     }
 
@@ -1292,6 +1294,7 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
 
     public void Dispose()
         // Clean up resources if needed
+
         => GC.SuppressFinalize(this);
 }
 

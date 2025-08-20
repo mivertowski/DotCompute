@@ -48,7 +48,7 @@ public sealed class MetalCommandBufferPool : IDisposable
         // Try to get a buffer from the pool first
         if (_availableBuffers.TryDequeue(out buffer))
         {
-            Interlocked.Decrement(ref _currentPoolSize);
+            _ = Interlocked.Decrement(ref _currentPoolSize);
             _logger.LogTrace("Reused command buffer from pool: {Buffer:X}", buffer.ToInt64());
         }
         else
@@ -100,7 +100,7 @@ public sealed class MetalCommandBufferPool : IDisposable
         {
             // Return to pool for reuse
             _availableBuffers.Enqueue(buffer);
-            Interlocked.Increment(ref _currentPoolSize);
+            _ = Interlocked.Increment(ref _currentPoolSize);
             _logger.LogTrace("Returned command buffer to pool: {Buffer:X}", buffer.ToInt64());
         }
         else
@@ -123,15 +123,16 @@ public sealed class MetalCommandBufferPool : IDisposable
 
         var cleaned = 0;
         var currentSize = _availableBuffers.Count;
-        
+
         // Clean up stale buffers from the pool
+
         for (var i = 0; i < currentSize; i++)
         {
             if (_availableBuffers.TryDequeue(out var buffer))
             {
                 MetalNative.ReleaseCommandBuffer(buffer);
                 cleaned++;
-                Interlocked.Decrement(ref _currentPoolSize);
+                _ = Interlocked.Decrement(ref _currentPoolSize);
             }
         }
 
@@ -150,7 +151,8 @@ public sealed class MetalCommandBufferPool : IDisposable
         {
             if (_activeBuffers.TryRemove(bufferPtr, out _))
             {
-                _logger.LogWarning("Found stale active command buffer (age: {Age}), disposing: {Buffer:X}", 
+                _logger.LogWarning("Found stale active command buffer (age: {Age}), disposing: {Buffer:X}",
+
                     DateTime.UtcNow - bufferInfo.CreatedAt, bufferPtr.ToInt64());
                 MetalNative.ReleaseCommandBuffer(bufferPtr);
             }

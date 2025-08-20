@@ -45,7 +45,8 @@ public static class SafeMemoryOperations
 
         // Bounds checking
         var maxCopyLength = Math.Min(Math.Min(source.Length, destination.Length), length);
-        
+
+
         if (maxCopyLength == 0)
         {
             return 0;
@@ -63,9 +64,11 @@ public static class SafeMemoryOperations
             // Perform safe copy with bounds verification
             var sourceSlice = source[..maxCopyLength];
             var destinationSlice = destination[..maxCopyLength];
-            
+
+
             sourceSlice.CopyTo(destinationSlice);
-            
+
+
             return maxCopyLength;
         }
         catch (Exception ex)
@@ -91,7 +94,7 @@ public static class SafeMemoryOperations
 
         if (length == 0)
         {
-            return new SafeMemoryAllocation<T>(Array.Empty<T>(), 0);
+            return new SafeMemoryAllocation<T>([], 0);
         }
 
         // Size validation to prevent DoS
@@ -111,13 +114,15 @@ public static class SafeMemoryOperations
         {
             // Allocate memory safely
             var array = new T[length];
-            
+
             // Initialize if requested
+
             if (initialize && length > 0)
             {
                 array.AsSpan().Clear();
             }
-            
+
+
             return new SafeMemoryAllocation<T>(array, length);
         }
         catch (OutOfMemoryException)
@@ -154,7 +159,8 @@ public static class SafeMemoryOperations
 
         // Bounds checking
         var actualCount = Math.Min(destination.Length, count);
-        
+
+
         try
         {
             // Perform safe fill operation
@@ -190,7 +196,8 @@ public static class SafeMemoryOperations
 
         // Bounds checking
         var compareLength = Math.Min(Math.Min(span1.Length, span2.Length), length);
-        
+
+
         try
         {
             // Perform safe comparison
@@ -224,18 +231,21 @@ public static class SafeMemoryOperations
 
         // Bounds checking
         var clearLength = Math.Min(span.Length, length);
-        
+
+
         try
         {
             // Perform secure clear operation
             span[..clearLength].Clear();
-            
+
             // Additional security: overwrite with random data if dealing with sensitive types
+
             if (IsSensitiveType<T>())
             {
                 SecureOverwrite(span[..clearLength]);
             }
-            
+
+
             return clearLength;
         }
         catch (Exception ex)
@@ -293,18 +303,21 @@ public static class SafeMemoryOperations
 
         // Bounds checking
         var hashLength = Math.Min(span.Length, maxLength);
-        
+
+
         try
         {
             // Calculate hash safely
             var hashCode = new HashCode();
             var spanToHash = span[..hashLength];
-            
+
+
             foreach (var item in spanToHash)
             {
                 hashCode.Add(item);
             }
-            
+
+
             return hashCode.ToHashCode();
         }
         catch (Exception ex)
@@ -321,8 +334,9 @@ public static class SafeMemoryOperations
     private static bool IsSensitiveType<T>()
     {
         var type = typeof(T);
-        
+
         // Check for types that might contain sensitive data
+
         return type == typeof(byte) ||
                type == typeof(char) ||
                type.Name.Contains("Key", StringComparison.OrdinalIgnoreCase) ||
@@ -422,12 +436,14 @@ public sealed class SafeMemoryAllocation<T> : IDisposable where T : unmanaged
         get
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            
+
+
             if (index < 0 || index >= _length)
             {
                 throw new IndexOutOfRangeException($"Index {index} is out of range [0, {_length})");
             }
-            
+
+
             return ref _array[index];
         }
     }
@@ -441,17 +457,20 @@ public sealed class SafeMemoryAllocation<T> : IDisposable where T : unmanaged
     public Span<T> Slice(int start, int length)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (start < 0 || start > _length)
         {
             throw new ArgumentOutOfRangeException(nameof(start), $"Start {start} is out of range [0, {_length}]");
         }
-        
+
+
         if (length < 0 || start + length > _length)
         {
             throw new ArgumentOutOfRangeException(nameof(length), $"Length {length} extends beyond allocation bounds");
         }
-        
+
+
         return _array.AsSpan(start, length);
     }
 
@@ -471,7 +490,7 @@ public sealed class SafeMemoryAllocation<T> : IDisposable where T : unmanaged
     public void Clear()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        SafeMemoryOperations.SafeClear(Span, _length);
+        _ = SafeMemoryOperations.SafeClear(Span, _length);
     }
 
     /// <summary>
@@ -488,14 +507,15 @@ public sealed class SafeMemoryAllocation<T> : IDisposable where T : unmanaged
 
         try
         {
-            SafeMemoryOperations.SafeClear(_array.AsSpan(0, _length), _length);
+            _ = SafeMemoryOperations.SafeClear(_array.AsSpan(0, _length), _length);
         }
         catch
         {
             // Ignore errors during disposal
         }
-        
-        _array = Array.Empty<T>();
+
+
+        _array = [];
         _disposed = true;
     }
 }

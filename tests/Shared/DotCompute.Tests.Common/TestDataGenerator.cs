@@ -51,6 +51,7 @@ public static class TestDataGenerator
         return data;
     }
 
+
     /// <summary>
     /// Generates test cases for different array sizes.
     /// </summary>
@@ -66,6 +67,7 @@ public static class TestDataGenerator
         yield return new object[] { 65536 };
     }
 #pragma warning restore CA1024
+
 
     /// <summary>
     /// Generates test cases for edge case array sizes.
@@ -85,6 +87,7 @@ public static class TestDataGenerator
     }
 #pragma warning restore CA1024
 
+
     /// <summary>
     /// Generates a 2D array with _random values.
     /// </summary>
@@ -102,6 +105,7 @@ public static class TestDataGenerator
         return array;
     }
 #pragma warning restore CA1814
+
 
     /// <summary>
     /// Generates test matrices for multiplication.
@@ -199,6 +203,7 @@ public static class TestDataGenerator
         }
         return result;
     }
+
 
     /// <summary>
     /// Generates a 2D float matrix with random values.

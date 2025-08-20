@@ -3,6 +3,7 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Implementations.Memory;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Tests.Implementations.Accelerators;
 
 

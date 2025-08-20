@@ -655,6 +655,7 @@ public sealed class MultiAcceleratorTests(ITestOutputHelper output) : Integratio
 
     private static bool CheckDirectTransferSupport(IAccelerator source, IAccelerator target)
         // Simplified check - in real implementation would check for P2P capabilities
+
         => source.Info.DeviceType == target.Info.DeviceType;
 
     // Placeholder methods - these would be implemented based on actual accelerator APIs
@@ -679,6 +680,7 @@ public sealed class MultiAcceleratorTests(ITestOutputHelper output) : Integratio
 
     private static async Task ModifySharedData(IAccelerator accelerator, IMemoryBuffer sharedBuffer, int modifier)
         // Placeholder - would modify data on accelerator
+
         => await Task.Delay(1);
 
     private static async Task<float[]> ReadSharedData(IAccelerator accelerator, IMemoryBuffer sharedBuffer)
@@ -711,7 +713,7 @@ public class AcceleratorResult
     public bool Success { get; set; }
     public int ProcessedItems { get; set; }
     public TimeSpan ExecutionTime { get; set; }
-    public object[] Results { get; set; } = Array.Empty<object>();
+    public object[] Results { get; set; } = [];
     public string? Error { get; set; }
 }
 

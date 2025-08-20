@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Backends.CPU
 {
     /// <summary>

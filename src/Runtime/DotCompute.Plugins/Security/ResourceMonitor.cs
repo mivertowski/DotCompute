@@ -56,7 +56,7 @@ public class ResourceMonitor : IDisposable
         ArgumentNullException.ThrowIfNull(plugin);
 
         var tracker = new PluginResourceTracker(plugin.Id, plugin.Permissions.ResourceLimits, _logger);
-        _trackers.TryAdd(plugin.Id, tracker);
+        _ = _trackers.TryAdd(plugin.Id, tracker);
 
         _logger.LogDebug("Registered plugin {PluginId} for resource monitoring", plugin.Id);
     }
@@ -108,11 +108,13 @@ public class ResourceMonitor : IDisposable
             while (!cancellationToken.IsCancellationRequested && !plugin.IsDisposed)
             {
                 var usage = tracker.GetCurrentUsage();
-                
+
+
                 if (usage.IsExceedingLimits)
                 {
                     var violations = string.Join(", ", usage.ViolatedLimits);
-                    _logger.LogWarning("Resource violations detected for plugin {PluginId}: {Violations}", 
+                    _logger.LogWarning("Resource violations detected for plugin {PluginId}: {Violations}",
+
                         plugin.Id, violations);
                     return violations;
                 }
@@ -151,7 +153,7 @@ public class ResourceMonitor : IDisposable
             var currentMemoryUsage = GetCurrentMemoryUsage();
 
             // Update each plugin tracker
-            Parallel.ForEach(_trackers.Values, tracker =>
+            _ = Parallel.ForEach(_trackers.Values, tracker =>
             {
                 try
                 {
@@ -221,7 +223,8 @@ public class ResourceMonitor : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         var result = new Dictionary<Guid, ResourceUsage>();
-        
+
+
         foreach (var kvp in _trackers)
         {
             try
@@ -273,11 +276,14 @@ internal class PluginResourceTracker : IDisposable
     private readonly ILogger _logger;
     private readonly Stopwatch _executionTimer;
     private readonly object _usageLock = new();
-    
-    private ResourceUsage _currentUsage;
+
+
+    private readonly ResourceUsage _currentUsage;
     private DateTime _lastUpdate;
-    private long _lastFileIOCount = 0;
-    private long _lastNetworkIOCount = 0;
+#pragma warning disable CS0649 // Field is never assigned to
+    private readonly long _lastFileIOCount;
+    private readonly long _lastNetworkIOCount;
+#pragma warning restore CS0649
     private bool _disposed;
 
     public PluginResourceTracker(Guid pluginId, ResourceLimits limits, ILogger logger)
@@ -307,7 +313,8 @@ internal class PluginResourceTracker : IDisposable
         {
             var now = DateTime.UtcNow;
             var deltaTime = (now - _lastUpdate).TotalSeconds;
-            
+
+
             if (deltaTime < 0.1)
             {
                 return; // Avoid too frequent updates
@@ -429,7 +436,8 @@ internal class PluginResourceTracker : IDisposable
 
         if (_currentUsage.IsExceedingLimits)
         {
-            _logger.LogWarning("Resource limits violated for plugin {PluginId}: {Violations}", 
+            _logger.LogWarning("Resource limits violated for plugin {PluginId}: {Violations}",
+
                 _pluginId, string.Join(", ", _currentUsage.ViolatedLimits));
         }
     }

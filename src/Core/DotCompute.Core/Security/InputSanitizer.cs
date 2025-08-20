@@ -27,40 +27,49 @@ public sealed class InputSanitizer : IDisposable
     private static readonly Dictionary<string, Regex> SecurityPatterns = new(StringComparer.OrdinalIgnoreCase)
     {
         // SQL Injection patterns
-        ["sql_injection_basic"] = new Regex(@"('|(--|;)|(\||(\*|%))|(\b(select|insert|update|delete|drop|create|alter|exec|execute|union|script)\b))", 
+        ["sql_injection_basic"] = new Regex(@"('|(--|;)|(\||(\*|%))|(\b(select|insert|update|delete|drop|create|alter|exec|execute|union|script)\b))",
+
             RegexOptions.IgnoreCase | RegexOptions.Compiled),
         ["sql_injection_advanced"] = new Regex(@"(\b(sleep|benchmark|pg_sleep|waitfor|delay)\b)|(\b(xp_cmdshell|sp_executesql)\b)|(\b(information_schema|sys\.|master\.)\b)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled),
-            
+
         // XSS patterns
-        ["xss_script"] = new Regex(@"<script[^>]*>.*?</script>|javascript:|vbscript:|on\w+\s*=", 
+
+        ["xss_script"] = new Regex(@"<script[^>]*>.*?</script>|javascript:|vbscript:|on\w+\s*=",
+
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline),
         ["xss_html"] = new Regex(@"<\s*(iframe|object|embed|applet|meta|link|style|img|svg)[^>]*>",
             RegexOptions.IgnoreCase | RegexOptions.Compiled),
-            
+
         // Command injection patterns
+
         ["command_injection"] = new Regex(@"[;&|`$(){}[\]<>*?~]|(\\x[0-9a-f]{2})|(%[0-9a-f]{2})",
             RegexOptions.IgnoreCase | RegexOptions.Compiled),
         ["powershell_injection"] = new Regex(@"(invoke-expression|iex|invoke-command|icm|start-process|saps|new-object|downloadstring)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled),
-            
+
         // Path traversal patterns
+
         ["path_traversal"] = new Regex(@"(\.\.[\\/])+|(%2e%2e[\\/])+|(\.\.%2f)|(\.\.%5c)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled),
-            
+
         // LDAP injection patterns
+
         ["ldap_injection"] = new Regex(@"[()&|!>=<~*/]|(\\\*)|(\\\()|(\\\))",
             RegexOptions.Compiled),
-            
+
         // Code injection patterns
+
         ["code_injection"] = new Regex(@"(eval|exec|system|shell_exec|passthru|popen|proc_open|file_get_contents|readfile|include|require)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled),
-            
+
         // XML injection patterns
+
         ["xml_injection"] = new Regex(@"(<!\[CDATA\[)|(<\?xml)|(<!\-\-)|(\]\]>)|(&lt;)|(&gt;)|(&amp;)|(&quot;)|(&apos;)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled),
-            
+
         // NoSQL injection patterns
+
         ["nosql_injection"] = new Regex(@"(\$where|\$regex|\$ne|\$gt|\$lt|\$or|\$and|\$in|\$nin)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled)
     };
@@ -82,12 +91,16 @@ public sealed class InputSanitizer : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? InputSanitizationConfiguration.Default;
-        
+
         // Initialize statistics collection
-        _statisticsTimer = new Timer(LogStatistics, null, 
+
+        _statisticsTimer = new Timer(LogStatistics, null,
+
             TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
-        
-        _logger.LogInformation("InputSanitizer initialized with configuration: {Configuration}", 
+
+
+        _logger.LogInformation("InputSanitizer initialized with configuration: {Configuration}",
+
             _configuration.ToString());
     }
 
@@ -99,7 +112,8 @@ public sealed class InputSanitizer : IDisposable
     /// <param name="sanitizationType">Type of sanitization to apply</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Sanitization result with cleaned input and security information</returns>
-    public async Task<SanitizationResult> SanitizeStringAsync(string input, string context, 
+    public async Task<SanitizationResult> SanitizeStringAsync(string input, string context,
+
         SanitizationType sanitizationType = SanitizationType.General, CancellationToken cancellationToken = default)
     {
         if (_disposed)
@@ -115,7 +129,8 @@ public sealed class InputSanitizer : IDisposable
         await _validationLock.WaitAsync(cancellationToken);
         try
         {
-            _logger.LogTrace("Sanitizing input: Context={Context}, Type={Type}, Length={Length}", 
+            _logger.LogTrace("Sanitizing input: Context={Context}, Type={Type}, Length={Length}",
+
                 context, sanitizationType, input.Length);
 
             var result = new SanitizationResult
@@ -155,7 +170,7 @@ public sealed class InputSanitizer : IDisposable
         }
         finally
         {
-            _validationLock.Release();
+            _ = _validationLock.Release();
         }
     }
 
@@ -196,13 +211,15 @@ public sealed class InputSanitizer : IDisposable
             {
                 var paramResult = await ValidateParameterAsync(key, value, $"kernel_{kernelName}", cancellationToken);
                 result.ParameterResults[key] = paramResult;
-                
+
+
                 if (!paramResult.IsSecure)
                 {
                     result.HasInvalidParameters = true;
                     result.InvalidParameters.Add(key);
                 }
-                
+
+
                 result.SecurityThreats.AddRange(paramResult.SecurityThreats);
             }
 
@@ -216,7 +233,7 @@ public sealed class InputSanitizer : IDisposable
         }
         finally
         {
-            _validationLock.Release();
+            _ = _validationLock.Release();
         }
     }
 
@@ -227,7 +244,8 @@ public sealed class InputSanitizer : IDisposable
     /// <param name="baseDirectory">Base directory that path should be within</param>
     /// <param name="allowedExtensions">Optional list of allowed file extensions</param>
     /// <returns>Path validation result</returns>
-    public PathValidationResult ValidateFilePath(string filePath, string baseDirectory, 
+    public PathValidationResult ValidateFilePath(string filePath, string baseDirectory,
+
         IEnumerable<string>? allowedExtensions = null)
     {
         if (_disposed)
@@ -265,7 +283,8 @@ public sealed class InputSanitizer : IDisposable
             // 2. Resolve full path and validate it's within base directory
             var fullPath = Path.GetFullPath(filePath);
             var fullBaseDirectory = Path.GetFullPath(baseDirectory);
-            
+
+
             if (!fullPath.StartsWith(fullBaseDirectory, StringComparison.OrdinalIgnoreCase))
             {
                 result.SecurityThreats.Add(new InputThreat
@@ -286,7 +305,8 @@ public sealed class InputSanitizer : IDisposable
             {
                 var extension = Path.GetExtension(fullPath).ToLowerInvariant();
                 var allowedList = allowedExtensions.Select(ext => ext.ToLowerInvariant()).ToList();
-                
+
+
                 if (!allowedList.Contains(extension))
                 {
                     result.SecurityThreats.Add(new InputThreat
@@ -340,7 +360,8 @@ public sealed class InputSanitizer : IDisposable
     /// <param name="globalSize">Global size dimensions</param>
     /// <param name="maxWorkGroupSize">Maximum allowed work group size</param>
     /// <returns>Work group validation result</returns>
-    public WorkGroupValidationResult ValidateWorkGroupSizes(int[] workGroupSize, int[] globalSize, 
+    public WorkGroupValidationResult ValidateWorkGroupSizes(int[] workGroupSize, int[] globalSize,
+
         int maxWorkGroupSize = 1024)
     {
         if (_disposed)
@@ -379,14 +400,15 @@ public sealed class InputSanitizer : IDisposable
             }
 
             // 3. Validate individual dimensions
-            for (int i = 0; i < workGroupSize.Length; i++)
+            for (var i = 0; i < workGroupSize.Length; i++)
             {
                 if (workGroupSize[i] <= 0)
                 {
                     result.ValidationErrors.Add($"Work group size dimension {i} must be positive: {workGroupSize[i]}");
                     result.IsValid = false;
                 }
-                
+
+
                 if (globalSize[i] <= 0)
                 {
                     result.ValidationErrors.Add($"Global size dimension {i} must be positive: {globalSize[i]}");
@@ -410,7 +432,7 @@ public sealed class InputSanitizer : IDisposable
             }
 
             // 5. Validate global size alignment
-            for (int i = 0; i < workGroupSize.Length; i++)
+            for (var i = 0; i < workGroupSize.Length; i++)
             {
                 if (globalSize[i] % workGroupSize[i] != 0)
                 {
@@ -464,9 +486,11 @@ public sealed class InputSanitizer : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(context);
         ArgumentNullException.ThrowIfNull(rule);
 
-        _customRules.AddOrUpdate(context, rule, (key, existing) => rule);
-        
-        _logger.LogDebug("Added custom validation rule: Context={Context}, Rule={RuleName}", 
+        _ = _customRules.AddOrUpdate(context, rule, (key, existing) => rule);
+
+
+        _logger.LogDebug("Added custom validation rule: Context={Context}, Rule={RuleName}",
+
             context, rule.Name);
     }
 
@@ -482,18 +506,21 @@ public sealed class InputSanitizer : IDisposable
             TotalThreatsDetected = _statistics.TotalThreatsDetected,
             TotalSecurityViolations = _statistics.TotalSecurityViolations
         };
-        
+
         // Copy the dictionaries since they are readonly properties
+
         foreach (var kvp in _statistics.ValidationsByType)
         {
             result.ValidationsByType[kvp.Key] = kvp.Value;
         }
-        
+
+
         foreach (var kvp in _statistics.ThreatsByType)
         {
             result.ThreatsByType[kvp.Key] = kvp.Value;
         }
-        
+
+
         return result;
     }
 
@@ -568,7 +595,8 @@ public sealed class InputSanitizer : IDisposable
         }, cancellationToken);
     }
 
-    private async Task<string> ApplySanitizationAsync(string input, SanitizationType sanitizationType, 
+    private async Task<string> ApplySanitizationAsync(string input, SanitizationType sanitizationType,
+
         SanitizationResult result, CancellationToken cancellationToken)
     {
         return await Task.Run(() =>
@@ -588,26 +616,28 @@ public sealed class InputSanitizer : IDisposable
         }, cancellationToken);
     }
 
-    private string SanitizeHtml(string input)
+    private static string SanitizeHtml(string input)
     {
         var result = new StringBuilder(input.Length);
-        
-        foreach (char c in input)
+
+
+        foreach (var c in input)
         {
             if (HtmlEntities.TryGetValue(c, out var entity))
             {
-                result.Append(entity);
+                _ = result.Append(entity);
             }
             else
             {
-                result.Append(c);
+                _ = result.Append(c);
             }
         }
-        
+
+
         return result.ToString();
     }
 
-    private string SanitizeSql(string input)
+    private static string SanitizeSql(string input)
     {
         // Escape single quotes and remove/escape dangerous SQL keywords
         return input.Replace("'", "''")
@@ -617,27 +647,29 @@ public sealed class InputSanitizer : IDisposable
                    .Replace("*/", "\\*/");
     }
 
-    private string SanitizeFilePath(string input)
+    private static string SanitizeFilePath(string input)
     {
         // Remove path traversal patterns and dangerous characters
         var sanitized = input.Replace("..", "")
                             .Replace("~", "")
                             .Replace("\\", "/");
-                            
+
         // Remove control characters and null bytes
+
         var result = new StringBuilder();
-        foreach (char c in sanitized)
+        foreach (var c in sanitized)
         {
             if (c >= 32 && c != 127 && c != 0) // Printable characters only
             {
-                result.Append(c);
+                _ = result.Append(c);
             }
         }
-        
+
+
         return result.ToString();
     }
 
-    private string SanitizeUrl(string input)
+    private static string SanitizeUrl(string input)
     {
         try
         {
@@ -651,44 +683,49 @@ public sealed class InputSanitizer : IDisposable
         }
     }
 
-    private string SanitizeEmail(string input) =>
+    private static string SanitizeEmail(string input)
         // Basic email sanitization - remove dangerous characters
-        Regex.Replace(input, @"[^\w@.-]", "", RegexOptions.Compiled);
 
-    private string SanitizeAlphaNumeric(string input) => Regex.Replace(input, @"[^a-zA-Z0-9]", "", RegexOptions.Compiled);
+        => Regex.Replace(input, @"[^\w@.-]", "", RegexOptions.Compiled);
 
-    private string SanitizeNumeric(string input) => Regex.Replace(input, @"[^0-9.-]", "", RegexOptions.Compiled);
+    private static string SanitizeAlphaNumeric(string input) => Regex.Replace(input, @"[^a-zA-Z0-9]", "", RegexOptions.Compiled);
 
-    private string SanitizeKernelParameter(string input)
+    private static string SanitizeNumeric(string input) => Regex.Replace(input, @"[^0-9.-]", "", RegexOptions.Compiled);
+
+    private static string SanitizeKernelParameter(string input)
     {
         // Remove potentially dangerous characters for kernel parameters
         var dangerous = new char[] { ';', '|', '&', '`', '$', '(', ')', '{', '}', '[', ']', '<', '>', '*', '?', '~' };
         var result = input;
-        
+
+
         foreach (var dangerousChar in dangerous)
         {
             result = result.Replace(dangerousChar.ToString(), "");
         }
-        
+
+
         return result;
     }
 
-    private string SanitizeGeneral(string input)
+    private static string SanitizeGeneral(string input)
     {
         // General sanitization - remove control characters and null bytes
         var result = new StringBuilder();
-        foreach (char c in input)
+        foreach (var c in input)
         {
             if (c >= 32 && c != 127 && c != 0) // Printable characters only
             {
-                result.Append(c);
+                _ = result.Append(c);
             }
         }
-        
+
+
         return result.ToString();
     }
 
-    private async Task ValidatePostSanitizationAsync(string sanitizedInput, SanitizationResult result, 
+    private static async Task ValidatePostSanitizationAsync(string sanitizedInput, SanitizationResult result,
+
         CancellationToken cancellationToken)
     {
         await Task.Run(() =>
@@ -712,16 +749,18 @@ public sealed class InputSanitizer : IDisposable
         }, cancellationToken);
     }
 
-    private async Task<SanitizationResult> ValidateParameterAsync(string parameterName, object parameterValue, 
+    private async Task<SanitizationResult> ValidateParameterAsync(string parameterName, object parameterValue,
+
         string context, CancellationToken cancellationToken)
     {
         var stringValue = parameterValue?.ToString() ?? "";
         var sanitizationType = DetermineSanitizationType(parameterName, parameterValue);
-        
+
+
         return await SanitizeStringAsync(stringValue, context, sanitizationType, cancellationToken);
     }
 
-    private SanitizationType DetermineSanitizationType(string parameterName, object? parameterValue)
+    private static SanitizationType DetermineSanitizationType(string parameterName, object? parameterValue)
     {
         return parameterName.ToLowerInvariant() switch
         {
@@ -739,18 +778,21 @@ public sealed class InputSanitizer : IDisposable
     {
         var criticalThreats = result.SecurityThreats.Count(t => t.Severity == ThreatSeverity.Critical);
         var highThreats = result.SecurityThreats.Count(t => t.Severity == ThreatSeverity.High);
-        
+
+
         return criticalThreats == 0 && highThreats <= _configuration.MaxHighSeverityThreats;
     }
 
-    private bool ContainsControlCharacters(string input) => input.Any(c => char.IsControl(c) && c != '\t' && c != '\r' && c != '\n');
+    private static bool ContainsControlCharacters(string input) => input.Any(c => char.IsControl(c) && c != '\t' && c != '\r' && c != '\n');
 
-    private bool ContainsSuspiciousFileName(string fileName)
+    private static bool ContainsSuspiciousFileName(string fileName)
     {
         var suspiciousNames = new[]
         {
-            "con", "prn", "aux", "nul", "com1", "com2", "com3", "com4", "com5", 
-            "com6", "com7", "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4", 
+            "con", "prn", "aux", "nul", "com1", "com2", "com3", "com4", "com5",
+
+            "com6", "com7", "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4",
+
             "lpt5", "lpt6", "lpt7", "lpt8", "lpt9"
         };
 
@@ -758,7 +800,7 @@ public sealed class InputSanitizer : IDisposable
         return suspiciousNames.Contains(nameWithoutExt);
     }
 
-    private ThreatType GetThreatTypeFromPattern(string patternName)
+    private static ThreatType GetThreatTypeFromPattern(string patternName)
     {
         return patternName switch
         {
@@ -774,7 +816,7 @@ public sealed class InputSanitizer : IDisposable
         };
     }
 
-    private ThreatSeverity GetSeverityFromPattern(string patternName)
+    private static ThreatSeverity GetSeverityFromPattern(string patternName)
     {
         return patternName switch
         {
@@ -789,17 +831,20 @@ public sealed class InputSanitizer : IDisposable
     {
         _statistics.TotalValidations++;
         _statistics.TotalThreatsDetected += result.SecurityThreats.Count;
-        
+
+
         if (!result.IsSecure)
         {
             _statistics.TotalSecurityViolations++;
         }
-        
-        _statistics.ValidationsByType.AddOrUpdate(result.SanitizationType, 1, (key, value) => value + 1);
-        
+
+
+        _ = _statistics.ValidationsByType.AddOrUpdate(result.SanitizationType, 1, (key, value) => value + 1);
+
+
         foreach (var threat in result.SecurityThreats)
         {
-            _statistics.ThreatsByType.AddOrUpdate(threat.ThreatType, 1, (key, value) => value + 1);
+            _ = _statistics.ThreatsByType.AddOrUpdate(threat.ThreatType, 1, (key, value) => value + 1);
         }
     }
 
@@ -834,10 +879,12 @@ public sealed class InputSanitizer : IDisposable
 
 
         _disposed = true;
-        
+
+
         _statisticsTimer?.Dispose();
         _validationLock?.Dispose();
-        
+
+
         _logger.LogInformation("InputSanitizer disposed. Final statistics: Validations={TotalValidations}, Threats={TotalThreats}",
             _statistics.TotalValidations, _statistics.TotalThreatsDetected);
     }
@@ -860,14 +907,15 @@ public sealed class InputSanitizationConfiguration
     };
 
     public int MaxInputLength { get; init; } = 10_000;
-    public int MaxHighSeverityThreats { get; init; } = 0;
+    public int MaxHighSeverityThreats { get; init; }
+
     public long MaxGlobalWorkSize { get; init; } = 1_000_000_000L;
     public bool EnableDetailedLogging { get; init; }
     public bool CacheValidationResults { get; init; } = true;
     public TimeSpan ValidationTimeout { get; init; } = TimeSpan.FromSeconds(30);
 
-    public override string ToString() =>
-        $"MaxLength={MaxInputLength}, MaxThreats={MaxHighSeverityThreats}, DetailedLogging={EnableDetailedLogging}";
+    public override string ToString()
+        => $"MaxLength={MaxInputLength}, MaxThreats={MaxHighSeverityThreats}, DetailedLogging={EnableDetailedLogging}";
 }
 
 /// <summary>
@@ -1015,5 +1063,6 @@ public sealed class ValidationStatistics
     public ConcurrentDictionary<SanitizationType, long> ValidationsByType { get; } = new();
     public ConcurrentDictionary<ThreatType, long> ThreatsByType { get; } = new();
 }
+
 
 #endregion

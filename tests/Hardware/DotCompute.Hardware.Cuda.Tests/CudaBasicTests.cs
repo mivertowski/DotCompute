@@ -10,6 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
+using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Hardware.Cuda.Tests;
 
 

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.ComponentModel.DataAnnotations;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions;
 
@@ -18,26 +19,32 @@ public class CompilationOptions
     /// <summary>
     /// Enable debug information generation
     /// </summary>
-    public bool EnableDebugInfo { get; set; } = false;
+    public bool EnableDebugInfo { get; set; }
+
 
     /// <summary>
     /// Enable fast math optimizations (may reduce precision)
     /// </summary>
     public bool EnableFastMath { get; set; } = true;
-    
+
+
     /// <summary>
     /// Enable fast math optimizations (alias for compatibility)
     /// </summary>
-    public bool FastMath 
-    { 
-        get => EnableFastMath; 
-        set => EnableFastMath = value; 
+    public bool FastMath
+    {
+
+        get => EnableFastMath;
+
+        set => EnableFastMath = value;
+
     }
 
     /// <summary>
     /// Enable aggressive optimizations
     /// </summary>
-    public bool AggressiveOptimizations { get; set; } = false;
+    public bool AggressiveOptimizations { get; set; }
+
 
     /// <summary>
     /// Target architecture specific optimizations
@@ -68,7 +75,8 @@ public class CompilationOptions
     /// <summary>
     /// Enable warnings as errors
     /// </summary>
-    public bool TreatWarningsAsErrors { get; set; } = false;
+    public bool TreatWarningsAsErrors { get; set; }
+
 
     /// <summary>
     /// Warning level (0-4)
@@ -79,17 +87,22 @@ public class CompilationOptions
     /// <summary>
     /// Enable memory coalescing optimizations
     /// </summary>
-    public bool EnableMemoryCoalescing { get; set; } = false;
-    
+    public bool EnableMemoryCoalescing { get; set; }
+
+
+
     /// <summary>
     /// Enable operator fusion optimizations
     /// </summary>
-    public bool EnableOperatorFusion { get; set; } = false;
-    
+    public bool EnableOperatorFusion { get; set; }
+
+
+
     /// <summary>
     /// Enable parallel execution
     /// </summary>
-    public bool EnableParallelExecution { get; set; } = false;
+    public bool EnableParallelExecution { get; set; }
+
 
     /// <summary>
     /// Enable loop unrolling optimizations
@@ -138,7 +151,8 @@ public class CompilationOptions
     /// <summary>
     /// Enable loop unrolling optimizations
     /// </summary>
-    public bool UnrollLoops { get; set; } = false;
+    public bool UnrollLoops { get; set; }
+
 
     /// <summary>
     /// Enable native math library usage
@@ -153,7 +167,8 @@ public class CompilationOptions
     /// <summary>
     /// Enable profile-guided optimizations
     /// </summary>
-    public bool EnableProfileGuidedOptimizations { get; set; } = false;
+    public bool EnableProfileGuidedOptimizations { get; set; }
+
 
     /// <summary>
     /// Profile data path for PGO
@@ -163,7 +178,8 @@ public class CompilationOptions
     /// <summary>
     /// Enable strict floating point semantics
     /// </summary>
-    public bool StrictFloatingPoint { get; set; } = false;
+    public bool StrictFloatingPoint { get; set; }
+
 
     /// <summary>
     /// Compiler backend to use
@@ -173,7 +189,8 @@ public class CompilationOptions
     /// <summary>
     /// Force interpreted mode instead of compiled
     /// </summary>
-    public bool ForceInterpretedMode { get; set; } = false;
+    public bool ForceInterpretedMode { get; set; }
+
 
     /// <summary>
     /// Default compilation options
@@ -246,8 +263,9 @@ public class CompilationOptions
         };
     }
 
-    public override string ToString() => 
-        $"OptLevel={OptimizationLevel}, FastMath={EnableFastMath}, Debug={EnableDebugInfo}, UnrollLoops={UnrollLoops}";
+    public override string ToString()
+
+        => $"OptLevel={OptimizationLevel}, FastMath={EnableFastMath}, Debug={EnableDebugInfo}, UnrollLoops={UnrollLoops}";
 }
 
 /// <summary>
@@ -279,7 +297,8 @@ public enum OptimizationLevel
     /// Release optimizations, longer compilation time
     /// </summary>
     Release = 4,
-    
+
+
     /// <summary>
     /// Maximum optimizations, longest compilation time
     /// </summary>

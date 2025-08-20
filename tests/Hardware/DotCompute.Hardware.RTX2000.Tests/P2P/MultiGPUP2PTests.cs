@@ -533,6 +533,7 @@ public sealed class MultiGPUP2PTests : IDisposable
         // This would normally launch a CUDA kernel using computeIterations
         await Task.Delay(computeIterations / 100); // Simulate compute time
                                                    // For simulation, we'll just do synchronous operations
+
         await Task.Delay(50 + gpuId * 10); // Simulate variable compute time
 
         // In real implementation, this would be:

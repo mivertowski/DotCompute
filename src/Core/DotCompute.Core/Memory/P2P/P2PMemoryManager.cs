@@ -23,14 +23,15 @@ namespace DotCompute.Core.Memory.P2P
         private readonly P2PBufferFactory _bufferFactory;
         private readonly ConcurrentDictionary<string, P2PMemoryPool> _memoryPools;
         private readonly SemaphoreSlim _managerSemaphore;
-        private P2PManagerStatistics _statistics;
+        private readonly P2PManagerStatistics _statistics;
         private bool _isInitialized;
         private bool _disposed;
 
         public P2PMemoryManager(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
+
+
             var capabilityDetector = new P2PCapabilityDetector(logger);
             _transferManager = new P2PTransferManager(logger, capabilityDetector);
             _capabilityMatrix = new P2PCapabilityMatrix(logger);
@@ -39,7 +40,8 @@ namespace DotCompute.Core.Memory.P2P
             _synchronizer = new P2PSynchronizer(logger);
             _coherenceManager = new P2PMemoryCoherenceManager(logger);
             _bufferFactory = new P2PBufferFactory(logger, capabilityDetector);
-            
+
+
             _memoryPools = new ConcurrentDictionary<string, P2PMemoryPool>();
             _managerSemaphore = new SemaphoreSlim(1, 1);
             _statistics = new P2PManagerStatistics();
@@ -167,7 +169,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _managerSemaphore.Release();
+                _ = _managerSemaphore.Release();
             }
         }
 
@@ -181,7 +183,8 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ThrowIfNotInitialized();
-            
+
+
             options ??= P2PBufferCreationOptions.Default;
 
             var p2pOptions = new P2PBufferOptions
@@ -214,7 +217,8 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ThrowIfNotInitialized();
-            
+
+
             options ??= P2PTransferExecutionOptions.Default;
 
             var transferOptions = new P2PTransferOptions
@@ -245,7 +249,8 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ThrowIfNotInitialized();
-            
+
+
             options ??= P2PScatterExecutionOptions.Default;
 
             var scatterOptions = new P2PScatterOptions
@@ -273,7 +278,8 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ThrowIfNotInitialized();
-            
+
+
             options ??= P2PGatherExecutionOptions.Default;
 
             var gatherOptions = new P2PGatherOptions
@@ -299,10 +305,12 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default)
         {
             ThrowIfNotInitialized();
-            
+
+
             options ??= P2PBenchmarkExecutionOptions.Default;
 
-            var devices = _memoryPools.Keys.Select(deviceId => 
+            var devices = _memoryPools.Keys.Select(deviceId =>
+
                 _memoryPools[deviceId].TargetDevice).ToArray();
 
             var multiGpuOptions = new P2PMultiGpuBenchmarkOptions
@@ -415,7 +423,7 @@ namespace DotCompute.Core.Memory.P2P
                 UseCachedResults = true
             };
 
-            await _validator.ExecuteP2PBenchmarkAsync(devices[0], devices[1], benchmarkOptions, cancellationToken);
+            _ = await _validator.ExecuteP2PBenchmarkAsync(devices[0], devices[1], benchmarkOptions, cancellationToken);
         }
 
         private void UpdateManagerStatistics(P2PTransferResult result)
@@ -435,9 +443,10 @@ namespace DotCompute.Core.Memory.P2P
             }
         }
 
-        private static long GetTransferSizeFromResult(P2PTransferResult result) =>
+        private static long GetTransferSizeFromResult(P2PTransferResult result)
             // In a real implementation, this would extract the transfer size from the result
-            result.TransferPlan?.TransferSize ?? 0;
+
+            => result.TransferPlan?.TransferSize ?? 0;
 
         private P2PManagerStatistics GetManagerStatistics()
         {
@@ -499,7 +508,8 @@ namespace DotCompute.Core.Memory.P2P
     {
         public static P2PMemoryManagerOptions Default => new();
 
-        public bool RunInitialBenchmarks { get; init; } = false;
+        public bool RunInitialBenchmarks { get; init; }
+
         public long DefaultPoolSizeMB { get; init; } = 512; // 512MB per device
         public bool EnableCoherenceTracking { get; init; } = true;
         public bool EnableOptimizations { get; init; } = true;
@@ -572,7 +582,8 @@ namespace DotCompute.Core.Memory.P2P
         public bool EnablePairwiseBenchmarks { get; init; } = true;
         public bool EnableScatterBenchmarks { get; init; } = true;
         public bool EnableGatherBenchmarks { get; init; } = true;
-        public bool EnableAllToAllBenchmarks { get; init; } = false;
+        public bool EnableAllToAllBenchmarks { get; init; }
+
         public int TransferSizeMB { get; init; } = 64;
         public bool UseCachedResults { get; init; } = true;
     }

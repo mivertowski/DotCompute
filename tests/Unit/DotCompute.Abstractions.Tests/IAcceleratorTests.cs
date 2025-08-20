@@ -5,6 +5,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
+using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Abstractions.Tests;
 
 

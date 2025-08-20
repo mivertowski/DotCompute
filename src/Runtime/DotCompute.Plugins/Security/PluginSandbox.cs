@@ -64,8 +64,9 @@ public class PluginSandbox : IDisposable
 
             // Load the assembly in the isolated context
             var assembly = await LoadAssemblySecurelyAsync(isolatedContext, assemblyPath, cancellationToken).ConfigureAwait(false);
-            
+
             // Get the plugin type
+
             var pluginType = assembly.GetType(typeName);
             if (pluginType == null)
             {
@@ -93,7 +94,7 @@ public class PluginSandbox : IDisposable
                 _resourceMonitor);
 
             // Register for monitoring
-            _sandboxedPlugins.TryAdd(pluginId, sandboxedPlugin);
+            _ = _sandboxedPlugins.TryAdd(pluginId, sandboxedPlugin);
             _resourceMonitor.RegisterPlugin(sandboxedPlugin);
 
             _logger.LogInformation("Successfully created sandboxed plugin {PluginId}", pluginId);
@@ -155,13 +156,15 @@ public class PluginSandbox : IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error executing operation on sandboxed plugin {PluginId}", plugin.Id);
-            
+
             // Check if this was a security violation
+
             if (ex is SecurityException || ex.Message.Contains("security", StringComparison.OrdinalIgnoreCase))
             {
                 await HandleSecurityViolationAsync(plugin, ex).ConfigureAwait(false);
             }
-            
+
+
             throw;
         }
     }
@@ -211,8 +214,9 @@ public class PluginSandbox : IDisposable
 
         // Analyze plugin type for required permissions
         var requiredPermissions = await AnalyzePluginPermissionsAsync(pluginType, cancellationToken);
-        
+
         // Validate that all required permissions are allowed
+
         var unauthorizedPermissions = requiredPermissions.Except(context.AllowedPermissions);
         if (unauthorizedPermissions.Any())
         {
@@ -268,13 +272,15 @@ public class PluginSandbox : IDisposable
         // Set up security context
         var originalContext = Thread.CurrentPrincipal;
         var securityPrincipal = CreateSecurityPrincipal(plugin.SecurityContext);
-        
+
+
         try
         {
             // Switch to sandboxed security context
             Thread.CurrentPrincipal = securityPrincipal;
-            
+
             // Execute the operation
+
             return await operation(plugin.Instance);
         }
         finally
@@ -290,19 +296,21 @@ public class PluginSandbox : IDisposable
     private async Task<HashSet<string>> AnalyzePluginPermissionsAsync(Type pluginType, CancellationToken cancellationToken)
     {
         var requiredPermissions = new HashSet<string>();
-        
+
+
         await Task.Run(() =>
         {
             // Analyze methods for required permissions
             var methods = pluginType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
-            
+
+
             foreach (var method in methods)
             {
                 // Check for file I/O operations
                 if (method.Name.Contains("File", StringComparison.OrdinalIgnoreCase) ||
                     method.GetParameters().Any(p => p.ParameterType == typeof(Stream) || p.ParameterType.Name.Contains("Stream")))
                 {
-                    requiredPermissions.Add("FileIO");
+                    _ = requiredPermissions.Add("FileIO");
                 }
 
                 // Check for network operations
@@ -310,19 +318,19 @@ public class PluginSandbox : IDisposable
                     method.Name.Contains("Network", StringComparison.OrdinalIgnoreCase) ||
                     method.GetParameters().Any(p => p.ParameterType.Namespace?.Contains("System.Net") == true))
                 {
-                    requiredPermissions.Add("NetworkAccess");
+                    _ = requiredPermissions.Add("NetworkAccess");
                 }
 
                 // Check for registry operations
                 if (method.Name.Contains("Registry", StringComparison.OrdinalIgnoreCase))
                 {
-                    requiredPermissions.Add("RegistryAccess");
+                    _ = requiredPermissions.Add("RegistryAccess");
                 }
 
                 // Check for process operations
                 if (method.Name.Contains("Process", StringComparison.OrdinalIgnoreCase))
                 {
-                    requiredPermissions.Add("ProcessControl");
+                    _ = requiredPermissions.Add("ProcessControl");
                 }
             }
 
@@ -332,7 +340,7 @@ public class PluginSandbox : IDisposable
             {
                 if (attr.GetType().Name.Contains("Permission"))
                 {
-                    requiredPermissions.Add(attr.GetType().Name);
+                    _ = requiredPermissions.Add(attr.GetType().Name);
                 }
             }
         }, cancellationToken);
@@ -375,14 +383,17 @@ public class PluginSandbox : IDisposable
         {
             // Immediately isolate the plugin
             await plugin.IsolateAsync();
-            
+
             // Remove from active plugins
-            _sandboxedPlugins.TryRemove(plugin.Id, out _);
-            
+
+            _ = _sandboxedPlugins.TryRemove(plugin.Id, out _);
+
             // Unload the plugin context
+
             plugin.LoadContext.Unload();
-            
+
             // Log security incident
+
             LogSecurityIncident(plugin, violation);
         }
         catch (Exception ex)
@@ -428,7 +439,8 @@ public class PluginSandbox : IDisposable
         if (_sandboxedPlugins.TryRemove(pluginId, out var plugin))
         {
             _logger.LogInformation("Terminating sandboxed plugin {PluginId}", pluginId);
-            
+
+
             try
             {
                 await plugin.TerminateAsync();

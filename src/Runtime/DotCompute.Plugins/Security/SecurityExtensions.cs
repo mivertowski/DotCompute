@@ -149,7 +149,8 @@ public static class SecurityExtensions
             "WScript.", "Shell.", "cmd.exe", "powershell"
         };
 
-        return !maliciousPatterns.Any(pattern => 
+        return !maliciousPatterns.Any(pattern =>
+
             input.Contains(pattern, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -182,7 +183,8 @@ public static class SecurityExtensions
         foreach (var pattern in dangerousPatterns)
         {
             sanitized = System.Text.RegularExpressions.Regex.Replace(
-                sanitized, pattern, "", 
+                sanitized, pattern, "",
+
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         }
 
@@ -298,7 +300,8 @@ public static class SecurityExtensions
         ArgumentNullException.ThrowIfNull(context);
 
         // Plugin is trusted if it has no violations and high isolation
-        return !context.HasViolations && 
+        return !context.HasViolations &&
+
                context.IsolationLevel >= PluginIsolationLevel.High &&
                context.CalculateSecurityScore() >= 80;
     }

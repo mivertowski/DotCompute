@@ -9,9 +9,9 @@ namespace DotCompute.Algorithms.Types.Kernels;
 /// </summary>
 public abstract class AlgorithmKernel
 {
-public abstract string Name { get; }
-public abstract string Description { get; }
-public virtual bool IsVectorized => false;
+    public abstract string Name { get; }
+    public abstract string Description { get; }
+    public virtual bool IsVectorized => false;
 }
 
 /// <summary>
@@ -19,6 +19,6 @@ public virtual bool IsVectorized => false;
 /// </summary>
 public sealed class KernelExecutionContext
 {
-public required object[] Parameters { get; init; }
-public CancellationToken CancellationToken { get; init; }
+    public required object[] Parameters { get; init; }
+    public CancellationToken CancellationToken { get; init; }
 }

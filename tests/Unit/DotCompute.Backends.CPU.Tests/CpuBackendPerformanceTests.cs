@@ -13,6 +13,7 @@ using Xunit;
 using System.Diagnostics;
 using FluentAssertions;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Backends.CPU.Tests.Performance
 {
 

@@ -16,18 +16,22 @@ public class RecoveryCoordinatorConfiguration
     public bool EnableGlobalRecovery { get; set; } = true;
     public bool EnableMetricsReporting { get; set; } = true;
     public int MaxConcurrentRecoveries { get; set; } = 10;
-    
+
     // Individual component configurations
+
     public GpuRecoveryConfiguration GpuRecoveryConfig { get; set; } = GpuRecoveryConfiguration.Default;
     public MemoryRecoveryConfiguration MemoryRecoveryConfig { get; set; } = MemoryRecoveryConfiguration.Default;
     public CompilationFallbackConfiguration CompilationFallbackConfig { get; set; } = CompilationFallbackConfiguration.Default;
     public CircuitBreakerConfiguration CircuitBreakerConfig { get; set; } = CircuitBreakerConfiguration.Default;
     public PluginRecoveryConfiguration PluginRecoveryConfig { get; set; } = PluginRecoveryConfiguration.Default;
-    
+
+
     public static RecoveryCoordinatorConfiguration Default => new();
-    
-    public override string ToString() => 
-        $"MetricsInterval={MetricsReportInterval}, MaxConcurrent={MaxConcurrentRecoveries}, GlobalEnabled={EnableGlobalRecovery}";
+
+
+    public override string ToString()
+
+        => $"MetricsInterval={MetricsReportInterval}, MaxConcurrent={MaxConcurrentRecoveries}, GlobalEnabled={EnableGlobalRecovery}";
 }
 
 /// <summary>
@@ -41,7 +45,8 @@ public class CompilationFallbackConfiguration
     public bool EnableProgressiveFallback { get; set; } = true;
     public bool EnableKernelSimplification { get; set; } = true;
     public bool EnableInterpreterMode { get; set; } = true;
-    
+
+
     public List<CompilationFallbackStrategy> FallbackStrategies { get; set; } = new()
     {
         CompilationFallbackStrategy.ReduceOptimizations,
@@ -50,11 +55,14 @@ public class CompilationFallbackConfiguration
         CompilationFallbackStrategy.AlternativeCompiler,
         CompilationFallbackStrategy.InterpreterMode
     };
-    
+
+
     public static CompilationFallbackConfiguration Default => new();
-    
-    public override string ToString() => 
-        $"CacheExpiration={CacheExpiration}, Strategies={FallbackStrategies.Count}, ProgressiveFallback={EnableProgressiveFallback}";
+
+
+    public override string ToString()
+
+        => $"CacheExpiration={CacheExpiration}, Strategies={FallbackStrategies.Count}, ProgressiveFallback={EnableProgressiveFallback}";
 }
 
 /// <summary>
@@ -85,9 +93,11 @@ public class RecoveryStatistics
     public PluginHealthReport PluginHealthReport { get; set; } = null!;
     public int RegisteredStrategies { get; set; }
     public double OverallSystemHealth { get; set; }
-    
-    public override string ToString() => 
-        $"SystemHealth={OverallSystemHealth:P1}, Strategies={RegisteredStrategies}, " +
+
+
+    public override string ToString()
+
+        => $"SystemHealth={OverallSystemHealth:P1}, Strategies={RegisteredStrategies}, " +
         $"GlobalSuccess={GlobalMetrics.SuccessRate:P1}";
 }
 
@@ -102,9 +112,11 @@ public class SystemHealthResult
     public TimeSpan Duration { get; set; }
     public DateTimeOffset Timestamp { get; set; }
     public string? Error { get; set; }
-    
-    public override string ToString() => 
-        IsHealthy 
+
+
+    public override string ToString()
+        => IsHealthy
+
             ? $"HEALTHY ({OverallHealth:P1}) - {ComponentResults.Count} components checked"
             : $"UNHEALTHY ({OverallHealth:P1}) - Error: {Error}";
 }
@@ -123,9 +135,11 @@ public class ComponentHealthResult
     public int TotalPlugins { get; set; }
     public TimeSpan ResponseTime { get; set; }
     public DateTimeOffset LastCheck { get; set; } = DateTimeOffset.UtcNow;
-    
-    public override string ToString() => 
-        $"{Component}: {(IsHealthy ? "HEALTHY" : "UNHEALTHY")} ({Health:P1}) - {Message}";
+
+
+    public override string ToString()
+
+        => $"{Component}: {(IsHealthy ? "HEALTHY" : "UNHEALTHY")} ({Health:P1}) - {Message}";
 }
 
 /// <summary>
@@ -141,9 +155,11 @@ public class CompilationStatistics
     public Dictionary<string, int> MostCommonErrors { get; set; } = new();
     public int CacheSize { get; set; }
     public double CacheHitRate { get; set; }
-    
-    public override string ToString() => 
-        $"Success={SuccessRate:P1} ({SuccessfulCompilations}/{TotalKernels}), " +
+
+
+    public override string ToString()
+
+        => $"Success={SuccessRate:P1} ({SuccessfulCompilations}/{TotalKernels}), " +
         $"Cache={CacheSize} entries ({CacheHitRate:P1} hit rate)";
 }
 
@@ -160,9 +176,11 @@ public class CircuitBreakerStatistics
     public Dictionary<string, ServiceStatistics> ServiceStatistics { get; set; } = new();
     public DateTimeOffset LastStateChange { get; set; }
     public int ActiveServices { get; set; }
-    
-    public override string ToString() => 
-        $"State={GlobalState}, FailureRate={OverallFailureRate:P1} ({FailedRequests}/{TotalRequests}), " +
+
+
+    public override string ToString()
+
+        => $"State={GlobalState}, FailureRate={OverallFailureRate:P1} ({FailedRequests}/{TotalRequests}), " +
         $"Services={ActiveServices}";
 }
 
@@ -178,9 +196,11 @@ public class ServiceStatistics
     public long FailedRequests { get; set; }
     public TimeSpan AverageResponseTime { get; set; }
     public DateTimeOffset LastFailure { get; set; }
-    
-    public override string ToString() => 
-        $"{ServiceName}: {State}, {FailureRate:P1} failure rate, {TotalRequests} requests";
+
+
+    public override string ToString()
+
+        => $"{ServiceName}: {State}, {FailureRate:P1} failure rate, {TotalRequests} requests";
 }
 
 /// <summary>
@@ -196,12 +216,14 @@ public class CompilationRecoveryContext
     public bool IsSimplified { get; set; }
     public bool UseInterpreter { get; set; }
     public string? PluginPath { get; set; }
-    
+
     // Modified during recovery
+
     public CompilationOptions? ModifiedOptions { get; set; }
     public KernelInterpreter? InterpreterInstance { get; set; }
     public CachedCompilationResult? CachedResult { get; set; }
-    
+
+
     public CompilationRecoveryContext Clone()
     {
         return new CompilationRecoveryContext
@@ -230,9 +252,11 @@ public class CompilationFallbackResult
     public object? CompiledKernel { get; set; }
     public List<CompilationAttempt> Attempts { get; set; } = new();
     public double TotalDuration { get; set; }
-    
-    public override string ToString() => 
-        Success 
+
+
+    public override string ToString()
+        => Success
+
             ? $"SUCCESS with {FinalStrategy} in {TotalDuration}ms ({Attempts.Count} attempts)"
             : $"FAILED after {Attempts.Count} attempts: {Error}";
 }
@@ -259,8 +283,8 @@ public class CompilationHistory : IDisposable
     private readonly string _kernelName;
     private readonly List<Exception> _recentErrors = new();
     private readonly List<CompilationFallbackStrategy> _attemptedStrategies = new();
-    private int _failureCount = 0;
-    private int _totalAttempts = 0;
+    private int _failureCount;
+    private int _totalAttempts;
     private CompilationFallbackStrategy? _successfulStrategy;
     private bool _disposed;
 
@@ -281,8 +305,9 @@ public class CompilationHistory : IDisposable
         _failureCount++;
         _totalAttempts++;
         _recentErrors.Add(error);
-        
+
         // Keep only recent errors
+
         if (_recentErrors.Count > 20)
         {
             _recentErrors.RemoveAt(0);
@@ -318,7 +343,8 @@ public class CachedCompilationResult
     public CompilationOptions SuccessfulOptions { get; set; } = null!;
     public DateTimeOffset Timestamp { get; set; }
     public DateTimeOffset ExpirationTime { get; set; }
-    
+
+
     public bool IsValid => DateTimeOffset.UtcNow < ExpirationTime;
 }
 
@@ -345,8 +371,9 @@ public class KernelInterpreter : IDisposable
             _logger.LogDebug("Kernel interpreter already prepared");
             return;
         }
-        
+
         // Kernel interpretation preparation would go here
+
         await Task.Delay(100, cancellationToken);
         _prepared = true;
         _logger.LogDebug("Kernel interpreter prepared for source code length {Length}", _sourceCode.Length);

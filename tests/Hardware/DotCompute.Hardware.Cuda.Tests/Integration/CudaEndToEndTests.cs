@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 using FluentAssertions;
 using DotCompute.Tests.Common;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Hardware.Cuda.Tests.Integration;
 
 

@@ -14,46 +14,46 @@ namespace DotCompute.Algorithms.Security;
 /// </summary>
 public sealed class FileSizeSecurityRule : SecurityRule
 {
-private readonly long _maxSize;
+    private readonly long _maxSize;
 
-/// <summary>
-/// Initializes a new instance of the <see cref="FileSizeSecurityRule"/> class.
-/// </summary>
-/// <param name="maxSize">Maximum allowed file size in bytes.</param>
-public FileSizeSecurityRule(long maxSize)
-{
-    _maxSize = maxSize;
-}
-
-/// <inheritdoc/>
-public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
-{
-    var result = new SecurityEvaluationResult();
-
-    try
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileSizeSecurityRule"/> class.
+    /// </summary>
+    /// <param name="maxSize">Maximum allowed file size in bytes.</param>
+    public FileSizeSecurityRule(long maxSize)
     {
-        var fileInfo = new FileInfo(context.AssemblyPath);
-        
-        if (fileInfo.Length > _maxSize)
+        _maxSize = maxSize;
+    }
+
+    /// <inheritdoc/>
+    public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
+    {
+        var result = new SecurityEvaluationResult();
+
+        try
+        {
+            var fileInfo = new FileInfo(context.AssemblyPath);
+
+            if (fileInfo.Length > _maxSize)
+            {
+                result.IsAllowed = false;
+                result.SecurityLevel = SecurityLevel.Low;
+                result.Violations.Add($"Assembly size ({fileInfo.Length:N0} bytes) exceeds maximum allowed size ({_maxSize:N0} bytes)");
+            }
+            else if (fileInfo.Length > _maxSize * 0.8) // Warn at 80% of limit
+            {
+                result.Warnings.Add($"Assembly size ({fileInfo.Length:N0} bytes) is approaching the maximum limit ({_maxSize:N0} bytes)");
+            }
+        }
+        catch (Exception ex)
         {
             result.IsAllowed = false;
             result.SecurityLevel = SecurityLevel.Low;
-            result.Violations.Add($"Assembly size ({fileInfo.Length:N0} bytes) exceeds maximum allowed size ({_maxSize:N0} bytes)");
+            result.Violations.Add($"Failed to check file size: {ex.Message}");
         }
-        else if (fileInfo.Length > _maxSize * 0.8) // Warn at 80% of limit
-        {
-            result.Warnings.Add($"Assembly size ({fileInfo.Length:N0} bytes) is approaching the maximum limit ({_maxSize:N0} bytes)");
-        }
-    }
-    catch (Exception ex)
-    {
-        result.IsAllowed = false;
-        result.SecurityLevel = SecurityLevel.Low;
-        result.Violations.Add($"Failed to check file size: {ex.Message}");
-    }
 
-    return result;
-}
+        return result;
+    }
 }
 
 /// <summary>
@@ -61,114 +61,115 @@ public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext cont
 /// </summary>
 public sealed class DigitalSignatureSecurityRule : SecurityRule
 {
-/// <inheritdoc/>
-public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
-{
-    var result = new SecurityEvaluationResult();
-
-    try
+    /// <inheritdoc/>
+    public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
     {
-        // Try to get the certificate from the assembly
-        var certificate = GetAssemblyCertificate(context.AssemblyPath);
-        
-        if (certificate == null)
-        {
-            result.IsAllowed = false;
-            result.SecurityLevel = SecurityLevel.Low;
-            result.Violations.Add("No digital signature found on assembly");
-            return result;
-        }
+        var result = new SecurityEvaluationResult();
 
-        // Validate certificate chain
-        var chain = new X509Chain
+        try
         {
-            ChainPolicy = 
+            // Try to get the certificate from the assembly
+            var certificate = GetAssemblyCertificate(context.AssemblyPath);
+
+            if (certificate == null)
+            {
+                result.IsAllowed = false;
+                result.SecurityLevel = SecurityLevel.Low;
+                result.Violations.Add("No digital signature found on assembly");
+                return result;
+            }
+
+            // Validate certificate chain
+            var chain = new X509Chain
+            {
+                ChainPolicy =
+
             {
                 RevocationMode = X509RevocationMode.Online,
                 RevocationFlag = X509RevocationFlag.ExcludeRoot,
                 VerificationFlags = X509VerificationFlags.NoFlag
             }
-        };
+            };
 
-        var chainValid = chain.Build(certificate);
-        
-        if (!chainValid)
-        {
-            result.SecurityLevel = SecurityLevel.Medium;
-            result.Warnings.Add("Certificate chain validation failed");
-            
-            foreach (var status in chain.ChainStatus)
+            var chainValid = chain.Build(certificate);
+
+            if (!chainValid)
             {
-                if (status.Status == X509ChainStatusFlags.NotTimeValid)
+                result.SecurityLevel = SecurityLevel.Medium;
+                result.Warnings.Add("Certificate chain validation failed");
+
+                foreach (var status in chain.ChainStatus)
                 {
-                    result.IsAllowed = false;
-                    result.Violations.Add("Certificate has expired or is not yet valid");
+                    if (status.Status == X509ChainStatusFlags.NotTimeValid)
+                    {
+                        result.IsAllowed = false;
+                        result.Violations.Add("Certificate has expired or is not yet valid");
+                    }
+                    else if (status.Status == X509ChainStatusFlags.Revoked)
+                    {
+                        result.IsAllowed = false;
+                        result.Violations.Add("Certificate has been revoked");
+                    }
+                    else
+                    {
+                        result.Warnings.Add($"Certificate chain issue: {status.StatusInformation}");
+                    }
                 }
-                else if (status.Status == X509ChainStatusFlags.Revoked)
+            }
+
+            // Check if certificate is from a trusted publisher
+            var trustedStore = new X509Store(StoreName.TrustedPublisher, StoreLocation.LocalMachine);
+            try
+            {
+                trustedStore.Open(OpenFlags.ReadOnly);
+                var trustedCert = trustedStore.Certificates.Find(X509FindType.FindByThumbprint, certificate.Thumbprint, false);
+
+                if (trustedCert.Count == 0)
                 {
-                    result.IsAllowed = false;
-                    result.Violations.Add("Certificate has been revoked");
+                    result.SecurityLevel = SecurityLevel.Medium;
+                    result.Warnings.Add("Publisher certificate is not in the trusted publisher store");
                 }
                 else
                 {
-                    result.Warnings.Add($"Certificate chain issue: {status.StatusInformation}");
+                    result.SecurityLevel = SecurityLevel.High;
                 }
             }
+            finally
+            {
+                trustedStore.Close();
+            }
+
+            // Store certificate in context for other rules
+            context.Certificate = certificate;
+            result.Metadata["CertificateThumbprint"] = certificate.Thumbprint;
+            result.Metadata["CertificateSubject"] = certificate.Subject;
+            result.Metadata["CertificateIssuer"] = certificate.Issuer;
+            result.Metadata["CertificateExpiration"] = certificate.NotAfter;
+        }
+        catch (Exception ex)
+        {
+            result.IsAllowed = false;
+            result.SecurityLevel = SecurityLevel.Low;
+            result.Violations.Add($"Digital signature validation failed: {ex.Message}");
         }
 
-        // Check if certificate is from a trusted publisher
-        var trustedStore = new X509Store(StoreName.TrustedPublisher, StoreLocation.LocalMachine);
+        return result;
+    }
+
+    private static X509Certificate2? GetAssemblyCertificate(string assemblyPath)
+    {
         try
         {
-            trustedStore.Open(OpenFlags.ReadOnly);
-            var trustedCert = trustedStore.Certificates.Find(X509FindType.FindByThumbprint, certificate.Thumbprint, false);
-            
-            if (trustedCert.Count == 0)
-            {
-                result.SecurityLevel = SecurityLevel.Medium;
-                result.Warnings.Add("Publisher certificate is not in the trusted publisher store");
-            }
-            else
-            {
-                result.SecurityLevel = SecurityLevel.High;
-            }
+            // Load the assembly and check for Authenticode signature
+            // Using X509Certificate2 constructor with X509Certificate
+            // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
+            return X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
         }
-        finally
+        catch
         {
-            trustedStore.Close();
+            return null;
         }
-
-        // Store certificate in context for other rules
-        context.Certificate = certificate;
-        result.Metadata["CertificateThumbprint"] = certificate.Thumbprint;
-        result.Metadata["CertificateSubject"] = certificate.Subject;
-        result.Metadata["CertificateIssuer"] = certificate.Issuer;
-        result.Metadata["CertificateExpiration"] = certificate.NotAfter;
     }
-    catch (Exception ex)
-    {
-        result.IsAllowed = false;
-        result.SecurityLevel = SecurityLevel.Low;
-        result.Violations.Add($"Digital signature validation failed: {ex.Message}");
-    }
-
-    return result;
-}
-
-private static X509Certificate2? GetAssemblyCertificate(string assemblyPath)
-{
-    try
-    {
-        // Load the assembly and check for Authenticode signature
-        // Using X509Certificate2 constructor with X509Certificate
-        // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
-        return X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
-    }
-    catch
-    {
-        return null;
-    }
-}
 }
 
 /// <summary>
@@ -176,72 +177,72 @@ private static X509Certificate2? GetAssemblyCertificate(string assemblyPath)
 /// </summary>
 public sealed class StrongNameSecurityRule : SecurityRule
 {
-/// <inheritdoc/>
-public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
-{
-    var result = new SecurityEvaluationResult();
-
-    try
+    /// <inheritdoc/>
+    public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
     {
-        // Load assembly to check strong name
-        var assemblyName = AssemblyName.GetAssemblyName(context.AssemblyPath);
-        var publicKey = assemblyName.GetPublicKey();
-        
-        if (publicKey == null || publicKey.Length == 0)
+        var result = new SecurityEvaluationResult();
+
+        try
+        {
+            // Load assembly to check strong name
+            var assemblyName = AssemblyName.GetAssemblyName(context.AssemblyPath);
+            var publicKey = assemblyName.GetPublicKey();
+
+            if (publicKey == null || publicKey.Length == 0)
+            {
+                result.IsAllowed = false;
+                result.SecurityLevel = SecurityLevel.Low;
+                result.Violations.Add("Assembly is not signed with a strong name");
+                return result;
+            }
+
+            // Verify strong name signature
+            if (!IsStrongNameValid(context.AssemblyPath, publicKey))
+            {
+                result.IsAllowed = false;
+                result.SecurityLevel = SecurityLevel.Low;
+                result.Violations.Add("Strong name signature is invalid");
+                return result;
+            }
+
+            // Store public key for other rules
+            context.StrongNameKey = publicKey;
+            result.Metadata["StrongNameKeySize"] = publicKey.Length;
+            result.Metadata["PublicKeyToken"] = Convert.ToHexString(assemblyName.GetPublicKeyToken() ?? []);
+            result.SecurityLevel = SecurityLevel.High;
+        }
+        catch (Exception ex)
         {
             result.IsAllowed = false;
             result.SecurityLevel = SecurityLevel.Low;
-            result.Violations.Add("Assembly is not signed with a strong name");
-            return result;
+            result.Violations.Add($"Strong name validation failed: {ex.Message}");
         }
 
-        // Verify strong name signature
-        if (!IsStrongNameValid(context.AssemblyPath, publicKey))
+        return result;
+    }
+
+    private static bool IsStrongNameValid(string assemblyPath, byte[] publicKey)
+    {
+        try
         {
-            result.IsAllowed = false;
-            result.SecurityLevel = SecurityLevel.Low;
-            result.Violations.Add("Strong name signature is invalid");
-            return result;
+            // Basic validation: check if public key exists and has reasonable size
+            if (publicKey.Length < 160) // Minimum size for RSA-1024
+            {
+                return false;
+            }
+
+            // Additional validation could be implemented here
+            // For now, we'll assume the presence of a public key indicates valid strong name
+            // In a production environment, you might want to use Windows APIs or
+            // third-party libraries for more thorough validation
+
+            return true;
         }
-
-        // Store public key for other rules
-        context.StrongNameKey = publicKey;
-        result.Metadata["StrongNameKeySize"] = publicKey.Length;
-        result.Metadata["PublicKeyToken"] = Convert.ToHexString(assemblyName.GetPublicKeyToken() ?? []);
-        result.SecurityLevel = SecurityLevel.High;
-    }
-    catch (Exception ex)
-    {
-        result.IsAllowed = false;
-        result.SecurityLevel = SecurityLevel.Low;
-        result.Violations.Add($"Strong name validation failed: {ex.Message}");
-    }
-
-    return result;
-}
-
-private static bool IsStrongNameValid(string assemblyPath, byte[] publicKey)
-{
-    try
-    {
-        // Basic validation: check if public key exists and has reasonable size
-        if (publicKey.Length < 160) // Minimum size for RSA-1024
+        catch
         {
             return false;
         }
-
-        // Additional validation could be implemented here
-        // For now, we'll assume the presence of a public key indicates valid strong name
-        // In a production environment, you might want to use Windows APIs or
-        // third-party libraries for more thorough validation
-        
-        return true;
     }
-    catch
-    {
-        return false;
-    }
-}
 }
 
 /// <summary>
@@ -249,7 +250,7 @@ private static bool IsStrongNameValid(string assemblyPath, byte[] publicKey)
 /// </summary>
 public sealed class MetadataAnalysisSecurityRule : SecurityRule
 {
-private static readonly HashSet<string> SuspiciousNamespaces = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> SuspiciousNamespaces = new(StringComparer.OrdinalIgnoreCase)
 {
     "System.Diagnostics",
     "System.IO",
@@ -259,7 +260,7 @@ private static readonly HashSet<string> SuspiciousNamespaces = new(StringCompare
     "System.Security.Cryptography"
 };
 
-private static readonly HashSet<string> SuspiciousTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> SuspiciousTypeNames = new(StringComparer.OrdinalIgnoreCase)
 {
     "Process",
     "ProcessStartInfo",
@@ -273,91 +274,91 @@ private static readonly HashSet<string> SuspiciousTypeNames = new(StringComparer
     "TypeBuilder"
 };
 
-/// <inheritdoc/>
-public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
-{
-    var result = new SecurityEvaluationResult();
-    var suspiciousCount = 0;
-    var warnings = new List<string>();
-
-    try
+    /// <inheritdoc/>
+    public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
     {
-        // Load assembly for metadata analysis
-        var assembly = Assembly.LoadFrom(context.AssemblyPath);
-        
-        // Analyze types and their namespaces
-        foreach (var type in assembly.GetTypes())
+        var result = new SecurityEvaluationResult();
+        var suspiciousCount = 0;
+        var warnings = new List<string>();
+
+        try
         {
-            // Check namespace
-            if (!string.IsNullOrEmpty(type.Namespace) && SuspiciousNamespaces.Contains(type.Namespace))
+            // Load assembly for metadata analysis
+            var assembly = Assembly.LoadFrom(context.AssemblyPath);
+
+            // Analyze types and their namespaces
+            foreach (var type in assembly.GetTypes())
             {
-                suspiciousCount++;
-                warnings.Add($"References suspicious namespace: {type.Namespace}");
+                // Check namespace
+                if (!string.IsNullOrEmpty(type.Namespace) && SuspiciousNamespaces.Contains(type.Namespace))
+                {
+                    suspiciousCount++;
+                    warnings.Add($"References suspicious namespace: {type.Namespace}");
+                }
+
+                // Check type names
+                if (SuspiciousTypeNames.Contains(type.Name))
+                {
+                    suspiciousCount++;
+                    warnings.Add($"Uses suspicious type: {type.FullName}");
+                }
+
+                // Check for dynamic code generation capabilities
+                if (typeof(System.Reflection.Emit.AssemblyBuilder).IsAssignableFrom(type) ||
+                    typeof(System.Reflection.Emit.ModuleBuilder).IsAssignableFrom(type))
+                {
+                    suspiciousCount++;
+                    warnings.Add($"Has dynamic code generation capabilities: {type.FullName}");
+                }
             }
 
-            // Check type names
-            if (SuspiciousTypeNames.Contains(type.Name))
+            // Analyze assembly attributes
+            var attributes = assembly.GetCustomAttributes();
+            foreach (var attr in attributes)
             {
-                suspiciousCount++;
-                warnings.Add($"Uses suspicious type: {type.FullName}");
+                // Check for unsafe code attributes
+                if (attr.GetType().Name.Contains("Unsafe", StringComparison.OrdinalIgnoreCase) ||
+                    attr.GetType().Name.Contains("Unmanaged", StringComparison.OrdinalIgnoreCase))
+                {
+                    suspiciousCount++;
+                    warnings.Add($"Contains unsafe code attribute: {attr.GetType().Name}");
+                }
             }
 
-            // Check for dynamic code generation capabilities
-            if (typeof(System.Reflection.Emit.AssemblyBuilder).IsAssignableFrom(type) ||
-                typeof(System.Reflection.Emit.ModuleBuilder).IsAssignableFrom(type))
+            // Evaluate suspicion level
+            if (suspiciousCount > 10)
             {
-                suspiciousCount++;
-                warnings.Add($"Has dynamic code generation capabilities: {type.FullName}");
+                result.IsAllowed = false;
+                result.SecurityLevel = SecurityLevel.Low;
+                result.Violations.Add($"Assembly contains too many suspicious patterns ({suspiciousCount} found)");
             }
+            else if (suspiciousCount > 5)
+            {
+                result.SecurityLevel = SecurityLevel.Medium;
+                result.Warnings.Add($"Assembly contains moderate suspicious patterns ({suspiciousCount} found)");
+            }
+            else if (suspiciousCount > 0)
+            {
+                result.SecurityLevel = SecurityLevel.High;
+                result.Warnings.AddRange(warnings.Take(5)); // Limit warnings
+            }
+
+            result.Metadata["SuspiciousPatternCount"] = suspiciousCount;
+            result.Metadata["TypeCount"] = assembly.GetTypes().Length;
         }
-
-        // Analyze assembly attributes
-        var attributes = assembly.GetCustomAttributes();
-        foreach (var attr in attributes)
-        {
-            // Check for unsafe code attributes
-            if (attr.GetType().Name.Contains("Unsafe", StringComparison.OrdinalIgnoreCase) ||
-                attr.GetType().Name.Contains("Unmanaged", StringComparison.OrdinalIgnoreCase))
-            {
-                suspiciousCount++;
-                warnings.Add($"Contains unsafe code attribute: {attr.GetType().Name}");
-            }
-        }
-
-        // Evaluate suspicion level
-        if (suspiciousCount > 10)
-        {
-            result.IsAllowed = false;
-            result.SecurityLevel = SecurityLevel.Low;
-            result.Violations.Add($"Assembly contains too many suspicious patterns ({suspiciousCount} found)");
-        }
-        else if (suspiciousCount > 5)
+        catch (ReflectionTypeLoadException ex)
         {
             result.SecurityLevel = SecurityLevel.Medium;
-            result.Warnings.Add($"Assembly contains moderate suspicious patterns ({suspiciousCount} found)");
+            result.Warnings.Add($"Some types could not be loaded for analysis: {ex.LoaderExceptions.Length} errors");
         }
-        else if (suspiciousCount > 0)
+        catch (Exception ex)
         {
-            result.SecurityLevel = SecurityLevel.High;
-            result.Warnings.AddRange(warnings.Take(5)); // Limit warnings
+            result.SecurityLevel = SecurityLevel.Medium;
+            result.Warnings.Add($"Metadata analysis encountered issues: {ex.Message}");
         }
 
-        result.Metadata["SuspiciousPatternCount"] = suspiciousCount;
-        result.Metadata["TypeCount"] = assembly.GetTypes().Length;
+        return result;
     }
-    catch (ReflectionTypeLoadException ex)
-    {
-        result.SecurityLevel = SecurityLevel.Medium;
-        result.Warnings.Add($"Some types could not be loaded for analysis: {ex.LoaderExceptions.Length} errors");
-    }
-    catch (Exception ex)
-    {
-        result.SecurityLevel = SecurityLevel.Medium;
-        result.Warnings.Add($"Metadata analysis encountered issues: {ex.Message}");
-    }
-
-    return result;
-}
 }
 
 /// <summary>
@@ -365,81 +366,81 @@ public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext cont
 /// </summary>
 public sealed class DirectoryPolicySecurityRule : SecurityRule
 {
-private readonly Dictionary<string, SecurityLevel> _directoryPolicies;
+    private readonly Dictionary<string, SecurityLevel> _directoryPolicies;
 
-/// <summary>
-/// Initializes a new instance of the <see cref="DirectoryPolicySecurityRule"/> class.
-/// </summary>
-/// <param name="directoryPolicies">The directory policies to enforce.</param>
-public DirectoryPolicySecurityRule(Dictionary<string, SecurityLevel> directoryPolicies)
-{
-    _directoryPolicies = directoryPolicies ?? throw new ArgumentNullException(nameof(directoryPolicies));
-}
-
-/// <inheritdoc/>
-public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
-{
-    var result = new SecurityEvaluationResult();
-
-    try
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DirectoryPolicySecurityRule"/> class.
+    /// </summary>
+    /// <param name="directoryPolicies">The directory policies to enforce.</param>
+    public DirectoryPolicySecurityRule(Dictionary<string, SecurityLevel> directoryPolicies)
     {
-        var assemblyDir = Path.GetDirectoryName(context.AssemblyPath);
-        if (string.IsNullOrEmpty(assemblyDir))
+        _directoryPolicies = directoryPolicies ?? throw new ArgumentNullException(nameof(directoryPolicies));
+    }
+
+    /// <inheritdoc/>
+    public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
+    {
+        var result = new SecurityEvaluationResult();
+
+        try
+        {
+            var assemblyDir = Path.GetDirectoryName(context.AssemblyPath);
+            if (string.IsNullOrEmpty(assemblyDir))
+            {
+                result.IsAllowed = false;
+                result.SecurityLevel = SecurityLevel.Low;
+                result.Violations.Add("Cannot determine assembly directory");
+                return result;
+            }
+
+            assemblyDir = Path.GetFullPath(assemblyDir);
+
+            // Find the most specific directory policy that applies
+            SecurityLevel? applicableLevel = null;
+            string? matchedPolicy = null;
+
+            foreach (var policy in _directoryPolicies.OrderByDescending(p => p.Key.Length))
+            {
+                var policyDir = Path.GetFullPath(policy.Key);
+                if (assemblyDir.StartsWith(policyDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    applicableLevel = policy.Value;
+                    matchedPolicy = policy.Key;
+                    break;
+                }
+            }
+
+            if (applicableLevel.HasValue)
+            {
+                result.SecurityLevel = applicableLevel.Value;
+                result.Metadata["AppliedDirectoryPolicy"] = matchedPolicy!;  // Non-null because we checked HasValue
+
+                if (applicableLevel.Value == SecurityLevel.Low)
+                {
+                    result.IsAllowed = false;
+                    result.Violations.Add($"Assembly location '{assemblyDir}' is restricted by directory policy");
+                }
+                else if (applicableLevel.Value == SecurityLevel.Medium)
+                {
+                    result.Warnings.Add($"Assembly location '{assemblyDir}' has medium trust policy");
+                }
+            }
+            else
+            {
+                // No specific policy found - use default medium security level
+                result.SecurityLevel = SecurityLevel.Medium;
+                result.Warnings.Add($"No specific directory policy found for '{assemblyDir}', using default security level");
+            }
+        }
+        catch (Exception ex)
         {
             result.IsAllowed = false;
             result.SecurityLevel = SecurityLevel.Low;
-            result.Violations.Add("Cannot determine assembly directory");
-            return result;
+            result.Violations.Add($"Directory policy evaluation failed: {ex.Message}");
         }
 
-        assemblyDir = Path.GetFullPath(assemblyDir);
-
-        // Find the most specific directory policy that applies
-        SecurityLevel? applicableLevel = null;
-        string? matchedPolicy = null;
-
-        foreach (var policy in _directoryPolicies.OrderByDescending(p => p.Key.Length))
-        {
-            var policyDir = Path.GetFullPath(policy.Key);
-            if (assemblyDir.StartsWith(policyDir, StringComparison.OrdinalIgnoreCase))
-            {
-                applicableLevel = policy.Value;
-                matchedPolicy = policy.Key;
-                break;
-            }
-        }
-
-        if (applicableLevel.HasValue)
-        {
-            result.SecurityLevel = applicableLevel.Value;
-            result.Metadata["AppliedDirectoryPolicy"] = matchedPolicy!;  // Non-null because we checked HasValue
-            
-            if (applicableLevel.Value == SecurityLevel.Low)
-            {
-                result.IsAllowed = false;
-                result.Violations.Add($"Assembly location '{assemblyDir}' is restricted by directory policy");
-            }
-            else if (applicableLevel.Value == SecurityLevel.Medium)
-            {
-                result.Warnings.Add($"Assembly location '{assemblyDir}' has medium trust policy");
-            }
-        }
-        else
-        {
-            // No specific policy found - use default medium security level
-            result.SecurityLevel = SecurityLevel.Medium;
-            result.Warnings.Add($"No specific directory policy found for '{assemblyDir}', using default security level");
-        }
+        return result;
     }
-    catch (Exception ex)
-    {
-        result.IsAllowed = false;
-        result.SecurityLevel = SecurityLevel.Low;
-        result.Violations.Add($"Directory policy evaluation failed: {ex.Message}");
-    }
-
-    return result;
-}
 }
 
 /// <summary>
@@ -447,79 +448,79 @@ public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext cont
 /// </summary>
 public sealed class BlocklistSecurityRule : SecurityRule
 {
-private readonly HashSet<string> _blockedHashes;
-private readonly HashSet<string> _blockedNames;
+    private readonly HashSet<string> _blockedHashes;
+    private readonly HashSet<string> _blockedNames;
 
-/// <summary>
-/// Initializes a new instance of the <see cref="BlocklistSecurityRule"/> class.
-/// </summary>
-/// <param name="blockedHashes">Set of blocked assembly hashes.</param>
-/// <param name="blockedNames">Set of blocked assembly names.</param>
-public BlocklistSecurityRule(HashSet<string> blockedHashes, HashSet<string> blockedNames)
-{
-    _blockedHashes = blockedHashes ?? throw new ArgumentNullException(nameof(blockedHashes));
-    _blockedNames = blockedNames ?? throw new ArgumentNullException(nameof(blockedNames));
-}
-
-/// <inheritdoc/>
-public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
-{
-    var result = new SecurityEvaluationResult();
-
-    try
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BlocklistSecurityRule"/> class.
+    /// </summary>
+    /// <param name="blockedHashes">Set of blocked assembly hashes.</param>
+    /// <param name="blockedNames">Set of blocked assembly names.</param>
+    public BlocklistSecurityRule(HashSet<string> blockedHashes, HashSet<string> blockedNames)
     {
-        // Check assembly name
-        var assemblyName = Path.GetFileNameWithoutExtension(context.AssemblyPath);
-        if (_blockedNames.Contains(assemblyName))
-        {
-            result.IsAllowed = false;
-            result.SecurityLevel = SecurityLevel.Low;
-            result.Violations.Add($"Assembly name '{assemblyName}' is on the blocklist");
-            return result;
-        }
+        _blockedHashes = blockedHashes ?? throw new ArgumentNullException(nameof(blockedHashes));
+        _blockedNames = blockedNames ?? throw new ArgumentNullException(nameof(blockedNames));
+    }
 
-        // Check assembly hash if we have the bytes
-        if (context.AssemblyBytes != null)
+    /// <inheritdoc/>
+    public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
+    {
+        var result = new SecurityEvaluationResult();
+
+        try
         {
-            using var sha256 = SHA256.Create();
-            var hash = Convert.ToHexString(sha256.ComputeHash(context.AssemblyBytes));
-            
-            if (_blockedHashes.Contains(hash))
+            // Check assembly name
+            var assemblyName = Path.GetFileNameWithoutExtension(context.AssemblyPath);
+            if (_blockedNames.Contains(assemblyName))
             {
                 result.IsAllowed = false;
                 result.SecurityLevel = SecurityLevel.Low;
-                result.Violations.Add($"Assembly hash '{hash}' is on the blocklist");
+                result.Violations.Add($"Assembly name '{assemblyName}' is on the blocklist");
                 return result;
             }
-            
-            result.Metadata["AssemblyHash"] = hash;
-        }
-        else if (File.Exists(context.AssemblyPath))
-        {
-            // Compute hash from file
-            using var sha256 = SHA256.Create();
-            using var fileStream = File.OpenRead(context.AssemblyPath);
-            var hash = Convert.ToHexString(sha256.ComputeHash(fileStream));
-            
-            if (_blockedHashes.Contains(hash))
+
+            // Check assembly hash if we have the bytes
+            if (context.AssemblyBytes != null)
             {
-                result.IsAllowed = false;
-                result.SecurityLevel = SecurityLevel.Low;
-                result.Violations.Add($"Assembly hash '{hash}' is on the blocklist");
-                return result;
+                using var sha256 = SHA256.Create();
+                var hash = Convert.ToHexString(sha256.ComputeHash(context.AssemblyBytes));
+
+                if (_blockedHashes.Contains(hash))
+                {
+                    result.IsAllowed = false;
+                    result.SecurityLevel = SecurityLevel.Low;
+                    result.Violations.Add($"Assembly hash '{hash}' is on the blocklist");
+                    return result;
+                }
+
+                result.Metadata["AssemblyHash"] = hash;
             }
-            
-            result.Metadata["AssemblyHash"] = hash;
+            else if (File.Exists(context.AssemblyPath))
+            {
+                // Compute hash from file
+                using var sha256 = SHA256.Create();
+                using var fileStream = File.OpenRead(context.AssemblyPath);
+                var hash = Convert.ToHexString(sha256.ComputeHash(fileStream));
+
+                if (_blockedHashes.Contains(hash))
+                {
+                    result.IsAllowed = false;
+                    result.SecurityLevel = SecurityLevel.Low;
+                    result.Violations.Add($"Assembly hash '{hash}' is on the blocklist");
+                    return result;
+                }
+
+                result.Metadata["AssemblyHash"] = hash;
+            }
+
+            result.SecurityLevel = SecurityLevel.High;
+        }
+        catch (Exception ex)
+        {
+            result.SecurityLevel = SecurityLevel.Medium;
+            result.Warnings.Add($"Blocklist validation encountered issues: {ex.Message}");
         }
 
-        result.SecurityLevel = SecurityLevel.High;
+        return result;
     }
-    catch (Exception ex)
-    {
-        result.SecurityLevel = SecurityLevel.Medium;
-        result.Warnings.Add($"Blocklist validation encountered issues: {ex.Message}");
-    }
-
-    return result;
-}
 }

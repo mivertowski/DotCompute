@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Backends.Metal
 {
 

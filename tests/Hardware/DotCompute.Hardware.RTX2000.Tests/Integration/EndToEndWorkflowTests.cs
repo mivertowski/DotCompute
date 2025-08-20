@@ -410,6 +410,7 @@ public sealed class EndToEndWorkflowTests(ITestOutputHelper output) : IDisposabl
 
     public void Dispose()
         // Cleanup resources
+
         => GC.SuppressFinalize(this);
 }
 

@@ -20,7 +20,7 @@ namespace DotCompute.Core.Memory.P2P
         private readonly ConcurrentDictionary<string, P2PDeviceSyncState> _deviceSyncStates;
         private readonly SemaphoreSlim _synchronizerSemaphore;
         private readonly Timer? _syncMonitorTimer;
-        private P2PSyncStatistics _statistics;
+        private readonly P2PSyncStatistics _statistics;
         private bool _disposed;
 
         // Synchronization configuration
@@ -86,7 +86,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
         }
 
@@ -166,7 +166,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
         }
 
@@ -185,14 +185,14 @@ namespace DotCompute.Core.Memory.P2P
                 if (_barriers.TryRemove(barrierId, out var barrier))
                 {
                     barrier.BarrierState = P2PBarrierState.Completed;
-                    barrier.CompletionSource.TrySetResult(true);
+                    _ = barrier.CompletionSource.TrySetResult(true);
 
                     // Update device sync states
                     foreach (var deviceId in barrier.ParticipantDevices)
                     {
                         if (_deviceSyncStates.TryGetValue(deviceId, out var deviceState))
                         {
-                            deviceState.ActiveBarriers.Remove(barrierId);
+                            _ = deviceState.ActiveBarriers.Remove(barrierId);
                             deviceState.LastSyncOperation = DateTimeOffset.UtcNow;
                         }
                     }
@@ -210,7 +210,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
         }
 
@@ -294,7 +294,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
         }
 
@@ -328,7 +328,8 @@ namespace DotCompute.Core.Memory.P2P
                 }
 
                 barrier.ArrivedParticipants++;
-                
+
+
                 _logger.LogTrace("Device {DeviceId} arrived at barrier {BarrierId} ({Arrived}/{Expected})",
                     deviceId, barrierId, barrier.ArrivedParticipants, barrier.ExpectedParticipants);
 
@@ -336,7 +337,7 @@ namespace DotCompute.Core.Memory.P2P
                 if (barrier.ArrivedParticipants >= barrier.ExpectedParticipants)
                 {
                     barrier.BarrierState = P2PBarrierState.Completed;
-                    barrier.CompletionSource.TrySetResult(true);
+                    _ = barrier.CompletionSource.TrySetResult(true);
 
                     _logger.LogDebug("Barrier {BarrierId} completed - all participants arrived", barrierId);
 
@@ -355,7 +356,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
         }
 
@@ -377,7 +378,7 @@ namespace DotCompute.Core.Memory.P2P
                 using var timeoutCts = new CancellationTokenSource(barrier.TimeoutMs);
                 using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
-                await barrier.CompletionSource.Task.WaitAsync(combinedCts.Token);
+                _ = await barrier.CompletionSource.Task.WaitAsync(combinedCts.Token);
                 return barrier.BarrierState == P2PBarrierState.Completed;
             }
             catch (OperationCanceledException)
@@ -456,7 +457,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
         }
 
@@ -484,7 +485,7 @@ namespace DotCompute.Core.Memory.P2P
                 var waitingTasks = syncEvent.WaitingDevices.Values.ToList();
                 foreach (var tcs in waitingTasks)
                 {
-                    tcs.TrySetResult(true);
+                    _ = tcs.TrySetResult(true);
                 }
 
                 if (syncEvent.EventType == P2PSyncEventType.AutoReset)
@@ -506,7 +507,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
         }
 
@@ -545,7 +546,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
 
             try
@@ -553,13 +554,13 @@ namespace DotCompute.Core.Memory.P2P
                 using var timeoutCts = new CancellationTokenSource(timeoutMs);
                 using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
-                await waitTcs.Task.WaitAsync(combinedCts.Token);
+                _ = await waitTcs.Task.WaitAsync(combinedCts.Token);
                 return true;
             }
             catch (OperationCanceledException)
             {
                 // Remove from waiting list on timeout/cancellation
-                syncEvent.WaitingDevices.TryRemove(deviceId, out _);
+                _ = syncEvent.WaitingDevices.TryRemove(deviceId, out _);
                 return false;
             }
         }
@@ -605,7 +606,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
         }
 
@@ -639,7 +640,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
         }
 
@@ -688,14 +689,14 @@ namespace DotCompute.Core.Memory.P2P
                 if (_barriers.TryGetValue(barrierId, out var barrier) && barrier.BarrierState == P2PBarrierState.Active)
                 {
                     barrier.BarrierState = P2PBarrierState.TimedOut;
-                    barrier.CompletionSource.TrySetException(new TimeoutException($"Barrier {barrierId} timed out"));
+                    _ = barrier.CompletionSource.TrySetException(new TimeoutException($"Barrier {barrierId} timed out"));
 
                     // Update device sync states
                     foreach (var deviceId in barrier.ParticipantDevices)
                     {
                         if (_deviceSyncStates.TryGetValue(deviceId, out var deviceState))
                         {
-                            deviceState.ActiveBarriers.Remove(barrierId);
+                            _ = deviceState.ActiveBarriers.Remove(barrierId);
                         }
                     }
 
@@ -710,7 +711,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             finally
             {
-                _synchronizerSemaphore.Release();
+                _ = _synchronizerSemaphore.Release();
             }
         }
 
@@ -767,7 +768,7 @@ namespace DotCompute.Core.Memory.P2P
                 if (barrier.BarrierState == P2PBarrierState.Active)
                 {
                     barrier.BarrierState = P2PBarrierState.Cancelled;
-                    barrier.CompletionSource.TrySetCanceled();
+                    _ = barrier.CompletionSource.TrySetCanceled();
                 }
             }
 
@@ -775,7 +776,7 @@ namespace DotCompute.Core.Memory.P2P
             {
                 foreach (var tcs in syncEvent.WaitingDevices.Values)
                 {
-                    tcs.TrySetCanceled();
+                    _ = tcs.TrySetCanceled();
                 }
             }
 
@@ -786,7 +787,8 @@ namespace DotCompute.Core.Memory.P2P
             _synchronizerSemaphore.Dispose();
 
             _logger.LogDebug("P2P Synchronizer disposed");
-            
+
+
             return ValueTask.CompletedTask;
         }
     }

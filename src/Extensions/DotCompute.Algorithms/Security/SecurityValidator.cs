@@ -40,8 +40,9 @@ public sealed class SecurityValidator : IDisposable
         ["OpenProcess"] = ThreatLevel.High,
         ["Process.Start"] = ThreatLevel.High,
         ["ProcessStartInfo"] = ThreatLevel.Medium,
-        
+
         // Memory manipulation
+
         ["VirtualAlloc"] = ThreatLevel.Critical,
         ["VirtualAllocEx"] = ThreatLevel.Critical,
         ["WriteProcessMemory"] = ThreatLevel.Critical,
@@ -51,16 +52,18 @@ public sealed class SecurityValidator : IDisposable
         ["LoadLibraryEx"] = ThreatLevel.High,
         ["GetProcAddress"] = ThreatLevel.High,
         ["SetWindowsHookEx"] = ThreatLevel.Critical,
-        
+
         // Registry manipulation
+
         ["RegOpenKeyEx"] = ThreatLevel.High,
         ["RegSetValueEx"] = ThreatLevel.High,
         ["RegDeleteKey"] = ThreatLevel.High,
         ["Registry.SetValue"] = ThreatLevel.High,
         ["Registry.DeleteKey"] = ThreatLevel.High,
         ["RegistryKey"] = ThreatLevel.Medium,
-        
+
         // File system manipulation
+
         ["CreateFile"] = ThreatLevel.Medium,
         ["DeleteFile"] = ThreatLevel.Medium,
         ["MoveFile"] = ThreatLevel.Medium,
@@ -69,8 +72,9 @@ public sealed class SecurityValidator : IDisposable
         ["Directory.Delete"] = ThreatLevel.Medium,
         ["File.Move"] = ThreatLevel.Low,
         ["File.Copy"] = ThreatLevel.Low,
-        
+
         // Network operations
+
         ["InternetOpen"] = ThreatLevel.High,
         ["HttpSendRequest"] = ThreatLevel.High,
         ["WinHttpOpen"] = ThreatLevel.High,
@@ -81,14 +85,16 @@ public sealed class SecurityValidator : IDisposable
         ["HttpClient"] = ThreatLevel.Low,
         ["WebClient"] = ThreatLevel.Low,
         ["TcpClient"] = ThreatLevel.Low,
-        
+
         // Cryptography
+
         ["CryptAcquireContext"] = ThreatLevel.Medium,
         ["CryptGenKey"] = ThreatLevel.Medium,
         ["CryptEncrypt"] = ThreatLevel.Low,
         ["CryptDecrypt"] = ThreatLevel.Low,
-        
+
         // Code execution
+
         ["cmd.exe"] = ThreatLevel.Critical,
         ["powershell.exe"] = ThreatLevel.Critical,
         ["PowerShell"] = ThreatLevel.Critical,
@@ -99,22 +105,25 @@ public sealed class SecurityValidator : IDisposable
         ["mshta.exe"] = ThreatLevel.High,
         ["wscript.exe"] = ThreatLevel.High,
         ["cscript.exe"] = ThreatLevel.High,
-        
+
         // Reflection and dynamic execution
+
         ["Assembly.LoadFrom"] = ThreatLevel.High,
         ["Assembly.LoadFile"] = ThreatLevel.High,
         ["Activator.CreateInstance"] = ThreatLevel.Medium,
         ["Type.GetType"] = ThreatLevel.Medium,
         ["MethodInfo.Invoke"] = ThreatLevel.Medium,
         ["InvokeMember"] = ThreatLevel.Medium,
-        
+
         // Security bypass attempts
+
         ["AllowPartiallyTrustedCallers"] = ThreatLevel.High,
         ["SecurityCritical"] = ThreatLevel.Medium,
         ["SuppressUnmanagedCodeSecurity"] = ThreatLevel.High,
         ["UnverifiableCode"] = ThreatLevel.High,
-        
+
         // System information gathering
+
         ["GetSystemInfo"] = ThreatLevel.Low,
         ["GetVersionEx"] = ThreatLevel.Low,
         ["GetComputerName"] = ThreatLevel.Low,
@@ -141,18 +150,22 @@ public sealed class SecurityValidator : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? SecurityConfiguration.Default;
         _hashAlgorithm = SHA256.Create();
-        
+
         // Setup cache cleanup timer (runs every 30 minutes)
+
         _cacheCleanupTimer = new Timer(CleanupCache, null, TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(30));
-        
-        _logger.LogInformation("SecurityValidator initialized with configuration: {Configuration}", 
+
+
+        _logger.LogInformation("SecurityValidator initialized with configuration: {Configuration}",
+
             _configuration.GetHashCode());
     }
 
     /// <summary>
     /// Validates kernel code for security threats before compilation or execution.
     /// </summary>
-    public async Task<ValidationResult> ValidateKernelCodeAsync(string kernelCode, string kernelName, 
+    public async Task<ValidationResult> ValidateKernelCodeAsync(string kernelCode, string kernelName,
+
         CancellationToken cancellationToken = default)
     {
         if (_disposed)
@@ -176,7 +189,8 @@ public sealed class SecurityValidator : IDisposable
         try
         {
             _logger.LogInformation("Starting security validation for kernel: {KernelName}", kernelName);
-            
+
+
             var result = new ValidationResult
             {
                 ValidationType = ValidationType.KernelCode,
@@ -186,45 +200,54 @@ public sealed class SecurityValidator : IDisposable
 
             // 1. Static code analysis
             await AnalyzeStaticCodeAsync(kernelCode, result, cancellationToken);
-            
+
             // 2. Detect injection attacks
+
             DetectInjectionAttacks(kernelCode, result);
-            
+
             // 3. Check for infinite loops
+
             DetectInfiniteLoops(kernelCode, result);
-            
+
             // 4. Validate buffer operations
+
             ValidateBufferOperations(kernelCode, result);
-            
+
             // 5. Check resource usage patterns
+
             ValidateResourceUsage(kernelCode, result);
-            
+
             // 6. Determine overall security level
+
             result.SecurityLevel = GetMaxThreatLevel(result.SecurityThreats);
             result.IsValid = result.SecurityLevel <= _configuration.MaxAllowedThreatLevel;
             result.ValidationEndTime = DateTimeOffset.UtcNow;
-            
+
             // Cache the result if successful
+
             if (result.IsValid)
             {
-                _validationCache.TryAdd(cacheKey, result);
+                _ = _validationCache.TryAdd(cacheKey, result);
             }
-            
+
+
             _logger.LogInformation("Security validation completed for kernel: {KernelName}. Valid: {IsValid}, Level: {SecurityLevel}, Threats: {ThreatCount}",
                 kernelName, result.IsValid, result.SecurityLevel, result.SecurityThreats.Count);
-            
+
+
             return result;
         }
         finally
         {
-            _validationLock.Release();
+            _ = _validationLock.Release();
         }
     }
 
     /// <summary>
     /// Validates assembly files for malicious code, signature verification, and security compliance.
     /// </summary>
-    public async Task<ValidationResult> ValidateAssemblyAsync(string assemblyPath, 
+    public async Task<ValidationResult> ValidateAssemblyAsync(string assemblyPath,
+
         CancellationToken cancellationToken = default)
     {
         if (_disposed)
@@ -265,7 +288,8 @@ public sealed class SecurityValidator : IDisposable
         try
         {
             _logger.LogInformation("Starting security validation for assembly: {AssemblyPath}", assemblyPath);
-            
+
+
             var result = new ValidationResult
             {
                 ValidationType = ValidationType.Assembly,
@@ -294,46 +318,56 @@ public sealed class SecurityValidator : IDisposable
             {
                 await ValidateDigitalSignatureAsync(assemblyPath, result, cancellationToken);
             }
-            
+
             // 4. Metadata analysis
+
             await AnalyzeAssemblyMetadataAsync(assemblyPath, result, cancellationToken);
-            
+
             // 5. String and resource analysis
+
             await AnalyzeStringResourcesAsync(assemblyPath, result, cancellationToken);
-            
+
             // 6. Import/export analysis
+
             await AnalyzeImportsExportsAsync(assemblyPath, result, cancellationToken);
-            
+
             // 7. Entropy analysis (packed/encrypted detection)
+
             await AnalyzeEntropyAsync(assemblyPath, result, cancellationToken);
-            
+
             // 8. Determine overall security level
+
             result.SecurityLevel = GetMaxThreatLevel(result.SecurityThreats);
-            result.IsValid = result.SecurityLevel <= _configuration.MaxAllowedThreatLevel && 
+            result.IsValid = result.SecurityLevel <= _configuration.MaxAllowedThreatLevel &&
+
                            result.SecurityThreats.All(t => t.ThreatLevel <= _configuration.MaxAllowedThreatLevel);
             result.ValidationEndTime = DateTimeOffset.UtcNow;
-            
+
             // Cache the result if successful
+
             if (result.IsValid)
             {
-                _validationCache.TryAdd(cacheKey, result);
+                _ = _validationCache.TryAdd(cacheKey, result);
             }
-            
+
+
             _logger.LogInformation("Security validation completed for assembly: {AssemblyPath}. Valid: {IsValid}, Level: {SecurityLevel}, Threats: {ThreatCount}",
                 assemblyPath, result.IsValid, result.SecurityLevel, result.SecurityThreats.Count);
-            
+
+
             return result;
         }
         finally
         {
-            _validationLock.Release();
+            _ = _validationLock.Release();
         }
     }
 
     /// <summary>
     /// Validates runtime parameters for security compliance.
     /// </summary>
-    public async Task<ValidationResult> ValidateRuntimeParametersAsync(IDictionary<string, object> parameters, 
+    public async Task<ValidationResult> ValidateRuntimeParametersAsync(IDictionary<string, object> parameters,
+
         string context, CancellationToken cancellationToken = default)
     {
         if (_disposed)
@@ -350,7 +384,8 @@ public sealed class SecurityValidator : IDisposable
         try
         {
             _logger.LogDebug("Validating runtime parameters for context: {Context}", context);
-            
+
+
             var result = new ValidationResult
             {
                 ValidationType = ValidationType.RuntimeParameters,
@@ -363,16 +398,18 @@ public sealed class SecurityValidator : IDisposable
             {
                 ValidateParameter(key, value, result);
             }
-            
+
+
             result.SecurityLevel = GetMaxThreatLevel(result.SecurityThreats);
             result.IsValid = result.SecurityLevel <= _configuration.MaxAllowedThreatLevel;
             result.ValidationEndTime = DateTimeOffset.UtcNow;
-            
+
+
             return result;
         }
         finally
         {
-            _validationLock.Release();
+            _ = _validationLock.Release();
         }
     }
 
@@ -397,8 +434,9 @@ public sealed class SecurityValidator : IDisposable
                     });
                 }
             }
-            
+
             // Check regex patterns
+
             foreach (var (regex, threatLevel) in SuspiciousRegexPatterns)
             {
                 var matches = regex.Matches(code);
@@ -415,7 +453,8 @@ public sealed class SecurityValidator : IDisposable
             }
         }, cancellationToken);
     }
-    
+
+
     /// <summary>
     /// Detects potential injection attacks in the code.
     /// </summary>
@@ -427,7 +466,8 @@ public sealed class SecurityValidator : IDisposable
             "<script>", "javascript:", "eval(", "setTimeout(",
             "document.cookie", "window.location"
         };
-        
+
+
         foreach (var pattern in injectionPatterns)
         {
             if (code.Contains(pattern, StringComparison.OrdinalIgnoreCase))
@@ -442,7 +482,8 @@ public sealed class SecurityValidator : IDisposable
             }
         }
     }
-    
+
+
     /// <summary>
     /// Detects potential infinite loops in kernel code.
     /// </summary>
@@ -453,7 +494,8 @@ public sealed class SecurityValidator : IDisposable
             "while(true)", "while (true)", "for(;;)", "for (;;)",
             "while(1)", "while (1)"
         };
-        
+
+
         foreach (var pattern in infiniteLoopPatterns)
         {
             if (code.Contains(pattern, StringComparison.OrdinalIgnoreCase))
@@ -468,7 +510,8 @@ public sealed class SecurityValidator : IDisposable
             }
         }
     }
-    
+
+
     /// <summary>
     /// Validates buffer operations for potential overflows.
     /// </summary>
@@ -479,7 +522,8 @@ public sealed class SecurityValidator : IDisposable
             "strcpy(", "strcat(", "sprintf(", "gets(",
             "memcpy(", "memmove(", "unsafe"
         };
-        
+
+
         foreach (var pattern in bufferPatterns)
         {
             if (code.Contains(pattern, StringComparison.OrdinalIgnoreCase))
@@ -494,7 +538,8 @@ public sealed class SecurityValidator : IDisposable
             }
         }
     }
-    
+
+
     /// <summary>
     /// Validates resource usage patterns for abuse.
     /// </summary>
@@ -505,7 +550,8 @@ public sealed class SecurityValidator : IDisposable
             "Thread.Sleep(0)", "Task.Delay(0)", "Parallel.For",
             "new Thread(", "ThreadPool.QueueUserWorkItem"
         };
-        
+
+
         foreach (var pattern in resourcePatterns)
         {
             if (code.Contains(pattern, StringComparison.OrdinalIgnoreCase))
@@ -520,7 +566,8 @@ public sealed class SecurityValidator : IDisposable
             }
         }
     }
-    
+
+
     /// <summary>
     /// Validates file integrity using hash verification.
     /// </summary>
@@ -531,7 +578,8 @@ public sealed class SecurityValidator : IDisposable
             var fileInfo = new FileInfo(filePath);
             result.Metadata["FileSize"] = fileInfo.Length;
             result.Metadata["LastModified"] = fileInfo.LastWriteTime;
-            
+
+
             var fileBytes = await File.ReadAllBytesAsync(filePath, cancellationToken);
             var hash = _hashAlgorithm.ComputeHash(fileBytes);
             result.Metadata["SHA256Hash"] = Convert.ToHexString(hash);
@@ -547,7 +595,8 @@ public sealed class SecurityValidator : IDisposable
             });
         }
     }
-    
+
+
     /// <summary>
     /// Validates PE structure for malformations.
     /// </summary>
@@ -559,7 +608,8 @@ public sealed class SecurityValidator : IDisposable
             {
                 using var stream = File.OpenRead(assemblyPath);
                 using var peReader = new PEReader(stream);
-                
+
+
                 if (!peReader.HasMetadata)
                 {
                     result.SecurityThreats.Add(new SecurityThreat
@@ -570,7 +620,8 @@ public sealed class SecurityValidator : IDisposable
                         Location = assemblyPath
                     });
                 }
-                
+
+
                 result.Metadata["IsManagedAssembly"] = peReader.HasMetadata;
             }
             catch (Exception ex)
@@ -585,7 +636,8 @@ public sealed class SecurityValidator : IDisposable
             }
         }, cancellationToken);
     }
-    
+
+
     /// <summary>
     /// Validates digital signatures if required.
     /// </summary>
@@ -610,7 +662,8 @@ public sealed class SecurityValidator : IDisposable
                 {
                     certificate?.Dispose();
                 }
-                
+
+
                 if (_configuration.RequireSignedAssemblies && !(bool)(result.Metadata["IsSigned"] ?? false))
                 {
                     result.SecurityThreats.Add(new SecurityThreat
@@ -638,7 +691,8 @@ public sealed class SecurityValidator : IDisposable
             }
         }, cancellationToken);
     }
-    
+
+
     /// <summary>
     /// Analyzes assembly metadata for suspicious patterns.
     /// </summary>
@@ -650,9 +704,11 @@ public sealed class SecurityValidator : IDisposable
             {
                 var assembly = Assembly.LoadFrom(assemblyPath);
                 var types = assembly.GetTypes();
-                
+
+
                 result.Metadata["TypeCount"] = types.Length;
-                
+
+
                 foreach (var type in types)
                 {
                     if (type.Name.Contains("Malware", StringComparison.OrdinalIgnoreCase) ||
@@ -680,7 +736,8 @@ public sealed class SecurityValidator : IDisposable
             }
         }, cancellationToken);
     }
-    
+
+
     /// <summary>
     /// Analyzes strings and resources for malicious content.
     /// </summary>
@@ -693,7 +750,8 @@ public sealed class SecurityValidator : IDisposable
             result.Metadata["StringAnalysisCompleted"] = true;
         }, cancellationToken);
     }
-    
+
+
     /// <summary>
     /// Analyzes imports and exports for suspicious APIs.
     /// </summary>
@@ -706,7 +764,8 @@ public sealed class SecurityValidator : IDisposable
             result.Metadata["ImportAnalysisCompleted"] = true;
         }, cancellationToken);
     }
-    
+
+
     /// <summary>
     /// Analyzes file entropy for packed/encrypted detection.
     /// </summary>
@@ -719,8 +778,9 @@ public sealed class SecurityValidator : IDisposable
                 var fileBytes = File.ReadAllBytes(assemblyPath);
                 var entropy = CalculateEntropy(fileBytes);
                 result.Metadata["FileEntropy"] = entropy;
-                
+
                 // High entropy might indicate packing/encryption
+
                 if (entropy > 7.5)
                 {
                     result.SecurityThreats.Add(new SecurityThreat
@@ -744,7 +804,8 @@ public sealed class SecurityValidator : IDisposable
             }
         }, cancellationToken);
     }
-    
+
+
     /// <summary>
     /// Validates individual runtime parameters.
     /// </summary>
@@ -762,8 +823,9 @@ public sealed class SecurityValidator : IDisposable
                 Location = "Runtime parameters"
             });
         }
-        
+
         // Check string values for injection patterns
+
         if (value is string strValue)
         {
             var injectionPatterns = new[] { "<script>", "javascript:", "'; DROP", "SELECT * FROM" };
@@ -782,7 +844,8 @@ public sealed class SecurityValidator : IDisposable
             }
         }
     }
-    
+
+
     /// <summary>
     /// Calculates Shannon entropy of byte array.
     /// </summary>
@@ -799,10 +862,12 @@ public sealed class SecurityValidator : IDisposable
         {
             frequency[b]++;
         }
-        
+
+
         var entropy = 0.0;
         var length = data.Length;
-        
+
+
         for (var i = 0; i < 256; i++)
         {
             if (frequency[i] > 0)
@@ -811,7 +876,8 @@ public sealed class SecurityValidator : IDisposable
                 entropy -= p * Math.Log2(p);
             }
         }
-        
+
+
         return entropy;
     }
 
@@ -829,12 +895,14 @@ public sealed class SecurityValidator : IDisposable
                 .Where(kvp => DateTimeOffset.UtcNow - kvp.Value.ValidationStartTime > TimeSpan.FromHours(1))
                 .Select(kvp => kvp.Key)
                 .ToList();
-                
+
+
             foreach (var key in expiredKeys)
             {
-                _validationCache.TryRemove(key, out _);
+                _ = _validationCache.TryRemove(key, out _);
             }
-            
+
+
             _logger.LogDebug("Cleaned up {Count} expired cache entries", expiredKeys.Count);
         }
         catch (Exception ex)
@@ -881,7 +949,8 @@ public sealed class SecurityValidator : IDisposable
         _cacheCleanupTimer?.Dispose();
         _validationLock?.Dispose();
         _hashAlgorithm?.Dispose();
-        
+
+
         _logger.LogInformation("SecurityValidator disposed");
     }
 }

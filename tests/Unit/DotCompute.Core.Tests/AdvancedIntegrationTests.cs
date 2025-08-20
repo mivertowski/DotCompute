@@ -6,6 +6,9 @@ using Xunit.Abstractions;
 using DotCompute.Tests.Implementations.Kernels;
 using DotCompute.Tests.Implementations.Accelerators;
 
+using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 namespace DotCompute.Core.Tests;
 
 /// <summary>

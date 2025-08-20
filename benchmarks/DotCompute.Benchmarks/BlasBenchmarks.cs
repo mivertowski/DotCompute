@@ -28,6 +28,7 @@ namespace DotCompute.Benchmarks;
 internal sealed class BlasBenchmarks : IDisposable
 #pragma warning restore CA1812
 {
+
     /// <summary>
     /// 
     /// </summary>

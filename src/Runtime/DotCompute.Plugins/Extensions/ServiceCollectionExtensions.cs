@@ -22,7 +22,7 @@ public static class ServiceCollectionExtensions
         Action<PluginOptions>? configureOptions = null)
     {
         // Configure options
-        services.Configure<PluginOptions>(options =>
+        _ = services.Configure<PluginOptions>(options =>
         {
 #pragma warning disable IL2026, IL3050 // Members annotated with trimming attributes - Configuration binding requires dynamic code
             configuration.GetSection("Plugins").Bind(options);
@@ -31,7 +31,7 @@ public static class ServiceCollectionExtensions
         });
 
         // Register plugin system
-        services.AddSingleton<PluginSystem>();
+        _ = services.AddSingleton<PluginSystem>();
 
         return services;
     }
@@ -43,8 +43,8 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         Action<PluginOptions> configureOptions)
     {
-        services.Configure(configureOptions);
-        services.AddSingleton<PluginSystem>();
+        _ = services.Configure(configureOptions);
+        _ = services.AddSingleton<PluginSystem>();
         return services;
     }
 
@@ -57,7 +57,7 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        services.Configure<PluginOptions>(opts =>
+        _ = services.Configure<PluginOptions>(opts =>
         {
             opts.PluginsDirectory = options.PluginsDirectory;
             opts.EnableHotReload = options.EnableHotReload;
@@ -70,7 +70,7 @@ public static class ServiceCollectionExtensions
             opts.IsInitialized = options.IsInitialized;
         });
 
-        services.AddSingleton<PluginSystem>();
+        _ = services.AddSingleton<PluginSystem>();
         return services;
     }
 }

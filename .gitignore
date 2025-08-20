@@ -508,3 +508,5 @@ nupkgs/
 aot-test/
 arm-test/
 fix_quality_issues.sh
+scripts/update-namespace-references.ps1
+scripts/update-namespace-references.sh

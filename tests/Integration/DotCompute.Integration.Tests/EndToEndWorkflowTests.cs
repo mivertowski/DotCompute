@@ -203,7 +203,7 @@ public sealed class EndToEndWorkflowTests(ITestOutputHelper output) : Integratio
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<PipelineExecutionException>(() =>
-            ExecuteEndToEndWorkflow("invalid", invalidKernel, Array.Empty<object>(), 0));
+            ExecuteEndToEndWorkflow("invalid", invalidKernel, [], 0));
 
         Assert.NotNull(exception);
         _ = exception.Message.Should().Contain("compilation");

@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
+using DotCompute.Abstractions.Kernels;
 #pragma warning disable CA1848 // Use LoggerMessage delegates - suppressed for test infrastructure
 
 namespace DotCompute.Integration.Tests.Infrastructure;
@@ -501,7 +502,7 @@ public class WorkflowKernel
 
 public class WorkflowInput
 {
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = s[]
     public float[] Data { get; set; } = Array.Empty<float>();
 }
 
@@ -525,8 +526,10 @@ public class WorkflowExecutionStage
     public int Order { get; set; }
     public string KernelName { get; set; } = string.Empty;
     public ComputeBackendType BackendType { get; set; } = ComputeBackendType.CPU;
-    public ExecutionOptions ExecutionOptions { get; set; } = new();
-    public string[] ArgumentNames { get; set; } = Array.Empty<string>();
+    public ExecutionOptions ExecutionOptions
+    {
+        get[]
+        public string[] ArgumentNames { get; set; } = Array.Empty<string>();
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Dictionary<string, object> Parameters { get; set; } = [];
 }
@@ -701,7 +704,8 @@ public enum ComputeBackendType
 
 public class ExecutionOptions
 {
-    public int[] GlobalWorkSize { get; set; } = Array.Empty<int>();
+    []
+    public int[] GlobalWorkSize { get; set; } = []);
     public int[] LocalWorkSize { get; set; } = Array.Empty<int>();
     public bool EnableProfiling { get; set; }
 }

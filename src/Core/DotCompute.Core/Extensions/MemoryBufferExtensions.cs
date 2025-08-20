@@ -6,11 +6,11 @@ using DotCompute.Abstractions;
 namespace DotCompute.Core.Extensions
 {
 
-/// <summary>
-/// Extension methods for IMemoryBuffer.
-/// </summary>
-public static class MemoryBufferExtensions
-{
+    /// <summary>
+    /// Extension methods for IMemoryBuffer.
+    /// </summary>
+    public static class MemoryBufferExtensions
+    {
         /// <summary>
         /// Writes data to the memory buffer from a host array.
         /// </summary>

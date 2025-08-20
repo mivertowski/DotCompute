@@ -72,7 +72,8 @@ public class SecurityManager : IDisposable
                 return false;
             }
 
-            _logger.LogDebug("Assembly integrity validated successfully: {AssemblyPath} (Hash: {Hash})", 
+            _logger.LogDebug("Assembly integrity validated successfully: {AssemblyPath} (Hash: {Hash})",
+
                 assemblyPath, hash[..16] + "...");
 
             return true;
@@ -165,7 +166,8 @@ public class SecurityManager : IDisposable
             // Validate that required tables are present and have valid entries
             var assemblyDefinition = metadataReader.GetAssemblyDefinition();
             var assemblyName = metadataReader.GetString(assemblyDefinition.Name);
-            
+
+
             if (string.IsNullOrEmpty(assemblyName))
             {
                 return false; // Invalid assembly name
@@ -259,7 +261,8 @@ public class SecurityManager : IDisposable
             foreach (var handle in handles)
             {
                 var stringValue = metadataReader.GetUserString(handle).ToLowerInvariant();
-            
+
+
                 foreach (var suspicious in suspiciousStrings)
                 {
                     if (stringValue.Contains(suspicious))
@@ -286,7 +289,8 @@ public class SecurityManager : IDisposable
         foreach (var attrHandle in metadataReader.CustomAttributes)
         {
             var attr = metadataReader.GetCustomAttribute(attrHandle);
-            
+
+
             if (attr.Constructor.Kind == HandleKind.MemberReference)
             {
                 var memberRef = metadataReader.GetMemberReference((MemberReferenceHandle)attr.Constructor);
@@ -331,7 +335,8 @@ public class SecurityManager : IDisposable
     private RiskLevel CalculateRiskLevel(AssemblyMetadataAnalysis analysis)
     {
         var patternCount = analysis.SuspiciousPatterns.Count;
-        
+
+
         return patternCount switch
         {
             0 => RiskLevel.Low,

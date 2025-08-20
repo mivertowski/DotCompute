@@ -28,12 +28,16 @@ public sealed class MemoryProtection : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? MemoryProtectionConfiguration.Default;
-        
+
         // Start integrity monitoring
-        _integrityCheckTimer = new Timer(PerformIntegrityCheck, null, 
+
+        _integrityCheckTimer = new Timer(PerformIntegrityCheck, null,
+
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
-        
-        _logger.LogInformation("MemoryProtection initialized with configuration: {Configuration}", 
+
+
+        _logger.LogInformation("MemoryProtection initialized with configuration: {Configuration}",
+
             _configuration.ToString());
     }
 
@@ -45,7 +49,8 @@ public sealed class MemoryProtection : IDisposable
     /// <param name="canExecute">Whether the memory should be executable</param>
     /// <param name="identifier">Optional identifier for debugging</param>
     /// <returns>Protected memory allocation result</returns>
-    public async Task<ProtectedMemoryAllocation> AllocateProtectedMemoryAsync(nuint size, 
+    public async Task<ProtectedMemoryAllocation> AllocateProtectedMemoryAsync(nuint size,
+
         nuint alignment = 8, bool canExecute = false, string? identifier = null)
     {
         if (_disposed)
@@ -58,7 +63,8 @@ public sealed class MemoryProtection : IDisposable
         if (size == 0 || size > _configuration.MaxAllocationSize)
         {
 
-            throw new ArgumentOutOfRangeException(nameof(size), 
+            throw new ArgumentOutOfRangeException(nameof(size),
+
                 $"Size must be between 1 and {_configuration.MaxAllocationSize} bytes");
         }
 
@@ -102,10 +108,12 @@ public sealed class MemoryProtection : IDisposable
             InitializeCanaryValues(region);
 
             // Register the protected region
-            _protectedRegions.TryAdd(baseAddress, region);
-            _allocations.TryAdd(userDataPtr, new AllocationMetadata 
-            { 
-                Region = region, 
+            _ = _protectedRegions.TryAdd(baseAddress, region);
+            _ = _allocations.TryAdd(userDataPtr, new AllocationMetadata
+            {
+
+                Region = region,
+
                 AccessCount = 0,
                 LastAccess = DateTimeOffset.UtcNow
             });
@@ -126,7 +134,7 @@ public sealed class MemoryProtection : IDisposable
         }
         finally
         {
-            _allocationLock.Release();
+            _ = _allocationLock.Release();
         }
     }
 
@@ -170,7 +178,8 @@ public sealed class MemoryProtection : IDisposable
                 Region = region,
                 Operation = "Read"
             };
-            
+
+
             LogMemoryViolation(violation);
             throw new AccessViolationException($"Memory bounds violation: attempted to read {readSize} bytes at offset {offset}, but allocation is only {region.Size} bytes");
         }
@@ -185,7 +194,8 @@ public sealed class MemoryProtection : IDisposable
                 Region = region,
                 Operation = "Read"
             };
-            
+
+
             LogMemoryViolation(violation);
             throw new DataMisalignedException("Memory corruption detected during read operation");
         }
@@ -249,7 +259,8 @@ public sealed class MemoryProtection : IDisposable
                 Region = region,
                 Operation = "Write"
             };
-            
+
+
             LogMemoryViolation(violation);
             throw new AccessViolationException($"Memory bounds violation: attempted to write {writeSize} bytes at offset {offset}, but allocation is only {region.Size} bytes");
         }
@@ -264,7 +275,8 @@ public sealed class MemoryProtection : IDisposable
                 Region = region,
                 Operation = "Write"
             };
-            
+
+
             LogMemoryViolation(violation);
             throw new DataMisalignedException("Memory corruption detected before write operation");
         }
@@ -314,7 +326,7 @@ public sealed class MemoryProtection : IDisposable
                 return;
             }
 
-            _allocations.TryRemove(allocation.Address, out _);
+            _ = _allocations.TryRemove(allocation.Address, out _);
 
             // Verify integrity one final time
             if (_configuration.EnableIntegrityChecking && !VerifyCanaryValues(region))
@@ -336,7 +348,7 @@ public sealed class MemoryProtection : IDisposable
         }
         finally
         {
-            _allocationLock.Release();
+            _ = _allocationLock.Release();
         }
     }
 
@@ -365,8 +377,9 @@ public sealed class MemoryProtection : IDisposable
             }
 
             var region = metadata.Region;
-            
+
             // Check for potential buffer overflow
+
             if (size > region.Size)
             {
                 _logger.LogWarning("Potential buffer overflow detected: {Address:X}, RequestedSize={Size}, AllocatedSize={AllocatedSize}",
@@ -432,7 +445,7 @@ public sealed class MemoryProtection : IDisposable
         }
     }
 
-    private IntPtr AllocateWindowsMemory(nuint size, bool canExecute)
+    private static IntPtr AllocateWindowsMemory(nuint size, bool canExecute)
     {
         // Windows VirtualAlloc implementation
         const uint MEM_COMMIT = 0x1000;
@@ -448,7 +461,7 @@ public sealed class MemoryProtection : IDisposable
         return result;
     }
 
-    private IntPtr AllocateUnixMemory(nuint size, bool canExecute)
+    private static IntPtr AllocateUnixMemory(nuint size, bool canExecute)
     {
         // Unix mmap implementation
         const int PROT_READ = 0x1;
@@ -480,14 +493,14 @@ public sealed class MemoryProtection : IDisposable
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // Set guard pages to no access
-                VirtualProtect(beforeGuard, beforeSize, 0x01, out _); // PAGE_NOACCESS
-                VirtualProtect(afterGuard, afterSize, 0x01, out _); // PAGE_NOACCESS
+                _ = VirtualProtect(beforeGuard, beforeSize, 0x01, out _); // PAGE_NOACCESS
+                _ = VirtualProtect(afterGuard, afterSize, 0x01, out _); // PAGE_NOACCESS
             }
             else
             {
                 // Unix mprotect to remove all permissions
-                mprotect(beforeGuard, beforeSize, 0);
-                mprotect(afterGuard, afterSize, 0);
+                _ = mprotect(beforeGuard, beforeSize, 0);
+                _ = mprotect(afterGuard, afterSize, 0);
             }
 
             _logger.LogTrace("Guard pages configured: Before={BeforeAddress:X}, After={AfterAddress:X}",
@@ -563,8 +576,9 @@ public sealed class MemoryProtection : IDisposable
                 SecureWipePass(region.UserDataAddress, region.Size, 0xFF);
                 SecureWipePass(region.UserDataAddress, region.Size, 0xAA);
                 SecureWipePass(region.UserDataAddress, region.Size, 0x55);
-                
+
                 // Final random pass
+
                 var random = new byte[region.Size];
                 RandomNumberGenerator.Fill(random);
                 Marshal.Copy(random, 0, region.UserDataAddress, (int)region.Size);
@@ -586,8 +600,9 @@ public sealed class MemoryProtection : IDisposable
         {
             ptr[i] = pattern;
         }
-        
+
         // Ensure compiler doesn't optimize away the write
+
         MemoryBarrier();
     }
 
@@ -597,11 +612,11 @@ public sealed class MemoryProtection : IDisposable
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                VirtualFree(address, UIntPtr.Zero, 0x8000); // MEM_RELEASE
+                _ = VirtualFree(address, UIntPtr.Zero, 0x8000); // MEM_RELEASE
             }
             else
             {
-                munmap(address, size);
+                _ = munmap(address, size);
             }
         }
         catch (Exception ex)
@@ -612,7 +627,7 @@ public sealed class MemoryProtection : IDisposable
 
     private static nuint AlignSize(nuint size, nuint alignment) => (size + alignment - 1) & ~(alignment - 1);
 
-    private bool DetectSuspiciousAccessPattern(AllocationMetadata metadata, string operation)
+    private static bool DetectSuspiciousAccessPattern(AllocationMetadata metadata, string operation)
     {
         var region = metadata.Region;
         var now = DateTimeOffset.UtcNow;
@@ -636,11 +651,12 @@ public sealed class MemoryProtection : IDisposable
 
     private void LogMemoryViolation(MemoryViolation violation)
     {
-        Interlocked.Increment(ref _violationCount);
-        
+        _ = Interlocked.Increment(ref _violationCount);
+
+
         if (violation.ViolationType == MemoryViolationType.CorruptionDetected)
         {
-            Interlocked.Increment(ref _corruptionCount);
+            _ = Interlocked.Increment(ref _corruptionCount);
         }
 
         _logger.LogError("Memory violation detected: Type={ViolationType}, Address={Address:X}, Operation={Operation}, Size={Size}",
@@ -671,7 +687,8 @@ public sealed class MemoryProtection : IDisposable
             {
                 _logger.LogError("Integrity check failed: {Count} corrupted memory regions detected",
                     corruptedRegions.Count);
-                
+
+
                 foreach (var region in corruptedRegions)
                 {
                     _logger.LogError("Corrupted region: {Identifier}, Address={Address:X}, Size={Size}",
@@ -772,8 +789,8 @@ public sealed class MemoryProtectionConfiguration
     public nuint MaxAllocationSize { get; init; } = 1024 * 1024 * 1024;
     public nuint DefaultAlignment { get; init; } = 8;
 
-    public override string ToString() =>
-        $"Integrity={EnableIntegrityChecking}, SecureWipe={EnableSecureWiping}, GuardPages={EnableGuardPages}, MaxSize={MaxAllocationSize / (1024 * 1024)}MB";
+    public override string ToString()
+        => $"Integrity={EnableIntegrityChecking}, SecureWipe={EnableSecureWiping}, GuardPages={EnableGuardPages}, MaxSize={MaxAllocationSize / (1024 * 1024)}MB";
 }
 
 /// <summary>
@@ -851,5 +868,6 @@ public sealed class MemoryProtectionStatistics
     public int ViolationCount { get; init; }
     public int CorruptionDetectionCount { get; init; }
 }
+
 
 #endregion

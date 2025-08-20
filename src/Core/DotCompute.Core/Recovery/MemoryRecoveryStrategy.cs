@@ -66,12 +66,14 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
         CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
-        
+
+
         Logger.LogWarning("Memory error detected: {Error}. Available memory: {AvailableMemory}MB",
             error.Message, GC.GetTotalMemory(false) / 1024 / 1024);
 
         await _recoveryLock.WaitAsync(cancellationToken);
-        
+
+
         try
         {
             // Determine recovery strategy based on error type and system state
@@ -79,10 +81,12 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
             Logger.LogInformation("Using memory recovery strategy: {Strategy}", strategy);
 
             var result = await ExecuteMemoryRecoveryAsync(strategy, context, options, cancellationToken);
-            
+
+
             stopwatch.Stop();
             result.Duration = stopwatch.Elapsed;
-            
+
+
             if (result.Success)
             {
                 Logger.LogInformation("Memory recovery successful using {Strategy} in {Duration}ms. Memory after recovery: {MemoryAfter}MB",
@@ -93,7 +97,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
         }
         finally
         {
-            _recoveryLock.Release();
+            _ = _recoveryLock.Release();
         }
     }
 
@@ -107,8 +111,9 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
         CancellationToken cancellationToken = default) where T : class
     {
         var delay = baseDelay ?? _config.AllocationRetryDelay;
-        
-        for (int attempt = 1; attempt <= maxRetries; attempt++)
+
+
+        for (var attempt = 1; attempt <= maxRetries; attempt++)
         {
             try
             {
@@ -121,8 +126,9 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
 
                 // Perform emergency memory recovery
                 await PerformEmergencyMemoryRecoveryAsync(cancellationToken);
-                
+
                 // Exponential backoff with jitter
+
                 var actualDelay = TimeSpan.FromTicks((long)(delay.Ticks * Math.Pow(2, attempt - 1) * (0.8 + Random.Shared.NextDouble() * 0.4)));
                 await Task.Delay(actualDelay, cancellationToken);
             }
@@ -148,7 +154,8 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
         CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Starting memory defragmentation for pool: {PoolId}", poolId ?? "all");
-        
+
+
         var stopwatch = Stopwatch.StartNew();
         var memoryBefore = GC.GetTotalMemory(false);
 
@@ -198,8 +205,9 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
         {
             stopwatch.Stop();
             Logger.LogError(ex, "Memory defragmentation failed");
-            
+
             // Ensure emergency reserve is restored even on failure
+
             try { InitializeEmergencyReserve(); } catch { }
 
             return new MemoryDefragmentationResult
@@ -222,8 +230,9 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
     public void RegisterMemoryPool(string poolId, IMemoryPool pool)
     {
         var poolState = new MemoryPoolState(poolId, pool);
-        _memoryPools.TryAdd(poolId, poolState);
-        
+        _ = _memoryPools.TryAdd(poolId, poolState);
+
+
         Logger.LogDebug("Registered memory pool {PoolId} for recovery monitoring", poolId);
     }
 
@@ -237,14 +246,16 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
             Logger.LogDebug("Unregistered memory pool {PoolId}", poolId);
             return true;
         }
-        
+
+
         return false;
     }
 
     private MemoryRecoveryStrategyType DetermineMemoryRecoveryStrategy(Exception error, MemoryRecoveryContext context)
     {
         var pressure = _pressureMonitor.GetCurrentPressure();
-        
+
+
         return pressure.Level switch
         {
             MemoryPressureLevel.Critical => MemoryRecoveryStrategyType.EmergencyRecovery,
@@ -277,15 +288,18 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
             GC.Collect(1, GCCollectionMode.Optimized);
             GC.WaitForPendingFinalizers();
         }, cancellationToken);
-        
+
+
         return Success("Simple garbage collection completed", TimeSpan.FromMilliseconds(50));
     }
 
     private async Task<RecoveryResult> DefragmentationWithGCAsync(CancellationToken cancellationToken)
     {
         var result = await DefragmentMemoryAsync(cancellationToken: cancellationToken);
-        
-        return result.Success 
+
+
+        return result.Success
+
             ? Success($"Defragmentation completed, freed {result.MemoryFreed / 1024 / 1024}MB", result.Duration)
             : Failure($"Defragmentation failed: {result.Error}");
     }
@@ -293,8 +307,9 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
     private async Task<RecoveryResult> AggressiveCleanupAsync(MemoryRecoveryContext context, CancellationToken cancellationToken)
     {
         Logger.LogWarning("Performing aggressive memory cleanup due to high memory pressure");
-        
+
         // Clean up memory pools
+
         foreach (var poolState in _memoryPools.Values)
         {
             try
@@ -309,8 +324,10 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
 
         // Perform defragmentation
         var defragResult = await DefragmentMemoryAsync(cancellationToken: cancellationToken);
-        
-        return defragResult.Success 
+
+
+        return defragResult.Success
+
             ? Success($"Aggressive cleanup completed, freed {defragResult.MemoryFreed / 1024 / 1024}MB", defragResult.Duration)
             : Failure($"Aggressive cleanup failed: {defragResult.Error}");
     }
@@ -318,14 +335,17 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
     private async Task<RecoveryResult> EmergencyRecoveryAsync(MemoryRecoveryContext context, CancellationToken cancellationToken)
     {
         Logger.LogCritical("Performing emergency memory recovery due to critical memory pressure");
-        
+
+
         try
         {
             // Release emergency reserve immediately
             ReleaseEmergencyReserve();
-            
+
             // Emergency cleanup of all memory pools
-            var cleanupTasks = _memoryPools.Values.Select(pool => 
+
+            var cleanupTasks = _memoryPools.Values.Select(pool =>
+
                 Task.Run(async () =>
                 {
                     try
@@ -337,13 +357,15 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
                         Logger.LogError(ex, "Emergency cleanup failed for pool {PoolId}", pool.PoolId);
                     }
                 }, cancellationToken));
-            
+
+
             await Task.WhenAll(cleanupTasks.Take(10)); // Limit concurrent operations
-            
+
             // Aggressive garbage collection
+
             await Task.Run(() =>
             {
-                for (int i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
                     GC.Collect(2, GCCollectionMode.Aggressive, true, true);
                     GC.WaitForPendingFinalizers();
@@ -362,7 +384,8 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
                     // Ignore failures during emergency
                 }
             }, CancellationToken.None);
-            
+
+
             return Success("Emergency memory recovery completed", TimeSpan.FromSeconds(1));
         }
         catch (Exception ex)
@@ -376,14 +399,16 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
     {
         // Quick emergency cleanup without full recovery process
         ReleaseEmergencyReserve();
-        
+
+
         await Task.Run(() =>
         {
             GC.Collect(1, GCCollectionMode.Forced);
             GC.WaitForPendingFinalizers();
         }, cancellationToken);
-        
+
         // Try to restore reserve after cleanup
+
         _ = Task.Run(() =>
         {
             try { InitializeEmergencyReserve(); }
@@ -413,20 +438,23 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
     private async Task DefragmentGpuMemoryAsync(string poolId, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Performing GPU memory defragmentation for pool {PoolId}", poolId);
-        
+
+
         if (_memoryPools.TryGetValue(poolId, out var poolState))
         {
             await poolState.PerformDefragmentationAsync(cancellationToken);
         }
-        
+
         // Platform-specific GPU memory operations
+
         await Task.Delay(50, cancellationToken);
     }
 
     private void InitializeEmergencyReserve(int sizeMB = 0)
     {
         var targetSize = sizeMB > 0 ? sizeMB : _config.EmergencyReserveSizeMB;
-        
+
+
         lock (_reserveLock)
         {
             try
@@ -451,8 +479,9 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
                 var sizeMB = _emergencyReserve.Length / 1024 / 1024;
                 _emergencyReserve = null;
                 Logger.LogInformation("Released emergency memory reserve: {Size}MB", sizeMB);
-                
+
                 // Force GC to immediately reclaim the memory
+
                 GC.Collect(0, GCCollectionMode.Forced);
             }
         }
@@ -469,17 +498,19 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
         try
         {
             var pressure = _pressureMonitor.GetCurrentPressure();
-            
+
             // Only defragment if memory pressure is elevated
+
             if (pressure.Level >= MemoryPressureLevel.Medium)
             {
                 Logger.LogInformation("Performing scheduled memory defragmentation (pressure: {Level})", pressure.Level);
-                
+
+
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await DefragmentMemoryAsync();
+                        _ = await DefragmentMemoryAsync();
                     }
                     catch (Exception ex)
                     {
@@ -503,10 +534,12 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
             _pressureMonitor?.Dispose();
             ReleaseEmergencyReserve();
             _disposed = true;
-            
+
+
             Logger.LogInformation("Memory Recovery Strategy disposed");
         }
     }
 }
+
 
 // Additional supporting types continue in next file due to length...

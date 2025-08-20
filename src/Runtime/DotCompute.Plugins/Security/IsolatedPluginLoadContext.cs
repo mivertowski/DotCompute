@@ -27,7 +27,8 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
         string name,
         string pluginAssemblyPath,
         SandboxPermissions permissions,
-        ILogger logger) 
+        ILogger logger)
+
         : base(name, isCollectible: true)
     {
         _pluginAssemblyPath = pluginAssemblyPath ?? throw new ArgumentNullException(nameof(pluginAssemblyPath));
@@ -70,12 +71,15 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
                     throw new SecurityException($"Assembly security validation failed: {assemblyName}");
                 }
 
-                _loadedAssemblies.Add(assemblyKey);
+                _ = _loadedAssemblies.Add(assemblyKey);
                 var assembly = LoadFromAssemblyPath(assemblyPath);
-                
-                _logger.LogDebug("Successfully loaded assembly: {AssemblyName} from {Path}", 
+
+
+                _logger.LogDebug("Successfully loaded assembly: {AssemblyName} from {Path}",
+
                     assemblyName, assemblyPath);
-                
+
+
                 return assembly;
             }
 
@@ -156,7 +160,8 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
         }
 
         // Allow system assemblies and explicitly allowed assemblies
-        return IsSystemAssembly(assemblyName) || 
+        return IsSystemAssembly(assemblyName) ||
+
                _permissions.AllowedPermissions.Contains($"Assembly:{name}") ||
                _permissions.AllowedPermissions.Contains("LoadAllAssemblies");
     }
@@ -196,7 +201,8 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
             var fileInfo = new FileInfo(assemblyPath);
             if (fileInfo.Length > _permissions.ResourceLimits.MaxMemoryMB * 1024 * 1024)
             {
-                _logger.LogWarning("Assembly exceeds size limit: {Path} ({Size} bytes)", 
+                _logger.LogWarning("Assembly exceeds size limit: {Path} ({Size} bytes)",
+
                     assemblyPath, fileInfo.Length);
                 return false;
             }
@@ -204,7 +210,8 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
             // Check if path is safe (prevent path traversal)
             var fullPath = Path.GetFullPath(assemblyPath);
             var fileName = Path.GetFileName(fullPath);
-            
+
+
             if (fileName.Contains("..") || fileName.Contains("~") || fileName.StartsWith("."))
             {
                 _logger.LogWarning("Unsafe assembly path detected: {Path}", assemblyPath);
@@ -231,7 +238,8 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
     private static bool IsUnmanagedDllSafe(string dllName)
     {
         // Check for path traversal attacks
-        if (dllName.Contains("..") || dllName.Contains("~") || 
+        if (dllName.Contains("..") || dllName.Contains("~") ||
+
             dllName.Contains(":") || dllName.StartsWith("."))
         {
             return false;

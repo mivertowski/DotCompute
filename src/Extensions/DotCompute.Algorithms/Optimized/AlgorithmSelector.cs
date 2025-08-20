@@ -22,19 +22,23 @@ public static class AlgorithmSelector
     private static readonly bool _hasFma = Fma.IsSupported;
     private static readonly bool _hasSse42 = Sse42.IsSupported;
     private static readonly int _coreCount = Environment.ProcessorCount;
-    
+
     // Performance threshold tables (auto-tuned)
+
     private static readonly ConcurrentDictionary<string, PerformanceThresholds> _thresholds = new();
-    
+
     // Performance cache to avoid redundant measurements
+
     private static readonly ConcurrentDictionary<string, AlgorithmPerformance> _performanceCache = new();
-    
+
     // Auto-tuning state
+
     private static readonly object _tuningLock = new();
     private static bool _autoTuningEnabled = true;
     private static DateTime _lastTuning = DateTime.MinValue;
     private static readonly TimeSpan _tuningInterval = TimeSpan.FromHours(24);
-    
+
+
     /// <summary>
     /// Hardware capabilities and performance characteristics.
     /// </summary>
@@ -47,18 +51,21 @@ public static class AlgorithmSelector
         public static readonly long L1CacheSize = GetCacheSize(CacheLevel.L1);
         public static readonly long L2CacheSize = GetCacheSize(CacheLevel.L2);
         public static readonly long L3CacheSize = GetCacheSize(CacheLevel.L3);
-        
+
+
         private enum CacheLevel { L1, L2, L3 }
 
 
-        private static bool DetectHighMemoryBandwidth() =>
+        private static bool DetectHighMemoryBandwidth()
             // Simplified heuristic based on core count and architecture
-            _coreCount >= 8 && (_hasAvx2 || _hasFma);
+
+            => _coreCount >= 8 && (_hasAvx2 || _hasFma);
 
 
-        private static int CalculateOptimalThreadCount() =>
+        private static int CalculateOptimalThreadCount()
             // Conservative approach: use 75% of available cores for compute-intensive tasks
-            Math.Max(1, (int)(_coreCount * 0.75));
+
+            => Math.Max(1, (int)(_coreCount * 0.75));
 
 
         private static long GetCacheSize(CacheLevel level)
@@ -74,7 +81,8 @@ public static class AlgorithmSelector
             };
         }
     }
-    
+
+
     /// <summary>
     /// Performance thresholds for algorithm selection.
     /// </summary>
@@ -85,8 +93,10 @@ public static class AlgorithmSelector
         public readonly int CacheObliviousThreshold;
         public readonly int StrassenThreshold;
         public readonly int BlockedThreshold;
-        
-        public PerformanceThresholds(int simdThreshold, int parallelThreshold, 
+
+
+        public PerformanceThresholds(int simdThreshold, int parallelThreshold,
+
             int cacheObliviousThreshold, int strassenThreshold, int blockedThreshold)
         {
             SimdThreshold = simdThreshold;
@@ -96,7 +106,8 @@ public static class AlgorithmSelector
             BlockedThreshold = blockedThreshold;
         }
     }
-    
+
+
     /// <summary>
     /// Algorithm performance metadata.
     /// </summary>
@@ -107,8 +118,10 @@ public static class AlgorithmSelector
         public readonly double ThroughputMFLOPS;
         public readonly int InputSize;
         public readonly DateTime Timestamp;
-        
-        public AlgorithmPerformance(string algorithm, TimeSpan executionTime, 
+
+
+        public AlgorithmPerformance(string algorithm, TimeSpan executionTime,
+
             double throughputMFLOPS, int inputSize)
         {
             Algorithm = algorithm;
@@ -118,7 +131,8 @@ public static class AlgorithmSelector
             Timestamp = DateTime.UtcNow;
         }
     }
-    
+
+
     /// <summary>
     /// Matrix multiplication algorithm selector with auto-tuning.
     /// </summary>
@@ -130,48 +144,58 @@ public static class AlgorithmSelector
     {
         var thresholds = GetOrCreateThresholds("MatrixMultiply");
         var totalSize = (long)rows * cols * inner;
-        
+
         // Check for auto-tuning opportunity
+
         if (_autoTuningEnabled && ShouldRunAutoTuning("MatrixMultiply"))
         {
             AutoTuneMatrixMultiply(rows, cols, inner);
         }
-        
+
         // Algorithm selection based on problem characteristics
+
         if (rows <= 4 && cols <= 4 && inner <= 4)
         {
             return MatrixMultiplyStrategy.Micro;
         }
-        
-        if (IsSquareAndPowerOfTwo(Math.Min(Math.Min(rows, cols), inner)) && 
+
+
+        if (IsSquareAndPowerOfTwo(Math.Min(Math.Min(rows, cols), inner)) &&
+
             Math.Min(Math.Min(rows, cols), inner) >= thresholds.StrassenThreshold)
         {
             return MatrixMultiplyStrategy.Strassen;
         }
-        
+
+
         if (totalSize >= thresholds.CacheObliviousThreshold)
         {
             return MatrixMultiplyStrategy.CacheOblivious;
         }
-        
+
+
         if (totalSize >= thresholds.ParallelThreshold && HardwareProfile.SupportsParallelism)
         {
             return MatrixMultiplyStrategy.ParallelBlocked;
         }
-        
+
+
         if (totalSize >= thresholds.BlockedThreshold)
         {
             return MatrixMultiplyStrategy.Blocked;
         }
-        
+
+
         if (totalSize >= thresholds.SimdThreshold && HardwareProfile.HasVectorInstructions)
         {
             return MatrixMultiplyStrategy.SIMD;
         }
-        
+
+
         return MatrixMultiplyStrategy.Standard;
     }
-    
+
+
     /// <summary>
     /// FFT algorithm selector with mixed-radix support.
     /// </summary>
@@ -181,7 +205,8 @@ public static class AlgorithmSelector
     public static FFTStrategy SelectFFTAlgorithm(int size, bool isReal = false)
     {
         var thresholds = GetOrCreateThresholds("FFT");
-        
+
+
         if (size <= 1)
         {
 
@@ -207,7 +232,8 @@ public static class AlgorithmSelector
                 return FFTStrategy.Bluestein;
             }
         }
-        
+
+
         if (size >= thresholds.CacheObliviousThreshold)
         {
 
@@ -224,7 +250,8 @@ public static class AlgorithmSelector
 
         return FFTStrategy.CooleyTukey;
     }
-    
+
+
     /// <summary>
     /// BLAS operation selector based on vector/matrix dimensions.
     /// </summary>
@@ -234,7 +261,8 @@ public static class AlgorithmSelector
     public static BLASStrategy SelectBLASAlgorithm(BLASOperation operation, int size)
     {
         var thresholds = GetOrCreateThresholds($"BLAS_{operation}");
-        
+
+
         return operation switch
         {
             BLASOperation.DOT when size >= thresholds.SimdThreshold => BLASStrategy.SimdVectorized,
@@ -246,7 +274,8 @@ public static class AlgorithmSelector
             _ => BLASStrategy.Standard
         };
     }
-    
+
+
     /// <summary>
     /// Parallel algorithm selector based on problem size and hardware.
     /// </summary>
@@ -257,25 +286,30 @@ public static class AlgorithmSelector
     {
         var thresholds = GetOrCreateThresholds("Parallel");
         var adjustedSize = (int)(problemSize * computeIntensity);
-        
+
+
         if (!HardwareProfile.SupportsParallelism || adjustedSize < thresholds.ParallelThreshold)
         {
             return ParallelStrategy.Sequential;
         }
-        
+
+
         if (adjustedSize >= thresholds.ParallelThreshold * 10)
         {
             return ParallelStrategy.WorkStealing;
         }
-        
+
+
         if (_coreCount >= 8 && adjustedSize >= thresholds.ParallelThreshold * 4)
         {
             return ParallelStrategy.ForkJoin;
         }
-        
+
+
         return ParallelStrategy.TaskParallel;
     }
-    
+
+
     /// <summary>
     /// Enables or disables auto-tuning of performance thresholds.
     /// </summary>
@@ -287,7 +321,8 @@ public static class AlgorithmSelector
             _autoTuningEnabled = enabled;
         }
     }
-    
+
+
     /// <summary>
     /// Manually triggers auto-tuning for all algorithms.
     /// </summary>
@@ -297,27 +332,32 @@ public static class AlgorithmSelector
         {
             Console.WriteLine("Starting algorithm auto-tuning...");
             var stopwatch = Stopwatch.StartNew();
-            
+
             // Auto-tune different algorithm categories
+
             AutoTuneMatrixMultiply(1024, 1024, 1024);
             AutoTuneFFT(1024);
             AutoTuneBLAS(1024);
-            
+
+
             stopwatch.Stop();
             Console.WriteLine($"Auto-tuning completed in {stopwatch.ElapsedMilliseconds}ms");
-            
+
+
             _lastTuning = DateTime.UtcNow;
         }
     }
-    
+
     #region Auto-Tuning Implementation
-    
+
+
     private static void AutoTuneMatrixMultiply(int rows, int cols, int inner)
     {
         var testSizes = new[] { 64, 128, 256, 512, 1024 };
         var strategies = Enum.GetValues<MatrixMultiplyStrategy>();
         var results = new List<(MatrixMultiplyStrategy Strategy, int Size, double Performance)>();
-        
+
+
         foreach (var size in testSizes)
         {
             if (size > Math.Max(rows, Math.Max(cols, inner)))
@@ -328,7 +368,8 @@ public static class AlgorithmSelector
 
             var testA = CreateRandomMatrix(size, size);
             var testB = CreateRandomMatrix(size, size);
-            
+
+
             foreach (var strategy in strategies)
             {
                 if (!IsStrategyApplicable(strategy, size, size, size))
@@ -341,21 +382,25 @@ public static class AlgorithmSelector
                 results.Add((strategy, size, performance));
             }
         }
-        
+
         // Analyze results and update thresholds
+
         UpdateMatrixMultiplyThresholds(results);
     }
-    
+
+
     private static void AutoTuneFFT(int maxSize)
     {
         var testSizes = GenerateFFTTestSizes(maxSize);
         var strategies = Enum.GetValues<FFTStrategy>();
         var results = new List<(FFTStrategy Strategy, int Size, double Performance)>();
-        
+
+
         foreach (var size in testSizes)
         {
             var testData = CreateRandomComplexArray(size);
-            
+
+
             foreach (var strategy in strategies)
             {
                 if (!IsFFTStrategyApplicable(strategy, size))
@@ -368,19 +413,23 @@ public static class AlgorithmSelector
                 results.Add((strategy, size, performance));
             }
         }
-        
+
+
         UpdateFFTThresholds(results);
     }
-    
+
+
     private static void AutoTuneBLAS(int maxSize)
     {
         var testSizes = new[] { 32, 64, 128, 256, 512, 1024 };
         var operations = Enum.GetValues<BLASOperation>();
-        
+
+
         foreach (var operation in operations)
         {
             var results = new List<(BLASStrategy Strategy, int Size, double Performance)>();
-            
+
+
             foreach (var size in testSizes)
             {
                 if (size > maxSize)
@@ -392,7 +441,8 @@ public static class AlgorithmSelector
                 var performance = BenchmarkBLASOperation(operation, size);
                 results.Add((BLASStrategy.Standard, size, performance));
             }
-            
+
+
             UpdateBLASThresholds(operation, results);
         }
     }
@@ -410,7 +460,8 @@ public static class AlgorithmSelector
         // Hardware-specific default thresholds
         var simdMultiplier = _hasAvx2 ? 1.0f : _hasSse42 ? 1.5f : 2.0f;
         var coreMultiplier = Math.Max(1.0f, _coreCount / 4.0f);
-        
+
+
         return algorithmType switch
         {
             "MatrixMultiply" => new PerformanceThresholds(
@@ -437,10 +488,12 @@ public static class AlgorithmSelector
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsPowerOfTwo(int n) => n > 0 && (n & (n - 1)) == 0;
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsSquareAndPowerOfTwo(int n) => IsPowerOfTwo(n);
-    
+
+
     private static bool CanFactorizeEfficiently(int n)
     {
         // Check if n can be factorized into small primes (2, 3, 5, 7)
@@ -454,12 +507,14 @@ public static class AlgorithmSelector
         }
         return n == 1;
     }
-    
+
+
     private static Matrix CreateRandomMatrix(int rows, int cols)
     {
         var matrix = new Matrix(rows, cols);
         var random = new Random(42); // Fixed seed for reproducible benchmarks
-        
+
+
         for (var i = 0; i < rows; i++)
         {
             for (var j = 0; j < cols; j++)
@@ -467,45 +522,55 @@ public static class AlgorithmSelector
                 matrix[i, j] = (float)random.NextDouble();
             }
         }
-        
+
+
         return matrix;
     }
-    
+
+
     private static System.Numerics.Complex[] CreateRandomComplexArray(int size)
     {
         var array = new System.Numerics.Complex[size];
         var random = new Random(42);
-        
+
+
         for (var i = 0; i < size; i++)
         {
             array[i] = new System.Numerics.Complex(random.NextDouble(), random.NextDouble());
         }
-        
+
+
         return array;
     }
-    
+
+
     private static int[] GenerateFFTTestSizes(int maxSize)
     {
         var sizes = new List<int>();
-        
+
         // Power of 2 sizes
+
         for (var size = 16; size <= maxSize; size *= 2)
         {
             sizes.Add(size);
         }
-        
+
         // Mixed-radix sizes
+
         var mixedRadix = new[] { 12, 18, 20, 24, 36, 40, 48, 60, 72, 80, 96 };
         sizes.AddRange(mixedRadix.Where(s => s <= maxSize));
-        
+
+
         return [.. sizes];
     }
-    
+
+
     private static double BenchmarkMatrixMultiply(Matrix a, Matrix b, MatrixMultiplyStrategy strategy)
     {
         // Simplified benchmarking - would use more sophisticated timing in production
         var stopwatch = Stopwatch.StartNew();
-        
+
+
         try
         {
             switch (strategy)
@@ -517,7 +582,7 @@ public static class AlgorithmSelector
                     MatrixOptimizations.BlockedMultiply(a, b, new Matrix(a.Rows, b.Columns));
                     break;
                 default:
-                    MatrixOptimizations.OptimizedMultiply(a, b);
+                    _ = MatrixOptimizations.OptimizedMultiply(a, b);
                     break;
             }
         }
@@ -525,17 +590,20 @@ public static class AlgorithmSelector
         {
             return 0; // Strategy failed
         }
-        
+
+
         stopwatch.Stop();
         var flops = 2.0 * a.Rows * b.Columns * a.Columns;
         return flops / stopwatch.Elapsed.TotalSeconds / 1e6; // MFLOPS
     }
-    
+
+
     private static double BenchmarkFFT(System.Numerics.Complex[] data, FFTStrategy strategy)
     {
         var dataCopy = data.ToArray();
         var stopwatch = Stopwatch.StartNew();
-        
+
+
         try
         {
             var complexSpan = dataCopy.AsSpan();
@@ -550,16 +618,18 @@ public static class AlgorithmSelector
         {
             return 0;
         }
-        
+
+
         stopwatch.Stop();
         var flops = 5.0 * data.Length * Math.Log2(data.Length); // Approximate FFT FLOPs
         return flops / stopwatch.Elapsed.TotalSeconds / 1e6;
     }
 
 
-    private static double BenchmarkBLASOperation(BLASOperation operation, int size) =>
+    private static double BenchmarkBLASOperation(BLASOperation operation, int size)
         // Simplified BLAS benchmarking
-        size * 1000.0 / (size + 100); // Placeholder performance model
+
+        => size * 1000.0 / (size + 100); // Placeholder performance model
 
 
     private static bool IsStrategyApplicable(MatrixMultiplyStrategy strategy, int rows, int cols, int inner)
@@ -572,7 +642,8 @@ public static class AlgorithmSelector
             _ => true
         };
     }
-    
+
+
     private static bool IsFFTStrategyApplicable(FFTStrategy strategy, int size)
     {
         return strategy switch
@@ -583,12 +654,14 @@ public static class AlgorithmSelector
             _ => true
         };
     }
-    
+
     // Placeholder methods for threshold updates
+
     private static void UpdateMatrixMultiplyThresholds(List<(MatrixMultiplyStrategy Strategy, int Size, double Performance)> results) { }
     private static void UpdateFFTThresholds(List<(FFTStrategy Strategy, int Size, double Performance)> results) { }
     private static void UpdateBLASThresholds(BLASOperation operation, List<(BLASStrategy Strategy, int Size, double Performance)> results) { }
-    
+
+
     #endregion
 }
 

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 /// Example demonstrating dynamic kernel generation from LINQ expression trees.
 /// This shows how expressions are analyzed, optimized, fused, and compiled into GPU kernels.
 /// </summary>
+using DotCompute.Abstractions.Kernels;
 internal sealed class Program
 {
     private static readonly int[] _sampleNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];

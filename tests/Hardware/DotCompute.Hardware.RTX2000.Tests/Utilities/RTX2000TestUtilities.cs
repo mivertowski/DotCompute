@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Hardware.RTX2000.Tests.Utilities;
 
 
@@ -351,6 +352,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 
     private static async Task ExecuteKernel(CompiledKernel kernel, KernelLaunchParameters launchParams, nint[] parameters)
         // Mock kernel execution
+
         => await Task.Delay(1);
 
     private static void CudaContextSynchronize()
@@ -391,7 +393,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
     internal sealed class CompiledKernel : IEquatable<CompiledKernel>
     {
         public string Name { get; set; } = string.Empty;
-        public string Source { get; set; } = string.Empty;
+        public string Source { get; set; } = string.Empty; []
         public string[] CompilationOptions { get; set; } = Array.Empty<string>();
         public bool IsCompiled { get; set; }
         public nint ModuleHandle { get; set; }
@@ -451,8 +453,10 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public double AverageTimeMicroseconds { get; set; }
         public double MinTimeMicroseconds { get; set; }
         public double MaxTimeMicroseconds { get; set; }
-        public double StandardDeviation { get; set; }
-        public double[] AllTimes { get; set; } = Array.Empty<double>();
+        public double StandardDeviation
+        {
+            get; se []
+            public double[] AllTimes { get; set; } = Array.Empty<double>();
 
         public bool Equals(KernelExecutionResult? other)
         {

@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Plugins.Tests;
 
 
@@ -52,6 +53,7 @@ public sealed class BaseBackendPluginTests
 
         protected override void RegisterAccelerator(IServiceCollection services, IConfiguration configuration)
             // Register a test accelerator for testing
+
             => services.AddSingleton<TestAccelerator>();
     }
 
@@ -244,6 +246,7 @@ public sealed class NamedAcceleratorWrapperTests
     [Fact]
     public void Constructor_ShouldThrowOnNullAccelerator()
         // Act & Assert
+
         => Assert.Throws<ArgumentNullException>(() => new NamedAcceleratorWrapper("test", null!));
 
     [Fact]

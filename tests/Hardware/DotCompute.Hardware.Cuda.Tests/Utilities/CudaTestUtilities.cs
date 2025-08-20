@@ -11,6 +11,7 @@ using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
 using DotCompute.Tests.Common;
 
+using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Hardware.Cuda.Tests.Utilities;
 
 
@@ -118,6 +119,7 @@ public static class CudaTestUtilities
     /// </summary>
     public static bool SupportsTensorCores(int deviceId)
         // Tensor Cores are available on compute capability 7.0+(Volta, Turing, Ampere, etc.)
+
         => SupportsComputeCapability(deviceId, 7, 0);
 
     /// <summary>

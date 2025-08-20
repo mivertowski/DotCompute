@@ -11,5 +11,5 @@ namespace DotCompute.Backends.Metal.Native;
 /// </summary>
 internal static class MetalLibraryImportAttribute
 {
-public const DllImportSearchPath SearchPath = DllImportSearchPath.SafeDirectories | DllImportSearchPath.AssemblyDirectory;
+    public const DllImportSearchPath SearchPath = DllImportSearchPath.SafeDirectories | DllImportSearchPath.AssemblyDirectory;
 }

@@ -40,14 +40,18 @@ public sealed class MemorySanitizer : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? MemorySanitizerConfiguration.Default;
         _randomGenerator = RandomNumberGenerator.Create();
-        
+
         // Initialize monitoring timers
-        _leakDetectionTimer = new Timer(DetectMemoryLeaks, null, 
+
+        _leakDetectionTimer = new Timer(DetectMemoryLeaks, null,
+
             TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
         _integrityCheckTimer = new Timer(PerformIntegrityCheck, null,
             TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
-        
-        _logger.LogInformation("MemorySanitizer initialized with configuration: {Configuration}", 
+
+
+        _logger.LogInformation("MemorySanitizer initialized with configuration: {Configuration}",
+
             _configuration.ToString());
     }
 
@@ -61,9 +65,11 @@ public sealed class MemorySanitizer : IDisposable
     /// <param name="callerFile">Automatically captured caller file path</param>
     /// <param name="callerLine">Automatically captured caller line number</param>
     /// <returns>Sanitized memory allocation result</returns>
-    public async Task<SanitizedMemoryResult> AllocateSanitizedMemoryAsync(nuint size, 
+    public async Task<SanitizedMemoryResult> AllocateSanitizedMemoryAsync(nuint size,
+
         DataClassification classification = DataClassification.Sensitive, string? identifier = null,
-        [CallerMemberName] string callerMethod = "", [CallerFilePath] string callerFile = "", 
+        [CallerMemberName] string callerMethod = "", [CallerFilePath] string callerFile = "",
+
         [CallerLineNumber] int callerLine = 0)
     {
         if (_disposed)
@@ -76,7 +82,8 @@ public sealed class MemorySanitizer : IDisposable
         if (size == 0 || size > _configuration.MaxAllocationSize)
         {
 
-            throw new ArgumentOutOfRangeException(nameof(size), 
+            throw new ArgumentOutOfRangeException(nameof(size),
+
                 $"Size must be between 1 and {_configuration.MaxAllocationSize}");
         }
 
@@ -140,16 +147,17 @@ public sealed class MemorySanitizer : IDisposable
             };
 
             // Register the allocation
-            _trackedAllocations.TryAdd(userPtr, allocation);
+            _ = _trackedAllocations.TryAdd(userPtr, allocation);
 
             result.Address = userPtr;
             result.ActualSize = size;
             result.IsSuccessful = true;
-            
+
             // Update statistics
-            Interlocked.Increment(ref _statistics.TotalAllocations);
-            Interlocked.Add(ref _statistics.TotalBytesAllocated, (long)size);
-            _statistics.AllocationsByClassification.AddOrUpdate(classification, 1, (key, value) => value + 1);
+
+            _ = Interlocked.Increment(ref _statistics.TotalAllocations);
+            _ = Interlocked.Add(ref _statistics.TotalBytesAllocated, (long)size);
+            _ = _statistics.AllocationsByClassification.AddOrUpdate(classification, 1, (key, value) => value + 1);
 
             _logger.LogDebug("Sanitized memory allocated: Address={Address:X}, Size={Size}, Id={Identifier}",
                 userPtr.ToInt64(), size, result.Identifier);
@@ -158,7 +166,7 @@ public sealed class MemorySanitizer : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -227,14 +235,17 @@ public sealed class MemorySanitizer : IDisposable
         try
         {
             var value = Unsafe.Read<T>((void*)readAddress);
-            
+
             // Update access tracking
+
             allocation.AccessCount++;
             allocation.LastAccessTime = DateTimeOffset.UtcNow;
-            
+
+
             _logger.LogTrace("Sanitized read successful: Address={Address:X}, Offset={Offset}, Size={Size}",
                 address.ToInt64(), offset, readSize);
-            
+
+
             return value;
         }
         catch (Exception ex)
@@ -309,11 +320,13 @@ public sealed class MemorySanitizer : IDisposable
         try
         {
             Unsafe.Write((void*)writeAddress, value);
-            
+
             // Update access tracking
+
             allocation.AccessCount++;
             allocation.LastAccessTime = DateTimeOffset.UtcNow;
-            
+
+
             _logger.LogTrace("Sanitized write successful: Address={Address:X}, Offset={Offset}, Size={Size}",
                 address.ToInt64(), offset, writeSize);
         }
@@ -407,10 +420,10 @@ public sealed class MemorySanitizer : IDisposable
             }
 
             // Remove from tracking
-            _trackedAllocations.TryRemove(address, out _);
+            _ = _trackedAllocations.TryRemove(address, out _);
 
             // Add to free history for double-free detection
-            _freeHistory.TryAdd(address, new FreeRecord
+            _ = _freeHistory.TryAdd(address, new FreeRecord
             {
                 Address = address,
                 Size = allocation.RequestedSize,
@@ -431,8 +444,8 @@ public sealed class MemorySanitizer : IDisposable
             result.SecurityLevel = allocation.Classification;
 
             // Update statistics
-            Interlocked.Increment(ref _statistics.TotalDeallocations);
-            Interlocked.Add(ref _statistics.TotalBytesFreed, (long)allocation.RequestedSize);
+            _ = Interlocked.Increment(ref _statistics.TotalDeallocations);
+            _ = Interlocked.Add(ref _statistics.TotalBytesFreed, (long)allocation.RequestedSize);
 
             _logger.LogDebug("Sanitized memory deallocated: Address={Address:X}, Size={Size}, Id={Identifier}",
                 address.ToInt64(), allocation.RequestedSize, allocation.Identifier);
@@ -441,7 +454,7 @@ public sealed class MemorySanitizer : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -511,7 +524,7 @@ public sealed class MemorySanitizer : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -533,18 +546,21 @@ public sealed class MemorySanitizer : IDisposable
             DoubleFreeAttempts = _statistics.DoubleFreeAttempts,
             UseAfterFreeAttempts = _statistics.UseAfterFreeAttempts
         };
-        
+
         // Populate the read-only dictionaries
+
         foreach (var kvp in _statistics.AllocationsByClassification)
         {
-            stats.AllocationsByClassification.TryAdd(kvp.Key, kvp.Value);
+            _ = stats.AllocationsByClassification.TryAdd(kvp.Key, kvp.Value);
         }
-        
+
+
         foreach (var kvp in _statistics.ViolationsByType)
         {
-            stats.ViolationsByType.TryAdd(kvp.Key, kvp.Value);
+            _ = stats.ViolationsByType.TryAdd(kvp.Key, kvp.Value);
         }
-        
+
+
         return stats;
     }
 
@@ -578,7 +594,8 @@ public sealed class MemorySanitizer : IDisposable
         });
     }
 
-    private async Task InitializeSecureMemoryAsync(IntPtr basePtr, IntPtr userPtr, nuint userSize, 
+    private async Task InitializeSecureMemoryAsync(IntPtr basePtr, IntPtr userPtr, nuint userSize,
+
         nuint totalSize, nuint guardSize, nuint canarySize)
     {
         await Task.Run(() =>
@@ -631,7 +648,7 @@ public sealed class MemorySanitizer : IDisposable
                 if (guardSize > 0)
                 {
                     var trailingGuardStart = totalSize - guardSize;
-                    for (nuint i = trailingGuardStart; i < totalSize; i++)
+                    for (var i = trailingGuardStart; i < totalSize; i++)
                     {
                         ptr[i] = GUARD_PATTERN;
                     }
@@ -717,7 +734,7 @@ public sealed class MemorySanitizer : IDisposable
                 var size = allocation.RequestedSize;
 
                 // Multiple-pass secure wipe
-                for (int pass = 0; pass < passes; pass++)
+                for (var pass = 0; pass < passes; pass++)
                 {
                     byte pattern = pass switch
                     {
@@ -760,7 +777,7 @@ public sealed class MemorySanitizer : IDisposable
         }
     }
 
-    private double CalculateSuspicionLevel(SanitizedAllocation allocation, TimeSpan age, TimeSpan timeSinceAccess)
+    private static double CalculateSuspicionLevel(SanitizedAllocation allocation, TimeSpan age, TimeSpan timeSinceAccess)
     {
         var ageFactor = Math.Min(age.TotalHours / 24.0, 1.0); // Max 1.0 after 24 hours
         var accessFactor = allocation.AccessCount == 0 ? 1.0 : Math.Min(timeSinceAccess.TotalHours / age.TotalHours, 1.0);
@@ -771,19 +788,19 @@ public sealed class MemorySanitizer : IDisposable
 
     private void LogSanitizationViolation(MemorySanitizationViolation violation)
     {
-        Interlocked.Increment(ref _statistics.TotalViolations);
-        _statistics.ViolationsByType.AddOrUpdate(violation.ViolationType, 1, (key, value) => value + 1);
+        _ = Interlocked.Increment(ref _statistics.TotalViolations);
+        _ = _statistics.ViolationsByType.AddOrUpdate(violation.ViolationType, 1, (key, value) => value + 1);
 
         switch (violation.ViolationType)
         {
             case SanitizationViolationType.CorruptionDetected:
-                Interlocked.Increment(ref _statistics.CorruptionDetections);
+                _ = Interlocked.Increment(ref _statistics.CorruptionDetections);
                 break;
             case SanitizationViolationType.DoubleFree:
-                Interlocked.Increment(ref _statistics.DoubleFreeAttempts);
+                _ = Interlocked.Increment(ref _statistics.DoubleFreeAttempts);
                 break;
             case SanitizationViolationType.UseAfterFree:
-                Interlocked.Increment(ref _statistics.UseAfterFreeAttempts);
+                _ = Interlocked.Increment(ref _statistics.UseAfterFreeAttempts);
                 break;
         }
 
@@ -923,12 +940,13 @@ public sealed class MemorySanitizerConfiguration
     public nuint GuardByteSize { get; init; } = 16;
     public bool EnableCanaryValues { get; init; } = true;
     public bool EnableSecureWiping { get; init; } = true;
-    public bool InitializeWithRandomData { get; init; } = false;
+    public bool InitializeWithRandomData { get; init; }
+
     public nuint MaxAllocationSize { get; init; } = 1024 * 1024 * 1024;
     public TimeSpan LeakDetectionThreshold { get; init; } = TimeSpan.FromMinutes(30);
 
-    public override string ToString() =>
-        $"Guards={EnableGuardBytes}, Canaries={EnableCanaryValues}, SecureWipe={EnableSecureWiping}";
+    public override string ToString()
+        => $"Guards={EnableGuardBytes}, Canaries={EnableCanaryValues}, SecureWipe={EnableSecureWiping}";
 }
 
 /// <summary>
@@ -1081,5 +1099,6 @@ public sealed class SanitizerStatistics
     public ConcurrentDictionary<DataClassification, long> AllocationsByClassification { get; } = new();
     public ConcurrentDictionary<SanitizationViolationType, long> ViolationsByType { get; } = new();
 }
+
 
 #endregion

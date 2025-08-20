@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Kernels;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
@@ -12,347 +13,347 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace DotCompute.Core.Execution
 {
 
-/// <summary>
-/// Provides comprehensive parallel execution strategies for multi-GPU and heterogeneous computing.
-/// </summary>
-public sealed class ParallelExecutionStrategy : IAsyncDisposable
-{
-    private readonly ILogger<ParallelExecutionStrategy> _logger;
-    private readonly IAcceleratorManager _acceleratorManager;
-    private readonly IKernelManager _kernelManager;
-    private readonly MultiGpuMemoryManager _memoryManager;
-    private readonly ExecutionCoordinator _coordinator;
-    private readonly PerformanceMonitor _performanceMonitor;
-    private readonly ILoggerFactory _loggerFactory;
-    private readonly ConcurrentDictionary<string, CompiledKernelCache> _distributedKernelCache;
-    private readonly SemaphoreSlim _executionSemaphore;
-    private readonly CancellationTokenSource _shutdownTokenSource;
-    private bool _disposed;
-
-    // High-performance logging delegates
-    private static readonly Action<ILogger, string, int, Exception?> LogStartingDataParallel =
-        LoggerMessage.Define<string, int>(LogLevel.Information, new EventId(1001, nameof(LogStartingDataParallel)),
-            "Starting data parallel execution of kernel '{KernelName}' across {DeviceCount} devices");
-
-    private static readonly Action<ILogger, double, double, Exception?> LogDataParallelCompleted =
-        LoggerMessage.Define<double, double>(LogLevel.Information, new EventId(1002, nameof(LogDataParallelCompleted)),
-            "Data parallel execution completed in {ExecutionTimeMs:F2}ms with {EfficiencyPercentage:F1}% efficiency");
-
-    private static readonly Action<ILogger, string, int, Exception?> LogStartingModelParallel =
-        LoggerMessage.Define<string, int>(LogLevel.Information, new EventId(1003, nameof(LogStartingModelParallel)),
-            "Starting model parallel execution of kernel '{KernelName}' with {LayerCount} layers");
-
-    private static readonly Action<ILogger, int, Exception?> LogStartingPipelineParallel =
-        LoggerMessage.Define<int>(LogLevel.Information, new EventId(1004, nameof(LogStartingPipelineParallel)),
-            "Starting pipeline parallel execution with {StageCount} stages");
-
-    private static readonly Action<ILogger, int, Exception?> LogStartingWorkStealing =
-        LoggerMessage.Define<int>(LogLevel.Information, new EventId(1005, nameof(LogStartingWorkStealing)),
-            "Starting work-stealing execution with {WorkItemCount} work items");
-
-    private static readonly Action<ILogger, Exception?> LogSynchronizingAccelerators =
-        LoggerMessage.Define(LogLevel.Debug, new EventId(1006, nameof(LogSynchronizingAccelerators)),
-            "Synchronizing all accelerators");
-
-    private static readonly Action<ILogger, Exception?> LogAcceleratorsSynchronized =
-        LoggerMessage.Define(LogLevel.Debug, new EventId(1007, nameof(LogAcceleratorsSynchronized)),
-            "All accelerators synchronized");
-
-    private static readonly Action<ILogger, Exception?> LogDisposingStrategy =
-        LoggerMessage.Define(LogLevel.Information, new EventId(1008, nameof(LogDisposingStrategy)),
-            "Disposing ParallelExecutionStrategy");
-
-    private static readonly Action<ILogger, Exception?> LogStrategyDisposed =
-        LoggerMessage.Define(LogLevel.Information, new EventId(1009, nameof(LogStrategyDisposed)),
-            "ParallelExecutionStrategy disposed");
-
-    private static readonly Action<ILogger, Exception?> LogErrorDuringSync =
-        LoggerMessage.Define(LogLevel.Warning, new EventId(1010, nameof(LogErrorDuringSync)),
-            "Error during final synchronization");
-
-    private static readonly Action<ILogger, string, Exception?> LogInitializedStrategies =
-        LoggerMessage.Define<string>(LogLevel.Information, new EventId(1011, nameof(LogInitializedStrategies)),
-            "Initialized with strategies: {Strategies}");
-
-    private static readonly Action<ILogger, int, int, Exception?> LogBufferSizeMismatch =
-        LoggerMessage.Define<int, int>(LogLevel.Warning, new EventId(1012, nameof(LogBufferSizeMismatch)),
-            "Input buffer size {ElementCount} is not evenly divisible by device count {DeviceCount}. This may lead to load imbalance.");
-
-    private static readonly Action<ILogger, string, Exception?> LogErrorExecutingOnDevice =
-        LoggerMessage.Define<string>(LogLevel.Error, new EventId(1013, nameof(LogErrorExecutingOnDevice)),
-            "Error executing on device {DeviceId}");
-
-    private static readonly Action<ILogger, int, int, Exception?> LogCreatingModelParallelPlan =
-        LoggerMessage.Define<int, int>(LogLevel.Debug, new EventId(1014, nameof(LogCreatingModelParallelPlan)),
-            "Creating model parallel execution plan with {LayerCount} layers across {DeviceCount} devices");
-
-    private static readonly Action<ILogger, int, Exception?> LogExecutingModelParallelPlan =
-        LoggerMessage.Define<int>(LogLevel.Debug, new EventId(1015, nameof(LogExecutingModelParallelPlan)),
-            "Executing model parallel plan with {LayerCount} layers");
-
-    private static readonly Action<ILogger, int, Exception?> LogErrorExecutingLayer =
-        LoggerMessage.Define<int>(LogLevel.Error, new EventId(1016, nameof(LogErrorExecutingLayer)),
-            "Error executing layer {LayerId}");
-
-    private static readonly Action<ILogger, int, int, Exception?> LogCreatingPipelinePlan =
-        LoggerMessage.Define<int, int>(LogLevel.Debug, new EventId(1017, nameof(LogCreatingPipelinePlan)),
-            "Creating pipeline execution plan with {StageCount} stages across {DeviceCount} devices");
-
-    private static readonly Action<ILogger, int, int, Exception?> LogExecutingPipelinePlan =
-        LoggerMessage.Define<int, int>(LogLevel.Debug, new EventId(1018, nameof(LogExecutingPipelinePlan)),
-            "Executing pipeline plan with {StageCount} stages and {MicrobatchCount} microbatches");
-
-    private static readonly Action<ILogger, int, Exception?> LogErrorInPipelineStage =
-        LoggerMessage.Define<int>(LogLevel.Error, new EventId(1019, nameof(LogErrorInPipelineStage)),
-            "Error in pipeline stage {StageId}");
-
-    public ParallelExecutionStrategy(
-        ILogger<ParallelExecutionStrategy> logger,
-        IAcceleratorManager acceleratorManager,
-        IKernelManager kernelManager,
-        ILoggerFactory? loggerFactory = null)
+    /// <summary>
+    /// Provides comprehensive parallel execution strategies for multi-GPU and heterogeneous computing.
+    /// </summary>
+    public sealed class ParallelExecutionStrategy : IAsyncDisposable
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(nameof(acceleratorManager));
-        _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
-        _loggerFactory = loggerFactory ?? new NullLoggerFactory();
-        
-        _memoryManager = new MultiGpuMemoryManager(_loggerFactory.CreateLogger<MultiGpuMemoryManager>());
-        _coordinator = new ExecutionCoordinator(_loggerFactory.CreateLogger<ExecutionCoordinator>());
-        _performanceMonitor = new PerformanceMonitor(_loggerFactory.CreateLogger<PerformanceMonitor>());
-        _distributedKernelCache = new ConcurrentDictionary<string, CompiledKernelCache>();
-        _executionSemaphore = new SemaphoreSlim(Environment.ProcessorCount * 2);
-        _shutdownTokenSource = new CancellationTokenSource();
-        
-        Initialize();
-    }
+        private readonly ILogger<ParallelExecutionStrategy> _logger;
+        private readonly IAcceleratorManager _acceleratorManager;
+        private readonly IKernelManager _kernelManager;
+        private readonly MultiGpuMemoryManager _memoryManager;
+        private readonly ExecutionCoordinator _coordinator;
+        private readonly PerformanceMonitor _performanceMonitor;
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly ConcurrentDictionary<string, CompiledKernelCache> _distributedKernelCache;
+        private readonly SemaphoreSlim _executionSemaphore;
+        private readonly CancellationTokenSource _shutdownTokenSource;
+        private bool _disposed;
 
-    /// <summary>
-    /// Gets available execution strategies.
-    /// </summary>
-    public IReadOnlyList<ExecutionStrategyType> AvailableStrategies { get; private set; } = Array.Empty<ExecutionStrategyType>();
+        // High-performance logging delegates
+        private static readonly Action<ILogger, string, int, Exception?> LogStartingDataParallel =
+            LoggerMessage.Define<string, int>(LogLevel.Information, new EventId(1001, nameof(LogStartingDataParallel)),
+                "Starting data parallel execution of kernel '{KernelName}' across {DeviceCount} devices");
 
-    /// <summary>
-    /// Gets the current performance metrics.
-    /// </summary>
-    public ParallelExecutionMetrics CurrentMetrics => _performanceMonitor.GetCurrentMetrics();
+        private static readonly Action<ILogger, double, double, Exception?> LogDataParallelCompleted =
+            LoggerMessage.Define<double, double>(LogLevel.Information, new EventId(1002, nameof(LogDataParallelCompleted)),
+                "Data parallel execution completed in {ExecutionTimeMs:F2}ms with {EfficiencyPercentage:F1}% efficiency");
 
-    /// <summary>
-    /// Executes a kernel using data parallelism across multiple GPUs.
-    /// </summary>
-    public async ValueTask<ParallelExecutionResult> ExecuteDataParallelAsync<T>(
-        string kernelName,
-        AbstractionsMemory.IBuffer<T>[] inputBuffers,
-        AbstractionsMemory.IBuffer<T>[] outputBuffers,
-        DataParallelismOptions options,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        using var combinedToken = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken, _shutdownTokenSource.Token);
+        private static readonly Action<ILogger, string, int, Exception?> LogStartingModelParallel =
+            LoggerMessage.Define<string, int>(LogLevel.Information, new EventId(1003, nameof(LogStartingModelParallel)),
+                "Starting model parallel execution of kernel '{KernelName}' with {LayerCount} layers");
 
-        await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
-        try
+        private static readonly Action<ILogger, int, Exception?> LogStartingPipelineParallel =
+            LoggerMessage.Define<int>(LogLevel.Information, new EventId(1004, nameof(LogStartingPipelineParallel)),
+                "Starting pipeline parallel execution with {StageCount} stages");
+
+        private static readonly Action<ILogger, int, Exception?> LogStartingWorkStealing =
+            LoggerMessage.Define<int>(LogLevel.Information, new EventId(1005, nameof(LogStartingWorkStealing)),
+                "Starting work-stealing execution with {WorkItemCount} work items");
+
+        private static readonly Action<ILogger, Exception?> LogSynchronizingAccelerators =
+            LoggerMessage.Define(LogLevel.Debug, new EventId(1006, nameof(LogSynchronizingAccelerators)),
+                "Synchronizing all accelerators");
+
+        private static readonly Action<ILogger, Exception?> LogAcceleratorsSynchronized =
+            LoggerMessage.Define(LogLevel.Debug, new EventId(1007, nameof(LogAcceleratorsSynchronized)),
+                "All accelerators synchronized");
+
+        private static readonly Action<ILogger, Exception?> LogDisposingStrategy =
+            LoggerMessage.Define(LogLevel.Information, new EventId(1008, nameof(LogDisposingStrategy)),
+                "Disposing ParallelExecutionStrategy");
+
+        private static readonly Action<ILogger, Exception?> LogStrategyDisposed =
+            LoggerMessage.Define(LogLevel.Information, new EventId(1009, nameof(LogStrategyDisposed)),
+                "ParallelExecutionStrategy disposed");
+
+        private static readonly Action<ILogger, Exception?> LogErrorDuringSync =
+            LoggerMessage.Define(LogLevel.Warning, new EventId(1010, nameof(LogErrorDuringSync)),
+                "Error during final synchronization");
+
+        private static readonly Action<ILogger, string, Exception?> LogInitializedStrategies =
+            LoggerMessage.Define<string>(LogLevel.Information, new EventId(1011, nameof(LogInitializedStrategies)),
+                "Initialized with strategies: {Strategies}");
+
+        private static readonly Action<ILogger, int, int, Exception?> LogBufferSizeMismatch =
+            LoggerMessage.Define<int, int>(LogLevel.Warning, new EventId(1012, nameof(LogBufferSizeMismatch)),
+                "Input buffer size {ElementCount} is not evenly divisible by device count {DeviceCount}. This may lead to load imbalance.");
+
+        private static readonly Action<ILogger, string, Exception?> LogErrorExecutingOnDevice =
+            LoggerMessage.Define<string>(LogLevel.Error, new EventId(1013, nameof(LogErrorExecutingOnDevice)),
+                "Error executing on device {DeviceId}");
+
+        private static readonly Action<ILogger, int, int, Exception?> LogCreatingModelParallelPlan =
+            LoggerMessage.Define<int, int>(LogLevel.Debug, new EventId(1014, nameof(LogCreatingModelParallelPlan)),
+                "Creating model parallel execution plan with {LayerCount} layers across {DeviceCount} devices");
+
+        private static readonly Action<ILogger, int, Exception?> LogExecutingModelParallelPlan =
+            LoggerMessage.Define<int>(LogLevel.Debug, new EventId(1015, nameof(LogExecutingModelParallelPlan)),
+                "Executing model parallel plan with {LayerCount} layers");
+
+        private static readonly Action<ILogger, int, Exception?> LogErrorExecutingLayer =
+            LoggerMessage.Define<int>(LogLevel.Error, new EventId(1016, nameof(LogErrorExecutingLayer)),
+                "Error executing layer {LayerId}");
+
+        private static readonly Action<ILogger, int, int, Exception?> LogCreatingPipelinePlan =
+            LoggerMessage.Define<int, int>(LogLevel.Debug, new EventId(1017, nameof(LogCreatingPipelinePlan)),
+                "Creating pipeline execution plan with {StageCount} stages across {DeviceCount} devices");
+
+        private static readonly Action<ILogger, int, int, Exception?> LogExecutingPipelinePlan =
+            LoggerMessage.Define<int, int>(LogLevel.Debug, new EventId(1018, nameof(LogExecutingPipelinePlan)),
+                "Executing pipeline plan with {StageCount} stages and {MicrobatchCount} microbatches");
+
+        private static readonly Action<ILogger, int, Exception?> LogErrorInPipelineStage =
+            LoggerMessage.Define<int>(LogLevel.Error, new EventId(1019, nameof(LogErrorInPipelineStage)),
+                "Error in pipeline stage {StageId}");
+
+        public ParallelExecutionStrategy(
+            ILogger<ParallelExecutionStrategy> logger,
+            IAcceleratorManager acceleratorManager,
+            IKernelManager kernelManager,
+            ILoggerFactory? loggerFactory = null)
         {
-            LogStartingDataParallel(_logger, kernelName, options.TargetDevices?.Length ?? _acceleratorManager.Count, null);
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(nameof(acceleratorManager));
+            _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
+            _loggerFactory = loggerFactory ?? new NullLoggerFactory();
 
-            var startTime = Stopwatch.StartNew();
-            var devices = SelectOptimalDevices(options);
-            
-            // Validate input compatibility
-            ValidateDataParallelInputs(inputBuffers, outputBuffers, devices);
+            _memoryManager = new MultiGpuMemoryManager(_loggerFactory.CreateLogger<MultiGpuMemoryManager>());
+            _coordinator = new ExecutionCoordinator(_loggerFactory.CreateLogger<ExecutionCoordinator>());
+            _performanceMonitor = new PerformanceMonitor(_loggerFactory.CreateLogger<PerformanceMonitor>());
+            _distributedKernelCache = new ConcurrentDictionary<string, CompiledKernelCache>();
+            _executionSemaphore = new SemaphoreSlim(Environment.ProcessorCount * 2);
+            _shutdownTokenSource = new CancellationTokenSource();
 
-            // Create execution plan
-            var executionPlan = await CreateDataParallelExecutionPlanAsync(
-                kernelName, inputBuffers, outputBuffers, devices, options, combinedToken.Token);
+            Initialize();
+        }
 
-            // Execute plan with coordination
-            var results = await ExecuteCoordinatedPlanAsync(executionPlan, combinedToken.Token);
+        /// <summary>
+        /// Gets available execution strategies.
+        /// </summary>
+        public IReadOnlyList<ExecutionStrategyType> AvailableStrategies { get; private set; } = Array.Empty<ExecutionStrategyType>();
 
-            startTime.Stop();
-            
-            var finalResult = new ParallelExecutionResult
+        /// <summary>
+        /// Gets the current performance metrics.
+        /// </summary>
+        public ParallelExecutionMetrics CurrentMetrics => _performanceMonitor.GetCurrentMetrics();
+
+        /// <summary>
+        /// Executes a kernel using data parallelism across multiple GPUs.
+        /// </summary>
+        public async ValueTask<ParallelExecutionResult> ExecuteDataParallelAsync<T>(
+            string kernelName,
+            AbstractionsMemory.IBuffer<T>[] inputBuffers,
+            AbstractionsMemory.IBuffer<T>[] outputBuffers,
+            DataParallelismOptions options,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            using var combinedToken = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, _shutdownTokenSource.Token);
+
+            await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
+            try
             {
-                Success = results.All(r => r.Success),
-                TotalExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
-                DeviceResults = [.. results],
-                Strategy = ExecutionStrategyType.DataParallel,
-                ThroughputGFLOPS = CalculateOverallThroughput(results),
-                MemoryBandwidthGBps = CalculateOverallMemoryBandwidth(results),
-                EfficiencyPercentage = CalculateParallelEfficiency(results, startTime.Elapsed.TotalMilliseconds)
-            };
+                LogStartingDataParallel(_logger, kernelName, options.TargetDevices?.Length ?? _acceleratorManager.Count, null);
 
-            _performanceMonitor.RecordExecution(finalResult);
-            LogDataParallelCompleted(_logger, finalResult.TotalExecutionTimeMs, finalResult.EfficiencyPercentage, null);
+                var startTime = Stopwatch.StartNew();
+                var devices = SelectOptimalDevices(options);
 
-            return finalResult;
-        }
-        finally
-        {
-            _executionSemaphore.Release();
-        }
-    }
+                // Validate input compatibility
+                ValidateDataParallelInputs(inputBuffers, outputBuffers, devices);
 
-    /// <summary>
-    /// Executes a kernel using model parallelism for large models that don't fit on a single GPU.
-    /// </summary>
-    public async ValueTask<ParallelExecutionResult> ExecuteModelParallelAsync<T>(
-        string kernelName,
-        ModelParallelWorkload<T> workload,
-        ModelParallelismOptions options,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        using var combinedToken = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken, _shutdownTokenSource.Token);
+                // Create execution plan
+                var executionPlan = await CreateDataParallelExecutionPlanAsync(
+                    kernelName, inputBuffers, outputBuffers, devices, options, combinedToken.Token);
 
-        await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
-        try
-        {
-            LogStartingModelParallel(_logger, kernelName, workload.ModelLayers.Count, null);
+                // Execute plan with coordination
+                var results = await ExecuteCoordinatedPlanAsync(executionPlan, combinedToken.Token);
 
-            var startTime = Stopwatch.StartNew();
-            var devices = SelectOptimalDevices(options.ToDataParallelOptions());
+                startTime.Stop();
 
-            // Create model parallel execution plan
-            var executionPlan = await CreateModelParallelExecutionPlanAsync(
-                kernelName, workload, devices, options, combinedToken.Token);
+                var finalResult = new ParallelExecutionResult
+                {
+                    Success = results.All(r => r.Success),
+                    TotalExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
+                    DeviceResults = [.. results],
+                    Strategy = ExecutionStrategyType.DataParallel,
+                    ThroughputGFLOPS = CalculateOverallThroughput(results),
+                    MemoryBandwidthGBps = CalculateOverallMemoryBandwidth(results),
+                    EfficiencyPercentage = CalculateParallelEfficiency(results, startTime.Elapsed.TotalMilliseconds)
+                };
 
-            // Execute layers with dependency management
-            var results = await ExecuteModelParallelPlanAsync(executionPlan, combinedToken.Token);
+                _performanceMonitor.RecordExecution(finalResult);
+                LogDataParallelCompleted(_logger, finalResult.TotalExecutionTimeMs, finalResult.EfficiencyPercentage, null);
 
-            startTime.Stop();
-
-            var finalResult = new ParallelExecutionResult
+                return finalResult;
+            }
+            finally
             {
-                Success = results.All(r => r.Success),
-                TotalExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
-                DeviceResults = [.. results],
-                Strategy = ExecutionStrategyType.ModelParallel,
-                ThroughputGFLOPS = CalculateOverallThroughput(results),
-                MemoryBandwidthGBps = CalculateOverallMemoryBandwidth(results),
-                EfficiencyPercentage = CalculateParallelEfficiency(results, startTime.Elapsed.TotalMilliseconds)
-            };
-
-            _performanceMonitor.RecordExecution(finalResult);
-            return finalResult;
+                _ = _executionSemaphore.Release();
+            }
         }
-        finally
+
+        /// <summary>
+        /// Executes a kernel using model parallelism for large models that don't fit on a single GPU.
+        /// </summary>
+        public async ValueTask<ParallelExecutionResult> ExecuteModelParallelAsync<T>(
+            string kernelName,
+            ModelParallelWorkload<T> workload,
+            ModelParallelismOptions options,
+            CancellationToken cancellationToken = default) where T : unmanaged
         {
-            _executionSemaphore.Release();
-        }
-    }
+            using var combinedToken = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, _shutdownTokenSource.Token);
 
-    /// <summary>
-    /// Executes a streaming pipeline with overlapped computation and communication.
-    /// </summary>
-    public async ValueTask<ParallelExecutionResult> ExecutePipelineParallelAsync<T>(
-        PipelineDefinition<T> pipeline,
-        PipelineParallelismOptions options,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        using var combinedToken = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken, _shutdownTokenSource.Token);
-
-        await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
-        try
-        {
-            LogStartingPipelineParallel(_logger, pipeline.Stages.Count, null);
-
-            var startTime = Stopwatch.StartNew();
-            var devices = SelectOptimalDevices(options.ToDataParallelOptions());
-
-            // Create pipeline execution plan
-            var executionPlan = await CreatePipelineExecutionPlanAsync(pipeline, devices, options, combinedToken.Token);
-
-            // Start pipeline execution with streaming
-            var results = await ExecutePipelinePlanAsync(executionPlan, combinedToken.Token);
-
-            startTime.Stop();
-
-            var finalResult = new ParallelExecutionResult
+            await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
+            try
             {
-                Success = results.All(r => r.Success),
-                TotalExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
-                DeviceResults = [.. results],
-                Strategy = ExecutionStrategyType.PipelineParallel,
-                ThroughputGFLOPS = CalculateOverallThroughput(results),
-                MemoryBandwidthGBps = CalculateOverallMemoryBandwidth(results),
-                EfficiencyPercentage = CalculateParallelEfficiency(results, startTime.Elapsed.TotalMilliseconds)
-            };
+                LogStartingModelParallel(_logger, kernelName, workload.ModelLayers.Count, null);
 
-            _performanceMonitor.RecordExecution(finalResult);
-            return finalResult;
-        }
-        finally
-        {
-            _executionSemaphore.Release();
-        }
-    }
+                var startTime = Stopwatch.StartNew();
+                var devices = SelectOptimalDevices(ModelParallelismOptions.ToDataParallelOptions());
 
-    /// <summary>
-    /// Executes using dynamic load balancing with work stealing.
-    /// </summary>
-    public async ValueTask<ParallelExecutionResult> ExecuteWithWorkStealingAsync<T>(
-        string kernelName,
-        WorkStealingWorkload<T> workload,
-        WorkStealingOptions options,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        using var combinedToken = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken, _shutdownTokenSource.Token);
+                // Create model parallel execution plan
+                var executionPlan = await CreateModelParallelExecutionPlanAsync(
+                    kernelName, workload, devices, options, combinedToken.Token);
 
-        await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
-        try
-        {
-            LogStartingWorkStealing(_logger, workload.WorkItems.Count, null);
+                // Execute layers with dependency management
+                var results = await ExecuteModelParallelPlanAsync(executionPlan, combinedToken.Token);
 
-            var startTime = Stopwatch.StartNew();
-            var devices = SelectOptimalDevices(options.ToDataParallelOptions());
+                startTime.Stop();
 
-            // Initialize work-stealing coordinator
-            var workStealingCoordinator = new WorkStealingCoordinator<T>(
-                devices, workload, _memoryManager, _loggerFactory.CreateLogger<WorkStealingCoordinator<T>>());
+                var finalResult = new ParallelExecutionResult
+                {
+                    Success = results.All(r => r.Success),
+                    TotalExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
+                    DeviceResults = [.. results],
+                    Strategy = ExecutionStrategyType.ModelParallel,
+                    ThroughputGFLOPS = CalculateOverallThroughput(results),
+                    MemoryBandwidthGBps = CalculateOverallMemoryBandwidth(results),
+                    EfficiencyPercentage = CalculateParallelEfficiency(results, startTime.Elapsed.TotalMilliseconds)
+                };
 
-            // Execute with dynamic load balancing
-            var results = await workStealingCoordinator.ExecuteAsync(
-                _kernelManager, options, combinedToken.Token);
-
-            startTime.Stop();
-
-            var finalResult = new ParallelExecutionResult
+                _performanceMonitor.RecordExecution(finalResult);
+                return finalResult;
+            }
+            finally
             {
-                Success = results.All(r => r.Success),
-                TotalExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
-                DeviceResults = [.. results],
-                Strategy = ExecutionStrategyType.WorkStealing,
-                ThroughputGFLOPS = CalculateOverallThroughput(results),
-                MemoryBandwidthGBps = CalculateOverallMemoryBandwidth(results),
-                EfficiencyPercentage = CalculateParallelEfficiency(results, startTime.Elapsed.TotalMilliseconds)
-            };
-
-            _performanceMonitor.RecordExecution(finalResult);
-            return finalResult;
+                _ = _executionSemaphore.Release();
+            }
         }
-        finally
+
+        /// <summary>
+        /// Executes a streaming pipeline with overlapped computation and communication.
+        /// </summary>
+        public async ValueTask<ParallelExecutionResult> ExecutePipelineParallelAsync<T>(
+            PipelineDefinition<T> pipeline,
+            PipelineParallelismOptions options,
+            CancellationToken cancellationToken = default) where T : unmanaged
         {
-            _executionSemaphore.Release();
+            using var combinedToken = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, _shutdownTokenSource.Token);
+
+            await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
+            try
+            {
+                LogStartingPipelineParallel(_logger, pipeline.Stages.Count, null);
+
+                var startTime = Stopwatch.StartNew();
+                var devices = SelectOptimalDevices(options.ToDataParallelOptions());
+
+                // Create pipeline execution plan
+                var executionPlan = await CreatePipelineExecutionPlanAsync(pipeline, devices, options, combinedToken.Token);
+
+                // Start pipeline execution with streaming
+                var results = await ExecutePipelinePlanAsync(executionPlan, combinedToken.Token);
+
+                startTime.Stop();
+
+                var finalResult = new ParallelExecutionResult
+                {
+                    Success = results.All(r => r.Success),
+                    TotalExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
+                    DeviceResults = [.. results],
+                    Strategy = ExecutionStrategyType.PipelineParallel,
+                    ThroughputGFLOPS = CalculateOverallThroughput(results),
+                    MemoryBandwidthGBps = CalculateOverallMemoryBandwidth(results),
+                    EfficiencyPercentage = CalculateParallelEfficiency(results, startTime.Elapsed.TotalMilliseconds)
+                };
+
+                _performanceMonitor.RecordExecution(finalResult);
+                return finalResult;
+            }
+            finally
+            {
+                _ = _executionSemaphore.Release();
+            }
         }
-    }
 
-    /// <summary>
-    /// Synchronizes all devices and ensures completion of pending operations.
-    /// </summary>
-    public async ValueTask SynchronizeAllAsync(CancellationToken cancellationToken = default)
-    {
-        LogSynchronizingAccelerators(_logger, null);
+        /// <summary>
+        /// Executes using dynamic load balancing with work stealing.
+        /// </summary>
+        public async ValueTask<ParallelExecutionResult> ExecuteWithWorkStealingAsync<T>(
+            string kernelName,
+            WorkStealingWorkload<T> workload,
+            WorkStealingOptions options,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            using var combinedToken = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, _shutdownTokenSource.Token);
 
-        var tasks = _acceleratorManager.AvailableAccelerators
-            .Select(accelerator => accelerator.SynchronizeAsync(cancellationToken).AsTask())
-            .ToArray();
+            await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
+            try
+            {
+                LogStartingWorkStealing(_logger, workload.WorkItems.Count, null);
 
-        await Task.WhenAll(tasks).ConfigureAwait(false);
-        
-        LogAcceleratorsSynchronized(_logger, null);
-    }
+                var startTime = Stopwatch.StartNew();
+                var devices = SelectOptimalDevices(WorkStealingOptions.ToDataParallelOptions());
+
+                // Initialize work-stealing coordinator
+                var workStealingCoordinator = new WorkStealingCoordinator<T>(
+                    devices, workload, _memoryManager, _loggerFactory.CreateLogger<WorkStealingCoordinator<T>>());
+
+                // Execute with dynamic load balancing
+                var results = await workStealingCoordinator.ExecuteAsync(
+                    _kernelManager, options, combinedToken.Token);
+
+                startTime.Stop();
+
+                var finalResult = new ParallelExecutionResult
+                {
+                    Success = results.All(r => r.Success),
+                    TotalExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
+                    DeviceResults = [.. results],
+                    Strategy = ExecutionStrategyType.WorkStealing,
+                    ThroughputGFLOPS = CalculateOverallThroughput(results),
+                    MemoryBandwidthGBps = CalculateOverallMemoryBandwidth(results),
+                    EfficiencyPercentage = CalculateParallelEfficiency(results, startTime.Elapsed.TotalMilliseconds)
+                };
+
+                _performanceMonitor.RecordExecution(finalResult);
+                return finalResult;
+            }
+            finally
+            {
+                _ = _executionSemaphore.Release();
+            }
+        }
+
+        /// <summary>
+        /// Synchronizes all devices and ensures completion of pending operations.
+        /// </summary>
+        public async ValueTask SynchronizeAllAsync(CancellationToken cancellationToken = default)
+        {
+            LogSynchronizingAccelerators(_logger, null);
+
+            var tasks = _acceleratorManager.AvailableAccelerators
+                .Select(accelerator => accelerator.SynchronizeAsync(cancellationToken).AsTask())
+                .ToArray();
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            LogAcceleratorsSynchronized(_logger, null);
+        }
 
         /// <summary>
         /// Gets performance analysis and optimization recommendations.
@@ -368,571 +369,571 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
             AcceleratorType[] availableAcceleratorTypes) => _performanceMonitor.RecommendOptimalStrategy(kernelName, inputSizes, availableAcceleratorTypes);
 
         public async ValueTask DisposeAsync()
-    {
-        if (_disposed)
         {
-            return;
-        }
-
-        LogDisposingStrategy(_logger, null);
-
-        _shutdownTokenSource.Cancel();
-
-        try
-        {
-            await SynchronizeAllAsync().ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            LogErrorDuringSync(_logger, ex);
-        }
-
-        await _memoryManager.DisposeAsync().ConfigureAwait(false);
-        await _coordinator.DisposeAsync().ConfigureAwait(false);
-        _performanceMonitor.Dispose();
-        
-        _executionSemaphore.Dispose();
-        _shutdownTokenSource.Dispose();
-        
-        _disposed = true;
-        LogStrategyDisposed(_logger, null);
-    }
-
-    #region Private Implementation
-
-    private void Initialize()
-    {
-        var gpuAccelerators = _acceleratorManager.AvailableAccelerators
-            .Where(a => a.Info.DeviceType != "CPU")
-            .ToArray();
-
-        var strategies = new List<ExecutionStrategyType>();
-
-        if (gpuAccelerators.Length > 1)
-        {
-            strategies.AddRange(new[]
+            if (_disposed)
             {
+                return;
+            }
+
+            LogDisposingStrategy(_logger, null);
+
+            _shutdownTokenSource.Cancel();
+
+            try
+            {
+                await SynchronizeAllAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                LogErrorDuringSync(_logger, ex);
+            }
+
+            await _memoryManager.DisposeAsync().ConfigureAwait(false);
+            await _coordinator.DisposeAsync().ConfigureAwait(false);
+            _performanceMonitor.Dispose();
+
+            _executionSemaphore.Dispose();
+            _shutdownTokenSource.Dispose();
+
+            _disposed = true;
+            LogStrategyDisposed(_logger, null);
+        }
+
+        #region Private Implementation
+
+        private void Initialize()
+        {
+            var gpuAccelerators = _acceleratorManager.AvailableAccelerators
+                .Where(a => a.Info.DeviceType != "CPU")
+                .ToArray();
+
+            var strategies = new List<ExecutionStrategyType>();
+
+            if (gpuAccelerators.Length > 1)
+            {
+                strategies.AddRange(new[]
+                {
                 ExecutionStrategyType.DataParallel,
                 ExecutionStrategyType.ModelParallel,
                 ExecutionStrategyType.PipelineParallel,
                 ExecutionStrategyType.WorkStealing
             });
-        }
-        else if (gpuAccelerators.Length == 1)
-        {
-            strategies.AddRange(new[]
+            }
+            else if (gpuAccelerators.Length == 1)
             {
+                strategies.AddRange(new[]
+                {
                 ExecutionStrategyType.Single,
                 ExecutionStrategyType.PipelineParallel
             });
+            }
+
+            // Always support heterogeneous execution if CPU is available
+            if (_acceleratorManager.AvailableAccelerators.Any(a => a.Info.DeviceType == "CPU"))
+            {
+                strategies.Add(ExecutionStrategyType.Heterogeneous);
+            }
+
+            AvailableStrategies = strategies.AsReadOnly();
+            LogInitializedStrategies(_logger, string.Join(", ", strategies), null);
         }
 
-        // Always support heterogeneous execution if CPU is available
-        if (_acceleratorManager.AvailableAccelerators.Any(a => a.Info.DeviceType == "CPU"))
+        private IAccelerator[] SelectOptimalDevices(DataParallelismOptions options)
         {
-            strategies.Add(ExecutionStrategyType.Heterogeneous);
-        }
-
-        AvailableStrategies = strategies.AsReadOnly();
-        LogInitializedStrategies(_logger, string.Join(", ", strategies), null);
-    }
-
-    private IAccelerator[] SelectOptimalDevices(DataParallelismOptions options)
-    {
-        if (options.TargetDevices != null)
-        {
-            return [.. options.TargetDevices
+            if (options.TargetDevices != null)
+            {
+                return [.. options.TargetDevices
                 .Select(id => _acceleratorManager.GetAcceleratorById(id))
                 .Where(a => a != null)
                 .Cast<IAccelerator>()];
-        }
+            }
 
-        var gpuAccelerators = _acceleratorManager.AvailableAccelerators
-            .Where(a => a.Info.DeviceType != "CPU")
-            .ToArray();
+            var gpuAccelerators = _acceleratorManager.AvailableAccelerators
+                .Where(a => a.Info.DeviceType != "CPU")
+                .ToArray();
 
-        if (gpuAccelerators.Length == 0)
-        {
-            return [_acceleratorManager.Default];
-        }
+            if (gpuAccelerators.Length == 0)
+            {
+                return [_acceleratorManager.Default];
+            }
 
-        // Select based on memory and compute capability
-        return [.. gpuAccelerators
+            // Select based on memory and compute capability
+            return [.. gpuAccelerators
             .OrderByDescending(a => a.Info.TotalMemory)
             .ThenByDescending(a => a.Info.ComputeUnits)
             .Take(options.MaxDevices ?? gpuAccelerators.Length)];
-    }
-
-    private void ValidateDataParallelInputs<T>(
-        AbstractionsMemory.IBuffer<T>[] inputBuffers,
-        AbstractionsMemory.IBuffer<T>[] outputBuffers,
-        IAccelerator[] devices) where T : unmanaged
-    {
-        if (inputBuffers == null || inputBuffers.Length == 0)
-        {
-            throw new ArgumentException("Input buffers cannot be null or empty", nameof(inputBuffers));
         }
 
-        if (outputBuffers == null || outputBuffers.Length == 0)
+        private void ValidateDataParallelInputs<T>(
+            AbstractionsMemory.IBuffer<T>[] inputBuffers,
+            AbstractionsMemory.IBuffer<T>[] outputBuffers,
+            IAccelerator[] devices) where T : unmanaged
         {
-            throw new ArgumentException("Output buffers cannot be null or empty", nameof(outputBuffers));
-        }
-
-        if (devices == null || devices.Length == 0)
-        {
-            throw new ArgumentException("No devices available for execution", nameof(devices));
-        }
-
-        // Validate buffer sizes are divisible by device count for even distribution
-        foreach (var buffer in inputBuffers)
-        {
-            var bufferElementCount = (int)(buffer.SizeInBytes / System.Runtime.InteropServices.Marshal.SizeOf<T>());
-            if (bufferElementCount % devices.Length != 0)
+            if (inputBuffers == null || inputBuffers.Length == 0)
             {
-                LogBufferSizeMismatch(_logger, bufferElementCount, devices.Length, null);
+                throw new ArgumentException("Input buffers cannot be null or empty", nameof(inputBuffers));
+            }
+
+            if (outputBuffers == null || outputBuffers.Length == 0)
+            {
+                throw new ArgumentException("Output buffers cannot be null or empty", nameof(outputBuffers));
+            }
+
+            if (devices == null || devices.Length == 0)
+            {
+                throw new ArgumentException("No devices available for execution", nameof(devices));
+            }
+
+            // Validate buffer sizes are divisible by device count for even distribution
+            foreach (var buffer in inputBuffers)
+            {
+                var bufferElementCount = (int)(buffer.SizeInBytes / System.Runtime.InteropServices.Marshal.SizeOf<T>());
+                if (bufferElementCount % devices.Length != 0)
+                {
+                    LogBufferSizeMismatch(_logger, bufferElementCount, devices.Length, null);
+                }
             }
         }
-    }
 
-    private async ValueTask<DataParallelExecutionPlan<T>> CreateDataParallelExecutionPlanAsync<T>(
-        string kernelName,
-        AbstractionsMemory.IBuffer<T>[] inputBuffers,
-        AbstractionsMemory.IBuffer<T>[] outputBuffers,
-        IAccelerator[] devices,
-        DataParallelismOptions options,
-        CancellationToken cancellationToken) where T : unmanaged
-    {
-        var plan = new DataParallelExecutionPlan<T>
+        private async ValueTask<DataParallelExecutionPlan<T>> CreateDataParallelExecutionPlanAsync<T>(
+            string kernelName,
+            AbstractionsMemory.IBuffer<T>[] inputBuffers,
+            AbstractionsMemory.IBuffer<T>[] outputBuffers,
+            IAccelerator[] devices,
+            DataParallelismOptions options,
+            CancellationToken cancellationToken) where T : unmanaged
         {
-            KernelName = kernelName,
-            Devices = devices,
-            StrategyType = ExecutionStrategyType.DataParallel,
-            InputBuffers = inputBuffers,
-            OutputBuffers = outputBuffers,
-            DeviceTasks = new DataParallelDeviceTask<T>[devices.Length]
-        };
-
-        // Calculate work distribution
-        var totalElements = (int)(inputBuffers[0].SizeInBytes / System.Runtime.InteropServices.Marshal.SizeOf<T>());
-        var elementsPerDevice = totalElements / devices.Length;
-        var remainingElements = totalElements % devices.Length;
-
-        for (var i = 0; i < devices.Length; i++)
-        {
-            var startIndex = i * elementsPerDevice;
-            var elementCount = elementsPerDevice + (i < remainingElements ? 1 : 0);
-
-            // Create device-specific input/output buffer slices
-            var deviceInputBuffers = await CreateDeviceBufferSlicesAsync(
-                inputBuffers, devices[i], startIndex, elementCount, cancellationToken);
-            
-            var deviceOutputBuffers = await CreateDeviceBufferSlicesAsync(
-                outputBuffers, devices[i], startIndex, elementCount, cancellationToken);
-
-            // Compile kernel for this device if not cached
-            var compiledKernel = await GetOrCompileKernelForDeviceAsync(
-                kernelName, devices[i], cancellationToken);
-
-            plan.DeviceTasks[i] = new DataParallelDeviceTask<T>
+            var plan = new DataParallelExecutionPlan<T>
             {
-                Device = devices[i],
-                CompiledKernel = compiledKernel,
-                InputBuffers = deviceInputBuffers,
-                OutputBuffers = deviceOutputBuffers,
-                StartIndex = startIndex,
-                ElementCount = elementCount
+                KernelName = kernelName,
+                Devices = devices,
+                StrategyType = ExecutionStrategyType.DataParallel,
+                InputBuffers = inputBuffers,
+                OutputBuffers = outputBuffers,
+                DeviceTasks = new DataParallelDeviceTask<T>[devices.Length]
             };
+
+            // Calculate work distribution
+            var totalElements = (int)(inputBuffers[0].SizeInBytes / System.Runtime.InteropServices.Marshal.SizeOf<T>());
+            var elementsPerDevice = totalElements / devices.Length;
+            var remainingElements = totalElements % devices.Length;
+
+            for (var i = 0; i < devices.Length; i++)
+            {
+                var startIndex = i * elementsPerDevice;
+                var elementCount = elementsPerDevice + (i < remainingElements ? 1 : 0);
+
+                // Create device-specific input/output buffer slices
+                var deviceInputBuffers = await CreateDeviceBufferSlicesAsync(
+                    inputBuffers, devices[i], startIndex, elementCount, cancellationToken);
+
+                var deviceOutputBuffers = await CreateDeviceBufferSlicesAsync(
+                    outputBuffers, devices[i], startIndex, elementCount, cancellationToken);
+
+                // Compile kernel for this device if not cached
+                var compiledKernel = await GetOrCompileKernelForDeviceAsync(
+                    kernelName, devices[i], cancellationToken);
+
+                plan.DeviceTasks[i] = new DataParallelDeviceTask<T>
+                {
+                    Device = devices[i],
+                    CompiledKernel = compiledKernel,
+                    InputBuffers = deviceInputBuffers,
+                    OutputBuffers = deviceOutputBuffers,
+                    StartIndex = startIndex,
+                    ElementCount = elementCount
+                };
+            }
+
+            return plan;
         }
 
-        return plan;
-    }
-
-    private async ValueTask<AbstractionsMemory.IBuffer<T>[]> CreateDeviceBufferSlicesAsync<T>(
-        AbstractionsMemory.IBuffer<T>[] sourceBuffers,
-        IAccelerator device,
-        int startIndex,
-        int elementCount,
-        CancellationToken cancellationToken) where T : unmanaged
-    {
-        var deviceBuffers = new AbstractionsMemory.IBuffer<T>[sourceBuffers.Length];
-
-        for (var i = 0; i < sourceBuffers.Length; i++)
+        private async ValueTask<AbstractionsMemory.IBuffer<T>[]> CreateDeviceBufferSlicesAsync<T>(
+            AbstractionsMemory.IBuffer<T>[] sourceBuffers,
+            IAccelerator device,
+            int startIndex,
+            int elementCount,
+            CancellationToken cancellationToken) where T : unmanaged
         {
-            var sourceBuffer = sourceBuffers[i];
-            
-            // Create buffer slice on target device
-            var deviceBuffer = await _memoryManager.CreateBufferSliceAsync(
-                sourceBuffer, device, startIndex, elementCount, cancellationToken);
-            
-            deviceBuffers[i] = deviceBuffer;
+            var deviceBuffers = new AbstractionsMemory.IBuffer<T>[sourceBuffers.Length];
+
+            for (var i = 0; i < sourceBuffers.Length; i++)
+            {
+                var sourceBuffer = sourceBuffers[i];
+
+                // Create buffer slice on target device
+                var deviceBuffer = await _memoryManager.CreateBufferSliceAsync(
+                    sourceBuffer, device, startIndex, elementCount, cancellationToken);
+
+                deviceBuffers[i] = deviceBuffer;
+            }
+
+            return deviceBuffers;
         }
 
-        return deviceBuffers;
-    }
-
-    private async ValueTask<DotCompute.Core.Execution.ManagedCompiledKernel> GetOrCompileKernelForDeviceAsync(
-        string kernelName,
-        IAccelerator device,
-        CancellationToken cancellationToken)
-    {
-        var cacheKey = $"{kernelName}_{device.Info.Id}";
-        
-        if (_distributedKernelCache.TryGetValue(cacheKey, out var cache) && 
-            cache.TryGetKernel(device, out var cachedKernel))
+        private async ValueTask<DotCompute.Core.Execution.ManagedCompiledKernel> GetOrCompileKernelForDeviceAsync(
+            string kernelName,
+            IAccelerator device,
+            CancellationToken cancellationToken)
         {
-            return cachedKernel;
+            var cacheKey = $"{kernelName}_{device.Info.Id}";
+
+            if (_distributedKernelCache.TryGetValue(cacheKey, out var cache) &&
+                cache.TryGetKernel(device, out var cachedKernel))
+            {
+                return cachedKernel;
+            }
+
+            // This is a simplified kernel compilation - in practice, you'd provide the actual expression/operation
+            var kernelsCompiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
+                kernelName,
+                [typeof(float)],
+                typeof(float),
+                device,
+                null,
+                null,
+                cancellationToken);
+
+            // Cache the kernel
+            var kernelCache = _distributedKernelCache.GetOrAdd(cacheKey, _ => new CompiledKernelCache());
+            // Convert from Kernels.ManagedCompiledKernel to Execution.ManagedCompiledKernel
+            var executionKernel = new DotCompute.Core.Execution.ManagedCompiledKernel(
+                kernelsCompiledKernel.Name,
+                device,
+                new CompiledKernel { Name = kernelsCompiledKernel.Name });
+            kernelCache.AddKernel(device, executionKernel);
+
+            return executionKernel;
         }
 
-        // This is a simplified kernel compilation - in practice, you'd provide the actual expression/operation
-        var kernelsCompiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
-            kernelName, 
-            [typeof(float)], 
-            typeof(float), 
-            device, 
-            null, 
-            null, 
-            cancellationToken);
+        private async ValueTask<DeviceExecutionResult[]> ExecuteCoordinatedPlanAsync<T>(
+            DataParallelExecutionPlan<T> plan,
+            CancellationToken cancellationToken) where T : unmanaged
+        {
+            // Create synchronization events for cross-device coordination
+            var deviceEvents = plan.Devices
+                .Select((device, index) => _coordinator.CreateEvent($"device_{index}"))
+                .ToArray();
 
-        // Cache the kernel
-        var kernelCache = _distributedKernelCache.GetOrAdd(cacheKey, _ => new CompiledKernelCache());
-        // Convert from Kernels.ManagedCompiledKernel to Execution.ManagedCompiledKernel
-        var executionKernel = new DotCompute.Core.Execution.ManagedCompiledKernel(
-            kernelsCompiledKernel.Name,
-            device,
-            new CompiledKernel { Name = kernelsCompiledKernel.Name });
-        kernelCache.AddKernel(device, executionKernel);
+            // Execute on all devices in parallel
+            var executionTasks = plan.DeviceTasks
+                .Select(async (task, index) =>
+                {
+                    try
+                    {
+                        var startTime = Stopwatch.StartNew();
 
-        return executionKernel;
-    }
+                        // Wait for memory transfers to complete
+                        await _memoryManager.WaitForTransfersAsync(task.Device, cancellationToken);
 
-    private async ValueTask<DeviceExecutionResult[]> ExecuteCoordinatedPlanAsync<T>(
-        DataParallelExecutionPlan<T> plan,
-        CancellationToken cancellationToken) where T : unmanaged
-    {
-        // Create synchronization events for cross-device coordination
-        var deviceEvents = plan.Devices
-            .Select((device, index) => _coordinator.CreateEvent($"device_{index}"))
-            .ToArray();
+                        // Execute kernel on device
+                        var kernelArgs = CreateKernelArguments(task.InputBuffers, task.OutputBuffers);
+                        // Convert Execution.ManagedCompiledKernel to Kernels.ManagedCompiledKernel
+                        var kernelsCompiledKernel = CreateKernelsCompatibleKernel(task.CompiledKernel);
+                        var executionResult = await _kernelManager.ExecuteKernelAsync(
+                            kernelsCompiledKernel,
+                            kernelArgs,
+                            task.Device,
+                            null,
+                            cancellationToken);
 
-        // Execute on all devices in parallel
-        var executionTasks = plan.DeviceTasks
-            .Select(async (task, index) =>
+                        // Signal completion to other devices
+                        await _coordinator.SignalEventAsync(deviceEvents[index], cancellationToken);
+
+                        startTime.Stop();
+
+                        return new DeviceExecutionResult
+                        {
+                            DeviceId = task.Device.Info.Id,
+                            Success = executionResult.Success,
+                            ExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
+                            ElementsProcessed = task.ElementCount,
+                            MemoryBandwidthGBps = CalculateMemoryBandwidth(task, startTime.Elapsed.TotalMilliseconds),
+                            ThroughputGFLOPS = executionResult.Timings?.EffectiveComputeThroughputGFLOPS ?? 0,
+                            ErrorMessage = executionResult.ErrorMessage
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        LogErrorExecutingOnDevice(_logger, task.Device.Info.Id, ex);
+                        return new DeviceExecutionResult
+                        {
+                            DeviceId = task.Device.Info.Id,
+                            Success = false,
+                            ErrorMessage = ex.Message
+                        };
+                    }
+                })
+                .ToArray();
+
+            var results = await Task.WhenAll(executionTasks).ConfigureAwait(false);
+
+            // Wait for all devices to complete and synchronize
+            await _coordinator.WaitForAllEventsAsync(deviceEvents, cancellationToken);
+
+            return results!;
+        }
+
+        private static KernelArgument[] CreateKernelArguments<T>(AbstractionsMemory.IBuffer<T>[] inputBuffers, AbstractionsMemory.IBuffer<T>[] outputBuffers) where T : unmanaged
+        {
+            var args = new KernelArgument[inputBuffers.Length + outputBuffers.Length];
+
+            for (var i = 0; i < inputBuffers.Length; i++)
+            {
+                args[i] = new KernelArgument
+                {
+                    Name = $"input_{i}",
+                    Value = inputBuffers[i],
+                    Type = typeof(AbstractionsMemory.IBuffer<T>),
+                    IsDeviceMemory = true,
+                    MemoryBuffer = inputBuffers[i] as AbstractionsMemory.IMemoryBuffer
+                };
+            }
+
+            for (var i = 0; i < outputBuffers.Length; i++)
+            {
+                args[inputBuffers.Length + i] = new KernelArgument
+                {
+                    Name = $"output_{i}",
+                    Value = outputBuffers[i],
+                    Type = typeof(AbstractionsMemory.IBuffer<T>),
+                    IsDeviceMemory = true,
+                    MemoryBuffer = outputBuffers[i] as AbstractionsMemory.IMemoryBuffer
+                };
+            }
+
+            return args;
+        }
+
+        private static double CalculateMemoryBandwidth<T>(DataParallelDeviceTask<T> task, double executionTimeMs) where T : unmanaged
+        {
+            var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
+            var totalBytes = (task.InputBuffers.Length + task.OutputBuffers.Length) *
+                            task.ElementCount * elementSize;
+            return (totalBytes / 1e9) / (executionTimeMs / 1000.0); // GB/s
+        }
+
+        private static double CalculateOverallThroughput(DeviceExecutionResult[] results) => results.Where(r => r.Success).Sum(r => r.ThroughputGFLOPS);
+
+        private static double CalculateOverallMemoryBandwidth(DeviceExecutionResult[] results) => results.Where(r => r.Success).Sum(r => r.MemoryBandwidthGBps);
+
+        private static double CalculateParallelEfficiency(DeviceExecutionResult[] results, double totalTimeMs)
+        {
+            var successfulResults = results.Where(r => r.Success).ToArray();
+            if (successfulResults.Length == 0)
+            {
+                return 0;
+            }
+
+            var averageDeviceTime = successfulResults.Average(r => r.ExecutionTimeMs);
+            var idealParallelTime = averageDeviceTime;
+
+            return (idealParallelTime / totalTimeMs) * 100;
+        }
+
+        // Model parallel and pipeline parallel execution strategies
+        private ValueTask<ModelParallelExecutionPlan<T>> CreateModelParallelExecutionPlanAsync<T>(
+            string kernelName, ModelParallelWorkload<T> workload, IAccelerator[] devices,
+            ModelParallelismOptions options, CancellationToken cancellationToken) where T : unmanaged
+        {
+            LogCreatingModelParallelPlan(_logger, workload.ModelLayers.Count, devices.Length, null);
+
+            // Simple layer-to-device assignment using round-robin
+            var layerAssignments = new Dictionary<int, IAccelerator>();
+            for (var i = 0; i < workload.ModelLayers.Count; i++)
+            {
+                layerAssignments[workload.ModelLayers[i].LayerId] = devices[i % devices.Length];
+            }
+
+            // Create simple communication schedule
+            var communicationSchedule = new CommunicationSchedule<T>
+            {
+                Operations = [],
+                SynchronizationPoints = []
+            };
+
+            return ValueTask.FromResult(new ModelParallelExecutionPlan<T>
+            {
+                KernelName = kernelName,
+                Devices = devices,
+                StrategyType = ExecutionStrategyType.ModelParallel,
+                ModelLayers = [.. workload.ModelLayers],
+                LayerAssignments = layerAssignments,
+                CommunicationSchedule = communicationSchedule,
+                EstimatedExecutionTimeMs = 100.0 // Simple estimate
+            });
+        }
+
+        private async ValueTask<DeviceExecutionResult[]> ExecuteModelParallelPlanAsync<T>(
+            ModelParallelExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
+        {
+            LogExecutingModelParallelPlan(_logger, plan.ModelLayers.Length, null);
+
+            var deviceResults = new List<DeviceExecutionResult>();
+            var startTime = Stopwatch.StartNew();
+
+            // Execute layers sequentially for simplicity (can be improved to parallel later)
+            foreach (var layer in plan.ModelLayers)
+            {
+                var device = plan.LayerAssignments[layer.LayerId];
+
+                try
+                {
+                    // Simulate layer execution
+                    await Task.Delay(10, cancellationToken); // Simple simulation
+
+                    var result = new DeviceExecutionResult
+                    {
+                        DeviceId = device.Info.Id,
+                        Success = true,
+                        ExecutionTimeMs = 10.0,
+                        ElementsProcessed = 1000, // Simulated
+                        MemoryBandwidthGBps = 100.0,
+                        ThroughputGFLOPS = 50.0
+                    };
+
+                    deviceResults.Add(result);
+                }
+                catch (Exception ex)
+                {
+                    LogErrorExecutingLayer(_logger, layer.LayerId, ex);
+                    deviceResults.Add(new DeviceExecutionResult
+                    {
+                        DeviceId = device.Info.Id,
+                        Success = false,
+                        ErrorMessage = ex.Message
+                    });
+                }
+            }
+
+            startTime.Stop();
+            return [.. deviceResults];
+        }
+
+        private ValueTask<PipelineExecutionPlan<T>> CreatePipelineExecutionPlanAsync<T>(
+            PipelineDefinition<T> pipeline, IAccelerator[] devices,
+            PipelineParallelismOptions options, CancellationToken cancellationToken) where T : unmanaged
+        {
+            LogCreatingPipelinePlan(_logger, pipeline.Stages.Count, devices.Length, null);
+
+            if (devices.Length < pipeline.Stages.Count)
+            {
+                throw new ArgumentException($"Need at least {pipeline.Stages.Count} devices for pipeline stages");
+            }
+
+            // Create simple pipeline stages
+            var stages = new PipelineStage<T>[pipeline.Stages.Count];
+            for (var i = 0; i < pipeline.Stages.Count; i++)
+            {
+                stages[i] = new PipelineStage<T>
+                {
+                    StageId = i,
+                    Name = pipeline.Stages[i].Name,
+                    Device = devices[i],
+                    Kernel = null!, // Would be compiled in full implementation
+                    InputBuffers = [],
+                    OutputBuffers = [],
+                    EstimatedProcessingTimeMs = 20.0
+                };
+            }
+
+            var microbatchConfig = new MicrobatchConfiguration
+            {
+                Size = options.MicrobatchSize,
+                Count = 10, // Simple default
+                SchedulingStrategy = MicrobatchSchedulingStrategy.Sequential
+            };
+
+            var bufferStrategy = new PipelineBufferStrategy<T>
+            {
+                BufferPool = new BufferPool<T>(),
+                DoubleBuffering = new DoubleBufferingConfig { Enabled = true },
+                Prefetching = new PrefetchingStrategy { Enabled = true, PrefetchDepth = 2 }
+            };
+
+            return ValueTask.FromResult(new PipelineExecutionPlan<T>
+            {
+                KernelName = $"pipeline_{pipeline.GetHashCode():X}",
+                Devices = [.. devices.Take(pipeline.Stages.Count)],
+                StrategyType = ExecutionStrategyType.PipelineParallel,
+                Stages = stages,
+                MicrobatchConfig = microbatchConfig,
+                BufferStrategy = bufferStrategy,
+                EstimatedExecutionTimeMs = stages.Sum(s => s.EstimatedProcessingTimeMs)
+            });
+        }
+
+        private async ValueTask<DeviceExecutionResult[]> ExecutePipelinePlanAsync<T>(
+            PipelineExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
+        {
+            LogExecutingPipelinePlan(_logger, plan.Stages.Length, plan.MicrobatchConfig.Count, null);
+
+            var deviceResults = new List<DeviceExecutionResult>();
+            var startTime = Stopwatch.StartNew();
+
+            // Execute pipeline stages in parallel
+            var stageTasks = plan.Stages.Select(async (stage, index) =>
             {
                 try
                 {
-                    var startTime = Stopwatch.StartNew();
-                    
-                    // Wait for memory transfers to complete
-                    await _memoryManager.WaitForTransfersAsync(task.Device, cancellationToken);
+                    var stageStartTime = Stopwatch.StartNew();
 
-                    // Execute kernel on device
-                    var kernelArgs = CreateKernelArguments(task.InputBuffers, task.OutputBuffers);
-                    // Convert Execution.ManagedCompiledKernel to Kernels.ManagedCompiledKernel
-                    var kernelsCompiledKernel = CreateKernelsCompatibleKernel(task.CompiledKernel);
-                    var executionResult = await _kernelManager.ExecuteKernelAsync(
-                        kernelsCompiledKernel,
-                        kernelArgs,
-                        task.Device,
-                        null,
-                        cancellationToken);
+                    // Simulate microbatch processing
+                    for (var batch = 0; batch < plan.MicrobatchConfig.Count; batch++)
+                    {
+                        await Task.Delay(5, cancellationToken); // Simulate processing time
+                    }
 
-                    // Signal completion to other devices
-                    await _coordinator.SignalEventAsync(deviceEvents[index], cancellationToken);
-
-                    startTime.Stop();
+                    stageStartTime.Stop();
 
                     return new DeviceExecutionResult
                     {
-                        DeviceId = task.Device.Info.Id,
-                        Success = executionResult.Success,
-                        ExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
-                        ElementsProcessed = task.ElementCount,
-                        MemoryBandwidthGBps = CalculateMemoryBandwidth(task, startTime.Elapsed.TotalMilliseconds),
-                        ThroughputGFLOPS = executionResult.Timings?.EffectiveComputeThroughputGFLOPS ?? 0,
-                        ErrorMessage = executionResult.ErrorMessage
+                        DeviceId = stage.Device.Info.Id,
+                        Success = true,
+                        ExecutionTimeMs = stageStartTime.Elapsed.TotalMilliseconds,
+                        ElementsProcessed = plan.MicrobatchConfig.Size * plan.MicrobatchConfig.Count,
+                        MemoryBandwidthGBps = 150.0,
+                        ThroughputGFLOPS = 75.0
                     };
                 }
                 catch (Exception ex)
                 {
-                    LogErrorExecutingOnDevice(_logger, task.Device.Info.Id, ex);
+                    LogErrorInPipelineStage(_logger, stage.StageId, ex);
                     return new DeviceExecutionResult
                     {
-                        DeviceId = task.Device.Info.Id,
+                        DeviceId = stage.Device.Info.Id,
                         Success = false,
                         ErrorMessage = ex.Message
                     };
                 }
-            })
-            .ToArray();
+            });
 
-        var results = await Task.WhenAll(executionTasks).ConfigureAwait(false);
+            var results = await Task.WhenAll(stageTasks);
+            startTime.Stop();
 
-        // Wait for all devices to complete and synchronize
-        await _coordinator.WaitForAllEventsAsync(deviceEvents, cancellationToken);
+            return results;
+        }
 
-        return results!;
-    }
-
-    private KernelArgument[] CreateKernelArguments<T>(AbstractionsMemory.IBuffer<T>[] inputBuffers, AbstractionsMemory.IBuffer<T>[] outputBuffers) where T : unmanaged
-    {
-        var args = new KernelArgument[inputBuffers.Length + outputBuffers.Length];
-        
-        for (var i = 0; i < inputBuffers.Length; i++)
+        /// <summary>
+        /// Creates a Kernels-compatible kernel from an Execution kernel wrapper.
+        /// </summary>
+        private static DotCompute.Core.Kernels.ManagedCompiledKernel CreateKernelsCompatibleKernel(DotCompute.Core.Execution.ManagedCompiledKernel executionKernel)
         {
-            args[i] = new KernelArgument
+            return new DotCompute.Core.Kernels.ManagedCompiledKernel
             {
-                Name = $"input_{i}",
-                Value = inputBuffers[i],
-                Type = typeof(AbstractionsMemory.IBuffer<T>),
-                IsDeviceMemory = true,
-                MemoryBuffer = inputBuffers[i] as AbstractionsMemory.IMemoryBuffer
-            };
-        }
-
-        for (var i = 0; i < outputBuffers.Length; i++)
-        {
-            args[inputBuffers.Length + i] = new KernelArgument
-            {
-                Name = $"output_{i}",
-                Value = outputBuffers[i],
-                Type = typeof(AbstractionsMemory.IBuffer<T>),
-                IsDeviceMemory = true,
-                MemoryBuffer = outputBuffers[i] as AbstractionsMemory.IMemoryBuffer
-            };
-        }
-
-        return args;
-    }
-
-    private double CalculateMemoryBandwidth<T>(DataParallelDeviceTask<T> task, double executionTimeMs) where T : unmanaged
-    {
-        var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
-        var totalBytes = (task.InputBuffers.Length + task.OutputBuffers.Length) * 
-                        task.ElementCount * elementSize;
-        return (totalBytes / 1e9) / (executionTimeMs / 1000.0); // GB/s
-    }
-
-        private double CalculateOverallThroughput(DeviceExecutionResult[] results) => results.Where(r => r.Success).Sum(r => r.ThroughputGFLOPS);
-
-        private double CalculateOverallMemoryBandwidth(DeviceExecutionResult[] results) => results.Where(r => r.Success).Sum(r => r.MemoryBandwidthGBps);
-
-        private double CalculateParallelEfficiency(DeviceExecutionResult[] results, double totalTimeMs)
-    {
-        var successfulResults = results.Where(r => r.Success).ToArray();
-        if (successfulResults.Length == 0)
-        {
-            return 0;
-        }
-
-        var averageDeviceTime = successfulResults.Average(r => r.ExecutionTimeMs);
-        var idealParallelTime = averageDeviceTime;
-        
-        return (idealParallelTime / totalTimeMs) * 100;
-    }
-
-    // Model parallel and pipeline parallel execution strategies
-    private ValueTask<ModelParallelExecutionPlan<T>> CreateModelParallelExecutionPlanAsync<T>(
-        string kernelName, ModelParallelWorkload<T> workload, IAccelerator[] devices, 
-        ModelParallelismOptions options, CancellationToken cancellationToken) where T : unmanaged
-    {
-        LogCreatingModelParallelPlan(_logger, workload.ModelLayers.Count, devices.Length, null);
-
-        // Simple layer-to-device assignment using round-robin
-        var layerAssignments = new Dictionary<int, IAccelerator>();
-        for (var i = 0; i < workload.ModelLayers.Count; i++)
-        {
-            layerAssignments[workload.ModelLayers[i].LayerId] = devices[i % devices.Length];
-        }
-
-        // Create simple communication schedule
-        var communicationSchedule = new CommunicationSchedule<T>
-        {
-            Operations = [],
-            SynchronizationPoints = []
-        };
-
-        return ValueTask.FromResult(new ModelParallelExecutionPlan<T>
-        {
-            KernelName = kernelName,
-            Devices = devices,
-            StrategyType = ExecutionStrategyType.ModelParallel,
-            ModelLayers = [.. workload.ModelLayers],
-            LayerAssignments = layerAssignments,
-            CommunicationSchedule = communicationSchedule,
-            EstimatedExecutionTimeMs = 100.0 // Simple estimate
-        });
-    }
-
-    private async ValueTask<DeviceExecutionResult[]> ExecuteModelParallelPlanAsync<T>(
-        ModelParallelExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
-    {
-        LogExecutingModelParallelPlan(_logger, plan.ModelLayers.Length, null);
-
-        var deviceResults = new List<DeviceExecutionResult>();
-        var startTime = Stopwatch.StartNew();
-
-        // Execute layers sequentially for simplicity (can be improved to parallel later)
-        foreach (var layer in plan.ModelLayers)
-        {
-            var device = plan.LayerAssignments[layer.LayerId];
-            
-            try
-            {
-                // Simulate layer execution
-                await Task.Delay(10, cancellationToken); // Simple simulation
-                
-                var result = new DeviceExecutionResult
+                Name = executionKernel.Name,
+                Binary = [], // Simplified for demo
+                Parameters = [], // Simplified for demo
+                Handle = IntPtr.Zero,
+                SharedMemorySize = 0,
+                PerformanceMetadata = new Dictionary<string, object>
                 {
-                    DeviceId = device.Info.Id,
-                    Success = true,
-                    ExecutionTimeMs = 10.0,
-                    ElementsProcessed = 1000, // Simulated
-                    MemoryBandwidthGBps = 100.0,
-                    ThroughputGFLOPS = 50.0
-                };
-                
-                deviceResults.Add(result);
-            }
-            catch (Exception ex)
-            {
-                LogErrorExecutingLayer(_logger, layer.LayerId, ex);
-                deviceResults.Add(new DeviceExecutionResult
-                {
-                    DeviceId = device.Info.Id,
-                    Success = false,
-                    ErrorMessage = ex.Message
-                });
-            }
-        }
-
-        startTime.Stop();
-        return [.. deviceResults];
-    }
-
-    private ValueTask<PipelineExecutionPlan<T>> CreatePipelineExecutionPlanAsync<T>(
-        PipelineDefinition<T> pipeline, IAccelerator[] devices, 
-        PipelineParallelismOptions options, CancellationToken cancellationToken) where T : unmanaged
-    {
-        LogCreatingPipelinePlan(_logger, pipeline.Stages.Count, devices.Length, null);
-
-        if (devices.Length < pipeline.Stages.Count)
-        {
-            throw new ArgumentException($"Need at least {pipeline.Stages.Count} devices for pipeline stages");
-        }
-
-        // Create simple pipeline stages
-        var stages = new PipelineStage<T>[pipeline.Stages.Count];
-        for (var i = 0; i < pipeline.Stages.Count; i++)
-        {
-            stages[i] = new PipelineStage<T>
-            {
-                StageId = i,
-                Name = pipeline.Stages[i].Name,
-                Device = devices[i],
-                Kernel = null!, // Would be compiled in full implementation
-                InputBuffers = [],
-                OutputBuffers = [],
-                EstimatedProcessingTimeMs = 20.0
-            };
-        }
-
-        var microbatchConfig = new MicrobatchConfiguration
-        {
-            Size = options.MicrobatchSize,
-            Count = 10, // Simple default
-            SchedulingStrategy = MicrobatchSchedulingStrategy.Sequential
-        };
-
-        var bufferStrategy = new PipelineBufferStrategy<T>
-        {
-            BufferPool = new BufferPool<T>(),
-            DoubleBuffering = new DoubleBufferingConfig { Enabled = true },
-            Prefetching = new PrefetchingStrategy { Enabled = true, PrefetchDepth = 2 }
-        };
-
-        return ValueTask.FromResult(new PipelineExecutionPlan<T>
-        {
-            KernelName = $"pipeline_{pipeline.GetHashCode():X}",
-            Devices = [.. devices.Take(pipeline.Stages.Count)],
-            StrategyType = ExecutionStrategyType.PipelineParallel,
-            Stages = stages,
-            MicrobatchConfig = microbatchConfig,
-            BufferStrategy = bufferStrategy,
-            EstimatedExecutionTimeMs = stages.Sum(s => s.EstimatedProcessingTimeMs)
-        });
-    }
-
-    private async ValueTask<DeviceExecutionResult[]> ExecutePipelinePlanAsync<T>(
-        PipelineExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
-    {
-        LogExecutingPipelinePlan(_logger, plan.Stages.Length, plan.MicrobatchConfig.Count, null);
-
-        var deviceResults = new List<DeviceExecutionResult>();
-        var startTime = Stopwatch.StartNew();
-
-        // Execute pipeline stages in parallel
-        var stageTasks = plan.Stages.Select(async (stage, index) =>
-        {
-            try
-            {
-                var stageStartTime = Stopwatch.StartNew();
-                
-                // Simulate microbatch processing
-                for (var batch = 0; batch < plan.MicrobatchConfig.Count; batch++)
-                {
-                    await Task.Delay(5, cancellationToken); // Simulate processing time
+                    ["ExecutionCount"] = executionKernel.ExecutionCount,
+                    ["TotalExecutionTime"] = executionKernel.TotalExecutionTime.TotalMilliseconds
                 }
-                
-                stageStartTime.Stop();
-                
-                return new DeviceExecutionResult
-                {
-                    DeviceId = stage.Device.Info.Id,
-                    Success = true,
-                    ExecutionTimeMs = stageStartTime.Elapsed.TotalMilliseconds,
-                    ElementsProcessed = plan.MicrobatchConfig.Size * plan.MicrobatchConfig.Count,
-                    MemoryBandwidthGBps = 150.0,
-                    ThroughputGFLOPS = 75.0
-                };
-            }
-            catch (Exception ex)
-            {
-                LogErrorInPipelineStage(_logger, stage.StageId, ex);
-                return new DeviceExecutionResult
-                {
-                    DeviceId = stage.Device.Info.Id,
-                    Success = false,
-                    ErrorMessage = ex.Message
-                };
-            }
-        });
+            };
+        }
 
-        var results = await Task.WhenAll(stageTasks);
-        startTime.Stop();
-        
-        return results;
+        #endregion
     }
-
-    /// <summary>
-    /// Creates a Kernels-compatible kernel from an Execution kernel wrapper.
-    /// </summary>
-    private DotCompute.Core.Kernels.ManagedCompiledKernel CreateKernelsCompatibleKernel(DotCompute.Core.Execution.ManagedCompiledKernel executionKernel)
-    {
-        return new DotCompute.Core.Kernels.ManagedCompiledKernel
-        {
-            Name = executionKernel.Name,
-            Binary = Array.Empty<byte>(), // Simplified for demo
-            Parameters = Array.Empty<DotCompute.Core.Kernels.KernelParameter>(), // Simplified for demo
-            Handle = IntPtr.Zero,
-            SharedMemorySize = 0,
-            PerformanceMetadata = new Dictionary<string, object>
-            {
-                ["ExecutionCount"] = executionKernel.ExecutionCount,
-                ["TotalExecutionTime"] = executionKernel.TotalExecutionTime.TotalMilliseconds
-            }
-        };
-    }
-
-    #endregion
-}
 }
