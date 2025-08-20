@@ -359,7 +359,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
         var kernelDefinition = new KernelDefinition
         {
             Name = "", // Empty name
-            Code = Encoding.UTF8.GetBytes(GetSimpleKernelSource()),
+            Code = GetSimpleKernelSource(),
             EntryPoint = "vector_add"
         };
 
@@ -408,7 +408,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
         return new KernelDefinition
         {
             Name = "vector_add",
-            Code = Encoding.UTF8.GetBytes(GetSimpleKernelSource()),
+            Code = GetSimpleKernelSource(),
             EntryPoint = "vector_add"
         };
     }
@@ -418,7 +418,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
         return new KernelDefinition
         {
             Name = "invalid_kernel",
-            Code = Encoding.UTF8.GetBytes("invalid cuda syntax {{{ this will not compile"),
+            Code = "invalid cuda syntax {{{ this will not compile",
             EntryPoint = "invalid_kernel"
         };
     }
@@ -436,7 +436,7 @@ __global__ void math_kernel(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "math_kernel",
-            Code = Encoding.UTF8.GetBytes(mathKernelSource),
+            Code = mathKernelSource,
             EntryPoint = "math_kernel"
         };
     }
@@ -463,7 +463,7 @@ __global__ void shared_memory_kernel(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "shared_memory_kernel",
-            Code = Encoding.UTF8.GetBytes(sharedMemoryKernelSource),
+            Code = sharedMemoryKernelSource,
             EntryPoint = "shared_memory_kernel"
         };
     }
@@ -473,7 +473,7 @@ __global__ void shared_memory_kernel(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "custom_kernel",
-            Code = Encoding.UTF8.GetBytes(GetSimpleKernelSource().Replace("vector_add", "custom_entry_point", StringComparison.Ordinal)),
+            Code = GetSimpleKernelSource().Replace("vector_add", "custom_entry_point", StringComparison.Ordinal),
             EntryPoint = "custom_entry_point"
         };
     }
@@ -519,7 +519,7 @@ __global__ void matrix_multiply(float* A, float* B, float* C, int n)
         return new KernelDefinition
         {
             Name = "matrix_multiply",
-            Code = Encoding.UTF8.GetBytes(matrixMultiplySource),
+            Code = matrixMultiplySource,
             EntryPoint = "matrix_multiply"
         };
     }
@@ -530,7 +530,7 @@ __global__ void matrix_multiply(float* A, float* B, float* C, int n)
         return new KernelDefinition
         {
             Name = name,
-            Code = Encoding.UTF8.GetBytes(source),
+            Code = source,
             EntryPoint = name
         };
     }

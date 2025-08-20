@@ -108,8 +108,8 @@ public AbstractionsValidationResult Validate(KernelDefinition definition)
     }
 
     // Check if this looks like Metal code or binary
-    var codeString = Encoding.UTF8.GetString(definition.Code);
-    if (!codeString.Contains("kernel", StringComparison.Ordinal) && !codeString.Contains("metal", StringComparison.Ordinal) && !IsBinaryCode(definition.Code))
+    var codeString = definition.Code ?? string.Empty;
+    if (!codeString.Contains("kernel", StringComparison.Ordinal) && !codeString.Contains("metal", StringComparison.Ordinal) && !IsBinaryCode(Encoding.UTF8.GetBytes(codeString)))
     {
         return AbstractionsValidationResult.Failure("Code does not appear to be valid Metal shader language or compiled binary");
     }
@@ -120,13 +120,13 @@ public AbstractionsValidationResult Validate(KernelDefinition definition)
 private static string ExtractMetalCode(KernelDefinition definition)
 {
     // If it's binary code, we'll need to handle it differently
-    if (IsBinaryCode(definition.Code))
+    if (definition.Code != null && IsBinaryCode(System.Text.Encoding.UTF8.GetBytes(definition.Code)))
     {
         throw new NotSupportedException("Pre-compiled Metal binaries are not yet supported");
     }
 
     // Assume it's text-based Metal code
-    var code = Encoding.UTF8.GetString(definition.Code);
+    var code = definition.Code ?? string.Empty;
 
     // If the code doesn't include Metal headers, add them
     if (!code.Contains("#include <metal_stdlib>", StringComparison.Ordinal))

@@ -443,18 +443,16 @@ public class HardwareAbstractionLayer
             "SUBGROUPS", "VARIABLE_POINTERS", "STORAGE_BUFFER_16BIT"
         ];
     }
-    
-    #endregion
-    
-    #region Performance Estimation Methods
-    
-    private long EstimateGpuMemory()
-    {
-        // Conservative estimate - would be better to query actual GPU memory
-        return 2L * 1024 * 1024 * 1024; // 2GB default
-    }
-    
-    private long EstimateOpenClMemory()
+
+        #endregion
+
+        #region Performance Estimation Methods
+
+        private long EstimateGpuMemory() =>
+            // Conservative estimate - would be better to query actual GPU memory
+            2L * 1024 * 1024 * 1024; // 2GB default
+
+        private long EstimateOpenClMemory()
     {
         var hardware = PlatformDetection.Hardware;
         return hardware.HasGpu ? EstimateGpuMemory() : hardware.AvailablePhysicalMemory / 4;

@@ -38,16 +38,13 @@ public IKernelTemplate GetTemplate(string templateName)
     throw new InvalidOperationException($"Kernel template '{templateName}' not found");
 }
 
-/// <summary>
-/// Gets all available template names.
-/// </summary>
-/// <returns>The template names.</returns>
-public IReadOnlyList<string> GetTemplateNames()
-{
-    return _templates.Keys.ToArray();
-}
+    /// <summary>
+    /// Gets all available template names.
+    /// </summary>
+    /// <returns>The template names.</returns>
+    public IReadOnlyList<string> GetTemplateNames() => _templates.Keys.ToArray();
 
-private void InitializeTemplates()
+    private void InitializeTemplates()
 {
     _templates["MapOperation"] = new MapKernelTemplate();
     _templates["FilterOperation"] = new FilterKernelTemplate();
@@ -99,7 +96,7 @@ public GeneratedKernel Generate(KernelDefinition definition, IAccelerator accele
         Name = definition.Name,
         Source = sourceBuilder.ToString(),
         Language = ConvertLanguage(definition.Language),
-        Parameters = definition.Parameters.Select(ConvertParameter).ToArray(),
+        Parameters = [.. definition.Parameters.Select(ConvertParameter)],
         SharedMemorySize = 0,
         OptimizationMetadata = definition.Metadata
     };
@@ -118,8 +115,12 @@ private static void GenerateCudaMapKernel(StringBuilder source, KernelDefinition
         source.Append(GetCudaType(param.Type));
         source.Append("* ");
         source.Append(param.Name);
-        if (i < parameters.Count - 1) source.Append(",");
-        source.AppendLine();
+        if (i < parameters.Count - 1)
+            {
+                source.Append(",");
+            }
+
+            source.AppendLine();
     }
     
     source.AppendLine(") {");
@@ -146,8 +147,12 @@ private static void GenerateOpenCLMapKernel(StringBuilder source, KernelDefiniti
         source.Append(GetOpenCLType(param.Type));
         source.Append("* ");
         source.Append(param.Name);
-        if (i < parameters.Count - 1) source.Append(",");
-        source.AppendLine();
+        if (i < parameters.Count - 1)
+            {
+                source.Append(",");
+            }
+
+            source.AppendLine();
     }
     
     source.AppendLine(") {");
@@ -175,8 +180,12 @@ private static void GenerateGenericMapKernel(StringBuilder source, KernelDefinit
         source.Append(GetCSharpType(param.Type));
         source.Append(" ");
         source.Append(param.Name);
-        if (i < parameters.Count - 1) source.Append(",");
-        source.AppendLine();
+        if (i < parameters.Count - 1)
+            {
+                source.Append(",");
+            }
+
+            source.AppendLine();
     }
     
     source.AppendLine(") {");
@@ -269,7 +278,7 @@ public GeneratedKernel Generate(KernelDefinition definition, IAccelerator accele
         Name = definition.Name,
         Source = sourceBuilder.ToString(),
         Language = Core.Kernels.KernelLanguage.CSharp,
-        Parameters = definition.Parameters.Select(ConvertParameter).ToArray(),
+        Parameters = [.. definition.Parameters.Select(ConvertParameter)],
         OptimizationMetadata = definition.Metadata
     };
 }
@@ -305,7 +314,7 @@ public GeneratedKernel Generate(KernelDefinition definition, IAccelerator accele
         Name = definition.Name,
         Source = sourceBuilder.ToString(),
         Language = Core.Kernels.KernelLanguage.CSharp,
-        Parameters = definition.Parameters.Select(ConvertParameter).ToArray(),
+        Parameters = [.. definition.Parameters.Select(ConvertParameter)],
         OptimizationMetadata = definition.Metadata
     };
 }
@@ -341,7 +350,7 @@ public GeneratedKernel Generate(KernelDefinition definition, IAccelerator accele
         Name = definition.Name,
         Source = sourceBuilder.ToString(),
         Language = Core.Kernels.KernelLanguage.CSharp,
-        Parameters = definition.Parameters.Select(ConvertParameter).ToArray(),
+        Parameters = [.. definition.Parameters.Select(ConvertParameter)],
         OptimizationMetadata = definition.Metadata
     };
 }

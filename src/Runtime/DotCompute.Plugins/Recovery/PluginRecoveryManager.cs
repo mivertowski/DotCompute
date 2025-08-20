@@ -9,6 +9,7 @@ using DotCompute.Core.Recovery;
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using CorePluginHealthStatus = DotCompute.Core.Recovery.PluginHealthStatus;
 
 namespace DotCompute.Plugins.Recovery;
 
@@ -48,7 +49,7 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
     {
         return error switch
         {
-            PluginException => true,
+            ArgumentException when error.Source?.Contains("plugin", StringComparison.OrdinalIgnoreCase) == true => true,
             ReflectionTypeLoadException => true,
             FileLoadException => true,
             BadImageFormatException => true,
@@ -201,12 +202,20 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
         
         return new PluginHealthReport
         {
+            PluginId = "All Plugins",
+            Status = pluginHealth.Values.All(p => p.IsHealthy) ? CorePluginHealthStatus.Healthy : CorePluginHealthStatus.Warning,
             Timestamp = DateTimeOffset.UtcNow,
-            PluginHealth = pluginHealth,
-            TotalPlugins = _pluginStates.Count,
-            HealthyPlugins = pluginHealth.Values.Count(p => p.IsHealthy),
-            IsolatedPlugins = pluginHealth.Values.Count(p => p.IsIsolated),
-            OverallHealth = CalculateOverallHealth(pluginHealth)
+            MemoryUsageBytes = pluginHealth.Values.Sum(p => p.MemoryUsageBytes),
+            CpuUsagePercent = pluginHealth.Values.Where(p => p.CpuUsagePercent > 0).DefaultIfEmpty(new PluginHealthInfo()).Average(p => p.CpuUsagePercent),
+            ActiveOperations = pluginHealth.Values.Sum(p => p.ActiveOperations),
+            OverallHealth = CalculateOverallHealth(pluginHealth),
+            Metrics = new Dictionary<string, object>
+            {
+                ["PluginHealth"] = pluginHealth,
+                ["TotalPlugins"] = _pluginStates.Count,
+                ["HealthyPlugins"] = pluginHealth.Values.Count(p => p.IsHealthy),
+                ["IsolatedPlugins"] = pluginHealth.Values.Count(p => p.IsIsolated)
+            }
         };
     }
 
@@ -362,14 +371,14 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
 
     private async Task<RecoveryResult> IsolatePluginRecoveryAsync(PluginRecoveryContext context, CancellationToken cancellationToken)
     {
-        if (context.Plugin == null)
+        if (context.Plugin is not IBackendPlugin plugin)
         {
-            return Failure("Cannot isolate plugin - plugin instance not available");
+            return Failure("Cannot isolate plugin - plugin instance not available or invalid type");
         }
         
         try
         {
-            var container = await IsolatePluginAsync(context.PluginId, context.Plugin, cancellationToken);
+            var container = await IsolatePluginAsync(context.PluginId, plugin, cancellationToken);
             return Success($"Plugin {context.PluginId} isolated successfully", TimeSpan.FromMilliseconds(300));
         }
         catch (Exception ex)
@@ -441,36 +450,38 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
         return true;
     }
 
-    private bool IsFrameworkCompatible(string? frameworkName)
-    {
+    private bool IsFrameworkCompatible(string? frameworkName) =>
         // Framework compatibility check implementation
-        return frameworkName?.Contains(".NETCoreApp") == true;
-    }
+        frameworkName?.Contains(".NETCoreApp") == true;
 
-    private List<string> CheckDependencyConflicts(Assembly assembly)
-    {
+    private List<string> CheckDependencyConflicts(Assembly assembly) =>
         // Dependency conflict detection implementation
-        return new List<string>();
-    }
+        new List<string>();
 
-    private List<string> CheckSecurityIssues(Assembly assembly)
-    {
+    private List<string> CheckSecurityIssues(Assembly assembly) =>
         // Security issue detection implementation
-        return new List<string>();
-    }
+        new List<string>();
 
     private double CalculateOverallHealth(Dictionary<string, PluginHealthInfo> pluginHealth)
     {
-        if (pluginHealth.Count == 0) return 1.0;
-        
+        if (pluginHealth.Count == 0)
+        {
+            return 1.0;
+        }
+
+
         var healthyCount = pluginHealth.Values.Count(p => p.IsHealthy);
         return (double)healthyCount / pluginHealth.Count;
     }
 
     private void PerformHealthCheck(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             foreach (var healthState in _pluginStates.Values)
@@ -530,4 +541,827 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
     }
 }
 
-// Supporting types would continue in additional files due to length...
+/// <summary>
+/// Recovery strategies for plugin error handling
+/// </summary>
+public enum PluginRecoveryStrategy
+{
+    /// <summary>
+    /// Restart the plugin process
+    /// </summary>
+    RestartPlugin,
+    
+    /// <summary>
+    /// Reload plugin assembly
+    /// </summary>
+    ReloadPlugin,
+    
+    /// <summary>
+    /// Isolate plugin in separate container
+    /// </summary>
+    IsolatePlugin,
+    
+    /// <summary>
+    /// Shutdown plugin safely
+    /// </summary>
+    ShutdownPlugin,
+    
+    /// <summary>
+    /// Rollback to previous plugin version
+    /// </summary>
+    RollbackVersion
+}
+
+/// <summary>
+/// Plugin health status enumeration
+/// </summary>
+public enum PluginHealthStatus
+{
+    /// <summary>
+    /// Plugin status is unknown
+    /// </summary>
+    Unknown,
+    
+    /// <summary>
+    /// Plugin is operating normally
+    /// </summary>
+    Healthy,
+    
+    /// <summary>
+    /// Plugin has warnings but is functional
+    /// </summary>
+    Warning,
+    
+    /// <summary>
+    /// Plugin is in critical state but still running
+    /// </summary>
+    Critical,
+    
+    /// <summary>
+    /// Plugin has failed and is not operational
+    /// </summary>
+    Failed,
+    
+    /// <summary>
+    /// Plugin is currently being recovered
+    /// </summary>
+    Recovering,
+    
+    /// <summary>
+    /// Plugin is isolated for safety
+    /// </summary>
+    Isolated,
+    
+    /// <summary>
+    /// Plugin is shutting down
+    /// </summary>
+    ShuttingDown
+}
+
+/// <summary>
+/// Comprehensive plugin health information
+/// </summary>
+public sealed class PluginHealthInfo
+{
+    /// <summary>
+    /// Plugin identifier
+    /// </summary>
+    public string PluginId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Whether the plugin is currently healthy
+    /// </summary>
+    public bool IsHealthy { get; set; }
+    
+    /// <summary>
+    /// Whether the plugin is running in isolation
+    /// </summary>
+    public bool IsIsolated { get; set; }
+    
+    /// <summary>
+    /// Total number of errors encountered
+    /// </summary>
+    public int ErrorCount { get; set; }
+    
+    /// <summary>
+    /// Number of times plugin has been restarted
+    /// </summary>
+    public int RestartCount { get; set; }
+    
+    /// <summary>
+    /// Last error that occurred
+    /// </summary>
+    public Exception? LastError { get; set; }
+    
+    /// <summary>
+    /// Timestamp of the last restart
+    /// </summary>
+    public DateTimeOffset? LastRestart { get; set; }
+    
+    /// <summary>
+    /// Timestamp of the last health check
+    /// </summary>
+    public DateTimeOffset LastHealthCheck { get; set; } = DateTimeOffset.UtcNow;
+    
+    /// <summary>
+    /// Number of consecutive failures
+    /// </summary>
+    public int ConsecutiveFailures { get; set; }
+    
+    /// <summary>
+    /// Uptime percentage over monitoring period
+    /// </summary>
+    public double UptimePercent { get; set; } = 100.0;
+    
+    /// <summary>
+    /// Current memory usage in bytes
+    /// </summary>
+    public long MemoryUsageBytes { get; set; }
+    
+    /// <summary>
+    /// Current CPU usage percentage
+    /// </summary>
+    public double CpuUsagePercent { get; set; }
+    
+    /// <summary>
+    /// Number of active operations
+    /// </summary>
+    public int ActiveOperations { get; set; }
+    
+    /// <summary>
+    /// Additional custom metrics
+    /// </summary>
+    public Dictionary<string, object> CustomMetrics { get; set; } = new();
+    
+    /// <summary>
+    /// Plugin start time
+    /// </summary>
+    public DateTimeOffset StartTime { get; set; } = DateTimeOffset.UtcNow;
+    
+    /// <summary>
+    /// Total runtime duration
+    /// </summary>
+    public TimeSpan Runtime => DateTimeOffset.UtcNow - StartTime;
+    
+    public override string ToString() => 
+        $"Plugin={PluginId}, Healthy={IsHealthy}, Errors={ErrorCount}, Restarts={RestartCount}, Uptime={UptimePercent:F1}%";
+}
+
+/// <summary>
+/// Plugin compatibility assessment result
+/// </summary>
+public sealed class PluginCompatibilityResult
+{
+    /// <summary>
+    /// Plugin identifier being assessed
+    /// </summary>
+    public string PluginId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Overall compatibility status
+    /// </summary>
+    public bool IsCompatible { get; set; }
+    
+    /// <summary>
+    /// Framework version compatibility
+    /// </summary>
+    public bool FrameworkCompatible { get; set; }
+    
+    /// <summary>
+    /// List of dependency conflicts found
+    /// </summary>
+    public List<string> DependencyConflicts { get; set; } = new();
+    
+    /// <summary>
+    /// List of security issues identified
+    /// </summary>
+    public List<string> SecurityIssues { get; set; } = new();
+    
+    /// <summary>
+    /// List of compatibility warnings
+    /// </summary>
+    public List<string> Warnings { get; set; } = new();
+    
+    /// <summary>
+    /// Recommended actions to resolve issues
+    /// </summary>
+    public List<string> RecommendedActions { get; set; } = new();
+    
+    /// <summary>
+    /// Error message if assessment failed
+    /// </summary>
+    public string? Error { get; set; }
+    
+    /// <summary>
+    /// Plugin version information
+    /// </summary>
+    public Version? PluginVersion { get; set; }
+    
+    /// <summary>
+    /// Target framework version
+    /// </summary>
+    public string? TargetFramework { get; set; }
+    
+    /// <summary>
+    /// Required dependencies and their versions
+    /// </summary>
+    public Dictionary<string, string> RequiredDependencies { get; set; } = new();
+    
+    /// <summary>
+    /// Assessment timestamp
+    /// </summary>
+    public DateTimeOffset AssessmentTime { get; set; } = DateTimeOffset.UtcNow;
+    
+    public override string ToString() => 
+        $"Plugin={PluginId}, Compatible={IsCompatible}, Issues={DependencyConflicts.Count + SecurityIssues.Count}";
+}
+
+/// <summary>
+/// Isolated plugin container for crash protection and resource isolation
+/// </summary>
+public sealed class IsolatedPluginContainer : IDisposable, IAsyncDisposable
+{
+    private readonly string _pluginId;
+    private readonly IBackendPlugin _plugin;
+    private readonly ILogger _logger;
+    private readonly PluginRecoveryConfiguration _config;
+    private readonly AssemblyLoadContext? _loadContext;
+    private readonly CancellationTokenSource _shutdownTokenSource;
+    private readonly SemaphoreSlim _operationLock;
+    private readonly Process? _isolatedProcess = null;
+    private bool _disposed;
+    private bool _initialized;
+    
+    /// <summary>
+    /// Plugin identifier
+    /// </summary>
+    public string PluginId => _pluginId;
+    
+    /// <summary>
+    /// Whether the container is currently active
+    /// </summary>
+    public bool IsActive { get; private set; }
+    
+    /// <summary>
+    /// Whether the plugin is running in a separate process
+    /// </summary>
+    public bool IsProcessIsolated => _isolatedProcess != null;
+    
+    /// <summary>
+    /// Current memory usage of the isolated plugin
+    /// </summary>
+    public long MemoryUsageBytes { get; private set; }
+    
+    /// <summary>
+    /// Container start time
+    /// </summary>
+    public DateTimeOffset StartTime { get; private set; }
+    
+    /// <summary>
+    /// Container uptime
+    /// </summary>
+    public TimeSpan Uptime => DateTimeOffset.UtcNow - StartTime;
+    
+    /// <summary>
+    /// Number of operations executed in this container
+    /// </summary>
+    public long OperationCount { get; private set; }
+    
+    /// <summary>
+    /// Last operation timestamp
+    /// </summary>
+    public DateTimeOffset? LastOperationTime { get; private set; }
+    
+    public IsolatedPluginContainer(
+        string pluginId,
+        IBackendPlugin plugin,
+        ILogger logger,
+        PluginRecoveryConfiguration config)
+    {
+        _pluginId = pluginId ?? throw new ArgumentNullException(nameof(pluginId));
+        _plugin = plugin ?? throw new ArgumentNullException(nameof(plugin));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+        
+        _shutdownTokenSource = new CancellationTokenSource();
+        _operationLock = new SemaphoreSlim(1, 1);
+        
+        // Create isolated assembly load context if needed
+        if (config.EnablePluginIsolation)
+        {
+            _loadContext = new AssemblyLoadContext($"Plugin_{pluginId}", isCollectible: true);
+        }
+        
+        StartTime = DateTimeOffset.UtcNow;
+        _logger.LogInformation("Created isolated container for plugin {PluginId}", pluginId);
+    }
+    
+    /// <summary>
+    /// Initializes the isolated container
+    /// </summary>
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+        {
+
+            throw new ObjectDisposedException(nameof(IsolatedPluginContainer));
+        }
+
+
+        if (_initialized)
+        {
+            return;
+        }
+
+
+        _logger.LogInformation("Initializing isolated container for plugin {PluginId}", _pluginId);
+        
+        try
+        {
+            // Initialize the plugin in isolation
+            // Note: Plugin initialization would be implementation specific
+            await Task.Delay(100, cancellationToken); // Placeholder for initialization
+            
+            // Start monitoring
+            _ = Task.Run(MonitorResourceUsageAsync, cancellationToken);
+            
+            IsActive = true;
+            _initialized = true;
+            
+            _logger.LogInformation("Successfully initialized isolated container for plugin {PluginId}", _pluginId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize isolated container for plugin {PluginId}", _pluginId);
+            throw;
+        }
+    }
+    
+    /// <summary>
+    /// Executes an operation within the isolated container
+    /// </summary>
+    public async Task<T> ExecuteAsync<T>(Func<IBackendPlugin, CancellationToken, Task<T>> operation, CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+        {
+
+            throw new ObjectDisposedException(nameof(IsolatedPluginContainer));
+        }
+
+
+        if (!_initialized)
+        {
+
+            throw new InvalidOperationException("Container not initialized");
+        }
+
+
+        await _operationLock.WaitAsync(cancellationToken);
+        
+        try
+        {
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, 
+                _shutdownTokenSource.Token);
+            timeoutCts.CancelAfter(_config.RecoveryTimeout);
+            
+            OperationCount++;
+            LastOperationTime = DateTimeOffset.UtcNow;
+            
+            var result = await operation(_plugin, timeoutCts.Token);
+            
+            _logger.LogDebug("Operation completed successfully in container {PluginId}", _pluginId);
+            return result;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning("Operation cancelled in container {PluginId}", _pluginId);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Operation failed in container {PluginId}", _pluginId);
+            throw;
+        }
+        finally
+        {
+            _operationLock.Release();
+        }
+    }
+    
+    /// <summary>
+    /// Shuts down the isolated container gracefully
+    /// </summary>
+    public async Task ShutdownAsync(CancellationToken cancellationToken = default)
+    {
+        if (_disposed || !IsActive)
+        {
+            return;
+        }
+
+
+        _logger.LogInformation("Shutting down isolated container for plugin {PluginId}", _pluginId);
+        
+        IsActive = false;
+        _shutdownTokenSource.Cancel();
+        
+        try
+        {
+            // Wait for ongoing operations to complete
+            await _operationLock.WaitAsync(TimeSpan.FromSeconds(30), cancellationToken);
+            
+            // Shutdown the plugin
+            if (_plugin is IDisposable disposablePlugin)
+            {
+                disposablePlugin.Dispose();
+            }
+            else if (_plugin is IAsyncDisposable asyncDisposablePlugin)
+            {
+                await asyncDisposablePlugin.DisposeAsync();
+            }
+            
+            // Unload assembly context if used
+            _loadContext?.Unload();
+            
+            _logger.LogInformation("Successfully shut down isolated container for plugin {PluginId}", _pluginId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during container shutdown for plugin {PluginId}", _pluginId);
+        }
+        finally
+        {
+            _operationLock.Release();
+        }
+    }
+    
+    /// <summary>
+    /// Gets current resource usage statistics
+    /// </summary>
+    public PluginResourceUsage GetResourceUsage()
+    {
+        return new PluginResourceUsage
+        {
+            PluginId = _pluginId,
+            MemoryUsageBytes = MemoryUsageBytes,
+            ProcessId = _isolatedProcess?.Id,
+            Uptime = Uptime,
+            OperationCount = OperationCount,
+            LastOperationTime = LastOperationTime,
+            IsProcessIsolated = IsProcessIsolated,
+            ThreadCount = _isolatedProcess?.Threads.Count ?? 0
+        };
+    }
+    
+    private async Task MonitorResourceUsageAsync()
+    {
+        while (IsActive && !_shutdownTokenSource.Token.IsCancellationRequested)
+        {
+            try
+            {
+                // Update memory usage
+                if (_isolatedProcess != null && !_isolatedProcess.HasExited)
+                {
+                    _isolatedProcess.Refresh();
+                    MemoryUsageBytes = _isolatedProcess.WorkingSet64;
+                }
+                else
+                {
+                    // Estimate memory usage for in-process isolation
+                    MemoryUsageBytes = GC.GetTotalMemory(false);
+                }
+                
+                await Task.Delay(TimeSpan.FromSeconds(5), _shutdownTokenSource.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error monitoring resource usage for plugin {PluginId}", _pluginId);
+                await Task.Delay(TimeSpan.FromSeconds(10), _shutdownTokenSource.Token);
+            }
+        }
+    }
+    
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            ShutdownAsync().GetAwaiter().GetResult();
+            
+            _shutdownTokenSource?.Dispose();
+            _operationLock?.Dispose();
+            _loadContext?.Unload();
+            _isolatedProcess?.Dispose();
+            
+            _disposed = true;
+        }
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+        if (!_disposed)
+        {
+            await ShutdownAsync();
+            
+            _shutdownTokenSource?.Dispose();
+            _operationLock?.Dispose();
+            _loadContext?.Unload();
+            _isolatedProcess?.Dispose();
+            
+            _disposed = true;
+        }
+    }
+}
+
+/// <summary>
+/// Extended plugin health state with recovery tracking
+/// </summary>
+public sealed class PluginHealthState
+{
+    private readonly PluginRecoveryConfiguration _config;
+    private readonly List<DateTimeOffset> _errorTimestamps;
+    private readonly List<DateTimeOffset> _restartTimestamps;
+    private readonly object _lock = new();
+    
+    /// <summary>
+    /// Plugin identifier
+    /// </summary>
+    public string PluginId { get; }
+    
+    /// <summary>
+    /// Whether the plugin is currently healthy
+    /// </summary>
+    public bool IsHealthy { get; private set; } = true;
+    
+    /// <summary>
+    /// Whether the plugin is running in isolation
+    /// </summary>
+    public bool IsIsolated { get; private set; }
+    
+    /// <summary>
+    /// Total error count
+    /// </summary>
+    public int ErrorCount { get; private set; }
+    
+    /// <summary>
+    /// Total restart count
+    /// </summary>
+    public int RestartCount { get; private set; }
+    
+    /// <summary>
+    /// Last error encountered
+    /// </summary>
+    public Exception? LastError { get; private set; }
+    
+    /// <summary>
+    /// Last restart timestamp
+    /// </summary>
+    public DateTimeOffset? LastRestart { get; private set; }
+    
+    /// <summary>
+    /// Last health check timestamp
+    /// </summary>
+    public DateTimeOffset LastHealthCheck { get; private set; } = DateTimeOffset.UtcNow;
+    
+    /// <summary>
+    /// Number of consecutive failures
+    /// </summary>
+    public int ConsecutiveFailures { get; private set; }
+    
+    /// <summary>
+    /// Plugin creation timestamp
+    /// </summary>
+    public DateTimeOffset CreatedAt { get; }
+    
+    /// <summary>
+    /// Emergency shutdown reason if applicable
+    /// </summary>
+    public string? EmergencyShutdownReason { get; private set; }
+    
+    /// <summary>
+    /// Whether plugin is in emergency shutdown state
+    /// </summary>
+    public bool IsEmergencyShutdown => !string.IsNullOrEmpty(EmergencyShutdownReason);
+    
+    public PluginHealthState(string pluginId, PluginRecoveryConfiguration config)
+    {
+        PluginId = pluginId ?? throw new ArgumentNullException(nameof(pluginId));
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _errorTimestamps = new List<DateTimeOffset>();
+        _restartTimestamps = new List<DateTimeOffset>();
+        CreatedAt = DateTimeOffset.UtcNow;
+    }
+    
+    /// <summary>
+    /// Records an error occurrence
+    /// </summary>
+    public void RecordError(Exception error)
+    {
+        lock (_lock)
+        {
+            ErrorCount++;
+            ConsecutiveFailures++;
+            LastError = error;
+            _errorTimestamps.Add(DateTimeOffset.UtcNow);
+            
+            // Check if plugin should be marked unhealthy
+            if (ConsecutiveFailures >= _config.MaxRecoveryAttempts)
+            {
+                IsHealthy = false;
+            }
+            
+            // Clean old timestamps
+            CleanOldTimestamps();
+        }
+    }
+    
+    /// <summary>
+    /// Records a successful recovery
+    /// </summary>
+    public void RecordSuccessfulRecovery()
+    {
+        lock (_lock)
+        {
+            ConsecutiveFailures = 0;
+            IsHealthy = true;
+            EmergencyShutdownReason = null;
+        }
+    }
+    
+    /// <summary>
+    /// Records a failed recovery attempt
+    /// </summary>
+    public void RecordFailedRecovery()
+    {
+        lock (_lock)
+        {
+            ConsecutiveFailures++;
+            if (ConsecutiveFailures >= _config.MaxRecoveryAttempts)
+            {
+                IsHealthy = false;
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Records a plugin restart
+    /// </summary>
+    public void RecordRestart()
+    {
+        lock (_lock)
+        {
+            RestartCount++;
+            LastRestart = DateTimeOffset.UtcNow;
+            _restartTimestamps.Add(DateTimeOffset.UtcNow);
+            ConsecutiveFailures = 0; // Reset on restart
+            
+            CleanOldTimestamps();
+        }
+    }
+    
+    /// <summary>
+    /// Sets isolation status
+    /// </summary>
+    public void SetIsolated(bool isolated)
+    {
+        lock (_lock)
+        {
+            IsIsolated = isolated;
+        }
+    }
+    
+    /// <summary>
+    /// Sets emergency shutdown state
+    /// </summary>
+    public void SetEmergencyShutdown(string reason)
+    {
+        lock (_lock)
+        {
+            EmergencyShutdownReason = reason;
+            IsHealthy = false;
+        }
+    }
+    
+    /// <summary>
+    /// Updates health check timestamp
+    /// </summary>
+    public void UpdateHealthCheck()
+    {
+        lock (_lock)
+        {
+            LastHealthCheck = DateTimeOffset.UtcNow;
+        }
+    }
+    
+    /// <summary>
+    /// Calculates uptime percentage over monitoring period
+    /// </summary>
+    public double CalculateUptimePercent()
+    {
+        lock (_lock)
+        {
+            var monitoringPeriod = TimeSpan.FromHours(24); // Last 24 hours
+            var now = DateTimeOffset.UtcNow;
+            var windowStart = now - monitoringPeriod;
+            
+            var recentRestarts = _restartTimestamps.Count(t => t >= windowStart);
+            var recentErrors = _errorTimestamps.Count(t => t >= windowStart);
+            
+            if (recentRestarts == 0 && recentErrors == 0)
+            {
+
+                return 100.0;
+            }
+
+            // Estimate downtime based on errors and restarts
+
+            var estimatedDowntimeMinutes = (recentRestarts * 2) + (recentErrors * 0.5); // 2 min per restart, 30s per error
+            var totalMinutes = monitoringPeriod.TotalMinutes;
+            
+            var uptimePercent = Math.Max(0, (totalMinutes - estimatedDowntimeMinutes) / totalMinutes * 100);
+            return Math.Min(100, uptimePercent);
+        }
+    }
+    
+    /// <summary>
+    /// Gets error rate over specified time window
+    /// </summary>
+    public double GetErrorRate(TimeSpan window)
+    {
+        lock (_lock)
+        {
+            var cutoff = DateTimeOffset.UtcNow - window;
+            var recentErrors = _errorTimestamps.Count(t => t >= cutoff);
+            return recentErrors / window.TotalHours; // Errors per hour
+        }
+    }
+    
+    private void CleanOldTimestamps()
+    {
+        var cutoff = DateTimeOffset.UtcNow - TimeSpan.FromHours(24);
+        _errorTimestamps.RemoveAll(t => t < cutoff);
+        _restartTimestamps.RemoveAll(t => t < cutoff);
+    }
+}
+
+/// <summary>
+/// Plugin resource usage information
+/// </summary>
+public sealed class PluginResourceUsage
+{
+    /// <summary>
+    /// Plugin identifier
+    /// </summary>
+    public string PluginId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Memory usage in bytes
+    /// </summary>
+    public long MemoryUsageBytes { get; set; }
+    
+    /// <summary>
+    /// Process ID if running in separate process
+    /// </summary>
+    public int? ProcessId { get; set; }
+    
+    /// <summary>
+    /// Plugin uptime
+    /// </summary>
+    public TimeSpan Uptime { get; set; }
+    
+    /// <summary>
+    /// Total operation count
+    /// </summary>
+    public long OperationCount { get; set; }
+    
+    /// <summary>
+    /// Last operation timestamp
+    /// </summary>
+    public DateTimeOffset? LastOperationTime { get; set; }
+    
+    /// <summary>
+    /// Whether plugin is process-isolated
+    /// </summary>
+    public bool IsProcessIsolated { get; set; }
+    
+    /// <summary>
+    /// Number of threads used
+    /// </summary>
+    public int ThreadCount { get; set; }
+    
+    /// <summary>
+    /// CPU usage percentage (if available)
+    /// </summary>
+    public double? CpuUsagePercent { get; set; }
+    
+    /// <summary>
+    /// Memory usage in MB for display
+    /// </summary>
+    public double MemoryUsageMB => MemoryUsageBytes / 1024.0 / 1024.0;
+    
+    public override string ToString() => 
+        $"Plugin={PluginId}, Memory={MemoryUsageMB:F1}MB, Operations={OperationCount}, Uptime={Uptime:hh\\:mm\\:ss}";
+}

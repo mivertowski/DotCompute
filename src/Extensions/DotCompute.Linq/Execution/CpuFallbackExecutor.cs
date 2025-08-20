@@ -88,19 +88,17 @@ public async Task<object?> ExecuteAsync(ExecutionContext context, CancellationTo
     }
 }
 
-/// <summary>
-/// Validates whether a compute plan can be executed on CPU.
-/// </summary>
-public DotCompute.Abstractions.ValidationResult Validate(IComputePlan plan, IAccelerator accelerator)
-{
-    // CPU fallback can always execute plans
-    return DotCompute.Abstractions.ValidationResult.Success();
-}
+    /// <summary>
+    /// Validates whether a compute plan can be executed on CPU.
+    /// </summary>
+    public DotCompute.Abstractions.ValidationResult Validate(IComputePlan plan, IAccelerator accelerator) =>
+        // CPU fallback can always execute plans
+        DotCompute.Abstractions.ValidationResult.Success();
 
-/// <summary>
-/// Executes a LINQ expression on CPU with SIMD optimization.
-/// </summary>
-public async Task<T> ExecuteAsync<T>(Expression expression, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Executes a LINQ expression on CPU with SIMD optimization.
+    /// </summary>
+    public async Task<T> ExecuteAsync<T>(Expression expression, CancellationToken cancellationToken = default)
 {
     _logger.LogDebug("Executing expression on CPU: {ExpressionType}", expression.NodeType);
     

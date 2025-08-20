@@ -51,7 +51,11 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default)
         {
             if (devices == null || devices.Length == 0)
+            {
+
                 throw new ArgumentException("At least one device must be provided", nameof(devices));
+            }
+
 
             _logger.LogInformation("Building P2P capability matrix for {DeviceCount} devices", devices.Length);
 
@@ -79,7 +83,11 @@ namespace DotCompute.Core.Memory.P2P
 
                     for (int j = 0; j < devices.Length; j++)
                     {
-                        if (i == j) continue; // Skip self-pairs
+                        if (i == j)
+                        {
+                            continue; // Skip self-pairs
+                        }
+
 
                         var device2 = devices[j];
                         var detectionTask = DetectAndStoreCapabilityAsync(device1, device2, cancellationToken)
@@ -120,8 +128,17 @@ namespace DotCompute.Core.Memory.P2P
             IAccelerator device2,
             CancellationToken cancellationToken = default)
         {
-            if (device1 == null) throw new ArgumentNullException(nameof(device1));
-            if (device2 == null) throw new ArgumentNullException(nameof(device2));
+            if (device1 == null)
+            {
+                throw new ArgumentNullException(nameof(device1));
+            }
+
+
+            if (device2 == null)
+            {
+                throw new ArgumentNullException(nameof(device2));
+            }
+
 
             if (device1.Info.Id == device2.Info.Id)
             {
@@ -163,9 +180,13 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default)
         {
             if (sourceDevice.Info.Id == targetDevice.Info.Id)
+            {
+
                 return null;
+            }
 
             // First try direct connection
+
             var directCapability = await GetP2PCapabilityAsync(sourceDevice, targetDevice, cancellationToken);
             if (directCapability.IsSupported)
             {
@@ -410,8 +431,11 @@ namespace DotCompute.Core.Memory.P2P
                 var current = queue.Dequeue();
                 
                 if (visited.Contains(current.CurrentDevice.Info.Id))
+                {
                     continue;
-                    
+                }
+
+
                 visited.Add(current.CurrentDevice.Info.Id);
 
                 // Check all connections from current device
@@ -420,11 +444,14 @@ namespace DotCompute.Core.Memory.P2P
                     foreach (var connection in connections)
                     {
                         if (!connection.Value.IsSupported || visited.Contains(connection.Key))
+                        {
                             continue;
+                        }
 
                         // Find device object for connection.Key (simplified - would need device registry)
                         // This is a placeholder - real implementation would maintain device registry
-                        
+
+
                         if (connection.Key == targetDevice.Info.Id)
                         {
                             // Found path to target
@@ -448,7 +475,7 @@ namespace DotCompute.Core.Memory.P2P
                             queue.Enqueue(new P2PPathCandidate
                             {
                                 CurrentDevice = current.CurrentDevice, // Placeholder - would be actual device
-                                Path = current.Path.Concat(new[] { current.CurrentDevice }).ToList(),
+                                Path = [.. current.Path, .. new[] { current.CurrentDevice }],
                                 TotalBandwidth = Math.Min(current.TotalBandwidth, connection.Value.EstimatedBandwidthGBps),
                                 TotalLatency = current.TotalLatency + EstimateLatency(connection.Value.ConnectionType)
                             });
@@ -511,18 +538,14 @@ namespace DotCompute.Core.Memory.P2P
             }
         }
 
-        private static bool IsCapabilityFresh(P2PConnectionCapability capability)
-        {
+        private static bool IsCapabilityFresh(P2PConnectionCapability capability) =>
             // In a real implementation, capabilities would have timestamps
             // For now, assume all cached capabilities are fresh
-            return true;
-        }
+            true;
 
-        private static DateTimeOffset GetCapabilityTimestamp(P2PConnectionCapability capability)
-        {
+        private static DateTimeOffset GetCapabilityTimestamp(P2PConnectionCapability capability) =>
             // Placeholder - would return actual timestamp in real implementation
-            return DateTimeOffset.UtcNow;
-        }
+            DateTimeOffset.UtcNow;
 
         private static double EstimateLatency(P2PConnectionType connectionType)
         {
@@ -551,11 +574,17 @@ namespace DotCompute.Core.Memory.P2P
                 var hasInfiniBand = deviceEntry.Value.Any(c => c.Value.ConnectionType == P2PConnectionType.InfiniBand && c.Value.IsSupported);
                 
                 if (hasNVLink)
+                {
                     nvlinkDevices.Add(deviceEntry.Key);
+                }
                 else if (hasInfiniBand)
+                {
                     infinibandDevices.Add(deviceEntry.Key);
+                }
                 else
+                {
                     pcieDevices.Add(deviceEntry.Key);
+                }
             }
 
             if (nvlinkDevices.Count > 1)
@@ -611,7 +640,11 @@ namespace DotCompute.Core.Memory.P2P
                 }
             }
 
-            if (allBandwidths.Count == 0) return bottlenecks;
+            if (allBandwidths.Count == 0)
+            {
+                return bottlenecks;
+            }
+
 
             var averageBandwidth = allBandwidths.Average();
             var threshold = averageBandwidth * 0.5; // Consider connections with <50% average bandwidth as bottlenecks
@@ -635,7 +668,7 @@ namespace DotCompute.Core.Memory.P2P
                 }
             }
 
-            return bottlenecks.Take(10).ToList(); // Return top 10 bottlenecks
+            return [.. bottlenecks.Take(10)]; // Return top 10 bottlenecks
         }
 
         private List<P2PHighPerformancePath> IdentifyHighPerformancePaths()
@@ -655,7 +688,11 @@ namespace DotCompute.Core.Memory.P2P
                 }
             }
 
-            if (allBandwidths.Count == 0) return highPerfPaths;
+            if (allBandwidths.Count == 0)
+            {
+                return highPerfPaths;
+            }
+
 
             var averageBandwidth = allBandwidths.Average();
             var threshold = averageBandwidth * 1.5; // Consider connections with >150% average bandwidth as high-performance
@@ -679,7 +716,7 @@ namespace DotCompute.Core.Memory.P2P
                 }
             }
 
-            return highPerfPaths.OrderByDescending(p => p.BandwidthGBps).Take(10).ToList();
+            return [.. highPerfPaths.OrderByDescending(p => p.BandwidthGBps).Take(10)];
         }
 
         private double CalculateAverageConnectionBandwidth(P2PConnectionType connectionType)
@@ -702,7 +739,11 @@ namespace DotCompute.Core.Memory.P2P
 
         private double CalculateInterconnectDensity(List<string> deviceIds)
         {
-            if (deviceIds.Count <= 1) return 0.0;
+            if (deviceIds.Count <= 1)
+            {
+                return 0.0;
+            }
+
 
             var possibleConnections = deviceIds.Count * (deviceIds.Count - 1);
             var actualConnections = 0;
@@ -721,17 +762,13 @@ namespace DotCompute.Core.Memory.P2P
             return possibleConnections > 0 ? (double)actualConnections / possibleConnections : 0.0;
         }
 
-        private int CountExpiredCapabilities()
-        {
+        private int CountExpiredCapabilities() =>
             // Placeholder - in real implementation would check timestamps
-            return 0;
-        }
+            0;
 
-        private double CalculateCacheHitRatio()
-        {
+        private double CalculateCacheHitRatio() =>
             // Placeholder - would track cache hits/misses in real implementation
-            return 0.95; // Assume 95% cache hit ratio
-        }
+            0.95; // Assume 95% cache hit ratio
 
         private void RefreshExpiredCapabilities(object? state)
         {
@@ -751,7 +788,12 @@ namespace DotCompute.Core.Memory.P2P
 
         public async ValueTask DisposeAsync()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
+
             _disposed = true;
 
             _refreshTimer?.Dispose();

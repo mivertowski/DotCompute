@@ -586,17 +586,14 @@ public static class PlatformDetection
             return false;
         }
     }
-    
-    #endregion
-    
-    #region GPU Detection
-    
-    private static bool DetectGpuPresence()
-    {
-        return DetectNvidiaGpu() || DetectAmdGpu() || DetectIntelGpu();
-    }
-    
-    private static bool DetectNvidiaGpu()
+
+        #endregion
+
+        #region GPU Detection
+
+        private static bool DetectGpuPresence() => DetectNvidiaGpu() || DetectAmdGpu() || DetectIntelGpu();
+
+        private static bool DetectNvidiaGpu()
     {
         try
         {

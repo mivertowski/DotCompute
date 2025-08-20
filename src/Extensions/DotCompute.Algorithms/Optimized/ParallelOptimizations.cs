@@ -17,7 +17,7 @@ public static class ParallelOptimizations
 {
     // Work-stealing configuration
     private static readonly int DefaultMaxWorkers = Environment.ProcessorCount;
-    private static readonly ThreadLocal&lt;Random&gt; ThreadLocalRandom = new(() => new Random());
+    private static readonly ThreadLocal<Random> ThreadLocalRandom = new(() => new Random());
     
     // Parallel thresholds
     private const int PARALLEL_THRESHOLD = 1000;
@@ -59,16 +59,24 @@ public static class ParallelOptimizations
         
         public void Execute(Action task)
         {
-            if (_disposed) throw new ObjectDisposedException(nameof(WorkStealingPool));
-            
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(WorkStealingPool));
+            }
+
+
             var workerId = Thread.CurrentThread.ManagedThreadId % _queues.Length;
             _queues[workerId].Enqueue(task);
         }
         
-        public void ExecuteParallel&lt;T&gt;(IEnumerable&lt;T&gt; items, Action&lt;T&gt; action)
+        public void ExecuteParallel<T>(IEnumerable<T> items, Action<T> action)
         {
-            if (_disposed) throw new ObjectDisposedException(nameof(WorkStealingPool));
-            
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(WorkStealingPool));
+            }
+
+
             var tasks = items.Select(item => new Action(() => action(item))).ToArray();
             var completedCount = 0;
             
@@ -105,7 +113,7 @@ public static class ParallelOptimizations
                 Action? task = null;
                 
                 // Try to dequeue from local queue
-                if (queue.TryDequeue(out task))
+                if (queue.TryDequeue(out task) && task != null)
                 {
                     ExecuteTask(task);
                     continue;
@@ -118,9 +126,12 @@ public static class ParallelOptimizations
                     var victimId = random.Next(_queues.Length);
                     if (victimId != workerId && _queues[victimId].TrySteal(out task))
                     {
-                        ExecuteTask(task);
-                        stoleWork = true;
-                        break;
+                        if (task != null)
+                        {
+                            ExecuteTask(task);
+                            stoleWork = true;
+                            break;
+                        }
                     }
                 }
                 
@@ -129,7 +140,9 @@ public static class ParallelOptimizations
                     // No work available, yield or sleep briefly
                     Thread.Yield();
                     if (!stoleWork)
+                    {
                         Thread.Sleep(1);
+                    }
                 }
             }
         }
@@ -270,8 +283,12 @@ public static class ParallelOptimizations
     public static Matrix ParallelMatrixMultiply(Matrix a, Matrix b, WorkStealingPool? pool = null)
     {
         if (a.Columns != b.Rows)
+        {
+
             throw new ArgumentException("Matrix dimensions incompatible");
-            
+        }
+
+
         var result = new Matrix(a.Rows, b.Columns);
         ParallelMatrixMultiply(a, b, result, pool);
         return result;
@@ -300,7 +317,7 @@ public static class ParallelOptimizations
         {
             // Divide work into cache-friendly blocks
             var blockSize = CalculateOptimalBlockSize(rows, cols, inner);
-            var tasks = new List&lt;Action&gt;();
+            var tasks = new List<Action>();
             
             for (var ii = 0; ii < rows; ii += blockSize)
             {
@@ -341,16 +358,30 @@ public static class ParallelOptimizations
     /// <param name="pool">Work-stealing pool (optional)</param>
     /// <returns>Reduced result</returns>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static T ParallelReduce&lt;T&gt;(IEnumerable&lt;T&gt; source, T identity, Func&lt;T, T, T&gt; reducer, 
+    public static T ParallelReduce<T>(IEnumerable<T> source, T identity, Func<T, T, T> reducer, 
         WorkStealingPool? pool = null)
     {
         var items = source.ToArray();
         var length = items.Length;
         
-        if (length == 0) return identity;
-        if (length == 1) return items[0];
-        if (length < PARALLEL_THRESHOLD) return items.Aggregate(identity, reducer);
-        
+        if (length == 0)
+        {
+            return identity;
+        }
+
+
+        if (length == 1)
+        {
+            return items[0];
+        }
+
+
+        if (length < PARALLEL_THRESHOLD)
+        {
+            return items.Aggregate(identity, reducer);
+        }
+
+
         var useExternalPool = pool != null;
         pool ??= new WorkStealingPool();
         
@@ -377,12 +408,16 @@ public static class ParallelOptimizations
     /// <param name="pool">Work-stealing pool (optional)</param>
     /// <returns>Scan result array</returns>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static T[] ParallelScan&lt;T&gt;(T[] source, T identity, Func&lt;T, T, T&gt; scanner, 
+    public static T[] ParallelScan<T>(T[] source, T identity, Func<T, T, T> scanner, 
         WorkStealingPool? pool = null)
     {
         var length = source.Length;
-        if (length == 0) return Array.Empty&lt;T&gt;();
-        
+        if (length == 0)
+        {
+            return Array.Empty<T>();
+        }
+
+
         var result = new T[length];
         if (length < PARALLEL_THRESHOLD)
         {
@@ -421,10 +456,14 @@ public static class ParallelOptimizations
     /// <param name="comparer">Comparison function</param>
     /// <param name="pool">Work-stealing pool (optional)</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static void ParallelSort&lt;T&gt;(T[] array, IComparer&lt;T&gt; comparer, WorkStealingPool? pool = null)
+    public static void ParallelSort<T>(T[] array, IComparer<T> comparer, WorkStealingPool? pool = null)
     {
-        if (array.Length < 2) return;
-        
+        if (array.Length < 2)
+        {
+            return;
+        }
+
+
         if (array.Length < PARALLEL_THRESHOLD)
         {
             Array.Sort(array, comparer);
@@ -463,10 +502,10 @@ public static class ParallelOptimizations
         /// <param name="gpuKernel">GPU kernel function</param>
         /// <param name="cpuFallback">CPU fallback function</param>
         /// <returns>Computation result</returns>
-        public static async Task&lt;TOutput[]&gt; AsyncGpuCompute&lt;TInput, TOutput&gt;(
+        public static async Task<TOutput[]> AsyncGpuCompute<TInput, TOutput>(
             TInput[] inputData,
-            Func&lt;TInput[], Task&lt;TOutput[]&gt;&gt; gpuKernel,
-            Func&lt;TInput[], TOutput[]&gt; cpuFallback)
+            Func<TInput[], Task<TOutput[]>> gpuKernel,
+            Func<TInput[], TOutput[]> cpuFallback)
         {
             if (inputData.Length < GPU_THRESHOLD)
             {
@@ -490,10 +529,10 @@ public static class ParallelOptimizations
         /// <summary>
         /// Hybrid CPU-GPU computation with dynamic load balancing.
         /// </summary>
-        public static async Task&lt;TOutput[]&gt; HybridCompute&lt;TInput, TOutput&gt;(
+        public static async Task<TOutput[]> HybridCompute<TInput, TOutput>(
             TInput[] inputData,
-            Func&lt;TInput[], Task&lt;TOutput[]&gt;&gt; gpuKernel,
-            Func&lt;TInput[], TOutput[]&gt; cpuKernel,
+            Func<TInput[], Task<TOutput[]>> gpuKernel,
+            Func<TInput[], TOutput[]> cpuKernel,
             float gpuRatio = 0.8f)
         {
             if (inputData.Length < PARALLEL_THRESHOLD)
@@ -557,14 +596,14 @@ public static class ParallelOptimizations
                 var aVal = aSpan[i * a.Columns + k];
                 for (var j = jStart; j < jEnd; j++)
                 {
-                    resultSpan[i * result.Columns + j] += aVal * bSpan[k * b.Columns + j];
+                    result.AsMutableSpan()[i * result.Columns + j] += aVal * bSpan[k * b.Columns + j];
                 }
             }
         }
     }
     
-    private static T ParallelReduceRecursive&lt;T&gt;(T[] items, int start, int length, T identity,
-        Func&lt;T, T, T&gt; reducer, WorkStealingPool pool)
+    private static T ParallelReduceRecursive<T>(T[] items, int start, int length, T identity,
+        Func<T, T, T> reducer, WorkStealingPool pool)
     {
         if (length <= PARALLEL_THRESHOLD)
         {
@@ -606,8 +645,8 @@ public static class ParallelOptimizations
         return reducer(leftResult!, rightResult!);
     }
     
-    private static void ParallelScanImpl&lt;T&gt;(T[] source, T[] result, T identity,
-        Func&lt;T, T, T&gt; scanner, WorkStealingPool pool)
+    private static void ParallelScanImpl<T>(T[] source, T[] result, T identity,
+        Func<T, T, T> scanner, WorkStealingPool pool)
     {
         var length = source.Length;
         var numWorkers = Environment.ProcessorCount;
@@ -681,8 +720,8 @@ public static class ParallelOptimizations
         }
     }
     
-    private static void ParallelMergeSort&lt;T&gt;(T[] array, T[] temp, int start, int length,
-        IComparer&lt;T&gt; comparer, WorkStealingPool pool)
+    private static void ParallelMergeSort<T>(T[] array, T[] temp, int start, int length,
+        IComparer<T> comparer, WorkStealingPool pool)
     {
         if (length <= PARALLEL_THRESHOLD)
         {
@@ -719,8 +758,8 @@ public static class ParallelOptimizations
         Merge(array, temp, start, mid, length, comparer);
     }
     
-    private static void Merge&lt;T&gt;(T[] array, T[] temp, int start, int mid, int length,
-        IComparer&lt;T&gt; comparer)
+    private static void Merge<T>(T[] array, T[] temp, int start, int mid, int length,
+        IComparer<T> comparer)
     {
         var left = start;
         var right = start + mid;

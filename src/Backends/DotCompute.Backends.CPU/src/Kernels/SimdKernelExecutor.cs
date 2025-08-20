@@ -508,18 +508,15 @@ private static unsafe void ExecuteFmaScalarRange(float* input1, float* input2, f
     }
 }
 
-/// <summary>
-/// Gets the maximum number of elements that can be processed in a single vector operation.
-/// </summary>
-public int GetMaxVectorElements()
-{
-    return _preferredVectorWidth / 32; // Assuming 32-bit floats
-}
+    /// <summary>
+    /// Gets the maximum number of elements that can be processed in a single vector operation.
+    /// </summary>
+    public int GetMaxVectorElements() => _preferredVectorWidth / 32; // Assuming 32-bit floats
 
-/// <summary>
-/// Determines if the specified element count is suitable for vectorization.
-/// </summary>
-public bool IsVectorizationBeneficial(int elementCount)
+    /// <summary>
+    /// Determines if the specified element count is suitable for vectorization.
+    /// </summary>
+    public bool IsVectorizationBeneficial(int elementCount)
 {
     var minElements = GetMaxVectorElements();
     return elementCount >= minElements && _simdCapabilities.IsHardwareAccelerated;

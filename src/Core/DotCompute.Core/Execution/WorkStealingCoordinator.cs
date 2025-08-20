@@ -355,14 +355,12 @@ public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unma
         return SelectRandomVictim(thiefIndex);
     }
 
-    private int SelectHierarchicalVictim(int thiefIndex)
-    {
-        // Implement hierarchical stealing based on device hierarchy
-        // For now, fallback to richest victim strategy
-        return SelectRichestVictim(thiefIndex);
-    }
+        private int SelectHierarchicalVictim(int thiefIndex) =>
+            // Implement hierarchical stealing based on device hierarchy
+            // For now, fallback to richest victim strategy
+            SelectRichestVictim(thiefIndex);
 
-    private async Task<double> ExecuteWorkItemAsync(
+        private async Task<double> ExecuteWorkItemAsync(
         WorkItem<T> workItem,
         IAccelerator device,
         IKernelManager kernelManager,

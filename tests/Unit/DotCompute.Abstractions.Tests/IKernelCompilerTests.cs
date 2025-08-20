@@ -25,7 +25,7 @@ public sealed class IKernelCompilerTests
         _mockCompiledKernel = new Mock<ICompiledKernel>();
 
         var source = new TextKernelSource("__global__ void test() {}", "test", KernelLanguage.Cuda);
-        _testKernelDefinition = new KernelDefinition("TestKernel", source, new CompilationOptions());
+        _testKernelDefinition = new KernelDefinition { Name = "TestKernel", Source = source.Code };
         _testCompilationOptions = new CompilationOptions();
     }
 

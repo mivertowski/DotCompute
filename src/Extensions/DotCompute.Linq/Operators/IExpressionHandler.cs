@@ -32,12 +32,9 @@ bool CanHandle(Expression expression);
 /// </summary>
 internal class MethodCallExpressionHandler : IExpressionHandler
 {
-public bool CanHandle(Expression expression)
-{
-    return expression.NodeType == ExpressionType.Call;
-}
+    public bool CanHandle(Expression expression) => expression.NodeType == ExpressionType.Call;
 
-public string Handle(Expression expression, KernelGenerationContext context)
+    public string Handle(Expression expression, KernelGenerationContext context)
 {
     if (expression is MethodCallExpression methodCall)
     {

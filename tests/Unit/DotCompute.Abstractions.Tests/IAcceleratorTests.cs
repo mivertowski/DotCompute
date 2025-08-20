@@ -97,7 +97,7 @@ public sealed class IAcceleratorTests
         // Arrange
         var mockCompiledKernel = new Mock<ICompiledKernel>();
         var kernelSource = new TextKernelSource("__global__ void test() { }", "test", KernelLanguage.Cuda);
-        var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
+        var definition = new KernelDefinition { Name = "test", Source = kernelSource.Code };
 
         _ = mockCompiledKernel.SetupGet(k => k.Name).Returns("test");
         _ = _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, CancellationToken.None))
@@ -118,7 +118,7 @@ public sealed class IAcceleratorTests
         // Arrange
         var mockCompiledKernel = new Mock<ICompiledKernel>();
         var kernelSource = new TextKernelSource("__global__ void test() { }", "test", KernelLanguage.Cuda);
-        var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
+        var definition = new KernelDefinition { Name = "test", Source = kernelSource.Code };
         var options = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Maximum,
@@ -142,7 +142,7 @@ public sealed class IAcceleratorTests
     {
         // Arrange
         var kernelSource = new TextKernelSource("__global__ void test() { }", "test", KernelLanguage.Cuda);
-        var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
+        var definition = new KernelDefinition { Name = "test", Source = kernelSource.Code };
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
@@ -171,7 +171,7 @@ public sealed class IAcceleratorTests
     {
         // Arrange
         var kernelSource = new TextKernelSource("invalid code", "test", KernelLanguage.Cuda);
-        var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
+        var definition = new KernelDefinition { Name = "test", Source = kernelSource.Code };
 
         _ = _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, CancellationToken.None))
                        .ThrowsAsync(new AcceleratorException("Compilation failed"));
@@ -282,7 +282,7 @@ public sealed class IAcceleratorTests
         // Arrange
         var mockCompiledKernel = new Mock<ICompiledKernel>();
         var kernelSource = new TextKernelSource("__global__ void test() { }", "test", KernelLanguage.Cuda);
-        var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
+        var definition = new KernelDefinition { Name = "test", Source = kernelSource.Code };
 
         _ = _mockAccelerator.SetupGet(a => a.Info).Returns(_testAcceleratorInfo);
         _ = _mockAccelerator.SetupGet(a => a.Type).Returns(AcceleratorType.CUDA);

@@ -227,12 +227,9 @@ public IEnumerator<T> GetEnumerator()
     return result.GetEnumerator();
 }
 
-/// <summary>
-/// Returns an enumerator that iterates through a collection.
-/// </summary>
-/// <returns>An IEnumerator object that can be used to iterate through the collection.</returns>
-IEnumerator IEnumerable.GetEnumerator()
-{
-    return GetEnumerator();
-}
+    /// <summary>
+    /// Returns an enumerator that iterates through a collection.
+    /// </summary>
+    /// <returns>An IEnumerator object that can be used to iterate through the collection.</returns>
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

@@ -82,7 +82,8 @@ public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
     {
         lock (_kernelLookup)
         {
-            return _kernelLookup.TryGetValue(kernel.NativeHandle, out var cudaKernel) ? cudaKernel : null;
+            // Use kernel.Id as string key instead of IntPtr
+            return _kernelLookup.ContainsKey(kernel.GetHashCode()) ? _kernelLookup[kernel.GetHashCode()] : null;
         }
     }
 
@@ -127,14 +128,14 @@ public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
     {
         ThrowIfDisposed();
 
-        if (arguments.Arguments.Length == 0)
+        if (arguments.Arguments.Count == 0)
         {
             throw new ArgumentException("No arguments provided for kernel execution", nameof(arguments));
         }
 
         try
         {
-            _logger.LogDebug("Executing CUDA kernel '{Name}' with {ArgCount} arguments", Name, arguments.Arguments.Length);
+            _logger.LogDebug("Executing CUDA kernel '{Name}' with {ArgCount} arguments", Name, arguments.Arguments.Count);
             
             // Use the advanced launcher for optimal performance
             await _launcher.LaunchKernelAsync(_function, arguments, null, cancellationToken).ConfigureAwait(false);
@@ -158,7 +159,7 @@ public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
     {
         ThrowIfDisposed();
 
-        if (arguments.Arguments.Length == 0)
+        if (arguments.Arguments.Count == 0)
         {
             throw new ArgumentException("No arguments provided for kernel execution", nameof(arguments));
         }

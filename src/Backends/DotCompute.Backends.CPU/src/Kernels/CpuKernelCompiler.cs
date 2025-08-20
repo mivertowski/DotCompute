@@ -274,8 +274,11 @@ private static MemoryAccessPattern AnalyzeMemoryAccess(KernelDefinition definiti
     {
         return MemoryAccessPattern.ReadOnly;
     }
-    else return writeOnlyParams == bufferParams ? MemoryAccessPattern.WriteOnly : MemoryAccessPattern.ReadWrite;
-}
+    else
+        {
+            return writeOnlyParams == bufferParams ? MemoryAccessPattern.WriteOnly : MemoryAccessPattern.ReadWrite;
+        }
+    }
 
 private static ComputeIntensity EstimateComputeIntensity(KernelDefinition definition)
 {
@@ -420,7 +423,7 @@ private static async ValueTask<CompiledCode> GenerateCodeAsync(
     else if (definition.Code != null && definition.Code.Length > 0)
     {
         // JIT compile bytecode
-        return CpuRuntimeCodeGenerator.GenerateFromBytecode(definition.Code, definition, analysis, options);
+        return CpuRuntimeCodeGenerator.GenerateFromBytecode(System.Text.Encoding.UTF8.GetBytes(definition.Code), definition, analysis, options);
     }
     else
     {
@@ -507,7 +510,7 @@ private static KernelDefinition EnrichDefinitionWithCompilationMetadata(
     metadata["CodeSize"] = compiledCode.CodeSize;
     metadata["OptimizationNotes"] = compiledCode.OptimizationNotes;
 
-    var sourceCode = System.Text.Encoding.UTF8.GetString(original.Code);
+    var sourceCode = original.Code ?? string.Empty;
     var kernelSource = new TextKernelSource(
         code: sourceCode,
         name: original.Name,
@@ -520,11 +523,11 @@ private static KernelDefinition EnrichDefinitionWithCompilationMetadata(
     {
         OptimizationLevel = OptimizationLevel.Default,
         EnableDebugInfo = false,
-        AdditionalFlags = null,
-        Defines = null
+        AdditionalFlags = [],
+        Defines = []
     };
 
-    var definition = new KernelDefinition(original.Name, kernelSource, compilationOptions);
+    var definition = new KernelDefinition(original.Name, kernelSource.Code, kernelSource.EntryPoint);
 
     // Override metadata with enriched information
     if (definition.Metadata != null)

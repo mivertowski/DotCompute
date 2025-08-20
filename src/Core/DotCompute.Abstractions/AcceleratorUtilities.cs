@@ -201,23 +201,18 @@ public static class AcceleratorUtilities
         }
     }
 
-    /// <summary>
-    /// Helper method to validate accelerator is not disposed.
-    /// </summary>
-    /// <param name="disposed">Disposed flag</param>
-    /// <param name="instance">Instance to check</param>
-    public static void ThrowIfDisposed(bool disposed, object instance)
-    {
-        ObjectDisposedException.ThrowIf(disposed, instance);
-    }
+        /// <summary>
+        /// Helper method to validate accelerator is not disposed.
+        /// </summary>
+        /// <param name="disposed">Disposed flag</param>
+        /// <param name="instance">Instance to check</param>
+        public static void ThrowIfDisposed(bool disposed, object instance) => ObjectDisposedException.ThrowIf(disposed, instance);
 
-    /// <summary>
-    /// Helper method to validate accelerator is not disposed using Interlocked pattern.
-    /// </summary>
-    /// <param name="disposed">Disposed flag as int</param>
-    /// <param name="instance">Instance to check</param>
-    public static void ThrowIfDisposed(int disposed, object instance)
-    {
-        ObjectDisposedException.ThrowIf(disposed != 0, instance);
+        /// <summary>
+        /// Helper method to validate accelerator is not disposed using Interlocked pattern.
+        /// </summary>
+        /// <param name="disposed">Disposed flag as int</param>
+        /// <param name="instance">Instance to check</param>
+        public static void ThrowIfDisposed(int disposed, object instance) => ObjectDisposedException.ThrowIf(disposed != 0, instance);
     }
-}}
+}

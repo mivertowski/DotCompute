@@ -241,25 +241,22 @@ private static void CooleyTukeyFFT(Span<Complex> data, bool inverse)
     }
 }
 
-/// <summary>
-/// Gets the frequency bin for a given index in FFT output.
-/// </summary>
-/// <param name="index">The FFT bin index.</param>
-/// <param name="fftSize">The FFT size.</param>
-/// <param name="sampleRate">The sample rate in Hz.</param>
-/// <returns>The frequency in Hz.</returns>
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static float GetFrequency(int index, int fftSize, float sampleRate)
-{
-    return index * sampleRate / fftSize;
-}
+    /// <summary>
+    /// Gets the frequency bin for a given index in FFT output.
+    /// </summary>
+    /// <param name="index">The FFT bin index.</param>
+    /// <param name="fftSize">The FFT size.</param>
+    /// <param name="sampleRate">The sample rate in Hz.</param>
+    /// <returns>The frequency in Hz.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float GetFrequency(int index, int fftSize, float sampleRate) => index * sampleRate / fftSize;
 
-/// <summary>
-/// Applies a window function to the data before FFT.
-/// </summary>
-/// <param name="data">The data to window.</param>
-/// <param name="windowType">The window type.</param>
-public static void ApplyWindow(Span<float> data, WindowType windowType)
+    /// <summary>
+    /// Applies a window function to the data before FFT.
+    /// </summary>
+    /// <param name="data">The data to window.</param>
+    /// <param name="windowType">The window type.</param>
+    public static void ApplyWindow(Span<float> data, WindowType windowType)
 {
     var n = data.Length;
     

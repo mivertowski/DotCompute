@@ -1,12 +1,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using SystemComplex = System.Numerics.Complex;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Algorithms.SignalProcessing;
+using Complex = DotCompute.Algorithms.SignalProcessing.Complex;
 
 namespace DotCompute.Algorithms.Optimized;
 
@@ -26,7 +28,7 @@ public static class FFTOptimizations
     private static readonly int[] OptimalRadices = { 8, 4, 2 };
     
     // Pre-computed twiddle factor cache
-    private static readonly Dictionary&lt;int, Complex[]&gt; TwiddleCache = new();
+    private static readonly Dictionary<int, Complex[]> TwiddleCache = new();
     private static readonly object TwiddleCacheLock = new();
     
     /// <summary>
@@ -35,14 +37,23 @@ public static class FFTOptimizations
     /// <param name="data">Complex data array (modified in-place)</param>
     /// <param name="inverse">True for inverse FFT, false for forward FFT</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void OptimizedFFT(Span&lt;Complex&gt; data, bool inverse = false)
+    public static void OptimizedFFT(Span<DotCompute.Algorithms.SignalProcessing.Complex> data, bool inverse = false)
     {
         var n = data.Length;
         
-        if (n == 0) return;
-        if (n == 1) return;
-        
+        if (n == 0)
+        {
+            return;
+        }
+
+
+        if (n == 1)
+        {
+            return;
+        }
+
         // Validate power of 2 or supported mixed-radix size
+
         if (!IsSupportedSize(n))
         {
             throw new ArgumentException($"FFT size {n} not supported. Use power of 2 or mixed-radix sizes.");
@@ -77,7 +88,7 @@ public static class FFTOptimizations
     /// <param name="realData">Real-valued input data</param>
     /// <param name="inverse">True for inverse FFT</param>
     /// <returns>Complex FFT result (N/2+1 elements for forward, N elements for inverse)</returns>
-    public static Complex[] OptimizedRealFFT(ReadOnlySpan&lt;float&gt; realData, bool inverse = false)
+    public static Complex[] OptimizedRealFFT(ReadOnlySpan<float> realData, bool inverse = false)
     {
         var n = realData.Length;
         
@@ -100,7 +111,7 @@ public static class FFTOptimizations
     /// Cache-friendly FFT implementation using four-step algorithm.
     /// Optimizes memory access patterns for large transforms.
     /// </summary>
-    private static void CacheFriendlyFFT(Span&lt;Complex&gt; data, bool inverse)
+    private static void CacheFriendlyFFT(Span<Complex> data, bool inverse)
     {
         var n = data.Length;
         var sqrt_n = (int)Math.Sqrt(n);
@@ -132,7 +143,7 @@ public static class FFTOptimizations
     /// SIMD-accelerated FFT using AVX2/SSE instructions for butterfly operations.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void SimdAcceleratedFFT(Span&lt;Complex&gt; data, bool inverse)
+    private static unsafe void SimdAcceleratedFFT(Span<Complex> data, bool inverse)
     {
         var n = data.Length;
         var logN = BitOperations.Log2((uint)n);
@@ -145,17 +156,11 @@ public static class FFTOptimizations
         
         if (Avx2.IsSupported)
         {
-            fixed (Complex* dataPtr = data, twiddlePtr = twiddles)
-            {
-                SimdButterflyAvx2(dataPtr, twiddlePtr, n, logN);
-            }
+            SimdButterflyAvx2(data, twiddles, n, logN);
         }
         else if (Sse2.IsSupported)
         {
-            fixed (Complex* dataPtr = data, twiddlePtr = twiddles)
-            {
-                SimdButterflySse2(dataPtr, twiddlePtr, n, logN);
-            }
+            SimdButterflySse2(data, twiddles, n, logN);
         }
         else
         {
@@ -167,7 +172,7 @@ public static class FFTOptimizations
     /// Mixed-radix FFT supporting sizes that are products of small primes.
     /// More flexible than power-of-2 FFTs while maintaining good performance.
     /// </summary>
-    private static void MixedRadixFFT(Span&lt;Complex&gt; data, bool inverse)
+    private static void MixedRadixFFT(Span<Complex> data, bool inverse)
     {
         var n = data.Length;
         var factors = Factorize(n);
@@ -185,7 +190,7 @@ public static class FFTOptimizations
     /// Optimized Cooley-Tukey FFT with improved twiddle factor computation.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static void OptimizedCooleyTukeyFFT(Span&lt;Complex&gt; data, bool inverse)
+    private static void OptimizedCooleyTukeyFFT(Span<Complex> data, bool inverse)
     {
         var n = data.Length;
         var logN = BitOperations.Log2((uint)n);
@@ -220,23 +225,19 @@ public static class FFTOptimizations
     /// <summary>
     /// SIMD-optimized real FFT using packed complex arithmetic.
     /// </summary>
-    private static unsafe Complex[] SimdRealFFT(ReadOnlySpan&lt;float&gt; realData, bool inverse)
+    private static unsafe Complex[] SimdRealFFT(ReadOnlySpan<float> realData, bool inverse)
     {
         var n = realData.Length;
         var complexData = new Complex[n];
         
         // Convert real to complex with SIMD
-        fixed (float* realPtr = realData)
-        fixed (Complex* complexPtr = complexData)
+        if (Avx2.IsSupported)
         {
-            if (Avx2.IsSupported)
-            {
-                RealToComplexAvx2(realPtr, complexPtr, n);
-            }
-            else
-            {
-                RealToComplexSse2(realPtr, complexPtr, n);
-            }
+            RealToComplexAvx2(realData, complexData, n);
+        }
+        else
+        {
+            RealToComplexSse2(realData, complexData, n);
         }
         
         // Perform FFT
@@ -260,7 +261,7 @@ public static class FFTOptimizations
     /// <summary>
     /// Standard real FFT fallback implementation.
     /// </summary>
-    private static Complex[] StandardRealFFT(ReadOnlySpan&lt;float&gt; realData, bool inverse)
+    private static Complex[] StandardRealFFT(ReadOnlySpan<float> realData, bool inverse)
     {
         var n = realData.Length;
         var complexData = new Complex[n];
@@ -293,16 +294,20 @@ public static class FFTOptimizations
     
     private static bool IsSupportedSize(int n)
     {
-        if (IsPowerOfTwo(n)) return true;
-        
+        if (IsPowerOfTwo(n))
+        {
+            return true;
+        }
+
         // Check if n can be factorized into supported radices
+
         var factors = Factorize(n);
         return factors.Count > 0;
     }
     
-    private static List&lt;int&gt; Factorize(int n)
+    private static List<int> Factorize(int n)
     {
-        var factors = new List&lt;int&gt;();
+        var factors = new List<int>();
         
         foreach (var radix in OptimalRadices)
         {
@@ -313,7 +318,7 @@ public static class FFTOptimizations
             }
         }
         
-        return n == 1 ? factors : new List&lt;int&gt;();
+        return n == 1 ? factors : new List<int>();
     }
     
     private static Complex[] GetTwiddleFactors(int n, bool inverse)
@@ -332,7 +337,7 @@ public static class FFTOptimizations
             for (var i = 0; i < n; i++)
             {
                 var angle = i * angleStep;
-                twiddles[i] = new Complex(Math.Cos(angle), Math.Sin(angle));
+                twiddles[i] = new Complex((float)Math.Cos(angle), (float)Math.Sin(angle));
             }
             
             TwiddleCache[key] = twiddles;
@@ -340,7 +345,7 @@ public static class FFTOptimizations
         }
     }
     
-    private static void BitReverseReorder(Span&lt;Complex&gt; data)
+    private static void BitReverseReorder(Span<Complex> data)
     {
         var n = data.Length;
         var j = 0;
@@ -362,7 +367,7 @@ public static class FFTOptimizations
         }
     }
     
-    private static void BitReverseReorderBlocked(Span&lt;Complex&gt; data)
+    private static void BitReverseReorderBlocked(Span<Complex> data)
     {
         var n = data.Length;
         const int blockSize = 64; // Cache-friendly block size
@@ -375,7 +380,7 @@ public static class FFTOptimizations
         }
     }
     
-    private static Complex[] ExtractColumn(Span&lt;Complex&gt; data, int col, int sqrt_n)
+    private static Complex[] ExtractColumn(Span<Complex> data, int col, int sqrt_n)
     {
         var column = new Complex[sqrt_n];
         for (var row = 0; row < sqrt_n; row++)
@@ -385,7 +390,7 @@ public static class FFTOptimizations
         return column;
     }
     
-    private static void WriteBackColumn(Span&lt;Complex&gt; data, Complex[] column, int col, int sqrt_n)
+    private static void WriteBackColumn(Span<Complex> data, Complex[] column, int col, int sqrt_n)
     {
         for (var row = 0; row < sqrt_n; row++)
         {
@@ -393,7 +398,7 @@ public static class FFTOptimizations
         }
     }
     
-    private static void ApplyTwiddleFactorsBlocked(Span&lt;Complex&gt; data, bool inverse, int sqrt_n)
+    private static void ApplyTwiddleFactorsBlocked(Span<Complex> data, bool inverse, int sqrt_n)
     {
         var n = data.Length;
         var twiddles = GetTwiddleFactors(n, inverse);
@@ -409,27 +414,36 @@ public static class FFTOptimizations
         }
     }
     
-    private static void MixedRadixDecomposition(Span&lt;Complex&gt; data, List&lt;int&gt; factors, bool inverse)
+    private static void MixedRadixDecomposition(Span<Complex> data, List<int> factors, bool inverse)
     {
         var n = data.Length;
         var temp = new Complex[n];
         data.CopyTo(temp);
         
         // Apply each radix factor
+        var useTemp = true;
         foreach (var radix in factors)
         {
-            MixedRadixStep(temp, data, radix, n, inverse);
-            (temp, data) = (data.ToArray(), temp);
+            if (useTemp)
+            {
+                MixedRadixStep(temp, data, radix, n, inverse);
+            }
+            else
+            {
+                MixedRadixStep(data.ToArray(), temp.AsSpan(), radix, n, inverse);
+                temp.AsSpan().CopyTo(data);
+            }
+            useTemp = !useTemp;
         }
         
         // Ensure result is in the original data span
-        if (!ReferenceEquals(temp, data.ToArray()))
+        if (useTemp)
         {
             temp.AsSpan().CopyTo(data);
         }
     }
     
-    private static void MixedRadixStep(Span&lt;Complex&gt; input, Span&lt;Complex&gt; output, int radix, int n, bool inverse)
+    private static void MixedRadixStep(Span<Complex> input, Span<Complex> output, int radix, int n, bool inverse)
     {
         var m = n / radix;
         var twiddles = GetRadixTwiddleFactors(radix, inverse);
@@ -458,7 +472,7 @@ public static class FFTOptimizations
         for (var i = 0; i < radix; i++)
         {
             var angle = i * angleStep;
-            twiddles[i] = new Complex(Math.Cos(angle), Math.Sin(angle));
+            twiddles[i] = new Complex((float)Math.Cos(angle), (float)Math.Sin(angle));
         }
         
         return twiddles;
@@ -469,7 +483,7 @@ public static class FFTOptimizations
     #region SIMD Implementation Details
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void SimdButterflyAvx2(Complex* data, Complex* twiddles, int n, int logN)
+    private static void SimdButterflyAvx2(Span<Complex> data, ReadOnlySpan<Complex> twiddles, int n, int logN)
     {
         // Advanced AVX2 butterfly operations
         // This would contain highly optimized SIMD butterfly operations
@@ -495,7 +509,7 @@ public static class FFTOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void SimdButterflySse2(Complex* data, Complex* twiddles, int n, int logN)
+    private static void SimdButterflySse2(Span<Complex> data, ReadOnlySpan<Complex> twiddles, int n, int logN)
     {
         // SSE2 butterfly operations
         // Similar to AVX2 but using 128-bit vectors
@@ -520,27 +534,11 @@ public static class FFTOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void RealToComplexAvx2(float* real, Complex* complex, int n)
+    private static void RealToComplexAvx2(ReadOnlySpan<float> real, Span<Complex> complex, int n)
     {
         var i = 0;
-        var vectorCount = n - (n % 8);
         
-        // Process 8 elements at a time
-        for (; i < vectorCount; i += 8)
-        {
-            var realVec = Avx.LoadVector256(real + i);
-            var zeroVec = Vector256&lt;float&gt;.Zero;
-            
-            // Interleave real and imaginary (zero) parts
-            var lo = Avx.UnpackLow(realVec, zeroVec);
-            var hi = Avx.UnpackHigh(realVec, zeroVec);
-            
-            // Store as complex numbers
-            Avx.Store((float*)(complex + i), lo);
-            Avx.Store((float*)(complex + i + 4), hi);
-        }
-        
-        // Handle remaining elements
+        // Handle remaining elements (simplified without SIMD for now)
         for (; i < n; i++)
         {
             complex[i] = new Complex(real[i], 0);
@@ -548,27 +546,11 @@ public static class FFTOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void RealToComplexSse2(float* real, Complex* complex, int n)
+    private static void RealToComplexSse2(ReadOnlySpan<float> real, Span<Complex> complex, int n)
     {
         var i = 0;
-        var vectorCount = n - (n % 4);
         
-        // Process 4 elements at a time
-        for (; i < vectorCount; i += 4)
-        {
-            var realVec = Sse.LoadVector128(real + i);
-            var zeroVec = Vector128&lt;float&gt;.Zero;
-            
-            // Interleave real and imaginary (zero) parts
-            var lo = Sse.UnpackLow(realVec, zeroVec);
-            var hi = Sse.UnpackHigh(realVec, zeroVec);
-            
-            // Store as complex numbers
-            Sse.Store((float*)(complex + i), lo);
-            Sse.Store((float*)(complex + i + 2), hi);
-        }
-        
-        // Handle remaining elements
+        // Handle remaining elements (simplified without SIMD for now)
         for (; i < n; i++)
         {
             complex[i] = new Complex(real[i], 0);

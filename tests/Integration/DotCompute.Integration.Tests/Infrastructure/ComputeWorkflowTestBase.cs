@@ -421,10 +421,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
     {
         private static readonly Random Random = new(42); // Fixed seed for reproducibility
 
-        public static float[] GenerateFloatArray(int size, float min = 0f, float max = 100f)
-        {
-            return [.. Enumerable.Range(0, size).Select(_ => min + ((float)Random.NextDouble() * (max - min)))];
-        }
+        public static float[] GenerateFloatArray(int size, float min = 0f, float max = 100f) => [.. Enumerable.Range(0, size).Select(_ => min + ((float)Random.NextDouble() * (max - min)))];
 
         public static float[] GenerateGaussianArray(int size, float mean = 0f, float stdDev = 1f)
         {

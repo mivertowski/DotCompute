@@ -43,7 +43,7 @@ kernel void vectorAdd(
         EnableDebugInfo = false
     };
 
-    var definition = new KernelDefinition("vectorAdd", kernelSource, compilationOptions);
+    var definition = new KernelDefinition("vectorAdd", kernelSource.Code);
 
     if (definition.Metadata != null)
     {
@@ -102,7 +102,7 @@ kernel void matrixMultiply(
         EnableDebugInfo = false
     };
 
-    var definition = new KernelDefinition("matrixMultiply", kernelSource, compilationOptions);
+    var definition = new KernelDefinition("matrixMultiply", kernelSource.Code);
 
     if (definition.Metadata != null)
     {
@@ -177,7 +177,7 @@ kernel void reduction{operation}(
         EnableDebugInfo = false
     };
 
-    var definition = new KernelDefinition(kernelName, kernelSource, compilationOptions);
+    var definition = new KernelDefinition(kernelName, kernelSource.Code);
 
     if (definition.Metadata != null)
     {
@@ -258,7 +258,7 @@ kernel void convolution2D(
         EnableDebugInfo = false
     };
 
-    var definition = new KernelDefinition("convolution2D", kernelSource, compilationOptions);
+    var definition = new KernelDefinition("convolution2D", kernelSource.Code);
 
     if (definition.Metadata != null)
     {
@@ -316,7 +316,7 @@ kernel void activation{activation}(
         EnableDebugInfo = false
     };
 
-    var definition = new KernelDefinition(kernelName, kernelSource, compilationOptions);
+    var definition = new KernelDefinition(kernelName, kernelSource.Code);
 
     if (definition.Metadata != null)
     {
@@ -362,7 +362,7 @@ kernel void {operation}(
         EnableDebugInfo = false
     };
 
-    var definition = new KernelDefinition(operation, kernelSource, compilationOptions);
+    var definition = new KernelDefinition(operation, kernelSource.Code);
 
     if (definition.Metadata != null)
     {

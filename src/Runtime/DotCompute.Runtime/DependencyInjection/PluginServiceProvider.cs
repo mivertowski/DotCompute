@@ -78,12 +78,9 @@ public void RegisterPluginServices(string pluginId, Action<IServiceCollection> c
     _logger.LogDebug("Registered {Count} services for plugin {PluginId}", services.Count, pluginId);
 }
 
-public T? GetPluginService<T>(string pluginId) where T : class
-{
-    return (T?)GetPluginService(pluginId, typeof(T));
-}
+    public T? GetPluginService<T>(string pluginId) where T : class => (T?)GetPluginService(pluginId, typeof(T));
 
-public object? GetPluginService(string pluginId, Type serviceType)
+    public object? GetPluginService(string pluginId, Type serviceType)
 {
     ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
     ArgumentNullException.ThrowIfNull(serviceType);
@@ -165,14 +162,12 @@ public async ValueTask DisposePluginServicesAsync(string pluginId)
     _pluginServices.TryRemove(pluginId, out _);
 }
 
-private IServiceProvider CreatePluginServiceProvider(IServiceCollection pluginServices, IServiceProvider parentProvider)
-{
-    // Simple fallback implementation - return the parent provider for now
-    // TODO: Implement proper plugin service isolation when ServiceCollection extensions are available
-    return parentProvider;
-}
+    private IServiceProvider CreatePluginServiceProvider(IServiceCollection pluginServices, IServiceProvider parentProvider) =>
+        // Simple fallback implementation - return the parent provider for now
+        // TODO: Implement proper plugin service isolation when ServiceCollection extensions are available
+        parentProvider;
 
-private static IEnumerable<ServiceDescriptor> GetServiceDescriptors(IServiceProvider provider)
+    private static IEnumerable<ServiceDescriptor> GetServiceDescriptors(IServiceProvider provider)
 {
     // This is a simplified approach. In production, you might want to use a more sophisticated method
     // to extract service descriptors from an existing provider
@@ -386,9 +381,7 @@ private PropertyInfo[] GetInjectableProperties(Type type)
 {
     return _propertyCache.GetOrAdd(type, t =>
     {
-        return t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            .Where(p => p.GetCustomAttributes(typeof(InjectAttribute), false).Any())
-            .ToArray();
+        return [.. t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(p => p.GetCustomAttributes(typeof(InjectAttribute), false).Any())];
     });
 }
 

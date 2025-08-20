@@ -79,9 +79,12 @@ public sealed class CudaMemoryPool : IDisposable
     {
         buffer = default;
         
-        if (_disposed) return false;
+        if (_disposed)
+            {
+                return false;
+            }
 
-        Interlocked.Increment(ref _totalAllocations);
+            Interlocked.Increment(ref _totalAllocations);
         
         var bucketSize = GetBucketSize(sizeInBytes);
         if (bucketSize == -1)
@@ -134,14 +137,20 @@ public sealed class CudaMemoryPool : IDisposable
     /// </summary>
     public bool TryReturnToPool(CudaMemoryBuffer buffer)
     {
-        if (_disposed || buffer.IsDisposed) return false;
+        if (_disposed || buffer.IsDisposed)
+            {
+                return false;
+            }
 
-        var sizeInBytes = buffer.SizeInBytes;
+            var sizeInBytes = buffer.SizeInBytes;
         var bucketSize = GetBucketSize(sizeInBytes);
         
-        if (bucketSize == -1) return false; // Size too large for pooling
+        if (bucketSize == -1)
+            {
+                return false; // Size too large for pooling
+            }
 
-        _poolLock.EnterReadLock();
+            _poolLock.EnterReadLock();
         try
         {
             if (_pools.TryGetValue(bucketSize, out var queue))
@@ -193,9 +202,12 @@ public sealed class CudaMemoryPool : IDisposable
     /// </summary>
     public void HandleMemoryPressure(double pressure)
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        var buffersToRelease = pressure switch
+            var buffersToRelease = pressure switch
         {
             > 0.95 => 0.8, // Release 80% of pooled buffers
             > 0.90 => 0.6, // Release 60% of pooled buffers
@@ -257,8 +269,10 @@ public sealed class CudaMemoryPool : IDisposable
         foreach (var bucketSize in BucketSizes)
         {
             if (requestedSize <= bucketSize)
-                return bucketSize;
-        }
+                {
+                    return bucketSize;
+                }
+            }
         
         return -1; // Too large for pooling
     }
@@ -266,19 +280,31 @@ public sealed class CudaMemoryPool : IDisposable
     private bool IsBufferValid(PooledBuffer pooledBuffer, long requestedSize, MemoryOptions options)
     {
         // Check if device pointer is still valid
-        if (pooledBuffer.DevicePointer == IntPtr.Zero) return false;
-        
-        // Check size compatibility
-        if (pooledBuffer.Size < requestedSize) return false;
-        
-        // Check options compatibility
-        if (pooledBuffer.Options != options) return false;
-        
-        // Check age - don't reuse very old buffers
-        var age = DateTime.UtcNow - pooledBuffer.CreatedTime;
-        if (age > TimeSpan.FromMinutes(10)) return false;
-        
-        return true;
+        if (pooledBuffer.DevicePointer == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            // Check size compatibility
+            if (pooledBuffer.Size < requestedSize)
+            {
+                return false;
+            }
+
+            // Check options compatibility
+            if (pooledBuffer.Options != options)
+            {
+                return false;
+            }
+
+            // Check age - don't reuse very old buffers
+            var age = DateTime.UtcNow - pooledBuffer.CreatedTime;
+        if (age > TimeSpan.FromMinutes(10))
+            {
+                return false;
+            }
+
+            return true;
     }
     
     private void DisposePooledBuffer(PooledBuffer pooledBuffer)
@@ -356,9 +382,12 @@ public sealed class CudaMemoryPool : IDisposable
 
     private void PerformCleanup(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             var cutoffTime = DateTime.UtcNow - TimeSpan.FromMinutes(5);
             var cleanedBuffers = 0;
@@ -422,9 +451,12 @@ public sealed class CudaMemoryPool : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             _cleanupTimer?.Dispose();
 

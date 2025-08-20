@@ -47,9 +47,23 @@ namespace DotCompute.Core.Memory.P2P
             P2PTransferPlan transferPlan,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null) throw new ArgumentNullException(nameof(sourceBuffer));
-            if (destinationBuffer == null) throw new ArgumentNullException(nameof(destinationBuffer));
-            if (transferPlan == null) throw new ArgumentNullException(nameof(transferPlan));
+            if (sourceBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(sourceBuffer));
+            }
+
+
+            if (destinationBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(destinationBuffer));
+            }
+
+
+            if (transferPlan == null)
+            {
+                throw new ArgumentNullException(nameof(transferPlan));
+            }
+
 
             await _validationSemaphore.WaitAsync(cancellationToken);
             try
@@ -110,9 +124,23 @@ namespace DotCompute.Core.Memory.P2P
             P2PTransferPlan transferPlan,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null) throw new ArgumentNullException(nameof(sourceBuffer));
-            if (destinationBuffer == null) throw new ArgumentNullException(nameof(destinationBuffer));
-            if (transferPlan == null) throw new ArgumentNullException(nameof(transferPlan));
+            if (sourceBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(sourceBuffer));
+            }
+
+
+            if (destinationBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(destinationBuffer));
+            }
+
+
+            if (transferPlan == null)
+            {
+                throw new ArgumentNullException(nameof(transferPlan));
+            }
+
 
             await _validationSemaphore.WaitAsync(cancellationToken);
             try
@@ -184,8 +212,17 @@ namespace DotCompute.Core.Memory.P2P
             P2PBenchmarkOptions? options = null,
             CancellationToken cancellationToken = default)
         {
-            if (sourceDevice == null) throw new ArgumentNullException(nameof(sourceDevice));
-            if (targetDevice == null) throw new ArgumentNullException(nameof(targetDevice));
+            if (sourceDevice == null)
+            {
+                throw new ArgumentNullException(nameof(sourceDevice));
+            }
+
+
+            if (targetDevice == null)
+            {
+                throw new ArgumentNullException(nameof(targetDevice));
+            }
+
 
             options ??= P2PBenchmarkOptions.Default;
             var benchmarkKey = GetBenchmarkCacheKey(sourceDevice.Info.Id, targetDevice.Info.Id, options);
@@ -272,7 +309,11 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default)
         {
             if (devices == null || devices.Length < 2)
+            {
+
                 throw new ArgumentException("At least 2 devices required for multi-GPU benchmark", nameof(devices));
+            }
+
 
             options ??= P2PMultiGpuBenchmarkOptions.Default;
 
@@ -588,7 +629,11 @@ namespace DotCompute.Core.Memory.P2P
                 foreach (var offset in sampleOffsets)
                 {
                     var actualSampleElements = Math.Min(sampleElements, sourceBuffer.Length - offset);
-                    if (actualSampleElements <= 0) continue;
+                    if (actualSampleElements <= 0)
+                    {
+                        continue;
+                    }
+
 
                     var sourceData = new T[actualSampleElements];
                     var destData = new T[actualSampleElements];
@@ -774,7 +819,7 @@ namespace DotCompute.Core.Memory.P2P
                 }
             }
 
-            return sizes.ToArray();
+            return [.. sizes];
         }
 
         private void CalculateAggregateStatistics(P2PBenchmarkResult benchmarkResult)
@@ -889,9 +934,14 @@ namespace DotCompute.Core.Memory.P2P
                 _statistics.TotalValidations++;
                 
                 if (validationResult.IsValid)
+                {
                     _statistics.SuccessfulValidations++;
+                }
                 else
+                {
                     _statistics.FailedValidations++;
+                }
+
 
                 foreach (var detail in validationResult.ValidationDetails)
                 {
@@ -913,16 +963,18 @@ namespace DotCompute.Core.Memory.P2P
             }
         }
 
-        private static string GetBenchmarkCacheKey(string sourceDeviceId, string targetDeviceId, P2PBenchmarkOptions options)
-        {
-            return $"{sourceDeviceId}_{targetDeviceId}_{options.MinTransferSizeMB}_{options.MaxTransferSizeMB}";
-        }
+        private static string GetBenchmarkCacheKey(string sourceDeviceId, string targetDeviceId, P2PBenchmarkOptions options) => $"{sourceDeviceId}_{targetDeviceId}_{options.MinTransferSizeMB}_{options.MaxTransferSizeMB}";
 
         #endregion
 
         public async ValueTask DisposeAsync()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
+
             _disposed = true;
 
             _validationSemaphore.Dispose();

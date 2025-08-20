@@ -103,8 +103,12 @@ public sealed class InputSanitizer : IDisposable
         SanitizationType sanitizationType = SanitizationType.General, CancellationToken cancellationToken = default)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(InputSanitizer));
-            
+        }
+
+
         ArgumentNullException.ThrowIfNull(input);
         ArgumentException.ThrowIfNullOrWhiteSpace(context);
 
@@ -166,8 +170,12 @@ public sealed class InputSanitizer : IDisposable
         IDictionary<string, object> parameters, string kernelName, CancellationToken cancellationToken = default)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(InputSanitizer));
-            
+        }
+
+
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
 
@@ -223,8 +231,12 @@ public sealed class InputSanitizer : IDisposable
         IEnumerable<string>? allowedExtensions = null)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(InputSanitizer));
-            
+        }
+
+
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(baseDirectory);
 
@@ -332,8 +344,12 @@ public sealed class InputSanitizer : IDisposable
         int maxWorkGroupSize = 1024)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(InputSanitizer));
-            
+        }
+
+
         ArgumentNullException.ThrowIfNull(workGroupSize);
         ArgumentNullException.ThrowIfNull(globalSize);
 
@@ -439,8 +455,12 @@ public sealed class InputSanitizer : IDisposable
     public void AddCustomValidationRule(string context, ValidationRule rule)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(InputSanitizer));
-            
+        }
+
+
         ArgumentException.ThrowIfNullOrWhiteSpace(context);
         ArgumentNullException.ThrowIfNull(rule);
 
@@ -631,21 +651,13 @@ public sealed class InputSanitizer : IDisposable
         }
     }
 
-    private string SanitizeEmail(string input)
-    {
+    private string SanitizeEmail(string input) =>
         // Basic email sanitization - remove dangerous characters
-        return Regex.Replace(input, @"[^\w@.-]", "", RegexOptions.Compiled);
-    }
+        Regex.Replace(input, @"[^\w@.-]", "", RegexOptions.Compiled);
 
-    private string SanitizeAlphaNumeric(string input)
-    {
-        return Regex.Replace(input, @"[^a-zA-Z0-9]", "", RegexOptions.Compiled);
-    }
+    private string SanitizeAlphaNumeric(string input) => Regex.Replace(input, @"[^a-zA-Z0-9]", "", RegexOptions.Compiled);
 
-    private string SanitizeNumeric(string input)
-    {
-        return Regex.Replace(input, @"[^0-9.-]", "", RegexOptions.Compiled);
-    }
+    private string SanitizeNumeric(string input) => Regex.Replace(input, @"[^0-9.-]", "", RegexOptions.Compiled);
 
     private string SanitizeKernelParameter(string input)
     {
@@ -731,10 +743,7 @@ public sealed class InputSanitizer : IDisposable
         return criticalThreats == 0 && highThreats <= _configuration.MaxHighSeverityThreats;
     }
 
-    private bool ContainsControlCharacters(string input)
-    {
-        return input.Any(c => char.IsControl(c) && c != '\t' && c != '\r' && c != '\n');
-    }
+    private bool ContainsControlCharacters(string input) => input.Any(c => char.IsControl(c) && c != '\t' && c != '\r' && c != '\n');
 
     private bool ContainsSuspiciousFileName(string fileName)
     {
@@ -796,7 +805,11 @@ public sealed class InputSanitizer : IDisposable
 
     private void LogStatistics(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -815,7 +828,10 @@ public sealed class InputSanitizer : IDisposable
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         _disposed = true;
         

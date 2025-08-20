@@ -81,9 +81,11 @@ public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
 
     if (offset + length > buffer.SizeInBytes)
-        throw new ArgumentException("View extends beyond buffer boundaries");
+        {
+            throw new ArgumentException("View extends beyond buffer boundaries");
+        }
 
-    if (buffer is RuntimeMemoryBuffer memBuffer)
+        if (buffer is RuntimeMemoryBuffer memBuffer)
     {
         return memBuffer.CreateView(offset, length);
     }
@@ -251,9 +253,11 @@ private RuntimeMemoryBuffer(RuntimeMemoryBuffer parent, long offset, long length
     ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
     
     if (offset + length > parent.SizeInBytes)
-        throw new ArgumentException("View extends beyond parent buffer");
-        
-    Id = parent.Id; // Views share the same ID
+        {
+            throw new ArgumentException("View extends beyond parent buffer");
+        }
+
+        Id = parent.Id; // Views share the same ID
     _id = parent._id;
     SizeInBytes = length;
     Options = parent.Options;
@@ -273,18 +277,24 @@ private RuntimeMemoryBuffer(RuntimeMemoryBuffer parent, long offset, long length
 public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeMemoryBuffer));
-        
-    if ((Options & MemoryOptions.ReadOnly) != 0)
-        throw new InvalidOperationException("Cannot write to read-only buffer");
+        {
+            throw new ObjectDisposedException(nameof(RuntimeMemoryBuffer));
+        }
 
-    var elementSize = Unsafe.SizeOf<T>();
+        if ((Options & MemoryOptions.ReadOnly) != 0)
+        {
+            throw new InvalidOperationException("Cannot write to read-only buffer");
+        }
+
+        var elementSize = Unsafe.SizeOf<T>();
     var sizeInBytes = source.Length * elementSize;
     
     if (offset < 0 || offset + sizeInBytes > SizeInBytes)
-        throw new ArgumentOutOfRangeException(nameof(offset), "Copy operation would exceed buffer boundaries");
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset), "Copy operation would exceed buffer boundaries");
+        }
 
-    _logger.LogTrace("Copying {SizeBytes} bytes ({ElementCount} elements of {ElementSize} bytes) to buffer {BufferId} at offset {Offset}", 
+        _logger.LogTrace("Copying {SizeBytes} bytes ({ElementCount} elements of {ElementSize} bytes) to buffer {BufferId} at offset {Offset}", 
         sizeInBytes, source.Length, elementSize, _id, offset);
     
     try
@@ -296,9 +306,11 @@ public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0,
         var copyLength = (int)Math.Min(sizeInBytes, _memory.Length - destStartIndex);
         
         if (copyLength < sizeInBytes)
-            throw new ArgumentException("Insufficient space in buffer for copy operation");
-            
-        var destMemory = _memory.Slice(destStartIndex, copyLength);
+            {
+                throw new ArgumentException("Insufficient space in buffer for copy operation");
+            }
+
+            var destMemory = _memory.Slice(destStartIndex, copyLength);
         var sourceBytes = MemoryMarshal.AsBytes(source.Span);
         
         // Perform the copy
@@ -322,18 +334,24 @@ public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0,
 public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeMemoryBuffer));
-        
-    if ((Options & MemoryOptions.WriteOnly) != 0)
-        throw new InvalidOperationException("Cannot read from write-only buffer");
+        {
+            throw new ObjectDisposedException(nameof(RuntimeMemoryBuffer));
+        }
 
-    var elementSize = Unsafe.SizeOf<T>();
+        if ((Options & MemoryOptions.WriteOnly) != 0)
+        {
+            throw new InvalidOperationException("Cannot read from write-only buffer");
+        }
+
+        var elementSize = Unsafe.SizeOf<T>();
     var sizeInBytes = destination.Length * elementSize;
     
     if (offset < 0 || offset + sizeInBytes > SizeInBytes)
-        throw new ArgumentOutOfRangeException(nameof(offset), "Copy operation would exceed buffer boundaries");
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset), "Copy operation would exceed buffer boundaries");
+        }
 
-    _logger.LogTrace("Copying {SizeBytes} bytes ({ElementCount} elements of {ElementSize} bytes) from buffer {BufferId} at offset {Offset}", 
+        _logger.LogTrace("Copying {SizeBytes} bytes ({ElementCount} elements of {ElementSize} bytes) from buffer {BufferId} at offset {Offset}", 
         sizeInBytes, destination.Length, elementSize, _id, offset);
     
     try
@@ -345,9 +363,11 @@ public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, Canc
         var copyLength = (int)Math.Min(sizeInBytes, _memory.Length - srcStartIndex);
         
         if (copyLength < sizeInBytes)
-            throw new ArgumentException("Insufficient data in buffer for copy operation");
-            
-        var srcMemory = _memory.Slice(srcStartIndex, copyLength);
+            {
+                throw new ArgumentException("Insufficient data in buffer for copy operation");
+            }
+
+            var srcMemory = _memory.Slice(srcStartIndex, copyLength);
         var destBytes = MemoryMarshal.AsBytes(destination.Span);
         
         // Perform the copy
@@ -371,9 +391,11 @@ public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, Canc
 internal RuntimeMemoryBuffer CreateView(long offset, long length)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeMemoryBuffer));
-        
-    return new RuntimeMemoryBuffer(this, offset, length);
+        {
+            throw new ObjectDisposedException(nameof(RuntimeMemoryBuffer));
+        }
+
+        return new RuntimeMemoryBuffer(this, offset, length);
 }
 
 public void Dispose()
@@ -488,12 +510,9 @@ public async ValueTask<ICompiledKernel> CompileAsync(
     }
 }
 
-public ValidationResult Validate(KernelDefinition definition)
-{
-    return ValidateKernelDefinition(definition);
-}
+    public ValidationResult Validate(KernelDefinition definition) => ValidateKernelDefinition(definition);
 
-private static ValidationResult ValidateKernelDefinition(KernelDefinition definition)
+    private static ValidationResult ValidateKernelDefinition(KernelDefinition definition)
 {
     if (string.IsNullOrEmpty(definition.Name))
     {
@@ -525,7 +544,7 @@ private async ValueTask<RuntimeCompiledKernel> CompileKernelInternalAsync(
 private static string GenerateCacheKey(KernelDefinition definition, CompilationOptions options)
 {
     var codeHash = definition.Code != null ? 
-        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(definition.Code)) : 
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(definition.Code))) : 
         "empty";
     
     return $"{definition.Name}_{codeHash}_{options.OptimizationLevel}_{options.FastMath}_{options.UnrollLoops}";
@@ -559,9 +578,11 @@ internal RuntimeCompiledKernel(KernelDefinition definition, CompilationOptions o
 public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeCompiledKernel));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeCompiledKernel));
+        }
 
-    var stopwatch = Stopwatch.StartNew();
+        var stopwatch = Stopwatch.StartNew();
     
     try
     {
@@ -630,10 +651,13 @@ private void ExecuteVectorOperation(IMemoryBuffer input1, IMemoryBuffer input2, 
                                     Math.Min(input2.SizeInBytes / sizeof(float), 
                                             output.SizeInBytes / sizeof(float)));
 
-    if (elementCount == 0) return;
+    if (elementCount == 0)
+        {
+            return;
+        }
 
-    // Create temporary arrays for the operation
-    var data1 = new float[elementCount];
+        // Create temporary arrays for the operation
+        var data1 = new float[elementCount];
     var data2 = new float[elementCount];
     var result = new float[elementCount];
 
@@ -663,9 +687,12 @@ private void ExecuteTransformOperation(IMemoryBuffer input, IMemoryBuffer output
     // Simulate transform operation (e.g., square root)
     var elementCount = (int)Math.Min(input.SizeInBytes / sizeof(float), output.SizeInBytes / sizeof(float));
 
-    if (elementCount == 0) return;
+    if (elementCount == 0)
+        {
+            return;
+        }
 
-    var inputData = new float[elementCount];
+        var inputData = new float[elementCount];
     var outputData = new float[elementCount];
 
     var inputMemory = new Memory<float>(inputData);
@@ -727,9 +754,11 @@ public RuntimeAcceleratorManager(ILogger<RuntimeAcceleratorManager> logger)
 public async ValueTask InitializeAsync(CancellationToken cancellationToken = default)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    if (_initialized)
+        if (_initialized)
     {
         _logger.LogDebug("Accelerator manager already initialized");
         return;
@@ -739,9 +768,12 @@ public async ValueTask InitializeAsync(CancellationToken cancellationToken = def
     
     try
     {
-        if (_initialized) return; // Double-check pattern
-        
-        _logger.LogInformation("Initializing accelerator manager...");
+        if (_initialized)
+            {
+                return; // Double-check pattern
+            }
+
+            _logger.LogInformation("Initializing accelerator manager...");
         
         var stopwatch = Stopwatch.StartNew();
         
@@ -794,53 +826,69 @@ public async ValueTask InitializeAsync(CancellationToken cancellationToken = def
 public IAccelerator GetAccelerator(int index)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    if (index < 0 || index >= _accelerators.Count)
-        throw new ArgumentOutOfRangeException(nameof(index));
+        if (index < 0 || index >= _accelerators.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
 
-    return _accelerators[index];
+        return _accelerators[index];
 }
 
 public IAccelerator? GetAcceleratorById(string id)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    ArgumentException.ThrowIfNullOrEmpty(id);
+        ArgumentException.ThrowIfNullOrEmpty(id);
     return _accelerators.FirstOrDefault(a => a.Info.Id == id);
 }
 
 public IEnumerable<IAccelerator> GetAcceleratorsByType(AcceleratorType type)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    return _accelerators.Where(a => a.Info.DeviceType == type.ToString());
+        return _accelerators.Where(a => a.Info.DeviceType == type.ToString());
 }
 
 public IAccelerator? SelectBest(AcceleratorSelectionCriteria criteria)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    ArgumentNullException.ThrowIfNull(criteria);
+        ArgumentNullException.ThrowIfNull(criteria);
     
     var candidates = _accelerators.AsEnumerable();
     
     // Apply filters
     if (criteria.PreferredType.HasValue)
-        candidates = candidates.Where(a => a.Info.DeviceType == criteria.PreferredType.Value.ToString());
-        
-    if (criteria.MinimumMemory.HasValue)
-        candidates = candidates.Where(a => a.Info.TotalMemory >= criteria.MinimumMemory.Value);
-        
-    if (criteria.MinimumComputeCapability != null)
-        candidates = candidates.Where(a => a.Info.ComputeCapability != null && 
-                                          a.Info.ComputeCapability >= criteria.MinimumComputeCapability);
+        {
+            candidates = candidates.Where(a => a.Info.DeviceType == criteria.PreferredType.Value.ToString());
+        }
 
-    // Score and select the best
-    var scoredCandidates = candidates.Select(a => new
+        if (criteria.MinimumMemory.HasValue)
+        {
+            candidates = candidates.Where(a => a.Info.TotalMemory >= criteria.MinimumMemory.Value);
+        }
+
+        if (criteria.MinimumComputeCapability != null)
+        {
+            candidates = candidates.Where(a => a.Info.ComputeCapability != null && 
+                                          a.Info.ComputeCapability >= criteria.MinimumComputeCapability);
+        }
+
+        // Score and select the best
+        var scoredCandidates = candidates.Select(a => new
     {
         Accelerator = a,
         Score = CalculateAcceleratorScore(a, criteria)
@@ -852,9 +900,11 @@ public IAccelerator? SelectBest(AcceleratorSelectionCriteria criteria)
 public AcceleratorContext CreateContext(IAccelerator accelerator)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    ArgumentNullException.ThrowIfNull(accelerator);
+        ArgumentNullException.ThrowIfNull(accelerator);
     
     return accelerator.Context;
 }
@@ -862,9 +912,11 @@ public AcceleratorContext CreateContext(IAccelerator accelerator)
 public void RegisterProvider(IAcceleratorProvider provider)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(provider);
     
     _providers.TryAdd(provider.Name, provider);
     _logger.LogDebug("Registered accelerator provider {ProviderName}", provider.Name);
@@ -873,9 +925,11 @@ public void RegisterProvider(IAcceleratorProvider provider)
 public ValueTask RefreshAsync(CancellationToken cancellationToken = default)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    _logger.LogDebug("Refreshing accelerator list");
+        _logger.LogDebug("Refreshing accelerator list");
     
     // In a real implementation, this would re-discover accelerators
     return ValueTask.CompletedTask;
@@ -884,26 +938,32 @@ public ValueTask RefreshAsync(CancellationToken cancellationToken = default)
 public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    return Task.FromResult<IEnumerable<IAccelerator>>(_accelerators.AsReadOnly());
+        return Task.FromResult<IEnumerable<IAccelerator>>(_accelerators.AsReadOnly());
 }
 
 public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    var result = GetAcceleratorsByType(type);
+        var result = GetAcceleratorsByType(type);
     return Task.FromResult(result);
 }
 
 public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAcceleratorManager));
+        }
 
-    IAccelerator? result;
+        IAccelerator? result;
     if (type.HasValue)
     {
         var criteria = new AcceleratorSelectionCriteria { PreferredType = type.Value };
@@ -957,13 +1017,17 @@ private static double CalculateAcceleratorScore(IAccelerator accelerator, Accele
 
     // Prefer dedicated over integrated
     if (criteria.PreferDedicated && !accelerator.Info.IsUnifiedMemory)
-        score += 10;
+        {
+            score += 10;
+        }
 
-    // Custom scorer
-    if (criteria.CustomScorer != null)
-        score += criteria.CustomScorer(accelerator);
+        // Custom scorer
+        if (criteria.CustomScorer != null)
+        {
+            score += criteria.CustomScorer(accelerator);
+        }
 
-    return score;
+        return score;
 }
 
 private RuntimeAccelerator CreateDefaultCpuAccelerator()
@@ -1021,9 +1085,11 @@ public ValueTask<ICompiledKernel> CompileKernelAsync(
     CancellationToken cancellationToken = default)
 {
     if (_disposed)
-        throw new ObjectDisposedException(nameof(RuntimeAccelerator));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAccelerator));
+        }
 
-    var compiler = new RuntimeKernelCompiler(_logger as ILogger<RuntimeKernelCompiler> ?? 
+        var compiler = new RuntimeKernelCompiler(_logger as ILogger<RuntimeKernelCompiler> ?? 
                                            NullLogger<RuntimeKernelCompiler>.Instance);
     return compiler.CompileAsync(definition, options, cancellationToken);
 }
@@ -1031,10 +1097,12 @@ public ValueTask<ICompiledKernel> CompileKernelAsync(
 public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
 {
     if (_disposed)
-        throw new ObjectDisposedException(nameof(RuntimeAccelerator));
+        {
+            throw new ObjectDisposedException(nameof(RuntimeAccelerator));
+        }
 
-    // For CPU execution, synchronization is immediate
-    return ValueTask.CompletedTask;
+        // For CPU execution, synchronization is immediate
+        return ValueTask.CompletedTask;
 }
 
 public ValueTask DisposeAsync()

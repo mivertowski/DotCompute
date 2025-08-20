@@ -22,10 +22,13 @@ public static Complex[] ComputeFFT(float[] signal)
     ArgumentNullException.ThrowIfNull(signal);
     
     var n = signal.Length;
-    if (n == 0) return [];
-    
-    // Convert to complex
-    var complexSignal = new Complex[n];
+    if (n == 0)
+        {
+            return [];
+        }
+
+        // Convert to complex
+        var complexSignal = new Complex[n];
     for (var i = 0; i < n; i++)
     {
         complexSignal[i] = new Complex(signal[i], 0);
@@ -44,10 +47,13 @@ public static Complex[] ComputeFFT(Complex[] signal)
     ArgumentNullException.ThrowIfNull(signal);
     
     var n = signal.Length;
-    if (n <= 1) return (Complex[])signal.Clone();
-    
-    // Choose algorithm based on input characteristics
-    if (IsPowerOfTwo(n))
+    if (n <= 1)
+        {
+            return (Complex[])signal.Clone();
+        }
+
+        // Choose algorithm based on input characteristics
+        if (IsPowerOfTwo(n))
     {
         return CooleyTukeyRadix2FFT(signal);
     }
@@ -71,10 +77,13 @@ public static Complex[] ComputeIFFT(Complex[] spectrum)
     ArgumentNullException.ThrowIfNull(spectrum);
     
     var n = spectrum.Length;
-    if (n == 0) return [];
-    
-    // Conjugate, FFT, conjugate, and normalize
-    var conjugated = new Complex[n];
+    if (n == 0)
+        {
+            return [];
+        }
+
+        // Conjugate, FFT, conjugate, and normalize
+        var conjugated = new Complex[n];
     for (var i = 0; i < n; i++)
     {
         conjugated[i] = Complex.Conjugate(spectrum[i]);
@@ -100,11 +109,14 @@ public static Complex[] ComputeRFFT(float[] signal)
     ArgumentNullException.ThrowIfNull(signal);
     
     var n = signal.Length;
-    if (n < 2) return ComputeFFT(signal);
-    
-    // For even N, pack real signal into N/2 complex values
-    // Then use complex FFT and unpack
-    var halfN = n / 2;
+    if (n < 2)
+        {
+            return ComputeFFT(signal);
+        }
+
+        // For even N, pack real signal into N/2 complex values
+        // Then use complex FFT and unpack
+        var halfN = n / 2;
     var packedSignal = new Complex[halfN];
     
     for (var i = 0; i < halfN; i++)
@@ -193,9 +205,11 @@ public static IEnumerable<Complex[]> SlidingWindowFFT(
     ArgumentNullException.ThrowIfNull(buffer);
     
     if (windowSize <= 0 || hopSize <= 0)
-        throw new ArgumentException("Window size and hop size must be positive");
-    
-    var window = ApplyWindow(windowSize, WindowType.Hann);
+        {
+            throw new ArgumentException("Window size and hop size must be positive");
+        }
+
+        var window = ApplyWindow(windowSize, WindowType.Hann);
     
     for (var start = 0; start + windowSize <= buffer.Length; start += hopSize)
     {
@@ -220,9 +234,11 @@ public static Complex[] ZeroPaddedFFT(float[] signal, int paddedLength)
     ArgumentNullException.ThrowIfNull(signal);
     
     if (paddedLength < signal.Length)
-        throw new ArgumentException("Padded length must be at least signal length");
-    
-    var paddedSignal = new float[paddedLength];
+        {
+            throw new ArgumentException("Padded length must be at least signal length");
+        }
+
+        var paddedSignal = new float[paddedLength];
     Array.Copy(signal, paddedSignal, signal.Length);
     // Rest remains zero (default initialization)
     
@@ -232,10 +248,13 @@ public static Complex[] ZeroPaddedFFT(float[] signal, int paddedLength)
 private static Complex[] CooleyTukeyRadix2FFT(Complex[] x)
 {
     var n = x.Length;
-    if (n <= 1) return (Complex[])x.Clone();
-    
-    // Bit-reversal permutation for in-place computation
-    var result = new Complex[n];
+    if (n <= 1)
+        {
+            return (Complex[])x.Clone();
+        }
+
+        // Bit-reversal permutation for in-place computation
+        var result = new Complex[n];
     for (var i = 0; i < n; i++)
     {
         result[ReverseBits(i, (int)Math.Log2(n))] = x[i];
@@ -512,9 +531,12 @@ private static List<int> GetPrimeFactorization(int n)
         }
     }
     
-    if (n > 1) factors.Add(n);
-    
-    return factors;
+    if (n > 1)
+        {
+            factors.Add(n);
+        }
+
+        return factors;
 }
 
 private static int ReverseBits(int value, int bitCount)
@@ -530,9 +552,12 @@ private static int ReverseBits(int value, int bitCount)
 
 private static int NextPowerOfTwo(int n)
 {
-    if (IsPowerOfTwo(n)) return n;
-    
-    n--;
+    if (IsPowerOfTwo(n))
+        {
+            return n;
+        }
+
+        n--;
     n |= n >> 1;
     n |= n >> 2;
     n |= n >> 4;

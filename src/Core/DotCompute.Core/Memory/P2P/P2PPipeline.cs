@@ -267,7 +267,12 @@ namespace DotCompute.Core.Memory.P2P
 
         public async ValueTask DisposeAsync()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
+
             _disposed = true;
 
             // Cancel any ongoing operations

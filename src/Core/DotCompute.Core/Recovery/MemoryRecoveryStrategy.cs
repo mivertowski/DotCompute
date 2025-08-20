@@ -214,10 +214,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
     /// <summary>
     /// Gets current memory pressure information
     /// </summary>
-    public MemoryPressureInfo GetMemoryPressureInfo()
-    {
-        return _pressureMonitor.GetCurrentPressure();
-    }
+    public MemoryPressureInfo GetMemoryPressureInfo() => _pressureMonitor.GetCurrentPressure();
 
     /// <summary>
     /// Registers a memory pool for monitoring and recovery
@@ -463,8 +460,12 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<MemoryRecovery
 
     private void PerformPeriodicDefragmentation(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             var pressure = _pressureMonitor.GetCurrentPressure();

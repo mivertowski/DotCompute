@@ -64,11 +64,22 @@ public sealed class P2PTransferScheduler : IAsyncDisposable
         TransferStrategy strategy,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (sourceBuffer == null) throw new ArgumentNullException(nameof(sourceBuffer));
-        if (targetBuffer == null) throw new ArgumentNullException(nameof(targetBuffer));
-        if (strategy == null) throw new ArgumentNullException(nameof(strategy));
+        if (sourceBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(sourceBuffer));
+            }
 
-        var transferSize = elementCount * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            if (targetBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(targetBuffer));
+            }
+
+            if (strategy == null)
+            {
+                throw new ArgumentNullException(nameof(strategy));
+            }
+
+            var transferSize = elementCount * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var operation = new P2PTransferOperation<T>
         {
             Id = Guid.NewGuid(),
@@ -283,47 +294,39 @@ public sealed class P2PTransferScheduler : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Executes a direct P2P transfer.
-    /// </summary>
-    private async Task ExecuteDirectP2PTransferAsync(P2PTransferOperation operation)
-    {
-        // Direct device-to-device transfer
-        // This would use platform-specific P2P APIs
-        await operation.ExecuteDirectTransferAsync(_shutdownTokenSource.Token);
-    }
+        /// <summary>
+        /// Executes a direct P2P transfer.
+        /// </summary>
+        private async Task ExecuteDirectP2PTransferAsync(P2PTransferOperation operation) =>
+            // Direct device-to-device transfer
+            // This would use platform-specific P2P APIs
+            await operation.ExecuteDirectTransferAsync(_shutdownTokenSource.Token);
 
-    /// <summary>
-    /// Executes a host-mediated transfer.
-    /// </summary>
-    private async Task ExecuteHostMediatedTransferAsync(P2PTransferOperation operation)
-    {
-        // Transfer via host memory
-        await operation.ExecuteHostMediatedTransferAsync(_shutdownTokenSource.Token);
-    }
+        /// <summary>
+        /// Executes a host-mediated transfer.
+        /// </summary>
+        private async Task ExecuteHostMediatedTransferAsync(P2PTransferOperation operation) =>
+            // Transfer via host memory
+            await operation.ExecuteHostMediatedTransferAsync(_shutdownTokenSource.Token);
 
-    /// <summary>
-    /// Executes a streaming transfer with chunking.
-    /// </summary>
-    private async Task ExecuteStreamingTransferAsync(P2PTransferOperation operation)
-    {
-        // Chunked streaming transfer
-        await operation.ExecuteStreamingTransferAsync(operation.Strategy.ChunkSize, _shutdownTokenSource.Token);
-    }
+        /// <summary>
+        /// Executes a streaming transfer with chunking.
+        /// </summary>
+        private async Task ExecuteStreamingTransferAsync(P2PTransferOperation operation) =>
+            // Chunked streaming transfer
+            await operation.ExecuteStreamingTransferAsync(operation.Strategy.ChunkSize, _shutdownTokenSource.Token);
 
-    /// <summary>
-    /// Executes a memory-mapped transfer.
-    /// </summary>
-    private async Task ExecuteMemoryMappedTransferAsync(P2PTransferOperation operation)
-    {
-        // Memory-mapped file transfer
-        await operation.ExecuteMemoryMappedTransferAsync(_shutdownTokenSource.Token);
-    }
+        /// <summary>
+        /// Executes a memory-mapped transfer.
+        /// </summary>
+        private async Task ExecuteMemoryMappedTransferAsync(P2PTransferOperation operation) =>
+            // Memory-mapped file transfer
+            await operation.ExecuteMemoryMappedTransferAsync(_shutdownTokenSource.Token);
 
-    /// <summary>
-    /// Ensures transfer channels exist for the devices.
-    /// </summary>
-    private async ValueTask EnsureTransferChannelsAsync(
+        /// <summary>
+        /// Ensures transfer channels exist for the devices.
+        /// </summary>
+        private async ValueTask EnsureTransferChannelsAsync(
         IAccelerator sourceDevice,
         IAccelerator targetDevice,
         TransferStrategy strategy)
@@ -381,9 +384,11 @@ public sealed class P2PTransferScheduler : IAsyncDisposable
     private double CalculateOverallBandwidthUtilization()
     {
         if (!_deviceChannels.Any())
-            return 0.0;
+            {
+                return 0.0;
+            }
 
-        var totalUtilization = _deviceChannels.Values.Sum(channel => channel.BandwidthUtilization);
+            var totalUtilization = _deviceChannels.Values.Sum(channel => channel.BandwidthUtilization);
         return totalUtilization / _deviceChannels.Count;
     }
 
@@ -420,9 +425,11 @@ public sealed class P2PTransferScheduler : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        _disposed = true;
+            _disposed = true;
 
         // Cancel all operations
         await _shutdownTokenSource.CancelAsync();
@@ -484,17 +491,11 @@ internal sealed class TransferChannel : IDisposable
     public int ActiveTransfers => _concurrencySemaphore.CurrentCount;
     public double BandwidthUtilization => _currentBandwidthUtilization;
 
-    public async ValueTask AcquireAsync(CancellationToken cancellationToken)
-    {
-        await _concurrencySemaphore.WaitAsync(cancellationToken);
-    }
+        public async ValueTask AcquireAsync(CancellationToken cancellationToken) => await _concurrencySemaphore.WaitAsync(cancellationToken);
 
-    public void Release()
-    {
-        _concurrencySemaphore.Release();
-    }
+        public void Release() => _concurrencySemaphore.Release();
 
-    public void RecordTransfer(long bytes, TimeSpan duration)
+        public void RecordTransfer(long bytes, TimeSpan duration)
     {
         lock (_statsLock)
         {
@@ -516,11 +517,8 @@ internal sealed class TransferChannel : IDisposable
         }
     }
 
-    public void Dispose()
-    {
-        _concurrencySemaphore.Dispose();
+        public void Dispose() => _concurrencySemaphore.Dispose();
     }
-}
 
 /// <summary>
 /// Base class for P2P transfer operations.
@@ -557,12 +555,9 @@ internal sealed class P2PTransferOperation<T> : P2PTransferOperation where T : u
     public override IAccelerator SourceDevice => SourceBuffer.Accelerator;
     public override IAccelerator TargetDevice => TargetBuffer.Accelerator;
 
-    public override async Task ExecuteDirectTransferAsync(CancellationToken cancellationToken)
-    {
-        await SourceBuffer.CopyToAsync(SourceOffset, TargetBuffer, TargetOffset, ElementCount, cancellationToken);
-    }
+        public override async Task ExecuteDirectTransferAsync(CancellationToken cancellationToken) => await SourceBuffer.CopyToAsync(SourceOffset, TargetBuffer, TargetOffset, ElementCount, cancellationToken);
 
-    public override async Task ExecuteHostMediatedTransferAsync(CancellationToken cancellationToken)
+        public override async Task ExecuteHostMediatedTransferAsync(CancellationToken cancellationToken)
     {
         var hostData = new T[ElementCount];
         

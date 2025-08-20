@@ -430,10 +430,7 @@ Task ProcessAsync();
 
 public class PluginSpecificService : IPluginSpecificService
 {
-public async Task ProcessAsync()
-{
-    await Task.Delay(5); // Simulate processing
-}
+    public async Task ProcessAsync() => await Task.Delay(5); // Simulate processing
 }
 
 /// <summary>
@@ -537,10 +534,7 @@ internal class ExampleMockAccelerator : IAccelerator
         return ValueTask.FromResult<ICompiledKernel>(mockKernel);
     }
 
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public void Dispose() { }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -563,10 +557,7 @@ internal class ExampleMockMemoryManager : IMemoryManager
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
 
-    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
-    {
-        return new ExampleMockMemoryBuffer(length, buffer.Options);
-    }
+    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length) => new ExampleMockMemoryBuffer(length, buffer.Options);
 
     public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
     {
@@ -584,10 +575,7 @@ internal class ExampleMockMemoryManager : IMemoryManager
         // Mock implementation - do nothing
     }
 
-    public void Free(IMemoryBuffer buffer)
-    {
-        buffer?.Dispose();
-    }
+    public void Free(IMemoryBuffer buffer) => buffer?.Dispose();
 
     public void Dispose() { }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -602,25 +590,13 @@ internal class ExampleMockMemoryBuffer(long size, MemoryOptions options) : IMemo
     public MemoryOptions Options { get; } = options;
     public bool IsDisposed { get; private set; }
 
-    public ValueTask<Memory<byte>> GetMemoryAsync(CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(new Memory<byte>(new byte[SizeInBytes]));
-    }
+    public ValueTask<Memory<byte>> GetMemoryAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(new Memory<byte>(new byte[SizeInBytes]));
 
-    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
-    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
-    public void Dispose()
-    {
-        IsDisposed = true;
-    }
+    public void Dispose() => IsDisposed = true;
 
     public ValueTask DisposeAsync()
     {
@@ -637,10 +613,7 @@ internal class ExampleMockCompiledKernel(KernelDefinition definition) : ICompile
 {
     public string Name => definition.Name;
 
-    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public void Dispose() { }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;

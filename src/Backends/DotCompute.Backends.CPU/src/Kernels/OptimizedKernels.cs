@@ -61,7 +61,7 @@ public override async ValueTask ExecuteAsync(KernelArguments arguments, Cancella
 {
     ThrowIfDisposed();
 
-    if (arguments.Arguments.Length < 3)
+    if (arguments.Arguments.Count < 3)
     {
         throw new ArgumentException("Vector add requires 3 arguments: input A, input B, output");
     }
@@ -75,14 +75,12 @@ public override async ValueTask ExecuteAsync(KernelArguments arguments, Cancella
     await Task.Run(() => ExecuteVectorAddOptimized(bufferA, bufferB, bufferResult, elementCount), cancellationToken);
 }
 
-private async void ExecuteVectorAddOptimized(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
-{
-    // Use generic implementation since we don't have direct access to HighPerformanceMemoryBuffer here
-    // This could be optimized further by exposing unsafe pointers through IMemoryBuffer
-    await ExecuteVectorAddGeneric(bufferA, bufferB, bufferResult, elementCount);
-}
+    private async void ExecuteVectorAddOptimized(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount) =>
+        // Use generic implementation since we don't have direct access to HighPerformanceMemoryBuffer here
+        // This could be optimized further by exposing unsafe pointers through IMemoryBuffer
+        await ExecuteVectorAddGeneric(bufferA, bufferB, bufferResult, elementCount);
 
-private async Task ExecuteVectorAddGeneric(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
+    private async Task ExecuteVectorAddGeneric(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
 {
     var dataA = new float[elementCount];
     var dataB = new float[elementCount];
@@ -126,7 +124,7 @@ public override async ValueTask ExecuteAsync(KernelArguments arguments, Cancella
 {
     ThrowIfDisposed();
 
-    if (arguments.Arguments.Length < 4)
+    if (arguments.Arguments.Count < 4)
     {
         throw new ArgumentException("Matrix multiply requires 4 arguments: matrix A, matrix B, result C, size");
     }
@@ -178,7 +176,7 @@ public override async ValueTask ExecuteAsync(KernelArguments arguments, Cancella
 {
     ThrowIfDisposed();
 
-    if (arguments.Arguments.Length < 2)
+    if (arguments.Arguments.Count < 2)
     {
         throw new ArgumentException("Reduction requires 2 arguments: input, output");
     }
@@ -231,7 +229,7 @@ public override async ValueTask ExecuteAsync(KernelArguments arguments, Cancella
 {
     ThrowIfDisposed();
 
-    if (arguments.Arguments.Length < 2)
+    if (arguments.Arguments.Count < 2)
     {
         throw new ArgumentException("Memory kernel requires 2 arguments: input, output");
     }
@@ -276,7 +274,7 @@ public override async ValueTask ExecuteAsync(KernelArguments arguments, Cancella
 {
     ThrowIfDisposed();
 
-    if (arguments.Arguments.Length < 3)
+    if (arguments.Arguments.Count < 3)
     {
         throw new ArgumentException("Compute kernel requires 3 arguments: input, output, iterations");
     }
@@ -328,10 +326,12 @@ public override async ValueTask ExecuteAsync(KernelArguments arguments, Cancella
 {
     ThrowIfDisposed();
 
-    if (arguments.Arguments.Length < 3)
-        throw new ArgumentException("Vector scale requires 3 arguments: input, scale factor, result");
+    if (arguments.Arguments.Count < 3)
+        {
+            throw new ArgumentException("Vector scale requires 3 arguments: input, scale factor, result");
+        }
 
-    var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
+        var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
     var scaleFactor = Convert.ToSingle(arguments.Arguments[1]);
     var resultBuffer = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
 
@@ -404,7 +404,7 @@ private async ValueTask TryExecuteGenericKernel(KernelArguments arguments, Cance
         // Vector scale pattern - handle it manually
         await ExecuteVectorScalePattern(arguments, cancellationToken);
     }
-    else if (source.Contains("result[i]") && arguments.Arguments.Length >= 3)
+    else if (source.Contains("result[i]") && arguments.Arguments.Count >= 3)
     {
         // General element-wise operation pattern
         await ExecuteElementWisePattern(arguments, cancellationToken);
@@ -417,7 +417,7 @@ private async ValueTask TryExecuteGenericKernel(KernelArguments arguments, Cance
 
 private async ValueTask ExecuteVectorScalePattern(KernelArguments arguments, CancellationToken cancellationToken)
 {
-    if (arguments.Arguments.Length < 3)
+    if (arguments.Arguments.Count < 3)
     {
         Logger.LogError("Vector scale pattern requires at least 3 arguments");
         return;
@@ -429,13 +429,19 @@ private async ValueTask ExecuteVectorScalePattern(KernelArguments arguments, Can
     
     // Try to extract scale factor from arguments[1]
     if (arguments.Arguments[1] is float f)
-        scaleFactor = f;
-    else if (arguments.Arguments[1] is double d)
-        scaleFactor = (float)d;
-    else if (arguments.Arguments[1] is int i)
-        scaleFactor = (float)i;
+        {
+            scaleFactor = f;
+        }
+        else if (arguments.Arguments[1] is double d)
+        {
+            scaleFactor = (float)d;
+        }
+        else if (arguments.Arguments[1] is int i)
+        {
+            scaleFactor = (float)i;
+        }
 
-    if (inputBuffer != null && resultBuffer != null)
+        if (inputBuffer != null && resultBuffer != null)
     {
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
         var inputData = new float[elementCount];
@@ -457,7 +463,7 @@ private async ValueTask ExecuteVectorScalePattern(KernelArguments arguments, Can
 private async ValueTask ExecuteElementWisePattern(KernelArguments arguments, CancellationToken cancellationToken)
 {
     // Generic element-wise operation - just copy input to output as fallback
-    if (arguments.Arguments.Length >= 2 &&
+    if (arguments.Arguments.Count >= 2 &&
         arguments.Arguments[0] is IMemoryBuffer inputBuffer &&
         arguments.Arguments[1] is IMemoryBuffer outputBuffer)
     {

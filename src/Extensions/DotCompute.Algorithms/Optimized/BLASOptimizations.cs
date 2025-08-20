@@ -23,9 +23,9 @@ public static class BLASOptimizations
     private const int LARGE_MATRIX_THRESHOLD = 1024;
     
     // SIMD vector sizes
-    private static readonly int Vector256Size = Vector256&lt;float&gt;.Count;
-    private static readonly int Vector128Size = Vector128&lt;float&gt;.Count;
-    private static readonly int VectorSize = Vector&lt;float&gt;.Count;
+    private static readonly int Vector256Size = Vector256<float>.Count;
+    private static readonly int Vector128Size = Vector128<float>.Count;
+    private static readonly int VectorSize = Vector<float>.Count;
     
     #region Level 1 BLAS Operations (Vector-Vector)
     
@@ -37,14 +37,22 @@ public static class BLASOptimizations
     /// <param name="y">Second vector</param>
     /// <returns>Dot product x · y</returns>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe float OptimizedDot(ReadOnlySpan&lt;float&gt; x, ReadOnlySpan&lt;float&gt; y)
+    public static unsafe float OptimizedDot(ReadOnlySpan<float> x, ReadOnlySpan<float> y)
     {
         if (x.Length != y.Length)
+        {
+
             throw new ArgumentException("Vector lengths must be equal");
-            
+        }
+
+
         var n = x.Length;
-        if (n == 0) return 0.0f;
-        
+        if (n == 0)
+        {
+            return 0.0f;
+        }
+
+
         if (n >= SIMD_THRESHOLD && Avx2.IsSupported)
         {
             return DotProductAvx2(x, y);
@@ -66,14 +74,22 @@ public static class BLASOptimizations
     /// <param name="x">Input vector x</param>
     /// <param name="y">Input/output vector y</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe void OptimizedAxpy(float alpha, ReadOnlySpan&lt;float&gt; x, Span&lt;float&gt; y)
+    public static unsafe void OptimizedAxpy(float alpha, ReadOnlySpan<float> x, Span<float> y)
     {
         if (x.Length != y.Length)
+        {
+
             throw new ArgumentException("Vector lengths must be equal");
-            
+        }
+
+
         var n = x.Length;
-        if (n == 0) return;
-        
+        if (n == 0)
+        {
+            return;
+        }
+
+
         if (n >= SIMD_THRESHOLD && Avx2.IsSupported)
         {
             AxpyAvx2(alpha, x, y);
@@ -94,11 +110,15 @@ public static class BLASOptimizations
     /// <param name="alpha">Scalar multiplier</param>
     /// <param name="x">Input/output vector</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe void OptimizedScale(float alpha, Span&lt;float&gt; x)
+    public static unsafe void OptimizedScale(float alpha, Span<float> x)
     {
         var n = x.Length;
-        if (n == 0) return;
-        
+        if (n == 0)
+        {
+            return;
+        }
+
+
         if (n >= SIMD_THRESHOLD && Avx2.IsSupported)
         {
             ScaleAvx2(alpha, x);
@@ -119,13 +139,22 @@ public static class BLASOptimizations
     /// <param name="x">Input vector</param>
     /// <returns>Euclidean norm</returns>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static float OptimizedNorm2(ReadOnlySpan&lt;float&gt; x)
+    public static float OptimizedNorm2(ReadOnlySpan<float> x)
     {
         var n = x.Length;
-        if (n == 0) return 0.0f;
-        if (n == 1) return Math.Abs(x[0]);
-        
+        if (n == 0)
+        {
+            return 0.0f;
+        }
+
+
+        if (n == 1)
+        {
+            return Math.Abs(x[0]);
+        }
+
         // Use optimized dot product with itself
+
         var dotProduct = OptimizedDot(x, x);
         return MathF.Sqrt(dotProduct);
     }
@@ -143,11 +172,15 @@ public static class BLASOptimizations
     /// <param name="beta">Scalar β</param>
     /// <param name="y">Input/output vector y</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static void OptimizedGemv(float alpha, Matrix matrix, ReadOnlySpan&lt;float&gt; x, float beta, Span&lt;float&gt; y)
+    public static void OptimizedGemv(float alpha, Matrix matrix, ReadOnlySpan<float> x, float beta, Span<float> y)
     {
         if (matrix.Columns != x.Length || matrix.Rows != y.Length)
+        {
+
             throw new ArgumentException("Matrix and vector dimensions incompatible");
-            
+        }
+
+
         var rows = matrix.Rows;
         var cols = matrix.Columns;
         var matrixData = matrix.AsSpan();
@@ -177,19 +210,27 @@ public static class BLASOptimizations
     /// <param name="y">Row vector</param>
     /// <param name="matrix">Input/output matrix</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static void OptimizedGer(float alpha, ReadOnlySpan&lt;float&gt; x, ReadOnlySpan&lt;float&gt; y, Matrix matrix)
+    public static void OptimizedGer(float alpha, ReadOnlySpan<float> x, ReadOnlySpan<float> y, Matrix matrix)
     {
         if (matrix.Rows != x.Length || matrix.Columns != y.Length)
+        {
+
             throw new ArgumentException("Matrix and vector dimensions incompatible");
-            
+        }
+
+
         var rows = matrix.Rows;
         var cols = matrix.Columns;
         
         for (var i = 0; i < rows; i++)
         {
             var alphaXi = alpha * x[i];
-            var rowSpan = matrix.AsSpan().Slice(i * cols, cols);
+            var matrixSpan = matrix.AsMutableSpan();
+            var rowData = new float[cols];
+            matrixSpan.Slice(i * cols, cols).CopyTo(rowData);
+            var rowSpan = rowData.AsSpan();
             OptimizedAxpy(alphaXi, y, rowSpan);
+            rowSpan.CopyTo(matrixSpan.Slice(i * cols, cols));
         }
     }
     
@@ -210,8 +251,12 @@ public static class BLASOptimizations
     public static void OptimizedGemm(float alpha, Matrix a, Matrix b, float beta, Matrix c)
     {
         if (a.Columns != b.Rows || a.Rows != c.Rows || b.Columns != c.Columns)
+        {
+
             throw new ArgumentException("Matrix dimensions incompatible for multiplication");
-            
+        }
+
+
         var m = a.Rows;
         var n = b.Columns;
         var k = a.Columns;
@@ -219,19 +264,25 @@ public static class BLASOptimizations
         // Scale C by beta first
         if (beta == 0.0f)
         {
-            c.AsSpan().Clear();
+            var cArray = c.ToArray();
+            cArray.AsSpan().Clear();
+            c = new Matrix(c.Rows, c.Columns, cArray);
         }
         else if (beta != 1.0f)
         {
-            OptimizedScale(beta, c.AsSpan());
+            OptimizedScale(beta, c.AsMutableSpan());
         }
         
         // Choose optimal algorithm
-        if (alpha == 0.0f) return;
-        
+        if (alpha == 0.0f)
+        {
+            return;
+        }
+
+
         var aSpan = a.AsSpan();
         var bSpan = b.AsSpan();
-        var cSpan = c.AsSpan();
+        var cSpan = c.AsMutableSpan();
         
         if (m >= LARGE_MATRIX_THRESHOLD || n >= LARGE_MATRIX_THRESHOLD || k >= LARGE_MATRIX_THRESHOLD)
         {
@@ -262,25 +313,35 @@ public static class BLASOptimizations
     public static void OptimizedSymm(float alpha, Matrix a, Matrix b, float beta, Matrix c)
     {
         if (!a.IsSquare)
+        {
+
             throw new ArgumentException("Matrix A must be square for symmetric operations");
-            
+        }
+
         // Leverage symmetry for ~2x performance improvement
+
         var n = a.Rows;
         var m = b.Columns;
         
         // Scale C first
         if (beta == 0.0f)
         {
-            c.AsSpan().Clear();
+            var cArray = c.ToArray();
+            cArray.AsSpan().Clear();
+            c = new Matrix(c.Rows, c.Columns, cArray);
         }
         else if (beta != 1.0f)
         {
-            OptimizedScale(beta, c.AsSpan());
+            OptimizedScale(beta, c.AsMutableSpan());
         }
         
-        if (alpha == 0.0f) return;
-        
+        if (alpha == 0.0f)
+        {
+            return;
+        }
+
         // Optimized symmetric multiplication
+
         for (var i = 0; i < n; i++)
         {
             for (var j = 0; j < m; j++)
@@ -318,8 +379,8 @@ public static class BLASOptimizations
     /// <param name="x">Input vector</param>
     /// <param name="y">Output vector</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static void OptimizedSpMV(ReadOnlySpan&lt;float&gt; values, ReadOnlySpan&lt;int&gt; rowPtr, 
-        ReadOnlySpan&lt;int&gt; colInd, ReadOnlySpan&lt;float&gt; x, Span&lt;float&gt; y)
+    public static void OptimizedSpMV(ReadOnlySpan<float> values, ReadOnlySpan<int> rowPtr, 
+        ReadOnlySpan<int> colInd, ReadOnlySpan<float> x, Span<float> y)
     {
         var rows = rowPtr.Length - 1;
         
@@ -351,12 +412,12 @@ public static class BLASOptimizations
     #region Private Implementation Methods
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe float DotProductAvx2(ReadOnlySpan&lt;float&gt; x, ReadOnlySpan&lt;float&gt; y)
+    private static unsafe float DotProductAvx2(ReadOnlySpan<float> x, ReadOnlySpan<float> y)
     {
         var n = x.Length;
         fixed (float* xPtr = x, yPtr = y)
         {
-            var sum = Vector256&lt;float&gt;.Zero;
+            var sum = Vector256<float>.Zero;
             var i = 0;
             var vectorCount = n - (n % Vector256Size);
             
@@ -382,12 +443,12 @@ public static class BLASOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe float DotProductSse2(ReadOnlySpan&lt;float&gt; x, ReadOnlySpan&lt;float&gt; y)
+    private static unsafe float DotProductSse2(ReadOnlySpan<float> x, ReadOnlySpan<float> y)
     {
         var n = x.Length;
         fixed (float* xPtr = x, yPtr = y)
         {
-            var sum = Vector128&lt;float&gt;.Zero;
+            var sum = Vector128<float>.Zero;
             var i = 0;
             var vectorCount = n - (n % Vector128Size);
             
@@ -413,23 +474,23 @@ public static class BLASOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static float DotProductVector(ReadOnlySpan&lt;float&gt; x, ReadOnlySpan&lt;float&gt; y)
+    private static float DotProductVector(ReadOnlySpan<float> x, ReadOnlySpan<float> y)
     {
         var n = x.Length;
-        var sum = Vector&lt;float&gt;.Zero;
+        var sum = Vector<float>.Zero;
         var i = 0;
         var vectorCount = n - (n % VectorSize);
         
         // Process vectorized elements
         for (; i < vectorCount; i += VectorSize)
         {
-            var xVec = new Vector&lt;float&gt;(x.Slice(i, VectorSize));
-            var yVec = new Vector&lt;float&gt;(y.Slice(i, VectorSize));
+            var xVec = new Vector<float>(x.Slice(i, VectorSize));
+            var yVec = new Vector<float>(y.Slice(i, VectorSize));
             sum += xVec * yVec;
         }
         
         // Sum vector elements
-        var result = Vector.Dot(sum, Vector&lt;float&gt;.One);
+        var result = Vector.Dot(sum, Vector<float>.One);
         
         // Handle remaining elements
         for (; i < n; i++)
@@ -441,7 +502,7 @@ public static class BLASOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void AxpyAvx2(float alpha, ReadOnlySpan&lt;float&gt; x, Span&lt;float&gt; y)
+    private static unsafe void AxpyAvx2(float alpha, ReadOnlySpan<float> x, Span<float> y)
     {
         var n = x.Length;
         fixed (float* xPtr = x, yPtr = y)
@@ -467,7 +528,7 @@ public static class BLASOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void AxpySse2(float alpha, ReadOnlySpan&lt;float&gt; x, Span&lt;float&gt; y)
+    private static unsafe void AxpySse2(float alpha, ReadOnlySpan<float> x, Span<float> y)
     {
         var n = x.Length;
         fixed (float* xPtr = x, yPtr = y)
@@ -493,17 +554,17 @@ public static class BLASOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static void AxpyVector(float alpha, ReadOnlySpan&lt;float&gt; x, Span&lt;float&gt; y)
+    private static void AxpyVector(float alpha, ReadOnlySpan<float> x, Span<float> y)
     {
         var n = x.Length;
-        var alphaVec = new Vector&lt;float&gt;(alpha);
+        var alphaVec = new Vector<float>(alpha);
         var i = 0;
         var vectorCount = n - (n % VectorSize);
         
         for (; i < vectorCount; i += VectorSize)
         {
-            var xVec = new Vector&lt;float&gt;(x.Slice(i, VectorSize));
-            var yVec = new Vector&lt;float&gt;(y.Slice(i, VectorSize));
+            var xVec = new Vector<float>(x.Slice(i, VectorSize));
+            var yVec = new Vector<float>(y.Slice(i, VectorSize));
             var result = yVec + alphaVec * xVec;
             result.CopyTo(y.Slice(i, VectorSize));
         }
@@ -516,7 +577,7 @@ public static class BLASOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void ScaleAvx2(float alpha, Span&lt;float&gt; x)
+    private static unsafe void ScaleAvx2(float alpha, Span<float> x)
     {
         var n = x.Length;
         fixed (float* xPtr = x)
@@ -541,7 +602,7 @@ public static class BLASOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void ScaleSse2(float alpha, Span&lt;float&gt; x)
+    private static unsafe void ScaleSse2(float alpha, Span<float> x)
     {
         var n = x.Length;
         fixed (float* xPtr = x)
@@ -566,16 +627,16 @@ public static class BLASOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static void ScaleVector(float alpha, Span&lt;float&gt; x)
+    private static void ScaleVector(float alpha, Span<float> x)
     {
         var n = x.Length;
-        var alphaVec = new Vector&lt;float&gt;(alpha);
+        var alphaVec = new Vector<float>(alpha);
         var i = 0;
         var vectorCount = n - (n % VectorSize);
         
         for (; i < vectorCount; i += VectorSize)
         {
-            var xVec = new Vector&lt;float&gt;(x.Slice(i, VectorSize));
+            var xVec = new Vector<float>(x.Slice(i, VectorSize));
             var result = alphaVec * xVec;
             result.CopyTo(x.Slice(i, VectorSize));
         }
@@ -589,7 +650,7 @@ public static class BLASOptimizations
     
     // Additional helper methods for horizontal sum, GEMV implementations, etc.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static float HorizontalSumAvx2(Vector256&lt;float&gt; vec)
+    private static float HorizontalSumAvx2(Vector256<float> vec)
     {
         var hi128 = Avx.ExtractVector128(vec, 1);
         var lo128 = Avx.ExtractVector128(vec, 0);
@@ -598,30 +659,29 @@ public static class BLASOptimizations
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static float HorizontalSumSse2(Vector128&lt;float&gt; vec)
+    private static float HorizontalSumSse2(Vector128<float> vec)
     {
         var temp = Sse.Add(vec, Sse.Shuffle(vec, vec, 0b_11_10_01_00));
         temp = Sse.Add(temp, Sse.Shuffle(temp, temp, 0b_01_00_11_10));
-        return Sse.ConvertToSingle(temp);
+        return temp.ToScalar();
     }
-    
+
     // Placeholder implementations for complex GEMM algorithms
-    private static void BlockedGemv(float alpha, ReadOnlySpan&lt;float&gt; matrix, ReadOnlySpan&lt;float&gt; x, 
-        float beta, Span&lt;float&gt; y, int rows, int cols, int matrixStride)
-    {
+
+    private static void BlockedGemv(float alpha, ReadOnlySpan<float> matrix, ReadOnlySpan<float> x,
+
+        float beta, Span<float> y, int rows, int cols, int matrixStride) =>
         // Implementation would include cache-blocked GEMV
         StandardGemv(alpha, matrix, x, beta, y, rows, cols, matrixStride);
-    }
-    
-    private static void SimdGemv(float alpha, ReadOnlySpan&lt;float&gt; matrix, ReadOnlySpan&lt;float&gt; x, 
-        float beta, Span&lt;float&gt; y, int rows, int cols, int matrixStride)
-    {
+
+    private static void SimdGemv(float alpha, ReadOnlySpan<float> matrix, ReadOnlySpan<float> x,
+        float beta, Span<float> y, int rows, int cols, int matrixStride) =>
         // Implementation would include SIMD-optimized GEMV
         StandardGemv(alpha, matrix, x, beta, y, rows, cols, matrixStride);
-    }
-    
-    private static void StandardGemv(float alpha, ReadOnlySpan&lt;float&gt; matrix, ReadOnlySpan&lt;float&gt; x, 
-        float beta, Span&lt;float&gt; y, int rows, int cols, int matrixStride)
+
+
+    private static void StandardGemv(float alpha, ReadOnlySpan<float> matrix, ReadOnlySpan<float> x, 
+        float beta, Span<float> y, int rows, int cols, int matrixStride)
     {
         for (var i = 0; i < rows; i++)
         {
@@ -633,24 +693,25 @@ public static class BLASOptimizations
             y[i] = alpha * sum + beta * y[i];
         }
     }
-    
+
     // Placeholder for complex GEMM implementations
-    private static void CacheObliviousGemm(float alpha, ReadOnlySpan&lt;float&gt; a, ReadOnlySpan&lt;float&gt; b, 
-        Span&lt;float&gt; c, int m, int n, int k, int aStride, int bStride, int cStride)
-    {
+
+    private static void CacheObliviousGemm(float alpha, ReadOnlySpan<float> a, ReadOnlySpan<float> b,
+
+        Span<float> c, int m, int n, int k, int aStride, int bStride, int cStride) =>
         // Would implement cache-oblivious algorithm
         OptimizedSmallGemm(alpha, a, b, c, m, n, k, aStride, bStride, cStride);
-    }
-    
-    private static void BlockedGemm(float alpha, ReadOnlySpan&lt;float&gt; a, ReadOnlySpan&lt;float&gt; b, 
-        Span&lt;float&gt; c, int m, int n, int k, int aStride, int bStride, int cStride)
-    {
+
+
+    private static void BlockedGemm(float alpha, ReadOnlySpan<float> a, ReadOnlySpan<float> b,
+
+        Span<float> c, int m, int n, int k, int aStride, int bStride, int cStride) =>
         // Would implement blocked GEMM
         OptimizedSmallGemm(alpha, a, b, c, m, n, k, aStride, bStride, cStride);
-    }
-    
-    private static void OptimizedSmallGemm(float alpha, ReadOnlySpan&lt;float&gt; a, ReadOnlySpan&lt;float&gt; b, 
-        Span&lt;float&gt; c, int m, int n, int k, int aStride, int bStride, int cStride)
+
+
+    private static void OptimizedSmallGemm(float alpha, ReadOnlySpan<float> a, ReadOnlySpan<float> b, 
+        Span<float> c, int m, int n, int k, int aStride, int bStride, int cStride)
     {
         for (var i = 0; i < m; i++)
         {
@@ -666,8 +727,8 @@ public static class BLASOptimizations
         }
     }
     
-    private static float SpMVVectorized(ReadOnlySpan&lt;float&gt; values, ReadOnlySpan&lt;int&gt; colInd, 
-        ReadOnlySpan&lt;float&gt; x, int start, int end)
+    private static float SpMVVectorized(ReadOnlySpan<float> values, ReadOnlySpan<int> colInd, 
+        ReadOnlySpan<float> x, int start, int end)
     {
         var sum = 0.0f;
         for (var j = start; j < end; j++)

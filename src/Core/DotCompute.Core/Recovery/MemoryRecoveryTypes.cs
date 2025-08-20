@@ -133,8 +133,12 @@ public sealed class MemoryPressureMonitor : IDisposable
 
     private void UpdateMemoryPressure(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             _currentPressure = CalculateMemoryPressure();

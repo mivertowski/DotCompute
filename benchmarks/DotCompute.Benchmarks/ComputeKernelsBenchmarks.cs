@@ -89,8 +89,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
                 }
             }";
 
-        var vectorAddSource_obj = new TextKernelSource(vectorAddSource, "vector_add", KernelLanguage.OpenCL, "vector_add");
-        var vectorAddDef = new KernelDefinition("vector_add", vectorAddSource_obj, options);
+        var vectorAddDef = new KernelDefinition("vector_add", vectorAddSource, "vector_add");
         _kernels["VectorAdd"] = await _accelerator.CompileKernelAsync(vectorAddDef, options);
 
         // Vector multiplication kernel
@@ -102,8 +101,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
                 }
             }";
 
-        var vectorMultiplySource_obj = new TextKernelSource(vectorMultiplySource, "vector_multiply", KernelLanguage.OpenCL, "vector_multiply");
-        var vectorMultiplyDef = new KernelDefinition("vector_multiply", vectorMultiplySource_obj, options);
+        var vectorMultiplyDef = new KernelDefinition("vector_multiply", vectorMultiplySource, "vector_multiply");
         _kernels["VectorMultiply"] = await _accelerator.CompileKernelAsync(vectorMultiplyDef, options);
 
         // Dot product kernel with reduction
@@ -131,8 +129,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
                 }
             }";
 
-        var dotProductSource_obj = new TextKernelSource(dotProductSource, "dot_product", KernelLanguage.OpenCL, "dot_product");
-        var dotProductDef = new KernelDefinition("dot_product", dotProductSource_obj, options);
+        var dotProductDef = new KernelDefinition("dot_product", dotProductSource, "dot_product");
         _kernels["DotProduct"] = await _accelerator.CompileKernelAsync(dotProductDef, options);
 
         // Matrix multiplication kernel
@@ -151,8 +148,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
                 }
             }";
 
-        var matrixMultiplySource_obj = new TextKernelSource(matrixMultiplySource, "matrix_multiply", KernelLanguage.OpenCL, "matrix_multiply");
-        var matrixMultiplyDef = new KernelDefinition("matrix_multiply", matrixMultiplySource_obj, options);
+        var matrixMultiplyDef = new KernelDefinition("matrix_multiply", matrixMultiplySource, "matrix_multiply");
         _kernels["MatrixMultiply"] = await _accelerator.CompileKernelAsync(matrixMultiplyDef, options);
 
         // Reduction sum kernel
@@ -178,8 +174,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
                 }
             }";
 
-        var reductionSource_obj = new TextKernelSource(reductionSource, "reduction_sum", KernelLanguage.OpenCL, "reduction_sum");
-        var reductionDef = new KernelDefinition("reduction_sum", reductionSource_obj, options);
+        var reductionDef = new KernelDefinition("reduction_sum", reductionSource, "reduction_sum");
         _kernels["Reduction"] = await _accelerator.CompileKernelAsync(reductionDef, options);
 
         // 1D Convolution kernel
@@ -197,8 +192,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
                 }
             }";
 
-        var convolutionSource_obj = new TextKernelSource(convolutionSource, "convolution_1d", KernelLanguage.OpenCL, "convolution_1d");
-        var convolutionDef = new KernelDefinition("convolution_1d", convolutionSource_obj, options);
+        var convolutionDef = new KernelDefinition("convolution_1d", convolutionSource, "convolution_1d");
         _kernels["Convolution"] = await _accelerator.CompileKernelAsync(convolutionDef, options);
     }
 

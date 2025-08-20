@@ -251,9 +251,12 @@ public CertificateInfo? ExtractCertificateInfo(string assemblyPath)
     {
         // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
         using var certificate = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
-        if (certificate == null) throw new InvalidOperationException("Failed to extract certificate");
+        if (certificate == null)
+            {
+                throw new InvalidOperationException("Failed to extract certificate");
+            }
 
-        return new CertificateInfo
+            return new CertificateInfo
         {
             Subject = certificate.Subject,
             Issuer = certificate.Issuer,

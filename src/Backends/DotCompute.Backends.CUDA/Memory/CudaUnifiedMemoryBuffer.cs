@@ -46,12 +46,16 @@ public sealed class CudaUnifiedMemoryBuffer : IMemoryBuffer
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         
         if (devicePointer == IntPtr.Zero)
-            throw new ArgumentException("Device pointer cannot be null", nameof(devicePointer));
-        
-        if (sizeInBytes <= 0)
-            throw new ArgumentException("Size must be greater than zero", nameof(sizeInBytes));
+            {
+                throw new ArgumentException("Device pointer cannot be null", nameof(devicePointer));
+            }
 
-        _devicePointer = devicePointer;
+            if (sizeInBytes <= 0)
+            {
+                throw new ArgumentException("Size must be greater than zero", nameof(sizeInBytes));
+            }
+
+            _devicePointer = devicePointer;
         SizeInBytes = sizeInBytes;
         Options = options;
         _isUnifiedMemory = isUnifiedMemory;
@@ -73,15 +77,19 @@ public sealed class CudaUnifiedMemoryBuffer : IMemoryBuffer
         ThrowIfDisposed();
         
         if (offset < 0)
-            throw new ArgumentException("Offset cannot be negative", nameof(offset));
+            {
+                throw new ArgumentException("Offset cannot be negative", nameof(offset));
+            }
 
-        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var bytesToCopy = source.Length * elementSize;
 
         if (offset + bytesToCopy > SizeInBytes)
-            throw new ArgumentException("Copy would exceed buffer bounds");
+            {
+                throw new ArgumentException("Copy would exceed buffer bounds");
+            }
 
-        using var handle = source.Pin();
+            using var handle = source.Pin();
         IntPtr srcPtr;
         IntPtr dstPtr;
         
@@ -116,15 +124,19 @@ public sealed class CudaUnifiedMemoryBuffer : IMemoryBuffer
         ThrowIfDisposed();
         
         if (offset < 0)
-            throw new ArgumentException("Offset cannot be negative", nameof(offset));
+            {
+                throw new ArgumentException("Offset cannot be negative", nameof(offset));
+            }
 
-        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var bytesToCopy = destination.Length * elementSize;
 
         if (offset + bytesToCopy > SizeInBytes)
-            throw new ArgumentException("Copy would exceed buffer bounds");
+            {
+                throw new ArgumentException("Copy would exceed buffer bounds");
+            }
 
-        using var handle = destination.Pin();
+            using var handle = destination.Pin();
         IntPtr srcPtr;
         IntPtr dstPtr;
         
@@ -159,15 +171,21 @@ public sealed class CudaUnifiedMemoryBuffer : IMemoryBuffer
         ThrowIfDisposed();
         
         if (offset < 0)
-            throw new ArgumentException("Offset cannot be negative", nameof(offset));
-        
-        if (length <= 0)
-            throw new ArgumentException("Length must be greater than zero", nameof(length));
-        
-        if (offset + length > SizeInBytes)
-            throw new ArgumentException("View would exceed buffer bounds");
+            {
+                throw new ArgumentException("Offset cannot be negative", nameof(offset));
+            }
 
-        var viewPointer = new IntPtr(_devicePointer.ToInt64() + offset);
+            if (length <= 0)
+            {
+                throw new ArgumentException("Length must be greater than zero", nameof(length));
+            }
+
+            if (offset + length > SizeInBytes)
+            {
+                throw new ArgumentException("View would exceed buffer bounds");
+            }
+
+            var viewPointer = new IntPtr(_devicePointer.ToInt64() + offset);
         return new CudaUnifiedMemoryBuffer(_context, viewPointer, length, Options, _isUnifiedMemory, _logger);
     }
 
@@ -176,9 +194,12 @@ public sealed class CudaUnifiedMemoryBuffer : IMemoryBuffer
     /// </summary>
     public async ValueTask PrefetchToDeviceAsync(CancellationToken cancellationToken = default)
     {
-        if (!_isUnifiedMemory) return; // Only works with unified memory
-        
-        ThrowIfDisposed();
+        if (!_isUnifiedMemory)
+            {
+                return; // Only works with unified memory
+            }
+
+            ThrowIfDisposed();
 
         await Task.Run(() =>
         {
@@ -202,9 +223,12 @@ public sealed class CudaUnifiedMemoryBuffer : IMemoryBuffer
     /// </summary>
     public async ValueTask PrefetchToHostAsync(CancellationToken cancellationToken = default)
     {
-        if (!_isUnifiedMemory) return; // Only works with unified memory
-        
-        ThrowIfDisposed();
+        if (!_isUnifiedMemory)
+            {
+                return; // Only works with unified memory
+            }
+
+            ThrowIfDisposed();
 
         await Task.Run(() =>
         {
@@ -350,10 +374,13 @@ public sealed class CudaUnifiedMemoryBuffer : IMemoryBuffer
     private double CalculateMemoryEfficiency()
     {
         var totalTransfers = _hostToDeviceTransfers + _deviceToHostTransfers;
-        if (totalTransfers == 0) return 1.0;
+        if (totalTransfers == 0)
+            {
+                return 1.0;
+            }
 
-        // Efficiency based on unified memory usage and transfer patterns
-        if (_isUnifiedMemory)
+            // Efficiency based on unified memory usage and transfer patterns
+            if (_isUnifiedMemory)
         {
             // Unified memory is more efficient for frequently accessed data
             var accessPattern = (double)totalTransfers / (SizeInBytes / 1024); // Transfers per KB
@@ -372,9 +399,12 @@ public sealed class CudaUnifiedMemoryBuffer : IMemoryBuffer
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             if (_devicePointer != IntPtr.Zero)
             {
@@ -427,9 +457,12 @@ public sealed class CudaUnifiedMemoryBuffer : IMemoryBuffer
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             if (_devicePointer != IntPtr.Zero)
             {

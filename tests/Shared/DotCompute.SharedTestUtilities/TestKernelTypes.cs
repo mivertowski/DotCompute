@@ -409,8 +409,8 @@ namespace DotCompute.SharedTestUtilities
 
             return new KernelDefinition(
                 name,
-                kernelSource,
-                new CompilationOptions());
+                kernelSource.Code,
+                kernelSource.EntryPoint);
         }
 
         /// <summary>

@@ -109,9 +109,11 @@ public sealed class CudaDynamicParallelismManager : IDisposable
     public void PerformMaintenance()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             // Update efficiency metrics
             _metrics.EfficiencyScore = Math.Min(1.0, _metrics.ChildKernelLaunches * 0.01);
@@ -123,13 +125,11 @@ public sealed class CudaDynamicParallelismManager : IDisposable
         }
     }
 
-    private bool AnalyzeForDynamicParallelism(CudaCompiledKernel kernel, KernelArgument[] arguments)
-    {
-        // Simple heuristic: large problem sizes with irregular patterns benefit from dynamic parallelism
-        return arguments.Any(arg => arg.Value is int size && size > 100000);
-    }
+        private bool AnalyzeForDynamicParallelism(CudaCompiledKernel kernel, KernelArgument[] arguments) =>
+            // Simple heuristic: large problem sizes with irregular patterns benefit from dynamic parallelism
+            arguments.Any(arg => arg.Value is int size && size > 100000);
 
-    public void Dispose()
+        public void Dispose()
     {
         if (!_disposed)
         {

@@ -217,24 +217,21 @@ public static class DisposalUtilities
         }
     }
 
-    /// <summary>
-    /// Thread-safe disposal state management helper using Interlocked.
-    /// </summary>
-    /// <param name="disposed">Reference to the disposed flag (as int, 0=not disposed, 1=disposed)</param>
-    /// <returns>True if disposal should proceed, false if already disposed</returns>
-    public static bool TrySetDisposedInterlocked(ref int disposed)
-    {
-        return Interlocked.Exchange(ref disposed, 1) == 0;
-    }
+        /// <summary>
+        /// Thread-safe disposal state management helper using Interlocked.
+        /// </summary>
+        /// <param name="disposed">Reference to the disposed flag (as int, 0=not disposed, 1=disposed)</param>
+        /// <returns>True if disposal should proceed, false if already disposed</returns>
+        public static bool TrySetDisposedInterlocked(ref int disposed) => Interlocked.Exchange(ref disposed, 1) == 0;
 
-    /// <summary>
-    /// Common pattern for components that need to free native resources.
-    /// </summary>
-    /// <param name="nativeHandles">Dictionary of native handles to release</param>
-    /// <param name="releaseFunc">Function to release a native handle</param>
-    /// <param name="logger">Logger for recording events</param>
-    /// <param name="componentName">Name of the component for logging</param>
-    public static void ReleaseNativeResources<T>(
+        /// <summary>
+        /// Common pattern for components that need to free native resources.
+        /// </summary>
+        /// <param name="nativeHandles">Dictionary of native handles to release</param>
+        /// <param name="releaseFunc">Function to release a native handle</param>
+        /// <param name="logger">Logger for recording events</param>
+        /// <param name="componentName">Name of the component for logging</param>
+        public static void ReleaseNativeResources<T>(
         IDictionary<string, T> nativeHandles,
         Action<T> releaseFunc,
         ILogger? logger,
@@ -261,23 +258,18 @@ public static class DisposalUtilities
         nativeHandles.Clear();
     }
 
-    /// <summary>
-    /// Validates that an object is not disposed and throws ObjectDisposedException if it is.
-    /// </summary>
-    /// <param name="disposed">The disposed flag</param>
-    /// <param name="objectInstance">The object instance to validate</param>
-    public static void ThrowIfDisposed(bool disposed, object objectInstance)
-    {
-        ObjectDisposedException.ThrowIf(disposed, objectInstance);
-    }
+        /// <summary>
+        /// Validates that an object is not disposed and throws ObjectDisposedException if it is.
+        /// </summary>
+        /// <param name="disposed">The disposed flag</param>
+        /// <param name="objectInstance">The object instance to validate</param>
+        public static void ThrowIfDisposed(bool disposed, object objectInstance) => ObjectDisposedException.ThrowIf(disposed, objectInstance);
 
-    /// <summary>
-    /// Validates that an object is not disposed using Interlocked and throws ObjectDisposedException if it is.
-    /// </summary>
-    /// <param name="disposed">The disposed flag (as int)</param>
-    /// <param name="objectInstance">The object instance to validate</param>
-    public static void ThrowIfDisposedInterlocked(int disposed, object objectInstance)
-    {
-        ObjectDisposedException.ThrowIf(disposed != 0, objectInstance);
+        /// <summary>
+        /// Validates that an object is not disposed using Interlocked and throws ObjectDisposedException if it is.
+        /// </summary>
+        /// <param name="disposed">The disposed flag (as int)</param>
+        /// <param name="objectInstance">The object instance to validate</param>
+        public static void ThrowIfDisposedInterlocked(int disposed, object objectInstance) => ObjectDisposedException.ThrowIf(disposed != 0, objectInstance);
     }
-}}
+}

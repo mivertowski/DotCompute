@@ -36,8 +36,11 @@ public static float DotProduct(ReadOnlySpan<float> a, ReadOnlySpan<float> b)
     {
         return DotProductAvx2(a, b);
     }
-    else return Vector128.IsHardwareAccelerated && a.Length >= 4 ? AdvSimd.IsSupported ? DotProductNeon(a, b) : DotProductSse(a, b) : DotProductScalar(a, b);
-}
+    else
+        {
+            return Vector128.IsHardwareAccelerated && a.Length >= 4 ? AdvSimd.IsSupported ? DotProductNeon(a, b) : DotProductSse(a, b) : DotProductScalar(a, b);
+        }
+    }
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 private static float DotProductAvx512(ReadOnlySpan<float> a, ReadOnlySpan<float> b)
@@ -232,8 +235,11 @@ public static float VectorSum(ReadOnlySpan<float> vector)
     {
         return VectorSumAvx2(vector);
     }
-    else return Vector128.IsHardwareAccelerated && vector.Length >= 4 ? AdvSimd.IsSupported ? VectorSumNeon(vector) : VectorSumSse(vector) : VectorSumScalar(vector);
-}
+    else
+        {
+            return Vector128.IsHardwareAccelerated && vector.Length >= 4 ? AdvSimd.IsSupported ? VectorSumNeon(vector) : VectorSumSse(vector) : VectorSumScalar(vector);
+        }
+    }
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 private static float VectorSumAvx512(ReadOnlySpan<float> vector)

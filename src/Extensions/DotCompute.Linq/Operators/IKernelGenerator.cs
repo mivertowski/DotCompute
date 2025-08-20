@@ -43,13 +43,11 @@ GeneratedKernel GenerateOperationKernel(string operationType, Type[] inputTypes,
 /// </summary>
 internal class CUDAKernelGenerator : IKernelGenerator
 {
-public bool CanCompile(Expression expression)
-{
-    // Basic check for supported expressions
-    return expression.NodeType is ExpressionType.Call or ExpressionType.Lambda;
-}
+    public bool CanCompile(Expression expression) =>
+        // Basic check for supported expressions
+        expression.NodeType is ExpressionType.Call or ExpressionType.Lambda;
 
-public GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context)
+    public GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context)
 {
     return new GeneratedKernel
     {
@@ -81,9 +79,7 @@ public GeneratedKernel GenerateOperationKernel(string operationType, Type[] inpu
     };
 }
 
-private static string GenerateCudaSource(Expression expression, KernelGenerationContext context)
-{
-    return """
+    private static string GenerateCudaSource(Expression expression, KernelGenerationContext context) => """
            __global__ void generated_kernel(float* input, float* output, int size) {
                int idx = blockIdx.x * blockDim.x + threadIdx.x;
                if (idx < size) {
@@ -92,9 +88,8 @@ private static string GenerateCudaSource(Expression expression, KernelGeneration
                }
            }
            """;
-}
 
-private static string GenerateCudaOperationSource(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context)
+    private static string GenerateCudaOperationSource(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context)
 {
     return operationType switch
     {
@@ -162,7 +157,7 @@ private static GeneratedKernelParameter[] GenerateParameters(Type[] inputTypes, 
         IsInput = true 
     });
     
-    return parameters.ToArray();
+    return [.. parameters];
 }
 }
 
@@ -171,12 +166,9 @@ private static GeneratedKernelParameter[] GenerateParameters(Type[] inputTypes, 
 /// </summary>
 internal class OpenCLKernelGenerator : IKernelGenerator
 {
-public bool CanCompile(Expression expression)
-{
-    return expression.NodeType is ExpressionType.Call or ExpressionType.Lambda;
-}
+    public bool CanCompile(Expression expression) => expression.NodeType is ExpressionType.Call or ExpressionType.Lambda;
 
-public GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context)
+    public GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context)
 {
     return new GeneratedKernel
     {
@@ -208,9 +200,7 @@ public GeneratedKernel GenerateOperationKernel(string operationType, Type[] inpu
     };
 }
 
-private static string GenerateOpenCLSource(Expression expression, KernelGenerationContext context)
-{
-    return """
+    private static string GenerateOpenCLSource(Expression expression, KernelGenerationContext context) => """
            __kernel void generated_kernel(__global float* input, __global float* output, int size) {
                int idx = get_global_id(0);
                if (idx < size) {
@@ -219,9 +209,8 @@ private static string GenerateOpenCLSource(Expression expression, KernelGenerati
                }
            }
            """;
-}
 
-private static string GenerateOpenCLOperationSource(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context)
+    private static string GenerateOpenCLOperationSource(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context)
 {
     return operationType switch
     {
@@ -289,6 +278,6 @@ private static GeneratedKernelParameter[] GenerateParameters(Type[] inputTypes, 
         IsInput = true 
     });
     
-    return parameters.ToArray();
+    return [.. parameters];
 }
 }

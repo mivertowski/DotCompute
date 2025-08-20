@@ -103,7 +103,7 @@ public async ValueTask ExecuteAsync(
     {
         Name = _definition.Name,
         WorkDimensions = [1024L], // Default work size - should be configurable
-        Arguments = arguments.Arguments.ToArray()
+        Arguments = arguments.Arguments?.ToArray()!
     };
 
     var stopwatch = Stopwatch.StartNew();

@@ -57,9 +57,11 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
         ThrowIfDisposed();
         
         if (sizeInBytes <= 0)
-            throw new ArgumentException("Size must be greater than zero", nameof(sizeInBytes));
+            {
+                throw new ArgumentException("Size must be greater than zero", nameof(sizeInBytes));
+            }
 
-        try
+            try
         {
             _logger.LogDebug("Allocating {Size}MB of CUDA unified memory with options {Options}", 
                 sizeInBytes / (1024 * 1024), options);
@@ -129,9 +131,11 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
         ArgumentNullException.ThrowIfNull(buffer);
         
         if (!_buffers.TryGetValue(buffer, out var cudaBuffer))
-            throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
+            {
+                throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
+            }
 
-        return cudaBuffer.CreateView(offset, length);
+            return cudaBuffer.CreateView(offset, length);
     }
 
     public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
@@ -402,9 +406,12 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
 
     private void CheckMemoryPressure(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             var stats = _statistics.GetCurrentStatistics();
             var memoryPressure = (double)stats.UsedMemoryBytes / stats.TotalMemoryBytes;
@@ -435,9 +442,12 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             _memoryPressureTimer?.Dispose();
             

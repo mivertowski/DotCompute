@@ -18,16 +18,16 @@ namespace DotCompute.Algorithms.Optimized;
 public static class AlgorithmSelector
 {
     // Hardware capability flags
-    private static readonly bool HasAvx2 = Avx2.IsSupported;
-    private static readonly bool HasFma = Fma.IsSupported;
-    private static readonly bool HasSse42 = Sse42.IsSupported;
-    private static readonly int CoreCount = Environment.ProcessorCount;
+    private static readonly bool _hasAvx2 = Avx2.IsSupported;
+    private static readonly bool _hasFma = Fma.IsSupported;
+    private static readonly bool _hasSse42 = Sse42.IsSupported;
+    private static readonly int _coreCount = Environment.ProcessorCount;
     
     // Performance threshold tables (auto-tuned)
-    private static readonly ConcurrentDictionary&lt;string, PerformanceThresholds&gt; _thresholds = new();
+    private static readonly ConcurrentDictionary<string, PerformanceThresholds> _thresholds = new();
     
     // Performance cache to avoid redundant measurements
-    private static readonly ConcurrentDictionary&lt;string, AlgorithmPerformance&gt; _performanceCache = new();
+    private static readonly ConcurrentDictionary<string, AlgorithmPerformance> _performanceCache = new();
     
     // Auto-tuning state
     private static readonly object _tuningLock = new();
@@ -40,8 +40,8 @@ public static class AlgorithmSelector
     /// </summary>
     public static class HardwareProfile
     {
-        public static readonly bool HasVectorInstructions = HasAvx2 || HasSse42;
-        public static readonly bool SupportsParallelism = CoreCount > 1;
+        public static readonly bool HasVectorInstructions = _hasAvx2 || _hasSse42;
+        public static readonly bool SupportsParallelism = _coreCount > 1;
         public static readonly bool HasHighMemoryBandwidth = DetectHighMemoryBandwidth();
         public static readonly int OptimalThreadCount = CalculateOptimalThreadCount();
         public static readonly long L1CacheSize = GetCacheSize(CacheLevel.L1);
@@ -49,19 +49,18 @@ public static class AlgorithmSelector
         public static readonly long L3CacheSize = GetCacheSize(CacheLevel.L3);
         
         private enum CacheLevel { L1, L2, L3 }
-        
-        private static bool DetectHighMemoryBandwidth()
-        {
+
+
+        private static bool DetectHighMemoryBandwidth() =>
             // Simplified heuristic based on core count and architecture
-            return CoreCount >= 8 && (HasAvx2 || HasFma);
-        }
-        
-        private static int CalculateOptimalThreadCount()
-        {
+            _coreCount >= 8 && (_hasAvx2 || _hasFma);
+
+
+        private static int CalculateOptimalThreadCount() =>
             // Conservative approach: use 75% of available cores for compute-intensive tasks
-            return Math.Max(1, (int)(CoreCount * 0.75));
-        }
-        
+            Math.Max(1, (int)(_coreCount * 0.75));
+
+
         private static long GetCacheSize(CacheLevel level)
         {
             // Platform-specific cache detection would go here
@@ -184,25 +183,45 @@ public static class AlgorithmSelector
         var thresholds = GetOrCreateThresholds("FFT");
         
         if (size <= 1)
+        {
+
             return FFTStrategy.Trivial;
-            
+        }
+
+
         if (size <= 16)
+        {
             return FFTStrategy.DirectDFT;
-            
+        }
+
         if (!IsPowerOfTwo(size))
         {
             if (CanFactorizeEfficiently(size))
+            {
+
                 return FFTStrategy.MixedRadix;
+            }
             else
+            {
+
                 return FFTStrategy.Bluestein;
+            }
         }
         
         if (size >= thresholds.CacheObliviousThreshold)
+        {
+
             return FFTStrategy.CacheFriendly;
-            
+        }
+
+
         if (size >= thresholds.SimdThreshold && HardwareProfile.HasVectorInstructions)
+        {
+
             return isReal ? FFTStrategy.SimdReal : FFTStrategy.SimdComplex;
-            
+        }
+
+
         return FFTStrategy.CooleyTukey;
     }
     
@@ -249,7 +268,7 @@ public static class AlgorithmSelector
             return ParallelStrategy.WorkStealing;
         }
         
-        if (CoreCount >= 8 && adjustedSize >= thresholds.ParallelThreshold * 4)
+        if (_coreCount >= 8 && adjustedSize >= thresholds.ParallelThreshold * 4)
         {
             return ParallelStrategy.ForkJoin;
         }
@@ -296,20 +315,28 @@ public static class AlgorithmSelector
     private static void AutoTuneMatrixMultiply(int rows, int cols, int inner)
     {
         var testSizes = new[] { 64, 128, 256, 512, 1024 };
-        var strategies = Enum.GetValues&lt;MatrixMultiplyStrategy&gt;();
-        var results = new List&lt;(MatrixMultiplyStrategy Strategy, int Size, double Performance)&gt;();
+        var strategies = Enum.GetValues<MatrixMultiplyStrategy>();
+        var results = new List<(MatrixMultiplyStrategy Strategy, int Size, double Performance)>();
         
         foreach (var size in testSizes)
         {
-            if (size > Math.Max(rows, Math.Max(cols, inner))) continue;
-            
+            if (size > Math.Max(rows, Math.Max(cols, inner)))
+            {
+                continue;
+            }
+
+
             var testA = CreateRandomMatrix(size, size);
             var testB = CreateRandomMatrix(size, size);
             
             foreach (var strategy in strategies)
             {
-                if (!IsStrategyApplicable(strategy, size, size, size)) continue;
-                
+                if (!IsStrategyApplicable(strategy, size, size, size))
+                {
+                    continue;
+                }
+
+
                 var performance = BenchmarkMatrixMultiply(testA, testB, strategy);
                 results.Add((strategy, size, performance));
             }
@@ -322,8 +349,8 @@ public static class AlgorithmSelector
     private static void AutoTuneFFT(int maxSize)
     {
         var testSizes = GenerateFFTTestSizes(maxSize);
-        var strategies = Enum.GetValues&lt;FFTStrategy&gt;();
-        var results = new List&lt;(FFTStrategy Strategy, int Size, double Performance)&gt;();
+        var strategies = Enum.GetValues<FFTStrategy>();
+        var results = new List<(FFTStrategy Strategy, int Size, double Performance)>();
         
         foreach (var size in testSizes)
         {
@@ -331,8 +358,12 @@ public static class AlgorithmSelector
             
             foreach (var strategy in strategies)
             {
-                if (!IsFFTStrategyApplicable(strategy, size)) continue;
-                
+                if (!IsFFTStrategyApplicable(strategy, size))
+                {
+                    continue;
+                }
+
+
                 var performance = BenchmarkFFT(testData, strategy);
                 results.Add((strategy, size, performance));
             }
@@ -344,16 +375,20 @@ public static class AlgorithmSelector
     private static void AutoTuneBLAS(int maxSize)
     {
         var testSizes = new[] { 32, 64, 128, 256, 512, 1024 };
-        var operations = Enum.GetValues&lt;BLASOperation&gt;();
+        var operations = Enum.GetValues<BLASOperation>();
         
         foreach (var operation in operations)
         {
-            var results = new List&lt;(BLASStrategy Strategy, int Size, double Performance)&gt;();
+            var results = new List<(BLASStrategy Strategy, int Size, double Performance)>();
             
             foreach (var size in testSizes)
             {
-                if (size > maxSize) continue;
-                
+                if (size > maxSize)
+                {
+                    continue;
+                }
+
+
                 var performance = BenchmarkBLASOperation(operation, size);
                 results.Add((BLASStrategy.Standard, size, performance));
             }
@@ -361,21 +396,20 @@ public static class AlgorithmSelector
             UpdateBLASThresholds(operation, results);
         }
     }
-    
+
     #endregion
-    
+
     #region Helper Methods
-    
-    private static PerformanceThresholds GetOrCreateThresholds(string algorithmType)
-    {
-        return _thresholds.GetOrAdd(algorithmType, _ => GetDefaultThresholds(algorithmType));
-    }
-    
+
+
+    private static PerformanceThresholds GetOrCreateThresholds(string algorithmType) => _thresholds.GetOrAdd(algorithmType, _ => GetDefaultThresholds(algorithmType));
+
+
     private static PerformanceThresholds GetDefaultThresholds(string algorithmType)
     {
         // Hardware-specific default thresholds
-        var simdMultiplier = HasAvx2 ? 1.0f : HasSse42 ? 1.5f : 2.0f;
-        var coreMultiplier = Math.Max(1.0f, CoreCount / 4.0f);
+        var simdMultiplier = _hasAvx2 ? 1.0f : _hasSse42 ? 1.5f : 2.0f;
+        var coreMultiplier = Math.Max(1.0f, _coreCount / 4.0f);
         
         return algorithmType switch
         {
@@ -396,12 +430,11 @@ public static class AlgorithmSelector
             _ => new PerformanceThresholds(32, 100, 1000, 128, 64)
         };
     }
-    
-    private static bool ShouldRunAutoTuning(string algorithmType)
-    {
-        return DateTime.UtcNow - _lastTuning > _tuningInterval;
-    }
-    
+
+
+    private static bool ShouldRunAutoTuning(string algorithmType) => DateTime.UtcNow - _lastTuning > _tuningInterval;
+
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsPowerOfTwo(int n) => n > 0 && (n & (n - 1)) == 0;
     
@@ -453,7 +486,7 @@ public static class AlgorithmSelector
     
     private static int[] GenerateFFTTestSizes(int maxSize)
     {
-        var sizes = new List&lt;int&gt;();
+        var sizes = new List<int>();
         
         // Power of 2 sizes
         for (var size = 16; size <= maxSize; size *= 2)
@@ -465,7 +498,7 @@ public static class AlgorithmSelector
         var mixedRadix = new[] { 12, 18, 20, 24, 36, 40, 48, 60, 72, 80, 96 };
         sizes.AddRange(mixedRadix.Where(s => s <= maxSize));
         
-        return sizes.ToArray();
+        return [.. sizes];
     }
     
     private static double BenchmarkMatrixMultiply(Matrix a, Matrix b, MatrixMultiplyStrategy strategy)
@@ -505,7 +538,13 @@ public static class AlgorithmSelector
         
         try
         {
-            FFTOptimizations.OptimizedFFT(dataCopy);
+            var complexSpan = dataCopy.AsSpan();
+            var dotComputeComplex = new DotCompute.Algorithms.SignalProcessing.Complex[dataCopy.Length];
+            for (var i = 0; i < dataCopy.Length; i++)
+            {
+                dotComputeComplex[i] = new DotCompute.Algorithms.SignalProcessing.Complex((float)dataCopy[i].Real, (float)dataCopy[i].Imaginary);
+            }
+            FFTOptimizations.OptimizedFFT(dotComputeComplex);
         }
         catch
         {
@@ -516,13 +555,13 @@ public static class AlgorithmSelector
         var flops = 5.0 * data.Length * Math.Log2(data.Length); // Approximate FFT FLOPs
         return flops / stopwatch.Elapsed.TotalSeconds / 1e6;
     }
-    
-    private static double BenchmarkBLASOperation(BLASOperation operation, int size)
-    {
+
+
+    private static double BenchmarkBLASOperation(BLASOperation operation, int size) =>
         // Simplified BLAS benchmarking
-        return size * 1000.0 / (size + 100); // Placeholder performance model
-    }
-    
+        size * 1000.0 / (size + 100); // Placeholder performance model
+
+
     private static bool IsStrategyApplicable(MatrixMultiplyStrategy strategy, int rows, int cols, int inner)
     {
         return strategy switch
@@ -546,9 +585,9 @@ public static class AlgorithmSelector
     }
     
     // Placeholder methods for threshold updates
-    private static void UpdateMatrixMultiplyThresholds(List&lt;(MatrixMultiplyStrategy Strategy, int Size, double Performance)&gt; results) { }
-    private static void UpdateFFTThresholds(List&lt;(FFTStrategy Strategy, int Size, double Performance)&gt; results) { }
-    private static void UpdateBLASThresholds(BLASOperation operation, List&lt;(BLASStrategy Strategy, int Size, double Performance)&gt; results) { }
+    private static void UpdateMatrixMultiplyThresholds(List<(MatrixMultiplyStrategy Strategy, int Size, double Performance)> results) { }
+    private static void UpdateFFTThresholds(List<(FFTStrategy Strategy, int Size, double Performance)> results) { }
+    private static void UpdateBLASThresholds(BLASOperation operation, List<(BLASStrategy Strategy, int Size, double Performance)> results) { }
     
     #endregion
 }

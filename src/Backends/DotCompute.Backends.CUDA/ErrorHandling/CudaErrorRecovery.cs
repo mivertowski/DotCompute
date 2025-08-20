@@ -199,8 +199,8 @@ public sealed class CudaErrorRecovery : IDisposable
             TotalErrors = errors.Length,
             RecentErrors = recentErrors.Length,
             ErrorRate = CalculateErrorRate(),
-            MostCommonErrors = errorCounts.OrderByDescending(kvp => kvp.Value).Take(5).ToList(),
-            ProblematicOperations = operationErrors.OrderByDescending(kvp => kvp.Value).Take(5).ToList(),
+            MostCommonErrors = [.. errorCounts.OrderByDescending(kvp => kvp.Value).Take(5)],
+            ProblematicOperations = [.. operationErrors.OrderByDescending(kvp => kvp.Value).Take(5)],
             LastError = errors.LastOrDefault(),
             RecoverySuccessRate = CalculateRecoverySuccessRate()
         };
@@ -481,18 +481,18 @@ public sealed class CudaErrorRecovery : IDisposable
         }
     }
 
-    private double CalculateRecoverySuccessRate()
-    {
-        // Simplified calculation - would track actual recovery attempts in production
-        return 0.85; // 85% success rate
-    }
+        private double CalculateRecoverySuccessRate() =>
+            // Simplified calculation - would track actual recovery attempts in production
+            0.85; // 85% success rate
 
-    private void AnalyzeErrorPatterns(object? state)
+        private void AnalyzeErrorPatterns(object? state)
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             var stats = GetErrorStatistics();
             

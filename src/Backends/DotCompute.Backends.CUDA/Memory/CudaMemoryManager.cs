@@ -572,13 +572,10 @@ public sealed class CudaMemoryManager : ISyncMemoryManager, IDisposable
             return new CudaMemoryBuffer(_context, sizeInBytes, options, _logger);
         }, cancellationToken).ConfigureAwait(false);
     }
-    
-    private static long AlignSize(long size, int alignment)
-    {
-        return ((size + alignment - 1) / alignment) * alignment;
-    }
-    
-    private async Task HandleMemoryPressureAsync(long requestedSize)
+
+        private static long AlignSize(long size, int alignment) => ((size + alignment - 1) / alignment) * alignment;
+
+        private async Task HandleMemoryPressureAsync(long requestedSize)
     {
         var stats = _statistics.GetCurrentStatistics();
         var projectedUsage = (double)(stats.UsedMemoryBytes + requestedSize) / stats.TotalMemoryBytes;
@@ -610,9 +607,12 @@ public sealed class CudaMemoryManager : ISyncMemoryManager, IDisposable
     
     private void CheckMemoryPressure(object? state)
     {
-        if (_disposed) return;
-        
-        try
+        if (_disposed)
+            {
+                return;
+            }
+
+            try
         {
             var stats = _statistics.GetCurrentStatistics();
             var pressure = stats.MemoryPressure;
@@ -702,7 +702,6 @@ public sealed class CudaMemoryManager : ISyncMemoryManager, IDisposable
             {
                 Buffer.MemoryCopy(pinnedPtr.ToPointer(), dstPtr.ToPointer(), sizeInBytes, sizeInBytes);
             }
-            
         }, cancellationToken).ConfigureAwait(false);
     }
     

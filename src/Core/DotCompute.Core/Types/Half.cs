@@ -70,18 +70,15 @@ public readonly struct Half : IComparable<Half>, IEquatable<Half>
     /// </summary>
     public static Half NaN => new(0x7E00);
 
-    /// <summary>
-    /// Converts the half to a float.
-    /// </summary>
-    public float ToSingle()
-    {
-        return HalfToFloat(_value);
-    }
+        /// <summary>
+        /// Converts the half to a float.
+        /// </summary>
+        public float ToSingle() => HalfToFloat(_value);
 
-    /// <summary>
-    /// Implicitly converts a Half to a float.
-    /// </summary>
-    public static implicit operator float(Half value)
+        /// <summary>
+        /// Implicitly converts a Half to a float.
+        /// </summary>
+        public static implicit operator float(Half value)
     {
         return value.ToSingle();
     }
@@ -182,77 +179,47 @@ public readonly struct Half : IComparable<Half>, IEquatable<Half>
         return left.ToSingle() >= right.ToSingle();
     }
 
-    /// <inheritdoc/>
-    public int CompareTo(Half other)
-    {
-        return ToSingle().CompareTo(other.ToSingle());
-    }
+        /// <inheritdoc/>
+        public int CompareTo(Half other) => ToSingle().CompareTo(other.ToSingle());
 
-    /// <inheritdoc/>
-    public bool Equals(Half other)
-    {
-        return _value == other._value;
-    }
+        /// <inheritdoc/>
+        public bool Equals(Half other) => _value == other._value;
 
-    /// <inheritdoc/>
-    public override bool Equals(object? obj)
-    {
-        return obj is Half other && Equals(other);
-    }
+        /// <inheritdoc/>
+        public override bool Equals(object? obj) => obj is Half other && Equals(other);
 
-    /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return _value.GetHashCode();
-    }
+        /// <inheritdoc/>
+        public override int GetHashCode() => _value.GetHashCode();
 
-    /// <inheritdoc/>
-    public override string ToString()
-    {
-        return ToSingle().ToString();
-    }
+        /// <inheritdoc/>
+        public override string ToString() => ToSingle().ToString();
 
-    /// <summary>
-    /// Checks if the value is NaN.
-    /// </summary>
-    public bool IsNaN()
-    {
-        return (_value & 0x7FFF) > 0x7C00;
-    }
+        /// <summary>
+        /// Checks if the value is NaN.
+        /// </summary>
+        public bool IsNaN() => (_value & 0x7FFF) > 0x7C00;
 
-    /// <summary>
-    /// Checks if the value is infinity.
-    /// </summary>
-    public bool IsInfinity()
-    {
-        return (_value & 0x7FFF) == 0x7C00;
-    }
+        /// <summary>
+        /// Checks if the value is infinity.
+        /// </summary>
+        public bool IsInfinity() => (_value & 0x7FFF) == 0x7C00;
 
-    /// <summary>
-    /// Checks if the value is positive infinity.
-    /// </summary>
-    public bool IsPositiveInfinity()
-    {
-        return _value == 0x7C00;
-    }
+        /// <summary>
+        /// Checks if the value is positive infinity.
+        /// </summary>
+        public bool IsPositiveInfinity() => _value == 0x7C00;
 
-    /// <summary>
-    /// Checks if the value is negative infinity.
-    /// </summary>
-    public bool IsNegativeInfinity()
-    {
-        return _value == 0xFC00;
-    }
+        /// <summary>
+        /// Checks if the value is negative infinity.
+        /// </summary>
+        public bool IsNegativeInfinity() => _value == 0xFC00;
 
-    /// <summary>
-    /// Gets the absolute value.
-    /// </summary>
-    public static Half Abs(Half value)
-    {
-        return new Half((ushort)(value._value & 0x7FFF));
-    }
+        /// <summary>
+        /// Gets the absolute value.
+        /// </summary>
+        public static Half Abs(Half value) => new Half((ushort)(value._value & 0x7FFF));
 
-    private static ushort FloatToHalf(float value)
+        private static ushort FloatToHalf(float value)
     {
         var fbits = BitConverter.SingleToUInt32Bits(value);
         var sign = (fbits >> 16) & 0x8000;

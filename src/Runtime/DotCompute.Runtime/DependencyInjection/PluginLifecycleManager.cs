@@ -317,12 +317,9 @@ private async Task NotifyDisposingAsync(string pluginId, object plugin)
     }
 }
 
-private static string GetPluginId(Type pluginType)
-{
-    return $"{pluginType.Assembly.GetName().Name}::{pluginType.FullName}";
-}
+    private static string GetPluginId(Type pluginType) => $"{pluginType.Assembly.GetName().Name}::{pluginType.FullName}";
 
-public void Dispose()
+    public void Dispose()
 {
     if (_disposed)
     {

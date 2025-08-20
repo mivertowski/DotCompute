@@ -114,18 +114,15 @@ public sealed class CudaMemoryStatistics : IDisposable
         IncrementOperationCount("d2h_transfers");
     }
 
-    /// <summary>
-    /// Records the execution time of an operation
-    /// </summary>
-    public void RecordOperationTime(string operation, TimeSpan duration)
-    {
-        _operationTimes.AddOrUpdate(operation, duration, (key, existing) => existing + duration);
-    }
+        /// <summary>
+        /// Records the execution time of an operation
+        /// </summary>
+        public void RecordOperationTime(string operation, TimeSpan duration) => _operationTimes.AddOrUpdate(operation, duration, (key, existing) => existing + duration);
 
-    /// <summary>
-    /// Gets current comprehensive statistics
-    /// </summary>
-    public CudaMemoryStatisticsSnapshot GetCurrentStatistics()
+        /// <summary>
+        /// Gets current comprehensive statistics
+        /// </summary>
+        public CudaMemoryStatisticsSnapshot GetCurrentStatistics()
     {
         lock (_lockObject)
         {
@@ -178,9 +175,12 @@ public sealed class CudaMemoryStatistics : IDisposable
 
     private void UpdateStatistics(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             var result = CudaRuntime.cudaMemGetInfo(out var free, out var total);
             if (result == CudaError.Success)
@@ -199,16 +199,16 @@ public sealed class CudaMemoryStatistics : IDisposable
         }
     }
 
-    private void IncrementOperationCount(string operation)
-    {
-        _operationCounts.AddOrUpdate(operation, 1, (key, existing) => existing + 1);
-    }
+        private void IncrementOperationCount(string operation) => _operationCounts.AddOrUpdate(operation, 1, (key, existing) => existing + 1);
 
-    public void Dispose()
+        public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             _updateTimer?.Dispose();
             var stats = GetCurrentStatistics();

@@ -969,5 +969,4 @@ public sealed class SafeCudaModuleHandle : SafeHandleZeroOrMinusOneIsInvalid
         return true;
     }
 }
-
 }

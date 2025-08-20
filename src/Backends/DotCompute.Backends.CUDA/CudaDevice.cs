@@ -466,26 +466,20 @@ public sealed class CudaDevice : IDisposable
         return capabilities;
     }
 
-    /// <summary>
-    /// Creates a CUDA context for this device.
-    /// </summary>
-    public CudaContext CreateContext()
-    {
-        return new CudaContext(_deviceId);
-    }
+        /// <summary>
+        /// Creates a CUDA context for this device.
+        /// </summary>
+        public CudaContext CreateContext() => new CudaContext(_deviceId);
 
-    /// <summary>
-    /// Synchronizes all operations on this device asynchronously.
-    /// </summary>
-    public async Task SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        await Task.Run(() => CudaRuntime.cudaDeviceSynchronize(), cancellationToken).ConfigureAwait(false);
-    }
+        /// <summary>
+        /// Synchronizes all operations on this device asynchronously.
+        /// </summary>
+        public async Task SynchronizeAsync(CancellationToken cancellationToken = default) => await Task.Run(() => CudaRuntime.cudaDeviceSynchronize(), cancellationToken).ConfigureAwait(false);
 
-    /// <summary>
-    /// Copies data from host to device asynchronously.
-    /// </summary>
-    public async Task CopyToDeviceAsync(IntPtr hostPtr, IMemoryBuffer deviceBuffer, ulong sizeInBytes, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Copies data from host to device asynchronously.
+        /// </summary>
+        public async Task CopyToDeviceAsync(IntPtr hostPtr, IMemoryBuffer deviceBuffer, ulong sizeInBytes, CancellationToken cancellationToken = default)
     {
         if (deviceBuffer is CudaMemoryBuffer cudaBuffer)
         {
@@ -504,23 +498,17 @@ public sealed class CudaDevice : IDisposable
         }
     }
 
-    /// <summary>
-    /// Allocates memory on this device asynchronously.
-    /// </summary>
-    public async Task<IMemoryBuffer> AllocateAsync(ulong sizeInBytes)
-    {
-        return await Memory.AllocateAsync((long)sizeInBytes).ConfigureAwait(false);
-    }
+        /// <summary>
+        /// Allocates memory on this device asynchronously.
+        /// </summary>
+        public async Task<IMemoryBuffer> AllocateAsync(ulong sizeInBytes) => await Memory.AllocateAsync((long)sizeInBytes).ConfigureAwait(false);
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    /// <summary>
-    /// Releases all resources used by the CudaDevice.
-    /// </summary>
-    public void Dispose()
+        /// <summary>
+        /// Releases all resources used by the CudaDevice.
+        /// </summary>
+        public void Dispose()
     {
         if (!_disposed)
         {

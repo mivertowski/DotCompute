@@ -292,12 +292,11 @@ public class ServiceCircuitState
             ActiveServices = 1
         };
     }
-    
-    public void Dispose()
-    {
+
+
+    public void Dispose() =>
         // Clean up any resources if needed
         Metrics.Clear();
-    }
 
     public override string ToString() =>
         $"{ServiceName}: {State}, Failures={ConsecutiveFailures}, " +

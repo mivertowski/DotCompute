@@ -159,14 +159,12 @@ internal class HighPerformanceCpuAccelerator : IAccelerator
         }
     }
 
-    private ICompiledKernel CreateOptimizedKernel(KernelInfo kernelInfo, CompilationOptions options)
-    {
-        // For now, just create a simple kernel since we moved the optimized ones to Backends.CPU
-        // In a full implementation, this would try to load the CPU backend dynamically
-        return new SimpleOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger);
-    }
+        private ICompiledKernel CreateOptimizedKernel(KernelInfo kernelInfo, CompilationOptions options) =>
+            // For now, just create a simple kernel since we moved the optimized ones to Backends.CPU
+            // In a full implementation, this would try to load the CPU backend dynamically
+            new SimpleOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger);
 
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public ValueTask DisposeAsync()
     {

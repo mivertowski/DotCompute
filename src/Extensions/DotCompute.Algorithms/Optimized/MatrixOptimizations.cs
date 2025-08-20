@@ -25,8 +25,8 @@ public static class MatrixOptimizations
     private const int STRASSEN_THRESHOLD = 128;
     
     // SIMD vector sizes
-    private static readonly int Vector256Size = Vector256&lt;float&gt;.Count;
-    private static readonly int Vector128Size = Vector128&lt;float&gt;.Count;
+    private static readonly int Vector256Size = Vector256<float>.Count;
+    private static readonly int Vector128Size = Vector128<float>.Count;
     
     /// <summary>
     /// Optimized matrix multiplication with automatic algorithm selection.
@@ -154,8 +154,11 @@ public static class MatrixOptimizations
     /// </summary>
     public static void CacheObliviousMultiply(Matrix a, Matrix b, Matrix result)
     {
+        var aSpan = a.AsMutableSpan();
+        var bSpan = b.AsMutableSpan();
+        var resultSpan = result.AsMutableSpan();
         CacheObliviousMultiplyRecursive(
-            a.AsSpan(), b.AsSpan(), result.AsSpan(),
+            aSpan, bSpan, resultSpan,
             a.Rows, a.Columns, b.Columns,
             0, 0, 0, 0, 0, 0,
             a.Columns, b.Columns, result.Columns);
@@ -167,16 +170,16 @@ public static class MatrixOptimizations
     /// </summary>
     public static void SimdMultiply(Matrix a, Matrix b, Matrix result)
     {
-        var aSpan = a.AsSpan();
-        var bSpan = b.AsSpan();
-        var resultSpan = result.AsSpan();
+        var aSpan = a.AsMutableSpan();
+        var bSpan = b.AsMutableSpan();
+        var resultSpan = result.AsMutableSpan();
         
         var rows = a.Rows;
         var cols = b.Columns;
         var inner = a.Columns;
         
         // Clear result matrix
-        resultSpan.Clear();
+        result.AsMutableSpan().Clear();
         
         if (Avx2.IsSupported && cols >= Vector256Size)
         {
@@ -202,12 +205,12 @@ public static class MatrixOptimizations
         var cols = b.Columns;
         var inner = a.Columns;
         
-        var aSpan = a.AsSpan();
-        var bSpan = b.AsSpan();
-        var resultSpan = result.AsSpan();
+        var aSpan = a.AsMutableSpan();
+        var bSpan = b.AsMutableSpan();
+        var resultSpan = result.AsMutableSpan();
         
         // Clear result
-        resultSpan.Clear();
+        result.AsMutableSpan().Clear();
         
         // Triple-nested loop with blocking
         for (var ii = 0; ii < rows; ii += blockSize)
@@ -250,7 +253,7 @@ public static class MatrixOptimizations
         var rows = source.Rows;
         var cols = source.Columns;
         var sourceSpan = source.AsSpan();
-        var destSpan = dest.AsSpan();
+        var destSpan = dest.AsMutableSpan();
         
         const int blockSize = L1_CACHE_BLOCK_SIZE;
         
@@ -264,17 +267,16 @@ public static class MatrixOptimizations
             BlockedTranspose(sourceSpan, destSpan, rows, cols, source.Columns, dest.Columns, blockSize);
         }
     }
-    
+
     #region Private Implementation Methods
-    
+
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsSquareAndPowerOfTwo(int n)
-    {
-        return n > 0 && (n & (n - 1)) == 0;
-    }
-    
+    private static bool IsSquareAndPowerOfTwo(int n) => n > 0 && (n & (n - 1)) == 0;
+
+
     private static void CacheObliviousMultiplyRecursive(
-        ReadOnlySpan&lt;float&gt; a, ReadOnlySpan&lt;float&gt; b, Span&lt;float&gt; c,
+        Span<float> a, Span<float> b, Span<float> c,
         int m, int n, int p,
         int aRow, int aCol, int bRow, int bCol, int cRow, int cCol,
         int aStride, int bStride, int cStride)
@@ -329,7 +331,7 @@ public static class MatrixOptimizations
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void SimdMultiplyAvx2(
-        ReadOnlySpan&lt;float&gt; a, ReadOnlySpan&lt;float&gt; b, Span&lt;float&gt; c,
+        Span<float> a, Span<float> b, Span<float> c,
         int rows, int cols, int inner, int aStride, int bStride, int cStride)
     {
         fixed (float* aPtr = a, bPtr = b, cPtr = c)
@@ -368,7 +370,7 @@ public static class MatrixOptimizations
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void SimdMultiplySse2(
-        ReadOnlySpan&lt;float&gt; a, ReadOnlySpan&lt;float&gt; b, Span&lt;float&gt; c,
+        Span<float> a, Span<float> b, Span<float> c,
         int rows, int cols, int inner, int aStride, int bStride, int cStride)
     {
         fixed (float* aPtr = a, bPtr = b, cPtr = c)
@@ -407,25 +409,25 @@ public static class MatrixOptimizations
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void SimdMultiplyFallback(
-        ReadOnlySpan&lt;float&gt; a, ReadOnlySpan&lt;float&gt; b, Span&lt;float&gt; c,
-        int rows, int cols, inner, int aStride, int bStride, int cStride)
+        Span<float> a, Span<float> b, Span<float> c,
+        int rows, int cols, int inner, int aStride, int bStride, int cStride)
     {
         // Use System.Numerics.Vector for cross-platform SIMD
-        var vectorCols = cols - (cols % Vector&lt;float&gt;.Count);
+        var vectorCols = cols - (cols % Vector<float>.Count);
         
         for (var i = 0; i < rows; i++)
         {
             for (var k = 0; k < inner; k++)
             {
-                var aVal = new Vector&lt;float&gt;(a[i * aStride + k]);
+                var aVal = new Vector<float>(a[i * aStride + k]);
                 
                 var j = 0;
-                for (; j < vectorCols; j += Vector&lt;float&gt;.Count)
+                for (; j < vectorCols; j += Vector<float>.Count)
                 {
-                    var bVec = new Vector&lt;float&gt;(b.Slice(k * bStride + j, Vector&lt;float&gt;.Count));
-                    var cVec = new Vector&lt;float&gt;(c.Slice(i * cStride + j, Vector&lt;float&gt;.Count));
+                    var bVec = new Vector<float>(b.Slice(k * bStride + j, Vector<float>.Count));
+                    var cVec = new Vector<float>(c.Slice(i * cStride + j, Vector<float>.Count));
                     var result = cVec + aVal * bVec;
-                    result.CopyTo(c.Slice(i * cStride + j, Vector&lt;float&gt;.Count));
+                    result.CopyTo(c.Slice(i * cStride + j, Vector<float>.Count));
                 }
                 
                 // Handle remaining elements
@@ -439,7 +441,7 @@ public static class MatrixOptimizations
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void MultiplyBlock(
-        ReadOnlySpan&lt;float&gt; a, ReadOnlySpan&lt;float&gt; b, Span&lt;float&gt; c,
+        Span<float> a, Span<float> b, Span<float> c,
         int iStart, int iEnd, int jStart, int jEnd, int kStart, int kEnd,
         int aStride, int bStride, int cStride)
     {
@@ -457,7 +459,7 @@ public static class MatrixOptimizations
     }
     
     private static unsafe void SimdTranspose(
-        ReadOnlySpan&lt;float&gt; source, Span&lt;float&gt; dest,
+        ReadOnlySpan<float> source, Span<float> dest,
         int rows, int cols, int sourceStride, int destStride)
     {
         if (Avx2.IsSupported && rows >= 8 && cols >= 8)
@@ -488,7 +490,7 @@ public static class MatrixOptimizations
     }
     
     private static void BlockedTranspose(
-        ReadOnlySpan&lt;float&gt; source, Span&lt;float&gt; dest,
+        ReadOnlySpan<float> source, Span<float> dest,
         int rows, int cols, int sourceStride, int destStride, int blockSize)
     {
         for (var ii = 0; ii < rows; ii += blockSize)
@@ -578,9 +580,9 @@ public static class MatrixOptimizations
     private static Matrix MatrixAdd(Matrix a, Matrix b)
     {
         var result = new Matrix(a.Rows, a.Columns);
-        var aSpan = a.AsSpan();
-        var bSpan = b.AsSpan();
-        var resultSpan = result.AsSpan();
+        var aSpan = a.AsMutableSpan();
+        var bSpan = b.AsMutableSpan();
+        var resultSpan = result.AsMutableSpan();
         
         for (var i = 0; i < aSpan.Length; i++)
         {
@@ -592,9 +594,9 @@ public static class MatrixOptimizations
     private static Matrix MatrixSubtract(Matrix a, Matrix b)
     {
         var result = new Matrix(a.Rows, a.Columns);
-        var aSpan = a.AsSpan();
-        var bSpan = b.AsSpan();
-        var resultSpan = result.AsSpan();
+        var aSpan = a.AsMutableSpan();
+        var bSpan = b.AsMutableSpan();
+        var resultSpan = result.AsMutableSpan();
         
         for (var i = 0; i < aSpan.Length; i++)
         {

@@ -179,9 +179,11 @@ public sealed class CudaEventManager : IDisposable
         ThrowIfDisposed();
 
         if (!_activeEvents.TryGetValue(eventId, out var eventInfo))
-            throw new ArgumentException($"Event {eventId} not found", nameof(eventId));
+            {
+                throw new ArgumentException($"Event {eventId} not found", nameof(eventId));
+            }
 
-        _context.MakeCurrent();
+            _context.MakeCurrent();
 
         var result = Native.CudaRuntime.cudaEventRecord(eventInfo.Handle, stream);
         Native.CudaRuntime.CheckError(result, $"recording event {eventId} on stream {stream}");
@@ -214,9 +216,11 @@ public sealed class CudaEventManager : IDisposable
         ThrowIfDisposed();
 
         if (!_activeEvents.TryGetValue(eventId, out var eventInfo))
-            throw new ArgumentException($"Event {eventId} not found", nameof(eventId));
+            {
+                throw new ArgumentException($"Event {eventId} not found", nameof(eventId));
+            }
 
-        _context.MakeCurrent();
+            _context.MakeCurrent();
 
         if (timeout.HasValue)
         {
@@ -258,9 +262,11 @@ public sealed class CudaEventManager : IDisposable
         ThrowIfDisposed();
 
         if (!_activeEvents.TryGetValue(eventId, out var eventInfo))
-            return false;
+            {
+                return false;
+            }
 
-        _context.MakeCurrent();
+            _context.MakeCurrent();
         var result = Native.CudaRuntime.cudaEventQuery(eventInfo.Handle);
         
         if (result == CudaError.Success && !eventInfo.CompletedAt.HasValue)
@@ -279,15 +285,21 @@ public sealed class CudaEventManager : IDisposable
         ThrowIfDisposed();
 
         if (!_activeEvents.TryGetValue(startEvent, out var startInfo))
-            throw new ArgumentException($"Start event {startEvent} not found");
+            {
+                throw new ArgumentException($"Start event {startEvent} not found");
+            }
 
-        if (!_activeEvents.TryGetValue(endEvent, out var endInfo))
-            throw new ArgumentException($"End event {endEvent} not found");
+            if (!_activeEvents.TryGetValue(endEvent, out var endInfo))
+            {
+                throw new ArgumentException($"End event {endEvent} not found");
+            }
 
-        if (startInfo.Type != CudaEventType.Timing || endInfo.Type != CudaEventType.Timing)
-            throw new InvalidOperationException("Both events must be timing events");
+            if (startInfo.Type != CudaEventType.Timing || endInfo.Type != CudaEventType.Timing)
+            {
+                throw new InvalidOperationException("Both events must be timing events");
+            }
 
-        _context.MakeCurrent();
+            _context.MakeCurrent();
 
         var milliseconds = 0f;
         var result = Native.CudaRuntime.cudaEventElapsedTime(
@@ -486,9 +498,11 @@ public sealed class CudaEventManager : IDisposable
         ThrowIfDisposed();
 
         if (!_activeEvents.TryGetValue(eventId, out var eventInfo))
-            throw new ArgumentException($"Event {eventId} not found");
+            {
+                throw new ArgumentException($"Event {eventId} not found");
+            }
 
-        _ = Task.Run(async () =>
+            _ = Task.Run(async () =>
         {
             try
             {
@@ -601,32 +615,44 @@ public sealed class CudaEventManager : IDisposable
 
     private static double CalculatePercentile(double[] sortedValues, double percentile)
     {
-        if (sortedValues.Length == 0) return 0;
-        
-        var index = (sortedValues.Length - 1) * percentile;
+        if (sortedValues.Length == 0)
+            {
+                return 0;
+            }
+
+            var index = (sortedValues.Length - 1) * percentile;
         var lower = (int)Math.Floor(index);
         var upper = (int)Math.Ceiling(index);
         
-        if (lower == upper) return sortedValues[lower];
-        
-        var weight = index - lower;
+        if (lower == upper)
+            {
+                return sortedValues[lower];
+            }
+
+            var weight = index - lower;
         return sortedValues[lower] * (1 - weight) + sortedValues[upper] * weight;
     }
 
     private static double CalculateStandardDeviation(double[] values)
     {
-        if (values.Length <= 1) return 0;
-        
-        var mean = values.Average();
+        if (values.Length <= 1)
+            {
+                return 0;
+            }
+
+            var mean = values.Average();
         var sumOfSquaredDeviations = values.Sum(val => Math.Pow(val - mean, 2));
         return Math.Sqrt(sumOfSquaredDeviations / (values.Length - 1));
     }
 
     private static int CountOutliers(double[] sortedValues)
     {
-        if (sortedValues.Length < 4) return 0;
-        
-        var q1 = CalculatePercentile(sortedValues, 0.25);
+        if (sortedValues.Length < 4)
+            {
+                return 0;
+            }
+
+            var q1 = CalculatePercentile(sortedValues, 0.25);
         var q3 = CalculatePercentile(sortedValues, 0.75);
         var iqr = q3 - q1;
         var lowerBound = q1 - 1.5 * iqr;
@@ -637,9 +663,12 @@ public sealed class CudaEventManager : IDisposable
 
     private void PerformMaintenance(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             _eventPool.PerformMaintenance();
             CleanupCompletedEvents();
@@ -694,8 +723,10 @@ public sealed class CudaEventManager : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
-            throw new ObjectDisposedException(nameof(CudaEventManager));
-    }
+            {
+                throw new ObjectDisposedException(nameof(CudaEventManager));
+            }
+        }
 
     public void Dispose()
     {

@@ -502,9 +502,9 @@ public sealed class AcceleratorStressTests
                         argumentsList.Add(args);
 
                         // Verify the values were set correctly
-                        if (!args.Get(0).Equals(value) ||
-                            !args.Get(1).Equals(threadId) ||
-                            !args.Get(2).Equals(i))
+                        if (!value.Equals(args.Get(0)) ||
+                            !threadId.Equals(args.Get(1)) ||
+                            !i.Equals(args.Get(2)))
                         {
                             exceptions.Add(new InvalidOperationException(
                                 $"Value mismatch in arguments for thread {threadId}, operation {i}"));

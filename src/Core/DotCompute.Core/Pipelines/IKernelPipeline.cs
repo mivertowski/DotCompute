@@ -619,5 +619,4 @@ public enum PipelineEventType
     /// </summary>
     MemoryReleased
 }
-
 }

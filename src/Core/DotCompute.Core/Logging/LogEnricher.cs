@@ -129,11 +129,19 @@ public sealed class LogEnricher : IDisposable
         {
             _threadLocalContext.Value["CorrelationId"] = correlationId;
             if (!string.IsNullOrEmpty(operationName))
+            {
                 _threadLocalContext.Value["OperationName"] = operationName;
+            }
+
             if (!string.IsNullOrEmpty(userId))
+            {
                 _threadLocalContext.Value["UserId"] = userId;
+            }
+
             if (!string.IsNullOrEmpty(sessionId))
+            {
                 _threadLocalContext.Value["SessionId"] = sessionId;
+            }
         }
     }
 
@@ -314,11 +322,19 @@ public sealed class LogEnricher : IDisposable
             contextObj is CorrelationContext context)
         {
             if (!string.IsNullOrEmpty(context.OperationName))
+            {
                 logEntry.Properties["Operation"] = context.OperationName;
+            }
+
             if (!string.IsNullOrEmpty(context.UserId))
+            {
                 logEntry.Properties["UserId"] = context.UserId;
+            }
+
             if (!string.IsNullOrEmpty(context.SessionId))
+            {
                 logEntry.Properties["SessionId"] = context.SessionId;
+            }
         }
     }
 
@@ -444,8 +460,11 @@ public sealed class LogEnricher : IDisposable
         {
             // Skip internal context items
             if (item.Key.StartsWith("correlation_") || item.Key.StartsWith("device_"))
+            {
                 continue;
-                
+            }
+
+
             if (!logEntry.Properties.ContainsKey(item.Key))
             {
                 logEntry.Properties[item.Key] = item.Value;
@@ -510,8 +529,12 @@ public sealed class LogEnricher : IDisposable
 
     private static string RedactString(string input)
     {
-        if (string.IsNullOrEmpty(input)) return input;
-        
+        if (string.IsNullOrEmpty(input))
+        {
+            return input;
+        }
+
+
         var result = input;
         foreach (var pattern in SensitivePatterns)
         {
@@ -532,11 +555,9 @@ public sealed class LogEnricher : IDisposable
                lowerName.Contains("auth");
     }
 
-    private static string HashString(string input)
-    {
+    private static string HashString(string input) =>
         // Simple hash for user identification (not cryptographically secure)
-        return input.GetHashCode().ToString("X8");
-    }
+        input.GetHashCode().ToString("X8");
 
     private static int EstimateLogEntrySize(StructuredLogEntry logEntry)
     {
@@ -558,8 +579,12 @@ public sealed class LogEnricher : IDisposable
 
     private void CleanupExpiredContext(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             var expiredThreshold = DateTimeOffset.UtcNow - TimeSpan.FromHours(_options.ContextRetentionHours);
@@ -596,13 +621,20 @@ public sealed class LogEnricher : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(LogEnricher));
+        }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
         _contextCleanupTimer?.Dispose();
         _threadLocalContext?.Dispose();

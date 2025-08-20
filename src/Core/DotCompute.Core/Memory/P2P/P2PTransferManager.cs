@@ -55,7 +55,11 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default)
         {
             if (devices == null || devices.Length == 0)
+            {
+
                 throw new ArgumentException("At least one device must be provided", nameof(devices));
+            }
+
 
             _logger.LogInformation("Initializing P2P topology for {DeviceCount} devices", devices.Length);
 
@@ -135,8 +139,17 @@ namespace DotCompute.Core.Memory.P2P
             P2PTransferOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null) throw new ArgumentNullException(nameof(sourceBuffer));
-            if (destinationBuffer == null) throw new ArgumentNullException(nameof(destinationBuffer));
+            if (sourceBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(sourceBuffer));
+            }
+
+
+            if (destinationBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(destinationBuffer));
+            }
+
 
             options ??= P2PTransferOptions.Default;
             var sessionId = Guid.NewGuid().ToString();
@@ -293,9 +306,18 @@ namespace DotCompute.Core.Memory.P2P
             P2PScatterOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null) throw new ArgumentNullException(nameof(sourceBuffer));
+            if (sourceBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(sourceBuffer));
+            }
+
+
             if (destinationBuffers == null || destinationBuffers.Length == 0)
+            {
+
                 throw new ArgumentException("At least one destination buffer is required", nameof(destinationBuffers));
+            }
+
 
             options ??= P2PScatterOptions.Default;
             var scatterResult = new P2PScatterResult { SessionId = Guid.NewGuid().ToString() };
@@ -348,8 +370,17 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             if (sourceBuffers == null || sourceBuffers.Length == 0)
+            {
+
                 throw new ArgumentException("At least one source buffer is required", nameof(sourceBuffers));
-            if (destinationBuffer == null) throw new ArgumentNullException(nameof(destinationBuffer));
+            }
+
+
+            if (destinationBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(destinationBuffer));
+            }
+
 
             options ??= P2PGatherOptions.Default;
             var gatherResult = new P2PGatherResult { SessionId = Guid.NewGuid().ToString() };
@@ -423,10 +454,7 @@ namespace DotCompute.Core.Memory.P2P
         /// <summary>
         /// Gets active transfer sessions.
         /// </summary>
-        public IReadOnlyList<P2PTransferSession> GetActiveSessions()
-        {
-            return _activeSessions.Values.ToList();
-        }
+        public IReadOnlyList<P2PTransferSession> GetActiveSessions() => _activeSessions.Values.ToList();
 
         #region Private Implementation
 
@@ -464,11 +492,9 @@ namespace DotCompute.Core.Memory.P2P
             IBuffer<T> source,
             IBuffer<T> destination,
             P2PTransferPlan plan,
-            CancellationToken cancellationToken) where T : unmanaged
-        {
+            CancellationToken cancellationToken) where T : unmanaged =>
             // Single direct P2P transfer
             await source.CopyToAsync(destination, cancellationToken);
-        }
 
         private async Task ExecuteChunkedP2PTransferAsync<T>(
             IBuffer<T> source,
@@ -589,7 +615,12 @@ namespace DotCompute.Core.Memory.P2P
 
         public async ValueTask DisposeAsync()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
+
             _disposed = true;
 
             // Cancel all active sessions

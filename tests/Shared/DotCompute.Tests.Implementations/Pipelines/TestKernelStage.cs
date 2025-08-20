@@ -126,7 +126,7 @@ public sealed class TestKernelStage : IPipelineStage
                 {
                     ["ExecutionTimeMs"] = stopwatch.Elapsed.TotalMilliseconds,
                     ["MemoryUsedBytes"] = endMemory - startMemory,
-                    ["ThreadsExecuted"] = _configuration?.GridDimensions.X * _configuration?.BlockDimensions.X ?? 1
+                    ["ThreadsExecuted"] = CalculateThreadCount(_configuration)
                 }
             };
         }
@@ -186,6 +186,17 @@ public sealed class TestKernelStage : IPipelineStage
         }
 
         return outputs;
+    }
+
+    private static double CalculateThreadCount(KernelConfiguration? configuration)
+    {
+        if (configuration == null)
+            return 1;
+
+        var gridDim = (Dim3)(configuration.Options.TryGetValue("GridDimension", out var grid) ? grid : new Dim3(1));
+        var blockDim = (Dim3)(configuration.Options.TryGetValue("BlockDimension", out var block) ? block : new Dim3(256));
+        
+        return gridDim.X * blockDim.X;
     }
 
     /// <summary>

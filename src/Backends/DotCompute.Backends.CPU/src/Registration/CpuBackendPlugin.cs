@@ -68,16 +68,14 @@ protected override void ConfigureBackendOptions(IServiceCollection services, ICo
 #pragma warning restore IL2026, IL3050
 }
 
-/// <inheritdoc/>
-protected override void RegisterAccelerator(IServiceCollection services, IConfiguration configuration)
-{
-    // Register the CPU accelerator
-    services.TryAddSingleton<CpuAccelerator>();
-}
+    /// <inheritdoc/>
+    protected override void RegisterAccelerator(IServiceCollection services, IConfiguration configuration) =>
+        // Register the CPU accelerator
+        services.TryAddSingleton<CpuAccelerator>();
 
 
-/// <inheritdoc/>
-protected override void OnValidate(PluginValidationResult result)
+    /// <inheritdoc/>
+    protected override void OnValidate(PluginValidationResult result)
 {
     base.OnValidate(result);
 

@@ -511,8 +511,5 @@ public sealed class ValidationResult
     /// <summary>
     /// Returns a string representation of the validation result.
     /// </summary>
-    public override string ToString()
-    {
-        return $"ValidationResult: {(IsValid ? "Valid" : "Invalid")} - Errors: {ErrorCount}, Warnings: {WarningCount}";
-    }
+    public override string ToString() => $"ValidationResult: {(IsValid ? "Valid" : "Invalid")} - Errors: {ErrorCount}, Warnings: {WarningCount}";
 }

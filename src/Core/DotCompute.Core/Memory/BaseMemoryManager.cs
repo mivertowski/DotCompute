@@ -123,16 +123,20 @@ public abstract class BaseMemoryManager<TBuffer, TStatistics> : IMemoryManager, 
         ThrowIfDisposed();
         
         if (elementCount <= 0)
-            throw new ArgumentOutOfRangeException(nameof(elementCount), "Element count must be greater than zero");
+            {
+                throw new ArgumentOutOfRangeException(nameof(elementCount), "Element count must be greater than zero");
+            }
 
-        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var sizeInBytes = (long)elementCount * elementSize;
 
         if (sizeInBytes > MaxAllocationSize)
-            throw new ArgumentOutOfRangeException(nameof(elementCount), 
+            {
+                throw new ArgumentOutOfRangeException(nameof(elementCount), 
                 $"Requested size {sizeInBytes} exceeds maximum allocation size {MaxAllocationSize}");
+            }
 
-        try
+            try
         {
             _logger?.LogDebug("Allocating {Count} elements of type {Type} ({Size}MB) at {Location} with {Access} on {Manager}", 
                 elementCount, typeof(T).Name, sizeInBytes / (1024 * 1024), location, access, ManagerName);
@@ -196,9 +200,11 @@ public abstract class BaseMemoryManager<TBuffer, TStatistics> : IMemoryManager, 
         var elementsToTransfer = elementCount ?? Math.Min(source.ElementCount - sourceOffset, destination.ElementCount - destinationOffset);
         
         if (elementsToTransfer <= 0)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             await CopyBufferInternalAsync(source, destination, sourceOffset, destinationOffset, elementsToTransfer, cancellationToken)
                 .ConfigureAwait(false);
@@ -224,9 +230,12 @@ public abstract class BaseMemoryManager<TBuffer, TStatistics> : IMemoryManager, 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             _logger?.LogInformation("Disposing {Manager} memory manager", ManagerName);
 
@@ -261,13 +270,17 @@ public abstract class BaseMemoryManager<TBuffer, TStatistics> : IMemoryManager, 
         ThrowIfDisposed();
         
         if (sizeInBytes <= 0)
-            throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size must be greater than zero");
+            {
+                throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size must be greater than zero");
+            }
 
-        if (sizeInBytes > MaxAllocationSize)
-            throw new ArgumentOutOfRangeException(nameof(sizeInBytes), 
+            if (sizeInBytes > MaxAllocationSize)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sizeInBytes), 
                 $"Requested size {sizeInBytes} exceeds maximum allocation size {MaxAllocationSize}");
+            }
 
-        try
+            try
         {
             _logger?.LogDebug("Allocating {Size}MB with options {Options} on {Manager}", 
                 sizeInBytes / (1024 * 1024), options, ManagerName);
@@ -328,9 +341,11 @@ public abstract class BaseMemoryManager<TBuffer, TStatistics> : IMemoryManager, 
         ArgumentNullException.ThrowIfNull(buffer);
 
         if (!_trackedBuffers.TryGetValue(buffer, out var typedBuffer))
-            throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
+            {
+                throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
+            }
 
-        return CreateBufferView(typedBuffer, offset, length);
+            return CreateBufferView(typedBuffer, offset, length);
     }
 
     /// <inheritdoc/>
@@ -348,15 +363,19 @@ public abstract class BaseMemoryManager<TBuffer, TStatistics> : IMemoryManager, 
         ArgumentNullException.ThrowIfNull(buffer);
 
         if (!_trackedBuffers.TryGetValue(buffer, out var typedBuffer))
-            throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
+            {
+                throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
+            }
 
-        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var sizeInBytes = data.Length * elementSize;
 
         if (sizeInBytes > buffer.SizeInBytes)
-            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+            {
+                throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+            }
 
-        try
+            try
         {
             CopyToDeviceInternal(typedBuffer, data);
         }
@@ -374,15 +393,19 @@ public abstract class BaseMemoryManager<TBuffer, TStatistics> : IMemoryManager, 
         ArgumentNullException.ThrowIfNull(buffer);
 
         if (!_trackedBuffers.TryGetValue(buffer, out var typedBuffer))
-            throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
+            {
+                throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
+            }
 
-        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var sizeInBytes = data.Length * elementSize;
 
         if (sizeInBytes > buffer.SizeInBytes)
-            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+            {
+                throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+            }
 
-        try
+            try
         {
             CopyFromDeviceInternal(data, typedBuffer);
         }
@@ -603,9 +626,12 @@ public abstract class BaseMemoryManager<TBuffer, TStatistics> : IMemoryManager, 
     /// <param name="state">Timer state (not used).</param>
     private void CheckMemoryPressure(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             var stats = GetMemoryStatistics();
             if (stats.TotalMemoryBytes > 0)
@@ -624,19 +650,16 @@ public abstract class BaseMemoryManager<TBuffer, TStatistics> : IMemoryManager, 
         }
     }
 
-    /// <summary>
-    /// Gets a snapshot of currently tracked buffers for diagnostics.
-    /// </summary>
-    /// <returns>A collection of currently tracked buffer information.</returns>
-    protected IEnumerable<(IMemoryBuffer Buffer, long SizeInBytes)> GetTrackedBuffers()
-    {
-        return _trackedBuffers.Keys.Select(buffer => (buffer, buffer.SizeInBytes));
-    }
+        /// <summary>
+        /// Gets a snapshot of currently tracked buffers for diagnostics.
+        /// </summary>
+        /// <returns>A collection of currently tracked buffer information.</returns>
+        protected IEnumerable<(IMemoryBuffer Buffer, long SizeInBytes)> GetTrackedBuffers() => _trackedBuffers.Keys.Select(buffer => (buffer, buffer.SizeInBytes));
 
-    /// <summary>
-    /// Forces cleanup of all tracked buffers (used during disposal).
-    /// </summary>
-    protected void ForceCleanupAllBuffers()
+        /// <summary>
+        /// Forces cleanup of all tracked buffers (used during disposal).
+        /// </summary>
+        protected void ForceCleanupAllBuffers()
     {
         _logger?.LogInformation("Force cleanup of {Count} tracked buffers in {Manager}", 
             _trackedBuffers.Count, ManagerName);
@@ -706,9 +729,12 @@ public abstract class BaseMemoryManager<TBuffer, TStatistics> : IMemoryManager, 
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             _logger?.LogInformation("Disposing {Manager} memory manager", ManagerName);
 
@@ -791,7 +817,6 @@ public class MemoryStatistics
     /// </summary>
     public double FragmentationPercentage { get; init; }
 }
-
 }
 
 #pragma warning restore CA1848

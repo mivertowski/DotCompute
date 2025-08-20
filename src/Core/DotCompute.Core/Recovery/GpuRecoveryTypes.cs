@@ -216,7 +216,11 @@ public class KernelExecutionMonitor : IKernelExecutionMonitor
 
     public async Task CancelAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed || _completed) return;
+        if (_disposed || _completed)
+        {
+            return;
+        }
+
 
         _logger.LogInformation("Cancelling kernel execution {KernelId}", KernelId);
         

@@ -558,19 +558,20 @@ public sealed class CudaP2PManager : IDisposable
         CudaP2PTopology topology)
     {
         // Simple priority-based ordering - could be enhanced with dependency analysis
-        return placements
+        return [.. placements
             .OrderByDescending(p => p.Priority)
             .ThenBy(p => p.Size)
-            .Select(p => p.ChunkId)
-            .ToList();
+            .Select(p => p.ChunkId)];
     }
 
     private void MonitorConnections(object? state)
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             var stats = GetStatistics();
             _logger.LogDebug("P2P Status: {Enabled}/{Total} connections enabled, {Transfers} transfers, {Bandwidth:F2} GB/s avg",

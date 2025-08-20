@@ -258,9 +258,11 @@ public bool RemoveTrustedPublisher(string thumbprint)
 public bool IsTrustedPublisher(string thumbprint)
 {
     if (string.IsNullOrWhiteSpace(thumbprint))
-        return false;
-        
-    return _trustedPublishers.Contains(thumbprint.ToUpperInvariant());
+        {
+            return false;
+        }
+
+        return _trustedPublishers.Contains(thumbprint.ToUpperInvariant());
 }
 
 private void InitializeDefaultPolicies()

@@ -325,21 +325,16 @@ public sealed class CompiledKernelCache : IAsyncDisposable
         await ClearAsync().ConfigureAwait(false);
     }
 
-    #region Private Methods
+        #region Private Methods
 
-    private static string GetDeviceKey(IAccelerator device)
-    {
-        // Create a unique key for the device
-        return $"{device.Info.DeviceType}_{device.Info.Id}";
+        private static string GetDeviceKey(IAccelerator device) =>
+            // Create a unique key for the device
+            $"{device.Info.DeviceType}_{device.Info.Id}";
+
+        private static string GetDeviceKeyFromMetadata(KernelMetadata metadata) => $"{metadata.DeviceType}_{metadata.DeviceId}";
+
+        #endregion
     }
-
-    private static string GetDeviceKeyFromMetadata(KernelMetadata metadata)
-    {
-        return $"{metadata.DeviceType}_{metadata.DeviceId}";
-    }
-
-    #endregion
-}
 
 /// <summary>
 /// Metadata about a cached kernel.
@@ -479,15 +474,12 @@ public sealed class GlobalKernelCacheManager : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Forces immediate cleanup of stale kernels.
-    /// </summary>
-    public async ValueTask ForceCleanupAsync()
-    {
-        await PerformCleanupAsync().ConfigureAwait(false);
-    }
+        /// <summary>
+        /// Forces immediate cleanup of stale kernels.
+        /// </summary>
+        public async ValueTask ForceCleanupAsync() => await PerformCleanupAsync().ConfigureAwait(false);
 
-    public async ValueTask DisposeAsync()
+        public async ValueTask DisposeAsync()
     {
         if (_disposed)
         {

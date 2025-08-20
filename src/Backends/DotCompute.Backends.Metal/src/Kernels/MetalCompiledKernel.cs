@@ -181,13 +181,25 @@ private void SetKernelArguments(IntPtr encoder, KernelArguments arguments)
         else
         {
             // Handle scalar values
-            var size = GetScalarSize(arg);
-            var bytes = GetScalarBytes(arg);
-            unsafe
+            if (arg != null)
             {
-                fixed (byte* ptr = bytes)
+                var size = GetScalarSize(arg);
+                var bytes = GetScalarBytes(arg);
+                unsafe
                 {
-                    MetalNative.SetBytes(encoder, (IntPtr)ptr, (nuint)size, bufferIndex);
+                    fixed (byte* ptr = bytes)
+                    {
+                        MetalNative.SetBytes(encoder, (IntPtr)ptr, (nuint)size, bufferIndex);
+                    }
+                }
+            }
+            else
+            {
+                // Handle null arguments by setting zero bytes
+                unsafe
+                {
+                    var nullValue = 0;
+                    MetalNative.SetBytes(encoder, (IntPtr)(&nullValue), sizeof(int), bufferIndex);
                 }
             }
         }

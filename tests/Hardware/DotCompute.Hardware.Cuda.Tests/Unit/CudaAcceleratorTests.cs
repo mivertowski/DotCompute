@@ -476,7 +476,7 @@ __global__ void test_kernel(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "test_kernel",
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = "test_kernel"
         };
     }

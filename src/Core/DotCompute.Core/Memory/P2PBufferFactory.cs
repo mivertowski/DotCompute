@@ -42,10 +42,17 @@ public sealed class P2PBufferFactory : IAsyncDisposable
         P2PBufferOptions? options = null,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (sourceBuffer == null) throw new ArgumentNullException(nameof(sourceBuffer));
-        if (targetDevice == null) throw new ArgumentNullException(nameof(targetDevice));
+        if (sourceBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(sourceBuffer));
+            }
 
-        options ??= P2PBufferOptions.Default;
+            if (targetDevice == null)
+            {
+                throw new ArgumentNullException(nameof(targetDevice));
+            }
+
+            options ??= P2PBufferOptions.Default;
 
         var sourceDevice = sourceBuffer.Accelerator;
         var transferStrategy = await _capabilityDetector.GetOptimalTransferStrategyAsync(
@@ -69,8 +76,12 @@ public sealed class P2PBufferFactory : IAsyncDisposable
         P2PBufferOptions? options = null,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (device == null) throw new ArgumentNullException(nameof(device));
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
+        if (device == null)
+            {
+                throw new ArgumentNullException(nameof(device));
+            }
+
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
 
         options ??= P2PBufferOptions.Default;
 
@@ -96,15 +107,25 @@ public sealed class P2PBufferFactory : IAsyncDisposable
         P2PBufferOptions? options = null,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (sourceBuffer == null) throw new ArgumentNullException(nameof(sourceBuffer));
-        if (targetDevice == null) throw new ArgumentNullException(nameof(targetDevice));
-        ArgumentOutOfRangeException.ThrowIfNegative(startIndex);
+        if (sourceBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(sourceBuffer));
+            }
+
+            if (targetDevice == null)
+            {
+                throw new ArgumentNullException(nameof(targetDevice));
+            }
+
+            ArgumentOutOfRangeException.ThrowIfNegative(startIndex);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(elementCount);
 
         if (startIndex + elementCount > BufferHelpers.GetElementCount(sourceBuffer))
-            throw new ArgumentOutOfRangeException(nameof(elementCount), "Slice extends beyond buffer bounds");
+            {
+                throw new ArgumentOutOfRangeException(nameof(elementCount), "Slice extends beyond buffer bounds");
+            }
 
-        options ??= P2PBufferOptions.Default;
+            options ??= P2PBufferOptions.Default;
 
         // Create target buffer
         var targetBuffer = await CreateEmptyP2PBufferAsync<T>(targetDevice, elementCount, options, cancellationToken);
@@ -318,25 +339,23 @@ public sealed class P2PBufferFactory : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Performs direct P2P transfer between GPU devices.
-    /// </summary>
-    private async ValueTask TransferDirectP2PAsync<T>(
-        IBuffer<T> source,
-        P2PBuffer<T> target,
-        TransferStrategy strategy,
-        CancellationToken cancellationToken) where T : unmanaged
-    {
-        // Direct P2P copy - this would use device-specific APIs
-        // For CUDA: cudaMemcpyPeer
-        // For ROCm: hipMemcpyPeer
-        await source.CopyToAsync(target, cancellationToken);
-    }
+        /// <summary>
+        /// Performs direct P2P transfer between GPU devices.
+        /// </summary>
+        private async ValueTask TransferDirectP2PAsync<T>(
+            IBuffer<T> source,
+            P2PBuffer<T> target,
+            TransferStrategy strategy,
+            CancellationToken cancellationToken) where T : unmanaged =>
+            // Direct P2P copy - this would use device-specific APIs
+            // For CUDA: cudaMemcpyPeer
+            // For ROCm: hipMemcpyPeer
+            await source.CopyToAsync(target, cancellationToken);
 
-    /// <summary>
-    /// Performs host-mediated transfer via CPU memory.
-    /// </summary>
-    private async ValueTask TransferHostMediatedAsync<T>(
+        /// <summary>
+        /// Performs host-mediated transfer via CPU memory.
+        /// </summary>
+        private async ValueTask TransferHostMediatedAsync<T>(
         IBuffer<T> source,
         P2PBuffer<T> target,
         TransferStrategy strategy,
@@ -390,23 +409,20 @@ public sealed class P2PBufferFactory : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Transfers a single chunk of data.
-    /// </summary>
-    private async Task TransferChunkAsync<T>(
-        IBuffer<T> source,
-        P2PBuffer<T> target,
-        int startElement,
-        int elementCount,
-        CancellationToken cancellationToken) where T : unmanaged
-    {
-        await source.CopyToAsync(startElement, target, startElement, elementCount, cancellationToken);
-    }
+        /// <summary>
+        /// Transfers a single chunk of data.
+        /// </summary>
+        private async Task TransferChunkAsync<T>(
+            IBuffer<T> source,
+            P2PBuffer<T> target,
+            int startElement,
+            int elementCount,
+            CancellationToken cancellationToken) where T : unmanaged => await source.CopyToAsync(startElement, target, startElement, elementCount, cancellationToken);
 
-    /// <summary>
-    /// Performs memory-mapped transfer for very large datasets.
-    /// </summary>
-    private async ValueTask TransferMemoryMappedAsync<T>(
+        /// <summary>
+        /// Performs memory-mapped transfer for very large datasets.
+        /// </summary>
+        private async ValueTask TransferMemoryMappedAsync<T>(
         IBuffer<T> source,
         P2PBuffer<T> target,
         TransferStrategy strategy,
@@ -431,8 +447,10 @@ public sealed class P2PBufferFactory : IAsyncDisposable
             try
             {
                 if (File.Exists(tempFile))
-                    File.Delete(tempFile);
-            }
+                    {
+                        File.Delete(tempFile);
+                    }
+                }
             catch
             {
                 // Ignore cleanup errors
@@ -481,9 +499,11 @@ public sealed class P2PBufferFactory : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        _disposed = true;
+            _disposed = true;
 
         // Dispose all device pools
         var disposeTasks = _devicePools.Values.Select(pool => pool.DisposeAsync());

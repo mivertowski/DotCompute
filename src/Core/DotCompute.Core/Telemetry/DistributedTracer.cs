@@ -275,7 +275,7 @@ public sealed class DistributedTracer : IDisposable
             Status = status,
             StatusMessage = statusMessage,
             Attributes = new Dictionary<string, object?>(spanContext.Attributes),
-            Events = spanContext.Events.ToList(),
+            Events = [.. spanContext.Events],
             ParentSpanId = spanContext.ParentSpanId
         };
         
@@ -325,7 +325,7 @@ public sealed class DistributedTracer : IDisposable
             EndTime = endTime,
             TotalDuration = totalDuration,
             Status = status,
-            Spans = traceContext.Spans.ToList(),
+            Spans = [.. traceContext.Spans],
             DeviceOperations = traceContext.DeviceOperations.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
             Tags = new Dictionary<string, object?>(traceContext.Tags)
         };
@@ -401,7 +401,7 @@ public sealed class DistributedTracer : IDisposable
         await _exportSemaphore.WaitAsync(cancellationToken);
         try
         {
-            var tracesToExport = correlationIds?.ToList() ?? _completedSpans.Keys.ToList();
+            var tracesToExport = correlationIds?.ToList() ?? [.. _completedSpans.Keys];
             
             foreach (var correlationId in tracesToExport.Take(_options.MaxTracesPerExport))
             {
@@ -477,11 +477,9 @@ public sealed class DistributedTracer : IDisposable
         _logger.LogDebug("Exported trace {CorrelationId} to custom format", correlationId);
     }
 
-    private List<SpanData> IdentifyCriticalPath(List<SpanData> spans)
-    {
+    private List<SpanData> IdentifyCriticalPath(List<SpanData> spans) =>
         // Simplified critical path analysis - find the longest sequential chain
-        return spans.OrderByDescending(s => s.Duration).Take(5).ToList();
-    }
+        [.. spans.OrderByDescending(s => s.Duration).Take(5)];
 
     private Dictionary<string, double> AnalyzeDeviceUtilization(
         ConcurrentDictionary<string, DeviceOperationTrace> deviceOps)
@@ -547,8 +545,12 @@ public sealed class DistributedTracer : IDisposable
 
     private double CalculateParallelismEfficiency(TraceData traceData)
     {
-        if (traceData.Spans.Count <= 1) return 1.0;
-        
+        if (traceData.Spans.Count <= 1)
+        {
+            return 1.0;
+        }
+
+
         var totalSpanTime = traceData.Spans.Sum(s => s.Duration.TotalMilliseconds);
         var actualTime = traceData.TotalDuration.TotalMilliseconds;
         
@@ -557,8 +559,12 @@ public sealed class DistributedTracer : IDisposable
 
     private double CalculateDeviceEfficiency(TraceData traceData)
     {
-        if (traceData.DeviceOperations.Count == 0) return 0;
-        
+        if (traceData.DeviceOperations.Count == 0)
+        {
+            return 0;
+        }
+
+
         var deviceUtilizations = traceData.DeviceOperations.Values
             .Select(d => (d.LastOperationTime - d.FirstOperationTime).TotalMilliseconds / 
                         traceData.TotalDuration.TotalMilliseconds)
@@ -591,8 +597,12 @@ public sealed class DistributedTracer : IDisposable
 
     private void CleanupExpiredTraces(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             var expiredThreshold = DateTimeOffset.UtcNow - TimeSpan.FromHours(_options.TraceRetentionHours);
@@ -641,13 +651,20 @@ public sealed class DistributedTracer : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(DistributedTracer));
+        }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
         
         // Dispose all active traces

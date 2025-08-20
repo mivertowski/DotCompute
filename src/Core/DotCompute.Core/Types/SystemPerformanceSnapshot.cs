@@ -298,7 +298,11 @@ public readonly struct SystemPerformanceSnapshot
         var timeDelta = Timestamp - previous.Timestamp;
         var timeDeltaSeconds = timeDelta.TotalSeconds;
 
-        if (timeDeltaSeconds <= 0) return Empty;
+        if (timeDeltaSeconds <= 0)
+        {
+            return Empty;
+        }
+
 
         return new SystemPerformanceSnapshot(
             cpuUtilization: CpuUtilizationPercent - previous.CpuUtilizationPercent,

@@ -153,10 +153,7 @@ public sealed class RecoveryCoordinator : IDisposable
         Exception error,
         string deviceId,
         string? operation = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await _gpuRecovery.HandleGpuErrorAsync(error, deviceId, operation, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) => await _gpuRecovery.HandleGpuErrorAsync(error, deviceId, operation, cancellationToken);
 
     /// <summary>
     /// Memory-specific recovery operations
@@ -165,10 +162,7 @@ public sealed class RecoveryCoordinator : IDisposable
         Exception error,
         MemoryRecoveryContext context,
         RecoveryOptions? options = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await _memoryRecovery.RecoverAsync(error, context, options ?? new RecoveryOptions(), cancellationToken);
-    }
+        CancellationToken cancellationToken = default) => await _memoryRecovery.RecoverAsync(error, context, options ?? new RecoveryOptions(), cancellationToken);
 
     /// <summary>
     /// Compilation-specific recovery operations
@@ -177,10 +171,7 @@ public sealed class RecoveryCoordinator : IDisposable
         Exception error,
         CompilationRecoveryContext context,
         RecoveryOptions? options = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await _compilationFallback.RecoverAsync(error, context, options ?? new RecoveryOptions(), cancellationToken);
-    }
+        CancellationToken cancellationToken = default) => await _compilationFallback.RecoverAsync(error, context, options ?? new RecoveryOptions(), cancellationToken);
 
     /// <summary>
     /// Plugin-specific recovery operations
@@ -189,10 +180,7 @@ public sealed class RecoveryCoordinator : IDisposable
         Exception error,
         PluginRecoveryContext context,
         RecoveryOptions? options = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await _pluginRecovery.RecoverAsync(error, context, options ?? new RecoveryOptions(), cancellationToken);
-    }
+        CancellationToken cancellationToken = default) => await _pluginRecovery.RecoverAsync(error, context, options ?? new RecoveryOptions(), cancellationToken);
 
     /// <summary>
     /// Network operation with circuit breaker protection
@@ -200,10 +188,7 @@ public sealed class RecoveryCoordinator : IDisposable
     public async Task<T> ExecuteWithCircuitBreakerAsync<T>(
         string serviceName,
         Func<CancellationToken, Task<T>> operation,
-        CancellationToken cancellationToken = default)
-    {
-        return await _circuitBreaker.ExecuteAsync(serviceName, operation, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) => await _circuitBreaker.ExecuteAsync(serviceName, operation, cancellationToken);
 
     /// <summary>
     /// Memory allocation with retry and recovery
@@ -212,10 +197,7 @@ public sealed class RecoveryCoordinator : IDisposable
         Func<T> allocateFunc,
         int maxRetries = 3,
         TimeSpan? baseDelay = null,
-        CancellationToken cancellationToken = default) where T : class
-    {
-        return await _memoryRecovery.AllocateWithRetryAsync(allocateFunc, maxRetries, baseDelay, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) where T : class => await _memoryRecovery.AllocateWithRetryAsync(allocateFunc, maxRetries, baseDelay, cancellationToken);
 
     /// <summary>
     /// Compilation with progressive fallback
@@ -369,12 +351,10 @@ public sealed class RecoveryCoordinator : IDisposable
             strategy.GetType().Name, contextType.Name);
     }
 
-    private void RegisterDefaultStrategies()
-    {
+    private void RegisterDefaultStrategies() =>
         // Strategies are directly used rather than registered generically
         // due to their specific implementations and contexts
         _logger.LogDebug("Default recovery strategies registered");
-    }
 
     private IRecoveryStrategy<object>? FindRecoveryStrategy<TContext>(Exception error, TContext context)
     {
@@ -422,8 +402,12 @@ public sealed class RecoveryCoordinator : IDisposable
 
     private void ReportMetrics(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             var stats = GetRecoveryStatistics();

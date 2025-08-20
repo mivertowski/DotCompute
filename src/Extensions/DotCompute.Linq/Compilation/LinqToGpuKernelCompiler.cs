@@ -41,8 +41,7 @@ public KernelDefinition CompileExpression<T>(Expression<Func<IEnumerable<T>, IEn
     
     return new KernelDefinition(
         $"linq_kernel_{Guid.NewGuid():N}",
-        new StringKernelSource(kernelCode),
-        new DotCompute.Abstractions.CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum }
+        kernelCode
     );
 }
 
@@ -160,15 +159,23 @@ public string CompileAggregate<T>(Expression<Func<T, T, T>> aggregator, string o
     sb.AppendLine("        if (tid < s) {");
     
     if (operation == "sum")
-        sb.AppendLine("            sdata[tid] += sdata[tid + s];");
-    else if (operation == "max")
-        sb.AppendLine("            sdata[tid] = max(sdata[tid], sdata[tid + s]);");
-    else if (operation == "min")
-        sb.AppendLine("            sdata[tid] = min(sdata[tid], sdata[tid + s]);");
-    else
-        sb.AppendLine($"            sdata[tid] = {CompileExpression(aggregator.Body, "sdata[tid]", "sdata[tid + s]")};");
-    
-    sb.AppendLine("        }");
+        {
+            sb.AppendLine("            sdata[tid] += sdata[tid + s];");
+        }
+        else if (operation == "max")
+        {
+            sb.AppendLine("            sdata[tid] = max(sdata[tid], sdata[tid + s]);");
+        }
+        else if (operation == "min")
+        {
+            sb.AppendLine("            sdata[tid] = min(sdata[tid], sdata[tid + s]);");
+        }
+        else
+        {
+            sb.AppendLine($"            sdata[tid] = {CompileExpression(aggregator.Body, "sdata[tid]", "sdata[tid + s]")};");
+        }
+
+        sb.AppendLine("        }");
     sb.AppendLine("        __syncthreads();");
     sb.AppendLine("    }");
     sb.AppendLine("    ");
@@ -319,12 +326,9 @@ private string GenerateSortKernel(MethodCallExpression methodCall, Type elementT
     return sb.ToString();
 }
 
-private string CompileExpression(Expression expr, string input)
-{
-    return CompileExpression(expr, input, null);
-}
+    private string CompileExpression(Expression expr, string input) => CompileExpression(expr, input, null);
 
-private string CompileExpression(Expression expr, string left, string? right)
+    private string CompileExpression(Expression expr, string left, string? right)
 {
     switch (expr)
     {
@@ -368,12 +372,9 @@ private string CompileExpression(Expression expr, string left, string? right)
     }
 }
 
-private static string GetCudaType<T>() where T : unmanaged
-{
-    return GetCudaType(typeof(T));
-}
+    private static string GetCudaType<T>() where T : unmanaged => GetCudaType(typeof(T));
 
-private static string GetCudaType(Type type)
+    private static string GetCudaType(Type type)
 {
     return type.Name switch
     {
@@ -458,13 +459,7 @@ public KernelLanguage Language => KernelLanguage.Cuda;
 public string EntryPoint => "kernel";
 public string[] Dependencies => Array.Empty<string>();
 
-public ValueTask<string> GetSourceAsync(CancellationToken cancellationToken = default)
-{
-    return ValueTask.FromResult(_source);
-}
+    public ValueTask<string> GetSourceAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(_source);
 
-public ValueTask<byte[]> GetBinaryAsync(CancellationToken cancellationToken = default)
-{
-    throw new NotSupportedException("Binary not available for string source");
-}
+    public ValueTask<byte[]> GetBinaryAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException("Binary not available for string source");
 }

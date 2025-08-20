@@ -108,10 +108,12 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
     {
         // Production implementation for kernel execution
         if (_disposed)
-            throw new ObjectDisposedException(nameof(ManagedCompiledKernel));
-        
-        // Check for cancellation
-        cancellationToken.ThrowIfCancellationRequested();
+            {
+                throw new ObjectDisposedException(nameof(ManagedCompiledKernel));
+            }
+
+            // Check for cancellation
+            cancellationToken.ThrowIfCancellationRequested();
         
         // Execute based on the kernel source type and compiled state
         var sourceType = DetermineSourceType();
@@ -212,12 +214,16 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
             {
                 // Check for PTX header (CUDA)
                 if (System.Text.Encoding.ASCII.GetString(Binary, 0, Math.Min(4, Binary.Length)).StartsWith("//", StringComparison.Ordinal))
-                    return KernelSourceType.CUDA;
-                
-                // Check for SPIR-V magic number (OpenCL/Vulkan)
-                if (Binary[0] == 0x03 && Binary[1] == 0x02 && Binary[2] == 0x23 && Binary[3] == 0x07)
-                    return KernelSourceType.OpenCL;
-            }
+                    {
+                        return KernelSourceType.CUDA;
+                    }
+
+                    // Check for SPIR-V magic number (OpenCL/Vulkan)
+                    if (Binary[0] == 0x03 && Binary[1] == 0x02 && Binary[2] == 0x23 && Binary[3] == 0x07)
+                    {
+                        return KernelSourceType.OpenCL;
+                    }
+                }
             
             return KernelSourceType.Binary;
         }

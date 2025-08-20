@@ -59,17 +59,15 @@ public UnifiedMemoryManager(IMemoryManager baseMemoryManager)
     _baseMemoryManager = baseMemoryManager ?? throw new ArgumentNullException(nameof(baseMemoryManager));
 }
 
-private static IMemoryManager CreateDefaultMemoryManager()
-{
-    // Create a default memory manager using simple implementation
-    // In a real scenario, this might be injected via DI
-    return new SimpleInMemoryManager();
-}
+    private static IMemoryManager CreateDefaultMemoryManager() =>
+        // Create a default memory manager using simple implementation
+        // In a real scenario, this might be injected via DI
+        new SimpleInMemoryManager();
 
-/// <summary>
-/// Simple in-memory implementation of IMemoryManager for default scenarios
-/// </summary>
-private sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
+    /// <summary>
+    /// Simple in-memory implementation of IMemoryManager for default scenarios
+    /// </summary>
+    private sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
 {
     public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default)
     {
@@ -84,12 +82,9 @@ private sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
 
-    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
-    {
-        return new SimpleMemoryBuffer(length, buffer.Options);
-    }
+        public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length) => new SimpleMemoryBuffer(length, buffer.Options);
 
-    public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+        public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
     {
         var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         return await AllocateAsync(sizeInBytes).ConfigureAwait(false);
@@ -108,12 +103,9 @@ private sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
         memory.Span.CopyTo(data);
     }
 
-    public void Free(IMemoryBuffer buffer)
-    {
-        buffer?.Dispose();
-    }
+        public void Free(IMemoryBuffer buffer) => buffer?.Dispose();
 
-    public void Dispose()
+        public void Dispose()
     {
         // Nothing to dispose for simple implementation
     }
@@ -135,9 +127,12 @@ private sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
 
         public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (IsDisposed) throw new ObjectDisposedException(nameof(SimpleMemoryBuffer));
-            
-            var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(source.Span);
+            if (IsDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(SimpleMemoryBuffer));
+                }
+
+                var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(source.Span);
             var destSpan = _data.AsSpan((int)offset, sourceBytes.Length);
             sourceBytes.CopyTo(destSpan);
             return ValueTask.CompletedTask;
@@ -145,20 +140,20 @@ private sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
 
         public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (IsDisposed) throw new ObjectDisposedException(nameof(SimpleMemoryBuffer));
-            
-            var sourceSpan = _data.AsSpan((int)offset, destination.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+            if (IsDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(SimpleMemoryBuffer));
+                }
+
+                var sourceSpan = _data.AsSpan((int)offset, destination.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
             var destBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(destination.Span);
             sourceSpan.CopyTo(destBytes);
             return ValueTask.CompletedTask;
         }
 
-        public void Dispose()
-        {
-            IsDisposed = true;
-        }
+            public void Dispose() => IsDisposed = true;
 
-        public ValueTask DisposeAsync()
+            public ValueTask DisposeAsync()
         {
             Dispose();
             return ValueTask.CompletedTask;

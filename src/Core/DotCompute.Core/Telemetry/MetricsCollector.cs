@@ -150,8 +150,12 @@ public sealed class MetricsCollector : IDisposable
         ThrowIfDisposed();
         
         var devices = _deviceMetrics.Values.ToArray();
-        if (devices.Length == 0) return 0.0;
-        
+        if (devices.Length == 0)
+        {
+            return 0.0;
+        }
+
+
         return devices.Average(d => d.UtilizationPercentage);
     }
 
@@ -163,8 +167,12 @@ public sealed class MetricsCollector : IDisposable
         ThrowIfDisposed();
         
         if (!_kernelMetrics.TryGetValue(kernelName, out var metrics))
+        {
+
             return null;
-            
+        }
+
+
         return new KernelPerformanceMetrics
         {
             KernelName = kernelName,
@@ -189,8 +197,12 @@ public sealed class MetricsCollector : IDisposable
         ThrowIfDisposed();
         
         if (!_deviceMetrics.TryGetValue(deviceId, out var metrics))
+        {
+
             return null;
-            
+        }
+
+
         return new DevicePerformanceMetrics
         {
             DeviceId = deviceId,
@@ -314,8 +326,12 @@ public sealed class MetricsCollector : IDisposable
 
     private void CollectSystemMetrics(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             // Collect system-level performance metrics
@@ -355,15 +371,24 @@ public sealed class MetricsCollector : IDisposable
         existing.LastExecutionTime = DateTimeOffset.UtcNow;
         
         if (success)
+        {
             existing.SuccessCount++;
-            
+        }
+
+
         if (executionTime < existing.MinExecutionTime)
+        {
             existing.MinExecutionTime = executionTime;
-            
+        }
+
+
         if (executionTime > existing.MaxExecutionTime)
+        {
             existing.MaxExecutionTime = executionTime;
-            
+        }
+
         // Update moving averages
+
         existing.Throughput = (existing.Throughput + CalculateThroughput(details)) / 2;
         existing.Occupancy = (existing.Occupancy + details.Occupancy) / 2;
         existing.CacheHitRate = (existing.CacheHitRate + details.CacheHitRate) / 2;
@@ -387,7 +412,12 @@ public sealed class MetricsCollector : IDisposable
             (key, existing) =>
             {
                 existing.TotalOperations++;
-                if (!success) existing.ErrorCount++;
+                if (!success)
+                {
+                    existing.ErrorCount++;
+                }
+
+
                 existing.AverageResponseTime = 
                     (existing.AverageResponseTime + executionTime.TotalMilliseconds) / 2;
                 existing.LastUpdateTime = DateTimeOffset.UtcNow;
@@ -415,7 +445,12 @@ public sealed class MetricsCollector : IDisposable
 
     private static double CalculateThroughput(KernelExecutionDetails details)
     {
-        if (details.ExecutionTime.TotalSeconds == 0) return 0;
+        if (details.ExecutionTime.TotalSeconds == 0)
+        {
+            return 0;
+        }
+
+
         return details.OperationsPerformed / details.ExecutionTime.TotalSeconds;
     }
 
@@ -451,13 +486,20 @@ public sealed class MetricsCollector : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(MetricsCollector));
+        }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
         _collectionTimer?.Dispose();
     }

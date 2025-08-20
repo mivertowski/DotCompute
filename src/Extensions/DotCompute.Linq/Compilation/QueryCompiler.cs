@@ -394,13 +394,10 @@ private class ComputePlanVisitor : ExpressionVisitor
         // Reference types
         return IntPtr.Size;
     }
-    
-    [RequiresDynamicCode("MakeArrayType requires dynamic code generation")]
-    private static Type CreateArrayType(Type elementType)
-    {
-        return elementType.MakeArrayType();
+
+        [RequiresDynamicCode("MakeArrayType requires dynamic code generation")]
+        private static Type CreateArrayType(Type elementType) => elementType.MakeArrayType();
     }
-}
 
 /// <summary>
 /// Validates expressions for GPU compatibility.
@@ -446,18 +443,24 @@ private class ExpressionValidator : ExpressionVisitor
     {
         // Primitive types are GPU-compatible
         if (type.IsPrimitive || type == typeof(decimal))
-            return true;
+            {
+                return true;
+            }
 
-        // Arrays of primitives are compatible
-        var elementType = type.GetElementType();
+            // Arrays of primitives are compatible
+            var elementType = type.GetElementType();
         if (type.IsArray && elementType != null && IsGpuCompatibleType(elementType))
-            return true;
+            {
+                return true;
+            }
 
-        // Simple structs without references are compatible
-        if (type.IsValueType && !type.GetFields().Any(f => !IsGpuCompatibleType(f.FieldType)))
-            return true;
+            // Simple structs without references are compatible
+            if (type.IsValueType && !type.GetFields().Any(f => !IsGpuCompatibleType(f.FieldType)))
+            {
+                return true;
+            }
 
-        return false;
+            return false;
     }
 }
 }

@@ -26,11 +26,13 @@ public static (float integral, float error) AdaptiveIntegration(
 {
     ArgumentNullException.ThrowIfNull(functionValues);
     
-    if (functionValues.Length < 2) 
-        return (0.0f, 0.0f);
-    
-    // For pre-sampled data, use composite Simpson's rule with Richardson extrapolation
-    return CompositeSimpsonWithExtrapolation(functionValues, a, b, tolerance);
+    if (functionValues.Length < 2)
+        {
+            return (0.0f, 0.0f);
+        }
+
+        // For pre-sampled data, use composite Simpson's rule with Richardson extrapolation
+        return CompositeSimpsonWithExtrapolation(functionValues, a, b, tolerance);
 }
 
 /// <summary>
@@ -80,10 +82,13 @@ public static float RombergIntegration(
     ArgumentNullException.ThrowIfNull(functionValues);
     
     var n = functionValues.Length;
-    if (n < 3) return TrapezoidalRule(functionValues, a, b);
-    
-    // Create Romberg table
-    var R = new float[maxLevels, maxLevels];
+    if (n < 3)
+        {
+            return TrapezoidalRule(functionValues, a, b);
+        }
+
+        // Create Romberg table
+        var R = new float[maxLevels, maxLevels];
     
     // First column: trapezoidal rule with increasing refinement
     R[0, 0] = TrapezoidalRule(functionValues, a, b);
@@ -122,10 +127,13 @@ public static float ClenshawCurtisIntegration(float[] functionValues, float a, f
     ArgumentNullException.ThrowIfNull(functionValues);
     
     var n = functionValues.Length;
-    if (n < 3) return TrapezoidalRule(functionValues, a, b);
-    
-    // Map function values to Chebyshev grid (approximately)
-    var weights = new float[n];
+    if (n < 3)
+        {
+            return TrapezoidalRule(functionValues, a, b);
+        }
+
+        // Map function values to Chebyshev grid (approximately)
+        var weights = new float[n];
     var sum = 0.0f;
     
     for (var k = 0; k < n; k++)
@@ -160,10 +168,13 @@ public static (float integral, float error) AdaptiveSimpsonRule(
     float tolerance = 1e-8f)
 {
     var n = functionValues.Length;
-    if (n < 3) return (TrapezoidalRule(functionValues, a, b), tolerance);
-    
-    // Divide into segments and apply Simpson's rule adaptively
-    var segments = Math.Max(1, (n - 1) / 4); // Each Simpson's segment needs 3 points minimum
+    if (n < 3)
+        {
+            return (TrapezoidalRule(functionValues, a, b), tolerance);
+        }
+
+        // Divide into segments and apply Simpson's rule adaptively
+        var segments = Math.Max(1, (n - 1) / 4); // Each Simpson's segment needs 3 points minimum
     var segmentSize = (n - 1) / segments;
     
     var totalIntegral = 0.0f;
@@ -235,9 +246,12 @@ private static (float integral, float error) SimpsonWithErrorEstimate(
 private static float SimpsonRule(float[] values, float a, float b)
 {
     var n = values.Length;
-    if (n < 3) return TrapezoidalRule(values, a, b);
-    
-    var h = (b - a) / (n - 1);
+    if (n < 3)
+        {
+            return TrapezoidalRule(values, a, b);
+        }
+
+        var h = (b - a) / (n - 1);
     
     if ((n - 1) % 2 == 0)
     {
@@ -278,9 +292,12 @@ private static float SimpsonRule(float[] values, float a, float b)
 
 private static float TrapezoidalRule(float[] values, float a, float b)
 {
-    if (values.Length < 2) return 0.0f;
-    
-    var h = (b - a) / (values.Length - 1);
+    if (values.Length < 2)
+        {
+            return 0.0f;
+        }
+
+        var h = (b - a) / (values.Length - 1);
     var sum = 0.5f * (values[0] + values[values.Length - 1]);
     
     for (var i = 1; i < values.Length - 1; i++)
@@ -329,29 +346,30 @@ private static float GaussLegendre7Point(float[] values, float a, float b)
     return sum * transform;
 }
 
-private static float Kronrod15Point(float[] values, float a, float b)
-{
-    // Simplified Kronrod extension - in practice would use 15 specific nodes
-    // For now, use a weighted average that extends Gauss-Legendre
-    return GaussLegendre7Point(values, a, b) * 1.05f; // Rough approximation
-}
+    private static float Kronrod15Point(float[] values, float a, float b) =>
+        // Simplified Kronrod extension - in practice would use 15 specific nodes
+        // For now, use a weighted average that extends Gauss-Legendre
+        GaussLegendre7Point(values, a, b) * 1.05f; // Rough approximation
 
-/// <summary>
-/// Specialized integration for oscillatory functions using Filon's method.
-/// </summary>
-/// <param name="functionValues">Function values</param>
-/// <param name="a">Lower bound</param>
-/// <param name="b">Upper bound</param>
-/// <param name="frequency">Oscillation frequency</param>
-/// <returns>Integral approximation</returns>
-public static float FilonIntegration(float[] functionValues, float a, float b, float frequency)
+    /// <summary>
+    /// Specialized integration for oscillatory functions using Filon's method.
+    /// </summary>
+    /// <param name="functionValues">Function values</param>
+    /// <param name="a">Lower bound</param>
+    /// <param name="b">Upper bound</param>
+    /// <param name="frequency">Oscillation frequency</param>
+    /// <returns>Integral approximation</returns>
+    public static float FilonIntegration(float[] functionValues, float a, float b, float frequency)
 {
     ArgumentNullException.ThrowIfNull(functionValues);
     
     var n = functionValues.Length;
-    if (n < 3) return 0.0f;
-    
-    var h = (b - a) / (n - 1);
+    if (n < 3)
+        {
+            return 0.0f;
+        }
+
+        var h = (b - a) / (n - 1);
     var omega = 2 * Math.PI * frequency;
     var alpha = omega * h;
     

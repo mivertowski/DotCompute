@@ -394,12 +394,20 @@ internal sealed class CudaMemoryBufferView : ISyncMemoryBuffer
         SizeInBytes = length;
         
         if (offset < 0)
-            throw new ArgumentException("Offset cannot be negative", nameof(offset));
-        if (length <= 0)
-            throw new ArgumentException("Length must be greater than zero", nameof(length));
-        if (offset + length > parent.SizeInBytes)
-            throw new ArgumentException("View would exceed parent buffer bounds");
-    }
+            {
+                throw new ArgumentException("Offset cannot be negative", nameof(offset));
+            }
+
+            if (length <= 0)
+            {
+                throw new ArgumentException("Length must be greater than zero", nameof(length));
+            }
+
+            if (offset + length > parent.SizeInBytes)
+            {
+                throw new ArgumentException("View would exceed parent buffer bounds");
+            }
+        }
 
     public long SizeInBytes { get; private set; }
     public MemoryOptions Options => _parent.Options;

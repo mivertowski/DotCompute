@@ -194,9 +194,12 @@ internal sealed class CudaEventPool : IDisposable
     /// </summary>
     public void PerformMaintenance()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        lock (_lockObject)
+            lock (_lockObject)
         {
             try
             {
@@ -479,12 +482,9 @@ internal sealed class CudaEventPool : IDisposable
         return eventCount > 0 ? (double)totalAcquireCount / eventCount : 0.0;
     }
 
-    private IEnumerable<PooledEvent> GetAllPooledEvents()
-    {
-        return _timingEvents.Concat(_syncEvents);
-    }
+        private IEnumerable<PooledEvent> GetAllPooledEvents() => _timingEvents.Concat(_syncEvents);
 
-    private void PerformCleanup(object? state)
+        private void PerformCleanup(object? state)
     {
         if (!_disposed)
         {
@@ -495,8 +495,10 @@ internal sealed class CudaEventPool : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
-            throw new ObjectDisposedException(nameof(CudaEventPool));
-    }
+            {
+                throw new ObjectDisposedException(nameof(CudaEventPool));
+            }
+        }
 
     public void Dispose()
     {

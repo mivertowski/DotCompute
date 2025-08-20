@@ -218,7 +218,7 @@ public sealed class CudaTensorCoreManager : IDisposable
         var layout = new CudaTensorMemoryLayout
         {
             Precision = precision,
-            OriginalDimensions = descriptor.Dimensions.ToArray()
+            OriginalDimensions = [.. descriptor.Dimensions]
         };
 
         // Optimize for specific Tensor Core generation
@@ -263,9 +263,11 @@ public sealed class CudaTensorCoreManager : IDisposable
     public void PerformMaintenance()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             // Clean up old tensor kernels
             var cutoffTime = DateTimeOffset.UtcNow.AddHours(-2);
@@ -575,9 +577,11 @@ public sealed class CudaTensorCoreManager : IDisposable
     private void UpdatePerformanceMetrics(object? state)
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             UpdateEfficiencyScore();
             

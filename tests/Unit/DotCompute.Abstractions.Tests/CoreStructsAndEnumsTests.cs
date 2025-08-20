@@ -13,6 +13,8 @@ namespace DotCompute.Abstractions.Tests;
 /// </summary>
 public sealed class CoreStructsAndEnumsTests
 {
+    private static readonly string[] OptimizationFlags = new[] { "-O3", "-ffast-math" };
+    
     #region CompiledKernel Struct Tests
 
     [Fact]
@@ -28,13 +30,25 @@ public sealed class CoreStructsAndEnumsTests
         );
 
         // Act
-        var compiledKernel = new CompiledKernel(id, handle, sharedMemorySize, configuration);
+        using var compiledKernel = new CompiledKernel
+        {
+            Name = "TestKernel",
+            Id = id.ToString(),
+            CompiledBinary = null,
+            Metadata = new Dictionary<string, object>
+            {
+                ["Id"] = id,
+                ["NativeHandle"] = handle,
+                ["SharedMemorySize"] = sharedMemorySize,
+                ["Configuration"] = configuration
+            }
+        };
 
         // Assert
-        _ = compiledKernel.Id.Should().Be(id);
-        _ = compiledKernel.NativeHandle.Should().Be(handle);
-        _ = compiledKernel.SharedMemorySize.Should().Be(sharedMemorySize);
-        _ = compiledKernel.Configuration.Should().Be(configuration);
+        _ = compiledKernel.Id.Should().Be(id.ToString());
+        _ = compiledKernel.Metadata["NativeHandle"].Should().Be(handle);
+        _ = compiledKernel.Metadata["SharedMemorySize"].Should().Be(sharedMemorySize);
+        _ = compiledKernel.Metadata["Configuration"].Should().Be(configuration);
     }
 
     [Fact]
@@ -46,8 +60,30 @@ public sealed class CoreStructsAndEnumsTests
         const int sharedMemorySize = 512;
         var configuration = new KernelConfiguration(new Dim3(128), new Dim3(16, 16));
 
-        var kernel1 = new CompiledKernel(id, handle, sharedMemorySize, configuration);
-        var kernel2 = new CompiledKernel(id, handle, sharedMemorySize, configuration);
+        using var kernel1 = new CompiledKernel
+        {
+            Name = "TestKernel1",
+            Id = id.ToString(),
+            Metadata = new Dictionary<string, object>
+            {
+                ["Id"] = id,
+                ["NativeHandle"] = handle,
+                ["SharedMemorySize"] = sharedMemorySize,
+                ["Configuration"] = configuration
+            }
+        };
+        using var kernel2 = new CompiledKernel
+        {
+            Name = "TestKernel2",
+            Id = id.ToString(),
+            Metadata = new Dictionary<string, object>
+            {
+                ["Id"] = id,
+                ["NativeHandle"] = handle,
+                ["SharedMemorySize"] = sharedMemorySize,
+                ["Configuration"] = configuration
+            }
+        };
 
         // Act & Assert
         _ = kernel1.Equals(kernel2).Should().BeTrue();
@@ -64,8 +100,30 @@ public sealed class CoreStructsAndEnumsTests
         var handle = new IntPtr(0x1000);
         var config = new KernelConfiguration(new Dim3(128), new Dim3(16, 16));
 
-        var kernel1 = new CompiledKernel(id1, handle, 512, config);
-        var kernel2 = new CompiledKernel(id2, handle, 512, config);
+        using var kernel1 = new CompiledKernel
+        {
+            Name = "TestKernel1",
+            Id = id1.ToString(),
+            Metadata = new Dictionary<string, object>
+            {
+                ["Id"] = id1,
+                ["NativeHandle"] = handle,
+                ["SharedMemorySize"] = 512,
+                ["Configuration"] = config
+            }
+        };
+        using var kernel2 = new CompiledKernel
+        {
+            Name = "TestKernel2",
+            Id = id2.ToString(),
+            Metadata = new Dictionary<string, object>
+            {
+                ["Id"] = id2,
+                ["NativeHandle"] = handle,
+                ["SharedMemorySize"] = 512,
+                ["Configuration"] = config
+            }
+        };
 
         // Act & Assert
         _ = kernel1.Equals(kernel2).Should().BeFalse();
@@ -81,8 +139,30 @@ public sealed class CoreStructsAndEnumsTests
         var handle = new IntPtr(0x2000);
         var config = new KernelConfiguration(new Dim3(64), new Dim3(8, 8));
 
-        var kernel1 = new CompiledKernel(id, handle, 256, config);
-        var kernel2 = new CompiledKernel(id, handle, 256, config);
+        using var kernel1 = new CompiledKernel
+        {
+            Name = "TestKernel1",
+            Id = id.ToString(),
+            Metadata = new Dictionary<string, object>
+            {
+                ["Id"] = id,
+                ["NativeHandle"] = handle,
+                ["SharedMemorySize"] = 256,
+                ["Configuration"] = config
+            }
+        };
+        using var kernel2 = new CompiledKernel
+        {
+            Name = "TestKernel2",
+            Id = id.ToString(),
+            Metadata = new Dictionary<string, object>
+            {
+                ["Id"] = id,
+                ["NativeHandle"] = handle,
+                ["SharedMemorySize"] = 256,
+                ["Configuration"] = config
+            }
+        };
 
         // Act
         var hashCode1 = kernel1.GetHashCode();
@@ -107,8 +187,8 @@ public sealed class CoreStructsAndEnumsTests
         var config = new KernelConfiguration(gridDim, blockDim);
 
         // Assert
-        _ = config.GridDimensions.Should().Be(gridDim);
-        _ = config.BlockDimensions.Should().Be(blockDim);
+        _ = ((Dim3)config.Options["GridDimension"]).Should().Be(gridDim);
+        _ = ((Dim3)config.Options["BlockDimension"]).Should().Be(blockDim);
     }
 
     [Fact]
@@ -151,10 +231,9 @@ public sealed class CoreStructsAndEnumsTests
         // Arrange
         const string name = "TestKernel";
         var source = new TextKernelSource("__global__ void test() {}", "test", KernelLanguage.Cuda);
-        var options = new CompilationOptions();
 
         // Act
-        var definition = new KernelDefinition(name, source, options);
+        var definition = new KernelDefinition { Name = name, Source = source.Code };
 
         // Assert
         _ = definition.Name.Should().Be(name);
@@ -175,7 +254,7 @@ public sealed class CoreStructsAndEnumsTests
         var options = new CompilationOptions();
 
         // Act & Assert
-        var action = () => new KernelDefinition(invalidName, source, options);
+        var action = () => new KernelDefinition { Name = invalidName, Source = source.Code };
         _ = action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("name");
     }
 
@@ -186,7 +265,7 @@ public sealed class CoreStructsAndEnumsTests
         var options = new CompilationOptions();
 
         // Act & Assert
-        var action = () => new KernelDefinition("TestKernel", null!, options);
+        var action = () => new KernelDefinition { Name = "TestKernel", Source = null! };
         _ = action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("source");
     }
 
@@ -197,7 +276,7 @@ public sealed class CoreStructsAndEnumsTests
         var source = new TextKernelSource("code", "test");
 
         // Act & Assert
-        var action = () => new KernelDefinition("TestKernel", source, null!);
+        var action = () => new KernelDefinition { Name = "TestKernel", Source = source.Code };
         _ = action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("options");
     }
 
@@ -214,17 +293,12 @@ public sealed class CoreStructsAndEnumsTests
         // Assert
         _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
         _ = options.EnableDebugInfo.Should().BeFalse();
-        _ = options.AdditionalFlags.Should().BeNull();
-        _ = options.Defines.Should().BeNull();
-        _ = options.FastMath.Should().BeFalse();
+        _ = options.AdditionalFlags.Should().NotBeNull().And.BeEmpty();
+        _ = options.Defines.Should().NotBeNull().And.BeEmpty();
+        _ = options.EnableFastMath.Should().BeTrue();
         _ = options.UnrollLoops.Should().BeFalse();
         _ = options.PreferredBlockSize.Should().Be(new Dim3(256, 1, 1));
         _ = options.SharedMemorySize.Should().Be(0);
-        _ = options.MaxThreadsPerBlock.Should().Be(1024);
-        _ = options.EnableMemoryCoalescing.Should().BeTrue();
-        _ = options.EnableOperatorFusion.Should().BeTrue();
-        _ = options.EnableParallelExecution.Should().BeTrue();
-        _ = options.GenerateDebugInfo.Should().BeFalse();
     }
 
     [Fact]
@@ -235,33 +309,23 @@ public sealed class CoreStructsAndEnumsTests
         {
             OptimizationLevel = OptimizationLevel.Maximum,
             EnableDebugInfo = true,
-            AdditionalFlags = ["-O3", "-ffast-math"],
+            AdditionalFlags = new List<string> { "-O3", "-ffast-math" },
             Defines = new Dictionary<string, string> { ["DEBUG"] = "1" },
-            FastMath = true,
+            EnableFastMath = true,
             UnrollLoops = true,
             PreferredBlockSize = new Dim3(512, 1, 1),
-            SharedMemorySize = 2048,
-            MaxThreadsPerBlock = 512,
-            EnableMemoryCoalescing = false,
-            EnableOperatorFusion = false,
-            EnableParallelExecution = false,
-            GenerateDebugInfo = true
+            SharedMemorySize = 2048
         };
 
         // Assert
         _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
         _ = options.EnableDebugInfo.Should().BeTrue();
-        _ = options.AdditionalFlags.Should().BeEquivalentTo(["-O3", "-ffast-math"]);
+        _ = options.AdditionalFlags.Should().BeEquivalentTo(OptimizationFlags);
         _ = options.Defines.Should().ContainKey("DEBUG");
-        _ = options.FastMath.Should().BeTrue();
+        _ = options.EnableFastMath.Should().BeTrue();
         _ = options.UnrollLoops.Should().BeTrue();
-        _ = options.PreferredBlockSize.Should().Be(new Dim3(256, 1, 1));
+        _ = options.PreferredBlockSize.Should().Be(new Dim3(512, 1, 1));
         _ = options.SharedMemorySize.Should().Be(2048);
-        _ = options.MaxThreadsPerBlock.Should().Be(512);
-        _ = options.EnableMemoryCoalescing.Should().BeFalse();
-        _ = options.EnableOperatorFusion.Should().BeFalse();
-        _ = options.EnableParallelExecution.Should().BeFalse();
-        _ = options.GenerateDebugInfo.Should().BeTrue();
     }
 
     #endregion

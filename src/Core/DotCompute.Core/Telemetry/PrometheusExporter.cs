@@ -281,91 +281,91 @@ public sealed class PrometheusExporter : IDisposable
         _kernelExecutionsTotal = Metrics.CreateCounter(
             "dotcompute_kernel_executions_total",
             "Total number of kernel executions",
-            new[] { "kernel_name", "device_id", "success" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", "success", .. commonLabels]);
         
         _memoryOperationsTotal = Metrics.CreateCounter(
             "dotcompute_memory_operations_total",
             "Total number of memory operations",
-            new[] { "operation_type", "device_id", "success" }.Concat(commonLabels).ToArray());
+            ["operation_type", "device_id", "success", .. commonLabels]);
         
         _errorsTotal = Metrics.CreateCounter(
             "dotcompute_errors_total",
             "Total number of errors by type",
-            new[] { "error_type", "device_id" }.Concat(commonLabels).ToArray());
+            ["error_type", "device_id", .. commonLabels]);
         
         // Timing metrics
         _kernelExecutionDuration = Metrics.CreateHistogram(
             "dotcompute_kernel_execution_duration_seconds",
             "Kernel execution duration in seconds",
-            new[] { "kernel_name", "device_id", "success" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", "success", .. commonLabels]);
         
         _memoryTransferDuration = Metrics.CreateHistogram(
             "dotcompute_memory_transfer_duration_seconds",
             "Memory transfer duration in seconds",
-            new[] { "operation_type", "device_id", "size_category" }.Concat(commonLabels).ToArray());
+            ["operation_type", "device_id", "size_category", .. commonLabels]);
         
         // Resource utilization metrics
         _currentMemoryUsage = Metrics.CreateGauge(
             "dotcompute_memory_usage_bytes",
             "Current memory usage in bytes",
-            new[] { "device_id" }.Concat(commonLabels).ToArray());
+            ["device_id", .. commonLabels]);
         
         _deviceUtilization = Metrics.CreateGauge(
             "dotcompute_device_utilization_ratio",
             "Device utilization ratio (0.0 to 1.0)",
-            new[] { "device_id" }.Concat(commonLabels).ToArray());
+            ["device_id", .. commonLabels]);
         
         _deviceTemperature = Metrics.CreateGauge(
             "dotcompute_device_temperature_celsius",
             "Device temperature in Celsius",
-            new[] { "device_id" }.Concat(commonLabels).ToArray());
+            ["device_id", .. commonLabels]);
         
         // Performance metrics
         _throughputOpsPerSecond = Metrics.CreateHistogram(
             "dotcompute_kernel_throughput_ops_per_second",
             "Kernel throughput in operations per second",
-            new[] { "kernel_name", "device_id" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", .. commonLabels]);
         
         _occupancyPercentage = Metrics.CreateGauge(
             "dotcompute_kernel_occupancy_percentage",
             "Kernel occupancy percentage",
-            new[] { "kernel_name", "device_id" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", .. commonLabels]);
         
         _cacheHitRate = Metrics.CreateGauge(
             "dotcompute_cache_hit_rate",
             "Cache hit rate (0.0 to 1.0)",
-            new[] { "kernel_name", "device_id" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", .. commonLabels]);
         
         _memoryBandwidth = Metrics.CreateGauge(
             "dotcompute_memory_bandwidth_gb_per_second",
             "Memory bandwidth in GB per second",
-            new[] { "kernel_name", "device_id" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", .. commonLabels]);
         
         // Advanced compute metrics
         _warpEfficiency = Metrics.CreateGauge(
             "dotcompute_warp_efficiency",
             "Warp execution efficiency (0.0 to 1.0)",
-            new[] { "kernel_name", "device_id" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", .. commonLabels]);
         
         _branchDivergence = Metrics.CreateGauge(
             "dotcompute_branch_divergence",
             "Branch divergence ratio (0.0 to 1.0)",
-            new[] { "kernel_name", "device_id" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", .. commonLabels]);
         
         _memoryCoalescingEfficiency = Metrics.CreateGauge(
             "dotcompute_memory_coalescing_efficiency",
             "Memory coalescing efficiency (0.0 to 1.0)",
-            new[] { "kernel_name", "device_id" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", .. commonLabels]);
         
         _instructionThroughput = Metrics.CreateGauge(
             "dotcompute_instruction_throughput_per_second",
             "Instruction throughput per second",
-            new[] { "kernel_name", "device_id" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", .. commonLabels]);
         
         _powerConsumption = Metrics.CreateGauge(
             "dotcompute_power_consumption_watts",
             "Power consumption in watts",
-            new[] { "component", "device_id" }.Concat(commonLabels).ToArray());
+            ["component", "device_id", .. commonLabels]);
         
         // Profiling metrics
         _profilesCreated = Metrics.CreateCounter(
@@ -387,18 +387,22 @@ public sealed class PrometheusExporter : IDisposable
         _compilationEvents = Metrics.CreateCounter(
             "dotcompute_kernel_compilations_total",
             "Total number of kernel compilations",
-            new[] { "kernel_name", "device_id", "success" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", "success", .. commonLabels]);
         
         _compilationDuration = Metrics.CreateHistogram(
             "dotcompute_kernel_compilation_duration_seconds",
             "Kernel compilation duration in seconds",
-            new[] { "kernel_name", "device_id", "success" }.Concat(commonLabels).ToArray());
+            ["kernel_name", "device_id", "success", .. commonLabels]);
     }
 
     private void CollectMetrics(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             // Update active profiles gauge
@@ -425,13 +429,20 @@ public sealed class PrometheusExporter : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(PrometheusExporter));
+        }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
         
         try

@@ -118,9 +118,6 @@ public IEnumerator<T> GetEnumerator()
     return result.GetEnumerator();
 }
 
-/// <inheritdoc/>
-System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-{
-    return GetEnumerator();
-}
+    /// <inheritdoc/>
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 }

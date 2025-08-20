@@ -26,8 +26,8 @@ public sealed class AutoTuner : IDisposable
     // Persistent storage
     private readonly string _configPath;
     private readonly Timer? _periodicTuningTimer;
-    private readonly ConcurrentDictionary&lt;string, TuningProfile&gt; _profiles = new();
-    private readonly ConcurrentDictionary&lt;string, ParameterOptimizer&gt; _optimizers = new();
+    private readonly ConcurrentDictionary<string, TuningProfile> _profiles = new();
+    private readonly ConcurrentDictionary<string, ParameterOptimizer> _optimizers = new();
     
     // Thread safety
     private readonly object _saveLock = new();
@@ -40,16 +40,16 @@ public sealed class AutoTuner : IDisposable
     public sealed class TuningProfile
     {
         public string AlgorithmName { get; set; } = string.Empty;
-        public Dictionary&lt;string, object&gt; OptimalParameters { get; set; } = new();
-        public Dictionary&lt;string, ParameterRange&gt; ParameterRanges { get; set; } = new();
+        public Dictionary<string, object> OptimalParameters { get; set; } = new();
+        public Dictionary<string, ParameterRange> ParameterRanges { get; set; } = new();
         public double BestPerformance { get; set; }
         public DateTime LastTuned { get; set; }
         public int TuningIterations { get; set; }
         public string HardwareFingerprint { get; set; } = string.Empty;
-        public Dictionary&lt;string, double&gt; PerformanceHistory { get; set; } = new();
+        public Dictionary<string, double> PerformanceHistory { get; set; } = new();
         
         [JsonIgnore]
-        public bool IsValid =&gt; OptimalParameters.Count > 0 && BestPerformance > 0;
+        public bool IsValid => OptimalParameters.Count > 0 && BestPerformance > 0;
     }
     
     /// <summary>
@@ -64,7 +64,7 @@ public sealed class AutoTuner : IDisposable
         public Type ParameterType { get; set; } = typeof(int);
         public bool IsDiscrete { get; set; } = true;
         
-        public IEnumerable&lt;object&gt; GenerateValues()
+        public IEnumerable<object> GenerateValues()
         {
             if (ParameterType == typeof(int))
             {
@@ -101,13 +101,13 @@ public sealed class AutoTuner : IDisposable
     /// </summary>
     public readonly struct PerformanceMeasurement
     {
-        public readonly Dictionary&lt;string, object&gt; Parameters;
+        public readonly Dictionary<string, object> Parameters;
         public readonly double Performance;
         public readonly TimeSpan ExecutionTime;
         public readonly double StandardDeviation;
         public readonly bool IsValid;
         
-        public PerformanceMeasurement(Dictionary&lt;string, object&gt; parameters, 
+        public PerformanceMeasurement(Dictionary<string, object> parameters, 
             double performance, TimeSpan executionTime, double standardDeviation)
         {
             Parameters = parameters;
@@ -123,11 +123,11 @@ public sealed class AutoTuner : IDisposable
     /// </summary>
     private abstract class ParameterOptimizer
     {
-        public abstract Dictionary&lt;string, object&gt; GetNextParameters(
-            List&lt;PerformanceMeasurement&gt; measurements,
-            Dictionary&lt;string, ParameterRange&gt; ranges);
+        public abstract Dictionary<string, object> GetNextParameters(
+            List<PerformanceMeasurement> measurements,
+            Dictionary<string, ParameterRange> ranges);
             
-        public abstract bool ShouldContinue(List&lt;PerformanceMeasurement&gt; measurements, int iteration);
+        public abstract bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration);
     }
     
     /// <summary>
@@ -135,12 +135,12 @@ public sealed class AutoTuner : IDisposable
     /// </summary>
     private sealed class GridSearchOptimizer : ParameterOptimizer
     {
-        private readonly Queue&lt;Dictionary&lt;string, object&gt;&gt; _parameterQueue = new();
+        private readonly Queue<Dictionary<string, object>> _parameterQueue = new();
         private bool _initialized = false;
         
-        public override Dictionary&lt;string, object&gt; GetNextParameters(
-            List&lt;PerformanceMeasurement&gt; measurements,
-            Dictionary&lt;string, ParameterRange&gt; ranges)
+        public override Dictionary<string, object> GetNextParameters(
+            List<PerformanceMeasurement> measurements,
+            Dictionary<string, ParameterRange> ranges)
         {
             if (!_initialized)
             {
@@ -148,28 +148,27 @@ public sealed class AutoTuner : IDisposable
                 _initialized = true;
             }
             
-            return _parameterQueue.Count > 0 ? _parameterQueue.Dequeue() : new Dictionary&lt;string, object&gt;();
+            return _parameterQueue.Count > 0 ? _parameterQueue.Dequeue() : new Dictionary<string, object>();
         }
-        
-        public override bool ShouldContinue(List&lt;PerformanceMeasurement&gt; measurements, int iteration)
-        {
-            return _parameterQueue.Count > 0 && iteration < MAX_SEARCH_ITERATIONS;
-        }
-        
-        private void InitializeGrid(Dictionary&lt;string, ParameterRange&gt; ranges)
+
+
+        public override bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration) => _parameterQueue.Count > 0 && iteration < MAX_SEARCH_ITERATIONS;
+
+
+        private void InitializeGrid(Dictionary<string, ParameterRange> ranges)
         {
             var parameterNames = ranges.Keys.ToArray();
             var parameterValues = ranges.Values.Select(r => r.GenerateValues().ToArray()).ToArray();
             
-            GenerateCartesianProduct(parameterNames, parameterValues, 0, new Dictionary&lt;string, object&gt;());
+            GenerateCartesianProduct(parameterNames, parameterValues, 0, new Dictionary<string, object>());
         }
         
         private void GenerateCartesianProduct(string[] names, object[][] values, int index, 
-            Dictionary&lt;string, object&gt; current)
+            Dictionary<string, object> current)
         {
             if (index == names.Length)
             {
-                _parameterQueue.Enqueue(new Dictionary&lt;string, object&gt;(current));
+                _parameterQueue.Enqueue(new Dictionary<string, object>(current));
                 return;
             }
             
@@ -193,11 +192,11 @@ public sealed class AutoTuner : IDisposable
     {
         private readonly Random _random = new();
         
-        public override Dictionary&lt;string, object&gt; GetNextParameters(
-            List&lt;PerformanceMeasurement&gt; measurements,
-            Dictionary&lt;string, ParameterRange&gt; ranges)
+        public override Dictionary<string, object> GetNextParameters(
+            List<PerformanceMeasurement> measurements,
+            Dictionary<string, ParameterRange> ranges)
         {
-            var parameters = new Dictionary&lt;string, object&gt;();
+            var parameters = new Dictionary<string, object>();
             
             foreach (var (name, range) in ranges)
             {
@@ -207,12 +206,21 @@ public sealed class AutoTuner : IDisposable
             return parameters;
         }
         
-        public override bool ShouldContinue(List&lt;PerformanceMeasurement&gt; measurements, int iteration)
+        public override bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration)
         {
-            if (iteration < MIN_MEASUREMENTS) return true;
-            if (iteration >= MAX_SEARCH_ITERATIONS) return false;
-            
+            if (iteration < MIN_MEASUREMENTS)
+            {
+                return true;
+            }
+
+
+            if (iteration >= MAX_SEARCH_ITERATIONS)
+            {
+                return false;
+            }
+
             // Continue if we're still finding improvements
+
             if (measurements.Count >= 5)
             {
                 var recent = measurements.TakeLast(5).Average(m => m.Performance);
@@ -255,9 +263,9 @@ public sealed class AutoTuner : IDisposable
     {
         private readonly Random _random = new();
         
-        public override Dictionary&lt;string, object&gt; GetNextParameters(
-            List&lt;PerformanceMeasurement&gt; measurements,
-            Dictionary&lt;string, ParameterRange&gt; ranges)
+        public override Dictionary<string, object> GetNextParameters(
+            List<PerformanceMeasurement> measurements,
+            Dictionary<string, ParameterRange> ranges)
         {
             if (measurements.Count < 5)
             {
@@ -267,7 +275,7 @@ public sealed class AutoTuner : IDisposable
             
             // Simplified Bayesian optimization - in production would use GP/TPE
             var bestMeasurement = measurements.OrderByDescending(m => m.Performance).First();
-            var parameters = new Dictionary&lt;string, object&gt;(bestMeasurement.Parameters);
+            var parameters = new Dictionary<string, object>(bestMeasurement.Parameters);
             
             // Add small perturbations around best parameters
             foreach (var (name, range) in ranges)
@@ -281,12 +289,21 @@ public sealed class AutoTuner : IDisposable
             return parameters;
         }
         
-        public override bool ShouldContinue(List&lt;PerformanceMeasurement&gt; measurements, int iteration)
+        public override bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration)
         {
-            if (iteration < MIN_MEASUREMENTS) return true;
-            if (iteration >= MAX_SEARCH_ITERATIONS) return false;
-            
+            if (iteration < MIN_MEASUREMENTS)
+            {
+                return true;
+            }
+
+
+            if (iteration >= MAX_SEARCH_ITERATIONS)
+            {
+                return false;
+            }
+
             // Use acquisition function (simplified)
+
             if (measurements.Count >= 10)
             {
                 var convergenceWindow = measurements.TakeLast(10);
@@ -321,7 +338,7 @@ public sealed class AutoTuner : IDisposable
             return current;
         }
         
-        private static double CalculateVariance(IEnumerable&lt;double&gt; values)
+        private static double CalculateVariance(IEnumerable<double> values)
         {
             var array = values.ToArray();
             var mean = array.Average();
@@ -351,7 +368,7 @@ public sealed class AutoTuner : IDisposable
     /// <param name="parameterRanges">Parameter ranges to explore</param>
     /// <param name="optimizer">Optimization strategy (default: Bayesian)</param>
     public void RegisterAlgorithm(string algorithmName, 
-        Dictionary&lt;string, ParameterRange&gt; parameterRanges,
+        Dictionary<string, ParameterRange> parameterRanges,
         string optimizer = "bayesian")
     {
         var profile = new TuningProfile
@@ -380,12 +397,12 @@ public sealed class AutoTuner : IDisposable
     /// </summary>
     /// <param name="testSizes">Matrix sizes to use for tuning</param>
     /// <returns>Tuning results</returns>
-    public async Task&lt;TuningProfile&gt; TuneMatrixMultiplicationAsync(int[] testSizes)
+    public async Task<TuningProfile> TuneMatrixMultiplicationAsync(int[] testSizes)
     {
         const string algorithmName = "MatrixMultiplication";
         
         // Define parameter ranges for matrix multiplication
-        var parameterRanges = new Dictionary&lt;string, ParameterRange&gt;
+        var parameterRanges = new Dictionary<string, ParameterRange>
         {
             ["BlockSize"] = new() { MinValue = 32, MaxValue = 512, StepSize = 32, ParameterType = typeof(int) },
             ["UseStrassen"] = new() { ParameterType = typeof(bool) },
@@ -395,7 +412,7 @@ public sealed class AutoTuner : IDisposable
         
         RegisterAlgorithm(algorithmName, parameterRanges, "bayesian");
         
-        var measurements = new List&lt;PerformanceMeasurement&gt;();
+        var measurements = new List<PerformanceMeasurement>();
         var optimizer = _optimizers[algorithmName];
         var iteration = 0;
         
@@ -404,8 +421,12 @@ public sealed class AutoTuner : IDisposable
         do
         {
             var parameters = optimizer.GetNextParameters(measurements, parameterRanges);
-            if (parameters.Count == 0) break;
-            
+            if (parameters.Count == 0)
+            {
+                break;
+            }
+
+
             Console.Write($"Iteration {++iteration}: Testing parameters... ");
             
             // Benchmark with current parameters
@@ -419,12 +440,11 @@ public sealed class AutoTuner : IDisposable
             if (performance.Performance > profile.BestPerformance)
             {
                 profile.BestPerformance = performance.Performance;
-                profile.OptimalParameters = new Dictionary&lt;string, object&gt;(parameters);
+                profile.OptimalParameters = new Dictionary<string, object>(parameters);
                 profile.LastTuned = DateTime.UtcNow;
                 
                 Console.WriteLine($"New best performance: {performance.Performance:F2} MFLOPS");
             }
-            
         } while (optimizer.ShouldContinue(measurements, iteration) && !_disposed);
         
         var finalProfile = _profiles[algorithmName];
@@ -447,11 +467,11 @@ public sealed class AutoTuner : IDisposable
     /// </summary>
     /// <param name="testSizes">FFT sizes to test</param>
     /// <returns>Tuning results</returns>
-    public async Task&lt;TuningProfile&gt; TuneFFTAsync(int[] testSizes)
+    public async Task<TuningProfile> TuneFFTAsync(int[] testSizes)
     {
         const string algorithmName = "FFT";
         
-        var parameterRanges = new Dictionary&lt;string, ParameterRange&gt;
+        var parameterRanges = new Dictionary<string, ParameterRange>
         {
             ["SimdThreshold"] = new() { MinValue = 32, MaxValue = 1024, StepSize = 32, ParameterType = typeof(int) },
             ["CacheThreshold"] = new() { MinValue = 512, MaxValue = 8192, StepSize = 512, ParameterType = typeof(int) },
@@ -461,7 +481,7 @@ public sealed class AutoTuner : IDisposable
         
         RegisterAlgorithm(algorithmName, parameterRanges, "random");
         
-        var measurements = new List&lt;PerformanceMeasurement&gt;();
+        var measurements = new List<PerformanceMeasurement>();
         var optimizer = _optimizers[algorithmName];
         var iteration = 0;
         
@@ -470,8 +490,12 @@ public sealed class AutoTuner : IDisposable
         do
         {
             var parameters = optimizer.GetNextParameters(measurements, parameterRanges);
-            if (parameters.Count == 0) break;
-            
+            if (parameters.Count == 0)
+            {
+                break;
+            }
+
+
             var performance = await BenchmarkFFTAsync(testSizes, parameters);
             measurements.Add(performance);
             
@@ -481,10 +505,9 @@ public sealed class AutoTuner : IDisposable
             if (performance.Performance > profile.BestPerformance)
             {
                 profile.BestPerformance = performance.Performance;
-                profile.OptimalParameters = new Dictionary&lt;string, object&gt;(parameters);
+                profile.OptimalParameters = new Dictionary<string, object>(parameters);
                 profile.LastTuned = DateTime.UtcNow;
             }
-            
         } while (optimizer.ShouldContinue(measurements, iteration) && !_disposed);
         
         var finalProfile = _profiles[algorithmName];
@@ -499,7 +522,7 @@ public sealed class AutoTuner : IDisposable
     /// </summary>
     /// <param name="algorithmName">Algorithm identifier</param>
     /// <returns>Optimal parameters or default values</returns>
-    public Dictionary&lt;string, object&gt; GetOptimalParameters(string algorithmName)
+    public Dictionary<string, object> GetOptimalParameters(string algorithmName)
     {
         if (_profiles.TryGetValue(algorithmName, out var profile) && profile.IsValid)
         {
@@ -510,7 +533,7 @@ public sealed class AutoTuner : IDisposable
             }
         }
         
-        return new Dictionary&lt;string, object&gt;();
+        return new Dictionary<string, object>();
     }
     
     /// <summary>
@@ -518,7 +541,7 @@ public sealed class AutoTuner : IDisposable
     /// </summary>
     public async Task TuneAllAlgorithmsAsync()
     {
-        var tasks = new List&lt;Task&gt;();
+        var tasks = new List<Task>();
         
         foreach (var algorithmName in _profiles.Keys)
         {
@@ -535,11 +558,13 @@ public sealed class AutoTuner : IDisposable
     
     #region Private Implementation
     
-    private async Task&lt;PerformanceMeasurement&gt; BenchmarkMatrixMultiplicationAsync(
-        int[] testSizes, Dictionary&lt;string, object&gt; parameters)
+    private async Task<PerformanceMeasurement> BenchmarkMatrixMultiplicationAsync(
+        int[] testSizes, Dictionary<string, object> parameters)
     {
-        var totalPerformance = 0.0;
-        var measurements = new List&lt;double&gt;();
+        return await Task.Run(() =>
+        {
+            var totalPerformance = 0.0;
+            var measurements = new List<double>();
         
         foreach (var size in testSizes)
         {
@@ -548,7 +573,7 @@ public sealed class AutoTuner : IDisposable
             var flopCount = 2.0 * size * size * size;
             
             // Run multiple iterations for accuracy
-            var times = new List&lt;TimeSpan&gt;();
+            var times = new List<TimeSpan>();
             for (var i = 0; i < 5; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
@@ -572,27 +597,30 @@ public sealed class AutoTuner : IDisposable
             var performance = flopCount / avgTime / 1e6; // MFLOPS
             measurements.Add(performance);
             totalPerformance += performance;
-        }
-        
-        var avgPerformance = totalPerformance / testSizes.Length;
-        var stdDev = Math.Sqrt(measurements.Average(m => Math.Pow(m - avgPerformance, 2)));
-        
-        return new PerformanceMeasurement(
-            parameters, avgPerformance, TimeSpan.FromSeconds(1.0 / avgPerformance), stdDev);
+            }
+            
+            var avgPerformance = totalPerformance / testSizes.Length;
+            var stdDev = Math.Sqrt(measurements.Average(m => Math.Pow(m - avgPerformance, 2)));
+            
+            return new PerformanceMeasurement(
+                parameters, avgPerformance, TimeSpan.FromSeconds(1.0 / avgPerformance), stdDev);
+        });
     }
     
-    private async Task&lt;PerformanceMeasurement&gt; BenchmarkFFTAsync(
-        int[] testSizes, Dictionary&lt;string, object&gt; parameters)
+    private async Task<PerformanceMeasurement> BenchmarkFFTAsync(
+        int[] testSizes, Dictionary<string, object> parameters)
     {
-        var totalPerformance = 0.0;
-        var measurements = new List&lt;double&gt;();
+        return await Task.Run(() =>
+        {
+            var totalPerformance = 0.0;
+            var measurements = new List<double>();
         
         foreach (var size in testSizes)
         {
             var complexData = CreateRandomComplexArray(size);
             var flopCount = 5.0 * size * Math.Log2(size);
             
-            var times = new List&lt;TimeSpan&gt;();
+            var times = new List<TimeSpan>();
             for (var i = 0; i < 5; i++)
             {
                 var dataCopy = complexData.ToArray();
@@ -613,8 +641,9 @@ public sealed class AutoTuner : IDisposable
         var avgPerformance = totalPerformance / testSizes.Length;
         var stdDev = Math.Sqrt(measurements.Average(m => Math.Pow(m - avgPerformance, 2)));
         
-        return new PerformanceMeasurement(
-            parameters, avgPerformance, TimeSpan.FromSeconds(1.0 / avgPerformance), stdDev);
+            return new PerformanceMeasurement(
+                parameters, avgPerformance, TimeSpan.FromSeconds(1.0 / avgPerformance), stdDev);
+        });
     }
     
     private void LoadConfiguration()
@@ -624,7 +653,7 @@ public sealed class AutoTuner : IDisposable
             if (File.Exists(_configPath))
             {
                 var json = File.ReadAllText(_configPath);
-                var profiles = JsonSerializer.Deserialize&lt;Dictionary&lt;string, TuningProfile&gt;&gt;(json);
+                var profiles = JsonSerializer.Deserialize<Dictionary<string, TuningProfile>>(json);
                 
                 if (profiles != null)
                 {
@@ -700,14 +729,14 @@ public sealed class AutoTuner : IDisposable
         return matrix;
     }
     
-    private static System.Numerics.Complex[] CreateRandomComplexArray(int size)
+    private static DotCompute.Algorithms.SignalProcessing.Complex[] CreateRandomComplexArray(int size)
     {
-        var array = new System.Numerics.Complex[size];
+        var array = new DotCompute.Algorithms.SignalProcessing.Complex[size];
         var random = new Random(42);
         
         for (var i = 0; i < size; i++)
         {
-            array[i] = new System.Numerics.Complex(random.NextDouble(), random.NextDouble());
+            array[i] = new DotCompute.Algorithms.SignalProcessing.Complex((float)random.NextDouble(), (float)random.NextDouble());
         }
         
         return array;
@@ -717,8 +746,12 @@ public sealed class AutoTuner : IDisposable
     
     private void PeriodicTuningCallback(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             Task.Run(async () =>

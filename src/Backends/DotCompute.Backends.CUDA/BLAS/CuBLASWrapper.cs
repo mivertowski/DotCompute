@@ -677,25 +677,19 @@ private async Task PerformQRDecompositionKernel(CudaMemoryBuffer A, CudaMemoryBu
     _logger.LogDebug("QR decomposition kernel executed for {M}x{N} matrix", m, n);
 }
 
-#endregion
+    #endregion
 
-/// <summary>
-/// Gets performance metrics for all executed operations
-/// </summary>
-public IReadOnlyDictionary<string, PerformanceMetrics> GetPerformanceMetrics()
-{
-    return _performanceCache;
-}
+    /// <summary>
+    /// Gets performance metrics for all executed operations
+    /// </summary>
+    public IReadOnlyDictionary<string, PerformanceMetrics> GetPerformanceMetrics() => _performanceCache;
 
-/// <summary>
-/// Resets performance metrics
-/// </summary>
-public void ResetPerformanceMetrics()
-{
-    _performanceCache.Clear();
-}
+    /// <summary>
+    /// Resets performance metrics
+    /// </summary>
+    public void ResetPerformanceMetrics() => _performanceCache.Clear();
 
-public void Dispose()
+    public void Dispose()
 {
     if (!_disposed)
     {

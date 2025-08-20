@@ -114,7 +114,7 @@ private GeneratedKernelParameter[] ExtractParameters(Expression expression)
         IsOutput = false
     });
 
-    return parameters.ToArray();
+    return [.. parameters];
 }
 
 private string GenerateSourceCode(Expression expression, IAccelerator accelerator)
@@ -280,12 +280,9 @@ protected override Expression VisitConditional(ConditionalExpression node)
 /// </summary>
 internal class MethodCallHandler : IExpressionHandler
 {
-public bool CanHandle(Expression expression)
-{
-    return expression.NodeType == ExpressionType.Call;
-}
+    public bool CanHandle(Expression expression) => expression.NodeType == ExpressionType.Call;
 
-public string Handle(Expression expression, KernelGenerationContext context)
+    public string Handle(Expression expression, KernelGenerationContext context)
 {
     if (expression is MethodCallExpression methodCall)
     {
@@ -308,15 +305,9 @@ public string Handle(Expression expression, KernelGenerationContext context)
 /// </summary>
 internal class LambdaHandler : IExpressionHandler
 {
-public bool CanHandle(Expression expression)
-{
-    return expression.NodeType == ExpressionType.Lambda;
-}
+    public bool CanHandle(Expression expression) => expression.NodeType == ExpressionType.Lambda;
 
-public string Handle(Expression expression, KernelGenerationContext context)
-{
-    return "/* Lambda expression */";
-}
+    public string Handle(Expression expression, KernelGenerationContext context) => "/* Lambda expression */";
 }
 
 /// <summary>

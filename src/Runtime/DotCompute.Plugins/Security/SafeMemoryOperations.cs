@@ -338,7 +338,11 @@ public static class SafeMemoryOperations
     /// <param name="span">The span to overwrite.</param>
     private static void SecureOverwrite<T>(Span<T> span) where T : unmanaged
     {
-        if (span.IsEmpty) return;
+        if (span.IsEmpty)
+        {
+            return;
+        }
+
 
         try
         {
@@ -475,9 +479,13 @@ public sealed class SafeMemoryAllocation<T> : IDisposable where T : unmanaged
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
         // Securely clear contents before disposal
+
         try
         {
             SafeMemoryOperations.SafeClear(_array.AsSpan(0, _length), _length);

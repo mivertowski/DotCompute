@@ -72,15 +72,17 @@ public class ValidationResult : IEquatable<ValidationResult>
     /// <summary>
     /// Gets any warnings from validation.
     /// </summary>
-    public string[] Warnings => _warnings.ToArray();
+    public string[] Warnings => [.. _warnings];
 
     private ValidationResult(bool isValid, string? errorMessage, string[]? warnings)
     {
         IsValid = isValid;
         ErrorMessage = errorMessage;
         if (warnings != null)
-            _warnings.AddRange(warnings);
-    }
+            {
+                _warnings.AddRange(warnings);
+            }
+        }
     
     /// <summary>
     /// Adds a warning to this validation result.
@@ -88,8 +90,10 @@ public class ValidationResult : IEquatable<ValidationResult>
     public void AddWarning(string warning)
     {
         if (!string.IsNullOrEmpty(warning))
-            _warnings.Add(warning);
-    }
+            {
+                _warnings.Add(warning);
+            }
+        }
 
     /// <summary>
     /// Creates a successful validation result.
@@ -140,8 +144,12 @@ public class ValidationResult : IEquatable<ValidationResult>
 
     public bool Equals(ValidationResult? other)
     {
-        if (other is null) return false;
-        return IsValid == other.IsValid &&
+        if (other is null)
+            {
+                return false;
+            }
+
+            return IsValid == other.IsValid &&
                ErrorMessage == other.ErrorMessage &&
                Warnings.SequenceEqual(other.Warnings);
     }

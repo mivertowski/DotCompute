@@ -270,19 +270,17 @@ public string Name { get; }
 /// </summary>
 public KernelProperties Properties { get; }
 
-/// <summary>
-/// Compiles the kernel (no-op for fallback kernel).
-/// </summary>
-public Task CompileAsync(CancellationToken cancellationToken = default)
-{
-    // Already compiled during construction
-    return Task.CompletedTask;
-}
+    /// <summary>
+    /// Compiles the kernel (no-op for fallback kernel).
+    /// </summary>
+    public Task CompileAsync(CancellationToken cancellationToken = default) =>
+        // Already compiled during construction
+        Task.CompletedTask;
 
-/// <summary>
-/// Executes the expression on CPU.
-/// </summary>
-public Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Executes the expression on CPU.
+    /// </summary>
+    public Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
 {
     return Task.Run(() =>
     {
@@ -304,18 +302,15 @@ public Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> paramet
     }, cancellationToken);
 }
 
-/// <summary>
-/// Gets parameter information (empty for fallback kernel).
-/// </summary>
-public IReadOnlyList<KernelParameter> GetParameterInfo()
-{
-    return Array.Empty<KernelParameter>();
-}
+    /// <summary>
+    /// Gets parameter information (empty for fallback kernel).
+    /// </summary>
+    public IReadOnlyList<KernelParameter> GetParameterInfo() => Array.Empty<KernelParameter>();
 
-/// <summary>
-/// Disposes the fallback kernel.
-/// </summary>
-public void Dispose()
+    /// <summary>
+    /// Disposes the fallback kernel.
+    /// </summary>
+    public void Dispose()
 {
     if (!_disposed)
     {
@@ -348,24 +343,32 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IKernelCompil
     {
         _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
     }
-    
+
+
     public async ValueTask<DotCompute.Abstractions.ICompiledKernel> CompileAsync(
         DotCompute.Abstractions.KernelDefinition definition,
         DotCompute.Abstractions.CompilationOptions? options = null,
-        CancellationToken cancellationToken = default)
-    {
+        CancellationToken cancellationToken = default) =>
         // Delegate to the accelerator's compilation capabilities
-        return await _accelerator.CompileKernelAsync(definition, options, cancellationToken).ConfigureAwait(false);
-    }
-    
+        await _accelerator.CompileKernelAsync(definition, options, cancellationToken).ConfigureAwait(false);
+
+
     public DotCompute.Abstractions.ValidationResult Validate(DotCompute.Abstractions.KernelDefinition definition)
     {
         if (definition == null)
+        {
+
             return DotCompute.Abstractions.ValidationResult.Failure("Kernel definition cannot be null");
-        
+        }
+
+
         if (string.IsNullOrEmpty(definition.Name))
+        {
+
             return DotCompute.Abstractions.ValidationResult.Failure("Kernel name cannot be empty");
-        
+        }
+
+
         return DotCompute.Abstractions.ValidationResult.Success();
     }
 }
@@ -407,11 +410,19 @@ internal class CpuFallbackKernelCompiler : DotCompute.Abstractions.IKernelCompil
     public DotCompute.Abstractions.ValidationResult Validate(DotCompute.Abstractions.KernelDefinition definition)
     {
         if (definition == null)
+        {
+
             return DotCompute.Abstractions.ValidationResult.Failure("Kernel definition cannot be null");
-        
+        }
+
+
         if (string.IsNullOrEmpty(definition.Name))
+        {
+
             return DotCompute.Abstractions.ValidationResult.Failure("Kernel name cannot be empty");
-        
+        }
+
+
         return DotCompute.Abstractions.ValidationResult.Success();
     }
 }
@@ -437,8 +448,12 @@ internal class CpuFallbackCompiledKernel : DotCompute.Abstractions.ICompiledKern
     public ValueTask ExecuteAsync(DotCompute.Abstractions.KernelArguments arguments, CancellationToken cancellationToken = default)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(CpuFallbackCompiledKernel));
-        
+        }
+
+
         _logger.LogDebug("Executing CPU fallback kernel {KernelName}", Name);
         
         // Simple CPU execution - just simulate work
@@ -497,7 +512,7 @@ public async Task<KernelCompilationResult> CompileKernelAsync(KernelCompilationR
             OptimizationLevel = ConvertOptimizationLevel(request.OptimizationLevel)
         };
         
-        var kernelDefinition = new DotCompute.Abstractions.KernelDefinition(request.Name, kernelSource, options);
+        var kernelDefinition = new DotCompute.Abstractions.KernelDefinition(request.Name, kernelSource.Code);
 
         var compiledKernel = await _coreCompiler.CompileAsync(kernelDefinition, options, cancellationToken);
         
@@ -644,9 +659,11 @@ public MockCompiledKernel(string name, string source, ILogger logger)
 public async Task ExecuteAsync(KernelExecutionParameters parameters, CancellationToken cancellationToken = default)
 {
     if (_disposed)
-        throw new ObjectDisposedException(nameof(MockCompiledKernel));
+        {
+            throw new ObjectDisposedException(nameof(MockCompiledKernel));
+        }
 
-    _logger.LogDebug("Executing mock compiled kernel {KernelName}", _name);
+        _logger.LogDebug("Executing mock compiled kernel {KernelName}", _name);
     
     try
     {
@@ -706,12 +723,9 @@ public static bool TryGetCached(string key, out ICompiledKernel? kernel)
     return false;
 }
 
-public static void Cache(string key, ICompiledKernel kernel)
-{
-    _cache[key] = new WeakReference<ICompiledKernel>(kernel);
-}
+    public static void Cache(string key, ICompiledKernel kernel) => _cache[key] = new WeakReference<ICompiledKernel>(kernel);
 
-public static string GenerateCacheKey(KernelCompilationRequest request)
+    public static string GenerateCacheKey(KernelCompilationRequest request)
 {
     // Generate cache key based on source hash and compilation options
     var sourceHash = request.Source.GetHashCode();

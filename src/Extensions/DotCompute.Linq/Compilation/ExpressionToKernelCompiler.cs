@@ -338,15 +338,26 @@ private async Task<Operators.IKernel> CompileFromTemplate(
 private static string DetermineOperationType(ExpressionAnalysisResult analysis)
 {
     if (analysis.SupportedOperations.Contains("Select"))
-        return "Map";
-    if (analysis.SupportedOperations.Contains("Where"))
-        return "Filter";
-    if (analysis.SupportedOperations.Contains("Sum") || analysis.SupportedOperations.Contains("Average"))
-        return "Reduce";
-    if (analysis.SupportedOperations.Contains("OrderBy"))
-        return "Sort";
-    
-    return "Custom";
+        {
+            return "Map";
+        }
+
+        if (analysis.SupportedOperations.Contains("Where"))
+        {
+            return "Filter";
+        }
+
+        if (analysis.SupportedOperations.Contains("Sum") || analysis.SupportedOperations.Contains("Average"))
+        {
+            return "Reduce";
+        }
+
+        if (analysis.SupportedOperations.Contains("OrderBy"))
+        {
+            return "Sort";
+        }
+
+        return "Custom";
 }
 
 private static long CalculateMemoryUsage(ExpressionAnalysisResult analysis)
@@ -554,10 +565,7 @@ private static bool IsLinqMethod(MethodCallExpression node)
     return declaringType == typeof(Queryable) || declaringType == typeof(Enumerable);
 }
 
-private static bool IsMathMethod(MethodCallExpression node)
-{
-    return node.Method.DeclaringType == typeof(Math) || node.Method.DeclaringType == typeof(MathF);
-}
+    private static bool IsMathMethod(MethodCallExpression node) => node.Method.DeclaringType == typeof(Math) || node.Method.DeclaringType == typeof(MathF);
 }
 
 /// <summary>

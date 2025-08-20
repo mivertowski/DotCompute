@@ -346,5 +346,4 @@ public static class CudaBackendPluginExtensions
         return services;
     }
 }
-
 }

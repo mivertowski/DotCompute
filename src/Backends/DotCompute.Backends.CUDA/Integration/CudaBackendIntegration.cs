@@ -422,40 +422,49 @@ public sealed class CudaBackendIntegration : IDisposable
 
     private double CalculateStreamHealth(CudaStreamStatistics stats)
     {
-        if (stats.MaxConcurrentStreams == 0) return 1.0;
-        
-        var utilization = (double)stats.ActiveStreams / stats.MaxConcurrentStreams;
+        if (stats.MaxConcurrentStreams == 0)
+            {
+                return 1.0;
+            }
+
+            var utilization = (double)stats.ActiveStreams / stats.MaxConcurrentStreams;
         return utilization < 0.9 ? 1.0 : Math.Max(0.0, 2.0 - 2.0 * utilization);
     }
 
     private double CalculateEventHealth(CudaEventStatistics stats)
     {
-        if (stats.MaxConcurrentEvents == 0) return 1.0;
-        
-        var utilization = (double)stats.ActiveEvents / stats.MaxConcurrentEvents;
+        if (stats.MaxConcurrentEvents == 0)
+            {
+                return 1.0;
+            }
+
+            var utilization = (double)stats.ActiveEvents / stats.MaxConcurrentEvents;
         return utilization < 0.8 ? 1.0 : Math.Max(0.0, 2.0 - 2.5 * utilization);
     }
 
     private double CalculateP2PHealth(CudaP2PStatistics stats)
     {
-        if (stats.TotalConnections == 0) return 1.0;
-        
-        var enabledRatio = (double)stats.EnabledConnections / stats.TotalConnections;
+        if (stats.TotalConnections == 0)
+            {
+                return 1.0;
+            }
+
+            var enabledRatio = (double)stats.EnabledConnections / stats.TotalConnections;
         return enabledRatio > 0.5 ? 1.0 : enabledRatio * 2.0;
     }
 
-    private double CalculatePerformanceHealth(CudaPerformanceMetrics metrics)
-    {
-        // Simple performance health calculation
-        return metrics.MemoryUtilization < 0.9 && metrics.ComputeUtilization < 0.95 ? 1.0 : 0.5;
-    }
+        private double CalculatePerformanceHealth(CudaPerformanceMetrics metrics) =>
+            // Simple performance health calculation
+            metrics.MemoryUtilization < 0.9 && metrics.ComputeUtilization < 0.95 ? 1.0 : 0.5;
 
-    private void PerformHealthCheck(object? state)
+        private void PerformHealthCheck(object? state)
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             var health = GetSystemHealth();
             
@@ -536,9 +545,11 @@ public static class CudaContextExtensions
     public static IAccelerator ToIAccelerator(this CudaContext context)
     {
         if (context == null)
-            throw new ArgumentNullException(nameof(context));
-        
-        lock (_mapLock)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            lock (_mapLock)
         {
             // Check if we already have an accelerator for this context
             if (_contextToAcceleratorMap.TryGetValue(context, out var existingAccelerator))
@@ -696,7 +707,7 @@ public static class CudaContextExtensions
             {
                 try
                 {
-                    _logger.LogDebug("Executing kernel {Name} with {ArgumentCount} arguments", Name, arguments.Arguments.Length);
+                    _logger.LogDebug("Executing kernel {Name} with {ArgumentCount} arguments", Name, arguments.Arguments.Count);
                     
                     // For context wrapper, we need to simulate kernel execution
                     // In a real implementation, this would compile and execute actual kernels
@@ -894,9 +905,12 @@ public static class CudaContextExtensions
         
         public void Dispose()
         {
-            if (_disposed) return;
-            
-            try
+            if (_disposed)
+                {
+                    return;
+                }
+
+                try
             {
                 _memoryManager?.Dispose();
                 // Don't dispose the context as we don't own it
@@ -912,9 +926,12 @@ public static class CudaContextExtensions
         
         public async ValueTask DisposeAsync()
         {
-            if (_disposed) return;
-            
-            try
+            if (_disposed)
+                {
+                    return;
+                }
+
+                try
             {
                 _memoryManager?.Dispose();
                 // Don't dispose the context as we don't own it
@@ -1034,9 +1051,12 @@ public sealed class CudaPerformanceMonitor : IDisposable
 
     private void UpdateMetrics(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             // Query actual performance metrics from CUDA runtime
             // These metrics would typically come from NVML or CUPTI APIs
@@ -1123,18 +1143,24 @@ public sealed class CudaPerformanceMonitor : IDisposable
     
     private double CalculateEffectiveFLOPS(KernelExecutionStats stats)
     {
-        if (stats.ElapsedTime.TotalSeconds <= 0) return 0.0;
-        
-        // Convert to GFLOPS
-        return stats.TotalFlops / (stats.ElapsedTime.TotalSeconds * 1_000_000_000);
+        if (stats.ElapsedTime.TotalSeconds <= 0)
+            {
+                return 0.0;
+            }
+
+            // Convert to GFLOPS
+            return stats.TotalFlops / (stats.ElapsedTime.TotalSeconds * 1_000_000_000);
     }
     
     private double CalculateMemoryBandwidth(KernelExecutionStats stats)
     {
-        if (stats.ElapsedTime.TotalSeconds <= 0) return 0.0;
-        
-        // Convert to GB/s
-        return stats.TotalBytesTransferred / (stats.ElapsedTime.TotalSeconds * 1_000_000_000);
+        if (stats.ElapsedTime.TotalSeconds <= 0)
+            {
+                return 0.0;
+            }
+
+            // Convert to GB/s
+            return stats.TotalBytesTransferred / (stats.ElapsedTime.TotalSeconds * 1_000_000_000);
     }
 }
 

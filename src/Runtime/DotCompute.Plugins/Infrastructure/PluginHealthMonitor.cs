@@ -38,9 +38,11 @@ public class PluginHealthMonitor : IDisposable
     public void RegisterPlugin(string pluginId, string pluginName, string version)
     {
         if (string.IsNullOrWhiteSpace(pluginId))
-            throw new ArgumentException("Plugin ID cannot be null or empty", nameof(pluginId));
+            {
+                throw new ArgumentException("Plugin ID cannot be null or empty", nameof(pluginId));
+            }
 
-        _pluginRegistrations[pluginId] = DateTime.UtcNow;
+            _pluginRegistrations[pluginId] = DateTime.UtcNow;
         _pluginErrors.TryRemove(pluginId, out _);
         
         _logger.LogInformation("Registered plugin {PluginId} ({PluginName} v{Version}) for health monitoring",
@@ -53,9 +55,11 @@ public class PluginHealthMonitor : IDisposable
     public void UnregisterPlugin(string pluginId)
     {
         if (string.IsNullOrWhiteSpace(pluginId))
-            throw new ArgumentException("Plugin ID cannot be null or empty", nameof(pluginId));
+            {
+                throw new ArgumentException("Plugin ID cannot be null or empty", nameof(pluginId));
+            }
 
-        _pluginRegistrations.TryRemove(pluginId, out _);
+            _pluginRegistrations.TryRemove(pluginId, out _);
         _pluginErrors.TryRemove(pluginId, out _);
         
         _logger.LogInformation("Unregistered plugin {PluginId} from health monitoring", pluginId);
@@ -67,9 +71,11 @@ public class PluginHealthMonitor : IDisposable
     public void RecordPluginError(string pluginId, Exception exception)
     {
         if (string.IsNullOrWhiteSpace(pluginId))
-            throw new ArgumentException("Plugin ID cannot be null or empty", nameof(pluginId));
+            {
+                throw new ArgumentException("Plugin ID cannot be null or empty", nameof(pluginId));
+            }
 
-        _pluginErrors[pluginId] = exception;
+            _pluginErrors[pluginId] = exception;
         _logger.LogError(exception, "Recorded error for plugin {PluginId}", pluginId);
     }
 
@@ -96,9 +102,11 @@ public class PluginHealthMonitor : IDisposable
     public Exception? GetPluginError(string pluginId)
     {
         if (string.IsNullOrWhiteSpace(pluginId))
-            return null;
-            
-        _pluginErrors.TryGetValue(pluginId, out var error);
+            {
+                return null;
+            }
+
+            _pluginErrors.TryGetValue(pluginId, out var error);
         return error;
     }
 
@@ -108,9 +116,11 @@ public class PluginHealthMonitor : IDisposable
     public void ClearPluginError(string pluginId)
     {
         if (string.IsNullOrWhiteSpace(pluginId))
-            return;
-            
-        _pluginErrors.TryRemove(pluginId, out _);
+            {
+                return;
+            }
+
+            _pluginErrors.TryRemove(pluginId, out _);
         _logger.LogInformation("Cleared error status for plugin {PluginId}", pluginId);
     }
 
@@ -145,9 +155,11 @@ public class PluginHealthMonitor : IDisposable
     public void Dispose()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        _healthCheckTimer?.Dispose();
+            _healthCheckTimer?.Dispose();
         _pluginRegistrations.Clear();
         _pluginErrors.Clear();
         _disposed = true;

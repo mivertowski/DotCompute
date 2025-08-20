@@ -593,9 +593,12 @@ private static unsafe void ExecuteVectorizedFma(VectorizedBuffers args, long off
     var input3 = args.Input3;
     var output = args.Output;
 
-    if (input3 == null) return;
+    if (input3 == null)
+        {
+            return;
+        }
 
-    if (Vector512.IsHardwareAccelerated && vectorElements >= 16 && Avx512F.IsSupported)
+        if (Vector512.IsHardwareAccelerated && vectorElements >= 16 && Avx512F.IsSupported)
     {
         fixed (byte* p1 = input1)
         fixed (byte* p2 = input2)
@@ -883,23 +886,26 @@ private ExecutionStrategy DetermineExecutionStrategy(long totalWorkItems, Kernel
     var useParallel = totalWorkItems > 1000 && _threadPool.WorkerCount > 1;
 
     if (hasVectorization && useParallel)
-        return ExecutionStrategy.ParallelVectorized;
-    
-    if (hasVectorization)
-        return ExecutionStrategy.Vectorized;
-    
-    if (useParallel)
-        return ExecutionStrategy.Parallel;
-    
-    return ExecutionStrategy.Sequential;
+        {
+            return ExecutionStrategy.ParallelVectorized;
+        }
+
+        if (hasVectorization)
+        {
+            return ExecutionStrategy.Vectorized;
+        }
+
+        if (useParallel)
+        {
+            return ExecutionStrategy.Parallel;
+        }
+
+        return ExecutionStrategy.Sequential;
 }
 
-private static int GetElementsPerVector(int vectorWidth)
-{
-    return vectorWidth / 32; // Assuming 32-bit floats
-}
+    private static int GetElementsPerVector(int vectorWidth) => vectorWidth / 32; // Assuming 32-bit floats
 
-private static bool TryGetVectorizedBuffers(KernelArguments arguments, out VectorizedBuffers vectorizedArgs)
+    private static bool TryGetVectorizedBuffers(KernelArguments arguments, out VectorizedBuffers vectorizedArgs)
 {
     vectorizedArgs = default;
 
@@ -926,23 +932,46 @@ private static VectorOperationType InferOperationType(KernelDefinition definitio
     var name = definition.Name.ToUpperInvariant();
 
     if (name.Contains("ADD", StringComparison.Ordinal))
-        return VectorOperationType.Add;
-    if (name.Contains("MUL", StringComparison.Ordinal))
-        return VectorOperationType.Multiply;
-    if (name.Contains("SUB", StringComparison.Ordinal))
-        return VectorOperationType.Subtract;
-    if (name.Contains("DIV", StringComparison.Ordinal))
-        return VectorOperationType.Divide;
-    if (name.Contains("FMA", StringComparison.Ordinal))
-        return VectorOperationType.Fma;
-    if (name.Contains("SQRT", StringComparison.Ordinal))
-        return VectorOperationType.Sqrt;
-    if (name.Contains("MIN", StringComparison.Ordinal))
-        return VectorOperationType.Min;
-    if (name.Contains("MAX", StringComparison.Ordinal))
-        return VectorOperationType.Max;
+        {
+            return VectorOperationType.Add;
+        }
 
-    return VectorOperationType.Add; // Default to add
+        if (name.Contains("MUL", StringComparison.Ordinal))
+        {
+            return VectorOperationType.Multiply;
+        }
+
+        if (name.Contains("SUB", StringComparison.Ordinal))
+        {
+            return VectorOperationType.Subtract;
+        }
+
+        if (name.Contains("DIV", StringComparison.Ordinal))
+        {
+            return VectorOperationType.Divide;
+        }
+
+        if (name.Contains("FMA", StringComparison.Ordinal))
+        {
+            return VectorOperationType.Fma;
+        }
+
+        if (name.Contains("SQRT", StringComparison.Ordinal))
+        {
+            return VectorOperationType.Sqrt;
+        }
+
+        if (name.Contains("MIN", StringComparison.Ordinal))
+        {
+            return VectorOperationType.Min;
+        }
+
+        if (name.Contains("MAX", StringComparison.Ordinal))
+        {
+            return VectorOperationType.Max;
+        }
+
+        return VectorOperationType.Add; // Default to add
 }
 
 private void ExecuteWorkItem(KernelDefinition definition, KernelArguments arguments, long[] workItemId, KernelExecutionPlan executionPlan)

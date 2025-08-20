@@ -85,7 +85,10 @@ public sealed class SecurityLogger : IDisposable
         [CallerLineNumber] int lineNumber = 0)
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         var entry = CreateSecurityLogEntry(eventType, message, level, userId, resourceId, 
             additionalData, correlationId, callerName, sourceFile, lineNumber);
@@ -138,7 +141,10 @@ public sealed class SecurityLogger : IDisposable
         string? correlationId = null)
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         var additionalData = new Dictionary<string, object>
         {
@@ -247,9 +253,13 @@ public sealed class SecurityLogger : IDisposable
             level, userId, resource, additionalData);
         
         if (result == AccessResult.Granted)
+        {
             Interlocked.Increment(ref _metrics.AccessGrantedCount);
+        }
         else
+        {
             Interlocked.Increment(ref _metrics.AccessDeniedCount);
+        }
     }
 
     /// <summary>
@@ -275,13 +285,22 @@ public sealed class SecurityLogger : IDisposable
         };
 
         if (fieldNames != null)
+        {
             additionalData["FieldNames"] = fieldNames.ToArray();
-        
+        }
+
+
         if (originalValues != null)
+        {
             additionalData["OriginalValues"] = originalValues;
-        
+        }
+
+
         if (newValues != null)
+        {
             additionalData["NewValues"] = newValues;
+        }
+
 
         await LogSecurityEventAsync(SecurityEventType.DataAccess,
             $"Data {operation.ToString().ToLower()}: {dataType} record {recordId} by user {userId}",
@@ -335,7 +354,11 @@ public sealed class SecurityLogger : IDisposable
         IEnumerable<SecurityEventType>? eventTypes = null, AuditExportFormat format = AuditExportFormat.Json)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(SecurityLogger));
+        }
+
 
         await _logWriteLock.WaitAsync();
         try
@@ -502,17 +525,20 @@ public sealed class SecurityLogger : IDisposable
             });
     }
 
-    private async Task AnalyzeAttackPatternsAsync(SecurityViolationType violationType, 
-        SourceInformation sourceInfo, string? correlationId)
-    {
+    private async Task AnalyzeAttackPatternsAsync(SecurityViolationType violationType,
+
+        SourceInformation sourceInfo, string? correlationId) =>
         // Implement attack pattern analysis logic
         // This could include rate limiting, IP reputation checks, etc.
         await Task.CompletedTask; // Placeholder for actual implementation
-    }
 
     private void FlushAuditLogs(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _ = Task.Run(async () =>
         {
@@ -529,7 +555,11 @@ public sealed class SecurityLogger : IDisposable
 
     private async Task FlushAuditLogQueueAsync()
     {
-        if (_auditQueue.IsEmpty) return;
+        if (_auditQueue.IsEmpty)
+        {
+            return;
+        }
+
 
         var entriesToFlush = new List<SecurityLogEntry>();
         while (_auditQueue.TryDequeue(out var entry) && entriesToFlush.Count < 1000)
@@ -537,7 +567,11 @@ public sealed class SecurityLogger : IDisposable
             entriesToFlush.Add(entry);
         }
 
-        if (entriesToFlush.Count == 0) return;
+        if (entriesToFlush.Count == 0)
+        {
+            return;
+        }
+
 
         await _logWriteLock.WaitAsync();
         try
@@ -585,16 +619,18 @@ public sealed class SecurityLogger : IDisposable
         }
     }
 
-    private async Task SendCriticalEventAlertAsync(SecurityLogEntry entry)
-    {
+    private async Task SendCriticalEventAlertAsync(SecurityLogEntry entry) =>
         // Implementation for sending critical event alerts
         // This could include email, SMS, webhook notifications, etc.
         await Task.CompletedTask; // Placeholder
-    }
 
     private void PerformIntegrityCheck(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _ = Task.Run(async () =>
         {
@@ -609,25 +645,19 @@ public sealed class SecurityLogger : IDisposable
         });
     }
 
-    private async Task PerformAuditLogIntegrityCheckAsync()
-    {
+    private async Task PerformAuditLogIntegrityCheckAsync() =>
         // Implementation for audit log integrity verification
         // This could include hash verification, digital signatures, etc.
         await Task.CompletedTask; // Placeholder
-    }
 
-    private static bool IsSecurityCriticalContext()
-    {
+    private static bool IsSecurityCriticalContext() =>
         // Check if we're running in a security-critical context
         // Note: SecurityManager is obsolete in .NET 9+, always return true for now
-        return true;
-    }
+        true;
 
-    private static string GetCurrentIntegrityLevel()
-    {
+    private static string GetCurrentIntegrityLevel() =>
         // Get current process integrity level (Windows-specific)
-        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Medium" : "Unknown";
-    }
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Medium" : "Unknown";
 
     private static Dictionary<string, object> GetExecutionContextInfo()
     {
@@ -657,7 +687,11 @@ public sealed class SecurityLogger : IDisposable
                     string? line;
                     while ((line = await reader.ReadLineAsync()) != null)
                     {
-                        if (string.IsNullOrWhiteSpace(line)) continue;
+                        if (string.IsNullOrWhiteSpace(line))
+                        {
+                            continue;
+                        }
+
 
                         try
                         {
@@ -698,7 +732,7 @@ public sealed class SecurityLogger : IDisposable
             throw;
         }
 
-        return filteredEntries.OrderBy(e => e.Timestamp).ToList();
+        return [.. filteredEntries.OrderBy(e => e.Timestamp)];
     }
 
     private async Task ExportEntriesAsync(List<SecurityLogEntry> entries, string exportPath, AuditExportFormat format)
@@ -781,10 +815,17 @@ public sealed class SecurityLogger : IDisposable
             await xmlWriter.WriteElementStringAsync(null, "Message", null, entry.Message);
             
             if (!string.IsNullOrEmpty(entry.UserId))
+            {
                 await xmlWriter.WriteElementStringAsync(null, "UserId", null, entry.UserId);
+            }
+
+
             if (!string.IsNullOrEmpty(entry.ResourceId))
+            {
                 await xmlWriter.WriteElementStringAsync(null, "ResourceId", null, entry.ResourceId);
-            
+            }
+
+
             await xmlWriter.WriteElementStringAsync(null, "CorrelationId", null, entry.CorrelationId);
             await xmlWriter.WriteEndElementAsync();
         }
@@ -795,8 +836,12 @@ public sealed class SecurityLogger : IDisposable
 
     private static string EscapeCsv(string value)
     {
-        if (string.IsNullOrEmpty(value)) return "";
-        
+        if (string.IsNullOrEmpty(value))
+        {
+            return "";
+        }
+
+
         if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
         {
             return $"\"{value.Replace("\"", "\"\"")}\"";
@@ -821,7 +866,10 @@ public sealed class SecurityLogger : IDisposable
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         _disposed = true;
 

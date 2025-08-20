@@ -229,9 +229,11 @@ public void Reset()
 private void SamplePerformance(object? state)
 {
     if (_disposed != 0)
-        return;
+        {
+            return;
+        }
 
-    try
+        try
     {
         var sample = _perfCounters.Sample();
         
@@ -253,9 +255,11 @@ private void SamplePerformance(object? state)
 public void Dispose()
 {
     if (Interlocked.Exchange(ref _disposed, 1) != 0)
-        return;
+        {
+            return;
+        }
 
-    _samplingTimer?.Dispose();
+        _samplingTimer?.Dispose();
     _perfCounters?.Dispose();
 }
 
@@ -324,9 +328,11 @@ public int VectorWidth { get; }
 public void Dispose()
 {
     if (Interlocked.Exchange(ref _disposed, 1) != 0)
-        return;
+        {
+            return;
+        }
 
-    var endTime = Stopwatch.GetTimestamp();
+        var endTime = Stopwatch.GetTimestamp();
     var endCounters = _profiler._perfCounters.Sample();
 
     _profiler.CompleteProfiling(this, endTime, endCounters);
@@ -429,9 +435,11 @@ public KernelPerformanceMetrics GetMetrics()
 private static double CalculateStandardDeviation(IReadOnlyList<double> values, double mean)
 {
     if (values.Count <= 1)
-        return 0;
+        {
+            return 0;
+        }
 
-    var sumSquaredDifferences = values.Sum(value => Math.Pow(value - mean, 2));
+        var sumSquaredDifferences = values.Sum(value => Math.Pow(value - mean, 2));
     return Math.Sqrt(sumSquaredDifferences / (values.Count - 1));
 }
 
@@ -441,9 +449,11 @@ private double CalculateEfficiency()
     // This is a simplified calculation - in practice, it would consider
     // the specific operation type and hardware capabilities
     if (!_lastUseVectorization || _executionCount == 0)
-        return 0.5; // Assume 50% efficiency for scalar operations
+        {
+            return 0.5; // Assume 50% efficiency for scalar operations
+        }
 
-    var theoreticalOpsPerMs = _lastVectorWidth switch
+        var theoreticalOpsPerMs = _lastVectorWidth switch
     {
         512 => 16 * 1000, // 16 operations per cycle at 1GHz
         256 => 8 * 1000,  // 8 operations per cycle at 1GHz
@@ -461,9 +471,11 @@ private double CalculateCacheHitRatio()
 {
     // Calculate cache hit ratio from performance counters
     if (_performanceSamples.Count == 0)
-        return 0;
+        {
+            return 0;
+        }
 
-    var latest = _performanceSamples[^1];
+        var latest = _performanceSamples[^1];
     return latest.CacheHitRatio;
 }
 
@@ -471,9 +483,11 @@ private double CalculateMemoryBandwidthUtilization()
 {
     // Calculate memory bandwidth utilization
     if (_performanceSamples.Count == 0)
-        return 0;
+        {
+            return 0;
+        }
 
-    var latest = _performanceSamples[^1];
+        var latest = _performanceSamples[^1];
     return latest.MemoryBandwidthUtilization;
 }
 }
@@ -514,9 +528,11 @@ public PerformanceCounterManager()
 public PerformanceCounterSample Sample()
 {
     if (_disposed)
-        return new PerformanceCounterSample();
+        {
+            return new PerformanceCounterSample();
+        }
 
-    try
+        try
     {
         var cpuUsage = _cpuCounter?.NextValue() ?? 0;
         var availableMemory = _memoryCounter?.NextValue() ?? 0;
@@ -536,26 +552,24 @@ public PerformanceCounterSample Sample()
     }
 }
 
-private static double EstimateCacheHitRatio()
-{
-    // In a full implementation, this would read actual cache performance counters
-    // For now, return a reasonable estimate
-    return 0.85; // Assume 85% cache hit ratio
-}
+    private static double EstimateCacheHitRatio() =>
+        // In a full implementation, this would read actual cache performance counters
+        // For now, return a reasonable estimate
+        0.85; // Assume 85% cache hit ratio
 
-private static double EstimateMemoryBandwidthUtilization()
-{
-    // In a full implementation, this would measure actual memory bandwidth usage
-    // For now, return a reasonable estimate
-    return 0.25; // Assume 25% memory bandwidth utilization
-}
+    private static double EstimateMemoryBandwidthUtilization() =>
+        // In a full implementation, this would measure actual memory bandwidth usage
+        // For now, return a reasonable estimate
+        0.25; // Assume 25% memory bandwidth utilization
 
-public void Dispose()
+    public void Dispose()
 {
     if (_disposed)
-        return;
+        {
+            return;
+        }
 
-    _cpuCounter?.Dispose();
+        _cpuCounter?.Dispose();
     _memoryCounter?.Dispose();
     _cacheCounter?.Dispose();
     _disposed = true;

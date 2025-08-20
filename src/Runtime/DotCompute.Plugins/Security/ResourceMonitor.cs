@@ -138,7 +138,11 @@ public class ResourceMonitor : IDisposable
     /// </summary>
     private void MonitorResources(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -238,7 +242,11 @@ public class ResourceMonitor : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _disposed = true;
 
@@ -289,14 +297,22 @@ internal class PluginResourceTracker : IDisposable
     /// </summary>
     public void UpdateUsage(double cpuUsage, long memoryUsage)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         lock (_usageLock)
         {
             var now = DateTime.UtcNow;
             var deltaTime = (now - _lastUpdate).TotalSeconds;
             
-            if (deltaTime < 0.1) return; // Avoid too frequent updates
+            if (deltaTime < 0.1)
+            {
+                return; // Avoid too frequent updates
+            }
+
 
             _currentUsage.CpuUsagePercent = cpuUsage;
             _currentUsage.MemoryUsageMB = memoryUsage;
@@ -420,7 +436,11 @@ internal class PluginResourceTracker : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _disposed = true;
         _executionTimer?.Stop();

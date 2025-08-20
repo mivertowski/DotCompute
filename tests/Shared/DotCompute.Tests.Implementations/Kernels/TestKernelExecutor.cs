@@ -110,12 +110,9 @@ public sealed class TestKernelExecutor(int maxConcurrentExecutions = 4)
         try
         {
             // Calculate total threads
-            var totalThreads = execution.Configuration.GridDimensions.X *
-                             execution.Configuration.GridDimensions.Y *
-                             execution.Configuration.GridDimensions.Z *
-                             execution.Configuration.BlockDimensions.X *
-                             execution.Configuration.BlockDimensions.Y *
-                             execution.Configuration.BlockDimensions.Z;
+            var gridDim = (Dim3)(execution.Configuration.Options.TryGetValue("GridDimension", out var grid) ? grid : new Dim3(1));
+            var blockDim = (Dim3)(execution.Configuration.Options.TryGetValue("BlockDimension", out var block) ? block : new Dim3(256));
+            var totalThreads = gridDim.X * gridDim.Y * gridDim.Z * blockDim.X * blockDim.Y * blockDim.Z;
 
             // Simulate kernel execution with parallel processing
             await Task.Run(() =>
@@ -167,8 +164,8 @@ public sealed class TestKernelExecutor(int maxConcurrentExecutions = 4)
     private static void SimulateThreadExecution(int threadId, KernelExecution execution)
     {
         // Calculate thread coordinates
-        var blockDim = execution.Configuration.BlockDimensions;
-        var gridDim = execution.Configuration.GridDimensions;
+        var gridDim = (Dim3)(execution.Configuration.Options.TryGetValue("GridDimension", out var grid) ? grid : new Dim3(1));
+        var blockDim = (Dim3)(execution.Configuration.Options.TryGetValue("BlockDimension", out var block) ? block : new Dim3(256));
 
         var threadsPerBlock = blockDim.X * blockDim.Y * blockDim.Z;
         var blockId = threadId / threadsPerBlock;
@@ -354,7 +351,7 @@ public sealed class KernelExecution
     /// <value>
     /// The arguments.
     /// </value>
-    public KernelArguments Arguments { get; set; }
+    public KernelArguments Arguments { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the configuration.
@@ -362,7 +359,7 @@ public sealed class KernelExecution
     /// <value>
     /// The configuration.
     /// </value>
-    public KernelConfiguration Configuration { get; set; }
+    public KernelConfiguration Configuration { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the queued at.

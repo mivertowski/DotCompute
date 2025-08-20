@@ -187,13 +187,10 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
         };
     }
 
-    private void ThrowIfDisposed()
-    {
-        AcceleratorUtilities.ThrowIfDisposed(_disposed, this);
-    }
+        private void ThrowIfDisposed() => AcceleratorUtilities.ThrowIfDisposed(_disposed, this);
 
-    /// <inheritdoc/>
-    public async ValueTask DisposeAsync()
+        /// <inheritdoc/>
+        public async ValueTask DisposeAsync()
     {
         if (_disposed)
         {

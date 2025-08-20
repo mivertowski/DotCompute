@@ -67,11 +67,19 @@ public sealed class MemorySanitizer : IDisposable
         [CallerLineNumber] int callerLine = 0)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(MemorySanitizer));
-        
+        }
+
+
         if (size == 0 || size > _configuration.MaxAllocationSize)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(size), 
                 $"Size must be between 1 and {_configuration.MaxAllocationSize}");
+        }
+
 
         await _operationLock.WaitAsync();
         try
@@ -164,7 +172,11 @@ public sealed class MemorySanitizer : IDisposable
     public unsafe T ReadSanitized<T>(IntPtr address, nuint offset = 0) where T : unmanaged
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(MemorySanitizer));
+        }
+
 
         if (!_trackedAllocations.TryGetValue(address, out var allocation))
         {
@@ -242,7 +254,11 @@ public sealed class MemorySanitizer : IDisposable
     public unsafe void WriteSanitized<T>(IntPtr address, T value, nuint offset = 0) where T : unmanaged
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(MemorySanitizer));
+        }
+
 
         if (!_trackedAllocations.TryGetValue(address, out var allocation))
         {
@@ -316,7 +332,11 @@ public sealed class MemorySanitizer : IDisposable
     public async Task<MemoryDeallocationResult> DeallocateSanitizedMemoryAsync(IntPtr address)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(MemorySanitizer));
+        }
+
 
         await _operationLock.WaitAsync();
         try
@@ -432,7 +452,11 @@ public sealed class MemorySanitizer : IDisposable
     public async Task<MemoryLeakReport> DetectMemoryLeaksAsync()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(MemorySanitizer));
+        }
+
 
         await _operationLock.WaitAsync();
         try
@@ -473,7 +497,7 @@ public sealed class MemorySanitizer : IDisposable
                 }
             }
 
-            report.SuspiciousAllocations = suspiciousAllocations.OrderByDescending(s => s.SuspicionLevel).ToList();
+            report.SuspiciousAllocations = [.. suspiciousAllocations.OrderByDescending(s => s.SuspicionLevel)];
             report.TotalSuspiciousBytes = suspiciousAllocations.Sum(s => (long)s.Size);
             report.HighSuspicionCount = suspiciousAllocations.Count(s => s.SuspicionLevel >= 0.8);
 
@@ -626,7 +650,11 @@ public sealed class MemorySanitizer : IDisposable
     private unsafe bool VerifyCanaryValues(SanitizedAllocation allocation)
     {
         if (!_configuration.EnableCanaryValues)
+        {
+
             return true;
+        }
+
 
         try
         {
@@ -634,12 +662,19 @@ public sealed class MemorySanitizer : IDisposable
             var guardSize = _configuration.EnableGuardBytes ? _configuration.GuardByteSize : 0;
             var leadingCanaryPtr = (ulong*)(allocation.BaseAddress + (int)guardSize);
             if (*leadingCanaryPtr != allocation.CanaryValue)
+            {
                 return false;
+            }
 
             // Check trailing canary
+
             var trailingCanaryPtr = (ulong*)(allocation.UserAddress + (int)allocation.RequestedSize);
             if (*trailingCanaryPtr != allocation.CanaryValue)
+            {
+
                 return false;
+            }
+
 
             return true;
         }
@@ -652,7 +687,10 @@ public sealed class MemorySanitizer : IDisposable
     private async Task PerformSecureWipeAsync(SanitizedAllocation allocation)
     {
         if (!_configuration.EnableSecureWiping)
+        {
             return;
+        }
+
 
         await Task.Run(() =>
         {
@@ -667,7 +705,11 @@ public sealed class MemorySanitizer : IDisposable
                 _ => 1
             };
 
-            if (passes == 0) return;
+            if (passes == 0)
+            {
+                return;
+            }
+
 
             unsafe
             {
@@ -751,7 +793,11 @@ public sealed class MemorySanitizer : IDisposable
 
     private void DetectMemoryLeaks(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _ = Task.Run(async () =>
         {
@@ -773,7 +819,11 @@ public sealed class MemorySanitizer : IDisposable
 
     private void PerformIntegrityCheck(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _ = Task.Run(() =>
         {
@@ -813,7 +863,10 @@ public sealed class MemorySanitizer : IDisposable
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         _disposed = true;
 

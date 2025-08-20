@@ -528,7 +528,7 @@ __global__ void benchmark_kernel(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "benchmark_kernel",
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = "benchmark_kernel"
         };
     }
@@ -559,7 +559,7 @@ __global__ void complex_kernel(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "complex_kernel",
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = "complex_kernel"
         };
     }
@@ -577,7 +577,7 @@ __global__ void {name}(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = name,
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = name
         };
     }

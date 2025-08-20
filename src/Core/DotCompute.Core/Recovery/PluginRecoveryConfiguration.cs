@@ -72,6 +72,29 @@ public class PluginRecoveryConfiguration
     };
 
     /// <summary>
+    /// Whether to enable plugin isolation in separate containers
+    /// </summary>
+    public bool EnablePluginIsolation { get; set; } = true;
+
+    /// <summary>
+    /// Delay before restarting a failed plugin
+    /// </summary>
+    [Range(typeof(TimeSpan), "00:00:01", "00:05:00")]
+    public TimeSpan RestartDelay { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// Maximum number of consecutive failures before taking drastic action
+    /// </summary>
+    [Range(1, 20)]
+    public int MaxConsecutiveFailures { get; set; } = 5;
+
+    /// <summary>
+    /// Maximum number of restarts allowed per plugin
+    /// </summary>
+    [Range(1, 50)]
+    public int MaxRestarts { get; set; } = 10;
+
+    /// <summary>
     /// Default configuration instance
     /// </summary>
     public static PluginRecoveryConfiguration Default => new();
@@ -82,22 +105,66 @@ public class PluginRecoveryConfiguration
     public void Validate()
     {
         if (RecoveryTimeout <= TimeSpan.Zero)
+        {
+
             throw new ArgumentException("Recovery timeout must be positive", nameof(RecoveryTimeout));
+        }
+
 
         if (MaxRecoveryAttempts <= 0)
+        {
+
             throw new ArgumentException("Max recovery attempts must be positive", nameof(MaxRecoveryAttempts));
+        }
+
 
         if (RecoveryInterval <= TimeSpan.Zero)
+        {
+
             throw new ArgumentException("Recovery interval must be positive", nameof(RecoveryInterval));
+        }
+
 
         if (HealthCheckInterval <= TimeSpan.Zero)
+        {
+
             throw new ArgumentException("Health check interval must be positive", nameof(HealthCheckInterval));
+        }
+
 
         if (MaxMemoryUsageBytes <= 0)
+        {
+
             throw new ArgumentException("Max memory usage must be positive", nameof(MaxMemoryUsageBytes));
+        }
+
 
         if (MaxCpuUsagePercent <= 0 || MaxCpuUsagePercent > 100)
+        {
+
             throw new ArgumentException("Max CPU usage must be between 0 and 100", nameof(MaxCpuUsagePercent));
+        }
+
+
+        if (RestartDelay <= TimeSpan.Zero)
+        {
+
+            throw new ArgumentException("Restart delay must be positive", nameof(RestartDelay));
+        }
+
+
+        if (MaxConsecutiveFailures <= 0)
+        {
+
+            throw new ArgumentException("Max consecutive failures must be positive", nameof(MaxConsecutiveFailures));
+        }
+
+
+        if (MaxRestarts <= 0)
+        {
+
+            throw new ArgumentException("Max restarts must be positive", nameof(MaxRestarts));
+        }
     }
 
     public override string ToString() => 

@@ -205,7 +205,7 @@ private class OperatorFusionVisitor : ExpressionVisitor
     {
         var firstParams = first.Method.GetParameters().Select(p => p.ParameterType).ToArray();
         var secondParams = second.Method.GetParameters().Skip(1).Select(p => p.ParameterType).ToArray(); // Skip source parameter
-        return firstParams.Concat(secondParams).Distinct().ToArray();
+        return [.. firstParams.Concat(secondParams).Distinct()];
     }
 
     private static Expression[] GetFusedArguments(MethodCallExpression first, MethodCallExpression second)
@@ -213,7 +213,7 @@ private class OperatorFusionVisitor : ExpressionVisitor
         // Combine arguments from both methods, avoiding duplicate source arguments
         var firstArgs = first.Arguments.ToList();
         var secondArgs = second.Arguments.Skip(1).ToList(); // Skip source argument
-        return firstArgs.Concat(secondArgs).ToArray();
+        return [.. firstArgs, .. secondArgs];
     }
 
     private static string GetFusionType(string firstMethod, string secondMethod)
@@ -290,10 +290,12 @@ private class RedundancyEliminationVisitor : ExpressionVisitor
     public override Expression Visit(Expression? node)
     {
         if (node == null)
-            return null!;
+            {
+                return null!;
+            }
 
-        // Check if we've already visited an equivalent expression
-        if (_visitedExpressions.TryGetValue(node, out var cached))
+            // Check if we've already visited an equivalent expression
+            if (_visitedExpressions.TryGetValue(node, out var cached))
         {
             _logger.LogDebug("Reusing cached expression for {NodeType}", node.NodeType);
             return cached;
@@ -363,9 +365,11 @@ private class ConstantFoldingVisitor : ExpressionVisitor
     private static object? EvaluateBinaryExpression(ExpressionType nodeType, object? left, object? right)
     {
         if (left == null || right == null)
-            return null;
+            {
+                return null;
+            }
 
-        return nodeType switch
+            return nodeType switch
         {
             ExpressionType.Add => Add(left, right),
             ExpressionType.Subtract => Subtract(left, right),
@@ -532,14 +536,10 @@ internal class FusedMethodInfo : MethodInfo
     public MethodCallExpression FirstMethod => _firstMethod;
     public MethodCallExpression SecondMethod => _secondMethod;
 
-    public override ParameterInfo[] GetParameters()
-    {
-        return _parameterTypes.Select((t, i) => new FusedParameterInfo($"param{i}", t, i))
-            .Cast<ParameterInfo>().ToArray();
-    }
+        public override ParameterInfo[] GetParameters() => [.. _parameterTypes.Select((t, i) => new FusedParameterInfo($"param{i}", t, i)).Cast<ParameterInfo>()];
 
-    // Minimal implementation for other required members
-    public override ICustomAttributeProvider ReturnTypeCustomAttributes => new EmptyCustomAttributeProvider();
+        // Minimal implementation for other required members
+        public override ICustomAttributeProvider ReturnTypeCustomAttributes => new EmptyCustomAttributeProvider();
     public override MethodAttributes Attributes => MethodAttributes.Static | MethodAttributes.Public;
     public override RuntimeMethodHandle MethodHandle => default;
     public override MethodInfo GetBaseDefinition() => this;
@@ -572,21 +572,12 @@ internal static class FusionMetadataStore
     private static readonly ThreadLocal<Dictionary<string, Dictionary<string, object>>> _store
         = new(() => new Dictionary<string, Dictionary<string, object>>());
 
-    public static void SetMetadata(string key, Dictionary<string, object> metadata)
-    {
-        _store.Value![key] = metadata;
-    }
+        public static void SetMetadata(string key, Dictionary<string, object> metadata) => _store.Value![key] = metadata;
 
-    public static Dictionary<string, object>? GetMetadata(string key)
-    {
-        return _store.Value!.TryGetValue(key, out var metadata) ? metadata : null;
-    }
+        public static Dictionary<string, object>? GetMetadata(string key) => _store.Value!.TryGetValue(key, out var metadata) ? metadata : null;
 
-    public static void Clear()
-    {
-        _store.Value!.Clear();
+        public static void Clear() => _store.Value!.Clear();
     }
-}
 
 /// <summary>
 /// Empty custom attribute provider implementation for fused methods

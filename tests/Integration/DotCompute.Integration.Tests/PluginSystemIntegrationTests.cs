@@ -430,7 +430,9 @@ namespace TestPlugin
             throw new NotImplementedException(""Test backend factory"");
         }}
 
+#pragma warning disable CA1822 // Mark members as static
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+#pragma warning restore CA1822
     }}
 }}";
     }
@@ -495,7 +497,9 @@ namespace MatrixPlugin
             throw new NotImplementedException(""Matrix backend factory"");
         }
 
+#pragma warning disable CA1822 // Mark members as static
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+#pragma warning restore CA1822
     }
 }";
     }
@@ -775,7 +779,7 @@ namespace FaultyPlugin
                 CompilationOptions = new CompilationOptions
                 {
                     OptimizationLevel = OptimizationLevel.Aggressive,
-                    FastMath = true,
+                    EnableFastMath = true,
                     UnrollLoops = true
                 }
             }
@@ -928,82 +932,106 @@ __kernel void baseline_compute(__global const float* input, __global float* outp
 }";
 
     // Test Backend Factory implementations for plugin testing
-    internal class TestBackendFactory : IBackendFactory
+#pragma warning disable CA1812 // Avoid uninstantiated internal classes - Used dynamically in tests
+    internal sealed class TestBackendFactory : IBackendFactory
     {
         public string Name => "Test Backend";
         public string Description => "Test Backend for Plugin Testing";
         public Version Version => new(1, 0, 0);
 
         public bool IsAvailable() => true;
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory methods return ownership
         public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Test Backend")];
         public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Test Backend");
+#pragma warning restore CA2000
         public BackendCapabilities GetCapabilities() => new BackendCapabilities();
     }
+#pragma warning restore CA1812
 
-    internal class MatrixBackendFactory : IBackendFactory
+#pragma warning disable CA1812 // Avoid uninstantiated internal classes - Used dynamically in tests
+    internal sealed class MatrixBackendFactory : IBackendFactory
     {
         public string Name => "Matrix Backend";
         public string Description => "Matrix Backend for Plugin Testing";
         public Version Version => new(1, 0, 0);
 
         public bool IsAvailable() => true;
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory methods return ownership
         public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Matrix Backend")];
         public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Matrix Backend");
+#pragma warning restore CA2000
         public BackendCapabilities GetCapabilities() => new BackendCapabilities();
     }
+#pragma warning restore CA1812
 
-    internal class BaseBackendFactory : IBackendFactory
+#pragma warning disable CA1812 // Avoid uninstantiated internal classes - Used dynamically in tests
+    internal sealed class BaseBackendFactory : IBackendFactory
     {
         public string Name => "Base Backend";
         public string Description => "Base Backend for Plugin Testing";
         public Version Version => new(1, 0, 0);
 
         public bool IsAvailable() => true;
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory methods return ownership
         public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Base Backend")];
         public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Base Backend");
+#pragma warning restore CA2000
         public BackendCapabilities GetCapabilities() => new BackendCapabilities();
     }
+#pragma warning restore CA1812
 
-    internal class DependentBackendFactory : IBackendFactory
+#pragma warning disable CA1812 // Avoid uninstantiated internal classes - Used dynamically in tests
+    internal sealed class DependentBackendFactory : IBackendFactory
     {
         public string Name => "Dependent Backend";
         public string Description => "Dependent Backend for Plugin Testing";
         public Version Version => new(1, 0, 0);
 
         public bool IsAvailable() => true;
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory methods return ownership
         public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Dependent Backend")];
         public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Dependent Backend");
+#pragma warning restore CA2000
         public BackendCapabilities GetCapabilities() => new BackendCapabilities();
     }
+#pragma warning restore CA1812
 
-    internal class ConfigurableBackendFactory : IBackendFactory
+#pragma warning disable CA1812 // Avoid uninstantiated internal classes - Used dynamically in tests
+    internal sealed class ConfigurableBackendFactory : IBackendFactory
     {
         public string Name => "Configurable Backend";
         public string Description => "Configurable Backend for Plugin Testing";
         public Version Version => new(1, 0, 0);
 
         public bool IsAvailable() => true;
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory methods return ownership
         public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Configurable Backend")];
         public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Configurable Backend");
+#pragma warning restore CA2000
         public BackendCapabilities GetCapabilities() => new BackendCapabilities();
     }
+#pragma warning restore CA1812
 
-    internal class FaultyBackendFactory : IBackendFactory
+#pragma warning disable CA1812 // Avoid uninstantiated internal classes - Used dynamically in tests
+    internal sealed class FaultyBackendFactory : IBackendFactory
     {
         public string Name => "Faulty Backend";
         public string Description => "Faulty Backend for Plugin Testing";
         public Version Version => new(1, 0, 0);
 
         public bool IsAvailable() => true;
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory methods return ownership
         public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Faulty Backend")];
         public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Faulty Backend");
+#pragma warning restore CA2000
         public BackendCapabilities GetCapabilities() => new BackendCapabilities();
     }
+#pragma warning restore CA1812
 
     /// <summary>
     /// Mock accelerator for integration testing.
     /// </summary>
-    internal class TestMockAccelerator : IAccelerator
+    internal sealed class TestMockAccelerator : IAccelerator
     {
         public AcceleratorInfo Info { get; }
         public AcceleratorType Type => AcceleratorType.CPU;
@@ -1020,8 +1048,10 @@ __kernel void baseline_compute(__global const float* input, __global float* outp
             CompilationOptions? options = null,
             CancellationToken cancellationToken = default)
         {
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory method returns ownership
             var kernel = new TestMockCompiledKernel(definition);
             return ValueTask.FromResult<ICompiledKernel>(kernel);
+#pragma warning restore CA2000
         }
 
         public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
@@ -1029,36 +1059,48 @@ __kernel void baseline_compute(__global const float* input, __global float* outp
             return ValueTask.CompletedTask;
         }
 
+#pragma warning disable CA1822 // Mark members as static
         public void Dispose() { }
+#pragma warning restore CA1822
+#pragma warning disable CA1822 // Mark members as static
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+#pragma warning restore CA1822
     }
 
     /// <summary>
     /// Mock memory manager for integration testing.
     /// </summary>
-    internal class TestMockMemoryManager : IMemoryManager
+    internal sealed class TestMockMemoryManager : IMemoryManager
     {
         public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
         {
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory method returns ownership
             var buffer = new TestMockMemoryBuffer(sizeInBytes, options);
             return ValueTask.FromResult<IMemoryBuffer>(buffer);
+#pragma warning restore CA2000
         }
 
         public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
         {
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory method returns ownership
             var buffer = new TestMockMemoryBuffer(source.Length * sizeof(int), options);
             return ValueTask.FromResult<IMemoryBuffer>(buffer);
+#pragma warning restore CA2000
         }
 
         public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
         {
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory method returns ownership
             return new TestMockMemoryBuffer(length, buffer.Options);
+#pragma warning restore CA2000
         }
 
         public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
         {
+#pragma warning disable CA2000 // Dispose objects before losing scope - Factory method returns ownership
             var buffer = new TestMockMemoryBuffer(count * sizeof(int), MemoryOptions.None);
             return ValueTask.FromResult<IMemoryBuffer>(buffer);
+#pragma warning restore CA2000
         }
 
         public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
@@ -1076,14 +1118,18 @@ __kernel void baseline_compute(__global const float* input, __global float* outp
             buffer?.Dispose();
         }
 
+#pragma warning disable CA1822 // Mark members as static
         public void Dispose() { }
+#pragma warning restore CA1822
+#pragma warning disable CA1822 // Mark members as static
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+#pragma warning restore CA1822
     }
 
     /// <summary>
     /// Mock memory buffer for integration testing.
     /// </summary>
-    internal class TestMockMemoryBuffer(long size, MemoryOptions options) : IMemoryBuffer
+    internal sealed class TestMockMemoryBuffer(long size, MemoryOptions options) : IMemoryBuffer
     {
         public long SizeInBytes { get; } = size;
         public MemoryOptions Options { get; } = options;
@@ -1120,7 +1166,7 @@ __kernel void baseline_compute(__global const float* input, __global float* outp
     /// <summary>
     /// Mock compiled kernel for integration testing.
     /// </summary>
-    internal class TestMockCompiledKernel(KernelDefinition definition) : ICompiledKernel
+    internal sealed class TestMockCompiledKernel(KernelDefinition definition) : ICompiledKernel
     {
         public string Name => definition.Name;
 
@@ -1129,8 +1175,11 @@ __kernel void baseline_compute(__global const float* input, __global float* outp
             return ValueTask.CompletedTask;
         }
 
+#pragma warning disable CA1822 // Mark members as static
         public void Dispose() { }
+#pragma warning restore CA1822
+#pragma warning disable CA1822 // Mark members as static
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+#pragma warning restore CA1822
     }
-
 }

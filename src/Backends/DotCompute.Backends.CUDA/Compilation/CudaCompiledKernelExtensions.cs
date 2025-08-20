@@ -14,25 +14,22 @@ namespace DotCompute.Backends.CUDA.Compilation
 /// </summary>
 public static class CudaCompiledKernelExtensions
 {
-    /// <summary>
-    /// Creates an enhanced compiled kernel with optimizations for modern architectures.
-    /// </summary>
-    public static CudaCompiledKernel CreateEnhanced(
-        CudaContext context,
-        string name,
-        string entryPoint,
-        byte[] compiledCode,
-        CompilationOptions? options,
-        ILogger logger,
-        CompilationMetadata? metadata = null)
-    {
-        return new CudaCompiledKernel(context, name, entryPoint, compiledCode, options, logger);
-    }
+        /// <summary>
+        /// Creates an enhanced compiled kernel with optimizations for modern architectures.
+        /// </summary>
+        public static CudaCompiledKernel CreateEnhanced(
+            CudaContext context,
+            string name,
+            string entryPoint,
+            byte[] compiledCode,
+            CompilationOptions? options,
+            ILogger logger,
+            CompilationMetadata? metadata = null) => new CudaCompiledKernel(context, name, entryPoint, compiledCode, options, logger);
 
-    /// <summary>
-    /// Gets optimal launch configuration for Ada generation and newer architectures.
-    /// </summary>
-    public static CudaLaunchConfig GetOptimalLaunchConfigForModernGPU(
+        /// <summary>
+        /// Gets optimal launch configuration for Ada generation and newer architectures.
+        /// </summary>
+        public static CudaLaunchConfig GetOptimalLaunchConfigForModernGPU(
         this CudaCompiledKernel kernel,
         int totalElements,
         int deviceId)

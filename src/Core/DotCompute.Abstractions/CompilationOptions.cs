@@ -77,6 +77,21 @@ public class CompilationOptions
     public int WarningLevel { get; set; } = 2;
 
     /// <summary>
+    /// Enable memory coalescing optimizations
+    /// </summary>
+    public bool EnableMemoryCoalescing { get; set; } = false;
+    
+    /// <summary>
+    /// Enable operator fusion optimizations
+    /// </summary>
+    public bool EnableOperatorFusion { get; set; } = false;
+    
+    /// <summary>
+    /// Enable parallel execution
+    /// </summary>
+    public bool EnableParallelExecution { get; set; } = false;
+
+    /// <summary>
     /// Enable loop unrolling optimizations
     /// </summary>
     public bool EnableLoopUnrolling { get; set; } = true;
@@ -107,6 +122,23 @@ public class CompilationOptions
     /// Thread block size hint
     /// </summary>
     public int? ThreadBlockSize { get; set; }
+
+    /// <summary>
+    /// Preferred block dimensions for GPU kernel execution
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public Dim3? PreferredBlockSize { get; set; } = new Dim3(256, 1, 1);
+
+    /// <summary>
+    /// Dynamic shared memory size allocation (in bytes)
+    /// </summary>
+    [Range(0, int.MaxValue)]
+    public int? SharedMemorySize { get; set; } = 0;
+
+    /// <summary>
+    /// Enable loop unrolling optimizations
+    /// </summary>
+    public bool UnrollLoops { get; set; } = false;
 
     /// <summary>
     /// Enable native math library usage
@@ -171,7 +203,10 @@ public class CompilationOptions
         EnableLoopUnrolling = true,
         EnableVectorization = true,
         EnableInlining = true,
-        UseNativeMathLibrary = true
+        UseNativeMathLibrary = true,
+        UnrollLoops = true,
+        PreferredBlockSize = new Dim3(256, 1, 1),
+        SharedMemorySize = 0
     };
 
     /// <summary>
@@ -198,6 +233,9 @@ public class CompilationOptions
             MaxRegisters = MaxRegisters,
             SharedMemoryLimit = SharedMemoryLimit,
             ThreadBlockSize = ThreadBlockSize,
+            PreferredBlockSize = PreferredBlockSize,
+            SharedMemorySize = SharedMemorySize,
+            UnrollLoops = UnrollLoops,
             UseNativeMathLibrary = UseNativeMathLibrary,
             FloatingPointMode = FloatingPointMode,
             EnableProfileGuidedOptimizations = EnableProfileGuidedOptimizations,
@@ -209,7 +247,7 @@ public class CompilationOptions
     }
 
     public override string ToString() => 
-        $"OptLevel={OptimizationLevel}, FastMath={EnableFastMath}, Debug={EnableDebugInfo}";
+        $"OptLevel={OptimizationLevel}, FastMath={EnableFastMath}, Debug={EnableDebugInfo}, UnrollLoops={UnrollLoops}";
 }
 
 /// <summary>
@@ -292,8 +330,5 @@ public static class CompilationOptionsExtensions
     /// <summary>
     /// Creates a copy of the compilation options
     /// </summary>
-    public static CompilationOptions Clone(this CompilationOptions options)
-    {
-        return options.Clone();
-    }
+    public static CompilationOptions Clone(this CompilationOptions options) => options.Clone();
 }

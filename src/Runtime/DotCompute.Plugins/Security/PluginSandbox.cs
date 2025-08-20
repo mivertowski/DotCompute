@@ -202,8 +202,8 @@ public class PluginSandbox : IDisposable
     {
         var context = new SecurityContext
         {
-            AllowedPermissions = permissions.AllowedPermissions.ToHashSet(),
-            DeniedPermissions = permissions.DeniedPermissions.ToHashSet(),
+            AllowedPermissions = [.. permissions.AllowedPermissions],
+            DeniedPermissions = [.. permissions.DeniedPermissions],
             ResourceLimits = permissions.ResourceLimits,
             NetworkAccess = permissions.NetworkAccess,
             FileSystemAccess = permissions.FileSystemAccess
@@ -360,7 +360,7 @@ public class PluginSandbox : IDisposable
     private System.Security.Principal.IPrincipal CreateSecurityPrincipal(SecurityContext context)
     {
         var identity = new System.Security.Principal.GenericIdentity("SandboxedPlugin", "Custom");
-        var principal = new System.Security.Principal.GenericPrincipal(identity, context.AllowedPermissions.ToArray());
+        var principal = new System.Security.Principal.GenericPrincipal(identity, [.. context.AllowedPermissions]);
         return principal;
     }
 
@@ -445,8 +445,12 @@ public class PluginSandbox : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
 
         // Terminate all active plugins

@@ -143,9 +143,12 @@ public string GetRecommendedAlgorithm(MatrixOperation operation)
 
 private static bool CheckSymmetry(Matrix matrix)
 {
-    if (!matrix.IsSquare) return false;
+    if (!matrix.IsSquare)
+        {
+            return false;
+        }
 
-    for (var i = 0; i < matrix.Rows; i++)
+        for (var i = 0; i < matrix.Rows; i++)
     {
         for (var j = 0; j < matrix.Columns; j++)
         {
@@ -160,9 +163,12 @@ private static bool CheckSymmetry(Matrix matrix)
 
 private static bool CheckSymmetryLinearAlgebra(DotCompute.Algorithms.LinearAlgebra.Matrix matrix)
 {
-    if (!matrix.IsSquare) return false;
+    if (!matrix.IsSquare)
+        {
+            return false;
+        }
 
-    for (var i = 0; i < matrix.Rows; i++)
+        for (var i = 0; i < matrix.Rows; i++)
     {
         for (var j = 0; j < matrix.Columns; j++)
         {
@@ -177,9 +183,12 @@ private static bool CheckSymmetryLinearAlgebra(DotCompute.Algorithms.LinearAlgeb
 
 private static bool CheckDiagonal(Matrix matrix)
 {
-    if (!matrix.IsSquare) return false;
+    if (!matrix.IsSquare)
+        {
+            return false;
+        }
 
-    for (var i = 0; i < matrix.Rows; i++)
+        for (var i = 0; i < matrix.Rows; i++)
     {
         for (var j = 0; j < matrix.Columns; j++)
         {
@@ -194,9 +203,12 @@ private static bool CheckDiagonal(Matrix matrix)
 
 private static bool CheckDiagonalLinearAlgebra(DotCompute.Algorithms.LinearAlgebra.Matrix matrix)
 {
-    if (!matrix.IsSquare) return false;
+    if (!matrix.IsSquare)
+        {
+            return false;
+        }
 
-    for (var i = 0; i < matrix.Rows; i++)
+        for (var i = 0; i < matrix.Rows; i++)
     {
         for (var j = 0; j < matrix.Columns; j++)
         {

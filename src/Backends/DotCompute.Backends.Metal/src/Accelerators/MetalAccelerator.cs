@@ -409,12 +409,32 @@ private static int EstimateComputeUnits(MetalDeviceInfo info, string families)
     if (families.Contains("Apple", StringComparison.Ordinal))
     {
         // Apple Silicon M-series chips
-        if (families.Contains("Apple8", StringComparison.Ordinal)) return 20; // M2 Max/Ultra
-        if (families.Contains("Apple7", StringComparison.Ordinal)) return 16; // M1 Max/Ultra  
-        if (families.Contains("Apple6", StringComparison.Ordinal)) return 8;  // M1 Pro
-        if (families.Contains("Apple5", StringComparison.Ordinal)) return 8;  // M1
-        if (families.Contains("Apple4", StringComparison.Ordinal)) return 6;  // A12/A13
-        return 4; // Older Apple Silicon
+        if (families.Contains("Apple8", StringComparison.Ordinal))
+            {
+                return 20; // M2 Max/Ultra
+            }
+
+            if (families.Contains("Apple7", StringComparison.Ordinal))
+            {
+                return 16; // M1 Max/Ultra  
+            }
+
+            if (families.Contains("Apple6", StringComparison.Ordinal))
+            {
+                return 8;  // M1 Pro
+            }
+
+            if (families.Contains("Apple5", StringComparison.Ordinal))
+            {
+                return 8;  // M1
+            }
+
+            if (families.Contains("Apple4", StringComparison.Ordinal))
+            {
+                return 6;  // A12/A13
+            }
+
+            return 4; // Older Apple Silicon
     }
     
     // Intel Mac GPUs

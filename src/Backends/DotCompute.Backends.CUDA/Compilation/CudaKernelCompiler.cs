@@ -123,7 +123,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             {
                 Name = definition.Name,
                 EntryPoint = definition.EntryPoint ?? "kernel_main",
-                Code = Encoding.UTF8.GetString(definition.Code),
+                Code = definition.Code ?? string.Empty,
                 Language = KernelLanguage.Cuda
             };
 
@@ -180,7 +180,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             {
                 CacheKey = cacheKey,
                 KernelName = definition.Name,
-                SourceCodeHash = definition.Code.GetHashCode(),
+                SourceCodeHash = definition.Code?.GetHashCode() ?? 0,
                 CompileTime = DateTime.UtcNow,
                 LastAccessed = DateTime.UtcNow,
                 AccessCount = 1,
@@ -889,7 +889,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
         var key = new StringBuilder();
         key.Append(definition.Name);
         key.Append('_');
-        key.Append(definition.Code.GetHashCode());
+        key.Append(definition.Code?.GetHashCode() ?? 0);
 
         if (options != null)
         {

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -32,7 +33,7 @@ public static class MemoryOptimizations
     /// </summary>
     public sealed class NumaAllocator : IDisposable
     {
-        private readonly Dictionary&lt;int, IntPtr&gt; _numaBuffers = new();
+        private readonly Dictionary<int, IntPtr> _numaBuffers = new();
         private readonly object _lock = new();
         private bool _disposed;
         
@@ -44,11 +45,15 @@ public static class MemoryOptimizations
         /// <param name="numaNode">Preferred NUMA node (-1 for local)</param>
         /// <param name="alignment">Memory alignment (default: cache line)</param>
         /// <returns>Allocated memory span</returns>
-        public unsafe Span&lt;T&gt; Allocate&lt;T&gt;(int count, int numaNode = -1, int alignment = CACHE_LINE_SIZE)
+        public unsafe Span<T> Allocate<T>(int count, int numaNode = -1, int alignment = CACHE_LINE_SIZE)
             where T : unmanaged
         {
-            if (_disposed) throw new ObjectDisposedException(nameof(NumaAllocator));
-            
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(NumaAllocator));
+            }
+
+
             var size = count * sizeof(T);
             var alignedSize = AlignUp(size, alignment);
             
@@ -68,17 +73,21 @@ public static class MemoryOptimizations
                 _numaBuffers[ptr.ToInt32()] = ptr;
             }
             
-            return new Span&lt;T&gt;(ptr.ToPointer(), count);
+            return new Span<T>(ptr.ToPointer(), count);
         }
         
         /// <summary>
         /// Deallocates previously allocated memory.
         /// </summary>
         /// <param name="span">Memory span to deallocate</param>
-        public unsafe void Deallocate&lt;T&gt;(Span&lt;T&gt; span) where T : unmanaged
+        public unsafe void Deallocate<T>(Span<T> span) where T : unmanaged
         {
-            if (span.IsEmpty) return;
-            
+            if (span.IsEmpty)
+            {
+                return;
+            }
+
+
             fixed (T* ptr = span)
             {
                 var intPtr = new IntPtr(ptr);
@@ -93,30 +102,23 @@ public static class MemoryOptimizations
                 }
             }
         }
-        
-        private static unsafe IntPtr AllocateOnNumaNode(int size, int numaNode, int alignment)
-        {
+
+
+        private static unsafe IntPtr AllocateOnNumaNode(int size, int numaNode, int alignment) =>
             // Platform-specific NUMA allocation would go here
             // For now, fall back to regular aligned allocation
-            return AllocateAligned(size, alignment);
-        }
-        
-        private static unsafe IntPtr AllocateAligned(int size, int alignment)
-        {
-            return new IntPtr(NativeMemory.AlignedAlloc((uint)size, (uint)alignment));
-        }
-        
-        private static bool IsNumaAvailable()
-        {
+            AllocateAligned(size, alignment);
+
+
+        private static unsafe IntPtr AllocateAligned(int size, int alignment) => new IntPtr(NativeMemory.AlignedAlloc((uint)size, (uint)alignment));
+
+        private static bool IsNumaAvailable() =>
             // Platform-specific NUMA detection would go here
-            return false;
-        }
-        
-        private static int AlignUp(int value, int alignment)
-        {
-            return (value + alignment - 1) & ~(alignment - 1);
-        }
-        
+            false;
+
+        private static int AlignUp(int value, int alignment) => (value + alignment - 1) & ~(alignment - 1);
+
+
         public void Dispose()
         {
             if (!_disposed)
@@ -141,20 +143,20 @@ public static class MemoryOptimizations
     /// High-performance memory pool with cache-aligned allocation and reuse.
     /// </summary>
     /// <typeparam name="T">Element type</typeparam>
-    public sealed class OptimizedMemoryPool&lt;T&gt; : IDisposable where T : unmanaged
+    public sealed class OptimizedMemoryPool<T> : IDisposable where T : unmanaged
     {
-        private readonly ConcurrentStack&lt;PooledBuffer&gt; _availableBuffers = new();
-        private readonly ConcurrentBag&lt;PooledBuffer&gt; _allBuffers = new();
+        private readonly ConcurrentStack<PooledBuffer> _availableBuffers = new();
+        private readonly ConcurrentBag<PooledBuffer> _allBuffers = new();
         private readonly int _maxBuffers;
         private readonly NumaAllocator _allocator;
         private bool _disposed;
         
         private readonly struct PooledBuffer
         {
-            public readonly Span&lt;T&gt; Buffer;
+            public readonly Memory<T> Buffer;
             public readonly int Size;
             
-            public PooledBuffer(Span&lt;T&gt; buffer, int size)
+            public PooledBuffer(Memory<T> buffer, int size)
             {
                 Buffer = buffer;
                 Size = size;
@@ -172,21 +174,27 @@ public static class MemoryOptimizations
         /// </summary>
         /// <param name="size">Required buffer size</param>
         /// <returns>Rented buffer span</returns>
-        public Span&lt;T&gt; Rent(int size)
+        public Span<T> Rent(int size)
         {
-            if (_disposed) throw new ObjectDisposedException(nameof(OptimizedMemoryPool&lt;T&gt;));
-            
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(OptimizedMemoryPool<T>));
+            }
+
             // Try to find a suitable buffer from the pool
+
             if (_availableBuffers.TryPop(out var pooledBuffer) && pooledBuffer.Size >= size)
             {
-                return pooledBuffer.Buffer.Slice(0, size);
+                return pooledBuffer.Buffer.Span.Slice(0, size);
             }
             
             // Allocate new buffer if pool is not full
             var alignedSize = AlignToNextPowerOf2(size);
-            var buffer = _allocator.Allocate&lt;T&gt;(alignedSize);
+            var buffer = _allocator.Allocate<T>(alignedSize);
             
-            var newBuffer = new PooledBuffer(buffer, alignedSize);
+            // Convert Span<T> to Memory<T> for storage
+            var memory = new Memory<T>(buffer.ToArray());
+            var newBuffer = new PooledBuffer(memory, alignedSize);
             _allBuffers.Add(newBuffer);
             
             return buffer.Slice(0, size);
@@ -196,23 +204,28 @@ public static class MemoryOptimizations
         /// Returns a rented buffer to the pool for reuse.
         /// </summary>
         /// <param name="buffer">Buffer to return</param>
-        public void Return(Span&lt;T&gt; buffer)
+        public void Return(Span<T> buffer)
         {
-            if (buffer.IsEmpty || _disposed) return;
-            
+            if (buffer.IsEmpty || _disposed)
+            {
+                return;
+            }
+
             // Find the original pooled buffer
+
             foreach (var pooledBuffer in _allBuffers)
             {
                 unsafe
                 {
+                    var pooledSpan = pooledBuffer.Buffer.Span;
                     fixed (T* bufferPtr = buffer)
-                    fixed (T* pooledPtr = pooledBuffer.Buffer)
+                    fixed (T* pooledPtr = pooledSpan)
                     {
                         if (bufferPtr >= pooledPtr && 
                             bufferPtr < pooledPtr + pooledBuffer.Size)
                         {
                             // Clear the buffer for security
-                            pooledBuffer.Buffer.Clear();
+                            pooledSpan.Clear();
                             
                             // Return to available pool
                             if (_availableBuffers.Count < _maxBuffers)
@@ -243,7 +256,9 @@ public static class MemoryOptimizations
             {
                 foreach (var buffer in _allBuffers)
                 {
-                    _allocator.Deallocate(buffer.Buffer);
+                    // Convert Memory<T> back to Span<T> for deallocation
+                    var span = buffer.Buffer.Span;
+                    _allocator.Deallocate(span);
                 }
                 
                 _allocator.Dispose();
@@ -266,7 +281,7 @@ public static class MemoryOptimizations
         /// <param name="cols">Number of columns</param>
         /// <param name="blockSize">Block size (0 for auto-detect)</param>
         /// <returns>Blocked layout data</returns>
-        public static float[] ToBlockedLayout(ReadOnlySpan&lt;float&gt; source, int rows, int cols, 
+        public static float[] ToBlockedLayout(ReadOnlySpan<float> source, int rows, int cols, 
             int blockSize = 0)
         {
             if (blockSize <= 0)
@@ -305,7 +320,7 @@ public static class MemoryOptimizations
         /// <param name="cols">Number of columns</param>
         /// <param name="blockSize">Block size</param>
         /// <returns>Row-major layout data</returns>
-        public static float[] FromBlockedLayout(ReadOnlySpan&lt;float&gt; blocked, int rows, int cols, 
+        public static float[] FromBlockedLayout(ReadOnlySpan<float> blocked, int rows, int cols, 
             int blockSize)
         {
             var rowMajor = new float[blocked.Length];
@@ -339,12 +354,12 @@ public static class MemoryOptimizations
         /// <param name="source">Source array</param>
         /// <param name="vectorSize">SIMD vector size</param>
         /// <returns>Optimized layout array</returns>
-        public static T[] OptimizeForVectorization&lt;T&gt;(T[] source, int vectorSize = 0) 
+        public static T[] OptimizeForVectorization<T>(T[] source, int vectorSize = 0) 
             where T : unmanaged
         {
             if (vectorSize <= 0)
             {
-                vectorSize = Vector&lt;T&gt;.Count;
+                vectorSize = Vector<T>.Count;
             }
             
             var alignedLength = AlignUp(source.Length, vectorSize);
@@ -370,11 +385,9 @@ public static class MemoryOptimizations
             // Clamp to reasonable range
             return Math.Max(32, Math.Min(optimalBlock, 256));
         }
-        
-        private static int AlignUp(int value, int alignment)
-        {
-            return (value + alignment - 1) & ~(alignment - 1);
-        }
+
+
+        private static int AlignUp(int value, int alignment) => (value + alignment - 1) & ~(alignment - 1);
     }
     
     /// <summary>
@@ -391,8 +404,12 @@ public static class MemoryOptimizations
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void PrefetchSequential(void* baseAddress, int stride, int count)
         {
-            if (!Sse.IsSupported) return;
-            
+            if (!Sse.IsSupported)
+            {
+                return;
+            }
+
+
             var ptr = (byte*)baseAddress;
             for (var i = 0; i < count; i++)
             {
@@ -419,14 +436,22 @@ public static class MemoryOptimizations
         /// <param name="source">Source span</param>
         /// <param name="destination">Destination span</param>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public static unsafe void PrefetchedCopy&lt;T&gt;(ReadOnlySpan&lt;T&gt; source, Span&lt;T&gt; destination) 
+        public static unsafe void PrefetchedCopy<T>(ReadOnlySpan<T> source, Span<T> destination) 
             where T : unmanaged
         {
             if (source.Length != destination.Length)
+            {
+
                 throw new ArgumentException("Source and destination must have same length");
-                
-            if (source.Length == 0) return;
-            
+            }
+
+
+            if (source.Length == 0)
+            {
+                return;
+            }
+
+
             fixed (T* srcPtr = source, dstPtr = destination)
             {
                 var byteCount = source.Length * sizeof(T);
@@ -518,8 +543,8 @@ public static class MemoryOptimizations
         /// <param name="cols">Number of columns</param>
         /// <param name="action">Action to perform on each element</param>
         /// <param name="tileSize">Tile size for blocking (0 for auto)</param>
-        public static void IterateTiled&lt;T&gt;(Span&lt;T&gt; array, int rows, int cols, 
-            Action&lt;int, int, ref T&gt; action, int tileSize = 0)
+        public static void IterateTiled<T>(Span<T> array, int rows, int cols, 
+            RefAction<T> action, int tileSize = 0)
         {
             if (tileSize <= 0)
             {
@@ -548,18 +573,17 @@ public static class MemoryOptimizations
         /// Processes array with optimal cache blocking for reduction operations.
         /// </summary>
         /// <typeparam name="T">Element type</typeparam>
-        /// <typeparam name="TResult">Result type</typeparam>
         /// <param name="array">Input array</param>
         /// <param name="identity">Identity value for reduction</param>
         /// <param name="reducer">Reduction function</param>
         /// <param name="blockSize">Block size (0 for auto)</param>
         /// <returns>Reduction result</returns>
-        public static TResult BlockedReduce&lt;T, TResult&gt;(ReadOnlySpan&lt;T&gt; array, TResult identity,
-            Func&lt;TResult, T, TResult&gt; reducer, int blockSize = 0)
+        public static T BlockedReduce<T>(ReadOnlySpan<T> array, T identity,
+            Func<T, T, T> reducer, int blockSize = 0)
         {
             if (blockSize <= 0)
             {
-                blockSize = L1_CACHE_SIZE / (Unsafe.SizeOf&lt;T&gt;() * 2); // Leave room for result accumulation
+                blockSize = L1_CACHE_SIZE / (Unsafe.SizeOf<T>() * 2); // Leave room for result accumulation
                 blockSize = Math.Max(64, Math.Min(blockSize, 4096));
             }
             
@@ -590,3 +614,12 @@ public static class MemoryOptimizations
         }
     }
 }
+
+/// <summary>
+/// Delegate for actions that take a reference parameter.
+/// </summary>
+/// <typeparam name="T">The type of the reference parameter</typeparam>
+/// <param name="row">Row index</param>
+/// <param name="col">Column index</param>
+/// <param name="value">Reference to the value</param>
+public delegate void RefAction<T>(int row, int col, ref T value);

@@ -134,6 +134,12 @@ public float[] ToArray()
 public ReadOnlySpan<float> AsSpan() => _data.AsSpan();
 
 /// <summary>
+/// Gets a mutable span of the matrix data.
+/// </summary>
+/// <returns>A mutable span of the matrix data.</returns>
+public Span<float> AsMutableSpan() => _data.AsSpan();
+
+/// <summary>
 /// Creates an identity matrix of the specified size.
 /// </summary>
 /// <param name="size">The size of the square identity matrix.</param>
@@ -150,24 +156,21 @@ public static Matrix Identity(int size)
     return matrix;
 }
 
-/// <summary>
-/// Creates a matrix filled with zeros.
-/// </summary>
-/// <param name="rows">Number of rows.</param>
-/// <param name="cols">Number of columns.</param>
-/// <returns>A zero matrix.</returns>
-public static Matrix Zeros(int rows, int cols)
-{
-    return new Matrix(rows, cols);
-}
+    /// <summary>
+    /// Creates a matrix filled with zeros.
+    /// </summary>
+    /// <param name="rows">Number of rows.</param>
+    /// <param name="cols">Number of columns.</param>
+    /// <returns>A zero matrix.</returns>
+    public static Matrix Zeros(int rows, int cols) => new Matrix(rows, cols);
 
-/// <summary>
-/// Creates a matrix filled with ones.
-/// </summary>
-/// <param name="rows">Number of rows.</param>
-/// <param name="cols">Number of columns.</param>
-/// <returns>A matrix of ones.</returns>
-public static Matrix Ones(int rows, int cols)
+    /// <summary>
+    /// Creates a matrix filled with ones.
+    /// </summary>
+    /// <param name="rows">Number of rows.</param>
+    /// <param name="cols">Number of columns.</param>
+    /// <returns>A matrix of ones.</returns>
+    public static Matrix Ones(int rows, int cols)
 {
     var matrix = new Matrix(rows, cols);
     Array.Fill(matrix._data, 1.0f);
@@ -250,17 +253,14 @@ public Matrix GetColumn(int col)
     return result;
 }
 
-/// <summary>
-/// Creates a deep copy of the matrix.
-/// </summary>
-/// <returns>A new matrix with copied data.</returns>
-public Matrix Clone()
-{
-    return new Matrix(_rows, _cols, _data);
-}
+    /// <summary>
+    /// Creates a deep copy of the matrix.
+    /// </summary>
+    /// <returns>A new matrix with copied data.</returns>
+    public Matrix Clone() => new Matrix(_rows, _cols, _data);
 
-/// <inheritdoc/>
-public bool Equals(Matrix? other)
+    /// <inheritdoc/>
+    public bool Equals(Matrix? other)
 {
     if (other is null)
     {
@@ -278,20 +278,14 @@ public bool Equals(Matrix? other)
     return _data.AsSpan().SequenceEqual(other._data.AsSpan());
 }
 
-/// <inheritdoc/>
-public override bool Equals(object? obj)
-{
-    return Equals(obj as Matrix);
-}
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as Matrix);
 
-/// <inheritdoc/>
-public override int GetHashCode()
-{
-    return HashCode.Combine(_rows, _cols, _data.Length);
-}
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine(_rows, _cols, _data.Length);
 
-/// <inheritdoc/>
-public override string ToString()
+    /// <inheritdoc/>
+    public override string ToString()
 {
     var sb = new StringBuilder();
     sb.AppendLine(CultureInfo.InvariantCulture, $"Matrix({_rows}x{_cols}):");

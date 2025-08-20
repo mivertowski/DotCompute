@@ -323,13 +323,20 @@ internal sealed class TelemetryService : ITelemetryService, IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(TelemetryService));
+        }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
         _telemetryProvider?.Dispose();
         _distributedTracer?.Dispose();

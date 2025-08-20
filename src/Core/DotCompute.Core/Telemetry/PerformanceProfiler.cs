@@ -190,8 +190,12 @@ public sealed class PerformanceProfiler : IDisposable
     {
         ThrowIfDisposed();
         
-        if (!_activeProfiles.TryGetValue(correlationId, out var profile)) return;
-        
+        if (!_activeProfiles.TryGetValue(correlationId, out var profile))
+        {
+            return;
+        }
+
+
         var operationProfile = new MemoryOperationProfile
         {
             OperationType = operationType,
@@ -258,8 +262,8 @@ public sealed class PerformanceProfiler : IDisposable
             Analysis = analysis,
             
             // Detailed data
-            KernelExecutions = activeProfile.KernelExecutions.ToList(),
-            MemoryOperations = activeProfile.MemoryOperations.ToList(),
+            KernelExecutions = [.. activeProfile.KernelExecutions],
+            MemoryOperations = [.. activeProfile.MemoryOperations],
             DeviceMetrics = activeProfile.DeviceMetrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
         };
         
@@ -514,8 +518,12 @@ public sealed class PerformanceProfiler : IDisposable
 
     private void CollectProfileSamples(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             var sample = new ProfileSample
@@ -584,8 +592,12 @@ public sealed class PerformanceProfiler : IDisposable
     private static double CalculateStandardDeviation(IEnumerable<double> values)
     {
         var valuesList = values.ToList();
-        if (valuesList.Count <= 1) return 0;
-        
+        if (valuesList.Count <= 1)
+        {
+            return 0;
+        }
+
+
         var average = valuesList.Average();
         var sumOfSquaresDiff = valuesList.Select(val => Math.Pow(val - average, 2)).Sum();
         return Math.Sqrt(sumOfSquaresDiff / valuesList.Count);
@@ -593,8 +605,12 @@ public sealed class PerformanceProfiler : IDisposable
 
     private static PerformanceTrend AnalyzePerformanceTrend(List<KernelExecutionProfile> executions)
     {
-        if (executions.Count < 2) return PerformanceTrend.Stable;
-        
+        if (executions.Count < 2)
+        {
+            return PerformanceTrend.Stable;
+        }
+
+
         var orderedExecutions = executions.OrderBy(e => e.StartTime).ToList();
         var firstHalf = orderedExecutions.Take(orderedExecutions.Count / 2);
         var secondHalf = orderedExecutions.Skip(orderedExecutions.Count / 2);
@@ -664,15 +680,23 @@ public sealed class PerformanceProfiler : IDisposable
 
     private double CalculateDeviceUtilizationEfficiency(ActiveProfile profile)
     {
-        if (!profile.DeviceMetrics.Any()) return 0;
-        
+        if (!profile.DeviceMetrics.Any())
+        {
+            return 0;
+        }
+
+
         return profile.DeviceMetrics.Values.Average(d => d.UtilizationPercentage) / 100.0;
     }
 
     private double CalculateParallelismEfficiency(List<KernelExecutionProfile> executions)
     {
-        if (executions.Count <= 1) return 1.0;
-        
+        if (executions.Count <= 1)
+        {
+            return 1.0;
+        }
+
+
         var totalTime = executions.Sum(e => e.ExecutionTime.TotalMilliseconds);
         var timeSpan = executions.Max(e => e.EndTime) - executions.Min(e => e.StartTime);
         
@@ -766,13 +790,20 @@ public sealed class PerformanceProfiler : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(PerformanceProfiler));
+        }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
         
         // Dispose all active profiles

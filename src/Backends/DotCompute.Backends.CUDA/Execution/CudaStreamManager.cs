@@ -270,12 +270,16 @@ public sealed class CudaStreamManager : IDisposable
         ThrowIfDisposed();
 
         if (!_activeStreams.TryGetValue(waitingStream, out var waitingStreamInfo))
-            throw new ArgumentException($"Waiting stream {waitingStream} not found");
+            {
+                throw new ArgumentException($"Waiting stream {waitingStream} not found");
+            }
 
-        if (!_activeStreams.TryGetValue(signalStream, out var signalStreamInfo))
-            throw new ArgumentException($"Signal stream {signalStream} not found");
+            if (!_activeStreams.TryGetValue(signalStream, out var signalStreamInfo))
+            {
+                throw new ArgumentException($"Signal stream {signalStream} not found");
+            }
 
-        _context.MakeCurrent();
+            _context.MakeCurrent();
 
         // Record event on signal stream
         var recordResult = Native.CudaRuntime.cudaEventRecord(eventHandle, signalStreamInfo.Handle);
@@ -362,9 +366,11 @@ public sealed class CudaStreamManager : IDisposable
         ThrowIfDisposed();
 
         if (!_activeStreams.TryGetValue(streamId, out var streamInfo))
-            return false;
+            {
+                return false;
+            }
 
-        _context.MakeCurrent();
+            _context.MakeCurrent();
         var result = Native.CudaRuntime.cudaStreamQuery(streamInfo.Handle);
         return result == CudaError.Success;
     }
@@ -414,9 +420,11 @@ public sealed class CudaStreamManager : IDisposable
         ThrowIfDisposed();
 
         if (!_activeStreams.TryGetValue(streamId, out var streamInfo))
-            throw new ArgumentException($"Stream {streamId} not found");
+            {
+                throw new ArgumentException($"Stream {streamId} not found");
+            }
 
-        _ = Task.Run(async () =>
+            _ = Task.Run(async () =>
         {
             try
             {
@@ -430,18 +438,15 @@ public sealed class CudaStreamManager : IDisposable
         });
     }
 
-    /// <summary>
-    /// Optimizes stream usage for RTX 2000 architecture
-    /// </summary>
-    public void OptimizeForRtx2000()
-    {
-        OptimizeStreamUsage();
-    }
+        /// <summary>
+        /// Optimizes stream usage for RTX 2000 architecture
+        /// </summary>
+        public void OptimizeForRtx2000() => OptimizeStreamUsage();
 
-    /// <summary>
-    /// Optimizes stream usage (backward compatibility)
-    /// </summary>
-    public void OptimizeStreamUsage()
+        /// <summary>
+        /// Optimizes stream usage (backward compatibility)
+        /// </summary>
+        public void OptimizeStreamUsage()
     {
         ThrowIfDisposed();
 
@@ -545,9 +550,11 @@ public sealed class CudaStreamManager : IDisposable
     private void DestroyStream(IntPtr stream)
     {
         if (stream == IntPtr.Zero || Array.IndexOf(_rtxOptimizedStreams, stream) >= 0)
-            return; // Don't destroy default or RTX-optimized streams
+            {
+                return; // Don't destroy default or RTX-optimized streams
+            }
 
-        try
+            try
         {
             _context.MakeCurrent();
             var result = Native.CudaRuntime.cudaStreamDestroy(stream);
@@ -581,9 +588,12 @@ public sealed class CudaStreamManager : IDisposable
 
     private void PerformMaintenance(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        try
+            try
         {
             OptimizeForRtx2000();
             _streamPool.PerformMaintenance();
@@ -598,8 +608,10 @@ public sealed class CudaStreamManager : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
-            throw new ObjectDisposedException(nameof(CudaStreamManager));
-    }
+            {
+                throw new ObjectDisposedException(nameof(CudaStreamManager));
+            }
+        }
 
     public void Dispose()
     {
@@ -759,12 +771,9 @@ public sealed class CudaStreamGroup : IDisposable
     public string Name { get; }
     public IReadOnlyDictionary<StreamId, IntPtr> Streams => _streams;
 
-    internal void AddStream(StreamId streamId, IntPtr stream)
-    {
-        _streams[streamId] = stream;
-    }
+        internal void AddStream(StreamId streamId, IntPtr stream) => _streams[streamId] = stream;
 
-    public void Dispose()
+        public void Dispose()
     {
         if (!_disposed)
         {
@@ -861,7 +870,7 @@ public sealed class CudaExecutionGraph
             Id = id,
             Operation = operation,
             Priority = priority,
-            Dependencies = dependencies.ToList()
+            Dependencies = [.. dependencies]
         });
     }
 
@@ -879,9 +888,11 @@ public sealed class CudaExecutionGraph
                 .ToList();
 
             if (readyNodes.Count == 0)
-                throw new InvalidOperationException("Circular dependency detected in execution graph");
+                {
+                    throw new InvalidOperationException("Circular dependency detected in execution graph");
+                }
 
-            levels.Add(new CudaExecutionLevel { Nodes = readyNodes });
+                levels.Add(new CudaExecutionLevel { Nodes = readyNodes });
 
             foreach (var node in readyNodes)
             {

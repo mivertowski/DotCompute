@@ -109,8 +109,17 @@ namespace DotCompute.Core.Memory.P2P
             P2PTransferOptions options,
             CancellationToken cancellationToken = default)
         {
-            if (sourceDevice == null) throw new ArgumentNullException(nameof(sourceDevice));
-            if (targetDevice == null) throw new ArgumentNullException(nameof(targetDevice));
+            if (sourceDevice == null)
+            {
+                throw new ArgumentNullException(nameof(sourceDevice));
+            }
+
+
+            if (targetDevice == null)
+            {
+                throw new ArgumentNullException(nameof(targetDevice));
+            }
+
 
             var profileKey = GetOptimizationProfileKey(sourceDevice.Info.Id, targetDevice.Info.Id);
 
@@ -157,9 +166,18 @@ namespace DotCompute.Core.Memory.P2P
             P2PScatterOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null) throw new ArgumentNullException(nameof(sourceBuffer));
+            if (sourceBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(sourceBuffer));
+            }
+
+
             if (destinationBuffers == null || destinationBuffers.Length == 0)
+            {
+
                 throw new ArgumentException("At least one destination buffer is required", nameof(destinationBuffers));
+            }
+
 
             var scatterPlan = new P2PScatterPlan
             {
@@ -213,8 +231,17 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             if (sourceBuffers == null || sourceBuffers.Length == 0)
+            {
+
                 throw new ArgumentException("At least one source buffer is required", nameof(sourceBuffers));
-            if (destinationBuffer == null) throw new ArgumentNullException(nameof(destinationBuffer));
+            }
+
+
+            if (destinationBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(destinationBuffer));
+            }
+
 
             var gatherPlan = new P2PGatherPlan
             {
@@ -690,9 +717,14 @@ namespace DotCompute.Core.Memory.P2P
 
             // Adjust for bandwidth
             if (capability.EstimatedBandwidthGBps > 50.0)
+            {
                 baseSize *= 2;
+            }
             else if (capability.EstimatedBandwidthGBps < 10.0)
+            {
                 baseSize /= 2;
+            }
+
 
             return baseSize;
         }
@@ -711,7 +743,11 @@ namespace DotCompute.Core.Memory.P2P
         private static P2PTransferStrategy DeterminePreferredStrategy(P2PConnectionCapability capability)
         {
             if (!capability.IsSupported)
+            {
+
                 return P2PTransferStrategy.HostMediated;
+            }
+
 
             return capability.EstimatedBandwidthGBps switch
             {
@@ -724,7 +760,11 @@ namespace DotCompute.Core.Memory.P2P
         private double CalculateInitialOptimizationScore(P2PConnectionCapability capability)
         {
             if (!capability.IsSupported)
+            {
+
                 return 0.0;
+            }
+
 
             var bandwidthScore = Math.Min(1.0, capability.EstimatedBandwidthGBps / 100.0);
             var connectionScore = capability.ConnectionType switch
@@ -750,10 +790,7 @@ namespace DotCompute.Core.Memory.P2P
             };
         }
 
-        private double EstimateImprovementPotential(P2POptimizationProfile profile)
-        {
-            return (1.0 - profile.EfficiencyScore) * 0.5; // Up to 50% improvement potential
-        }
+        private double EstimateImprovementPotential(P2POptimizationProfile profile) => (1.0 - profile.EfficiencyScore) * 0.5; // Up to 50% improvement potential
 
         private void UpdateOptimizationStatistics(P2PTransferPlan transferPlan)
         {
@@ -800,16 +837,18 @@ namespace DotCompute.Core.Memory.P2P
             }
         }
 
-        private static string GetOptimizationProfileKey(string sourceDeviceId, string targetDeviceId)
-        {
-            return $"{sourceDeviceId}_{targetDeviceId}";
-        }
+        private static string GetOptimizationProfileKey(string sourceDeviceId, string targetDeviceId) => $"{sourceDeviceId}_{targetDeviceId}";
 
         #endregion
 
         public async ValueTask DisposeAsync()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
+
             _disposed = true;
 
             _adaptiveOptimizationTimer?.Dispose();

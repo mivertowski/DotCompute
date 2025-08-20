@@ -277,25 +277,22 @@ public static class MemoryUtilities
         }
     }
 
-    /// <summary>
-    /// Validates memory allocation parameters.
-    /// </summary>
-    /// <param name="size">Size to validate</param>
-    /// <param name="parameterName">Name of the size parameter</param>
-    public static void ValidateAllocationSize(long size, string parameterName = "size")
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(size, parameterName);
-    }
+        /// <summary>
+        /// Validates memory allocation parameters.
+        /// </summary>
+        /// <param name="size">Size to validate</param>
+        /// <param name="parameterName">Name of the size parameter</param>
+        public static void ValidateAllocationSize(long size, string parameterName = "size") => ArgumentOutOfRangeException.ThrowIfNegativeOrZero(size, parameterName);
 
-    /// <summary>
-    /// Validates memory copy parameters.
-    /// </summary>
-    /// <param name="source">Source buffer</param>
-    /// <param name="destination">Destination buffer</param>
-    /// <param name="size">Size to copy</param>
-    /// <param name="sourceOffset">Source offset</param>
-    /// <param name="destinationOffset">Destination offset</param>
-    public static void ValidateCopyParameters(
+        /// <summary>
+        /// Validates memory copy parameters.
+        /// </summary>
+        /// <param name="source">Source buffer</param>
+        /// <param name="destination">Destination buffer</param>
+        /// <param name="size">Size to copy</param>
+        /// <param name="sourceOffset">Source offset</param>
+        /// <param name="destinationOffset">Destination offset</param>
+        public static void ValidateCopyParameters(
         IMemoryBuffer source,
         IMemoryBuffer destination,
         long size,

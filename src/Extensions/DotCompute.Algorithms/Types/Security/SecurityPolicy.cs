@@ -235,24 +235,36 @@ public async Task LoadPolicyFromFileAsync(string filePath)
     var root = document.RootElement;
 
     if (root.TryGetProperty("RequireDigitalSignature", out var reqDigSig))
-        RequireDigitalSignature = reqDigSig.GetBoolean();
-    
-    if (root.TryGetProperty("RequireStrongName", out var reqStrongName))
-        RequireStrongName = reqStrongName.GetBoolean();
-    
-    if (root.TryGetProperty("MinimumSecurityLevel", out var minLevel))
-        MinimumSecurityLevel = Enum.Parse<SecurityLevel>(minLevel.GetString()!);
-    
-    if (root.TryGetProperty("EnableMetadataAnalysis", out var enableMeta))
-        EnableMetadataAnalysis = enableMeta.GetBoolean();
-    
-    if (root.TryGetProperty("EnableMalwareScanning", out var enableMalware))
-        EnableMalwareScanning = enableMalware.GetBoolean();
-    
-    if (root.TryGetProperty("MaxAssemblySize", out var maxSize))
-        MaxAssemblySize = maxSize.GetInt64();
+        {
+            RequireDigitalSignature = reqDigSig.GetBoolean();
+        }
 
-    if (root.TryGetProperty("DirectoryPolicies", out var dirPolicies))
+        if (root.TryGetProperty("RequireStrongName", out var reqStrongName))
+        {
+            RequireStrongName = reqStrongName.GetBoolean();
+        }
+
+        if (root.TryGetProperty("MinimumSecurityLevel", out var minLevel))
+        {
+            MinimumSecurityLevel = Enum.Parse<SecurityLevel>(minLevel.GetString()!);
+        }
+
+        if (root.TryGetProperty("EnableMetadataAnalysis", out var enableMeta))
+        {
+            EnableMetadataAnalysis = enableMeta.GetBoolean();
+        }
+
+        if (root.TryGetProperty("EnableMalwareScanning", out var enableMalware))
+        {
+            EnableMalwareScanning = enableMalware.GetBoolean();
+        }
+
+        if (root.TryGetProperty("MaxAssemblySize", out var maxSize))
+        {
+            MaxAssemblySize = maxSize.GetInt64();
+        }
+
+        if (root.TryGetProperty("DirectoryPolicies", out var dirPolicies))
     {
         DirectoryPolicies.Clear();
         foreach (var prop in dirPolicies.EnumerateObject())

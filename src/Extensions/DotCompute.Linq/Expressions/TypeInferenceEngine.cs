@@ -318,22 +318,13 @@ private bool HasPerformanceIssues(Type type)
     return false;
 }
 
-private bool CanVectorize(Type type)
-{
-    return _typeCapabilities.TryGetValue(type, out var capabilities) && capabilities.CanVectorize;
-}
+    private bool CanVectorize(Type type) => _typeCapabilities.TryGetValue(type, out var capabilities) && capabilities.CanVectorize;
 
-private Type? GetVectorType(Type type)
-{
-    return _typeCapabilities.TryGetValue(type, out var capabilities) ? capabilities.VectorType : null;
-}
+    private Type? GetVectorType(Type type) => _typeCapabilities.TryGetValue(type, out var capabilities) ? capabilities.VectorType : null;
 
-private static bool CanReducePrecision(Type type)
-{
-    return type == typeof(double) || type == typeof(decimal);
-}
+    private static bool CanReducePrecision(Type type) => type == typeof(double) || type == typeof(decimal);
 
-private static Type GetReducedPrecisionType(Type type)
+    private static Type GetReducedPrecisionType(Type type)
 {
     return type switch
     {
@@ -355,13 +346,11 @@ private static bool RequiresMemoryLayoutOptimization(Type type)
     return fields.Any(f => !IsWellAligned(f.FieldType));
 }
 
-private static bool IsWellAligned(Type type)
-{
-    // Simple check for alignment - more sophisticated logic would be needed in practice
-    return type.IsPrimitive || (type.IsValueType && CalculateTypeSize(type) % 4 == 0);
-}
+    private static bool IsWellAligned(Type type) =>
+        // Simple check for alignment - more sophisticated logic would be needed in practice
+        type.IsPrimitive || (type.IsValueType && CalculateTypeSize(type) % 4 == 0);
 
-private static int CalculateTypeSize(Type type)
+    private static int CalculateTypeSize(Type type)
 {
     if (type.IsPrimitive)
     {
@@ -914,22 +903,19 @@ private bool IsDirectlySupported(Type type)
            (type.IsArray && _supportedTypes.Contains(type.GetElementType()!));
 }
 
-private bool IsGpuCompatible(Type type)
-{
-    return _typeCapabilities.TryGetValue(type, out var capabilities) && capabilities.IsGpuCompatible;
-}
+    private bool IsGpuCompatible(Type type) => _typeCapabilities.TryGetValue(type, out var capabilities) && capabilities.IsGpuCompatible;
 
-private Type? GetSuggestedGpuType(Type type)
-{
-    return _typeCapabilities.TryGetValue(type, out var capabilities) ? capabilities.OptimalGpuType : null;
-}
+    private Type? GetSuggestedGpuType(Type type) => _typeCapabilities.TryGetValue(type, out var capabilities) ? capabilities.OptimalGpuType : null;
 
-private static Type? GetCommonType(Type type1, Type type2)
+    private static Type? GetCommonType(Type type1, Type type2)
 {
-    if (type1 == type2) return type1;
+    if (type1 == type2)
+        {
+            return type1;
+        }
 
-    // Numeric promotion rules (simplified)
-    if (IsNumericType(type1) && IsNumericType(type2))
+        // Numeric promotion rules (simplified)
+        if (IsNumericType(type1) && IsNumericType(type2))
     {
         var code1 = Type.GetTypeCode(type1);
         var code2 = Type.GetTypeCode(type2);
@@ -962,12 +948,9 @@ private static TypeCode GetWiderType(TypeCode code1, TypeCode code2)
     return index1 > index2 ? code1 : code2;
 }
 
-private static bool IsImplicitlyConvertible(Type from, Type to)
-{
-    return to.IsAssignableFrom(from) || HasImplicitConversion(from, to);
-}
+    private static bool IsImplicitlyConvertible(Type from, Type to) => to.IsAssignableFrom(from) || HasImplicitConversion(from, to);
 
-private static bool HasImplicitConversion(Type from, Type to)
+    private static bool HasImplicitConversion(Type from, Type to)
 {
     // Check for built-in numeric conversions
     if (IsNumericType(from) && IsNumericType(to))

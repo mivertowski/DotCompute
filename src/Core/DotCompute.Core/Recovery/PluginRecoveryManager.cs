@@ -28,7 +28,11 @@ public class PluginRecoveryManager : IDisposable
     public async Task<bool> AttemptRecoveryAsync(PluginRecoveryContext context, CancellationToken cancellationToken = default)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(PluginRecoveryManager));
+        }
+
 
         try
         {
@@ -56,7 +60,11 @@ public class PluginRecoveryManager : IDisposable
         CancellationToken cancellationToken = default)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(PluginRecoveryManager));
+        }
+
 
         try
         {
@@ -82,6 +90,8 @@ public class PluginRecoveryManager : IDisposable
     public ComponentHealthResult GetHealthReport()
     {
         if (_disposed)
+        {
+
             return new ComponentHealthResult
             {
                 Component = "PluginRecovery",
@@ -90,6 +100,8 @@ public class PluginRecoveryManager : IDisposable
                 ResponseTime = TimeSpan.Zero,
                 LastCheck = DateTimeOffset.UtcNow
             };
+        }
+
 
         return new ComponentHealthResult
         {
@@ -134,6 +146,16 @@ public class PluginRecoveryContext
     /// Additional context data
     /// </summary>
     public Dictionary<string, object> Context { get; set; } = new();
+
+    /// <summary>
+    /// Path to plugin file or directory
+    /// </summary>
+    public string? PluginPath { get; set; }
+
+    /// <summary>
+    /// Plugin instance (if available)
+    /// </summary>
+    public object? Plugin { get; set; }
 
     public override string ToString() => $"Plugin={PluginId}, Attempt={AttemptNumber}";
 }

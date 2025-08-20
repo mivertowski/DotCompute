@@ -88,7 +88,11 @@ public class SandboxedPlugin : IDisposable
     /// </summary>
     internal async Task IsolateAsync()
     {
-        if (_isolated) return;
+        if (_isolated)
+        {
+            return;
+        }
+
 
         _isolated = true;
         
@@ -104,7 +108,11 @@ public class SandboxedPlugin : IDisposable
     /// </summary>
     internal async Task TerminateAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         await IsolateAsync().ConfigureAwait(false);
         
@@ -131,12 +139,10 @@ public class SandboxedPlugin : IDisposable
     /// <summary>
     /// Terminates any ongoing operations in the plugin.
     /// </summary>
-    private async Task TerminateOperationsAsync()
-    {
+    private async Task TerminateOperationsAsync() =>
         // This would terminate any active threads or tasks within the plugin
         // Implementation would depend on the specific threading model used
         await Task.CompletedTask.ConfigureAwait(false);
-    }
 
     /// <summary>
     /// Clears any sensitive data that might be held by the plugin.
@@ -152,7 +158,11 @@ public class SandboxedPlugin : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _disposed = true;
         TerminateAsync().GetAwaiter().GetResult();

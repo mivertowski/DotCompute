@@ -49,11 +49,19 @@ public sealed class MemoryProtection : IDisposable
         nuint alignment = 8, bool canExecute = false, string? identifier = null)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(MemoryProtection));
-        
+        }
+
+
         if (size == 0 || size > _configuration.MaxAllocationSize)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(size), 
                 $"Size must be between 1 and {_configuration.MaxAllocationSize} bytes");
+        }
+
 
         await _allocationLock.WaitAsync();
         try
@@ -132,10 +140,18 @@ public sealed class MemoryProtection : IDisposable
     public unsafe T ReadMemory<T>(IntPtr address, nuint offset = 0) where T : unmanaged
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(MemoryProtection));
+        }
+
 
         if (!_allocations.TryGetValue(address, out var metadata))
+        {
+
             throw new SecurityException($"Attempt to read from unprotected memory address: {address:X}");
+        }
+
 
         var region = metadata.Region;
         var readSize = (nuint)sizeof(T);
@@ -203,10 +219,18 @@ public sealed class MemoryProtection : IDisposable
     public unsafe void WriteMemory<T>(IntPtr address, T value, nuint offset = 0) where T : unmanaged
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(MemoryProtection));
+        }
+
 
         if (!_allocations.TryGetValue(address, out var metadata))
+        {
+
             throw new SecurityException($"Attempt to write to unprotected memory address: {address:X}");
+        }
+
 
         var region = metadata.Region;
         var writeSize = (nuint)sizeof(T);
@@ -270,8 +294,12 @@ public sealed class MemoryProtection : IDisposable
     public async Task FreeProtectedMemoryAsync(ProtectedMemoryAllocation allocation)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(MemoryProtection));
-        
+        }
+
+
         ArgumentNullException.ThrowIfNull(allocation);
 
         await _allocationLock.WaitAsync();
@@ -322,7 +350,11 @@ public sealed class MemoryProtection : IDisposable
     public bool ValidateMemoryAccess(IntPtr address, nuint size, string operation)
     {
         if (_disposed)
+        {
+
             return false;
+        }
+
 
         try
         {
@@ -426,7 +458,11 @@ public sealed class MemoryProtection : IDisposable
         const int MAP_ANONYMOUS = 0x20;
 
         var prot = PROT_READ | PROT_WRITE;
-        if (canExecute) prot |= PROT_EXEC;
+        if (canExecute)
+        {
+            prot |= PROT_EXEC;
+        }
+
 
         var result = mmap(IntPtr.Zero, size, prot, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         if (result == new IntPtr(-1))
@@ -467,9 +503,12 @@ public sealed class MemoryProtection : IDisposable
     private void InitializeCanaryValues(ProtectedMemoryRegion region)
     {
         if (!_configuration.EnableIntegrityChecking)
+        {
             return;
+        }
 
         // Generate random canary values
+
         var canary = new byte[8];
         RandomNumberGenerator.Fill(canary);
         region.CanaryValue = BitConverter.ToUInt64(canary);
@@ -488,7 +527,11 @@ public sealed class MemoryProtection : IDisposable
     private unsafe bool VerifyCanaryValues(ProtectedMemoryRegion region)
     {
         if (!_configuration.EnableIntegrityChecking)
+        {
+
             return true;
+        }
+
 
         try
         {
@@ -567,10 +610,7 @@ public sealed class MemoryProtection : IDisposable
         }
     }
 
-    private static nuint AlignSize(nuint size, nuint alignment)
-    {
-        return (size + alignment - 1) & ~(alignment - 1);
-    }
+    private static nuint AlignSize(nuint size, nuint alignment) => (size + alignment - 1) & ~(alignment - 1);
 
     private bool DetectSuspiciousAccessPattern(AllocationMetadata metadata, string operation)
     {
@@ -610,7 +650,10 @@ public sealed class MemoryProtection : IDisposable
     private void PerformIntegrityCheck(object? state)
     {
         if (_disposed || !_configuration.EnableIntegrityChecking)
+        {
             return;
+        }
+
 
         try
         {
@@ -665,17 +708,17 @@ public sealed class MemoryProtection : IDisposable
     private static extern int mprotect(IntPtr addr, nuint len, int prot);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void MemoryBarrier()
-    {
-        Thread.MemoryBarrier();
-    }
+    private static void MemoryBarrier() => Thread.MemoryBarrier();
 
     #endregion
 
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         _disposed = true;
 

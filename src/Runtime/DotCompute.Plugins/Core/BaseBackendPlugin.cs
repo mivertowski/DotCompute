@@ -112,23 +112,20 @@ public abstract class BaseBackendPlugin<TAccelerator, TOptions> : BackendPluginB
         });
     }
 
-    /// <summary>
-    /// Creates a named accelerator wrapper. Override this method to provide
-    /// custom wrapper implementation if needed.
-    /// </summary>
-    /// <param name="name">The name for the accelerator.</param>
-    /// <param name="accelerator">The underlying accelerator instance.</param>
-    /// <returns>A wrapped accelerator with the specified name.</returns>
-    protected virtual IAccelerator CreateNamedAcceleratorWrapper(string name, TAccelerator accelerator)
-    {
-        return new NamedAcceleratorWrapper(name, accelerator);
-    }
+        /// <summary>
+        /// Creates a named accelerator wrapper. Override this method to provide
+        /// custom wrapper implementation if needed.
+        /// </summary>
+        /// <param name="name">The name for the accelerator.</param>
+        /// <param name="accelerator">The underlying accelerator instance.</param>
+        /// <returns>A wrapped accelerator with the specified name.</returns>
+        protected virtual IAccelerator CreateNamedAcceleratorWrapper(string name, TAccelerator accelerator) => new NamedAcceleratorWrapper(name, accelerator);
 
-    /// <summary>
-    /// Provides common lifecycle logging for initialization.
-    /// Override OnInitializeAsync to add backend-specific initialization logic.
-    /// </summary>
-    protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
+        /// <summary>
+        /// Provides common lifecycle logging for initialization.
+        /// Override OnInitializeAsync to add backend-specific initialization logic.
+        /// </summary>
+        protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
         Logger?.LogInformation("Initializing {BackendName} backend plugin", AcceleratorName);
         
@@ -265,7 +262,6 @@ public sealed class NamedAcceleratorWrapper : IAccelerator
     /// <inheritdoc/>
     public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
 }
-
 }
 
 #pragma warning restore CA1848

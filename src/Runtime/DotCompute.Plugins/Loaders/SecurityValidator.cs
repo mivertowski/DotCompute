@@ -575,11 +575,9 @@ public class SecurityValidator
     /// <summary>
     /// Checks the vulnerability database for known issues.
     /// </summary>
-    private async Task CheckVulnerabilityDatabaseAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken)
-    {
+    private async Task CheckVulnerabilityDatabaseAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken) =>
         // Check if the plugin or its dependencies have known vulnerabilities
         await _vulnerabilityDatabase.CheckPluginAsync(manifest, scanResult, cancellationToken);
-    }
 }
 
 /// <summary>
@@ -885,11 +883,9 @@ internal class VulnerabilityDatabase
         };
     }
 
-    public async Task CheckPluginAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken)
-    {
+    public async Task CheckPluginAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken) =>
         // Check plugin-specific vulnerabilities
         await Task.CompletedTask;
-    }
 }
 
 /// <summary>

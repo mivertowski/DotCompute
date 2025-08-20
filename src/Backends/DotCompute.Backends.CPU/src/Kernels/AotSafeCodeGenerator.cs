@@ -512,16 +512,15 @@ private Delegate CreateGenericDelegate(List<Type> paramTypes, Func<ExtendedKerne
     });
 }
 
-private static void ExecuteSync(Func<ExtendedKernelExecutionContext, Task> implementation, ExtendedKernelExecutionContext context)
-{
+    private static void ExecuteSync(Func<ExtendedKernelExecutionContext, Task> implementation, ExtendedKernelExecutionContext context) =>
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT delegate signature compatibility
-    implementation(context).GetAwaiter().GetResult();
+        implementation(context).GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
-}
 
-#region Pre-compiled Kernel Implementations
 
-private static async Task VectorAddFloatKernelAsync(ExtendedKernelExecutionContext context)
+    #region Pre-compiled Kernel Implementations
+
+    private static async Task VectorAddFloatKernelAsync(ExtendedKernelExecutionContext context)
 {
     var a = context.GetBuffer<float>(0);
     var b = context.GetBuffer<float>(1);

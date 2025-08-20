@@ -164,29 +164,34 @@ public readonly struct MemoryAccessMetrics
     /// <summary>
     /// Creates metrics from a simple transfer
     /// </summary>
-    public static MemoryAccessMetrics FromTransfer(long bytes, TimeSpan duration)
-    {
-        return new MemoryAccessMetrics(bytes, duration);
-    }
+    public static MemoryAccessMetrics FromTransfer(long bytes, TimeSpan duration) => new MemoryAccessMetrics(bytes, duration);
 
     /// <summary>
     /// Creates metrics from a measured operation
     /// </summary>
     public static MemoryAccessMetrics FromMeasurement(
-        long bytes, 
-        Stopwatch stopwatch, 
-        MemoryAccessPattern pattern = MemoryAccessPattern.Sequential)
-    {
-        return new MemoryAccessMetrics(bytes, stopwatch.Elapsed, accessPattern: pattern);
-    }
+        long bytes,
+
+        Stopwatch stopwatch,
+
+        MemoryAccessPattern pattern = MemoryAccessPattern.Sequential) => new MemoryAccessMetrics(bytes, stopwatch.Elapsed, accessPattern: pattern);
 
     /// <summary>
     /// Combines multiple metrics into aggregate metrics
     /// </summary>
     public static MemoryAccessMetrics Combine(params MemoryAccessMetrics[] metrics)
     {
-        if (metrics.Length == 0) return Empty;
-        if (metrics.Length == 1) return metrics[0];
+        if (metrics.Length == 0)
+        {
+            return Empty;
+        }
+
+
+        if (metrics.Length == 1)
+        {
+            return metrics[0];
+        }
+
 
         long totalBytes = 0;
         TimeSpan totalDuration = TimeSpan.Zero;
@@ -252,10 +257,26 @@ public readonly struct MemoryAccessMetrics
         };
 
         // Alignment contributes 10%
-        if (alignment >= 32) score += 0.1;
-        else if (alignment >= 16) score += 0.07;
-        else if (alignment >= 8) score += 0.05;
-        else if (alignment >= 4) score += 0.03;
+        if (alignment >= 32)
+        {
+            score += 0.1;
+        }
+
+        else if (alignment >= 16)
+        {
+            score += 0.07;
+        }
+
+        else if (alignment >= 8)
+        {
+            score += 0.05;
+        }
+
+        else if (alignment >= 4)
+        {
+            score += 0.03;
+        }
+
 
         return Math.Clamp(score, 0.0, 1.0);
     }

@@ -238,7 +238,7 @@ public sealed class PluginServiceProvider : IServiceProvider, IDisposable
                 SingletonServiceCount = singletonCount,
                 MemoryUsage = memoryUsage,
                 LastHealthCheck = DateTime.UtcNow,
-                RegisteredAssemblies = _assemblyScopes.Keys.Select(a => a.GetName().Name ?? "Unknown").ToList()
+                RegisteredAssemblies = [.. _assemblyScopes.Keys.Select(a => a.GetName().Name ?? "Unknown")]
             };
         }
         catch (Exception ex)
@@ -643,16 +643,10 @@ internal sealed class PluginActivator : IPluginActivator
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
-    public object CreateInstance(Type type)
-    {
-        return ActivatorUtilities.CreateInstance(_serviceProvider, type);
-    }
+        public object CreateInstance(Type type) => ActivatorUtilities.CreateInstance(_serviceProvider, type);
 
-    public T CreateInstance<T>() where T : class
-    {
-        return ActivatorUtilities.CreateInstance<T>(_serviceProvider);
+        public T CreateInstance<T>() where T : class => ActivatorUtilities.CreateInstance<T>(_serviceProvider);
     }
-}
 
 /// <summary>
 /// Plugin validator interface.

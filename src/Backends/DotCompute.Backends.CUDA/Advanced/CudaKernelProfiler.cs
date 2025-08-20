@@ -115,10 +115,15 @@ public sealed class CudaKernelProfiler : IDisposable
         {
             // Clean up events
             if (startEvent != IntPtr.Zero)
-                CudaRuntime.cudaEventDestroy(startEvent);
-            if (endEvent != IntPtr.Zero)
-                CudaRuntime.cudaEventDestroy(endEvent);
-        }
+                {
+                    CudaRuntime.cudaEventDestroy(startEvent);
+                }
+
+                if (endEvent != IntPtr.Zero)
+                {
+                    CudaRuntime.cudaEventDestroy(endEvent);
+                }
+            }
     }
 
     /// <summary>
@@ -320,21 +325,19 @@ public sealed class CudaKernelProfiler : IDisposable
         return totalSize;
     }
 
-    /// <summary>
-    /// Prepares kernel arguments for execution
-    /// </summary>
-    private IntPtr PrepareKernelArguments(Abstractions.KernelArguments arguments)
-    {
-        // KernelArguments is a wrapper for kernel parameters
-        // For now, return a placeholder since actual implementation depends on the structure
-        return IntPtr.Zero;
-    }
+        /// <summary>
+        /// Prepares kernel arguments for execution
+        /// </summary>
+        private IntPtr PrepareKernelArguments(Abstractions.KernelArguments arguments) =>
+            // KernelArguments is a wrapper for kernel parameters
+            // For now, return a placeholder since actual implementation depends on the structure
+            IntPtr.Zero;
 
 
-    /// <summary>
-    /// Frees kernel arguments after execution
-    /// </summary>
-    private static void FreeKernelArguments(IntPtr argPtrs)
+        /// <summary>
+        /// Frees kernel arguments after execution
+        /// </summary>
+        private static void FreeKernelArguments(IntPtr argPtrs)
     {
         if (argPtrs == IntPtr.Zero)
         {

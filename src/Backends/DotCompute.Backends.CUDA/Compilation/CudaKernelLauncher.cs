@@ -104,9 +104,9 @@ public sealed class CudaKernelLauncher
         
         try
         {
-            for (int i = 0; i < arguments.Length; i++)
+            for (int i = 0; i < arguments.Count; i++)
             {
-                IntPtr argPtr = PrepareKernelArgument(arguments.Get(i), handles);
+                IntPtr argPtr = PrepareKernelArgument(arguments.Get(i) ?? throw new ArgumentNullException($"Argument at index {i} is null"), handles);
                 argPointers.Add(argPtr);
             }
             
@@ -217,7 +217,7 @@ public sealed class CudaKernelLauncher
     private int EstimateProblemSize(Abstractions.KernelArguments arguments)
     {
         // Look for buffer sizes or explicit size parameters
-        for (int i = 0; i < arguments.Length; i++)
+        for (int i = 0; i < arguments.Count; i++)
         {
             var argValue = arguments.Get(i);
             

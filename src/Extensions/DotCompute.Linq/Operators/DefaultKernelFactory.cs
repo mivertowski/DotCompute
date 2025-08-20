@@ -187,16 +187,14 @@ public IReadOnlyList<KernelLanguage> GetSupportedLanguages(IAccelerator accelera
     return new[] { KernelLanguage.CSharp };
 }
 
-private void RegisterBuiltInGenerators()
-{
-    // Built-in generators are now registered through the backend plugin system
-    // This method is kept for backwards compatibility but generators are loaded
-    // dynamically through the backend factory pattern when accelerators are created
-    
-    _logger.LogDebug("Built-in generators will be registered through backend plugins");
-}
+    private void RegisterBuiltInGenerators() =>
+        // Built-in generators are now registered through the backend plugin system
+        // This method is kept for backwards compatibility but generators are loaded
+        // dynamically through the backend factory pattern when accelerators are created
 
-private static Dictionary<string, object>? ExtractFusionMetadata(KernelDefinition definition)
+        _logger.LogDebug("Built-in generators will be registered through backend plugins");
+
+    private static Dictionary<string, object>? ExtractFusionMetadata(KernelDefinition definition)
 {
     if (definition.Metadata.TryGetValue("FusionMetadata", out var metadata) && metadata is Dictionary<string, object> fusionData)
     {
@@ -207,10 +205,9 @@ private static Dictionary<string, object>? ExtractFusionMetadata(KernelDefinitio
 
 private static Type[] ExtractInputTypes(KernelDefinition definition)
 {
-    return definition.Parameters
+    return [.. definition.Parameters
         .Where(p => p.Direction == ParameterDirection.In || p.Direction == ParameterDirection.InOut)
-        .Select(p => p.Type)
-        .ToArray();
+        .Select(p => p.Type)];
 }
 
 private static Type ExtractOutputType(KernelDefinition definition)
@@ -310,45 +307,39 @@ public string Name { get; }
 /// </summary>
 public KernelProperties Properties { get; }
 
-/// <summary>
-/// Compiles the kernel for execution.
-/// </summary>
-/// <param name="cancellationToken">The cancellation token.</param>
-/// <returns>A task representing the compilation operation.</returns>
-public Task CompileAsync(CancellationToken cancellationToken = default)
-{
-    // Placeholder compilation - just return completed task
-    return Task.CompletedTask;
-}
+    /// <summary>
+    /// Compiles the kernel for execution.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the compilation operation.</returns>
+    public Task CompileAsync(CancellationToken cancellationToken = default) =>
+        // Placeholder compilation - just return completed task
+        Task.CompletedTask;
 
-/// <summary>
-/// Executes the kernel with the given parameters.
-/// </summary>
-/// <param name="workItems">The work items configuration.</param>
-/// <param name="parameters">The kernel parameters.</param>
-/// <param name="cancellationToken">The cancellation token.</param>
-/// <returns>A task representing the execution.</returns>
-public Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
-{
-    // Placeholder execution - just return completed task
-    // In a real implementation, this would execute the kernel code
-    return Task.CompletedTask;
-}
+    /// <summary>
+    /// Executes the kernel with the given parameters.
+    /// </summary>
+    /// <param name="workItems">The work items configuration.</param>
+    /// <param name="parameters">The kernel parameters.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the execution.</returns>
+    public Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default) =>
+        // Placeholder execution - just return completed task
+        // In a real implementation, this would execute the kernel code
+        Task.CompletedTask;
 
-/// <summary>
-/// Gets information about the kernel parameters.
-/// </summary>
-/// <returns>The kernel parameter information.</returns>
-public IReadOnlyList<KernelParameter> GetParameterInfo()
-{
-    // Return parameters from definition if available
-    return _definition.Parameters.ToArray();
-}
+    /// <summary>
+    /// Gets information about the kernel parameters.
+    /// </summary>
+    /// <returns>The kernel parameter information.</returns>
+    public IReadOnlyList<KernelParameter> GetParameterInfo() =>
+        // Return parameters from definition if available
+        _definition.Parameters.ToArray();
 
-/// <summary>
-/// Disposes the kernel.
-/// </summary>
-public void Dispose()
+    /// <summary>
+    /// Disposes the kernel.
+    /// </summary>
+    public void Dispose()
 {
     if (!_disposed)
     {

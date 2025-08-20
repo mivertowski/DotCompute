@@ -64,25 +64,22 @@ public static float[] CrossCorrelate(ReadOnlySpan<float> signal1, ReadOnlySpan<f
     return Convolve(signal1, reversedSignal2);
 }
 
-/// <summary>
-/// Applies a finite impulse response (FIR) filter to a signal.
-/// </summary>
-/// <param name="signal">The input signal.</param>
-/// <param name="coefficients">The filter coefficients.</param>
-/// <returns>The filtered signal.</returns>
-public static float[] ApplyFIRFilter(ReadOnlySpan<float> signal, ReadOnlySpan<float> coefficients)
-{
-    return Convolve(signal, coefficients);
-}
+    /// <summary>
+    /// Applies a finite impulse response (FIR) filter to a signal.
+    /// </summary>
+    /// <param name="signal">The input signal.</param>
+    /// <param name="coefficients">The filter coefficients.</param>
+    /// <returns>The filtered signal.</returns>
+    public static float[] ApplyFIRFilter(ReadOnlySpan<float> signal, ReadOnlySpan<float> coefficients) => Convolve(signal, coefficients);
 
-/// <summary>
-/// Applies an infinite impulse response (IIR) filter to a signal.
-/// </summary>
-/// <param name="signal">The input signal.</param>
-/// <param name="b">The feedforward coefficients.</param>
-/// <param name="a">The feedback coefficients (a[0] should be 1).</param>
-/// <returns>The filtered signal.</returns>
-public static float[] ApplyIIRFilter(ReadOnlySpan<float> signal, ReadOnlySpan<float> b, ReadOnlySpan<float> a)
+    /// <summary>
+    /// Applies an infinite impulse response (IIR) filter to a signal.
+    /// </summary>
+    /// <param name="signal">The input signal.</param>
+    /// <param name="b">The feedforward coefficients.</param>
+    /// <param name="a">The feedback coefficients (a[0] should be 1).</param>
+    /// <returns>The filtered signal.</returns>
+    public static float[] ApplyIIRFilter(ReadOnlySpan<float> signal, ReadOnlySpan<float> b, ReadOnlySpan<float> a)
 {
     if (signal.Length == 0)
     {

@@ -64,17 +64,11 @@ public static class CudaMemoryAlignment
     public const int OptimalAlignment = 512; // 512 bytes optimal for RTX 2000 series
     public const int TextureAlignment = 512; // Texture memory alignment
     public const int SurfaceAlignment = 512; // Surface memory alignment
-    
-    public static long AlignUp(long size, int alignment = OptimalAlignment)
-    {
-        return ((size + alignment - 1) / alignment) * alignment;
+
+        public static long AlignUp(long size, int alignment = OptimalAlignment) => ((size + alignment - 1) / alignment) * alignment;
+
+        public static bool IsAligned(long size, int alignment = OptimalAlignment) => size % alignment == 0;
     }
-    
-    public static bool IsAligned(long size, int alignment = OptimalAlignment)
-    {
-        return size % alignment == 0;
-    }
-}
 
 /// <summary>
 /// Kernel arguments for CUDA execution
@@ -89,18 +83,12 @@ public sealed class CudaKernelArguments
     {
         _arguments.AddRange(arguments);
     }
-    
-    public void Add<T>(T argument) where T : unmanaged
-    {
-        _arguments.Add(argument);
-    }
-    
-    public void AddBuffer(IntPtr devicePointer)
-    {
-        _arguments.Add(devicePointer);
-    }
-    
-    public object[] ToArray() => _arguments.ToArray();
+
+        public void Add<T>(T argument) where T : unmanaged => _arguments.Add(argument);
+
+        public void AddBuffer(IntPtr devicePointer) => _arguments.Add(devicePointer);
+
+        public object[] ToArray() => [.. _arguments];
     
     public int Count => _arguments.Count;
 }

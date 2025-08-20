@@ -34,15 +34,13 @@ public QueryExecutor(
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 }
 
-/// <inheritdoc/>
-public object? Execute(ExecutionContext context)
-{
-    // For synchronous execution, call the async version and wait
-    return ExecuteAsync(context, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
-}
+    /// <inheritdoc/>
+    public object? Execute(ExecutionContext context) =>
+        // For synchronous execution, call the async version and wait
+        ExecuteAsync(context, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
 
-/// <inheritdoc/>
-public async Task<object?> ExecuteAsync(ExecutionContext context, CancellationToken cancellationToken = default)
+    /// <inheritdoc/>
+    public async Task<object?> ExecuteAsync(ExecutionContext context, CancellationToken cancellationToken = default)
 {
     ArgumentNullException.ThrowIfNull(context);
 
@@ -460,9 +458,6 @@ public DefaultMemoryManagerFactory(ILogger<UnifiedMemoryManager> logger)
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 }
 
-/// <inheritdoc/>
-public IMemoryManager CreateMemoryManager(IAccelerator accelerator)
-{
-    return new UnifiedMemoryManager(accelerator.Memory);
-}
+    /// <inheritdoc/>
+    public IMemoryManager CreateMemoryManager(IAccelerator accelerator) => new UnifiedMemoryManager(accelerator.Memory);
 }

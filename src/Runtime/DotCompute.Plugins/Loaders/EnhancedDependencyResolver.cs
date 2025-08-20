@@ -30,9 +30,11 @@ public sealed class EnhancedDependencyResolver : IDisposable
     public Task<bool> ResolveDependenciesAsync(string packageId, string version)
     {
         if (string.IsNullOrWhiteSpace(packageId))
-            throw new ArgumentException("Package ID cannot be null or empty", nameof(packageId));
-        
-        _logger.LogInformation("Resolving dependencies for package {PackageId} version {Version}", packageId, version);
+            {
+                throw new ArgumentException("Package ID cannot be null or empty", nameof(packageId));
+            }
+
+            _logger.LogInformation("Resolving dependencies for package {PackageId} version {Version}", packageId, version);
         
         // For now, just cache the package and return success
         _packageCache[packageId] = version;
@@ -46,9 +48,11 @@ public sealed class EnhancedDependencyResolver : IDisposable
     public bool IsPackageResolved(string packageId)
     {
         if (string.IsNullOrWhiteSpace(packageId))
-            return false;
-            
-        return _packageCache.ContainsKey(packageId);
+            {
+                return false;
+            }
+
+            return _packageCache.ContainsKey(packageId);
     }
 
     /// <summary>
@@ -57,18 +61,22 @@ public sealed class EnhancedDependencyResolver : IDisposable
     public string? GetResolvedVersion(string packageId)
     {
         if (string.IsNullOrWhiteSpace(packageId))
-            return null;
-            
-        _packageCache.TryGetValue(packageId, out var version);
+            {
+                return null;
+            }
+
+            _packageCache.TryGetValue(packageId, out var version);
         return version;
     }
 
     public void Dispose()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        _packageCache.Clear();
+            _packageCache.Clear();
         _disposed = true;
     }
 }

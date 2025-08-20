@@ -174,7 +174,7 @@ public sealed class SimulatedAccelerator : IAccelerator
         if (!IsAvailable)
             throw new InvalidOperationException(_failureMessage ?? "Accelerator not available");
 
-        var kernel = new TestCompiledKernel(definition.Name, definition.Code, options ?? new CompilationOptions());
+        var kernel = new TestCompiledKernel(definition.Name, definition.Code ?? string.Empty, options ?? new CompilationOptions());
         return ValueTask.FromResult<ICompiledKernel>(kernel);
     }
 

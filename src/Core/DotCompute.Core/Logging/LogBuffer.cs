@@ -80,9 +80,13 @@ public sealed class LogBuffer : IDisposable
     {
         ThrowIfDisposed();
         
-        if (logEntry == null) return false;
-        
+        if (logEntry == null)
+        {
+            return false;
+        }
+
         // Apply filtering if configured
+
         if (!ShouldProcessLogEntry(logEntry))
         {
             return true; // Entry was filtered, but not an error
@@ -174,8 +178,12 @@ public sealed class LogBuffer : IDisposable
     {
         ThrowIfDisposed();
         
-        if (sink == null) throw new ArgumentNullException(nameof(sink));
-        
+        if (sink == null)
+        {
+            throw new ArgumentNullException(nameof(sink));
+        }
+
+
         _sinks.Add(sink);
         
         try
@@ -198,8 +206,12 @@ public sealed class LogBuffer : IDisposable
     {
         ThrowIfDisposed();
         
-        if (sink == null) return false;
-        
+        if (sink == null)
+        {
+            return false;
+        }
+
+
         var removed = _sinks.Remove(sink);
         if (removed)
         {
@@ -270,8 +282,12 @@ public sealed class LogBuffer : IDisposable
 
     private async Task ProcessBatchAsync(List<StructuredLogEntry> batch, CancellationToken cancellationToken)
     {
-        if (!batch.Any()) return;
-        
+        if (!batch.Any())
+        {
+            return;
+        }
+
+
         try
         {
             // Apply batch-level transformations
@@ -463,8 +479,12 @@ public sealed class LogBuffer : IDisposable
 
     private void TriggerBatchFlush(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _ = Task.Run(async () =>
         {
             try
@@ -493,13 +513,20 @@ public sealed class LogBuffer : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(LogBuffer));
+        }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
         
         try
@@ -654,12 +681,11 @@ public sealed class FileSink : ILogSink, IHealthCheckable
             Directory.CreateDirectory(directory);
         }
     }
-    
-    public async Task WriteAsync(StructuredLogEntry entry, CancellationToken cancellationToken = default)
-    {
-        await WriteBatchAsync(new List<StructuredLogEntry> { entry }, cancellationToken);
-    }
-    
+
+
+    public async Task WriteAsync(StructuredLogEntry entry, CancellationToken cancellationToken = default) => await WriteBatchAsync(new List<StructuredLogEntry> { entry }, cancellationToken);
+
+
     public async Task WriteBatchAsync(List<StructuredLogEntry> entries, CancellationToken cancellationToken = default)
     {
         await _writeSemaphore.WaitAsync(cancellationToken);
@@ -679,18 +705,16 @@ public sealed class FileSink : ILogSink, IHealthCheckable
             _writeSemaphore.Release();
         }
     }
-    
-    public Task FlushAsync(CancellationToken cancellationToken = default)
-    {
+
+
+    public Task FlushAsync(CancellationToken cancellationToken = default) =>
         // File writes are immediately flushed
-        return Task.CompletedTask;
-    }
-    
+        Task.CompletedTask;
+
+
     public void MarkUnhealthy(Exception? exception = null) => IsHealthy = false;
     public void MarkHealthy() => IsHealthy = true;
-    
-    public void Dispose()
-    {
-        _writeSemaphore?.Dispose();
-    }
+
+
+    public void Dispose() => _writeSemaphore?.Dispose();
 }

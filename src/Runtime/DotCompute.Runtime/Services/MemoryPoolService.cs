@@ -150,12 +150,9 @@ public async Task<long> ReleaseUnusedMemoryAsync()
     return totalReleased;
 }
 
-private long GetLargestContiguousBlock()
-{
-    return _pools.Values.Max(p => p.AvailableSize);
-}
+    private long GetLargestContiguousBlock() => _pools.Values.Max(p => p.AvailableSize);
 
-public void Dispose()
+    public void Dispose()
 {
     if (_disposed)
     {
@@ -345,19 +342,15 @@ public long SizeInBytes { get; }
 public MemoryOptions Options { get; }
 public bool IsDisposed => _disposed;
 
-public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-{
-    // Mock implementation
-    return ValueTask.CompletedTask;
-}
+    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged =>
+        // Mock implementation
+        ValueTask.CompletedTask;
 
-public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-{
-    // Mock implementation
-    return ValueTask.CompletedTask;
-}
+    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged =>
+        // Mock implementation
+        ValueTask.CompletedTask;
 
-public void Dispose()
+    public void Dispose()
 {
     if (!_disposed)
     {
@@ -468,24 +461,17 @@ public long SizeInBytes { get; }
 public MemoryOptions Options { get; }
 public bool IsDisposed { get; private set; }
 
-public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-{
-    // Mock implementation
-    return ValueTask.CompletedTask;
-}
+    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged =>
+        // Mock implementation
+        ValueTask.CompletedTask;
 
-public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-{
-    // Mock implementation
-    return ValueTask.CompletedTask;
-}
+    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged =>
+        // Mock implementation
+        ValueTask.CompletedTask;
 
-public void Dispose()
-{
-    IsDisposed = true;
-}
+    public void Dispose() => IsDisposed = true;
 
-public ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
 {
     IsDisposed = true;
     return ValueTask.CompletedTask;

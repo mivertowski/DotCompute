@@ -19,18 +19,15 @@ public static class ExecutionMemoryManager
     private static readonly ConcurrentDictionary<string, DeviceBufferPool> _devicePools = new();
     private static readonly ConcurrentDictionary<Guid, List<AbstractionsMemory.IMemoryBuffer>> _executionBuffers = new();
 
-    /// <summary>
-    /// Gets or creates a buffer pool for the specified device.
-    /// </summary>
-    public static DeviceBufferPool GetDevicePool(string deviceId)
-    {
-        return _devicePools.GetOrAdd(deviceId, id => new DeviceBufferPool(id));
-    }
+        /// <summary>
+        /// Gets or creates a buffer pool for the specified device.
+        /// </summary>
+        public static DeviceBufferPool GetDevicePool(string deviceId) => _devicePools.GetOrAdd(deviceId, id => new DeviceBufferPool(id));
 
-    /// <summary>
-    /// Allocates buffers for an execution plan.
-    /// </summary>
-    public static async ValueTask<List<AbstractionsMemory.IMemoryBuffer>> AllocateExecutionBuffersAsync(
+        /// <summary>
+        /// Allocates buffers for an execution plan.
+        /// </summary>
+        public static async ValueTask<List<AbstractionsMemory.IMemoryBuffer>> AllocateExecutionBuffersAsync(
         Guid executionId,
         IEnumerable<BufferAllocationRequest> requests,
         CancellationToken cancellationToken = default)
@@ -184,10 +181,13 @@ public sealed class DeviceBufferPool : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        // Dispose all pooled buffers
-        while (_availableBuffers.TryDequeue(out var buffer))
+            // Dispose all pooled buffers
+            while (_availableBuffers.TryDequeue(out var buffer))
         {
             await buffer.DisposeAsync();
         }
@@ -1157,18 +1157,16 @@ public sealed class ExecutionPlanFactory
             pipelineWorkload.PipelineDefinition, availableDevices, options, cancellationToken);
     }
 
-    private async ValueTask<ExecutionPlan<T>> GenerateWorkStealingPlan<T>(
-        ExecutionWorkload<T> workload,
-        IAccelerator[] availableDevices,
-        ExecutionConstraints constraints,
-        CancellationToken cancellationToken) where T : unmanaged
-    {
-        // Work stealing plans would be implemented similar to data parallel
-        // but with different load balancing and synchronization strategies
-        return await GenerateDataParallelPlan(workload, availableDevices, constraints, cancellationToken);
-    }
+        private async ValueTask<ExecutionPlan<T>> GenerateWorkStealingPlan<T>(
+            ExecutionWorkload<T> workload,
+            IAccelerator[] availableDevices,
+            ExecutionConstraints constraints,
+            CancellationToken cancellationToken) where T : unmanaged =>
+            // Work stealing plans would be implemented similar to data parallel
+            // but with different load balancing and synchronization strategies
+            await GenerateDataParallelPlan(workload, availableDevices, constraints, cancellationToken);
 
-    private async ValueTask<ExecutionPlan<T>> GenerateSingleDevicePlan<T>(
+        private async ValueTask<ExecutionPlan<T>> GenerateSingleDevicePlan<T>(
         ExecutionWorkload<T> workload,
         IAccelerator[] availableDevices,
         ExecutionConstraints constraints,
@@ -1198,17 +1196,14 @@ public sealed class ExecutionPlanFactory
         throw new NotSupportedException($"Single device execution not supported for workload type {workload.WorkloadType}");
     }
 
-    private async ValueTask<ExecutionPlan<T>> GeneratePlanForSpecificStrategyAsync<T>(
-        ExecutionWorkload<T> workload,
-        IAccelerator[] availableDevices,
-        ExecutionStrategyType strategy,
-        ExecutionConstraints constraints,
-        CancellationToken cancellationToken) where T : unmanaged
-    {
-        return await GeneratePlanForStrategyAsync(workload, availableDevices, strategy, constraints, cancellationToken);
-    }
+        private async ValueTask<ExecutionPlan<T>> GeneratePlanForSpecificStrategyAsync<T>(
+            ExecutionWorkload<T> workload,
+            IAccelerator[] availableDevices,
+            ExecutionStrategyType strategy,
+            ExecutionConstraints constraints,
+            CancellationToken cancellationToken) where T : unmanaged => await GeneratePlanForStrategyAsync(workload, availableDevices, strategy, constraints, cancellationToken);
 
-    private static ExecutionStrategyType[] GetViableStrategies<T>(
+        private static ExecutionStrategyType[] GetViableStrategies<T>(
         ExecutionWorkload<T> workload,
         IAccelerator[] availableDevices,
         ExecutionConstraints constraints) where T : unmanaged
@@ -1513,9 +1508,12 @@ public sealed class ManagedCompiledKernel : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        if (Kernel is IAsyncDisposable asyncDisposable)
+            if (Kernel is IAsyncDisposable asyncDisposable)
         {
             await asyncDisposable.DisposeAsync();
         }
@@ -1638,97 +1636,63 @@ internal class PoolBufferWrapper<T> : AbstractionsMemory.IBuffer<T> where T : un
         return _memoryBuffer.CopyFromHostAsync(memory, 0, cancellationToken).AsTask();
     }
 
-    public ValueTask CopyFromHostAsync<TData>(ReadOnlyMemory<TData> source, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
-    {
-        return _memoryBuffer.CopyFromHostAsync(source, offset, cancellationToken);
-    }
+        public ValueTask CopyFromHostAsync<TData>(ReadOnlyMemory<TData> source, long offset, CancellationToken cancellationToken = default) where TData : unmanaged => _memoryBuffer.CopyFromHostAsync(source, offset, cancellationToken);
 
-    public Task CopyToHostAsync<TData>(TData[] destination, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
+        public Task CopyToHostAsync<TData>(TData[] destination, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
     {
         var memory = new Memory<TData>(destination, offset, destination.Length - offset);
         return _memoryBuffer.CopyToHostAsync(memory, 0, cancellationToken).AsTask();
     }
 
-    public ValueTask CopyToHostAsync<TData>(Memory<TData> destination, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
-    {
-        return _memoryBuffer.CopyToHostAsync(destination, offset, cancellationToken);
-    }
+        public ValueTask CopyToHostAsync<TData>(Memory<TData> destination, long offset, CancellationToken cancellationToken = default) where TData : unmanaged => _memoryBuffer.CopyToHostAsync(destination, offset, cancellationToken);
 
-    public Task CopyFromAsync(AbstractionsMemory.IMemoryBuffer source, CancellationToken cancellationToken = default)
-    {
-        // Simplified mock implementation
-        return Task.CompletedTask;
-    }
+        public Task CopyFromAsync(AbstractionsMemory.IMemoryBuffer source, CancellationToken cancellationToken = default) =>
+            // Simplified mock implementation
+            Task.CompletedTask;
 
-    public Task CopyToAsync(AbstractionsMemory.IMemoryBuffer destination, CancellationToken cancellationToken = default)
-    {
-        // Simplified mock implementation
-        return Task.CompletedTask;
-    }
+        public Task CopyToAsync(AbstractionsMemory.IMemoryBuffer destination, CancellationToken cancellationToken = default) =>
+            // Simplified mock implementation
+            Task.CompletedTask;
 
-    public ValueTask CopyToAsync(AbstractionsMemory.IBuffer<T> destination, CancellationToken cancellationToken = default)
-    {
-        // Simplified mock implementation
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask CopyToAsync(AbstractionsMemory.IBuffer<T> destination, CancellationToken cancellationToken = default) =>
+            // Simplified mock implementation
+            ValueTask.CompletedTask;
 
-    public ValueTask CopyToAsync(int sourceOffset, AbstractionsMemory.IBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
-    {
-        // Simplified implementation - real version would handle offsets and counts properly
-        return CopyToAsync(destination, cancellationToken);
-    }
+        public ValueTask CopyToAsync(int sourceOffset, AbstractionsMemory.IBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) =>
+            // Simplified implementation - real version would handle offsets and counts properly
+            CopyToAsync(destination, cancellationToken);
 
-    public Task FillAsync<TData>(TData value, CancellationToken cancellationToken = default) where TData : unmanaged
-    {
-        // Simplified mock implementation
-        return Task.CompletedTask;
-    }
+        public Task FillAsync<TData>(TData value, CancellationToken cancellationToken = default) where TData : unmanaged =>
+            // Simplified mock implementation
+            Task.CompletedTask;
 
-    public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
-    {
-        // Simplified mock implementation
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask FillAsync(T value, CancellationToken cancellationToken = default) =>
+            // Simplified mock implementation
+            ValueTask.CompletedTask;
 
-    public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
-    {
-        // Simplified mock implementation
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) =>
+            // Simplified mock implementation
+            ValueTask.CompletedTask;
 
-    public Task ClearAsync(CancellationToken cancellationToken = default)
-    {
-        // Simplified mock implementation
-        return Task.CompletedTask;
-    }
+        public Task ClearAsync(CancellationToken cancellationToken = default) =>
+            // Simplified mock implementation
+            Task.CompletedTask;
 
-    public AbstractionsMemory.IBuffer<T> Slice(int offset, int length)
-    {
-        return new PoolBufferWrapper<T>(_memoryBuffer, length, _pool);
-    }
+        public AbstractionsMemory.IBuffer<T> Slice(int offset, int length) => new PoolBufferWrapper<T>(_memoryBuffer, length, _pool);
 
-    public AbstractionsMemory.IBuffer<TNew> AsType<TNew>() where TNew : unmanaged
+        public AbstractionsMemory.IBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         var newElementCount = (_elementCount * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()) / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
         return new PoolBufferWrapper<TNew>(_memoryBuffer, newElementCount, null!);
     }
 
-    public AbstractionsMemory.MappedMemory<T> Map(AbstractionsMemory.MapMode mode = AbstractionsMemory.MapMode.ReadWrite)
-    {
-        return default(AbstractionsMemory.MappedMemory<T>);
-    }
+        public AbstractionsMemory.MappedMemory<T> Map(AbstractionsMemory.MapMode mode = AbstractionsMemory.MapMode.ReadWrite) => default(AbstractionsMemory.MappedMemory<T>);
 
-    public AbstractionsMemory.MappedMemory<T> MapRange(int offset, int length, AbstractionsMemory.MapMode mode = AbstractionsMemory.MapMode.ReadWrite)
-    {
-        return default(AbstractionsMemory.MappedMemory<T>);
-    }
+        public AbstractionsMemory.MappedMemory<T> MapRange(int offset, int length, AbstractionsMemory.MapMode mode = AbstractionsMemory.MapMode.ReadWrite) => default(AbstractionsMemory.MappedMemory<T>);
 
-    public ValueTask<AbstractionsMemory.MappedMemory<T>> MapAsync(AbstractionsMemory.MapMode mode = AbstractionsMemory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
-    {
-        return new ValueTask<AbstractionsMemory.MappedMemory<T>>(default(AbstractionsMemory.MappedMemory<T>));
-    }
+        public ValueTask<AbstractionsMemory.MappedMemory<T>> MapAsync(AbstractionsMemory.MapMode mode = AbstractionsMemory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => new ValueTask<AbstractionsMemory.MappedMemory<T>>(default(AbstractionsMemory.MappedMemory<T>));
 
-    public ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
     {
         if (!_disposed)
         {
@@ -1738,11 +1702,8 @@ internal class PoolBufferWrapper<T> : AbstractionsMemory.IBuffer<T> where T : un
         return ValueTask.CompletedTask;
     }
 
-    public void Dispose()
-    {
-        DisposeAsync().AsTask().Wait();
+        public void Dispose() => DisposeAsync().AsTask().Wait();
     }
-}
 
 /// <summary>
 /// Mock accelerator for buffer pool operations
@@ -1831,7 +1792,7 @@ public sealed class ExecutionPlanGenerator
 
             // 5. Estimate execution time based on performance history
             var estimatedExecutionTime = _performanceMonitor.EstimateExecutionTime(
-                kernelName, selectedDevices.Select(d => d.Info.DeviceType).ToArray(), 
+                kernelName, [.. selectedDevices.Select(d => d.Info.DeviceType)], 
                 inputBuffers.Sum(b => (int)b.Length));
 
             var plan = new DataParallelExecutionPlan<T>
@@ -2028,8 +1989,8 @@ public sealed class ExecutionPlanGenerator
             {
                 Device = assignment.Device,
                 CompiledKernel = compiledKernel,
-                InputBuffers = assignment.InputBuffers.Cast<AbstractionsMemory.IBuffer<T>>().ToArray(),
-                OutputBuffers = assignment.OutputBuffers.Cast<AbstractionsMemory.IBuffer<T>>().ToArray(),
+                InputBuffers = [.. assignment.InputBuffers.Cast<AbstractionsMemory.IBuffer<T>>()],
+                OutputBuffers = [.. assignment.OutputBuffers.Cast<AbstractionsMemory.IBuffer<T>>()],
                 StartIndex = assignment.StartIndex,
                 ElementCount = assignment.ElementCount,
                 Dependencies = dependencyGraph.GetDependencies(i)
@@ -2400,12 +2361,10 @@ public sealed class DependencyAnalyzer
         await ValueTask.CompletedTask;
     }
 
-    private static bool BuffersOverlap<T>(AbstractionsMemory.IBuffer<T> buffer1, AbstractionsMemory.IBuffer<T> buffer2) where T : unmanaged
-    {
-        // Simplified overlap detection - in practice would check memory addresses
-        return buffer1 == buffer2;
+        private static bool BuffersOverlap<T>(AbstractionsMemory.IBuffer<T> buffer1, AbstractionsMemory.IBuffer<T> buffer2) where T : unmanaged =>
+            // Simplified overlap detection - in practice would check memory addresses
+            buffer1 == buffer2;
     }
-}
 
 /// <summary>
 /// Represents a dependency graph for execution planning.
@@ -2440,12 +2399,9 @@ public sealed class DependencyGraph
         types.Add(type);
     }
 
-    public List<int> GetDependencies(int taskId)
-    {
-        return _dependencies.TryGetValue(taskId, out var deps) ? [.. deps] : [];
-    }
+        public List<int> GetDependencies(int taskId) => _dependencies.TryGetValue(taskId, out var deps) ? [.. deps] : [];
 
-    public bool HasDependencies(int taskId) => _dependencies.ContainsKey(taskId) && _dependencies[taskId].Count > 0;
+        public bool HasDependencies(int taskId) => _dependencies.ContainsKey(taskId) && _dependencies[taskId].Count > 0;
 
     public int TotalDependencies => _dependencies.Values.Sum(deps => deps.Count);
 
@@ -2561,15 +2517,13 @@ public sealed class ResourceScheduler
         // Filter by target devices if specified
         if (options.TargetDevices != null && options.TargetDevices.Length > 0)
         {
-            deviceCandidates = deviceCandidates
-                .Where(d => options.TargetDevices.Contains(d.Info.Id))
-                .ToList();
+            deviceCandidates = [.. deviceCandidates.Where(d => options.TargetDevices.Contains(d.Info.Id))];
         }
 
         // Limit by max devices
         if (options.MaxDevices.HasValue)
         {
-            deviceCandidates = deviceCandidates.Take(options.MaxDevices.Value).ToList();
+            deviceCandidates = [.. deviceCandidates.Take(options.MaxDevices.Value)];
         }
 
         // Score and rank devices
@@ -2765,16 +2719,14 @@ public sealed class ResourceScheduler
         return assignments;
     }
 
-    private async ValueTask<List<DeviceWorkAssignment>> DistributeAdaptiveAsync<T>(
-        AbstractionsMemory.IBuffer<T>[] inputBuffers,
-        IAccelerator[] devices,
-        CancellationToken cancellationToken) where T : unmanaged
-    {
-        // Start with weighted distribution and adapt based on historical performance
-        return await DistributeWeightedAsync(inputBuffers, devices, cancellationToken);
-    }
+        private async ValueTask<List<DeviceWorkAssignment>> DistributeAdaptiveAsync<T>(
+            AbstractionsMemory.IBuffer<T>[] inputBuffers,
+            IAccelerator[] devices,
+            CancellationToken cancellationToken) where T : unmanaged =>
+            // Start with weighted distribution and adapt based on historical performance
+            await DistributeWeightedAsync(inputBuffers, devices, cancellationToken);
 
-    private async ValueTask<List<DeviceWorkAssignment>> DistributeDynamicAsync<T>(
+        private async ValueTask<List<DeviceWorkAssignment>> DistributeDynamicAsync<T>(
         AbstractionsMemory.IBuffer<T>[] inputBuffers,
         IAccelerator[] devices,
         CancellationToken cancellationToken) where T : unmanaged
@@ -2893,14 +2845,12 @@ public sealed class ResourceScheduler
         return assignments;
     }
 
-    private static object[] GetBufferSlice<T>(AbstractionsMemory.IBuffer<T>[] buffers, int startIndex, int count) where T : unmanaged
-    {
-        // Simplified buffer slicing - in practice would create proper buffer views
-        return buffers.Cast<object>().ToArray();
-    }
+        private static object[] GetBufferSlice<T>(AbstractionsMemory.IBuffer<T>[] buffers, int startIndex, int count) where T : unmanaged =>
+            // Simplified buffer slicing - in practice would create proper buffer views
+            [.. buffers.Cast<object>()];
 
-    #endregion
-}
+        #endregion
+    }
 
 /// <summary>
 /// Represents workload distribution across devices.
@@ -3209,9 +3159,7 @@ public sealed class ExecutionOptimizer
         var schedule = plan.CommunicationSchedule;
         
         // Sort operations by execution order and group where possible
-        schedule.Operations = schedule.Operations
-            .OrderBy(op => op.ExecutionOrder)
-            .ToList();
+        schedule.Operations = [.. schedule.Operations.OrderBy(op => op.ExecutionOrder)];
             
         _logger.LogTrace("Optimized communication schedule with {OpCount} operations", schedule.Operations.Count);
         await ValueTask.CompletedTask;

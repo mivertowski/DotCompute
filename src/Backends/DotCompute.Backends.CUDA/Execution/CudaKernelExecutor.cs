@@ -469,12 +469,9 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
         return Math.Max(warpSize, Math.Min(blockSize, maxThreadsPerBlock));
     }
 
-    private Abstractions.KernelArguments ConvertArgumentsToCuda(KernelArgument[] arguments)
-    {
-        return new Abstractions.KernelArguments(arguments);
-    }
+        private Abstractions.KernelArguments ConvertArgumentsToCuda(KernelArgument[] arguments) => new Abstractions.KernelArguments(arguments);
 
-    private async Task LaunchKernelAsync(
+        private async Task LaunchKernelAsync(
         CompiledKernel kernel,
         Abstractions.KernelArguments arguments,
         CudaLaunchConfig launchConfig,
@@ -619,12 +616,9 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
         return flags;
     }
 
-    private static int RoundUpToMultiple(int value, int multiple)
-    {
-        return ((value + multiple - 1) / multiple) * multiple;
-    }
+        private static int RoundUpToMultiple(int value, int multiple) => ((value + multiple - 1) / multiple) * multiple;
 
-    private KernelExecutionHandle CreateExecutionHandle(CudaKernelExecution execution)
+        private KernelExecutionHandle CreateExecutionHandle(CudaKernelExecution execution)
     {
         // Since KernelExecutionHandle properties have internal setters,
         // we need to use reflection to set them from outside the Core assembly
@@ -673,7 +667,7 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
 
             try
             {
-                Task.WaitAll(completionTasks.ToArray(), timeout);
+                Task.WaitAll([.. completionTasks], timeout);
             }
             catch (Exception ex)
             {

@@ -166,7 +166,7 @@ public IntPtr CompileFunction(string source, string functionName)
         var definition = new KernelDefinition 
         { 
             Name = functionName, 
-            Code = System.Text.Encoding.UTF8.GetBytes(source) 
+            Code = source 
         };
         
         var compiledKernel = accelerator.CompileKernelAsync(definition).GetAwaiter().GetResult();

@@ -481,7 +481,7 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
         return new KernelDefinition
         {
             Name = "vector_add",
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = "vector_add"
         };
     }
@@ -505,7 +505,7 @@ __global__ void matrix_multiply(float* A, float* B, float* C, int n)
         return new KernelDefinition
         {
             Name = "matrix_multiply",
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = "matrix_multiply"
         };
     }
@@ -523,7 +523,7 @@ __global__ void scalar_multiply(float* input, float* output, float scalar, int n
         return new KernelDefinition
         {
             Name = "scalar_multiply",
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = "scalar_multiply"
         };
     }
@@ -541,7 +541,7 @@ __global__ void scalar_add(float* input, float* output, float scalar, int n)
         return new KernelDefinition
         {
             Name = "scalar_add",
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = "scalar_add"
         };
     }
@@ -560,7 +560,7 @@ __global__ void memory_intensive(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "memory_intensive",
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = "memory_intensive"
         };
     }
@@ -570,7 +570,7 @@ __global__ void memory_intensive(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "invalid_kernel",
-            Code = Encoding.UTF8.GetBytes("invalid cuda syntax {{{ this will fail"),
+            Code = "invalid cuda syntax {{{ this will fail",
             EntryPoint = "invalid_kernel"
         };
     }
@@ -588,7 +588,7 @@ __global__ void {name}(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = name,
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = name
         };
     }

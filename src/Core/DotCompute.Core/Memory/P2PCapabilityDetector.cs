@@ -28,11 +28,18 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
         IAccelerator device2, 
         CancellationToken cancellationToken = default)
     {
-        if (device1 == null) throw new ArgumentNullException(nameof(device1));
-        if (device2 == null) throw new ArgumentNullException(nameof(device2));
-        
-        // Same device cannot have P2P with itself
-        if (device1.Info.Id == device2.Info.Id)
+        if (device1 == null)
+            {
+                throw new ArgumentNullException(nameof(device1));
+            }
+
+            if (device2 == null)
+            {
+                throw new ArgumentNullException(nameof(device2));
+            }
+
+            // Same device cannot have P2P with itself
+            if (device1.Info.Id == device2.Info.Id)
         {
             return new P2PConnectionCapability
             {
@@ -83,10 +90,17 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
         IAccelerator device2, 
         CancellationToken cancellationToken = default)
     {
-        if (device1 == null) throw new ArgumentNullException(nameof(device1));
-        if (device2 == null) throw new ArgumentNullException(nameof(device2));
+        if (device1 == null)
+            {
+                throw new ArgumentNullException(nameof(device1));
+            }
 
-        try
+            if (device2 == null)
+            {
+                throw new ArgumentNullException(nameof(device2));
+            }
+
+            try
         {
             var capability = await DetectP2PCapabilityAsync(device1, device2, cancellationToken);
             
@@ -150,10 +164,17 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
         IAccelerator device2, 
         CancellationToken cancellationToken = default)
     {
-        if (device1 == null) throw new ArgumentNullException(nameof(device1));
-        if (device2 == null) throw new ArgumentNullException(nameof(device2));
+        if (device1 == null)
+            {
+                throw new ArgumentNullException(nameof(device1));
+            }
 
-        try
+            if (device2 == null)
+            {
+                throw new ArgumentNullException(nameof(device2));
+            }
+
+            try
         {
             // Attempt to disable P2P access using platform-specific methods
             var disableSuccess = await DisableHardwareP2PAccessAsync(device1, device2, cancellationToken);
@@ -226,9 +247,12 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
         IAccelerator device,
         CancellationToken cancellationToken = default)
     {
-        if (device == null) throw new ArgumentNullException(nameof(device));
+        if (device == null)
+            {
+                throw new ArgumentNullException(nameof(device));
+            }
 
-        try
+            try
         {
             // Query real device capabilities from hardware
             var capabilities = await QueryHardwareCapabilitiesAsync(device, cancellationToken);
@@ -791,17 +815,23 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
             name.Contains("rtx") || name.Contains("gtx") || 
             name.Contains("nvidia") || name.Contains("geforce") || 
             name.Contains("quadro") || name.Contains("tesla"))
-            return DeviceVendor.NVIDIA;
-            
-        if (name.Contains("rocm") || name.Contains("mi210") || name.Contains("mi250") ||
+            {
+                return DeviceVendor.NVIDIA;
+            }
+
+            if (name.Contains("rocm") || name.Contains("mi210") || name.Contains("mi250") ||
             name.Contains("amd") || name.Contains("radeon") || name.Contains("instinct"))
-            return DeviceVendor.AMD;
-            
-        if (device.Type == AcceleratorType.CPU || name.Contains("cpu") ||
+            {
+                return DeviceVendor.AMD;
+            }
+
+            if (device.Type == AcceleratorType.CPU || name.Contains("cpu") ||
             name.Contains("intel") || name.Contains("iris") || name.Contains("arc"))
-            return DeviceVendor.Intel;
-            
-        return DeviceVendor.Unknown;
+            {
+                return DeviceVendor.Intel;
+            }
+
+            return DeviceVendor.Unknown;
     }
     
     /// <summary>
@@ -834,9 +864,11 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        _disposed = true;
+            _disposed = true;
         await Task.CompletedTask;
     }
 }

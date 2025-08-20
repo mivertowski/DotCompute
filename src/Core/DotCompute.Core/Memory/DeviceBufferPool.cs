@@ -296,9 +296,11 @@ public sealed class DeviceBufferPool : IAsyncDisposable
     public void Cleanup()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        var cleanupCount = 0;
+            var cleanupCount = 0;
         var releasedBytes = 0L;
 
         try
@@ -401,10 +403,17 @@ public sealed class DeviceBufferPool : IAsyncDisposable
     /// </summary>
     private static int RoundUpToPowerOfTwo(int value)
     {
-        if (value <= 0) return 1;
-        if ((value & (value - 1)) == 0) return value; // Already power of 2
+        if (value <= 0)
+            {
+                return 1;
+            }
 
-        var result = 1;
+            if ((value & (value - 1)) == 0)
+            {
+                return value; // Already power of 2
+            }
+
+            var result = 1;
         while (result < value)
         {
             result <<= 1;
@@ -412,18 +421,15 @@ public sealed class DeviceBufferPool : IAsyncDisposable
         return result;
     }
 
-    /// <summary>
-    /// Gets the approximate size of a concurrent queue (for pool size checking).
-    /// </summary>
-    private static int GetPoolSize(ConcurrentQueue<IMemoryBuffer> pool)
-    {
-        return pool.Count; // This is approximate but sufficient for our needs
-    }
+        /// <summary>
+        /// Gets the approximate size of a concurrent queue (for pool size checking).
+        /// </summary>
+        private static int GetPoolSize(ConcurrentQueue<IMemoryBuffer> pool) => pool.Count; // This is approximate but sufficient for our needs
 
-    /// <summary>
-    /// Periodic cleanup callback.
-    /// </summary>
-    private void PeriodicCleanup(object? state)
+        /// <summary>
+        /// Periodic cleanup callback.
+        /// </summary>
+        private void PeriodicCleanup(object? state)
     {
         try
         {
@@ -435,18 +441,17 @@ public sealed class DeviceBufferPool : IAsyncDisposable
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    public async ValueTask DisposeAsync()
+        public async ValueTask DisposeAsync()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        _disposed = true;
+            _disposed = true;
 
         await _cleanupTimer.DisposeAsync();
 
@@ -529,27 +534,28 @@ internal sealed class PooledMemoryBuffer : IMemoryBuffer
         return _underlyingBuffer.CopyToHostAsync(destination, offset, cancellationToken);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    public void Dispose()
+        public void Dispose()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        _disposed = true;
+            _disposed = true;
         _pool.ReturnBuffer(_underlyingBuffer, _originalSize);
     }
 
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        _disposed = true;
+            _disposed = true;
         _pool.ReturnBuffer(_underlyingBuffer, _originalSize);
         await ValueTask.CompletedTask;
     }

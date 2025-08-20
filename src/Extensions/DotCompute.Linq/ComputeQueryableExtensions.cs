@@ -55,29 +55,26 @@ public static IQueryable<T> AsComputeQueryable<T>(
     return new ComputeQueryable<T>(provider, sourceExpression);
 }
 
-/// <summary>
-/// Converts an array to a GPU-accelerated queryable.
-/// </summary>
-/// <typeparam name="T">The type of elements in the array.</typeparam>
-/// <param name="source">The source array.</param>
-/// <param name="accelerator">The accelerator to use for query execution.</param>
-/// <param name="options">Optional query options.</param>
-/// <returns>A GPU-accelerated queryable.</returns>
-public static IQueryable<T> AsComputeQueryable<T>(
-    this T[] source,
-    IAccelerator accelerator,
-    ComputeQueryOptions? options = null)
-{
-    return ((IEnumerable<T>)source).AsComputeQueryable(accelerator, options);
-}
+    /// <summary>
+    /// Converts an array to a GPU-accelerated queryable.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the array.</typeparam>
+    /// <param name="source">The source array.</param>
+    /// <param name="accelerator">The accelerator to use for query execution.</param>
+    /// <param name="options">Optional query options.</param>
+    /// <returns>A GPU-accelerated queryable.</returns>
+    public static IQueryable<T> AsComputeQueryable<T>(
+        this T[] source,
+        IAccelerator accelerator,
+        ComputeQueryOptions? options = null) => ((IEnumerable<T>)source).AsComputeQueryable(accelerator, options);
 
-/// <summary>
-/// Executes a query on the GPU and returns the results.
-/// </summary>
-/// <typeparam name="T">The type of elements in the result.</typeparam>
-/// <param name="source">The compute queryable.</param>
-/// <returns>The query results.</returns>
-public static T[] ToComputeArray<T>(this IQueryable<T> source)
+    /// <summary>
+    /// Executes a query on the GPU and returns the results.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the result.</typeparam>
+    /// <param name="source">The compute queryable.</param>
+    /// <returns>The query results.</returns>
+    public static T[] ToComputeArray<T>(this IQueryable<T> source)
 {
     ArgumentNullException.ThrowIfNull(source);
 

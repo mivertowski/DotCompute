@@ -468,12 +468,10 @@ public class DependencyResolver
     /// <summary>
     /// Checks if a dependency is compatible with the current platform.
     /// </summary>
-    private bool IsPlatformCompatible(ResolvedDependency dependency)
-    {
+    private bool IsPlatformCompatible(ResolvedDependency dependency) =>
         // Simplified platform compatibility check
         // In a real implementation, this would check the package's supported frameworks
-        return true;
-    }
+        true;
 }
 
 /// <summary>

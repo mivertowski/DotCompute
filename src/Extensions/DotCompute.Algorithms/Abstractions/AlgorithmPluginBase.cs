@@ -158,36 +158,30 @@ public virtual async ValueTask DisposeAsync()
     }
 }
 
-/// <summary>
-/// Called when the plugin is being initialized.
-/// </summary>
-/// <param name="accelerator">The accelerator instance.</param>
-/// <param name="cancellationToken">Cancellation token.</param>
-/// <returns>A task representing the initialization operation.</returns>
-protected virtual Task OnInitializeAsync(IAccelerator accelerator, CancellationToken cancellationToken)
-{
-    return Task.CompletedTask;
-}
+    /// <summary>
+    /// Called when the plugin is being initialized.
+    /// </summary>
+    /// <param name="accelerator">The accelerator instance.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the initialization operation.</returns>
+    protected virtual Task OnInitializeAsync(IAccelerator accelerator, CancellationToken cancellationToken) => Task.CompletedTask;
 
-/// <summary>
-/// Implements the actual algorithm execution.
-/// </summary>
-/// <param name="inputs">The input data.</param>
-/// <param name="parameters">Optional parameters.</param>
-/// <param name="cancellationToken">Cancellation token.</param>
-/// <returns>The algorithm result.</returns>
-protected abstract Task<object> OnExecuteAsync(object[] inputs, Dictionary<string, object>? parameters, CancellationToken cancellationToken);
+    /// <summary>
+    /// Implements the actual algorithm execution.
+    /// </summary>
+    /// <param name="inputs">The input data.</param>
+    /// <param name="parameters">Optional parameters.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The algorithm result.</returns>
+    protected abstract Task<object> OnExecuteAsync(object[] inputs, Dictionary<string, object>? parameters, CancellationToken cancellationToken);
 
-/// <summary>
-/// Called when the plugin is being disposed.
-/// </summary>
-/// <returns>A task representing the disposal operation.</returns>
-protected virtual ValueTask OnDisposeAsync()
-{
-    return ValueTask.CompletedTask;
-}
+    /// <summary>
+    /// Called when the plugin is being disposed.
+    /// </summary>
+    /// <returns>A task representing the disposal operation.</returns>
+    protected virtual ValueTask OnDisposeAsync() => ValueTask.CompletedTask;
 
-private static AcceleratorType GetAcceleratorType(IAccelerator accelerator)
+    private static AcceleratorType GetAcceleratorType(IAccelerator accelerator)
 {
     // Map device type string to AcceleratorType enum
     return accelerator.Info.DeviceType switch

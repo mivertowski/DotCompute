@@ -282,9 +282,11 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
         if (sourceOffset + count > Length)
-            throw new ArgumentOutOfRangeException(nameof(count), "Source range exceeds buffer bounds");
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Source range exceeds buffer bounds");
+            }
 
-        if (destination is P2PBuffer<T> p2pDestination)
+            if (destination is P2PBuffer<T> p2pDestination)
         {
             await CopyRangeToP2PBufferAsync(sourceOffset, p2pDestination, destinationOffset, count, cancellationToken);
         }
@@ -319,27 +321,26 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
         }
     }
 
-    /// <summary>
-    /// Fills the buffer with a specific value.
-    /// </summary>
-    public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
-    {
-        await FillAsync<T>(value, cancellationToken);
-    }
+        /// <summary>
+        /// Fills the buffer with a specific value.
+        /// </summary>
+        public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => await FillAsync<T>(value, cancellationToken);
 
-    /// <summary>
-    /// Fills a range of the buffer with a specific value.
-    /// </summary>
-    public async ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Fills a range of the buffer with a specific value.
+        /// </summary>
+        public async ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
         if (offset + count > Length)
-            throw new ArgumentOutOfRangeException(nameof(count), "Fill range exceeds buffer bounds");
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Fill range exceeds buffer bounds");
+            }
 
-        try
+            try
         {
             await FillRangeOptimizedAsync(value, offset, count, cancellationToken);
             _logger.LogTrace("P2P buffer range fill completed: offset={Offset}, count={Count} on {Device}", 
@@ -352,28 +353,27 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
         }
     }
 
-    /// <summary>
-    /// Clears the buffer (fills with zero).
-    /// </summary>
-    public async Task ClearAsync(CancellationToken cancellationToken = default)
-    {
-        await FillAsync(default(T), cancellationToken);
-    }
+        /// <summary>
+        /// Clears the buffer (fills with zero).
+        /// </summary>
+        public async Task ClearAsync(CancellationToken cancellationToken = default) => await FillAsync(default(T), cancellationToken);
 
-    /// <summary>
-    /// Creates a slice of this buffer.
-    /// </summary>
-    public IBuffer<T> Slice(int offset, int count)
+        /// <summary>
+        /// Creates a slice of this buffer.
+        /// </summary>
+        public IBuffer<T> Slice(int offset, int count)
     {
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
         if (offset + count > Length)
-            throw new ArgumentOutOfRangeException(nameof(count), "Slice range exceeds buffer bounds");
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Slice range exceeds buffer bounds");
+            }
 
-        // Create a view of the underlying buffer
-        var sliceBuffer = _underlyingBuffer; // In real implementation, create actual slice
+            // Create a view of the underlying buffer
+            var sliceBuffer = _underlyingBuffer; // In real implementation, create actual slice
         return new P2PBuffer<T>(sliceBuffer, _accelerator, count, _supportsDirectP2P, _logger);
     }
 
@@ -425,10 +425,12 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
         if (offset + count > Length)
-            throw new ArgumentOutOfRangeException(nameof(count), "Map range exceeds buffer bounds");
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Map range exceeds buffer bounds");
+            }
 
-        // P2P buffers typically don't support direct mapping
-        return default;
+            // P2P buffers typically don't support direct mapping
+            return default;
     }
 
     /// <summary>
@@ -881,45 +883,43 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
                 _logger.LogWarning(ex, "Generic P2P copy failed, using host-mediated fallback");
                 throw; // Let caller handle fallback
             }
-            
         });
         
         _logger.LogTrace("Generic P2P copy executed: {Bytes} bytes", SizeInBytes);
     }
 
-    /// <summary>
-    /// Executes generic P2P range memory copy.
-    /// </summary>
-    private async ValueTask ExecuteGenericP2PRangeCopyAsync(
-        P2PBuffer<T> destination, 
-        int sourceOffset, 
-        int destinationOffset, 
-        int count, 
-        CancellationToken cancellationToken)
-    {
-        // Fallback to host-mediated transfer for generic range copy
-        await HostMediatedRangeCopyAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);
-    }
+        /// <summary>
+        /// Executes generic P2P range memory copy.
+        /// </summary>
+        private async ValueTask ExecuteGenericP2PRangeCopyAsync(
+            P2PBuffer<T> destination,
+            int sourceOffset,
+            int destinationOffset,
+            int count,
+            CancellationToken cancellationToken) =>
+            // Fallback to host-mediated transfer for generic range copy
+            await HostMediatedRangeCopyAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);
 
-    #endregion
+        #endregion
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-    public void Dispose()
+        public void Dispose()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        lock (_syncLock)
+            lock (_syncLock)
         {
             if (_disposed)
-                return;
+                {
+                    return;
+                }
 
-            _underlyingBuffer.Dispose();
+                _underlyingBuffer.Dispose();
             _disposed = true;
         }
     }
@@ -927,9 +927,11 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        await _underlyingBuffer.DisposeAsync();
+            await _underlyingBuffer.DisposeAsync();
         _disposed = true;
     }
 }

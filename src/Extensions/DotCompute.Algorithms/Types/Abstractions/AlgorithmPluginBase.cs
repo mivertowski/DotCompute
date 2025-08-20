@@ -74,8 +74,12 @@ public abstract ValueTask<object> ExecuteAsync(object input, CancellationToken c
 /// <returns>True if the input is valid, false otherwise.</returns>
 public virtual bool ValidateInput(object input)
 {
-    if (input == null) return false;
-    return InputTypes.Contains(input.GetType());
+    if (input == null)
+        {
+            return false;
+        }
+
+        return InputTypes.Contains(input.GetType());
 }
 
 /// <summary>
@@ -93,11 +97,8 @@ public virtual AlgorithmPerformanceProfile GetPerformanceProfile()
     };
 }
 
-/// <summary>
-/// Disposes the plugin resources.
-/// </summary>
-public virtual ValueTask DisposeAsync()
-{
-    return ValueTask.CompletedTask;
-}
+    /// <summary>
+    /// Disposes the plugin resources.
+    /// </summary>
+    public virtual ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

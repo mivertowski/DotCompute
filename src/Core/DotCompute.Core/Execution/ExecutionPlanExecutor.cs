@@ -73,7 +73,7 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
 
             // Wait for all devices to complete
             await _coordinator.WaitForAllEventsAsync(
-                deviceResults.Select(r => r.CompletionEvent).ToArray(), 
+                [.. deviceResults.Select(r => r.CompletionEvent)], 
                 cancellationToken);
 
             stopwatch.Stop();
@@ -182,9 +182,11 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (_disposed)
-            throw new ObjectDisposedException(nameof(ExecutionPlanExecutor));
+            {
+                throw new ObjectDisposedException(nameof(ExecutionPlanExecutor));
+            }
 
-        var executionId = Guid.NewGuid();
+            var executionId = Guid.NewGuid();
         var stopwatch = Stopwatch.StartNew();
 
         _logger.LogInformation("Starting pipeline execution {ExecutionId} with {StageCount} stages and {MicrobatchCount} microbatches",
@@ -551,18 +553,16 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
         return [.. results];
     }
 
-    private async ValueTask<StageExecutionResult[]> ExecuteOneForwardOneBackwardPipelineAsync<T>(
-        PipelineStage<T>[] stages,
-        MicrobatchConfiguration microbatchConfig,
-        Guid executionId,
-        CancellationToken cancellationToken) where T : unmanaged
-    {
-        // 1F1B scheduling is more complex and typically used for training
-        // For this implementation, we'll use a simplified approach
-        return await ExecuteInterleavedPipelineAsync(stages, microbatchConfig, executionId, cancellationToken);
-    }
+        private async ValueTask<StageExecutionResult[]> ExecuteOneForwardOneBackwardPipelineAsync<T>(
+            PipelineStage<T>[] stages,
+            MicrobatchConfiguration microbatchConfig,
+            Guid executionId,
+            CancellationToken cancellationToken) where T : unmanaged =>
+            // 1F1B scheduling is more complex and typically used for training
+            // For this implementation, we'll use a simplified approach
+            await ExecuteInterleavedPipelineAsync(stages, microbatchConfig, executionId, cancellationToken);
 
-    private async Task<StageExecutionResult> ExecutePipelineStageAsync<T>(
+        private async Task<StageExecutionResult> ExecutePipelineStageAsync<T>(
         PipelineStage<T> stage,
         int microbatchIndex,
         Guid executionId,
@@ -709,8 +709,8 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
             Success = g.All(r => r.Success),
             ExecutionTimeMs = g.Sum(r => r.ExecutionTimeMs),
             ElementsProcessed = g.Count(),
-            ThroughputGFLOPS = EstimatePipelineThroughput(g.ToArray(), plan.MicrobatchConfig),
-            MemoryBandwidthGBps = EstimatePipelineMemoryBandwidth(g.ToArray()),
+            ThroughputGFLOPS = EstimatePipelineThroughput([.. g], plan.MicrobatchConfig),
+            MemoryBandwidthGBps = EstimatePipelineMemoryBandwidth([.. g]),
             ErrorMessage = success ? null : string.Join("; ", g.Where(r => !r.Success).Select(r => r.ErrorMessage))
         }).ToArray();
 
@@ -788,18 +788,24 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
 
     private static double CalculateThroughput(int elementCount, double executionTimeMs)
     {
-        if (executionTimeMs <= 0) return 0;
-        
-        // Simple throughput calculation: operations per second converted to GFLOPS
-        var opsPerSecond = (elementCount / executionTimeMs) * 1000.0;
+        if (executionTimeMs <= 0)
+            {
+                return 0;
+            }
+
+            // Simple throughput calculation: operations per second converted to GFLOPS
+            var opsPerSecond = (elementCount / executionTimeMs) * 1000.0;
         return opsPerSecond / 1e9; // Convert to GFLOPS
     }
 
     private static double CalculateMemoryBandwidth<T>(DataParallelDeviceTask<T> deviceTask, double executionTimeMs) where T : unmanaged
     {
-        if (executionTimeMs <= 0) return 0;
+        if (executionTimeMs <= 0)
+            {
+                return 0;
+            }
 
-        var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
+            var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
         var totalBytes = (deviceTask.InputBuffers.Length + deviceTask.OutputBuffers.Length) * deviceTask.ElementCount * elementSize;
         var bytesPerSecond = (totalBytes / executionTimeMs) * 1000.0;
         
@@ -808,13 +814,19 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
 
     private static double CalculateParallelEfficiency(DeviceTaskResult[] deviceResults, double totalExecutionTimeMs)
     {
-        if (deviceResults.Length == 0 || totalExecutionTimeMs <= 0) return 0;
+        if (deviceResults.Length == 0 || totalExecutionTimeMs <= 0)
+            {
+                return 0;
+            }
 
-        var successfulResults = deviceResults.Where(r => r.Success).ToArray();
-        if (successfulResults.Length == 0) return 0;
+            var successfulResults = deviceResults.Where(r => r.Success).ToArray();
+        if (successfulResults.Length == 0)
+            {
+                return 0;
+            }
 
-        // Theoretical best time would be max individual time
-        var maxDeviceTime = successfulResults.Max(r => r.ExecutionTimeMs);
+            // Theoretical best time would be max individual time
+            var maxDeviceTime = successfulResults.Max(r => r.ExecutionTimeMs);
         
         // Efficiency is how close we are to ideal parallel execution
         return Math.Min(100, (maxDeviceTime / totalExecutionTimeMs) * 100);
@@ -822,20 +834,29 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
 
     private static double CalculateModelParallelEfficiency(LayerExecutionResult[] layerResults, int totalLayers)
     {
-        if (layerResults.Length == 0 || totalLayers == 0) return 0;
+        if (layerResults.Length == 0 || totalLayers == 0)
+            {
+                return 0;
+            }
 
-        var successfulResults = layerResults.Where(r => r.Success).ToArray();
-        if (successfulResults.Length == 0) return 0;
+            var successfulResults = layerResults.Where(r => r.Success).ToArray();
+        if (successfulResults.Length == 0)
+            {
+                return 0;
+            }
 
-        // Simple efficiency based on successful layer execution rate
-        return (successfulResults.Length * 100.0) / totalLayers;
+            // Simple efficiency based on successful layer execution rate
+            return (successfulResults.Length * 100.0) / totalLayers;
     }
 
     private static double CalculatePipelineEfficiency(StageExecutionResult[] stageResults, int stageCount, int microbatchCount)
     {
-        if (stageResults.Length == 0 || stageCount == 0 || microbatchCount == 0) return 0;
+        if (stageResults.Length == 0 || stageCount == 0 || microbatchCount == 0)
+            {
+                return 0;
+            }
 
-        var successfulResults = stageResults.Where(r => r.Success).ToArray();
+            var successfulResults = stageResults.Where(r => r.Success).ToArray();
         var expectedResults = stageCount * microbatchCount;
         
         return (successfulResults.Length * 100.0) / expectedResults;
@@ -843,33 +864,40 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
 
     private static double EstimateMemoryBandwidth(long totalBytes, double totalTimeMs)
     {
-        if (totalTimeMs <= 0) return 0;
-        
-        var bytesPerSecond = (totalBytes / totalTimeMs) * 1000.0;
+        if (totalTimeMs <= 0)
+            {
+                return 0;
+            }
+
+            var bytesPerSecond = (totalBytes / totalTimeMs) * 1000.0;
         return bytesPerSecond / (1024.0 * 1024.0 * 1024.0); // Convert to GB/s
     }
 
     private static double EstimatePipelineThroughput(StageExecutionResult[] stageResults, MicrobatchConfiguration microbatchConfig)
     {
-        if (stageResults.Length == 0) return 0;
+        if (stageResults.Length == 0)
+            {
+                return 0;
+            }
 
-        // Estimate throughput based on microbatch processing rate
-        var avgStageTime = stageResults.Where(r => r.Success).Average(r => r.ExecutionTimeMs);
-        if (avgStageTime <= 0) return 0;
+            // Estimate throughput based on microbatch processing rate
+            var avgStageTime = stageResults.Where(r => r.Success).Average(r => r.ExecutionTimeMs);
+        if (avgStageTime <= 0)
+            {
+                return 0;
+            }
 
-        var microbatchesPerSecond = 1000.0 / avgStageTime;
+            var microbatchesPerSecond = 1000.0 / avgStageTime;
         var operationsPerMicrobatch = microbatchConfig.Size * 100.0; // Estimated operations
         
         return (microbatchesPerSecond * operationsPerMicrobatch) / 1e9; // Convert to GFLOPS
     }
 
-    private static double EstimatePipelineMemoryBandwidth(StageExecutionResult[] stageResults)
-    {
-        // Simplified memory bandwidth estimation for pipeline stages
-        return 10.0; // GB/s - placeholder value
-    }
+        private static double EstimatePipelineMemoryBandwidth(StageExecutionResult[] stageResults) =>
+            // Simplified memory bandwidth estimation for pipeline stages
+            10.0; // GB/s - placeholder value
 
-    private static List<int> GetLayerExecutionOrder<T>(ModelLayer<T>[] layers) where T : unmanaged
+        private static List<int> GetLayerExecutionOrder<T>(ModelLayer<T>[] layers) where T : unmanaged
     {
         // Simple topological sort based on layer dependencies
         var visited = new HashSet<int>();
@@ -888,9 +916,12 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
 
     private static void VisitLayer<T>(int layerId, ModelLayer<T>[] layers, HashSet<int> visited, List<int> result) where T : unmanaged
     {
-        if (visited.Contains(layerId)) return;
+        if (visited.Contains(layerId))
+            {
+                return;
+            }
 
-        visited.Add(layerId);
+            visited.Add(layerId);
         
         var layer = layers.FirstOrDefault(l => l.LayerId == layerId);
         if (layer != null)
@@ -908,9 +939,12 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        _logger.LogInformation("Disposing ExecutionPlanExecutor");
+            _logger.LogInformation("Disposing ExecutionPlanExecutor");
 
         await _coordinator.DisposeAsync();
         await _resourceTracker.DisposeAsync();
@@ -1006,9 +1040,12 @@ public class ResourceTracker : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
-        
-        _deviceUsage.Clear();
+        if (_disposed)
+            {
+                return;
+            }
+
+            _deviceUsage.Clear();
         _disposed = true;
         await ValueTask.CompletedTask;
     }
@@ -1077,9 +1114,12 @@ public class ExecutionProfiler : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
-        
-        _profilingData.Clear();
+        if (_disposed)
+            {
+                return;
+            }
+
+            _profilingData.Clear();
         _disposed = true;
         await ValueTask.CompletedTask;
     }

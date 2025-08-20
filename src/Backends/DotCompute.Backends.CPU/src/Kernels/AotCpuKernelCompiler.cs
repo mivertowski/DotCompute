@@ -321,9 +321,10 @@ public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken
     {
         // Convert KernelArguments to KernelExecutionContext for internal processing
         var context = new KernelExecutionContext();
-        for (var i = 0; i < arguments.Arguments.Length; i++)
+        for (var i = 0; i < arguments.Arguments.Count; i++)
         {
-            context.SetParameter(i, arguments.Arguments[i]);
+            var arg = arguments.Arguments[i];
+            context.SetParameter(i, arg ?? throw new ArgumentNullException($"arguments[{i}]", "Kernel argument cannot be null"));
         }
 
         await _implementation(context).ConfigureAwait(false);

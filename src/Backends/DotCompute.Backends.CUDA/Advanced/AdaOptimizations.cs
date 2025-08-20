@@ -120,8 +120,11 @@ public static class AdaOptimizations
         {
             return MemoryAccessPattern.SharedMemory;
         }
-        else return totalSize <= RTX2000Specs.L2CacheSize ? MemoryAccessPattern.L2Cache : MemoryAccessPattern.GlobalMemoryCoalesced;
-    }
+        else
+            {
+                return totalSize <= RTX2000Specs.L2CacheSize ? MemoryAccessPattern.L2Cache : MemoryAccessPattern.GlobalMemoryCoalesced;
+            }
+        }
 
     /// <summary>
     /// Validates configuration against RTX 2000 Ada capabilities

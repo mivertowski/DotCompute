@@ -166,9 +166,11 @@ public sealed class CudaUnifiedMemoryAdvanced : IDisposable
     public void PerformMaintenance()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             // Update efficiency metrics
             _metrics.EfficiencyScore = Math.Max(0.5, 1.0 - (_metrics.MigrationOverhead * 2.0));

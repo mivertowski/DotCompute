@@ -12,20 +12,17 @@ namespace DotCompute.Core.Memory
 /// </summary>
 public static class BufferExtensions
 {
-    /// <summary>
-    /// Extension method to safely get the length for any IMemoryBuffer.
-    /// This provides compatibility when IBuffer doesn't have Length property in some implementations.
-    /// </summary>
-    public static int GetElementCount<T>(this IMemoryBuffer buffer) where T : unmanaged
-    {
-        return (int)(buffer.SizeInBytes / Unsafe.SizeOf<T>());
-    }
+        /// <summary>
+        /// Extension method to safely get the length for any IMemoryBuffer.
+        /// This provides compatibility when IBuffer doesn't have Length property in some implementations.
+        /// </summary>
+        public static int GetElementCount<T>(this IMemoryBuffer buffer) where T : unmanaged => (int)(buffer.SizeInBytes / Unsafe.SizeOf<T>());
 
-    /// <summary>
-    /// Extension method to safely get the length for any IBuffer.
-    /// This provides a fallback calculation if Length isn't implemented.
-    /// </summary>
-    public static int GetElementCount<T>(this IBuffer<T> buffer) where T : unmanaged
+        /// <summary>
+        /// Extension method to safely get the length for any IBuffer.
+        /// This provides a fallback calculation if Length isn't implemented.
+        /// </summary>
+        public static int GetElementCount<T>(this IBuffer<T> buffer) where T : unmanaged
     {
         try
         {

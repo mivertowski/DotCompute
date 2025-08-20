@@ -542,10 +542,10 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
     {
         // Create actual ManagedCompiledKernel instances instead of mocking them
         var mockAccelerator = Mock.Of<IAccelerator>();
-        var compiledKernel = new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 1024, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
+        using var compiledKernel = new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 1024, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
         var kernel1 = new DotCompute.Core.Execution.ManagedCompiledKernel("linear_kernel", mockAccelerator, compiledKernel);
 
-        var compiledKernel2 = new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 512, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
+        using var compiledKernel2 = new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 512, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
         var kernel2 = new DotCompute.Core.Execution.ManagedCompiledKernel("relu_kernel", mockAccelerator, compiledKernel2);
 
         return new ModelParallelWorkload<T>

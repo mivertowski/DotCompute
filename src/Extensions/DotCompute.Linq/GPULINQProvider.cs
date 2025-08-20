@@ -172,16 +172,27 @@ public IQueryable CreateQuery(Expression expression)
     var elementType = GetElementType(expression.Type);
     // AOT-compatible generic type creation
     if (elementType == typeof(int))
-        return new GPUQueryable<int>(this, expression);
-    if (elementType == typeof(float))
-        return new GPUQueryable<float>(this, expression);
-    if (elementType == typeof(double))
-        return new GPUQueryable<double>(this, expression);
-    if (elementType == typeof(long))
-        return new GPUQueryable<long>(this, expression);
-    
-    // Fallback for other types
-    var queryableType = typeof(GPUQueryable<>).MakeGenericType(elementType);
+        {
+            return new GPUQueryable<int>(this, expression);
+        }
+
+        if (elementType == typeof(float))
+        {
+            return new GPUQueryable<float>(this, expression);
+        }
+
+        if (elementType == typeof(double))
+        {
+            return new GPUQueryable<double>(this, expression);
+        }
+
+        if (elementType == typeof(long))
+        {
+            return new GPUQueryable<long>(this, expression);
+        }
+
+        // Fallback for other types
+        var queryableType = typeof(GPUQueryable<>).MakeGenericType(elementType);
     return (IQueryable)Activator.CreateInstance(queryableType, this, expression)!;
 }
 
@@ -536,11 +547,8 @@ public IEnumerator<T> GetEnumerator()
     return result.GetEnumerator();
 }
 
-/// <inheritdoc/>
-System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-{
-    return GetEnumerator();
-}
+    /// <inheritdoc/>
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
 /// <summary>
@@ -696,21 +704,68 @@ protected override Expression VisitParameter(ParameterExpression node)
 
 private static object? CreateDefaultValueAotCompatible(Type type)
 {
-    if (type == typeof(int)) return 0;
-    if (type == typeof(long)) return 0L;
-    if (type == typeof(float)) return 0.0f;
-    if (type == typeof(double)) return 0.0;
-    if (type == typeof(bool)) return false;
-    if (type == typeof(byte)) return (byte)0;
-    if (type == typeof(short)) return (short)0;
-    if (type == typeof(uint)) return 0U;
-    if (type == typeof(ulong)) return 0UL;
-    if (type == typeof(ushort)) return (ushort)0;
-    if (type == typeof(char)) return '\0';
-    if (type == typeof(decimal)) return 0m;
-    return null;
-}
+    if (type == typeof(int))
+        {
+            return 0;
+        }
 
+        if (type == typeof(long))
+        {
+            return 0L;
+        }
+
+        if (type == typeof(float))
+        {
+            return 0.0f;
+        }
+
+        if (type == typeof(double))
+        {
+            return 0.0;
+        }
+
+        if (type == typeof(bool))
+        {
+            return false;
+        }
+
+        if (type == typeof(byte))
+        {
+            return (byte)0;
+        }
+
+        if (type == typeof(short))
+        {
+            return (short)0;
+        }
+
+        if (type == typeof(uint))
+        {
+            return 0U;
+        }
+
+        if (type == typeof(ulong))
+        {
+            return 0UL;
+        }
+
+        if (type == typeof(ushort))
+        {
+            return (ushort)0;
+        }
+
+        if (type == typeof(char))
+        {
+            return '\0';
+        }
+
+        if (type == typeof(decimal))
+        {
+            return 0m;
+        }
+
+        return null;
+}
 }
 
 /// <summary>

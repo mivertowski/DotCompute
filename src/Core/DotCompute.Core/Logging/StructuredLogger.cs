@@ -60,8 +60,12 @@ public sealed class StructuredLogger : ILogger, IDisposable
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, 
         Func<TState, Exception?, string> formatter)
     {
-        if (!IsEnabled(logLevel) || _disposed) return;
-        
+        if (!IsEnabled(logLevel) || _disposed)
+        {
+            return;
+        }
+
+
         try
         {
             // Create structured log entry
@@ -417,9 +421,13 @@ public sealed class StructuredLogger : ILogger, IDisposable
 
     private static void ExtractPropertiesFromState<TState>(TState state, Dictionary<string, object> properties)
     {
-        if (state == null) return;
-        
+        if (state == null)
+        {
+            return;
+        }
+
         // Handle common structured logging patterns
+
         if (state is IEnumerable<KeyValuePair<string, object?>> keyValuePairs)
         {
             foreach (var kvp in keyValuePairs)
@@ -454,8 +462,12 @@ public sealed class StructuredLogger : ILogger, IDisposable
 
     private void FlushLogs(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             _ = Task.Run(async () =>
@@ -480,13 +492,20 @@ public sealed class StructuredLogger : ILogger, IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(StructuredLogger));
+        }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
         
         try

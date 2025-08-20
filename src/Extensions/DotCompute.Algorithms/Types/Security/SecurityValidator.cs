@@ -9,16 +9,11 @@ namespace DotCompute.Algorithms.Types.Security;
 /// </summary>
 public sealed class SecurityValidator
 {
-public bool ValidatePlugin(string pluginPath)
-{
-    // Security validation logic
-    return File.Exists(pluginPath);
-}
+    public bool ValidatePlugin(string pluginPath) =>
+        // Security validation logic
+        File.Exists(pluginPath);
 
-public SecurityValidationResult ValidateExecution(object executionContext)
-{
-    return new SecurityValidationResult { IsValid = true };
-}
+    public SecurityValidationResult ValidateExecution(object executionContext) => new SecurityValidationResult { IsValid = true };
 }
 
 /// <summary>

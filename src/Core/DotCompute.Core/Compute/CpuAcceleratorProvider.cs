@@ -100,8 +100,11 @@ public class CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger) : IA
         {
             return new Version(1, 4);
         }
-        else return System.Numerics.Vector.IsHardwareAccelerated ? new Version(1, 0) : new Version(0, 1);
-    }
+        else
+            {
+                return System.Numerics.Vector.IsHardwareAccelerated ? new Version(1, 0) : new Version(0, 1);
+            }
+        }
 
     private static long GetAvailableMemory()
     {

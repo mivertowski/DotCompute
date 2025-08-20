@@ -344,7 +344,10 @@ public sealed class CudaAdvancedFeatures : IDisposable
     private void OptimizeFeatures(object? state)
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         try
         {

@@ -142,7 +142,7 @@ private ICompiledKernel? TryCreateOptimizedKernel(KernelDefinition definition, C
     try
     {
         // Parse kernel source to detect optimization opportunities
-        var sourceCode = System.Text.Encoding.UTF8.GetString(definition.Code);
+        var sourceCode = definition.Code ?? string.Empty;
         var kernelParser = new OpenCLKernelParser(_logger);
         var kernelInfo = kernelParser.ParseKernel(sourceCode, definition.EntryPoint ?? "main");
 
@@ -529,7 +529,7 @@ private static CoreKernelDefinition ConvertToCoreKernelDefinition(KernelDefiniti
     // Since we're using Abstractions now, we can use the definition directly
     var source = definition.Code;
 
-    var sourceCode = System.Text.Encoding.UTF8.GetString(source);
+    var sourceCode = source ?? string.Empty;
     var kernelSource = new TextKernelSource(
         code: sourceCode,
         name: definition.Name,
@@ -542,11 +542,11 @@ private static CoreKernelDefinition ConvertToCoreKernelDefinition(KernelDefiniti
     {
         OptimizationLevel = OptimizationLevel.Default,
         EnableDebugInfo = false,
-        AdditionalFlags = null,
-        Defines = null
+        AdditionalFlags = new List<string>(),
+        Defines = new Dictionary<string, string>()
     };
 
-    var coreDefinition = new CoreKernelDefinition(definition.Name, kernelSource, compilationOptions);
+    var coreDefinition = new CoreKernelDefinition(definition.Name, kernelSource.Code, kernelSource.EntryPoint);
 
     // Override metadata with original information
     if (coreDefinition.Metadata != null && definition.Metadata != null)

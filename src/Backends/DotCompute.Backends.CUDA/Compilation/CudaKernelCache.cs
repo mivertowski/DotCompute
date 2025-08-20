@@ -345,7 +345,7 @@ public sealed class CudaKernelCache : IDisposable
             keyBuilder.Append('_').Append(options.OptimizationLevel);
             keyBuilder.Append('_').Append(options.EnableDebugInfo ? "debug" : "release");
             
-            if (options.AdditionalFlags?.Length > 0)
+            if (options.AdditionalFlags?.Count > 0)
             {
                 var flagsHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(string.Join(",", options.AdditionalFlags)));
                 keyBuilder.Append('_').Append(Convert.ToHexString(flagsHash)[..8]);

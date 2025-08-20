@@ -156,108 +156,72 @@ public static Complex operator *(float left, Complex right)
     return new Complex(left * right.Real, left * right.Imaginary);
 }
 
-/// <summary>
-/// Computes e^(i*theta).
-/// </summary>
-/// <param name="theta">The angle in radians.</param>
-/// <returns>The complex exponential.</returns>
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static Complex Exp(float theta)
-{
-    return new Complex(MathF.Cos(theta), MathF.Sin(theta));
-}
+    /// <summary>
+    /// Computes e^(i*theta).
+    /// </summary>
+    /// <param name="theta">The angle in radians.</param>
+    /// <returns>The complex exponential.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Complex Exp(float theta) => new Complex(MathF.Cos(theta), MathF.Sin(theta));
 
-/// <summary>
-/// Adds two complex numbers.
-/// </summary>
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static Complex Add(Complex left, Complex right)
-{
-    return left + right;
-}
+    /// <summary>
+    /// Adds two complex numbers.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Complex Add(Complex left, Complex right) => left + right;
 
-/// <summary>
-/// Subtracts two complex numbers.
-/// </summary>
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static Complex Subtract(Complex left, Complex right)
-{
-    return left - right;
-}
+    /// <summary>
+    /// Subtracts two complex numbers.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Complex Subtract(Complex left, Complex right) => left - right;
 
-/// <summary>
-/// Multiplies two complex numbers.
-/// </summary>
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static Complex Multiply(Complex left, Complex right)
-{
-    return left * right;
-}
+    /// <summary>
+    /// Multiplies two complex numbers.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Complex Multiply(Complex left, Complex right) => left * right;
 
-/// <summary>
-/// Multiplies a complex number by a scalar.
-/// </summary>
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static Complex Multiply(Complex left, float right)
-{
-    return left * right;
-}
+    /// <summary>
+    /// Multiplies a complex number by a scalar.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Complex Multiply(Complex left, float right) => left * right;
 
-/// <summary>
-/// Multiplies a scalar by a complex number.
-/// </summary>
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static Complex Multiply(float left, Complex right)
-{
-    return left * right;
-}
+    /// <summary>
+    /// Multiplies a scalar by a complex number.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Complex Multiply(float left, Complex right) => left * right;
 
-/// <summary>
-/// Divides two complex numbers.
-/// </summary>
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static Complex Divide(Complex left, Complex right)
-{
-    return left / right;
-}
+    /// <summary>
+    /// Divides two complex numbers.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Complex Divide(Complex left, Complex right) => left / right;
 
-/// <summary>
-/// Negates a complex number.
-/// </summary>
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static Complex Negate(Complex value)
-{
-    return -value;
-}
+    /// <summary>
+    /// Negates a complex number.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Complex Negate(Complex value) => -value;
 
-/// <inheritdoc/>
-public bool Equals(Complex other)
-{
-    return Real == other.Real && Imaginary == other.Imaginary;
-}
+    /// <inheritdoc/>
+    public bool Equals(Complex other) => Real == other.Real && Imaginary == other.Imaginary;
 
-/// <inheritdoc/>
-public override bool Equals(object? obj)
-{
-    return obj is Complex other && Equals(other);
-}
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is Complex other && Equals(other);
 
-/// <inheritdoc/>
-public override int GetHashCode()
-{
-    return HashCode.Combine(Real, Imaginary);
-}
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine(Real, Imaginary);
 
-/// <inheritdoc/>
-public override string ToString()
-{
-    return Imaginary >= 0 ? $"{Real} + {Imaginary}i" : $"{Real} - {-Imaginary}i";
-}
+    /// <inheritdoc/>
+    public override string ToString() => Imaginary >= 0 ? $"{Real} + {Imaginary}i" : $"{Real} - {-Imaginary}i";
 
-/// <summary>
-/// Equality operator.
-/// </summary>
-public static bool operator ==(Complex left, Complex right)
+    /// <summary>
+    /// Equality operator.
+    /// </summary>
+    public static bool operator ==(Complex left, Complex right)
 {
     return left.Equals(right);
 }

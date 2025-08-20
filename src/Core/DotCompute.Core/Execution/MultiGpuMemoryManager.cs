@@ -79,18 +79,15 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Waits for all pending transfers to a specific device to complete.
-    /// </summary>
-    public async ValueTask WaitForTransfersAsync(IAccelerator device, CancellationToken cancellationToken = default)
-    {
-        await _transferScheduler.WaitForDeviceTransfersAsync(device.Info.Id, cancellationToken);
-    }
+        /// <summary>
+        /// Waits for all pending transfers to a specific device to complete.
+        /// </summary>
+        public async ValueTask WaitForTransfersAsync(IAccelerator device, CancellationToken cancellationToken = default) => await _transferScheduler.WaitForDeviceTransfersAsync(device.Info.Id, cancellationToken);
 
-    /// <summary>
-    /// Enables peer-to-peer transfers between two devices using hardware detection.
-    /// </summary>
-    public async ValueTask<bool> EnablePeerToPeerAsync(IAccelerator device1, IAccelerator device2)
+        /// <summary>
+        /// Enables peer-to-peer transfers between two devices using hardware detection.
+        /// </summary>
+        public async ValueTask<bool> EnablePeerToPeerAsync(IAccelerator device1, IAccelerator device2)
     {
         var connectionKey = GetConnectionKey(device1.Info.Id, device2.Info.Id);
         
@@ -169,18 +166,15 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
             sourceBuffer, targetBuffer, sourceOffset, targetOffset, transferCount, strategy, cancellationToken);
     }
 
-    /// <summary>
-    /// Synchronizes a buffer across all devices that have copies of it.
-    /// </summary>
-    public async ValueTask SynchronizeBufferAsync<T>(AbstractionsMemory.IBuffer<T> buffer, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        await _coherenceManager.SynchronizeBufferAsync(buffer, cancellationToken);
-    }
+        /// <summary>
+        /// Synchronizes a buffer across all devices that have copies of it.
+        /// </summary>
+        public async ValueTask SynchronizeBufferAsync<T>(AbstractionsMemory.IBuffer<T> buffer, CancellationToken cancellationToken = default) where T : unmanaged => await _coherenceManager.SynchronizeBufferAsync(buffer, cancellationToken);
 
-    /// <summary>
-    /// Gets comprehensive memory usage statistics across all devices with P2P metrics.
-    /// </summary>
-    public MultiGpuMemoryStatistics GetMemoryStatistics()
+        /// <summary>
+        /// Gets comprehensive memory usage statistics across all devices with P2P metrics.
+        /// </summary>
+        public MultiGpuMemoryStatistics GetMemoryStatistics()
     {
         var p2pStats = _bufferFactory.GetConnectionStatistics();
         var poolStats = _bufferFactory.GetBufferPoolStatistics();
@@ -405,13 +399,10 @@ internal sealed class MockAcceleratorForTest : IAccelerator
     public AbstractionsMemory.IMemoryManager Memory { get; }
     public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
     public bool IsDisposed => false;
-    
-    public ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult<ICompiledKernel>(new MockCompiledKernel());
-    }
-    
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
+        public ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default) => ValueTask.FromResult<ICompiledKernel>(new MockCompiledKernel());
+
+        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     public void Dispose() { }
 }
@@ -446,113 +437,76 @@ internal sealed class SimpleBufferAdapter<T> : AbstractionsMemory.IBuffer<T> whe
 
     public bool IsDisposed => _disposed;
 
-    public Task CopyFromHostAsync<TData>(TData[] source, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
-    {
-        return _memoryBuffer.CopyFromHostAsync<TData>(source, offset, cancellationToken).AsTask();
-    }
+        public Task CopyFromHostAsync<TData>(TData[] source, int offset, CancellationToken cancellationToken = default) where TData : unmanaged => _memoryBuffer.CopyFromHostAsync<TData>(source, offset, cancellationToken).AsTask();
 
-    public ValueTask CopyFromHostAsync<TData>(ReadOnlyMemory<TData> source, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
-    {
-        // Simple mock - just return completed
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask CopyFromHostAsync<TData>(ReadOnlyMemory<TData> source, long offset, CancellationToken cancellationToken = default) where TData : unmanaged =>
+            // Simple mock - just return completed
+            ValueTask.CompletedTask;
 
-    public Task CopyToHostAsync<TData>(TData[] destination, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
-    {
-        return _memoryBuffer.CopyToHostAsync<TData>(destination, offset, cancellationToken).AsTask();
-    }
+        public Task CopyToHostAsync<TData>(TData[] destination, int offset, CancellationToken cancellationToken = default) where TData : unmanaged => _memoryBuffer.CopyToHostAsync<TData>(destination, offset, cancellationToken).AsTask();
 
-    public ValueTask CopyToHostAsync<TData>(Memory<TData> destination, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
-    {
-        // Simple mock - just return completed
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask CopyToHostAsync<TData>(Memory<TData> destination, long offset, CancellationToken cancellationToken = default) where TData : unmanaged =>
+            // Simple mock - just return completed
+            ValueTask.CompletedTask;
 
-    public Task CopyFromAsync(AbstractionsMemory.IMemoryBuffer source, CancellationToken cancellationToken = default)
-    {
-        // Simple mock - just return completed
-        return Task.CompletedTask;
-    }
+        public Task CopyFromAsync(AbstractionsMemory.IMemoryBuffer source, CancellationToken cancellationToken = default) =>
+            // Simple mock - just return completed
+            Task.CompletedTask;
 
-    public Task CopyToAsync(AbstractionsMemory.IMemoryBuffer destination, CancellationToken cancellationToken = default)
-    {
-        // Simple mock - just return completed
-        return Task.CompletedTask;
-    }
+        public Task CopyToAsync(AbstractionsMemory.IMemoryBuffer destination, CancellationToken cancellationToken = default) =>
+            // Simple mock - just return completed
+            Task.CompletedTask;
 
-    public ValueTask CopyToAsync(AbstractionsMemory.IBuffer<T> destination, CancellationToken cancellationToken = default)
-    {
-        // Simple mock - just return completed
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask CopyToAsync(AbstractionsMemory.IBuffer<T> destination, CancellationToken cancellationToken = default) =>
+            // Simple mock - just return completed
+            ValueTask.CompletedTask;
 
-    public ValueTask CopyToAsync(int sourceOffset, AbstractionsMemory.IBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
-    {
-        // Simple mock - just return completed
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask CopyToAsync(int sourceOffset, AbstractionsMemory.IBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) =>
+            // Simple mock - just return completed
+            ValueTask.CompletedTask;
 
-    public Task FillAsync<TData>(TData value, CancellationToken cancellationToken = default) where TData : unmanaged
-    {
-        // Simple mock - just return completed
-        return Task.CompletedTask;
-    }
+        public Task FillAsync<TData>(TData value, CancellationToken cancellationToken = default) where TData : unmanaged =>
+            // Simple mock - just return completed
+            Task.CompletedTask;
 
-    public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
-    {
-        // Simple mock - just return completed
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask FillAsync(T value, CancellationToken cancellationToken = default) =>
+            // Simple mock - just return completed
+            ValueTask.CompletedTask;
 
-    public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
-    {
-        // Simple mock - just return completed
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) =>
+            // Simple mock - just return completed
+            ValueTask.CompletedTask;
 
-    public Task ClearAsync(CancellationToken cancellationToken = default)
-    {
-        // Simple mock - just return completed
-        return Task.CompletedTask;
-    }
+        public Task ClearAsync(CancellationToken cancellationToken = default) =>
+            // Simple mock - just return completed
+            Task.CompletedTask;
 
-    public AbstractionsMemory.IBuffer<T> Slice(int offset, int count)
-    {
-        // Create a new wrapper with adjusted element count
-        return new SimpleBufferAdapter<T>(_memoryBuffer, count);
-    }
+        public AbstractionsMemory.IBuffer<T> Slice(int offset, int count) =>
+            // Create a new wrapper with adjusted element count
+            new SimpleBufferAdapter<T>(_memoryBuffer, count);
 
-    public AbstractionsMemory.IBuffer<TNew> AsType<TNew>() where TNew : unmanaged
+        public AbstractionsMemory.IBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         // Calculate new element count based on size ratio
         var newElementCount = (_elementCount * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()) / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
         return new SimpleBufferAdapter<TNew>(_memoryBuffer, newElementCount);
     }
 
-    public AbstractionsMemory.MappedMemory<T> Map(AbstractionsMemory.MapMode mode)
-    {
-        // Simple mock implementation - return default structure
-        return default(AbstractionsMemory.MappedMemory<T>);
-    }
+        public AbstractionsMemory.MappedMemory<T> Map(AbstractionsMemory.MapMode mode) =>
+            // Simple mock implementation - return default structure
+            default(AbstractionsMemory.MappedMemory<T>);
 
-    public AbstractionsMemory.MappedMemory<T> MapRange(int offset, int count, AbstractionsMemory.MapMode mode)
-    {
-        // Simple mock implementation - return default structure
-        return default(AbstractionsMemory.MappedMemory<T>);
-    }
+        public AbstractionsMemory.MappedMemory<T> MapRange(int offset, int count, AbstractionsMemory.MapMode mode) =>
+            // Simple mock implementation - return default structure
+            default(AbstractionsMemory.MappedMemory<T>);
 
-    public ValueTask<AbstractionsMemory.MappedMemory<T>> MapAsync(AbstractionsMemory.MapMode mode, CancellationToken cancellationToken = default)
-    {
-        // Simple mock implementation - return default structure
-        return new ValueTask<AbstractionsMemory.MappedMemory<T>>(default(AbstractionsMemory.MappedMemory<T>));
-    }
+        public ValueTask<AbstractionsMemory.MappedMemory<T>> MapAsync(AbstractionsMemory.MapMode mode, CancellationToken cancellationToken = default) =>
+            // Simple mock implementation - return default structure
+            new ValueTask<AbstractionsMemory.MappedMemory<T>>(default(AbstractionsMemory.MappedMemory<T>));
 
-    public ValueTask DisposeAsync()
-    {
-        return _memoryBuffer.DisposeAsync();
-    }
+        public ValueTask DisposeAsync() => _memoryBuffer.DisposeAsync();
 
-    public void Dispose()
+        public void Dispose()
     {
         _disposed = true;
         _memoryBuffer.DisposeAsync().AsTask().Wait();
@@ -626,12 +580,9 @@ internal sealed class MockMemoryManager : AbstractionsMemory.IMemoryManager
         return ValueTask.FromResult<AbstractionsMemory.IMemoryBuffer>(buffer);
     }
 
-    public AbstractionsMemory.IMemoryBuffer CreateView(AbstractionsMemory.IMemoryBuffer buffer, long offset, long length)
-    {
-        return new MockMemoryBuffer(length, buffer.Options);
-    }
+        public AbstractionsMemory.IMemoryBuffer CreateView(AbstractionsMemory.IMemoryBuffer buffer, long offset, long length) => new MockMemoryBuffer(length, buffer.Options);
 
-    public async ValueTask<AbstractionsMemory.IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+        public async ValueTask<AbstractionsMemory.IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
         var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
@@ -653,11 +604,8 @@ internal sealed class MockMemoryManager : AbstractionsMemory.IMemoryManager
         memory.Span.CopyTo(data);
     }
 
-    public void Free(AbstractionsMemory.IMemoryBuffer buffer)
-    {
-        buffer?.Dispose();
+        public void Free(AbstractionsMemory.IMemoryBuffer buffer) => buffer?.Dispose();
     }
-}
 
 /// <summary>
 /// Mock memory buffer for testing purposes
@@ -677,27 +625,18 @@ internal sealed class MockMemoryBuffer : AbstractionsMemory.IMemoryBuffer
     public AbstractionsMemory.MemoryOptions Options { get; }
     public bool IsDisposed => _disposed;
 
-    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
-    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
-    public ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
     {
         _disposed = true;
         return ValueTask.CompletedTask;
     }
 
-    public void Dispose()
-    {
-        _disposed = true;
+        public void Dispose() => _disposed = true;
     }
-}
 
 /// <summary>
 /// Mock compiled kernel for testing purposes
@@ -706,17 +645,11 @@ internal sealed class MockCompiledKernel : ICompiledKernel
 {
     public string Name => "MockKernel";
 
-    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
-    public ValueTask DisposeAsync()
-    {
-        return ValueTask.CompletedTask;
-    }
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-    public void Dispose()
+        public void Dispose()
     {
         // Nothing to dispose
     }

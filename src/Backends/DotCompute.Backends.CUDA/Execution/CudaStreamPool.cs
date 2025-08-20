@@ -165,9 +165,12 @@ internal sealed class CudaStreamPool : IDisposable
     /// </summary>
     public void PerformMaintenance()
     {
-        if (_disposed) return;
+        if (_disposed)
+            {
+                return;
+            }
 
-        lock (_lockObject)
+            lock (_lockObject)
         {
             try
             {
@@ -446,12 +449,9 @@ internal sealed class CudaStreamPool : IDisposable
         return streamCount > 0 ? (double)totalAcquireCount / streamCount : 0.0;
     }
 
-    private IEnumerable<PooledStream> GetAllPooledStreams()
-    {
-        return _highPriorityStreams.Concat(_normalPriorityStreams).Concat(_lowPriorityStreams);
-    }
+        private IEnumerable<PooledStream> GetAllPooledStreams() => _highPriorityStreams.Concat(_normalPriorityStreams).Concat(_lowPriorityStreams);
 
-    private int ConvertToCudaPriority(CudaStreamPriority priority) => priority switch
+        private int ConvertToCudaPriority(CudaStreamPriority priority) => priority switch
     {
         CudaStreamPriority.High => _greatestPriority,
         CudaStreamPriority.Low => _leastPriority,
@@ -469,8 +469,10 @@ internal sealed class CudaStreamPool : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
-            throw new ObjectDisposedException(nameof(CudaStreamPool));
-    }
+            {
+                throw new ObjectDisposedException(nameof(CudaStreamPool));
+            }
+        }
 
     public void Dispose()
     {
@@ -577,11 +579,8 @@ internal sealed class PoolReturnManager : IStreamReturnManager
         _pooledStream = pooledStream;
     }
 
-    public void ReturnStreamToPool(StreamId streamId)
-    {
-        _pool.Return(_pooledStream.Handle, _pooledStream.Priority);
+        public void ReturnStreamToPool(StreamId streamId) => _pool.Return(_pooledStream.Handle, _pooledStream.Priority);
     }
-}
 
 /// <summary>
 /// Interface for stream return management

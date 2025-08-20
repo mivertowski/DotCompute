@@ -466,7 +466,7 @@ __global__ void turing_optimized(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "turing_optimized",
-            Code = Encoding.UTF8.GetBytes(kernelSource),
+            Code = kernelSource,
             EntryPoint = "turing_optimized"
         };
     }

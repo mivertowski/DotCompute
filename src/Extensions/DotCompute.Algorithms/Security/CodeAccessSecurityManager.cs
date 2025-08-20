@@ -259,12 +259,9 @@ public async Task LoadConfigurationAsync(string configPath, CancellationToken ca
     }
 }
 
-private void InitializeDefaultPermissionSets()
-{
-    _logger.LogDebug("Initializing default permission sets");
-}
+    private void InitializeDefaultPermissionSets() => _logger.LogDebug("Initializing default permission sets");
 
-private void AddTrustedPermissions(SecurityPermissionSet permissionSet)
+    private void AddTrustedPermissions(SecurityPermissionSet permissionSet)
 {
     // Full trust permissions (MyComputer zone)
     permissionSet.AllowFileSystemAccess = true;
@@ -349,53 +346,57 @@ private void ApplyCustomRestrictions(SecurityPermissionSet permissionSet)
 private void SetupFileSystemRestrictions(AssemblyLoadContext loadContext, string assemblyPath)
 {
     if (!_options.EnableFileSystemRestrictions)
-        return;
+        {
+            return;
+        }
 
-    // In modern .NET, we would implement this through:
-    // 1. File system watchers
-    // 2. Custom file I/O interceptors
-    // 3. Process monitoring
-    
-    _logger.LogDebug("Setting up file system restrictions for: {AssemblyPath}", assemblyPath);
+        // In modern .NET, we would implement this through:
+        // 1. File system watchers
+        // 2. Custom file I/O interceptors
+        // 3. Process monitoring
+
+        _logger.LogDebug("Setting up file system restrictions for: {AssemblyPath}", assemblyPath);
 }
 
 private void SetupNetworkRestrictions(AssemblyLoadContext loadContext, string assemblyPath)
 {
     if (!_options.EnableNetworkRestrictions)
-        return;
+        {
+            return;
+        }
 
-    // Network restrictions could be implemented through:
-    // 1. Custom HttpClientHandler
-    // 2. Network monitoring
-    // 3. Firewall integration
-    
-    _logger.LogDebug("Setting up network restrictions for: {AssemblyPath}", assemblyPath);
+        // Network restrictions could be implemented through:
+        // 1. Custom HttpClientHandler
+        // 2. Network monitoring
+        // 3. Firewall integration
+
+        _logger.LogDebug("Setting up network restrictions for: {AssemblyPath}", assemblyPath);
 }
 
 private void SetupReflectionRestrictions(AssemblyLoadContext loadContext, string assemblyPath)
 {
     if (!_options.EnableReflectionRestrictions)
-        return;
+        {
+            return;
+        }
 
-    // Reflection restrictions could be monitored through:
-    // 1. Custom assembly resolution
-    // 2. Type loading monitoring
-    // 3. Dynamic method creation tracking
-    
-    _logger.LogDebug("Setting up reflection restrictions for: {AssemblyPath}", assemblyPath);
+        // Reflection restrictions could be monitored through:
+        // 1. Custom assembly resolution
+        // 2. Type loading monitoring
+        // 3. Dynamic method creation tracking
+
+        _logger.LogDebug("Setting up reflection restrictions for: {AssemblyPath}", assemblyPath);
 }
 
-private void SetupResourceLimits(AssemblyLoadContext loadContext, string assemblyPath)
-{
-    // Resource limits implementation:
-    // 1. Memory usage monitoring
-    // 2. CPU time limits
-    // 3. Thread count limits
-    
-    _logger.LogDebug("Setting up resource limits for: {AssemblyPath}", assemblyPath);
-}
+    private void SetupResourceLimits(AssemblyLoadContext loadContext, string assemblyPath) =>
+        // Resource limits implementation:
+        // 1. Memory usage monitoring
+        // 2. CPU time limits
+        // 3. Thread count limits
 
-private bool ValidateOperation(SecurityPermissionSet permissionSet, SecurityOperation operation, string? target)
+        _logger.LogDebug("Setting up resource limits for: {AssemblyPath}", assemblyPath);
+
+    private bool ValidateOperation(SecurityPermissionSet permissionSet, SecurityOperation operation, string? target)
 {
     try
     {
@@ -419,40 +420,42 @@ private bool ValidateOperation(SecurityPermissionSet permissionSet, SecurityOper
 private static bool ValidateFileOperation(SecurityPermissionSet permissionSet, string? target, bool isWrite)
 {
     if (!permissionSet.AllowFileSystemAccess)
-        return false;
+        {
+            return false;
+        }
 
-    if (target == null)
-        return permissionSet.AllowFileSystemAccess;
+        if (target == null)
+        {
+            return permissionSet.AllowFileSystemAccess;
+        }
 
-    // Check if the target path is in the allowed paths
-    return permissionSet.AllowedFilePaths.Any(allowedPath => 
+        // Check if the target path is in the allowed paths
+        return permissionSet.AllowedFilePaths.Any(allowedPath => 
         target.StartsWith(allowedPath, StringComparison.OrdinalIgnoreCase));
 }
 
 private static bool ValidateNetworkOperation(SecurityPermissionSet permissionSet, string? target)
 {
     if (!permissionSet.AllowNetworkAccess)
-        return false;
+        {
+            return false;
+        }
 
-    if (target == null)
-        return permissionSet.AllowNetworkAccess;
+        if (target == null)
+        {
+            return permissionSet.AllowNetworkAccess;
+        }
 
-    // Check if the target endpoint is in the allowed endpoints
-    return permissionSet.AllowedNetworkEndpoints.Any(allowedEndpoint => 
+        // Check if the target endpoint is in the allowed endpoints
+        return permissionSet.AllowedNetworkEndpoints.Any(allowedEndpoint => 
         target.StartsWith(allowedEndpoint, StringComparison.OrdinalIgnoreCase));
 }
 
-private static bool ValidateReflectionOperation(SecurityPermissionSet permissionSet)
-{
-    return permissionSet.AllowReflection;
-}
+    private static bool ValidateReflectionOperation(SecurityPermissionSet permissionSet) => permissionSet.AllowReflection;
 
-private static bool ValidateUnmanagedCodeOperation(SecurityPermissionSet permissionSet)
-{
-    return permissionSet.AllowUnmanagedCode;
-}
+    private static bool ValidateUnmanagedCodeOperation(SecurityPermissionSet permissionSet) => permissionSet.AllowUnmanagedCode;
 
-private void ApplyConfiguration(CodeAccessSecurityConfiguration config)
+    private void ApplyConfiguration(CodeAccessSecurityConfiguration config)
 {
     _options.DefaultSecurityZone = config.DefaultSecurityZone;
     _options.EnableFileSystemRestrictions = config.EnableFileSystemRestrictions;
@@ -644,41 +647,32 @@ public List<string> AllowedNetworkEndpoints { get; } = [];
 /// </summary>
 public Dictionary<string, object> Permissions { get; } = [];
 
-/// <summary>
-/// Adds a permission to the set.
-/// </summary>
-/// <param name="name">Permission name.</param>
-/// <param name="value">Permission value.</param>
-public void AddPermission(string name, object value)
-{
-    Permissions[name] = value;
-}
+    /// <summary>
+    /// Adds a permission to the set.
+    /// </summary>
+    /// <param name="name">Permission name.</param>
+    /// <param name="value">Permission value.</param>
+    public void AddPermission(string name, object value) => Permissions[name] = value;
 
-/// <summary>
-/// Removes a permission from the set.
-/// </summary>
-/// <param name="name">Permission name.</param>
-/// <returns>True if removed; otherwise, false.</returns>
-public bool RemovePermission(string name)
-{
-    return Permissions.Remove(name);
-}
+    /// <summary>
+    /// Removes a permission from the set.
+    /// </summary>
+    /// <param name="name">Permission name.</param>
+    /// <returns>True if removed; otherwise, false.</returns>
+    public bool RemovePermission(string name) => Permissions.Remove(name);
 
-/// <summary>
-/// Checks if a permission exists in the set.
-/// </summary>
-/// <param name="name">Permission name.</param>
-/// <returns>True if the permission exists; otherwise, false.</returns>
-public bool HasPermission(string name)
-{
-    return Permissions.ContainsKey(name);
-}
+    /// <summary>
+    /// Checks if a permission exists in the set.
+    /// </summary>
+    /// <param name="name">Permission name.</param>
+    /// <returns>True if the permission exists; otherwise, false.</returns>
+    public bool HasPermission(string name) => Permissions.ContainsKey(name);
 
-/// <summary>
-/// Creates a copy of this permission set.
-/// </summary>
-/// <returns>A new permission set with the same settings.</returns>
-public SecurityPermissionSet Clone()
+    /// <summary>
+    /// Creates a copy of this permission set.
+    /// </summary>
+    /// <returns>A new permission set with the same settings.</returns>
+    public SecurityPermissionSet Clone()
 {
     var clone = new SecurityPermissionSet
     {

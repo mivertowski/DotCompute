@@ -225,8 +225,11 @@ public static double DotProductDouble(ReadOnlySpan<double> a, ReadOnlySpan<doubl
     {
         return DotProductDoubleAvx2(a, b);
     }
-    else return Vector128.IsHardwareAccelerated && a.Length >= 2 ? AdvSimd.IsSupported ? DotProductDoubleNeon(a, b) : DotProductDoubleSse(a, b) : DotProductDoubleScalar(a, b);
-}
+    else
+        {
+            return Vector128.IsHardwareAccelerated && a.Length >= 2 ? AdvSimd.IsSupported ? DotProductDoubleNeon(a, b) : DotProductDoubleSse(a, b) : DotProductDoubleScalar(a, b);
+        }
+    }
 
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
 private static double DotProductDoubleScalar(ReadOnlySpan<double> a, ReadOnlySpan<double> b)

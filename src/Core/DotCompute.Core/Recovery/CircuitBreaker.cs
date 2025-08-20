@@ -304,9 +304,12 @@ private TimeSpan CalculateRetryDelay(int attempt, RetryPolicy policy)
 
 private void PerformHealthCheck(object? state)
 {
-    if (_disposed) return;
-    
-    try
+    if (_disposed)
+        {
+            return;
+        }
+
+        try
     {
         var now = DateTimeOffset.UtcNow;
         

@@ -45,7 +45,23 @@ public readonly struct Dim3 : IEquatable<Dim3>
     public static bool operator !=(Dim3 left, Dim3 right) => !left.Equals(right);
 
     public static implicit operator Dim3(int value) => new(value);
+    public static implicit operator Dim3((int x, int y) tuple) => new(tuple.x, tuple.y);
     public static implicit operator Dim3((int x, int y, int z) tuple) => new(tuple.x, tuple.y, tuple.z);
+    
+    /// <summary>
+    /// Creates a Dim3 from an integer value.
+    /// </summary>
+    public static Dim3 FromInt32(int value) => new(value);
+    
+    /// <summary>
+    /// Creates a Dim3 from a two-component tuple.
+    /// </summary>
+    public static Dim3 FromValueTuple((int x, int y) tuple) => new(tuple.x, tuple.y);
+    
+    /// <summary>
+    /// Creates a Dim3 from a three-component tuple.
+    /// </summary>
+    public static Dim3 FromValueTuple((int x, int y, int z) tuple) => new(tuple.x, tuple.y, tuple.z);
 }
 
 /// <summary>
@@ -53,10 +69,7 @@ public readonly struct Dim3 : IEquatable<Dim3>
 /// </summary>
 public class Dim3TypeConverter : TypeConverter
 {
-    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
-    {
-        return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
-    }
+    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType) => sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
 }
 
 /// <summary>
@@ -105,7 +118,7 @@ public class KernelDefinition
 /// </summary>
 public class KernelArguments
 {
-    private readonly List<object?> _arguments = new();
+    private readonly List<object?> _arguments;
 
     /// <summary>Gets the number of arguments.</summary>
     public int Count => _arguments.Count;
@@ -116,33 +129,215 @@ public class KernelArguments
     /// <summary>
     /// Initializes a new instance of KernelArguments.
     /// </summary>
-    public KernelArguments() { }
+    public KernelArguments()
+    {
+        _arguments = new List<object?>();
+    }
+    
+    /// <summary>
+    /// Initializes a new instance of KernelArguments with initial capacity.
+    /// </summary>
+    /// <param name="capacity">The initial capacity for arguments.</param>
+    public KernelArguments(int capacity)
+    {
+        if (capacity < 0)
+        {
+
+            throw new ArgumentOutOfRangeException(nameof(capacity), "Capacity cannot be negative.");
+        }
+
+
+        _arguments = new List<object?>(capacity);
+        
+        // Pre-fill with null values to match the expected capacity
+        for (int i = 0; i < capacity; i++)
+        {
+            _arguments.Add(null);
+        }
+    }
     
     /// <summary>
     /// Initializes a new instance of KernelArguments with initial arguments.
     /// </summary>
+    /// <param name="arguments">The initial arguments.</param>
     public KernelArguments(params object?[] arguments)
     {
-        _arguments.AddRange(arguments);
+        ArgumentNullException.ThrowIfNull(arguments);
+        _arguments = new List<object?>(arguments);
     }
 
-    /// <summary>Adds an argument to the kernel.</summary>
-    public void Add(object? argument)
+    /// <summary>
+    /// Adds an argument to the kernel.
+    /// </summary>
+    /// <param name="argument">The argument to add.</param>
+    public void Add(object? argument) => _arguments.Add(argument);
+
+    /// <summary>
+    /// Sets the argument at the specified index.
+    /// </summary>
+    /// <param name="index">The zero-based index of the argument to set.</param>
+    /// <param name="value">The value to set.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when index is out of range.</exception>
+    public void Set(int index, object? value)
     {
-        _arguments.Add(argument);
+        if (index < 0)
+        {
+
+            throw new ArgumentOutOfRangeException(nameof(index), "Index cannot be negative.");
+        }
+
+
+        if (index >= _arguments.Count)
+        {
+            // If we're in an uninitialized state (Count == 0), throw a more informative exception
+            if (_arguments.Count == 0)
+            {
+
+                throw new InvalidOperationException($"Cannot set argument at index {index}. KernelArguments has not been initialized with a capacity. Use KernelArguments.Create(capacity) or the constructor with capacity parameter.");
+            }
+
+
+            throw new ArgumentOutOfRangeException(nameof(index), $"Index {index} is out of range. Valid range is 0 to {_arguments.Count - 1}.");
+        }
+        
+        _arguments[index] = value;
     }
 
-    /// <summary>Gets the argument at the specified index.</summary>
-    public object? this[int index] => _arguments[index];
+    /// <summary>
+    /// Gets the argument at the specified index.
+    /// </summary>
+    /// <param name="index">The zero-based index of the argument to get.</param>
+    /// <returns>The argument at the specified index.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when index is out of range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when trying to access arguments on an uninitialized KernelArguments.</exception>
+    public object? this[int index] 
+    { 
+        get
+        {
+            if (index < 0)
+            {
+
+                throw new ArgumentOutOfRangeException(nameof(index), "Index cannot be negative.");
+            }
+
+
+            if (index >= _arguments.Count)
+            {
+                // If we're in an uninitialized state (Count == 0), throw a more informative exception
+                if (_arguments.Count == 0)
+                {
+
+                    throw new InvalidOperationException($"Cannot get argument at index {index}. KernelArguments has not been initialized with a capacity. Use KernelArguments.Create(capacity) or the constructor with capacity parameter.");
+                }
+
+
+                throw new ArgumentOutOfRangeException(nameof(index), $"Index {index} is out of range. Valid range is 0 to {_arguments.Count - 1}.");
+            }
+            
+            return _arguments[index];
+        }
+    }
 
     /// <summary>Gets all arguments.</summary>
     public IReadOnlyList<object?> Arguments => _arguments.AsReadOnly();
     
-    /// <summary>Gets the argument at the specified index.</summary>
-    public T Get<T>(int index) => (T)_arguments[index]!;
-    
-    /// <summary>Creates a new KernelArguments instance with the specified arguments.</summary>
-    public static KernelArguments Create(params object?[] arguments) => new(arguments);
+    /// <summary>
+    /// Gets the argument at the specified index with type safety.
+    /// </summary>
+    /// <typeparam name="T">The expected type of the argument.</typeparam>
+    /// <param name="index">The zero-based index of the argument to get.</param>
+    /// <returns>The argument at the specified index cast to the specified type.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when index is out of range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when trying to access arguments on an uninitialized KernelArguments.</exception>
+    /// <exception cref="InvalidCastException">Thrown when the argument cannot be cast to the specified type.</exception>
+    public T Get<T>(int index)
+    {
+        if (index < 0)
+        {
+
+            throw new ArgumentOutOfRangeException(nameof(index), "Index cannot be negative.");
+        }
+
+
+        if (index >= _arguments.Count)
+        {
+            // If we're in an uninitialized state (Count == 0), throw a more informative exception
+            if (_arguments.Count == 0)
+            {
+
+                throw new InvalidOperationException($"Cannot get argument at index {index}. KernelArguments has not been initialized with a capacity. Use KernelArguments.Create(capacity) or the constructor with capacity parameter.");
+            }
+
+
+            throw new ArgumentOutOfRangeException(nameof(index), $"Index {index} is out of range. Valid range is 0 to {_arguments.Count - 1}.");
+        }
+        
+        var value = _arguments[index];
+        
+        if (value == null)
+        {
+            // Handle nullable reference types and value types
+            if (typeof(T).IsValueType && Nullable.GetUnderlyingType(typeof(T)) == null)
+            {
+                throw new InvalidCastException($"Cannot cast null value to non-nullable value type {typeof(T).Name}.");
+            }
+            return default(T)!;
+        }
+        
+        if (value is T typedValue)
+        {
+            return typedValue;
+        }
+        
+        // Try explicit conversion
+        try
+        {
+            return (T)value;
+        }
+        catch (InvalidCastException ex)
+        {
+            throw new InvalidCastException($"Cannot cast argument at index {index} of type {value.GetType().Name} to type {typeof(T).Name}.", ex);
+        }
+    }
+
+
+    /// <summary>
+    /// Gets the argument at the specified index without type conversion.
+    /// </summary>
+    /// <param name="index">The zero-based index of the argument to get.</param>
+    /// <returns>The raw argument at the specified index.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when index is out of range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when trying to access arguments on an uninitialized KernelArguments.</exception>
+    public object? Get(int index) => this[index];
+
+    /// <summary>
+    /// Creates a new KernelArguments instance with the specified initial capacity.
+    /// </summary>
+    /// <param name="capacity">The initial capacity for arguments.</param>
+    /// <returns>A new KernelArguments instance with the specified capacity.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when capacity is negative.</exception>
+    public static KernelArguments Create(int capacity) => new KernelArguments(capacity);
+
+
+    /// <summary>
+    /// Creates a new KernelArguments instance with the specified arguments.
+    /// </summary>
+    /// <param name="arguments">The initial arguments.</param>
+    /// <returns>A new KernelArguments instance with the specified arguments.</returns>
+    public static KernelArguments Create(params object?[] arguments) => new KernelArguments(arguments);
+
+
+    /// <summary>
+    /// Clears all arguments from this instance.
+    /// </summary>
+    public void Clear() => _arguments.Clear();
+
+
+    /// <summary>
+    /// Returns an enumerator that iterates through the arguments.
+    /// </summary>
+    /// <returns>An enumerator for the arguments.</returns>
+    public IEnumerator<object?> GetEnumerator() => _arguments.GetEnumerator();
 }
 
 /// <summary>
@@ -206,14 +401,36 @@ public class CompiledKernel : IDisposable
     }
 
     /// <summary>
+    /// Initializes a new instance of CompiledKernel for low-level usage with native handle.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
+    public CompiledKernel(Guid id, IntPtr nativeHandle, int sharedMemorySize, KernelConfiguration configuration)
+    {
+        Name = $"Kernel_{id:N}";
+        Id = id.ToString();
+        CompiledBinary = null; // No binary for native handle kernels
+        Metadata = new Dictionary<string, object>
+        {
+            ["Id"] = id,
+            ["NativeHandle"] = nativeHandle,
+            ["SharedMemorySize"] = sharedMemorySize,
+            ["Configuration"] = configuration
+        };
+    }
+
+    /// <summary>
     /// Executes the compiled kernel with the specified arguments.
     /// </summary>
     public virtual Task ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
         if (IsDisposed)
+        {
+
             throw new ObjectDisposedException(nameof(CompiledKernel));
+        }
 
         // Default implementation - would be overridden by backend-specific implementations
+
         return Task.CompletedTask;
     }
 

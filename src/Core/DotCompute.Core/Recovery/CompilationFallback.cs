@@ -467,8 +467,11 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         };
         
         if (context.UseInterpreter)
+        {
             successRate = 0.99; // Interpreter almost always works
-        
+        }
+
+
         var success = Random.Shared.NextDouble() < successRate;
         
         return success 
@@ -500,10 +503,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         return Convert.ToBase64String(hash);
     }
 
-    private string DetectTargetPlatform(CompilationOptions options)
-    {
-        return options.CompilerBackend ?? "Unknown";
-    }
+    private string DetectTargetPlatform(CompilationOptions options) => options.CompilerBackend ?? "Unknown";
 
     private void CacheCompilationResult(string kernelHash, CompilationRecoveryContext context, RecoveryResult result)
     {
@@ -520,16 +520,18 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         _compilationCache.TryAdd(kernelHash, cachedResult);
     }
 
-    private double CalculateCacheHitRate()
-    {
+    private double CalculateCacheHitRate() =>
         // This would track actual cache hits/misses in a real implementation
-        return 0.75; // 75% hit rate placeholder
-    }
+        0.75; // 75% hit rate placeholder
 
     private void CleanupCache(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             var now = DateTimeOffset.UtcNow;

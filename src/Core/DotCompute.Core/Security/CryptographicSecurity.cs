@@ -68,8 +68,12 @@ public sealed class CryptographicSecurity : IDisposable
         string identifier, string purpose)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(CryptographicSecurity));
-        
+        }
+
+
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(purpose);
 
@@ -130,8 +134,12 @@ public sealed class CryptographicSecurity : IDisposable
         string algorithm = "AES-256-GCM", ReadOnlyMemory<byte> associatedData = default)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(CryptographicSecurity));
-        
+        }
+
+
         ArgumentException.ThrowIfNullOrWhiteSpace(keyIdentifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
 
@@ -190,8 +198,12 @@ public sealed class CryptographicSecurity : IDisposable
         ReadOnlyMemory<byte> associatedData = default)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(CryptographicSecurity));
-        
+        }
+
+
         ArgumentException.ThrowIfNullOrWhiteSpace(keyIdentifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
 
@@ -246,8 +258,12 @@ public sealed class CryptographicSecurity : IDisposable
         string hashAlgorithm = "SHA-256")
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(CryptographicSecurity));
-        
+        }
+
+
         ArgumentException.ThrowIfNullOrWhiteSpace(keyIdentifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(hashAlgorithm);
 
@@ -310,8 +326,12 @@ public sealed class CryptographicSecurity : IDisposable
         ReadOnlyMemory<byte> signature, string keyIdentifier, string hashAlgorithm = "SHA-256")
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(CryptographicSecurity));
-        
+        }
+
+
         ArgumentException.ThrowIfNullOrWhiteSpace(keyIdentifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(hashAlgorithm);
 
@@ -366,8 +386,12 @@ public sealed class CryptographicSecurity : IDisposable
     public AlgorithmValidationResult ValidateCryptographicAlgorithm(string algorithm, int keySize, string context)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(CryptographicSecurity));
-        
+        }
+
+
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
         ArgumentException.ThrowIfNullOrWhiteSpace(context);
 
@@ -419,7 +443,11 @@ public sealed class CryptographicSecurity : IDisposable
     public async Task<KeyRotationResult> RotateKeysAsync(bool forceRotation = false)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(CryptographicSecurity));
+        }
+
 
         await _operationLock.WaitAsync();
         try
@@ -986,7 +1014,11 @@ public sealed class CryptographicSecurity : IDisposable
 
     private void PerformKeyRotation(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -1095,7 +1127,10 @@ public sealed class CryptographicSecurity : IDisposable
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         _disposed = true;
 
@@ -1169,8 +1204,12 @@ internal sealed class SecureKeyContainer : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
         KeyData?.Dispose();
         

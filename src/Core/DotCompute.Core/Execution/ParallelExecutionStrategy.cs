@@ -322,7 +322,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
             {
                 Success = results.All(r => r.Success),
                 TotalExecutionTimeMs = startTime.Elapsed.TotalMilliseconds,
-                DeviceResults = results.ToArray(),
+                DeviceResults = [.. results],
                 Strategy = ExecutionStrategyType.WorkStealing,
                 ThroughputGFLOPS = CalculateOverallThroughput(results),
                 MemoryBandwidthGBps = CalculateOverallMemoryBandwidth(results),
@@ -354,26 +354,20 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         LogAcceleratorsSynchronized(_logger, null);
     }
 
-    /// <summary>
-    /// Gets performance analysis and optimization recommendations.
-    /// </summary>
-    public ParallelExecutionAnalysis GetPerformanceAnalysis()
-    {
-        return _performanceMonitor.GetPerformanceAnalysis();
-    }
+        /// <summary>
+        /// Gets performance analysis and optimization recommendations.
+        /// </summary>
+        public ParallelExecutionAnalysis GetPerformanceAnalysis() => _performanceMonitor.GetPerformanceAnalysis();
 
-    /// <summary>
-    /// Optimizes execution strategy based on historical performance data.
-    /// </summary>
-    public ExecutionStrategyRecommendation OptimizeStrategy(
-        string kernelName,
-        int[] inputSizes,
-        AcceleratorType[] availableAcceleratorTypes)
-    {
-        return _performanceMonitor.RecommendOptimalStrategy(kernelName, inputSizes, availableAcceleratorTypes);
-    }
+        /// <summary>
+        /// Optimizes execution strategy based on historical performance data.
+        /// </summary>
+        public ExecutionStrategyRecommendation OptimizeStrategy(
+            string kernelName,
+            int[] inputSizes,
+            AcceleratorType[] availableAcceleratorTypes) => _performanceMonitor.RecommendOptimalStrategy(kernelName, inputSizes, availableAcceleratorTypes);
 
-    public async ValueTask DisposeAsync()
+        public async ValueTask DisposeAsync()
     {
         if (_disposed)
         {
@@ -718,17 +712,11 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         return (totalBytes / 1e9) / (executionTimeMs / 1000.0); // GB/s
     }
 
-    private double CalculateOverallThroughput(DeviceExecutionResult[] results)
-    {
-        return results.Where(r => r.Success).Sum(r => r.ThroughputGFLOPS);
-    }
+        private double CalculateOverallThroughput(DeviceExecutionResult[] results) => results.Where(r => r.Success).Sum(r => r.ThroughputGFLOPS);
 
-    private double CalculateOverallMemoryBandwidth(DeviceExecutionResult[] results)
-    {
-        return results.Where(r => r.Success).Sum(r => r.MemoryBandwidthGBps);
-    }
+        private double CalculateOverallMemoryBandwidth(DeviceExecutionResult[] results) => results.Where(r => r.Success).Sum(r => r.MemoryBandwidthGBps);
 
-    private double CalculateParallelEfficiency(DeviceExecutionResult[] results, double totalTimeMs)
+        private double CalculateParallelEfficiency(DeviceExecutionResult[] results, double totalTimeMs)
     {
         var successfulResults = results.Where(r => r.Success).ToArray();
         if (successfulResults.Length == 0)

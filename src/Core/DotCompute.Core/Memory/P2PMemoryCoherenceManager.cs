@@ -55,10 +55,17 @@ public sealed class P2PMemoryCoherenceManager : IAsyncDisposable
         int count,
         P2PConnectionCapability? p2pCapability) where T : unmanaged
     {
-        if (buffer == null) throw new ArgumentNullException(nameof(buffer));
-        if (sourceBuffer == null) throw new ArgumentNullException(nameof(sourceBuffer));
+        if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-        var coherenceInfo = new P2PBufferCoherenceInfo
+            if (sourceBuffer == null)
+            {
+                throw new ArgumentNullException(nameof(sourceBuffer));
+            }
+
+            var coherenceInfo = new P2PBufferCoherenceInfo
         {
             BufferId = Guid.NewGuid(),
             SourceBuffer = sourceBuffer,
@@ -347,52 +354,46 @@ public sealed class P2PMemoryCoherenceManager : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Executes direct P2P synchronization.
-    /// </summary>
-    private async Task ExecuteDirectP2PSyncAsync(
-        BufferCopy source, 
-        BufferCopy target, 
-        P2PBufferCoherenceInfo coherenceInfo,
-        CancellationToken cancellationToken)
-    {
-        // Direct device-to-device copy using P2P
-        // Note: This requires specific type casting based on actual buffer types
-        // Implementation would need to handle type safety properly
-        await Task.CompletedTask; // Placeholder for P2P copy
-    }
+        /// <summary>
+        /// Executes direct P2P synchronization.
+        /// </summary>
+        private async Task ExecuteDirectP2PSyncAsync(
+            BufferCopy source,
+            BufferCopy target,
+            P2PBufferCoherenceInfo coherenceInfo,
+            CancellationToken cancellationToken) =>
+            // Direct device-to-device copy using P2P
+            // Note: This requires specific type casting based on actual buffer types
+            // Implementation would need to handle type safety properly
+            await Task.CompletedTask; // Placeholder for P2P copy
 
-    /// <summary>
-    /// Executes host-mediated synchronization.
-    /// </summary>
-    private async Task ExecuteHostMediatedSyncAsync(
-        BufferCopy source, 
-        BufferCopy target, 
-        P2PBufferCoherenceInfo coherenceInfo,
-        CancellationToken cancellationToken)
-    {
-        // Transfer via host memory - requires type-specific implementation
-        // This is a simplified placeholder - real implementation would need proper type handling
-        await Task.CompletedTask;
-    }
+        /// <summary>
+        /// Executes host-mediated synchronization.
+        /// </summary>
+        private async Task ExecuteHostMediatedSyncAsync(
+            BufferCopy source,
+            BufferCopy target,
+            P2PBufferCoherenceInfo coherenceInfo,
+            CancellationToken cancellationToken) =>
+            // Transfer via host memory - requires type-specific implementation
+            // This is a simplified placeholder - real implementation would need proper type handling
+            await Task.CompletedTask;
 
-    /// <summary>
-    /// Executes streamed synchronization for large buffers.
-    /// </summary>
-    private async Task ExecuteStreamedSyncAsync(
-        BufferCopy source, 
-        BufferCopy target, 
-        P2PBufferCoherenceInfo coherenceInfo,
-        CancellationToken cancellationToken)
-    {
-        // Chunked synchronization for large buffers
-        await ExecuteHostMediatedSyncAsync(source, target, coherenceInfo, cancellationToken);
-    }
+        /// <summary>
+        /// Executes streamed synchronization for large buffers.
+        /// </summary>
+        private async Task ExecuteStreamedSyncAsync(
+            BufferCopy source,
+            BufferCopy target,
+            P2PBufferCoherenceInfo coherenceInfo,
+            CancellationToken cancellationToken) =>
+            // Chunked synchronization for large buffers
+            await ExecuteHostMediatedSyncAsync(source, target, coherenceInfo, cancellationToken);
 
-    /// <summary>
-    /// Determines the optimal synchronization strategy.
-    /// </summary>
-    private SyncStrategy DetermineSyncStrategy(
+        /// <summary>
+        /// Determines the optimal synchronization strategy.
+        /// </summary>
+        private SyncStrategy DetermineSyncStrategy(
         IAccelerator sourceDevice, 
         IAccelerator targetDevice, 
         P2PBufferCoherenceInfo coherenceInfo)
@@ -448,16 +449,22 @@ public sealed class P2PMemoryCoherenceManager : IAsyncDisposable
     private static CoherenceLevel DetermineCoherenceLevel(P2PBufferCoherenceInfo coherenceInfo)
     {
         if (!coherenceInfo.IsCoherent)
-            return CoherenceLevel.None;
+            {
+                return CoherenceLevel.None;
+            }
 
-        var writtenCopies = coherenceInfo.Copies.Count(c => c.IsWritten);
+            var writtenCopies = coherenceInfo.Copies.Count(c => c.IsWritten);
         if (writtenCopies == 0)
-            return CoherenceLevel.Strong;
-        
-        if (writtenCopies == 1)
-            return CoherenceLevel.Weak;
+            {
+                return CoherenceLevel.Strong;
+            }
 
-        return CoherenceLevel.None; // Multiple writers = incoherent
+            if (writtenCopies == 1)
+            {
+                return CoherenceLevel.Weak;
+            }
+
+            return CoherenceLevel.None; // Multiple writers = incoherent
     }
 
     /// <summary>
@@ -577,9 +584,12 @@ public sealed class P2PMemoryCoherenceManager : IAsyncDisposable
     private double CalculateCoherenceEfficiency()
     {
         var totalBuffers = _statistics.TotalTrackedBuffers;
-        if (totalBuffers == 0) return 1.0;
+        if (totalBuffers == 0)
+            {
+                return 1.0;
+            }
 
-        var coherentRatio = (double)_statistics.CoherentBuffers / totalBuffers;
+            var coherentRatio = (double)_statistics.CoherentBuffers / totalBuffers;
         var syncEfficiency = _statistics.SynchronizationOperations > 0 
             ? 1.0 / (_statistics.TotalSyncTime.TotalMilliseconds / _statistics.SynchronizationOperations * 1000)
             : 1.0;
@@ -587,19 +597,17 @@ public sealed class P2PMemoryCoherenceManager : IAsyncDisposable
         return (coherentRatio + syncEfficiency) / 2.0;
     }
 
-    /// <summary>
-    /// Gets element size for a buffer (simplified implementation).
-    /// </summary>
-    private static int GetElementSize(object buffer)
-    {
-        // This would use reflection or type information in a real implementation
-        return 4; // Assume 4-byte elements for simplicity
-    }
+        /// <summary>
+        /// Gets element size for a buffer (simplified implementation).
+        /// </summary>
+        private static int GetElementSize(object buffer) =>
+            // This would use reflection or type information in a real implementation
+            4; // Assume 4-byte elements for simplicity
 
-    /// <summary>
-    /// Monitors coherence health and triggers maintenance operations.
-    /// </summary>
-    private void MonitorCoherenceHealth(object? state)
+        /// <summary>
+        /// Monitors coherence health and triggers maintenance operations.
+        /// </summary>
+        private void MonitorCoherenceHealth(object? state)
     {
         try
         {
@@ -659,9 +667,11 @@ public sealed class P2PMemoryCoherenceManager : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        _disposed = true;
+            _disposed = true;
 
         await _coherenceMonitor.DisposeAsync();
         _coherenceSemaphore.Dispose();
@@ -805,7 +815,6 @@ public enum OptimizationType
     LocalityOptimization = 1,  // Optimize data locality
     BandwidthOptimization = 2  // Optimize bandwidth usage
 }
-
 }
 
 #endregion

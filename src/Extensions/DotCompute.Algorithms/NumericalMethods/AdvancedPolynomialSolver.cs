@@ -24,10 +24,13 @@ public static float[] FindRealRoots(float[] coefficients, float tolerance = 1e-1
     ArgumentNullException.ThrowIfNull(coefficients);
     
     var degree = GetEffectiveDegree(coefficients);
-    if (degree <= 0) return [];
-    
-    // Normalize polynomial by leading coefficient
-    var normalized = NormalizePolynomial(coefficients, degree + 1);
+    if (degree <= 0)
+        {
+            return [];
+        }
+
+        // Normalize polynomial by leading coefficient
+        var normalized = NormalizePolynomial(coefficients, degree + 1);
     
     return degree switch
     {
@@ -51,9 +54,12 @@ public static Complex[] FindComplexRoots(float[] coefficients, float tolerance =
     ArgumentNullException.ThrowIfNull(coefficients);
     
     var degree = GetEffectiveDegree(coefficients);
-    if (degree <= 0) return [];
-    
-    var normalized = NormalizePolynomial(coefficients, degree + 1);
+    if (degree <= 0)
+        {
+            return [];
+        }
+
+        var normalized = NormalizePolynomial(coefficients, degree + 1);
     return DurandKernerMethod(normalized, tolerance, maxIterations);
 }
 
@@ -65,9 +71,12 @@ public static Complex[] FindComplexRoots(float[] coefficients, float tolerance =
 /// <returns>Polynomial value at x</returns>
 public static float EvaluatePolynomial(float[] coefficients, float x)
 {
-    if (coefficients.Length == 0) return 0.0f;
-    
-    var result = coefficients[0];
+    if (coefficients.Length == 0)
+        {
+            return 0.0f;
+        }
+
+        var result = coefficients[0];
     for (var i = 1; i < coefficients.Length; i++)
     {
         result = result * x + coefficients[i];
@@ -83,9 +92,12 @@ public static float EvaluatePolynomial(float[] coefficients, float x)
 /// <returns>Complex polynomial value at z</returns>
 public static Complex EvaluatePolynomial(float[] coefficients, Complex z)
 {
-    if (coefficients.Length == 0) return Complex.Zero;
-    
-    Complex result = coefficients[0];
+    if (coefficients.Length == 0)
+        {
+            return Complex.Zero;
+        }
+
+        Complex result = coefficients[0];
     for (var i = 1; i < coefficients.Length; i++)
     {
         result = result * z + coefficients[i];
@@ -98,8 +110,10 @@ private static int GetEffectiveDegree(float[] coefficients)
     for (var i = 0; i < coefficients.Length; i++)
     {
         if (Math.Abs(coefficients[i]) > 1e-15f)
-            return coefficients.Length - i - 1;
-    }
+            {
+                return coefficients.Length - i - 1;
+            }
+        }
     return -1;
 }
 
@@ -123,8 +137,12 @@ private static float[] NormalizePolynomial(float[] coefficients, int length)
 private static float[] SolveLinear(float[] coeffs)
 {
     // ax + b = 0 => x = -b/a
-    if (Math.Abs(coeffs[0]) < 1e-15f) return [];
-    return [-coeffs[1] / coeffs[0]];
+    if (Math.Abs(coeffs[0]) < 1e-15f)
+        {
+            return [];
+        }
+
+        return [-coeffs[1] / coeffs[0]];
 }
 
 private static float[] SolveQuadratic(float[] coeffs)
@@ -134,9 +152,12 @@ private static float[] SolveQuadratic(float[] coeffs)
     var b = coeffs[1];
     var c = coeffs[2];
     
-    if (Math.Abs(a) < 1e-15f) return SolveLinear([b, c]);
-    
-    var discriminant = b * b - 4 * a * c;
+    if (Math.Abs(a) < 1e-15f)
+        {
+            return SolveLinear([b, c]);
+        }
+
+        var discriminant = b * b - 4 * a * c;
     var roots = new List<float>();
     
     if (discriminant > 0)
@@ -166,10 +187,13 @@ private static float[] SolveCubic(float[] coeffs)
     var c = coeffs[2];
     var d = coeffs[3];
     
-    if (Math.Abs(a) < 1e-15f) return SolveQuadratic([b, c, d]);
-    
-    // Convert to depressed cubic t³ + pt + q = 0 using substitution x = t - b/(3a)
-    var p = (3*a*c - b*b) / (3*a*a);
+    if (Math.Abs(a) < 1e-15f)
+        {
+            return SolveQuadratic([b, c, d]);
+        }
+
+        // Convert to depressed cubic t³ + pt + q = 0 using substitution x = t - b/(3a)
+        var p = (3*a*c - b*b) / (3*a*a);
     var q = (2*b*b*b - 9*a*b*c + 27*a*a*d) / (27*a*a*a);
     var offset = -b / (3*a);
     
@@ -217,14 +241,12 @@ private static float[] SolveCubic(float[] coeffs)
     return [.. roots];
 }
 
-private static float[] SolveQuartic(float[] coeffs)
-{
-    // Ferrari's method - for now, delegate to high-degree solver
-    // Full Ferrari implementation would be quite complex
-    return SolveHighDegree(coeffs, 1e-10f, 1000);
-}
+    private static float[] SolveQuartic(float[] coeffs) =>
+        // Ferrari's method - for now, delegate to high-degree solver
+        // Full Ferrari implementation would be quite complex
+        SolveHighDegree(coeffs, 1e-10f, 1000);
 
-private static float[] SolveHighDegree(float[] coeffs, float tolerance, int maxIterations)
+    private static float[] SolveHighDegree(float[] coeffs, float tolerance, int maxIterations)
 {
     var degree = coeffs.Length - 1;
     var complexRoots = DurandKernerMethod(coeffs, tolerance, maxIterations);
@@ -246,9 +268,12 @@ private static float[] SolveHighDegree(float[] coeffs, float tolerance, int maxI
 private static Complex[] DurandKernerMethod(float[] coeffs, float tolerance, int maxIterations)
 {
     var degree = coeffs.Length - 1;
-    if (degree <= 0) return [];
-    
-    var roots = new Complex[degree];
+    if (degree <= 0)
+        {
+            return [];
+        }
+
+        var roots = new Complex[degree];
     var newRoots = new Complex[degree];
     
     // Initialize roots using a sophisticated starting configuration
@@ -288,8 +313,11 @@ private static Complex[] DurandKernerMethod(float[] coeffs, float tolerance, int
         
         Array.Copy(newRoots, roots, degree);
         
-        if (maxChange < tolerance) break;
-    }
+        if (maxChange < tolerance)
+            {
+                break;
+            }
+        }
     
     // Polish roots using Newton's method
     for (var i = 0; i < roots.Length; i++)
@@ -330,22 +358,31 @@ private static Complex NewtonRefinement(float[] coeffs, Complex initialGuess, fl
         var f = EvaluatePolynomial(coeffs, z);
         var fp = EvaluatePolynomialDerivative(coeffs, z);
         
-        if (fp.Magnitude < 1e-15) break;
-        
-        var correction = f / fp;
+        if (fp.Magnitude < 1e-15)
+            {
+                break;
+            }
+
+            var correction = f / fp;
         z -= correction;
         
-        if (correction.Magnitude < tolerance) break;
-    }
+        if (correction.Magnitude < tolerance)
+            {
+                break;
+            }
+        }
     
     return z;
 }
 
 private static Complex EvaluatePolynomialDerivative(float[] coeffs, Complex z)
 {
-    if (coeffs.Length <= 1) return Complex.Zero;
-    
-    Complex result = coeffs[0] * (coeffs.Length - 1);
+    if (coeffs.Length <= 1)
+        {
+            return Complex.Zero;
+        }
+
+        Complex result = coeffs[0] * (coeffs.Length - 1);
     for (var i = 1; i < coeffs.Length - 1; i++)
     {
         result = result * z + coeffs[i] * (coeffs.Length - 1 - i);

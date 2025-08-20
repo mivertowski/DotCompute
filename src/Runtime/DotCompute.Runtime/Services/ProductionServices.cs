@@ -40,8 +40,11 @@ public ProductionMemoryManager(ILogger<ProductionMemoryManager> logger)
 public async ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
 {
     if (_disposed)
-        throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-    ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
     // Limit memory allocation size to prevent excessive memory consumption
     if (sizeInBytes > 16L * 1024 * 1024 * 1024) // 16GB limit
@@ -124,9 +127,11 @@ public async ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOpti
 public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
 {
     if (_disposed)
-        throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-    
-    var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
     var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken);
     
     try
@@ -144,15 +149,20 @@ public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> 
 public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
 {
     if (_disposed)
-        throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-    ArgumentNullException.ThrowIfNull(buffer);
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentNullException.ThrowIfNull(buffer);
     ArgumentOutOfRangeException.ThrowIfNegative(offset);
     ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
 
     if (offset + length > buffer.SizeInBytes)
-        throw new ArgumentException("View extends beyond buffer boundaries");
+        {
+            throw new ArgumentException("View extends beyond buffer boundaries");
+        }
 
-    var viewId = Interlocked.Increment(ref _nextId);
+        var viewId = Interlocked.Increment(ref _nextId);
     var view = new ProductionMemoryBufferView(viewId, buffer, offset, length, _logger);
     
     _logger.LogTrace("Created memory buffer view {ViewId} with offset {Offset} and length {Length}", 
@@ -172,8 +182,11 @@ public MemoryStatistics GetStatistics() => _statistics.CreateSnapshot();
 public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
 {
     if (_disposed)
-        throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-    ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
     
     var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
     return await AllocateAsync(sizeInBytes);
@@ -189,8 +202,11 @@ public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
 public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
 {
     if (_disposed)
-        throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-    ArgumentNullException.ThrowIfNull(buffer);
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentNullException.ThrowIfNull(buffer);
     
     var memory = new ReadOnlyMemory<T>(data.ToArray());
     buffer.CopyFromHostAsync(memory).AsTask().Wait();
@@ -205,8 +221,11 @@ public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T 
 public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
 {
     if (_disposed)
-        throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-    ArgumentNullException.ThrowIfNull(buffer);
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentNullException.ThrowIfNull(buffer);
     
     var memory = new Memory<T>(new T[data.Length]);
     buffer.CopyToHostAsync(memory).AsTask().Wait();
@@ -357,13 +376,17 @@ public ProductionMemoryBuffer(long id, long sizeInBytes, MemoryOptions options, 
 public async ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
+        {
+            throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
+        }
 
-    var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
+        var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
     if (offset + sizeInBytes > SizeInBytes)
-        throw new ArgumentException("Copy operation would exceed buffer size");
+        {
+            throw new ArgumentException("Copy operation would exceed buffer size");
+        }
 
-    var startTime = Stopwatch.GetTimestamp();
+        var startTime = Stopwatch.GetTimestamp();
     
     try
     {
@@ -394,13 +417,17 @@ public async ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offse
 public async ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
+        {
+            throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
+        }
 
-    var sizeInBytes = destination.Length * Unsafe.SizeOf<T>();
+        var sizeInBytes = destination.Length * Unsafe.SizeOf<T>();
     if (offset + sizeInBytes > SizeInBytes)
-        throw new ArgumentException("Copy operation would exceed buffer size");
+        {
+            throw new ArgumentException("Copy operation would exceed buffer size");
+        }
 
-    var startTime = Stopwatch.GetTimestamp();
+        var startTime = Stopwatch.GetTimestamp();
 
     try
     {
@@ -487,15 +514,21 @@ public ProductionMemoryBufferView(long viewId, IMemoryBuffer parentBuffer, long 
 public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
-    return _parentBuffer.CopyFromHostAsync(source, _offset + offset, cancellationToken);
+        {
+            throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
+        }
+
+        return _parentBuffer.CopyFromHostAsync(source, _offset + offset, cancellationToken);
 }
 
 public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
-    return _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+        {
+            throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
+        }
+
+        return _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
 }
 
 public void Dispose()
@@ -533,10 +566,12 @@ public MemoryPool(ILogger logger)
 public ValueTask<IntPtr?> TryGetBufferAsync(long size, MemoryOptions options, CancellationToken cancellationToken)
 {
     if (_disposed)
-        return ValueTask.FromResult<IntPtr?>(null);
+        {
+            return ValueTask.FromResult<IntPtr?>(null);
+        }
 
-    // Round up to nearest power of 2 for better pooling
-    var poolSize = RoundToPowerOfTwo(size);
+        // Round up to nearest power of 2 for better pooling
+        var poolSize = RoundToPowerOfTwo(size);
     
     if (_pools.TryGetValue(poolSize, out var queue))
     {
@@ -591,12 +626,9 @@ public async ValueTask PerformMaintenanceAsync()
     });
 }
 
-private void PerformCleanup(object? state)
-{
-    _ = PerformMaintenanceAsync();
-}
+    private void PerformCleanup(object? state) => _ = PerformMaintenanceAsync();
 
-private static long RoundToPowerOfTwo(long value)
+    private static long RoundToPowerOfTwo(long value)
 {
     if (value <= 0)
     {
@@ -655,11 +687,15 @@ public void RecordAllocation(long bytes, double timeMs, bool fromPool)
     Interlocked.Add(ref _totalBytesAllocated, bytes);
     
     if (fromPool)
-        Interlocked.Increment(ref _poolHits);
-    else
-        Interlocked.Increment(ref _poolMisses);
+        {
+            Interlocked.Increment(ref _poolHits);
+        }
+        else
+        {
+            Interlocked.Increment(ref _poolMisses);
+        }
 
-    lock (this)
+        lock (this)
     {
         _totalAllocationTimeMs += timeMs;
     }
@@ -742,8 +778,11 @@ public async ValueTask<ICompiledKernel> CompileAsync(
     CancellationToken cancellationToken = default)
 {
     if (_disposed)
-        throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-    ArgumentNullException.ThrowIfNull(definition);
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentNullException.ThrowIfNull(definition);
 
     var cacheKey = GenerateCacheKey(definition, options);
     
@@ -811,7 +850,7 @@ public ValidationResult Validate(KernelDefinition definition)
     // Check for common patterns that might cause issues
     if (definition.Code != null && definition.Code.Length > 0)
     {
-        var sourceCode = System.Text.Encoding.UTF8.GetString(definition.Code);
+        var sourceCode = definition.Code;
         if (sourceCode.Contains("while(true)") || sourceCode.Contains("for(;;)"))
         {
             warnings.Add("Infinite loops detected - ensure proper termination conditions");
@@ -849,10 +888,7 @@ private async ValueTask<ProductionCompiledKernel> CompileKernelInternalAsync(
     var bytecode = GenerateMockBytecode(definition);
     
     // Create kernel configuration
-    var config = new KernelConfiguration(
-        gridDimensions: new Dim3(1, 1, 1),
-        blockDimensions: options?.PreferredBlockSize ?? new Dim3(256, 1, 1)
-    );
+    var config = new KernelConfiguration(new Dim3(1, 1, 1), options?.PreferredBlockSize ?? new Dim3(256, 1, 1));
     
     return new ProductionCompiledKernel(
         Guid.NewGuid(),
@@ -948,12 +984,14 @@ public ProductionCompiledKernel(Guid id, string name, byte[] bytecode, KernelCon
 public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
 {
     if (IsDisposed)
-        throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
+        {
+            throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
+        }
 
-    // Simulate kernel execution
-    await Task.Delay(Random.Shared.Next(1, 10), cancellationToken);
+        // Simulate kernel execution
+        await Task.Delay(Random.Shared.Next(1, 10), cancellationToken);
     
-    _logger.LogTrace("Executed kernel {KernelName} with {ArgCount} arguments", Name, arguments.Arguments.Length);
+    _logger.LogTrace("Executed kernel {KernelName} with {ArgCount} arguments", Name, arguments.Arguments.Count);
 }
 
 public void Dispose()
@@ -993,16 +1031,15 @@ public void RecordCompilation(double timeMs, bool success)
 {
     Interlocked.Increment(ref _totalCompilations);
     if (success)
-        Interlocked.Increment(ref _successfulCompilations);
+        {
+            Interlocked.Increment(ref _successfulCompilations);
+        }
 
-    lock (this)
+        lock (this)
     {
         _totalCompilationTimeMs += timeMs;
     }
 }
 
-public void RecordCacheHit()
-{
-    Interlocked.Increment(ref _cacheHits);
-}
+    public void RecordCacheHit() => Interlocked.Increment(ref _cacheHits);
 }

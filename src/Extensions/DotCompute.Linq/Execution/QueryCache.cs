@@ -141,10 +141,12 @@ public CacheStatistics GetStatistics()
 private void EvictLeastRecentlyUsed()
 {
     if (_cache.IsEmpty)
-        return;
+        {
+            return;
+        }
 
-    // Find the least recently used entry
-    var lruEntry = _cache.Values
+        // Find the least recently used entry
+        var lruEntry = _cache.Values
         .OrderBy(e => e.LastAccessTime)
         .ThenBy(e => e.AccessCount)
         .FirstOrDefault();
@@ -159,9 +161,11 @@ private void EvictLeastRecentlyUsed()
 private static long EstimateObjectSize(object? obj)
 {
     if (obj == null)
-        return 0;
+        {
+            return 0;
+        }
 
-    var type = obj.GetType();
+        var type = obj.GetType();
     
     // Estimate size based on type
     if (type.IsPrimitive)

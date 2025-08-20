@@ -155,8 +155,8 @@ public sealed class TelemetryProvider : IDisposable
             }
         }
         
-        _kernelExecutionCounter.Add(1, tags.ToArray());
-        _kernelExecutionDuration.Record(duration.TotalSeconds, tags.ToArray());
+        _kernelExecutionCounter.Add(1, [.. tags]);
+        _kernelExecutionDuration.Record(duration.TotalSeconds, [.. tags]);
         
         if (!success)
         {
@@ -215,7 +215,7 @@ public sealed class TelemetryProvider : IDisposable
             }
         }
         
-        _errorCounter.Add(1, tags.ToArray());
+        _errorCounter.Add(1, [.. tags]);
         
         // Log structured error with correlation context
         using var scope = _logger.BeginScope(new Dictionary<string, object>
@@ -290,8 +290,12 @@ public sealed class TelemetryProvider : IDisposable
 
     private void SampleMetrics(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             var health = GetSystemHealth();
@@ -326,45 +330,45 @@ public sealed class TelemetryProvider : IDisposable
         };
     }
 
-    private double CalculateErrorRate()
-    {
+    private double CalculateErrorRate() =>
         // This would typically use a sliding window calculation
         // For now, return 0 as a placeholder
-        return 0.0;
-    }
+        0.0;
 
-    private async Task ExportPrometheusMetricsAsync(CollectedMetrics metrics, 
-        CancellationToken cancellationToken)
-    {
+    private async Task ExportPrometheusMetricsAsync(CollectedMetrics metrics,
+
+        CancellationToken cancellationToken) =>
         // Implementation for Prometheus export
         await Task.Delay(1, cancellationToken); // Placeholder
-    }
 
     private async Task ExportOpenTelemetryMetricsAsync(CollectedMetrics metrics,
-        CancellationToken cancellationToken)
-    {
+        CancellationToken cancellationToken) =>
         // Implementation for OpenTelemetry export
         await Task.Delay(1, cancellationToken); // Placeholder
-    }
 
     private async Task ExportJsonMetricsAsync(CollectedMetrics metrics,
-        CancellationToken cancellationToken)
-    {
+        CancellationToken cancellationToken) =>
         // Implementation for JSON export
         await Task.Delay(1, cancellationToken); // Placeholder
-    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(TelemetryProvider));
+        }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _disposed = true;
         _samplingTimer?.Dispose();
         _metricsCollector?.Dispose();

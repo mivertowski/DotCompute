@@ -56,7 +56,11 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default)
         {
             if (devices == null || devices.Length == 0)
+            {
+
                 throw new ArgumentException("At least one device must be provided", nameof(devices));
+            }
+
 
             options ??= P2PMemoryManagerOptions.Default;
 
@@ -397,9 +401,13 @@ namespace DotCompute.Core.Memory.P2P
 
         private async Task RunInitialBenchmarksAsync(IAccelerator[] devices, CancellationToken cancellationToken)
         {
-            if (devices.Length < 2) return;
+            if (devices.Length < 2)
+            {
+                return;
+            }
 
             // Run a quick benchmark between the first two devices
+
             var benchmarkOptions = new P2PBenchmarkOptions
             {
                 MinTransferSizeMB = 1,
@@ -427,11 +435,9 @@ namespace DotCompute.Core.Memory.P2P
             }
         }
 
-        private static long GetTransferSizeFromResult(P2PTransferResult result)
-        {
+        private static long GetTransferSizeFromResult(P2PTransferResult result) =>
             // In a real implementation, this would extract the transfer size from the result
-            return result.TransferPlan?.TransferSize ?? 0;
-        }
+            result.TransferPlan?.TransferSize ?? 0;
 
         private P2PManagerStatistics GetManagerStatistics()
         {
@@ -461,7 +467,12 @@ namespace DotCompute.Core.Memory.P2P
 
         public async ValueTask DisposeAsync()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
+
             _disposed = true;
 
             await _transferManager.DisposeAsync();

@@ -338,8 +338,7 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
                 }
             }";
 
-        var kernelSource_obj = new TextKernelSource(kernelSource, "test_kernel", KernelLanguage.OpenCL, "test_kernel");
-        var kernelDef = new KernelDefinition("test_kernel", kernelSource_obj, new CompilationOptions());
+        var kernelDef = new KernelDefinition("test_kernel", kernelSource, "test_kernel");
 
         var options = new CompilationOptions
         {

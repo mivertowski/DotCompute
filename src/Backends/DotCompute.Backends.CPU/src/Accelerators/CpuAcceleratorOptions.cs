@@ -223,15 +223,9 @@ public bool ShouldUseInstructionSet(string instructionSet)
     return true;
 }
 
-private static bool IsValidVectorWidth(int width)
-{
-    return width is 128 or 256 or 512;
-}
+    private static bool IsValidVectorWidth(int width) => width is 128 or 256 or 512;
 
-private static bool IsPowerOfTwo(int value)
-{
-    return value > 0 && (value & (value - 1)) == 0;
-}
+    private static bool IsPowerOfTwo(int value) => value > 0 && (value & (value - 1)) == 0;
 }
 
 /// <summary>

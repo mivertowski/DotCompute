@@ -206,9 +206,11 @@ public sealed class CudaCooperativeGroupsManager : IDisposable
     public void PerformMaintenance()
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             // Clean up old kernels
             var cutoffTime = DateTimeOffset.UtcNow.AddHours(-1);
@@ -312,9 +314,11 @@ public sealed class CudaCooperativeGroupsManager : IDisposable
     private void UpdateMetrics(object? state)
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             var totalLaunches = _cooperativeKernels.Values.Sum(k => k.LaunchCount);
             var totalTime = _cooperativeKernels.Values.Sum(k => k.TotalExecutionTime.TotalMilliseconds);
@@ -328,13 +332,11 @@ public sealed class CudaCooperativeGroupsManager : IDisposable
         }
     }
 
-    private double CalculateSynchronizationOverhead()
-    {
-        // Estimate synchronization overhead for cooperative groups
-        return _cooperativeKernels.Count > 0 ? 0.05 : 0.0; // 5% overhead estimate
-    }
+        private double CalculateSynchronizationOverhead() =>
+            // Estimate synchronization overhead for cooperative groups
+            _cooperativeKernels.Count > 0 ? 0.05 : 0.0; // 5% overhead estimate
 
-    private void ThrowIfDisposed()
+        private void ThrowIfDisposed()
     {
         if (_disposed)
         {
@@ -404,5 +406,4 @@ public sealed class CudaCooperativeLaunchResult
     public int LaunchCount { get; set; }
     public string? ErrorMessage { get; set; }
 }
-
 }

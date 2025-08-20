@@ -73,7 +73,7 @@ public sealed class CudaGraphSupport : IDisposable
             var graph = new CudaGraph
             {
                 Id = graphId,
-                Operations = operations.ToList(),
+                Operations = [.. operations],
                 CreatedAt = DateTimeOffset.UtcNow,
                 Options = options ?? new CudaGraphOptimizationOptions()
             };
@@ -553,10 +553,12 @@ public sealed class CudaGraphSupport : IDisposable
     private async Task OptimizeGraphAsync(CudaGraph graph, CancellationToken cancellationToken)
     {
         if (!graph.Options.EnableOptimization)
-            return;
+            {
+                return;
+            }
 
-        // RTX 2000 Ada specific optimizations
-        if (graph.Options.TargetArchitecture == CudaArchitecture.Ada)
+            // RTX 2000 Ada specific optimizations
+            if (graph.Options.TargetArchitecture == CudaArchitecture.Ada)
         {
             await OptimizeForAdaArchitectureAsync(graph, cancellationToken).ConfigureAwait(false);
         }
@@ -605,9 +607,11 @@ public sealed class CudaGraphSupport : IDisposable
     private void OptimizeGraphs(object? state)
     {
         if (_disposed)
-            return;
+            {
+                return;
+            }
 
-        try
+            try
         {
             // Periodic optimization of existing graphs
             var activeGraphs = _graphInstances.Values
@@ -754,15 +758,13 @@ public sealed class CudaGraphSupport : IDisposable
                second.Type == CudaKernelType.ElementWise &&
                first.OutputDimensions == second.InputDimensions;
     }
-    
-    private double EstimateFusionBenefit(CudaKernelOperation first, CudaKernelOperation second)
-    {
-        // Estimate the performance benefit of fusing these kernels
-        // Consider memory bandwidth savings and kernel launch overhead reduction
-        return 0.2; // 20% estimated improvement
-    }
-    
-    private async Task FuseKernelNodesAsync(CudaGraph graph, List<KernelFusionCandidate> candidates, CancellationToken cancellationToken)
+
+        private double EstimateFusionBenefit(CudaKernelOperation first, CudaKernelOperation second) =>
+            // Estimate the performance benefit of fusing these kernels
+            // Consider memory bandwidth savings and kernel launch overhead reduction
+            0.2; // 20% estimated improvement
+
+        private async Task FuseKernelNodesAsync(CudaGraph graph, List<KernelFusionCandidate> candidates, CancellationToken cancellationToken)
     {
         // Apply kernel fusion using CUDA graph API
         await Task.Delay(1, cancellationToken).ConfigureAwait(false);
@@ -910,26 +912,14 @@ public sealed class CudaKernelFusionOptions
     private readonly Dictionary<CudaCompiledKernel, CudaKernelArguments> _arguments = [];
     private readonly Dictionary<CudaCompiledKernel, CudaLaunchConfig> _configs = [];
 
-    public CudaKernelArguments GetArgumentsForKernel(CudaCompiledKernel kernel)
-    {
-        return _arguments.TryGetValue(kernel, out var args) ? args : new CudaKernelArguments([]);
-    }
+        public CudaKernelArguments GetArgumentsForKernel(CudaCompiledKernel kernel) => _arguments.TryGetValue(kernel, out var args) ? args : new CudaKernelArguments([]);
 
-    public CudaLaunchConfig GetLaunchConfigForKernel(CudaCompiledKernel kernel)
-    {
-        return _configs.TryGetValue(kernel, out var config) ? config : new CudaLaunchConfig(1, 1, 1, 256, 1, 1);
-    }
+        public CudaLaunchConfig GetLaunchConfigForKernel(CudaCompiledKernel kernel) => _configs.TryGetValue(kernel, out var config) ? config : new CudaLaunchConfig(1, 1, 1, 256, 1, 1);
 
-    public void SetCudaKernelArguments(CudaCompiledKernel kernel, CudaKernelArguments arguments)
-    {
-        _arguments[kernel] = arguments;
-    }
+        public void SetCudaKernelArguments(CudaCompiledKernel kernel, CudaKernelArguments arguments) => _arguments[kernel] = arguments;
 
-    public void SetKernelLaunchConfig(CudaCompiledKernel kernel, CudaLaunchConfig config)
-    {
-        _configs[kernel] = config;
+        public void SetKernelLaunchConfig(CudaCompiledKernel kernel, CudaLaunchConfig config) => _configs[kernel] = config;
     }
-}
 
 public sealed class CudaGraphExecutionResult
 {
@@ -998,6 +988,4 @@ public enum CudaKernelType
     Custom,
     Fused
 }
-
-
 }

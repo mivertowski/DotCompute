@@ -221,15 +221,13 @@ public IServiceScope CreateAcceleratorScope(string acceleratorId)
     });
 }
 
-private void RegisterDefaultProviders()
-{
-    // Register CPU provider by default
-    // _providerTypes[AcceleratorType.CPU] = typeof(DotCompute.Core.Accelerators.CpuAcceleratorProvider); // Commented out - type doesn't exist"
-    
-    _logger.LogDebug("Registered default accelerator providers");
-}
+    private void RegisterDefaultProviders() =>
+        // Register CPU provider by default
+        // _providerTypes[AcceleratorType.CPU] = typeof(DotCompute.Core.Accelerators.CpuAcceleratorProvider); // Commented out - type doesn't exist"
 
-private async Task<IAcceleratorProvider> GetOrCreateProviderAsync(AcceleratorType type, IServiceProvider serviceProvider)
+        _logger.LogDebug("Registered default accelerator providers");
+
+    private async Task<IAcceleratorProvider> GetOrCreateProviderAsync(AcceleratorType type, IServiceProvider serviceProvider)
 {
     // First try to get from registered providers
     var existingProvider = _serviceProvider.GetServices<IAcceleratorProvider>()

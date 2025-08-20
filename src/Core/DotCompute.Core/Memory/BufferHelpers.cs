@@ -12,34 +12,25 @@ namespace DotCompute.Core.Memory
 /// </summary>
 public static class BufferHelpers
 {
-    /// <summary>
-    /// Gets the element count from an IBuffer based on its SizeInBytes.
-    /// </summary>
-    public static int GetElementCount<T>(IBuffer<T> buffer) where T : unmanaged
-    {
-        return (int)(buffer.SizeInBytes / Unsafe.SizeOf<T>());
-    }
+        /// <summary>
+        /// Gets the element count from an IBuffer based on its SizeInBytes.
+        /// </summary>
+        public static int GetElementCount<T>(IBuffer<T> buffer) where T : unmanaged => (int)(buffer.SizeInBytes / Unsafe.SizeOf<T>());
 
-    /// <summary>
-    /// Determines if buffer supports direct P2P operations.
-    /// </summary>
-    public static bool SupportsDirectP2P<T>(IBuffer<T> buffer) where T : unmanaged
-    {
-        return buffer is P2PBuffer<T> p2pBuffer && p2pBuffer.SupportsDirectP2P;
-    }
+        /// <summary>
+        /// Determines if buffer supports direct P2P operations.
+        /// </summary>
+        public static bool SupportsDirectP2P<T>(IBuffer<T> buffer) where T : unmanaged => buffer is P2PBuffer<T> p2pBuffer && p2pBuffer.SupportsDirectP2P;
 
-    /// <summary>
-    /// Gets the underlying memory buffer for advanced operations.
-    /// </summary>
-    public static IMemoryBuffer? GetUnderlyingBuffer<T>(IBuffer<T> buffer) where T : unmanaged
-    {
-        return buffer is P2PBuffer<T> p2pBuffer ? p2pBuffer.UnderlyingBuffer : null;
-    }
+        /// <summary>
+        /// Gets the underlying memory buffer for advanced operations.
+        /// </summary>
+        public static IMemoryBuffer? GetUnderlyingBuffer<T>(IBuffer<T> buffer) where T : unmanaged => buffer is P2PBuffer<T> p2pBuffer ? p2pBuffer.UnderlyingBuffer : null;
 
-    /// <summary>
-    /// Safely copies data between buffers with type checking.
-    /// </summary>
-    public static async ValueTask CopyBetweenBuffersAsync<T>(
+        /// <summary>
+        /// Safely copies data between buffers with type checking.
+        /// </summary>
+        public static async ValueTask CopyBetweenBuffersAsync<T>(
         IBuffer<T> source, 
         IBuffer<T> destination, 
         int sourceOffset = 0, 

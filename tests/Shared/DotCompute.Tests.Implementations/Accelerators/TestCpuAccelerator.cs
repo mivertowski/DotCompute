@@ -80,7 +80,7 @@ public sealed class TestCpuAccelerator : IAccelerator
 
         var kernel = new TestCompiledKernel(
             definition.Name,
-            definition.Code,
+            System.Text.Encoding.UTF8.GetBytes(definition.Code ?? string.Empty),
             options ?? new CompilationOptions());
 
         _compiledKernels[definition.Name] = kernel;

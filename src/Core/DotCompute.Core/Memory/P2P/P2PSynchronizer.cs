@@ -55,7 +55,11 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default)
         {
             if (devices == null || devices.Length == 0)
+            {
+
                 throw new ArgumentException("At least one device must be provided", nameof(devices));
+            }
+
 
             _logger.LogInformation("Initializing P2P synchronization for {DeviceCount} devices", devices.Length);
 
@@ -95,9 +99,23 @@ namespace DotCompute.Core.Memory.P2P
             string transferId,
             CancellationToken cancellationToken = default)
         {
-            if (sourceDevice == null) throw new ArgumentNullException(nameof(sourceDevice));
-            if (targetDevice == null) throw new ArgumentNullException(nameof(targetDevice));
-            if (string.IsNullOrEmpty(transferId)) throw new ArgumentException("Transfer ID cannot be empty", nameof(transferId));
+            if (sourceDevice == null)
+            {
+                throw new ArgumentNullException(nameof(sourceDevice));
+            }
+
+
+            if (targetDevice == null)
+            {
+                throw new ArgumentNullException(nameof(targetDevice));
+            }
+
+
+            if (string.IsNullOrEmpty(transferId))
+            {
+                throw new ArgumentException("Transfer ID cannot be empty", nameof(transferId));
+            }
+
 
             var barrierId = $"transfer_barrier_{transferId}";
 
@@ -206,9 +224,18 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default)
         {
             if (devices == null || devices.Length == 0)
+            {
+
                 throw new ArgumentException("At least one device must be provided", nameof(devices));
+            }
+
+
             if (string.IsNullOrEmpty(barrierId))
+            {
+
                 throw new ArgumentException("Barrier ID cannot be empty", nameof(barrierId));
+            }
+
 
             await _synchronizerSemaphore.WaitAsync(cancellationToken);
             try
@@ -378,9 +405,18 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(eventId))
+            {
+
                 throw new ArgumentException("Event ID cannot be empty", nameof(eventId));
+            }
+
+
             if (devices == null || devices.Length == 0)
+            {
+
                 throw new ArgumentException("At least one device must be provided", nameof(devices));
+            }
+
 
             await _synchronizerSemaphore.WaitAsync(cancellationToken);
             try
@@ -388,7 +424,7 @@ namespace DotCompute.Core.Memory.P2P
                 var syncEvent = new P2PSyncEvent
                 {
                     EventId = eventId,
-                    ParticipantDevices = devices.Select(d => d.Info.Id).ToList(),
+                    ParticipantDevices = [.. devices.Select(d => d.Info.Id)],
                     EventType = eventType,
                     IsSignaled = false,
                     WaitingDevices = new ConcurrentDictionary<string, TaskCompletionSource<bool>>(),
@@ -537,7 +573,11 @@ namespace DotCompute.Core.Memory.P2P
             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(counterId))
+            {
+
                 throw new ArgumentException("Counter ID cannot be empty", nameof(counterId));
+            }
+
 
             await _synchronizerSemaphore.WaitAsync(cancellationToken);
             try
@@ -636,10 +676,7 @@ namespace DotCompute.Core.Memory.P2P
         /// <summary>
         /// Gets active synchronization state for all devices.
         /// </summary>
-        public IReadOnlyList<P2PDeviceSyncState> GetDeviceSyncStates()
-        {
-            return _deviceSyncStates.Values.ToList();
-        }
+        public IReadOnlyList<P2PDeviceSyncState> GetDeviceSyncStates() => _deviceSyncStates.Values.ToList();
 
         #region Private Implementation
 
@@ -712,7 +749,12 @@ namespace DotCompute.Core.Memory.P2P
 
         public ValueTask DisposeAsync()
         {
-            if (_disposed) return ValueTask.CompletedTask;
+            if (_disposed)
+            {
+                return ValueTask.CompletedTask;
+            }
+
+
             _disposed = true;
 
             _syncMonitorTimer?.Dispose();

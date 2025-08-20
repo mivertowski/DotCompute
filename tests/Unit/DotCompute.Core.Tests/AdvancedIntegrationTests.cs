@@ -316,13 +316,8 @@ public sealed class AdvancedIntegrationTests(ITestOutputHelper output) : IAsyncL
                 var kernel = await accelerator.CompileKernelAsync(
                     new KernelDefinition(
                         $"Kernel_{index}",
-                        new TestKernelSource
-                        {
-                            Name = $"Kernel_{index}",
-                            Code = "test",
-                            Language = KernelLanguage.OpenCL
-                        },
-                        new CompilationOptions()));
+                        "test",
+                        "main"));
 
                 var args = new KernelArguments();
                 await kernel.ExecuteAsync(args);

@@ -709,9 +709,18 @@ public class NuGetPluginLoader : IDisposable
             var hash = Convert.ToHexString(hashBytes);
             
             // Basic integrity checks
-            if (hashBytes.Length != 32) return false; // SHA-256 should be 32 bytes
-            if (hash.All(c => c == '0')) return false; // All zeros indicates corruption
-            
+            if (hashBytes.Length != 32)
+            {
+                return false; // SHA-256 should be 32 bytes
+            }
+
+
+            if (hash.All(c => c == '0'))
+            {
+                return false; // All zeros indicates corruption
+            }
+
+
             return true;
         }
         catch
@@ -764,8 +773,12 @@ public class NuGetPluginLoader : IDisposable
                 using var fileStream = File.OpenRead(assemblyPath);
                 using var peReader = new System.Reflection.PortableExecutable.PEReader(fileStream);
                 
-                if (!peReader.HasMetadata) return;
-                
+                if (!peReader.HasMetadata)
+                {
+                    return;
+                }
+
+
                 unsafe
                 {
                     var metadataBlock = peReader.GetMetadata();
@@ -817,8 +830,12 @@ public class NuGetPluginLoader : IDisposable
                 using var fileStream = File.OpenRead(assemblyPath);
                 using var peReader = new System.Reflection.PortableExecutable.PEReader(fileStream);
                 
-                if (!peReader.HasMetadata) return;
-                
+                if (!peReader.HasMetadata)
+                {
+                    return;
+                }
+
+
                 var suspiciousPatterns = new List<string>();
                 
                 unsafe
@@ -876,10 +893,7 @@ public class NuGetPluginLoader : IDisposable
     /// <summary>
     /// Checks if a specific assembly is explicitly allowed.
     /// </summary>
-    private bool IsAssemblyAllowed(string assemblyName)
-    {
-        return _options.SecurityPolicy?.AllowedDangerousAssemblies?.Contains(assemblyName, StringComparer.OrdinalIgnoreCase) == true;
-    }
+    private bool IsAssemblyAllowed(string assemblyName) => _options.SecurityPolicy?.AllowedDangerousAssemblies?.Contains(assemblyName, StringComparer.OrdinalIgnoreCase) == true;
 
     private async Task VerifyAssemblySignatureAsync(string assemblyPath, CancellationToken cancellationToken)
     {

@@ -327,7 +327,11 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private void PerformHealthCheck(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -375,8 +379,12 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private double CalculateOverallHealth(Dictionary<string, DeviceHealthStatus> deviceHealth)
     {
-        if (deviceHealth.Count == 0) return 1.0;
-        
+        if (deviceHealth.Count == 0)
+        {
+            return 1.0;
+        }
+
+
         var healthyDevices = deviceHealth.Values.Count(d => d.IsHealthy);
         return (double)healthyDevices / deviceHealth.Count;
     }

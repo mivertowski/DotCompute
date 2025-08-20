@@ -94,18 +94,12 @@ public class PluginSecurityContext
     /// <summary>
     /// Gets violations of a specific severity level.
     /// </summary>
-    public IEnumerable<SecurityViolation> GetViolationsBySeverity(ViolationSeverity severity)
-    {
-        return Violations.Where(v => v.Severity == severity);
-    }
+    public IEnumerable<SecurityViolation> GetViolationsBySeverity(ViolationSeverity severity) => Violations.Where(v => v.Severity == severity);
 
     /// <summary>
     /// Clears all recorded violations.
     /// </summary>
-    public void ClearViolations()
-    {
-        Violations.Clear();
-    }
+    public void ClearViolations() => Violations.Clear();
 }
 
 /// <summary>

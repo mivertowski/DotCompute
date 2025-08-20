@@ -25,10 +25,10 @@ public static class SimdIntrinsics
     public static readonly bool HasNeon = AdvSimd.IsSupported;
     
     // Vector sizes for different architectures
-    public static readonly int Vector512Size = HasAvx512 ? Vector512&lt;float&gt;.Count : 0;
-    public static readonly int Vector256Size = HasAvx2 ? Vector256&lt;float&gt;.Count : 0;
-    public static readonly int Vector128Size = Vector128&lt;float&gt;.Count;
-    public static readonly int VectorSize = Vector&lt;float&gt;.Count;
+    public static readonly int Vector512Size = HasAvx512 ? Vector512<float>.Count : 0;
+    public static readonly int Vector256Size = HasAvx2 ? Vector256<float>.Count : 0;
+    public static readonly int Vector128Size = Vector128<float>.Count;
+    public static readonly int VectorSize = Vector<float>.Count;
     
     // Optimal vector size for current architecture
     public static readonly int OptimalVectorSize = HasAvx512 ? Vector512Size : 
@@ -42,14 +42,22 @@ public static class SimdIntrinsics
     /// <param name="right">Right operand span</param>
     /// <param name="result">Result span</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe void Add(ReadOnlySpan&lt;float&gt; left, ReadOnlySpan&lt;float&gt; right, Span&lt;float&gt; result)
+    public static unsafe void Add(ReadOnlySpan<float> left, ReadOnlySpan<float> right, Span<float> result)
     {
         if (left.Length != right.Length || left.Length != result.Length)
+        {
+
             throw new ArgumentException("All spans must have the same length");
-            
+        }
+
+
         var length = left.Length;
-        if (length == 0) return;
-        
+        if (length == 0)
+        {
+            return;
+        }
+
+
         fixed (float* leftPtr = left, rightPtr = right, resultPtr = result)
         {
             if (HasAvx512 && length >= Vector512Size)
@@ -82,14 +90,22 @@ public static class SimdIntrinsics
     /// <param name="right">Right operand span</param>
     /// <param name="result">Result span</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe void Multiply(ReadOnlySpan&lt;float&gt; left, ReadOnlySpan&lt;float&gt; right, Span&lt;float&gt; result)
+    public static unsafe void Multiply(ReadOnlySpan<float> left, ReadOnlySpan<float> right, Span<float> result)
     {
         if (left.Length != right.Length || left.Length != result.Length)
+        {
+
             throw new ArgumentException("All spans must have the same length");
-            
+        }
+
+
         var length = left.Length;
-        if (length == 0) return;
-        
+        if (length == 0)
+        {
+            return;
+        }
+
+
         fixed (float* leftPtr = left, rightPtr = right, resultPtr = result)
         {
             if (HasAvx512 && length >= Vector512Size)
@@ -123,15 +139,23 @@ public static class SimdIntrinsics
     /// <param name="c">Addend</param>
     /// <param name="result">Result span</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe void FusedMultiplyAdd(ReadOnlySpan&lt;float&gt; a, ReadOnlySpan&lt;float&gt; b, 
-        ReadOnlySpan&lt;float&gt; c, Span&lt;float&gt; result)
+    public static unsafe void FusedMultiplyAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, 
+        ReadOnlySpan<float> c, Span<float> result)
     {
         if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+        {
+
             throw new ArgumentException("All spans must have the same length");
-            
+        }
+
+
         var length = a.Length;
-        if (length == 0) return;
-        
+        if (length == 0)
+        {
+            return;
+        }
+
+
         fixed (float* aPtr = a, bPtr = b, cPtr = c, resultPtr = result)
         {
             if (HasAvx512 && HasFma && length >= Vector512Size)
@@ -164,14 +188,22 @@ public static class SimdIntrinsics
     /// <param name="right">Right operand span</param>
     /// <returns>Dot product result</returns>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe float DotProduct(ReadOnlySpan&lt;float&gt; left, ReadOnlySpan&lt;float&gt; right)
+    public static unsafe float DotProduct(ReadOnlySpan<float> left, ReadOnlySpan<float> right)
     {
         if (left.Length != right.Length)
+        {
+
             throw new ArgumentException("Both spans must have the same length");
-            
+        }
+
+
         var length = left.Length;
-        if (length == 0) return 0.0f;
-        
+        if (length == 0)
+        {
+            return 0.0f;
+        }
+
+
         fixed (float* leftPtr = left, rightPtr = right)
         {
             if (HasAvx512 && length >= Vector512Size)
@@ -205,11 +237,15 @@ public static class SimdIntrinsics
     /// <param name="rows">Number of rows</param>
     /// <param name="cols">Number of columns</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe void Transpose(ReadOnlySpan&lt;float&gt; source, Span&lt;float&gt; dest, int rows, int cols)
+    public static unsafe void Transpose(ReadOnlySpan<float> source, Span<float> dest, int rows, int cols)
     {
         if (source.Length != rows * cols || dest.Length != rows * cols)
+        {
+
             throw new ArgumentException("Source and destination must match matrix dimensions");
-            
+        }
+
+
         fixed (float* srcPtr = source, dstPtr = dest)
         {
             if (HasAvx2 && rows >= 8 && cols >= 8)
@@ -237,11 +273,15 @@ public static class SimdIntrinsics
     /// <param name="values">Values to sum</param>
     /// <returns>Sum of all values</returns>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe float HorizontalSum(ReadOnlySpan&lt;float&gt; values)
+    public static unsafe float HorizontalSum(ReadOnlySpan<float> values)
     {
         var length = values.Length;
-        if (length == 0) return 0.0f;
-        
+        if (length == 0)
+        {
+            return 0.0f;
+        }
+
+
         fixed (float* valuesPtr = values)
         {
             if (HasAvx512 && length >= Vector512Size)
@@ -336,7 +376,7 @@ public static class SimdIntrinsics
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float DotProductAvx512(float* left, float* right, int length)
     {
-        var sum = Vector512&lt;float&gt;.Zero;
+        var sum = Vector512<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector512Size);
         
@@ -362,7 +402,7 @@ public static class SimdIntrinsics
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float HorizontalSumAvx512(float* values, int length)
     {
-        var sum = Vector512&lt;float&gt;.Zero;
+        var sum = Vector512<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector512Size);
         
@@ -384,7 +424,7 @@ public static class SimdIntrinsics
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static float HorizontalSumVector512(Vector512&lt;float&gt; vec)
+    private static float HorizontalSumVector512(Vector512<float> vec)
     {
         var hi256 = Avx512F.ExtractVector256(vec, 1);
         var lo256 = Avx512F.ExtractVector256(vec, 0);
@@ -449,7 +489,7 @@ public static class SimdIntrinsics
             var aVec = Avx.LoadVector256(a + i);
             var bVec = Avx.LoadVector256(b + i);
             var cVec = Avx.LoadVector256(c + i);
-            Vector256&lt;float&gt; resultVec;
+            Vector256<float> resultVec;
             
             if (HasFma)
             {
@@ -473,7 +513,7 @@ public static class SimdIntrinsics
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float DotProductAvx2(float* left, float* right, int length)
     {
-        var sum = Vector256&lt;float&gt;.Zero;
+        var sum = Vector256<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector256Size);
         
@@ -507,7 +547,7 @@ public static class SimdIntrinsics
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float HorizontalSumAvx2(float* values, int length)
     {
-        var sum = Vector256&lt;float&gt;.Zero;
+        var sum = Vector256<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector256Size);
         
@@ -529,7 +569,7 @@ public static class SimdIntrinsics
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static float HorizontalSumVector256(Vector256&lt;float&gt; vec)
+    private static float HorizontalSumVector256(Vector256<float> vec)
     {
         var hi128 = Avx.ExtractVector128(vec, 1);
         var lo128 = Avx.ExtractVector128(vec, 0);
@@ -641,7 +681,7 @@ public static class SimdIntrinsics
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float DotProductNeon(float* left, float* right, int length)
     {
-        var sum = Vector128&lt;float&gt;.Zero;
+        var sum = Vector128<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
         
@@ -667,7 +707,7 @@ public static class SimdIntrinsics
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float HorizontalSumNeon(float* values, int length)
     {
-        var sum = Vector128&lt;float&gt;.Zero;
+        var sum = Vector128<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
         
@@ -792,7 +832,7 @@ public static class SimdIntrinsics
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float DotProductSse(float* left, float* right, int length)
     {
-        var sum = Vector128&lt;float&gt;.Zero;
+        var sum = Vector128<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
         
@@ -818,7 +858,7 @@ public static class SimdIntrinsics
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe float HorizontalSumSse(float* values, int length)
     {
-        var sum = Vector128&lt;float&gt;.Zero;
+        var sum = Vector128<float>.Zero;
         var i = 0;
         var vectorCount = length - (length % Vector128Size);
         
@@ -840,11 +880,11 @@ public static class SimdIntrinsics
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static float HorizontalSumVector128(Vector128&lt;float&gt; vec)
+    private static float HorizontalSumVector128(Vector128<float> vec)
     {
         var temp = Sse.Add(vec, Sse.Shuffle(vec, vec, 0b_11_10_01_00));
         temp = Sse.Add(temp, Sse.Shuffle(temp, temp, 0b_01_00_11_10));
-        return Sse.ConvertToSingle(temp);
+        return temp.ToScalar();
     }
     
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
