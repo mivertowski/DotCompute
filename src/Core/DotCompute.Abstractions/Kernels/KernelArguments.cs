@@ -32,7 +32,7 @@ public class KernelArguments : IEnumerable<object?>
     /// </summary>
     public KernelArguments()
     {
-        _arguments = new List<object?>();
+        _arguments = [];
     }
 
 

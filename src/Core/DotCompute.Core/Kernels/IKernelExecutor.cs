@@ -15,7 +15,7 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Gets the accelerator this executor targets.
         /// </summary>
-        IAccelerator Accelerator { get; }
+        public IAccelerator Accelerator { get; }
 
         /// <summary>
         /// Executes a compiled kernel.
@@ -25,7 +25,7 @@ namespace DotCompute.Core.Kernels
         /// <param name="executionConfig">The execution configuration.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Execution result.</returns>
-        ValueTask<KernelExecutionResult> ExecuteAsync(
+        public ValueTask<KernelExecutionResult> ExecuteAsync(
             CompiledKernel kernel,
             KernelArgument[] arguments,
             KernelExecutionConfig executionConfig,
@@ -39,7 +39,7 @@ namespace DotCompute.Core.Kernels
         /// <param name="executionConfig">The execution configuration.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Execution result.</returns>
-        ValueTask<KernelExecutionResult> ExecuteAndWaitAsync(
+        public ValueTask<KernelExecutionResult> ExecuteAndWaitAsync(
             CompiledKernel kernel,
             KernelArgument[] arguments,
             KernelExecutionConfig executionConfig,
@@ -52,7 +52,7 @@ namespace DotCompute.Core.Kernels
         /// <param name="arguments">The kernel arguments.</param>
         /// <param name="executionConfig">The execution configuration.</param>
         /// <returns>An execution handle to track the operation.</returns>
-        KernelExecutionHandle EnqueueExecution(
+        public KernelExecutionHandle EnqueueExecution(
             CompiledKernel kernel,
             KernelArgument[] arguments,
             KernelExecutionConfig executionConfig);
@@ -63,7 +63,7 @@ namespace DotCompute.Core.Kernels
         /// <param name="handle">The execution handle.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Execution result.</returns>
-        ValueTask<KernelExecutionResult> WaitForCompletionAsync(
+        public ValueTask<KernelExecutionResult> WaitForCompletionAsync(
             KernelExecutionHandle handle,
             CancellationToken cancellationToken = default);
 
@@ -73,7 +73,7 @@ namespace DotCompute.Core.Kernels
         /// <param name="kernel">The compiled kernel.</param>
         /// <param name="problemSize">The problem size.</param>
         /// <returns>Optimal execution configuration.</returns>
-        KernelExecutionConfig GetOptimalExecutionConfig(CompiledKernel kernel, int[] problemSize);
+        public KernelExecutionConfig GetOptimalExecutionConfig(CompiledKernel kernel, int[] problemSize);
 
         /// <summary>
         /// Profiles kernel execution.
@@ -84,7 +84,7 @@ namespace DotCompute.Core.Kernels
         /// <param name="iterations">Number of iterations to run.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Profiling results.</returns>
-        ValueTask<KernelProfilingResult> ProfileAsync(
+        public ValueTask<KernelProfilingResult> ProfileAsync(
             CompiledKernel kernel,
             KernelArgument[] arguments,
             KernelExecutionConfig executionConfig,

@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
 using System.Security.Cryptography;
 using System.Text;
@@ -416,7 +415,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 if (_mappedViews.TryGetValue(cacheKey, out var view) && view != null)
                 {
                     var dataSize = view.ReadInt32(0);
-                    if (dataSize > 0 && dataSize <= MaxCacheFileSize)
+                    if (dataSize is > 0 and <= (int)MaxCacheFileSize)
                     {
                         ptxData = new byte[dataSize];
                         _ = view.ReadArray(4, ptxData, 0, dataSize);

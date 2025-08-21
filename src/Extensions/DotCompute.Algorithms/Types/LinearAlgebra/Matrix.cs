@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 // This is a redirect to the main Matrix implementation
-using DotCompute.Algorithms.LinearAlgebra;
-
 // Re-export the Matrix type for compatibility
 namespace DotCompute.Algorithms.Types.LinearAlgebra;
 

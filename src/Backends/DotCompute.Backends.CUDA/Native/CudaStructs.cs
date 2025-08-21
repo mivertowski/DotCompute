@@ -3,7 +3,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace DotCompute.Backends.CUDA.Native
+namespace DotCompute.Backends.CUDA.Native.Types
 {
 
     /// <summary>

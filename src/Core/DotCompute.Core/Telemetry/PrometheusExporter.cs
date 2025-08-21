@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Prometheus;
@@ -514,7 +508,7 @@ public sealed class PrometheusExporterOptions
     public int Port { get; set; } = 9464;
     public string Endpoint { get; set; } = "/metrics";
     public int CollectionIntervalSeconds { get; set; } = 15;
-    public List<string> CommonLabels { get; set; } = new() { "application", "version", "environment" };
+    public List<string> CommonLabels { get; set; } = ["application", "version", "environment"];
 }
 
 /// <summary>

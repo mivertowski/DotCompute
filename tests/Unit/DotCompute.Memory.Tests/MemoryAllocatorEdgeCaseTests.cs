@@ -5,7 +5,6 @@ using System.Buffers;
 using FluentAssertions;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using DotCompute.Memory;
 using Xunit;
 
 namespace DotCompute.Memory.Tests;

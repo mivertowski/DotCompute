@@ -2,11 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
-using System.Text;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-
-using DotCompute.Abstractions.Enums;
 namespace DotCompute.Linq.Operators;
 
 
@@ -28,7 +25,7 @@ public class ExpressionKernelGenerator
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _handlers = new Dictionary<ExpressionType, IExpressionHandler>();
+        _handlers = [];
 
         InitializeHandlers();
     }
@@ -199,7 +196,7 @@ public class ExpressionKernelGenerator
 internal class ParameterExtractionVisitor : ExpressionVisitor
 {
     private readonly List<GeneratedKernelParameter> _parameters;
-    private readonly HashSet<string> _seenNames = new();
+    private readonly HashSet<string> _seenNames = [];
 
     public ParameterExtractionVisitor(List<GeneratedKernelParameter> parameters)
     {

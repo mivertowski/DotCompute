@@ -43,13 +43,13 @@ public sealed class AutoTuner : IDisposable
     public sealed class TuningProfile
     {
         public string AlgorithmName { get; set; } = string.Empty;
-        public Dictionary<string, object> OptimalParameters { get; set; } = new();
-        public Dictionary<string, ParameterRange> ParameterRanges { get; set; } = new();
+        public Dictionary<string, object> OptimalParameters { get; set; } = [];
+        public Dictionary<string, ParameterRange> ParameterRanges { get; set; } = [];
         public double BestPerformance { get; set; }
         public DateTime LastTuned { get; set; }
         public int TuningIterations { get; set; }
         public string HardwareFingerprint { get; set; } = string.Empty;
-        public Dictionary<string, double> PerformanceHistory { get; set; } = new();
+        public Dictionary<string, double> PerformanceHistory { get; set; } = [];
 
 
         [JsonIgnore]
@@ -164,7 +164,7 @@ public sealed class AutoTuner : IDisposable
             }
 
 
-            return _parameterQueue.Count > 0 ? _parameterQueue.Dequeue() : new Dictionary<string, object>();
+            return _parameterQueue.Count > 0 ? _parameterQueue.Dequeue() : [];
         }
 
 
@@ -177,7 +177,7 @@ public sealed class AutoTuner : IDisposable
             var parameterValues = ranges.Values.Select(r => r.GenerateValues().ToArray()).ToArray();
 
 
-            GenerateCartesianProduct(parameterNames, parameterValues, 0, new Dictionary<string, object>());
+            GenerateCartesianProduct(parameterNames, parameterValues, 0, []);
         }
 
 
@@ -610,7 +610,7 @@ public sealed class AutoTuner : IDisposable
         }
 
 
-        return new Dictionary<string, object>();
+        return [];
     }
 
 

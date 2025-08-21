@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Core.Kernels;
 
 namespace DotCompute.Core.Execution
 {

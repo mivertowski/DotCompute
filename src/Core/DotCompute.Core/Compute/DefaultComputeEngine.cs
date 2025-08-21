@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Compute
@@ -183,15 +182,9 @@ namespace DotCompute.Core.Compute
             ExecutionOptions? options = null,
             CancellationToken cancellationToken = default)
         {
-            if (kernel == null)
-            {
-                throw new ArgumentNullException(nameof(kernel));
-            }
+            ArgumentNullException.ThrowIfNull(kernel);
 
-            if (arguments == null)
-            {
-                throw new ArgumentNullException(nameof(arguments));
-            }
+            ArgumentNullException.ThrowIfNull(arguments);
 
             _logger.LogInformation("Executing kernel {KernelName} on backend {Backend}",
                 kernel.Name, backendType);

@@ -28,15 +28,9 @@ namespace DotCompute.Core.Memory
             IAccelerator device2,
             CancellationToken cancellationToken = default)
         {
-            if (device1 == null)
-            {
-                throw new ArgumentNullException(nameof(device1));
-            }
+            ArgumentNullException.ThrowIfNull(device1);
 
-            if (device2 == null)
-            {
-                throw new ArgumentNullException(nameof(device2));
-            }
+            ArgumentNullException.ThrowIfNull(device2);
 
             // Same device cannot have P2P with itself
             if (device1.Info.Id == device2.Info.Id)
@@ -90,15 +84,9 @@ namespace DotCompute.Core.Memory
             IAccelerator device2,
             CancellationToken cancellationToken = default)
         {
-            if (device1 == null)
-            {
-                throw new ArgumentNullException(nameof(device1));
-            }
+            ArgumentNullException.ThrowIfNull(device1);
 
-            if (device2 == null)
-            {
-                throw new ArgumentNullException(nameof(device2));
-            }
+            ArgumentNullException.ThrowIfNull(device2);
 
             try
             {
@@ -164,15 +152,9 @@ namespace DotCompute.Core.Memory
             IAccelerator device2,
             CancellationToken cancellationToken = default)
         {
-            if (device1 == null)
-            {
-                throw new ArgumentNullException(nameof(device1));
-            }
+            ArgumentNullException.ThrowIfNull(device1);
 
-            if (device2 == null)
-            {
-                throw new ArgumentNullException(nameof(device2));
-            }
+            ArgumentNullException.ThrowIfNull(device2);
 
             try
             {
@@ -247,10 +229,7 @@ namespace DotCompute.Core.Memory
             IAccelerator device,
             CancellationToken cancellationToken = default)
         {
-            if (device == null)
-            {
-                throw new ArgumentNullException(nameof(device));
-            }
+            ArgumentNullException.ThrowIfNull(device);
 
             try
             {

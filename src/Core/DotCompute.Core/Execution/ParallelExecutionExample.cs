@@ -6,6 +6,10 @@ using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using DotCompute.Core.Execution.Metrics;
+using DotCompute.Core.Execution.Types;
+using DotCompute.Core.Execution.Configuration;
+
 namespace DotCompute.Core.Execution
 {
 

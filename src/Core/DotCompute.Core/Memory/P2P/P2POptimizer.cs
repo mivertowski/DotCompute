@@ -84,7 +84,7 @@ namespace DotCompute.Core.Memory.P2P
                         _transferHistory[profileKey] = new P2PTransferHistory
                         {
                             DevicePairKey = profileKey,
-                            TransferRecords = new List<P2PTransferRecord>(),
+                            TransferRecords = [],
                             TotalTransfers = 0,
                             TotalBytesTransferred = 0,
                             AverageThroughput = 0.0
@@ -111,16 +111,10 @@ namespace DotCompute.Core.Memory.P2P
             P2PTransferOptions options,
             CancellationToken cancellationToken = default)
         {
-            if (sourceDevice == null)
-            {
-                throw new ArgumentNullException(nameof(sourceDevice));
-            }
+            ArgumentNullException.ThrowIfNull(sourceDevice);
 
 
-            if (targetDevice == null)
-            {
-                throw new ArgumentNullException(nameof(targetDevice));
-            }
+            ArgumentNullException.ThrowIfNull(targetDevice);
 
 
             var profileKey = GetOptimizationProfileKey(sourceDevice.Info.Id, targetDevice.Info.Id);
@@ -168,10 +162,7 @@ namespace DotCompute.Core.Memory.P2P
             P2PScatterOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(sourceBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(sourceBuffer);
 
 
             if (destinationBuffers == null || destinationBuffers.Length == 0)
@@ -186,7 +177,7 @@ namespace DotCompute.Core.Memory.P2P
                 PlanId = Guid.NewGuid().ToString(),
                 SourceBuffer = sourceBuffer,
                 DestinationBuffers = destinationBuffers,
-                Chunks = new List<P2PTransferChunk>(),
+                Chunks = [],
                 EstimatedTotalTimeMs = 0,
                 CreatedAt = DateTimeOffset.UtcNow
             };
@@ -241,10 +232,7 @@ namespace DotCompute.Core.Memory.P2P
             }
 
 
-            if (destinationBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(destinationBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(destinationBuffer);
 
 
             var gatherPlan = new P2PGatherPlan
@@ -252,7 +240,7 @@ namespace DotCompute.Core.Memory.P2P
                 PlanId = Guid.NewGuid().ToString(),
                 SourceBuffers = sourceBuffers,
                 DestinationBuffer = destinationBuffer,
-                Chunks = new List<P2PTransferChunk>(),
+                Chunks = [],
                 EstimatedTotalTimeMs = 0,
                 CreatedAt = DateTimeOffset.UtcNow
             };
@@ -369,9 +357,9 @@ namespace DotCompute.Core.Memory.P2P
                 var recommendations = new P2POptimizationRecommendations
                 {
                     GeneratedAt = DateTimeOffset.UtcNow,
-                    PerformanceRecommendations = new List<P2PPerformanceRecommendation>(),
-                    TopologyRecommendations = new List<P2PTopologyRecommendation>(),
-                    ConfigurationRecommendations = new List<P2PConfigurationRecommendation>()
+                    PerformanceRecommendations = [],
+                    TopologyRecommendations = [],
+                    ConfigurationRecommendations = []
                 };
 
                 // Analyze profiles for performance recommendations
@@ -444,10 +432,10 @@ namespace DotCompute.Core.Memory.P2P
                 {
                     TotalOptimizedTransfers = _statistics.TotalOptimizedTransfers,
                     OptimizationProfilesActive = _optimizationProfiles.Count,
-                    AverageOptimizationScore = _optimizationProfiles.Values.Any()
+                    AverageOptimizationScore = _optimizationProfiles.Values.Count != 0
 
                         ? _optimizationProfiles.Values.Average(p => p.OptimizationScore) : 0.0,
-                    AverageEfficiencyScore = _optimizationProfiles.Values.Any()
+                    AverageEfficiencyScore = _optimizationProfiles.Values.Count != 0
                         ? _optimizationProfiles.Values.Average(p => p.EfficiencyScore) : 0.0,
                     TotalTransferHistory = _transferHistory.Values.Sum(h => h.TotalTransfers),
                     AdaptiveOptimizationsApplied = _statistics.AdaptiveOptimizationsApplied,
@@ -494,7 +482,7 @@ namespace DotCompute.Core.Memory.P2P
             _transferHistory[profileKey] = new P2PTransferHistory
             {
                 DevicePairKey = profileKey,
-                TransferRecords = new List<P2PTransferRecord>(),
+                TransferRecords = [],
                 TotalTransfers = 0,
                 TotalBytesTransferred = 0,
                 AverageThroughput = capability.EstimatedBandwidthGBps
@@ -624,7 +612,7 @@ namespace DotCompute.Core.Memory.P2P
             string profileKey,
             CancellationToken cancellationToken)
         {
-            if (_transferHistory.TryGetValue(profileKey, out var history) && history.TransferRecords.Any())
+            if (_transferHistory.TryGetValue(profileKey, out var history) && history.TransferRecords.Count != 0)
             {
                 // Find similar past transfers
                 var similarTransfers = history.TransferRecords
@@ -632,7 +620,7 @@ namespace DotCompute.Core.Memory.P2P
                     .Where(r => r.WasSuccessful)
                     .ToList();
 
-                if (similarTransfers.Any())
+                if (similarTransfers.Count != 0)
                 {
                     // Get best performing configuration
                     var bestTransfer = similarTransfers.OrderByDescending(r => r.ThroughputGBps).First();
@@ -838,7 +826,7 @@ namespace DotCompute.Core.Memory.P2P
                     }
                 }
 
-                if (profilesNeedingOptimization.Any())
+                if (profilesNeedingOptimization.Count != 0)
                 {
                     _logger.LogTrace("Adaptive optimization applied to {ProfileCount} optimization profiles",
                         profilesNeedingOptimization.Count);

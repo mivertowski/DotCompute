@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.Loader;
-
 namespace DotCompute.Plugins.Security;
 
 /// <summary>
@@ -182,12 +180,12 @@ public class SandboxPermissions
     /// <summary>
     /// Gets or sets the list of allowed permissions.
     /// </summary>
-    public List<string> AllowedPermissions { get; set; } = new();
+    public List<string> AllowedPermissions { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the list of explicitly denied permissions.
     /// </summary>
-    public List<string> DeniedPermissions { get; set; } = new();
+    public List<string> DeniedPermissions { get; set; } = [];
 
     /// <summary>
     /// Gets or sets resource limits for the plugin.
@@ -211,7 +209,7 @@ public class SandboxPermissions
     {
         return new SandboxPermissions
         {
-            AllowedPermissions = new List<string> { "Execution" },
+            AllowedPermissions = ["Execution"],
             NetworkAccess = NetworkAccessPermissions.None,
             FileSystemAccess = FileSystemAccessPermissions.None,
             ResourceLimits = new ResourceLimits
@@ -230,7 +228,7 @@ public class SandboxPermissions
     {
         return new SandboxPermissions
         {
-            AllowedPermissions = new List<string> { "Execution", "FileIO", "NetworkAccess" },
+            AllowedPermissions = ["Execution", "FileIO", "NetworkAccess"],
             NetworkAccess = NetworkAccessPermissions.HttpClient,
             FileSystemAccess = FileSystemAccessPermissions.TempDirectory,
             ResourceLimits = new ResourceLimits
@@ -309,12 +307,12 @@ public class SecurityContext
     /// <summary>
     /// Gets or sets the allowed permissions.
     /// </summary>
-    public HashSet<string> AllowedPermissions { get; set; } = new();
+    public HashSet<string> AllowedPermissions { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the denied permissions.
     /// </summary>
-    public HashSet<string> DeniedPermissions { get; set; } = new();
+    public HashSet<string> DeniedPermissions { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the resource limits.
@@ -375,5 +373,5 @@ public class ResourceUsage
     /// <summary>
     /// Gets the list of violated resource limits.
     /// </summary>
-    public List<string> ViolatedLimits { get; set; } = new();
+    public List<string> ViolatedLimits { get; set; } = [];
 }

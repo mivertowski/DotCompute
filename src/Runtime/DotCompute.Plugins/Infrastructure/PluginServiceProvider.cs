@@ -621,14 +621,14 @@ namespace DotCompute.Plugins.Infrastructure
         /// </summary>
         /// <param name="type">The type to create.</param>
         /// <returns>The created instance.</returns>
-        object CreateInstance(Type type);
+        public object CreateInstance(Type type);
 
         /// <summary>
         /// Creates an instance of the specified type.
         /// </summary>
         /// <typeparam name="T">The type to create.</typeparam>
         /// <returns>The created instance.</returns>
-        T CreateInstance<T>() where T : class;
+        public T CreateInstance<T>() where T : class;
     }
 
     /// <summary>
@@ -658,7 +658,7 @@ namespace DotCompute.Plugins.Infrastructure
         /// </summary>
         /// <param name="plugin">The plugin to validate.</param>
         /// <returns>Validation result.</returns>
-        Task<PluginValidationResult> ValidateAsync(object plugin);
+        public Task<PluginValidationResult> ValidateAsync(object plugin);
     }
 
     /// <summary>
@@ -712,20 +712,20 @@ namespace DotCompute.Plugins.Infrastructure
         /// Records plugin activation.
         /// </summary>
         /// <param name="pluginType">The plugin type.</param>
-        void RecordActivation(Type pluginType);
+        public void RecordActivation(Type pluginType);
 
         /// <summary>
         /// Records plugin execution time.
         /// </summary>
         /// <param name="pluginType">The plugin type.</param>
         /// <param name="executionTime">The execution time.</param>
-        void RecordExecutionTime(Type pluginType, TimeSpan executionTime);
+        public void RecordExecutionTime(Type pluginType, TimeSpan executionTime);
 
         /// <summary>
         /// Gets plugin metrics.
         /// </summary>
         /// <returns>Plugin metrics data.</returns>
-        PluginMetricsData GetMetrics();
+        public PluginMetricsData GetMetrics();
     }
 
     /// <summary>

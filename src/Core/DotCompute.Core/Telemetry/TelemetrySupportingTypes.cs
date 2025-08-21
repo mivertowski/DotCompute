@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading.Tasks;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -31,8 +28,8 @@ public sealed class TraceContext
     public DateTimeOffset StartTime { get; set; }
     public Activity? Activity { get; set; }
     public SpanContext? ParentSpanContext { get; set; }
-    public Dictionary<string, object?> Tags { get; set; } = new();
-    public ConcurrentBag<SpanData> Spans { get; set; } = new();
+    public Dictionary<string, object?> Tags { get; set; } = [];
+    public ConcurrentBag<SpanData> Spans { get; set; } = [];
     public ConcurrentDictionary<string, DeviceOperationTrace> DeviceOperations { get; set; } = new();
 }
 
@@ -49,8 +46,8 @@ public sealed class SpanContext
     public TimeSpan Duration { get; set; }
     public SpanStatus Status { get; set; } = SpanStatus.Ok;
     public string? StatusMessage { get; set; }
-    public Dictionary<string, object?> Attributes { get; set; } = new();
-    public List<SpanEvent> Events { get; set; } = new();
+    public Dictionary<string, object?> Attributes { get; set; } = [];
+    public List<SpanEvent> Events { get; set; } = [];
     public string? ParentSpanId { get; set; }
     public Activity? Activity { get; set; }
 }
@@ -68,8 +65,8 @@ public sealed class SpanData
     public TimeSpan Duration { get; set; }
     public SpanStatus Status { get; set; }
     public string? StatusMessage { get; set; }
-    public Dictionary<string, object?> Attributes { get; set; } = new();
-    public List<SpanEvent> Events { get; set; } = new();
+    public Dictionary<string, object?> Attributes { get; set; } = [];
+    public List<SpanEvent> Events { get; set; } = [];
     public string? ParentSpanId { get; set; }
 }
 
@@ -77,7 +74,7 @@ public sealed class SpanEvent
 {
     public string Name { get; set; } = string.Empty;
     public DateTimeOffset Timestamp { get; set; }
-    public Dictionary<string, object?> Attributes { get; set; } = new();
+    public Dictionary<string, object?> Attributes { get; set; } = [];
 }
 
 public sealed class DeviceOperationTrace
@@ -86,7 +83,7 @@ public sealed class DeviceOperationTrace
     public int OperationCount { get; set; }
     public DateTimeOffset FirstOperationTime { get; set; }
     public DateTimeOffset LastOperationTime { get; set; }
-    public ConcurrentBag<SpanContext> ActiveSpans { get; set; } = new();
+    public ConcurrentBag<SpanContext> ActiveSpans { get; set; } = [];
 }
 
 public sealed class TraceData
@@ -98,9 +95,9 @@ public sealed class TraceData
     public DateTimeOffset EndTime { get; set; }
     public TimeSpan TotalDuration { get; set; }
     public TraceStatus Status { get; set; }
-    public List<SpanData> Spans { get; set; } = new();
-    public Dictionary<string, DeviceOperationTrace> DeviceOperations { get; set; } = new();
-    public Dictionary<string, object?> Tags { get; set; } = new();
+    public List<SpanData> Spans { get; set; } = [];
+    public Dictionary<string, DeviceOperationTrace> DeviceOperations { get; set; } = [];
+    public Dictionary<string, object?> Tags { get; set; } = [];
     public TraceAnalysis? Analysis { get; set; }
 }
 
@@ -111,14 +108,14 @@ public sealed class TraceAnalysis
     public TimeSpan TotalOperationTime { get; set; }
     public int SpanCount { get; set; }
     public int DeviceCount { get; set; }
-    public List<SpanData> CriticalPath { get; set; } = new();
+    public List<SpanData> CriticalPath { get; set; } = [];
     public double CriticalPathDuration { get; set; }
-    public Dictionary<string, double> DeviceUtilization { get; set; } = new();
-    public List<PerformanceBottleneck> Bottlenecks { get; set; } = new();
-    public Dictionary<string, object> MemoryAccessPatterns { get; set; } = new();
+    public Dictionary<string, double> DeviceUtilization { get; set; } = [];
+    public List<PerformanceBottleneck> Bottlenecks { get; set; } = [];
+    public Dictionary<string, object> MemoryAccessPatterns { get; set; } = [];
     public double ParallelismEfficiency { get; set; }
     public double DeviceEfficiency { get; set; }
-    public List<string> OptimizationRecommendations { get; set; } = new();
+    public List<string> OptimizationRecommendations { get; set; } = [];
 }
 
 public sealed class KernelPerformanceData
@@ -177,8 +174,8 @@ public sealed class ActiveProfile
     public string CorrelationId { get; set; } = string.Empty;
     public DateTimeOffset StartTime { get; set; }
     public ProfileOptions Options { get; set; } = new();
-    public ConcurrentBag<KernelExecutionProfile> KernelExecutions { get; set; } = new();
-    public ConcurrentBag<MemoryOperationProfile> MemoryOperations { get; set; } = new();
+    public ConcurrentBag<KernelExecutionProfile> KernelExecutions { get; set; } = [];
+    public ConcurrentBag<MemoryOperationProfile> MemoryOperations { get; set; } = [];
     public ConcurrentDictionary<string, DeviceProfileMetrics> DeviceMetrics { get; set; } = new();
     public ConcurrentQueue<SystemSnapshot> SystemSnapshots { get; set; } = new();
 }
@@ -195,9 +192,9 @@ public sealed class PerformanceProfile
     public int TotalMemoryOperations { get; set; }
     public int DevicesInvolved { get; set; }
     public ProfileAnalysis? Analysis { get; set; }
-    public List<KernelExecutionProfile> KernelExecutions { get; set; } = new();
-    public List<MemoryOperationProfile> MemoryOperations { get; set; } = new();
-    public Dictionary<string, DeviceProfileMetrics> DeviceMetrics { get; set; } = new();
+    public List<KernelExecutionProfile> KernelExecutions { get; set; } = [];
+    public List<MemoryOperationProfile> MemoryOperations { get; set; } = [];
+    public Dictionary<string, DeviceProfileMetrics> DeviceMetrics { get; set; } = [];
 }
 
 public sealed class KernelExecutionProfile
@@ -300,8 +297,8 @@ public sealed class ProfileAnalysis
     public double AverageCacheHitRate { get; set; }
     public double DeviceUtilizationEfficiency { get; set; }
     public double ParallelismEfficiency { get; set; }
-    public List<string> IdentifiedBottlenecks { get; set; } = new();
-    public List<string> OptimizationRecommendations { get; set; } = new();
+    public List<string> IdentifiedBottlenecks { get; set; } = [];
+    public List<string> OptimizationRecommendations { get; set; } = [];
 }
 
 public sealed class KernelAnalysisResult
@@ -322,9 +319,9 @@ public sealed class KernelAnalysisResult
     public double AverageWarpEfficiency { get; set; }
     public double AverageBranchDivergence { get; set; }
     public double AverageMemoryCoalescing { get; set; }
-    public Dictionary<string, int> DeviceDistribution { get; set; } = new();
+    public Dictionary<string, int> DeviceDistribution { get; set; } = [];
     public PerformanceTrend PerformanceTrend { get; set; }
-    public List<string> OptimizationRecommendations { get; set; } = new();
+    public List<string> OptimizationRecommendations { get; set; } = [];
 }
 
 public sealed class MemoryAccessAnalysisResult
@@ -336,13 +333,13 @@ public sealed class MemoryAccessAnalysisResult
     public double AverageBandwidth { get; set; }
     public double PeakBandwidth { get; set; }
     public long TotalBytesTransferred { get; set; }
-    public Dictionary<string, int> AccessPatternDistribution { get; set; } = new();
+    public Dictionary<string, int> AccessPatternDistribution { get; set; } = [];
     public double AverageCoalescingEfficiency { get; set; }
     public double AverageCacheHitRate { get; set; }
-    public Dictionary<string, int> TransferDirectionDistribution { get; set; } = new();
-    public Dictionary<string, double> DeviceBandwidthUtilization { get; set; } = new();
-    public Dictionary<string, MemorySegmentStats> MemorySegmentUsage { get; set; } = new();
-    public List<string> OptimizationRecommendations { get; set; } = new();
+    public Dictionary<string, int> TransferDirectionDistribution { get; set; } = [];
+    public Dictionary<string, double> DeviceBandwidthUtilization { get; set; } = [];
+    public Dictionary<string, MemorySegmentStats> MemorySegmentUsage { get; set; } = [];
+    public List<string> OptimizationRecommendations { get; set; } = [];
 }
 
 public sealed class MemorySegmentStats
@@ -363,7 +360,7 @@ public sealed class SystemPerformanceSnapshot
     public int Gen0Collections { get; set; }
     public int Gen1Collections { get; set; }
     public int Gen2Collections { get; set; }
-    public Dictionary<string, double> HardwareCounters { get; set; } = new();
+    public Dictionary<string, double> HardwareCounters { get; set; } = [];
 }
 
 public sealed class ProfileSample

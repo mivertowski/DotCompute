@@ -4,13 +4,11 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
-using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
-using ManagedCompiledKernel = DotCompute.Core.Kernels.ManagedCompiledKernel;
 
 namespace DotCompute.Linq;
 

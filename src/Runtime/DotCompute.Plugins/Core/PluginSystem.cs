@@ -4,7 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.Loader;
-using DotCompute.Plugins.Exceptions;
+using DotCompute.Plugins.Exceptions.Loading;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

@@ -4,9 +4,9 @@
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Native.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Runtime.InteropServices;
 
 namespace DotCompute.Backends.CUDA
 {

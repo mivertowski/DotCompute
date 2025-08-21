@@ -1,11 +1,5 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Telemetry;
@@ -651,7 +645,7 @@ public sealed class MemoryAccessAnalysis
     public int TotalOperations { get; set; }
     public double AverageBandwidth { get; set; }
     public double PeakBandwidth { get; set; }
-    public Dictionary<string, int> AccessPatterns { get; set; } = new();
+    public Dictionary<string, int> AccessPatterns { get; set; } = [];
     public double AverageCoalescingEfficiency { get; set; }
     public TimeSpan TimeWindow { get; set; }
     public DateTimeOffset AnalysisTimestamp { get; set; }

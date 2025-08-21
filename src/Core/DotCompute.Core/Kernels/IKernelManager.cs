@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Core.Kernels.Compilation;
 
 namespace DotCompute.Core.Kernels
 {
@@ -15,22 +16,22 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Registers a kernel generator for a specific accelerator type.
         /// </summary>
-        void RegisterGenerator(AcceleratorType acceleratorType, IKernelGenerator generator);
+        public void RegisterGenerator(AcceleratorType acceleratorType, IKernelGenerator generator);
 
         /// <summary>
         /// Registers a kernel compiler for a specific accelerator type.
         /// </summary>
-        void RegisterCompiler(AcceleratorType acceleratorType, IKernelCompiler compiler);
+        public void RegisterCompiler(AcceleratorType acceleratorType, IKernelCompiler compiler);
 
         /// <summary>
         /// Registers a kernel executor for a specific accelerator type.
         /// </summary>
-        void RegisterExecutor(AcceleratorType acceleratorType, IKernelExecutor executor);
+        public void RegisterExecutor(AcceleratorType acceleratorType, IKernelExecutor executor);
 
         /// <summary>
         /// Gets or compiles a kernel from an expression.
         /// </summary>
-        ValueTask<ManagedCompiledKernel> GetOrCompileKernelAsync(
+        public ValueTask<ManagedCompiledKernel> GetOrCompileKernelAsync(
             Expression expression,
             IAccelerator accelerator,
             KernelGenerationContext? context = null,
@@ -40,7 +41,7 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Gets or compiles a kernel for a specific operation.
         /// </summary>
-        ValueTask<ManagedCompiledKernel> GetOrCompileOperationKernelAsync(
+        public ValueTask<ManagedCompiledKernel> GetOrCompileOperationKernelAsync(
             string operation,
             Type[] inputTypes,
             Type outputType,
@@ -52,7 +53,7 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Executes a compiled kernel with the specified arguments.
         /// </summary>
-        ValueTask<KernelExecutionResult> ExecuteKernelAsync(
+        public ValueTask<KernelExecutionResult> ExecuteKernelAsync(
             ManagedCompiledKernel kernel,
             KernelArgument[] arguments,
             IAccelerator accelerator,
@@ -62,7 +63,7 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Profiles a kernel execution.
         /// </summary>
-        ValueTask<KernelProfilingResult> ProfileKernelAsync(
+        public ValueTask<KernelProfilingResult> ProfileKernelAsync(
             ManagedCompiledKernel kernel,
             KernelArgument[] arguments,
             IAccelerator accelerator,
@@ -73,11 +74,11 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Clears the kernel cache.
         /// </summary>
-        void ClearCache();
+        public void ClearCache();
 
         /// <summary>
         /// Gets cache statistics.
         /// </summary>
-        KernelCacheStatistics GetCacheStatistics();
+        public KernelCacheStatistics GetCacheStatistics();
     }
 }

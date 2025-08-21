@@ -74,8 +74,8 @@ namespace DotCompute.Core.Memory.P2P
                         DeviceName = device.Info.Name,
                         Device = device,
                         IsInitialized = true,
-                        ActiveBarriers = new List<string>(),
-                        ActiveEvents = new List<string>(),
+                        ActiveBarriers = [],
+                        ActiveEvents = [],
                         LastSyncOperation = DateTimeOffset.UtcNow
                     };
 
@@ -99,16 +99,10 @@ namespace DotCompute.Core.Memory.P2P
             string transferId,
             CancellationToken cancellationToken = default)
         {
-            if (sourceDevice == null)
-            {
-                throw new ArgumentNullException(nameof(sourceDevice));
-            }
+            ArgumentNullException.ThrowIfNull(sourceDevice);
 
 
-            if (targetDevice == null)
-            {
-                throw new ArgumentNullException(nameof(targetDevice));
-            }
+            ArgumentNullException.ThrowIfNull(targetDevice);
 
 
             if (string.IsNullOrEmpty(transferId))
@@ -125,7 +119,7 @@ namespace DotCompute.Core.Memory.P2P
                 var barrier = new P2PSyncBarrier
                 {
                     BarrierId = barrierId,
-                    ParticipantDevices = new List<string> { sourceDevice.Info.Id, targetDevice.Info.Id },
+                    ParticipantDevices = [sourceDevice.Info.Id, targetDevice.Info.Id],
                     ExpectedParticipants = 2,
                     ArrivedParticipants = 0,
                     BarrierState = P2PBarrierState.Active,

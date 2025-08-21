@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Types;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution

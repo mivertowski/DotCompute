@@ -46,18 +46,18 @@ public class SandboxConfiguration
     /// <summary>
     /// Gets the list of globally blocked assembly names.
     /// </summary>
-    public HashSet<string> GloballyBlockedAssemblies { get; } = new()
-    {
+    public HashSet<string> GloballyBlockedAssemblies { get; } =
+    [
         "System.Management",
         "Microsoft.Win32.Registry",
         "System.Diagnostics.Process"
-    };
+    ];
 
     /// <summary>
     /// Gets the list of dangerous API patterns to monitor.
     /// </summary>
-    public HashSet<string> DangerousAPIPatterns { get; } = new()
-    {
+    public HashSet<string> DangerousAPIPatterns { get; } =
+    [
         "CreateProcess",
         "LoadLibrary",
         "GetProcAddress",
@@ -67,7 +67,7 @@ public class SandboxConfiguration
         "SetWindowsHookEx",
         "RegOpenKeyEx",
         "RegSetValueEx"
-    };
+    ];
 
     /// <summary>
     /// Gets or sets the trusted certificate store for assembly verification.
@@ -187,7 +187,7 @@ public class SandboxConfiguration
             errors.Add("ResourceLimits.MaxMemoryMB must be positive");
         }
 
-        if (ResourceLimits.MaxCpuUsagePercent <= 0 || ResourceLimits.MaxCpuUsagePercent > 100)
+        if (ResourceLimits.MaxCpuUsagePercent is <= 0 or > 100)
         {
             errors.Add("ResourceLimits.MaxCpuUsagePercent must be between 1 and 100");
         }

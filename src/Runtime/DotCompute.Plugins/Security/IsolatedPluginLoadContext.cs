@@ -17,7 +17,7 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
     private readonly SandboxPermissions _permissions;
     private readonly ILogger _logger;
     private readonly AssemblyDependencyResolver _resolver;
-    private readonly HashSet<string> _loadedAssemblies = new();
+    private readonly HashSet<string> _loadedAssemblies = [];
     private readonly object _loadLock = new();
 
     /// <summary>

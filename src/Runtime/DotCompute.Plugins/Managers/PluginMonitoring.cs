@@ -124,7 +124,7 @@ internal class PluginHealthMonitor : IDisposable
                 healthState.Health = result.Health;
                 healthState.CheckCount++;
 
-                if (result.Health == PluginHealth.Critical || result.Health == PluginHealth.Unhealthy)
+                if (result.Health is PluginHealth.Critical or PluginHealth.Unhealthy)
                 {
                     healthState.ConsecutiveFailures++;
                 }

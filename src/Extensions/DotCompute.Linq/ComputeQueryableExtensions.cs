@@ -7,12 +7,9 @@ using DotCompute.Linq.Providers;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Execution;
 using DotCompute.Linq.Expressions;
-using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using DotCompute.Memory;
-
-using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Linq;
 
 
@@ -378,6 +375,6 @@ public static class ComputeQueryableExtensions
         /// <param name="accelerator">The target accelerator.</param>
         /// <param name="definition">The kernel definition.</param>
         /// <returns>The created kernel.</returns>
-        Operators.IKernel CreateKernel(IAccelerator accelerator, Operators.KernelDefinition definition);
+        public Operators.IKernel CreateKernel(IAccelerator accelerator, Operators.KernelDefinition definition);
     }
 }

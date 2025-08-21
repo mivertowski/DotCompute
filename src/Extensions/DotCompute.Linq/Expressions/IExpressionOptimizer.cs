@@ -18,14 +18,14 @@ public interface IExpressionOptimizer
     /// <param name="expression">The expression to optimize.</param>
     /// <param name="options">The compilation options.</param>
     /// <returns>The optimized expression.</returns>
-    Expression Optimize(Expression expression, CompilationOptions options);
+    public Expression Optimize(Expression expression, CompilationOptions options);
 
     /// <summary>
     /// Analyzes an expression tree and returns optimization suggestions.
     /// </summary>
     /// <param name="expression">The expression to analyze.</param>
     /// <returns>A collection of optimization suggestions.</returns>
-    IEnumerable<OptimizationSuggestion> Analyze(Expression expression);
+    public IEnumerable<OptimizationSuggestion> Analyze(Expression expression);
 }
 
 /// <summary>

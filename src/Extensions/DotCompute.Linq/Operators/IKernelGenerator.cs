@@ -2,9 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
-using DotCompute.Abstractions;
-
-using DotCompute.Abstractions.Enums;
 namespace DotCompute.Linq.Operators;
 
 
@@ -18,7 +15,7 @@ public interface IKernelGenerator
     /// </summary>
     /// <param name="expression">The expression to check.</param>
     /// <returns>True if the expression can be compiled; otherwise, false.</returns>
-    bool CanCompile(Expression expression);
+    public bool CanCompile(Expression expression);
 
     /// <summary>
     /// Generates a kernel from an expression.
@@ -26,7 +23,7 @@ public interface IKernelGenerator
     /// <param name="expression">The expression to compile.</param>
     /// <param name="context">The generation context.</param>
     /// <returns>A generated kernel.</returns>
-    GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context);
+    public GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context);
 
     /// <summary>
     /// Generates a kernel for a specific operation type.
@@ -36,7 +33,7 @@ public interface IKernelGenerator
     /// <param name="outputType">The output type.</param>
     /// <param name="context">The generation context.</param>
     /// <returns>A generated kernel.</returns>
-    GeneratedKernel GenerateOperationKernel(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context);
+    public GeneratedKernel GenerateOperationKernel(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context);
 }
 
 /// <summary>

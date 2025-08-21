@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Linq;
 
 namespace DotCompute.Runtime.DependencyInjection;
 
@@ -328,7 +327,7 @@ public class PluginDependencyResolver : IPluginDependencyResolver
             }
 
             // Check for circular dependencies (simplified check)
-            var circularDeps = DetectCircularDependencies(pluginType, serviceProvider, new HashSet<Type>());
+            var circularDeps = DetectCircularDependencies(pluginType, serviceProvider, []);
 
             return errors.Count == 0 && circularDeps.Count == 0
                 ? PluginDependencyValidationResult.Success()

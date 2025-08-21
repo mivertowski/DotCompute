@@ -16,7 +16,7 @@ public interface IMemoryPoolService
     /// </summary>
     /// <param name="acceleratorId">The accelerator identifier</param>
     /// <returns>The memory pool for the accelerator</returns>
-    IMemoryPool GetPool(string acceleratorId);
+    public IMemoryPool GetPool(string acceleratorId);
 
     /// <summary>
     /// Creates a new memory pool for an accelerator
@@ -25,25 +25,25 @@ public interface IMemoryPoolService
     /// <param name="initialSize">The initial pool size in bytes</param>
     /// <param name="maxSize">The maximum pool size in bytes</param>
     /// <returns>The created memory pool</returns>
-    Task<IMemoryPool> CreatePoolAsync(string acceleratorId, long initialSize, long maxSize);
+    public Task<IMemoryPool> CreatePoolAsync(string acceleratorId, long initialSize, long maxSize);
 
     /// <summary>
     /// Gets memory usage statistics across all pools
     /// </summary>
     /// <returns>Memory usage statistics</returns>
-    MemoryUsageStatistics GetUsageStatistics();
+    public MemoryUsageStatistics GetUsageStatistics();
 
     /// <summary>
     /// Optimizes memory usage across all pools
     /// </summary>
     /// <returns>A task representing the optimization operation</returns>
-    Task OptimizeMemoryUsageAsync();
+    public Task OptimizeMemoryUsageAsync();
 
     /// <summary>
     /// Releases unused memory from all pools
     /// </summary>
     /// <returns>The amount of memory released in bytes</returns>
-    Task<long> ReleaseUnusedMemoryAsync();
+    public Task<long> ReleaseUnusedMemoryAsync();
 }
 
 /// <summary>
@@ -57,7 +57,7 @@ public interface IUnifiedMemoryService
     /// <param name="sizeInBytes">The size in bytes</param>
     /// <param name="acceleratorIds">The accelerator IDs that will access this memory</param>
     /// <returns>The allocated unified memory buffer</returns>
-    Task<IMemoryBuffer> AllocateUnifiedAsync(long sizeInBytes, params string[] acceleratorIds);
+    public Task<IMemoryBuffer> AllocateUnifiedAsync(long sizeInBytes, params string[] acceleratorIds);
 
     /// <summary>
     /// Migrates data between accelerators
@@ -66,7 +66,7 @@ public interface IUnifiedMemoryService
     /// <param name="sourceAcceleratorId">The source accelerator ID</param>
     /// <param name="targetAcceleratorId">The target accelerator ID</param>
     /// <returns>A task representing the migration operation</returns>
-    Task MigrateAsync(IMemoryBuffer buffer, string sourceAcceleratorId, string targetAcceleratorId);
+    public Task MigrateAsync(IMemoryBuffer buffer, string sourceAcceleratorId, string targetAcceleratorId);
 
     /// <summary>
     /// Synchronizes memory coherence across accelerators
@@ -74,14 +74,14 @@ public interface IUnifiedMemoryService
     /// <param name="buffer">The memory buffer to synchronize</param>
     /// <param name="acceleratorIds">The accelerator IDs to synchronize</param>
     /// <returns>A task representing the synchronization operation</returns>
-    Task SynchronizeCoherenceAsync(IMemoryBuffer buffer, params string[] acceleratorIds);
+    public Task SynchronizeCoherenceAsync(IMemoryBuffer buffer, params string[] acceleratorIds);
 
     /// <summary>
     /// Gets memory coherence status for a buffer
     /// </summary>
     /// <param name="buffer">The memory buffer</param>
     /// <returns>The coherence status</returns>
-    MemoryCoherenceStatus GetCoherenceStatus(IMemoryBuffer buffer);
+    public MemoryCoherenceStatus GetCoherenceStatus(IMemoryBuffer buffer);
 }
 
 /// <summary>
@@ -92,48 +92,48 @@ public interface IMemoryPool : IDisposable
     /// <summary>
     /// Gets the accelerator ID this pool belongs to
     /// </summary>
-    string AcceleratorId { get; }
+    public string AcceleratorId { get; }
 
     /// <summary>
     /// Gets the total pool size in bytes
     /// </summary>
-    long TotalSize { get; }
+    public long TotalSize { get; }
 
     /// <summary>
     /// Gets the available size in bytes
     /// </summary>
-    long AvailableSize { get; }
+    public long AvailableSize { get; }
 
     /// <summary>
     /// Gets the used size in bytes
     /// </summary>
-    long UsedSize { get; }
+    public long UsedSize { get; }
 
     /// <summary>
     /// Allocates memory from the pool
     /// </summary>
     /// <param name="sizeInBytes">The size to allocate</param>
     /// <returns>The allocated memory buffer</returns>
-    Task<IMemoryBuffer> AllocateAsync(long sizeInBytes);
+    public Task<IMemoryBuffer> AllocateAsync(long sizeInBytes);
 
     /// <summary>
     /// Returns memory to the pool
     /// </summary>
     /// <param name="buffer">The memory buffer to return</param>
     /// <returns>A task representing the return operation</returns>
-    Task ReturnAsync(IMemoryBuffer buffer);
+    public Task ReturnAsync(IMemoryBuffer buffer);
 
     /// <summary>
     /// Defragments the memory pool
     /// </summary>
     /// <returns>A task representing the defragmentation operation</returns>
-    Task DefragmentAsync();
+    public Task DefragmentAsync();
 
     /// <summary>
     /// Gets pool statistics
     /// </summary>
     /// <returns>Pool statistics</returns>
-    MemoryPoolStatistics GetStatistics();
+    public MemoryPoolStatistics GetStatistics();
 }
 
 /// <summary>
@@ -159,7 +159,7 @@ public class MemoryUsageStatistics
     /// <summary>
     /// Gets per-accelerator statistics
     /// </summary>
-    public Dictionary<string, AcceleratorMemoryStatistics> PerAcceleratorStats { get; init; } = new();
+    public Dictionary<string, AcceleratorMemoryStatistics> PerAcceleratorStats { get; init; } = [];
 
     /// <summary>
     /// Gets the timestamp when these statistics were collected

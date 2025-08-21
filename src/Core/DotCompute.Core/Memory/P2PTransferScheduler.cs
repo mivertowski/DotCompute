@@ -64,20 +64,11 @@ namespace DotCompute.Core.Memory
             TransferStrategy strategy,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(sourceBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(sourceBuffer);
 
-            if (targetBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(targetBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(targetBuffer);
 
-            if (strategy == null)
-            {
-                throw new ArgumentNullException(nameof(strategy));
-            }
+            ArgumentNullException.ThrowIfNull(strategy);
 
             var transferSize = elementCount * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             var operation = new P2PTransferOperation<T>
@@ -359,8 +350,8 @@ namespace DotCompute.Core.Memory
                 }
 
                 // Create completion tracking if needed
-                _ = _deviceTransferCompletions.TryAdd(sourceDevice.Info.Id, new List<TaskCompletionSource<bool>>());
-                _ = _deviceTransferCompletions.TryAdd(targetDevice.Info.Id, new List<TaskCompletionSource<bool>>());
+                _ = _deviceTransferCompletions.TryAdd(sourceDevice.Info.Id, []);
+                _ = _deviceTransferCompletions.TryAdd(targetDevice.Info.Id, []);
             }
             finally
             {

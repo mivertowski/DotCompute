@@ -4,7 +4,6 @@
 using Moq;
 using Xunit;
 using FluentAssertions;
-using System.Globalization;
 
 using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;

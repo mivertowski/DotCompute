@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;

@@ -9,8 +9,6 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
-
-using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Hardware.Cuda.Tests;
 
@@ -706,7 +704,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
         try
         {
             var executionException = await Assert.ThrowsAsync<ArgumentException>(
-                async () => await validKernel.ExecuteAsync(new KernelArguments()));
+                async () => await validKernel.ExecuteAsync([]));
 
             Assert.NotNull(executionException);
             LogExecutionErrorHandled(_logger, executionException.Message, null);

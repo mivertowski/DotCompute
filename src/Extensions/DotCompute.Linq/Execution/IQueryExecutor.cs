@@ -3,8 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
-using DotCompute.Memory;
-using MemoryOptions = DotCompute.Memory.MemoryOptions;
 
 namespace DotCompute.Linq.Execution;
 
@@ -19,7 +17,7 @@ public interface IQueryExecutor
     /// </summary>
     /// <param name="context">The execution context containing the plan and accelerator.</param>
     /// <returns>The result of the execution.</returns>
-    object? Execute(ExecutionContext context);
+    public object? Execute(ExecutionContext context);
 
     /// <summary>
     /// Executes a compute plan asynchronously and returns the result.
@@ -27,7 +25,7 @@ public interface IQueryExecutor
     /// <param name="context">The execution context containing the plan and accelerator.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation with the result.</returns>
-    Task<object?> ExecuteAsync(ExecutionContext context, CancellationToken cancellationToken = default);
+    public Task<object?> ExecuteAsync(ExecutionContext context, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Validates whether a compute plan can be executed.
@@ -35,7 +33,7 @@ public interface IQueryExecutor
     /// <param name="plan">The compute plan to validate.</param>
     /// <param name="accelerator">The target accelerator.</param>
     /// <returns>A validation result.</returns>
-    DotCompute.Abstractions.ValidationResult Validate(IComputePlan plan, IAccelerator accelerator);
+    public DotCompute.Abstractions.ValidationResult Validate(IComputePlan plan, IAccelerator accelerator);
 }
 
 /// <summary>
@@ -188,7 +186,7 @@ public interface IQueryCache
     /// </summary>
     /// <param name="expression">The expression to generate a key for.</param>
     /// <returns>The cache key.</returns>
-    string GenerateKey(System.Linq.Expressions.Expression expression);
+    public string GenerateKey(System.Linq.Expressions.Expression expression);
 
     /// <summary>
     /// Tries to get a cached result.
@@ -196,25 +194,25 @@ public interface IQueryCache
     /// <param name="key">The cache key.</param>
     /// <param name="result">The cached result if found.</param>
     /// <returns>True if the result was found in cache; otherwise, false.</returns>
-    bool TryGet(string key, out object? result);
+    public bool TryGet(string key, out object? result);
 
     /// <summary>
     /// Sets a result in the cache.
     /// </summary>
     /// <param name="key">The cache key.</param>
     /// <param name="result">The result to cache.</param>
-    void Set(string key, object? result);
+    public void Set(string key, object? result);
 
     /// <summary>
     /// Clears the cache.
     /// </summary>
-    void Clear();
+    public void Clear();
 
     /// <summary>
     /// Gets cache statistics.
     /// </summary>
     /// <returns>Cache statistics.</returns>
-    CacheStatistics GetStatistics();
+    public CacheStatistics GetStatistics();
 }
 
 /// <summary>

@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
 namespace DotCompute.Algorithms.Optimized;
@@ -35,7 +34,7 @@ public static class MemoryOptimizations
     /// </summary>
     public sealed class NumaAllocator : IDisposable
     {
-        private readonly Dictionary<int, IntPtr> _numaBuffers = new();
+        private readonly Dictionary<int, IntPtr> _numaBuffers = [];
         private readonly object _lock = new();
         private bool _disposed;
 
@@ -158,7 +157,7 @@ public static class MemoryOptimizations
     public sealed class OptimizedMemoryPool<T> : IDisposable where T : unmanaged
     {
         private readonly ConcurrentStack<PooledBuffer> _availableBuffers = new();
-        private readonly ConcurrentBag<PooledBuffer> _allBuffers = new();
+        private readonly ConcurrentBag<PooledBuffer> _allBuffers = [];
         private readonly int _maxBuffers;
         private readonly NumaAllocator _allocator;
         private bool _disposed;

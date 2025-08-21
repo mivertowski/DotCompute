@@ -3,10 +3,8 @@
 
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Common.Hardware;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;

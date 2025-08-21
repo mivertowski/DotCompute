@@ -11,6 +11,12 @@ using System.Runtime.Loader;
 using System.Security.Cryptography;
 using System.Text.Json;
 using DotCompute.Abstractions;
+using DotCompute.Algorithms.Management.Configuration;
+using DotCompute.Algorithms.Management.Info;
+using DotCompute.Algorithms.Management.Loading;
+using DotCompute.Algorithms.Management.Metadata;
+using DotCompute.Algorithms.Management.Types;
+using DotCompute.Algorithms.Management.Validation;
 using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Types.Security;
 using Microsoft.Extensions.Logging;
@@ -1877,53 +1883,12 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
 /// <summary>
 /// Represents information about an algorithm plugin.
 /// </summary>
-public sealed class AlgorithmPluginInfo
-{
-    /// <summary>
-    /// Gets or sets the plugin ID.
-    /// </summary>
-    public required string Id { get; init; }
+// AlgorithmPluginInfo moved to Management/Info/AlgorithmPluginInfo.cs
 
-    /// <summary>
-    /// Gets or sets the plugin name.
-    /// </summary>
-    public required string Name { get; init; }
+// AlgorithmPluginManagerOptions moved to Management/Configuration/AlgorithmPluginManagerOptions.cs
 
-    /// <summary>
-    /// Gets or sets the plugin version.
-    /// </summary>
-    public required Version Version { get; init; }
-
-    /// <summary>
-    /// Gets or sets the plugin description.
-    /// </summary>
-    public required string Description { get; init; }
-
-    /// <summary>
-    /// Gets or sets the supported accelerator types.
-    /// </summary>
-    public required AcceleratorType[] SupportedAccelerators { get; init; }
-
-    /// <summary>
-    /// Gets or sets the input type names.
-    /// </summary>
-    public required string[] InputTypes { get; init; }
-
-    /// <summary>
-    /// Gets or sets the output type name.
-    /// </summary>
-    public required string OutputType { get; init; }
-
-    /// <summary>
-    /// Gets or sets the performance profile.
-    /// </summary>
-    public required AlgorithmPerformanceProfile PerformanceProfile { get; init; }
-}
-
-/// <summary>
-/// Configuration options for the Algorithm Plugin Manager.
-/// </summary>
-public sealed class AlgorithmPluginManagerOptions
+// Placeholder for removed class
+internal sealed class AlgorithmPluginManagerOptionsPlaceholder
 {
     /// <summary>
     /// Gets or sets whether plugin isolation is enabled.

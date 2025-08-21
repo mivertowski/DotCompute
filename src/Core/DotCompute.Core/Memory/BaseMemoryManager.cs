@@ -781,7 +781,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Gets or sets additional properties for backend-specific statistics.
         /// </summary>
-        public Dictionary<string, object> Properties { get; set; } = new();
+        public Dictionary<string, object> Properties { get; set; } = [];
     }
 
     /// <summary>

@@ -4,8 +4,8 @@
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Core.Kernels.Compilation;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Kernels
@@ -585,7 +585,7 @@ public sealed partial class KernelManager : IDisposable
             OptimizationLevel = ConvertOptimizationLevel(options.OptimizationLevel),
             EnableDebugInfo = options.GenerateDebugInfo,
             FastMath = options.EnableFastMath,
-            AdditionalFlags = options.AdditionalFlags?.ToList() ?? new List<string>(),
+            AdditionalFlags = options.AdditionalFlags?.ToList() ?? [],
             Defines = options.Defines
         };
     }

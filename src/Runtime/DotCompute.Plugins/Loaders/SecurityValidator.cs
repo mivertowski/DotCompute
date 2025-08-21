@@ -2,11 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Plugins.Loaders;
@@ -319,7 +315,7 @@ public class SecurityValidator
                 IsSigned = false,
 
                 IsValid = false,
-                ValidationErrors = new List<string> { $"Signature verification failed: {ex.Message}" }
+                ValidationErrors = [$"Signature verification failed: {ex.Message}"]
             };
         }
     }
@@ -643,7 +639,7 @@ public class SecurityPolicy
     /// <summary>
     /// Gets or sets the list of allowed dangerous assemblies.
     /// </summary>
-    public List<string> AllowedDangerousAssemblies { get; set; } = new();
+    public List<string> AllowedDangerousAssemblies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether to block packages with critical vulnerabilities.

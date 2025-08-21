@@ -458,7 +458,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
             // Reorder operations to minimize data movement
-            if (node.Method.Name == "OrderBy" || node.Method.Name == "OrderByDescending")
+            if (node.Method.Name is "OrderBy" or "OrderByDescending")
             {
                 // Check if there's a Where clause after OrderBy that could be moved before
                 var parent = node.Arguments[0];
@@ -570,7 +570,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
     internal static class FusionMetadataStore
     {
         private static readonly ThreadLocal<Dictionary<string, Dictionary<string, object>>> _store
-            = new(() => new Dictionary<string, Dictionary<string, object>>());
+            = new(() => []);
 
         public static void SetMetadata(string key, Dictionary<string, object> metadata) => _store.Value![key] = metadata;
 

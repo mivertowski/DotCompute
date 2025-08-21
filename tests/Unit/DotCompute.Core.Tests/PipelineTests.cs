@@ -1,7 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core;
 using DotCompute.Core.Pipelines;
 using Moq;
 using Xunit;

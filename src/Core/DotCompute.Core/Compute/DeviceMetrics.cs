@@ -1,8 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Aot;
-using DotCompute.Core.Execution;
+using DotCompute.Core.Device.Interfaces;
 using PipelineMonitor = DotCompute.Core.Pipelines.PerformanceMonitor;
 
 namespace DotCompute.Core.Compute

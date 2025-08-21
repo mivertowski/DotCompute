@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 
@@ -209,7 +208,7 @@ public class AuthenticodeValidationResult
     /// <summary>
     /// Gets or sets additional validation details.
     /// </summary>
-    public Dictionary<string, object> AdditionalDetails { get; set; } = new();
+    public Dictionary<string, object> AdditionalDetails { get; set; } = [];
 }
 
 /// <summary>

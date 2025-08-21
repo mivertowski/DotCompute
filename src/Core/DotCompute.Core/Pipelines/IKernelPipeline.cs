@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using DotCompute.Core.Device.Interfaces;
 
 namespace DotCompute.Core.Pipelines
 {

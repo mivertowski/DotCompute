@@ -6,7 +6,12 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Kernels;
-using DotCompute.Core.Memory;
+using DotCompute.Core.Execution.Types;
+using DotCompute.Core.Execution.Configuration;
+using DotCompute.Core.Execution.Metrics;
+using DotCompute.Core.Execution.Plans;
+using DotCompute.Core.Execution.Pipeline;
+using DotCompute.Core.Execution.Workload;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -917,9 +922,9 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Creates a Kernels-compatible kernel from an Execution kernel wrapper.
         /// </summary>
-        private static DotCompute.Core.Kernels.ManagedCompiledKernel CreateKernelsCompatibleKernel(DotCompute.Core.Execution.ManagedCompiledKernel executionKernel)
+        private static DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel CreateKernelsCompatibleKernel(DotCompute.Core.Execution.ManagedCompiledKernel executionKernel)
         {
-            return new DotCompute.Core.Kernels.ManagedCompiledKernel
+            return new DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel
             {
                 Name = executionKernel.Name,
                 Binary = [], // Simplified for demo

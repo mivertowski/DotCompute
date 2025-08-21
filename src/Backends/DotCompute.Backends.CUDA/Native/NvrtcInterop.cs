@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
-using System.Text;
 using Microsoft.Win32.SafeHandles;
 
 namespace DotCompute.Backends.CUDA.Native

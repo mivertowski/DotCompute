@@ -1,8 +1,5 @@
 using System.Diagnostics;
-using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
-
-using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Hardware.RTX2000.Tests.Utilities;
 
 
@@ -456,7 +453,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public double StandardDeviation
         {
             get; se []
-            public double[] AllTimes { get; set; } = Array.Empty<double>();
+            public private double[] AllTimes { get; set; } = Array.Empty<double>();
 
         public bool Equals(KernelExecutionResult? other)
         {

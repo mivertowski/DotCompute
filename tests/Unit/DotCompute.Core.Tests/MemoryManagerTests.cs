@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using CoreMemory = DotCompute.Core.Memory;
-using AbstractionsMemory = DotCompute.Abstractions;
 
 namespace DotCompute.Core.Tests;
 

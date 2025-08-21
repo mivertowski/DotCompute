@@ -13,8 +13,8 @@ namespace DotCompute.Algorithms.Types.Security;
 public class SecurityPolicy
 {
     private readonly ILogger<SecurityPolicy>? _logger;
-    private readonly Dictionary<string, ISecurityRule> _securityRules = new();
-    private readonly HashSet<string> _trustedPublishers = new();
+    private readonly Dictionary<string, ISecurityRule> _securityRules = [];
+    private readonly HashSet<string> _trustedPublishers = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SecurityPolicy"/> class.
@@ -58,7 +58,7 @@ public class SecurityPolicy
     /// <summary>
     /// Gets the directory-based security policies.
     /// </summary>
-    public Dictionary<string, SecurityLevel> DirectoryPolicies { get; } = new();
+    public Dictionary<string, SecurityLevel> DirectoryPolicies { get; } = [];
 
     /// <summary>
     /// Gets the set of trusted publisher certificate thumbprints.
@@ -133,7 +133,7 @@ public class SecurityPolicy
         {
             IsAllowed = true,
             SecurityLevel = SecurityLevel.High,
-            Violations = new List<string>()
+            Violations = []
         };
 
         // Check directory-based policies
@@ -304,7 +304,7 @@ public class SecurityEvaluationContext
     /// <summary>
     /// Gets or sets additional context metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 /// <summary>
@@ -325,7 +325,7 @@ public class SecurityEvaluationResult
     /// <summary>
     /// Gets or sets the list of security violations.
     /// </summary>
-    public List<string> Violations { get; set; } = new();
+    public List<string> Violations { get; set; } = [];
 }
 
 /// <summary>
@@ -338,7 +338,7 @@ public interface ISecurityRule
     /// </summary>
     /// <param name="context">The evaluation context.</param>
     /// <returns>The evaluation result.</returns>
-    SecurityEvaluationResult Evaluate(SecurityEvaluationContext context);
+    public SecurityEvaluationResult Evaluate(SecurityEvaluationContext context);
 }
 
 /// <summary>

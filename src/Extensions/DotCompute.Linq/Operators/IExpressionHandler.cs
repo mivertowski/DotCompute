@@ -17,14 +17,14 @@ public interface IExpressionHandler
     /// <param name="expression">The expression to handle.</param>
     /// <param name="context">The generation context.</param>
     /// <returns>The generated kernel code fragment.</returns>
-    string Handle(Expression expression, KernelGenerationContext context);
+    public string Handle(Expression expression, KernelGenerationContext context);
 
     /// <summary>
     /// Determines if this handler can process the given expression.
     /// </summary>
     /// <param name="expression">The expression to check.</param>
     /// <returns>True if the handler can process the expression; otherwise, false.</returns>
-    bool CanHandle(Expression expression);
+    public bool CanHandle(Expression expression);
 }
 
 /// <summary>

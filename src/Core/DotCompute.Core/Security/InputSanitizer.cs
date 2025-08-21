@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Globalization;
-using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -392,7 +390,7 @@ public sealed class InputSanitizer : IDisposable
             }
 
             // 2. Validate dimension limits (1D, 2D, 3D only)
-            if (workGroupSize.Length < 1 || workGroupSize.Length > 3)
+            if (workGroupSize.Length is < 1 or > 3)
             {
                 result.ValidationErrors.Add($"Invalid dimension count: {workGroupSize.Length}. Must be 1, 2, or 3");
                 result.IsValid = false;
@@ -659,7 +657,7 @@ public sealed class InputSanitizer : IDisposable
         var result = new StringBuilder();
         foreach (var c in sanitized)
         {
-            if (c >= 32 && c != 127 && c != 0) // Printable characters only
+            if (c is >= (char)32 and not (char)127 and not (char)0) // Printable characters only
             {
                 _ = result.Append(c);
             }
@@ -714,7 +712,7 @@ public sealed class InputSanitizer : IDisposable
         var result = new StringBuilder();
         foreach (var c in input)
         {
-            if (c >= 32 && c != 127 && c != 0) // Printable characters only
+            if (c is >= (char)32 and not (char)127 and not (char)0) // Printable characters only
             {
                 _ = result.Append(c);
             }
@@ -995,7 +993,7 @@ public sealed class SanitizationResult
     public TimeSpan ProcessingDuration => ProcessingEndTime - ProcessingStartTime;
     public bool IsSecure { get; set; }
     public bool IsValid { get; set; }
-    public List<InputThreat> SecurityThreats { get; } = new();
+    public List<InputThreat> SecurityThreats { get; } = [];
 }
 
 /// <summary>
@@ -1009,9 +1007,9 @@ public sealed class ParameterValidationResult
     public DateTimeOffset ValidationEndTime { get; set; }
     public bool IsValid { get; set; } = true;
     public bool HasInvalidParameters { get; set; }
-    public List<string> InvalidParameters { get; } = new();
-    public Dictionary<string, SanitizationResult> ParameterResults { get; } = new();
-    public List<InputThreat> SecurityThreats { get; } = new();
+    public List<string> InvalidParameters { get; } = [];
+    public Dictionary<string, SanitizationResult> ParameterResults { get; } = [];
+    public List<InputThreat> SecurityThreats { get; } = [];
 }
 
 /// <summary>
@@ -1023,7 +1021,7 @@ public sealed class PathValidationResult
     public string? SanitizedPath { get; set; }
     public required string BaseDirectory { get; init; }
     public bool IsValid { get; set; } = true;
-    public List<InputThreat> SecurityThreats { get; } = new();
+    public List<InputThreat> SecurityThreats { get; } = [];
 }
 
 /// <summary>
@@ -1037,8 +1035,8 @@ public sealed class WorkGroupValidationResult
     public int TotalWorkGroupSize { get; set; }
     public long TotalGlobalSize { get; set; }
     public bool IsValid { get; set; } = true;
-    public List<string> ValidationErrors { get; } = new();
-    public List<string> ValidationWarnings { get; } = new();
+    public List<string> ValidationErrors { get; } = [];
+    public List<string> ValidationWarnings { get; } = [];
 }
 
 /// <summary>

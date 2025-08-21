@@ -103,7 +103,7 @@ public class ServiceCircuitState
     /// <summary>
     /// Additional metrics and metadata
     /// </summary>
-    public Dictionary<string, object> Metrics { get; set; } = new();
+    public Dictionary<string, object> Metrics { get; set; } = [];
 
     private readonly CircuitBreakerConfiguration _config;
     private readonly ILogger _logger;

@@ -1,17 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Text;
 using DotCompute.Abstractions;
-using DotCompute.Core.Kernels;
 using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
-
-using DotCompute.Abstractions.Enums;
-using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Linq.Compilation;
 
 
@@ -38,7 +33,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         _kernelFactory = kernelFactory ?? throw new ArgumentNullException(nameof(kernelFactory));
         _optimizer = optimizer ?? throw new ArgumentNullException(nameof(optimizer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _templateCache = new Dictionary<string, KernelTemplate>();
+        _templateCache = [];
         _compilationSemaphore = new SemaphoreSlim(Environment.ProcessorCount);
     }
 
@@ -427,7 +422,7 @@ public interface IExpressionToKernelCompiler
     /// <summary>
     /// Compiles an expression tree into a GPU kernel.
     /// </summary>
-    Task<Operators.IKernel> CompileExpressionAsync(
+    public Task<Operators.IKernel> CompileExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
         CompilationOptions? options = null,
@@ -436,12 +431,12 @@ public interface IExpressionToKernelCompiler
     /// <summary>
     /// Validates whether an expression can be compiled to a kernel.
     /// </summary>
-    bool CanCompileExpression(Expression expression);
+    public bool CanCompileExpression(Expression expression);
 
     /// <summary>
     /// Gets resource estimation for compiling an expression.
     /// </summary>
-    ExpressionResourceEstimate EstimateResources(Expression expression);
+    public ExpressionResourceEstimate EstimateResources(Expression expression);
 }
 
 /// <summary>
@@ -449,15 +444,15 @@ public interface IExpressionToKernelCompiler
 /// </summary>
 public sealed class ExpressionAnalysisResult
 {
-    private readonly List<string> _supportedOperations = new();
-    private readonly List<Type> _parameterTypes = new();
+    private readonly List<string> _supportedOperations = [];
+    private readonly List<Type> _parameterTypes = [];
 
     public bool IsCompilable { get; set; }
     public IReadOnlyList<string> SupportedOperations => _supportedOperations;
     public IReadOnlyList<Type> ParameterTypes => _parameterTypes;
     public Type OutputType { get; set; } = typeof(object);
     public int ComplexityScore { get; set; }
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 
     internal List<string> SupportedOperationsInternal => _supportedOperations;
     internal List<Type> ParameterTypesInternal => _parameterTypes;
@@ -470,7 +465,7 @@ public sealed class FusionContext
 {
     public IReadOnlyList<string> FusedOperations { get; init; } = new List<string>();
     public string FusionType { get; init; } = string.Empty;
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
     public double EstimatedSpeedup { get; init; } = 1.0;
 }
 
@@ -493,7 +488,7 @@ public sealed class KernelTemplate
 {
     public string Name { get; init; } = string.Empty;
     public Func<Expression, Operators.KernelDefinition> CreateDefinition { get; init; } = _ => new Operators.KernelDefinition();
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>

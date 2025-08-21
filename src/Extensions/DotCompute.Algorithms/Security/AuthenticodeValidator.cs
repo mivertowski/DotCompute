@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 
@@ -160,9 +159,9 @@ public sealed class AuthenticodeValidator : IDisposable
             if (!chainValid)
             {
                 var criticalErrors = chain.ChainStatus.Where(status =>
-                    status.Status == X509ChainStatusFlags.NotTimeValid ||
-                    status.Status == X509ChainStatusFlags.Revoked ||
-                    status.Status == X509ChainStatusFlags.NotSignatureValid);
+                    status.Status is X509ChainStatusFlags.NotTimeValid or
+                    X509ChainStatusFlags.Revoked or
+                    X509ChainStatusFlags.NotSignatureValid);
 
                 if (criticalErrors.Any())
                 {

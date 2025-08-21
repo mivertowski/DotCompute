@@ -3,7 +3,6 @@
 
 using Xunit;
 using FluentAssertions;
-using System.Globalization;
 
 using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Accelerators;
@@ -314,7 +313,7 @@ public sealed class CoreStructsAndEnumsTests
         {
             OptimizationLevel = OptimizationLevel.Maximum,
             EnableDebugInfo = true,
-            AdditionalFlags = new List<string> { "-O3", "-ffast-math" },
+            AdditionalFlags = ["-O3", "-ffast-math"],
             Defines = new Dictionary<string, string> { ["DEBUG"] = "1" },
             EnableFastMath = true,
             UnrollLoops = true,

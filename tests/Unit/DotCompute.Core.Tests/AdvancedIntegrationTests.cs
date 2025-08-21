@@ -367,7 +367,7 @@ public sealed class AdvancedIntegrationTests(ITestOutputHelper output) : IAsyncL
         var executionTasks = kernels.Select(kernel =>
             _kernelExecutor.ExecuteAsync(
                 kernel,
-                new KernelArguments(),
+                [],
                 new KernelConfiguration(new Dim3(64), new Dim3(64))
             )).ToArray();
 

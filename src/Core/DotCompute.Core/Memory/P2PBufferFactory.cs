@@ -42,15 +42,9 @@ namespace DotCompute.Core.Memory
             P2PBufferOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(sourceBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(sourceBuffer);
 
-            if (targetDevice == null)
-            {
-                throw new ArgumentNullException(nameof(targetDevice));
-            }
+            ArgumentNullException.ThrowIfNull(targetDevice);
 
             options ??= P2PBufferOptions.Default;
 
@@ -76,10 +70,7 @@ namespace DotCompute.Core.Memory
             P2PBufferOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (device == null)
-            {
-                throw new ArgumentNullException(nameof(device));
-            }
+            ArgumentNullException.ThrowIfNull(device);
 
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
 
@@ -107,15 +98,9 @@ namespace DotCompute.Core.Memory
             P2PBufferOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(sourceBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(sourceBuffer);
 
-            if (targetDevice == null)
-            {
-                throw new ArgumentNullException(nameof(targetDevice));
-            }
+            ArgumentNullException.ThrowIfNull(targetDevice);
 
             ArgumentOutOfRangeException.ThrowIfNegative(startIndex);
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(elementCount);

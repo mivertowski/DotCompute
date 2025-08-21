@@ -1,8 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Globalization;
-using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;

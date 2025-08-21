@@ -2,14 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-
-using DotCompute.Abstractions.Enums;
-using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Linq.Operators;
 
 
@@ -86,7 +81,7 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
                 Language = _generatedKernel.Language,
                 TargetAccelerator = _accelerator,
                 OptimizationLevel = OptimizationLevel.Default,
-                Metadata = _generatedKernel.OptimizationMetadata ?? new Dictionary<string, object>()
+                Metadata = _generatedKernel.OptimizationMetadata ?? []
             };
 
             var result = await _compiler.Value.CompileKernelAsync(compilationRequest, cancellationToken)
@@ -497,7 +492,7 @@ internal class CpuFallbackCompiledKernel : DotCompute.Abstractions.ICompiledKern
 /// </summary>
 public interface IKernelCompiler
 {
-    Task<KernelCompilationResult> CompileKernelAsync(KernelCompilationRequest request, CancellationToken cancellationToken = default);
+    public Task<KernelCompilationResult> CompileKernelAsync(KernelCompilationRequest request, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -622,7 +617,7 @@ internal class CompiledKernelAdapter : ICompiledKernel
 
 public interface ICompiledKernel : IDisposable
 {
-    Task ExecuteAsync(KernelExecutionParameters parameters, CancellationToken cancellationToken = default);
+    public Task ExecuteAsync(KernelExecutionParameters parameters, CancellationToken cancellationToken = default);
 }
 
 public class KernelCompilationRequest
@@ -632,7 +627,7 @@ public class KernelCompilationRequest
     public required Core.Kernels.KernelLanguage Language { get; init; }
     public required IAccelerator TargetAccelerator { get; init; }
     public OptimizationLevel OptimizationLevel { get; init; } = OptimizationLevel.Default;
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 public class KernelCompilationResult
@@ -641,14 +636,14 @@ public class KernelCompilationResult
     public string? ErrorMessage { get; init; }
     public ICompiledKernel? CompiledKernel { get; init; }
     public TimeSpan CompilationTime { get; init; }
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 public class KernelExecutionParameters
 {
     public required int[] GlobalWorkSize { get; init; }
     public int[]? LocalWorkSize { get; init; }
-    public Dictionary<string, object> Arguments { get; init; } = new();
+    public Dictionary<string, object> Arguments { get; init; } = [];
     public int SharedMemorySize { get; init; }
 }
 

@@ -1,11 +1,7 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -478,8 +474,8 @@ public sealed class SystemHealthMetrics
 /// </summary>
 public sealed class CollectedMetrics
 {
-    public Dictionary<string, long> Counters { get; set; } = new();
-    public Dictionary<string, double[]> Histograms { get; set; } = new();
-    public Dictionary<string, double> Gauges { get; set; } = new();
+    public Dictionary<string, long> Counters { get; set; } = [];
+    public Dictionary<string, double[]> Histograms { get; set; } = [];
+    public Dictionary<string, double> Gauges { get; set; } = [];
     public DateTimeOffset CollectedAt { get; set; } = DateTimeOffset.UtcNow;
 }

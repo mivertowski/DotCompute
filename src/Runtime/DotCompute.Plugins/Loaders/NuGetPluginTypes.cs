@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
-using System.Text.Json.Serialization;
 using DotCompute.Plugins.Interfaces;
 
 namespace DotCompute.Plugins.Loaders;
@@ -208,7 +207,7 @@ public class PluginSignature
     /// <summary>
     /// Gets or sets validation errors.
     /// </summary>
-    public List<string> ValidationErrors { get; set; } = new();
+    public List<string> ValidationErrors { get; set; } = [];
 }
 
 /// <summary>

@@ -72,7 +72,7 @@ namespace DotCompute.Core.Memory.P2P
                 if (_isInitialized)
                 {
                     _logger.LogWarning("P2P Memory Manager is already initialized");
-                    return new P2PInitializationSummary { IsSuccessful = false, ErrorMessage = "Already initialized", InitializationSteps = new List<P2PInitializationStep>() };
+                    return new P2PInitializationSummary { IsSuccessful = false, ErrorMessage = "Already initialized", InitializationSteps = [] };
                 }
 
                 var initStartTime = DateTimeOffset.UtcNow;
@@ -81,7 +81,7 @@ namespace DotCompute.Core.Memory.P2P
                 var summary = new P2PInitializationSummary
                 {
                     TotalDevices = devices.Length,
-                    InitializationSteps = new List<P2PInitializationStep>()
+                    InitializationSteps = []
                 };
 
                 try

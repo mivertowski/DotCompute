@@ -9,7 +9,6 @@ using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
 using AbstractionsValidationResult = DotCompute.Abstractions.ValidationResult;
-using MetalValidationResult = DotCompute.Backends.Metal.Utilities.ValidationResult;
 
 using DotCompute.Abstractions.Kernels;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements

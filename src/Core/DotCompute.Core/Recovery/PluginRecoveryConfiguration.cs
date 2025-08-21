@@ -64,12 +64,12 @@ public class PluginRecoveryConfiguration
     /// <summary>
     /// List of critical exceptions that should trigger immediate recovery
     /// </summary>
-    public HashSet<string> CriticalExceptionTypes { get; set; } = new()
-    {
+    public HashSet<string> CriticalExceptionTypes { get; set; } =
+    [
         typeof(OutOfMemoryException).FullName!,
         typeof(AccessViolationException).FullName!,
         typeof(StackOverflowException).FullName!
-    };
+    ];
 
     /// <summary>
     /// Whether to enable plugin isolation in separate containers
@@ -139,7 +139,7 @@ public class PluginRecoveryConfiguration
         }
 
 
-        if (MaxCpuUsagePercent <= 0 || MaxCpuUsagePercent > 100)
+        if (MaxCpuUsagePercent is <= 0 or > 100)
         {
 
             throw new ArgumentException("Max CPU usage must be between 0 and 100", nameof(MaxCpuUsagePercent));
@@ -225,7 +225,7 @@ public class PluginHealthReport
     /// <summary>
     /// Additional metrics
     /// </summary>
-    public Dictionary<string, object> Metrics { get; set; } = new();
+    public Dictionary<string, object> Metrics { get; set; } = [];
 
     /// <summary>
     /// Overall health score (0.0 to 1.0)

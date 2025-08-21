@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using DotCompute.Backends.CPU.Threading;
 
 namespace DotCompute.Backends.CPU.Performance;
 

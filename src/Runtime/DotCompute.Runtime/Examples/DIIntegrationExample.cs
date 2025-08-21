@@ -2,12 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Accelerators;
 using DotCompute.Abstractions.Kernels;
 // using DotCompute.Algorithms.Types; // Temporarily commented out due to compilation issues
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.DependencyInjection;
-using DotCompute.Runtime;
 using DotCompute.Runtime.Factories;
 using DotCompute.Runtime.Services;
 using Microsoft.Extensions.Configuration;
@@ -239,7 +237,7 @@ public static class DIIntegrationExample
 /// </summary>
 public interface ICustomComputeService
 {
-    Task PerformComputationAsync();
+    public Task PerformComputationAsync();
 }
 
 public class CustomComputeService : ICustomComputeService
@@ -383,7 +381,7 @@ public ValueTask DisposeAsync()
 // Supporting service interfaces and implementations
 public interface ICustomDataProvider
 {
-    Task<byte[]> GetInitializationDataAsync();
+    public Task<byte[]> GetInitializationDataAsync();
 }
 
 public class CustomDataProvider : ICustomDataProvider
@@ -397,8 +395,8 @@ public class CustomDataProvider : ICustomDataProvider
 
 public interface IComputationLogger
 {
-    Task LogInitializationAsync(string pluginId, int dataSize);
-    Task LogExecutionAsync(string pluginId, int inputSize);
+    public Task LogInitializationAsync(string pluginId, int dataSize);
+    public Task LogExecutionAsync(string pluginId, int inputSize);
 }
 
 public class ComputationLogger : IComputationLogger
@@ -427,7 +425,7 @@ public class ComputationLogger : IComputationLogger
 
 public interface IPluginSpecificService
 {
-    Task ProcessAsync();
+    public Task ProcessAsync();
 }
 
 public class PluginSpecificService : IPluginSpecificService

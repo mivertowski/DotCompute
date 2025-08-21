@@ -2,11 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Security;
@@ -304,7 +301,7 @@ public sealed class CryptographicSecurity : IDisposable
                 return result;
             }
 
-            if (keyContainer.KeyType != KeyType.RSA && keyContainer.KeyType != KeyType.ECDSA)
+            if (keyContainer.KeyType is not KeyType.RSA and not KeyType.ECDSA)
             {
                 result.ErrorMessage = $"Key type not suitable for signing: {keyContainer.KeyType}";
                 return result;
@@ -1266,9 +1263,9 @@ internal sealed class SecureKeyContainer : IDisposable
 /// </summary>
 public interface ICryptographicResult
 {
-    bool IsSuccessful { get; set; }
-    string? ErrorMessage { get; set; }
-    DateTimeOffset OperationTime { get; init; }
+    public bool IsSuccessful { get; set; }
+    public string? ErrorMessage { get; set; }
+    public DateTimeOffset OperationTime { get; init; }
 }
 
 /// <summary>
@@ -1351,8 +1348,8 @@ public sealed class AlgorithmValidationResult
     public required string Context { get; init; }
     public DateTimeOffset ValidationTime { get; init; }
     public bool IsApproved { get; set; }
-    public List<string> SecurityIssues { get; } = new();
-    public List<string> Recommendations { get; } = new();
+    public List<string> SecurityIssues { get; } = [];
+    public List<string> Recommendations { get; } = [];
 }
 
 /// <summary>
@@ -1365,8 +1362,8 @@ public sealed class KeyRotationResult
     public TimeSpan Duration => EndTime - StartTime;
     public bool ForceRotation { get; init; }
     public int TotalKeysProcessed { get; set; }
-    public List<string> SuccessfulRotations { get; } = new();
-    public Dictionary<string, string> FailedRotations { get; } = new();
+    public List<string> SuccessfulRotations { get; } = [];
+    public Dictionary<string, string> FailedRotations { get; } = [];
 }
 
 

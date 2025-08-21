@@ -1,11 +1,6 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -93,8 +88,8 @@ public sealed class DistributedTracer : IDisposable
             StartTime = DateTimeOffset.UtcNow,
             Activity = activity,
             ParentSpanContext = parentSpanContext,
-            Tags = tags?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new(),
-            Spans = new ConcurrentBag<SpanData>(),
+            Tags = tags?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? [],
+            Spans = [],
             DeviceOperations = new ConcurrentDictionary<string, DeviceOperationTrace>()
         };
 
@@ -144,7 +139,7 @@ public sealed class DistributedTracer : IDisposable
             DeviceId = deviceId,
             SpanKind = spanKind,
             StartTime = startTime,
-            Attributes = attributes?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new(),
+            Attributes = attributes?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? [],
             ParentSpanId = traceContext.Activity?.SpanId.ToString()
         };
 
@@ -177,7 +172,7 @@ public sealed class DistributedTracer : IDisposable
                 OperationCount = 1,
                 FirstOperationTime = startTime,
                 LastOperationTime = startTime,
-                ActiveSpans = new ConcurrentBag<SpanContext> { spanContext }
+                ActiveSpans = [spanContext]
             },
             (key, existing) =>
             {
@@ -566,7 +561,7 @@ public sealed class DistributedTracer : IDisposable
 
         // Find spans that took disproportionately long
 
-        if (spans.Any())
+        if (spans.Count != 0)
         {
             var averageDuration = spans.Average(s => s.Duration.TotalMilliseconds);
             var threshold = averageDuration * 2;
@@ -701,7 +696,7 @@ public sealed class DistributedTracer : IDisposable
             // Also cleanup completed spans
 
             var expiredCompleted = _completedSpans
-                .Where(kvp => kvp.Value.Any() && kvp.Value.Max(s => s.EndTime) < expiredThreshold)
+                .Where(kvp => kvp.Value.Count != 0 && kvp.Value.Max(s => s.EndTime) < expiredThreshold)
                 .Select(kvp => kvp.Key)
                 .ToList();
 
@@ -712,7 +707,7 @@ public sealed class DistributedTracer : IDisposable
             }
 
 
-            if (expiredTraces.Any() || expiredCompleted.Any())
+            if (expiredTraces.Count != 0 || expiredCompleted.Count != 0)
             {
                 _logger.LogInformation("Cleaned up {ActiveCount} expired active traces and {CompletedCount} completed traces",
                     expiredTraces.Count, expiredCompleted.Count);

@@ -17,14 +17,14 @@ public interface IPluginServiceProvider
     /// </summary>
     /// <param name="pluginId">The plugin identifier</param>
     /// <returns>A service scope for the plugin</returns>
-    IServiceScope CreatePluginScope(string pluginId);
+    public IServiceScope CreatePluginScope(string pluginId);
 
     /// <summary>
     /// Registers plugin-specific services
     /// </summary>
     /// <param name="pluginId">The plugin identifier</param>
     /// <param name="configureServices">Action to configure plugin services</param>
-    void RegisterPluginServices(string pluginId, Action<IServiceCollection> configureServices);
+    public void RegisterPluginServices(string pluginId, Action<IServiceCollection> configureServices);
 
     /// <summary>
     /// Resolves a service for a specific plugin
@@ -32,7 +32,7 @@ public interface IPluginServiceProvider
     /// <typeparam name="T">The service type</typeparam>
     /// <param name="pluginId">The plugin identifier</param>
     /// <returns>The resolved service instance</returns>
-    T? GetPluginService<T>(string pluginId) where T : class;
+    public T? GetPluginService<T>(string pluginId) where T : class;
 
     /// <summary>
     /// Resolves a service for a specific plugin
@@ -40,7 +40,7 @@ public interface IPluginServiceProvider
     /// <param name="pluginId">The plugin identifier</param>
     /// <param name="serviceType">The service type</param>
     /// <returns>The resolved service instance</returns>
-    object? GetPluginService(string pluginId, Type serviceType);
+    public object? GetPluginService(string pluginId, Type serviceType);
 
     /// <summary>
     /// Checks if a service is registered for a plugin
@@ -48,13 +48,13 @@ public interface IPluginServiceProvider
     /// <param name="pluginId">The plugin identifier</param>
     /// <param name="serviceType">The service type</param>
     /// <returns>True if the service is registered</returns>
-    bool IsServiceRegistered(string pluginId, Type serviceType);
+    public bool IsServiceRegistered(string pluginId, Type serviceType);
 
     /// <summary>
     /// Disposes plugin-specific services
     /// </summary>
     /// <param name="pluginId">The plugin identifier</param>
-    ValueTask DisposePluginServicesAsync(string pluginId);
+    public ValueTask DisposePluginServicesAsync(string pluginId);
 }
 
 /// <summary>
@@ -68,7 +68,7 @@ public interface IPluginDependencyResolver
     /// <param name="pluginType">The plugin type</param>
     /// <param name="serviceProvider">The service provider</param>
     /// <returns>Constructor arguments</returns>
-    object[] ResolveConstructorDependencies(Type pluginType, IServiceProvider serviceProvider);
+    public object[] ResolveConstructorDependencies(Type pluginType, IServiceProvider serviceProvider);
 
     /// <summary>
     /// Injects property dependencies into a plugin instance
@@ -76,7 +76,7 @@ public interface IPluginDependencyResolver
     /// <param name="pluginInstance">The plugin instance</param>
     /// <param name="serviceProvider">The service provider</param>
     /// <returns>A task representing the async operation</returns>
-    Task InjectPropertiesAsync(object pluginInstance, IServiceProvider serviceProvider);
+    public Task InjectPropertiesAsync(object pluginInstance, IServiceProvider serviceProvider);
 
     /// <summary>
     /// Validates that all plugin dependencies can be resolved
@@ -84,14 +84,14 @@ public interface IPluginDependencyResolver
     /// <param name="pluginType">The plugin type</param>
     /// <param name="serviceProvider">The service provider</param>
     /// <returns>Validation result</returns>
-    PluginDependencyValidationResult ValidateDependencies(Type pluginType, IServiceProvider serviceProvider);
+    public PluginDependencyValidationResult ValidateDependencies(Type pluginType, IServiceProvider serviceProvider);
 
     /// <summary>
     /// Gets the required services for a plugin type
     /// </summary>
     /// <param name="pluginType">The plugin type</param>
     /// <returns>Required service types</returns>
-    IEnumerable<Type> GetRequiredServices(Type pluginType);
+    public IEnumerable<Type> GetRequiredServices(Type pluginType);
 }
 
 /// <summary>
@@ -106,7 +106,7 @@ public interface IPluginLifecycleManager
     /// <param name="pluginType">The concrete plugin type</param>
     /// <param name="serviceProvider">The service provider</param>
     /// <returns>The plugin instance</returns>
-    Task<T> CreatePluginAsync<T>(Type pluginType, IServiceProvider serviceProvider) where T : class;
+    public Task<T> CreatePluginAsync<T>(Type pluginType, IServiceProvider serviceProvider) where T : class;
 
     /// <summary>
     /// Initializes a plugin with its dependencies
@@ -114,28 +114,28 @@ public interface IPluginLifecycleManager
     /// <param name="plugin">The plugin instance</param>
     /// <param name="serviceProvider">The service provider</param>
     /// <returns>A task representing the async operation</returns>
-    Task InitializePluginAsync(object plugin, IServiceProvider serviceProvider);
+    public Task InitializePluginAsync(object plugin, IServiceProvider serviceProvider);
 
     /// <summary>
     /// Disposes a plugin and its dependencies
     /// </summary>
     /// <param name="plugin">The plugin instance</param>
     /// <returns>A task representing the async operation</returns>
-    ValueTask DisposePluginAsync(object plugin);
+    public ValueTask DisposePluginAsync(object plugin);
 
     /// <summary>
     /// Gets the lifecycle state of a plugin
     /// </summary>
     /// <param name="pluginId">The plugin identifier</param>
     /// <returns>The lifecycle state</returns>
-    PluginLifecycleState GetPluginState(string pluginId);
+    public PluginLifecycleState GetPluginState(string pluginId);
 
     /// <summary>
     /// Registers lifecycle event handlers for a plugin
     /// </summary>
     /// <param name="pluginId">The plugin identifier</param>
     /// <param name="eventHandlers">Event handlers</param>
-    void RegisterLifecycleHandlers(string pluginId, PluginLifecycleHandlers eventHandlers);
+    public void RegisterLifecycleHandlers(string pluginId, PluginLifecycleHandlers eventHandlers);
 }
 
 /// <summary>
@@ -150,21 +150,21 @@ public interface IPluginFactory
     /// <param name="pluginType">The concrete plugin type</param>
     /// <param name="serviceScope">The service scope for the plugin</param>
     /// <returns>The plugin instance</returns>
-    Task<T> CreateAsync<T>(Type pluginType, IServiceScope serviceScope) where T : class;
+    public Task<T> CreateAsync<T>(Type pluginType, IServiceScope serviceScope) where T : class;
 
     /// <summary>
     /// Checks if a type can be created as a plugin
     /// </summary>
     /// <param name="pluginType">The plugin type</param>
     /// <returns>True if the type can be created as a plugin</returns>
-    bool CanCreate(Type pluginType);
+    public bool CanCreate(Type pluginType);
 
     /// <summary>
     /// Gets the required services for creating a plugin
     /// </summary>
     /// <param name="pluginType">The plugin type</param>
     /// <returns>Required service types</returns>
-    IEnumerable<ServiceDescriptor> GetRequiredServiceDescriptors(Type pluginType);
+    public IEnumerable<ServiceDescriptor> GetRequiredServiceDescriptors(Type pluginType);
 }
 
 /// <summary>
@@ -214,8 +214,8 @@ public class PluginDependencyValidationResult
         {
             IsValid = false,
             Errors = errors.ToList(),
-            MissingDependencies = missingDependencies?.ToList() ?? new List<Type>(),
-            CircularDependencies = circularDependencies?.ToList() ?? new List<string>()
+            MissingDependencies = missingDependencies?.ToList() ?? [],
+            CircularDependencies = circularDependencies?.ToList() ?? []
         };
 }
 

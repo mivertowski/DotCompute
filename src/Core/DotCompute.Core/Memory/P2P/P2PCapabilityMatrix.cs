@@ -131,16 +131,10 @@ namespace DotCompute.Core.Memory.P2P
             IAccelerator device2,
             CancellationToken cancellationToken = default)
         {
-            if (device1 == null)
-            {
-                throw new ArgumentNullException(nameof(device1));
-            }
+            ArgumentNullException.ThrowIfNull(device1);
 
 
-            if (device2 == null)
-            {
-                throw new ArgumentNullException(nameof(device2));
-            }
+            ArgumentNullException.ThrowIfNull(device2);
 
 
             if (device1.Info.Id == device2.Info.Id)
@@ -431,7 +425,7 @@ namespace DotCompute.Core.Memory.P2P
             queue.Enqueue(new P2PPathCandidate
             {
                 CurrentDevice = sourceDevice,
-                Path = new List<IAccelerator> { sourceDevice },
+                Path = [sourceDevice],
                 TotalBandwidth = double.MaxValue,
                 TotalLatency = 0
             });
@@ -893,9 +887,9 @@ namespace DotCompute.Core.Memory.P2P
         public double AverageNVLinkBandwidth { get; set; }
         public double AveragePCIeBandwidth { get; set; }
         public double AverageInfiniBandBandwidth { get; set; }
-        public List<P2PTopologyCluster> TopologyClusters { get; set; } = new();
-        public List<P2PBandwidthBottleneck> BandwidthBottlenecks { get; set; } = new();
-        public List<P2PHighPerformancePath> HighPerformancePaths { get; set; } = new();
+        public List<P2PTopologyCluster> TopologyClusters { get; set; } = [];
+        public List<P2PBandwidthBottleneck> BandwidthBottlenecks { get; set; } = [];
+        public List<P2PHighPerformancePath> HighPerformancePaths { get; set; } = [];
     }
 
     /// <summary>
@@ -939,7 +933,7 @@ namespace DotCompute.Core.Memory.P2P
     public sealed class P2PMatrixValidationResult
     {
         public bool IsValid { get; set; }
-        public List<string> Issues { get; set; } = new();
+        public List<string> Issues { get; set; } = [];
         public DateTimeOffset ValidationTime { get; set; }
     }
 

@@ -153,7 +153,7 @@ public class PluginRecoveryContext
     /// <summary>
     /// Additional context data
     /// </summary>
-    public Dictionary<string, object> Context { get; set; } = new();
+    public Dictionary<string, object> Context { get; set; } = [];
 
     /// <summary>
     /// Path to plugin file or directory

@@ -54,17 +54,17 @@ public class CompilationOptions
     /// <summary>
     /// Compiler-specific defines
     /// </summary>
-    public Dictionary<string, string> Defines { get; set; } = new();
+    public Dictionary<string, string> Defines { get; set; } = [];
 
     /// <summary>
     /// Include paths for headers
     /// </summary>
-    public List<string> IncludePaths { get; set; } = new();
+    public List<string> IncludePaths { get; set; } = [];
 
     /// <summary>
     /// Additional compiler flags
     /// </summary>
-    public List<string> AdditionalFlags { get; set; } = new();
+    public List<string> AdditionalFlags { get; set; } = [];
 
     /// <summary>
     /// Maximum compilation time before timeout

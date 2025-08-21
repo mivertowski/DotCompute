@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
-using DotCompute.Abstractions;
 
 namespace DotCompute.Abstractions.Kernels;
 
@@ -41,7 +40,7 @@ public class CompiledKernel : IDisposable
     /// A dictionary containing compilation-specific metadata such as compilation options,
     /// native handles, shared memory requirements, and device-specific configuration.
     /// </value>
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 
     /// <summary>
     /// Gets a value indicating whether this kernel instance has been disposed.
@@ -71,7 +70,7 @@ public class CompiledKernel : IDisposable
 
         Name = name;
         CompiledBinary = binary;
-        Metadata = metadata ?? new Dictionary<string, object>();
+        Metadata = metadata ?? [];
 
 
         if (options != null)

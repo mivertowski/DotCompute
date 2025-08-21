@@ -84,7 +84,7 @@ public static class PerformanceBenchmarks
     /// </summary>
     public sealed class BenchmarkReport
     {
-        public List<BenchmarkResult> Results { get; } = new();
+        public List<BenchmarkResult> Results { get; } = [];
         public DateTime Timestamp { get; } = DateTime.UtcNow;
         public string SystemInfo { get; }
 

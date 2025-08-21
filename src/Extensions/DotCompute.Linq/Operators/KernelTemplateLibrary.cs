@@ -3,9 +3,6 @@
 
 using DotCompute.Abstractions;
 using System.Text;
-
-using DotCompute.Abstractions.Enums;
-using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Linq.Operators;
 
 
@@ -21,7 +18,7 @@ public class KernelTemplateLibrary
     /// </summary>
     public KernelTemplateLibrary()
     {
-        _templates = new Dictionary<string, IKernelTemplate>();
+        _templates = [];
         InitializeTemplates();
     }
 
@@ -66,7 +63,7 @@ public interface IKernelTemplate
     /// <param name="definition">The kernel definition.</param>
     /// <param name="accelerator">The target accelerator.</param>
     /// <returns>A generated kernel.</returns>
-    GeneratedKernel Generate(KernelDefinition definition, IAccelerator accelerator);
+    public GeneratedKernel Generate(KernelDefinition definition, IAccelerator accelerator);
 }
 
 /// <summary>
@@ -255,8 +252,8 @@ public class MapKernelTemplate : IKernelTemplate
         {
             Name = param.Name,
             Type = param.Type,
-            IsInput = param.Direction == ParameterDirection.In || param.Direction == ParameterDirection.InOut,
-            IsOutput = param.Direction == ParameterDirection.Out || param.Direction == ParameterDirection.InOut
+            IsInput = param.Direction is ParameterDirection.In or ParameterDirection.InOut,
+            IsOutput = param.Direction is ParameterDirection.Out or ParameterDirection.InOut
         };
     }
 }
@@ -291,8 +288,8 @@ public class FilterKernelTemplate : IKernelTemplate
         {
             Name = param.Name,
             Type = param.Type,
-            IsInput = param.Direction == ParameterDirection.In || param.Direction == ParameterDirection.InOut,
-            IsOutput = param.Direction == ParameterDirection.Out || param.Direction == ParameterDirection.InOut
+            IsInput = param.Direction is ParameterDirection.In or ParameterDirection.InOut,
+            IsOutput = param.Direction is ParameterDirection.Out or ParameterDirection.InOut
         };
     }
 }
@@ -327,8 +324,8 @@ public class ReduceKernelTemplate : IKernelTemplate
         {
             Name = param.Name,
             Type = param.Type,
-            IsInput = param.Direction == ParameterDirection.In || param.Direction == ParameterDirection.InOut,
-            IsOutput = param.Direction == ParameterDirection.Out || param.Direction == ParameterDirection.InOut
+            IsInput = param.Direction is ParameterDirection.In or ParameterDirection.InOut,
+            IsOutput = param.Direction is ParameterDirection.Out or ParameterDirection.InOut
         };
     }
 }
@@ -363,8 +360,8 @@ public class SortKernelTemplate : IKernelTemplate
         {
             Name = param.Name,
             Type = param.Type,
-            IsInput = param.Direction == ParameterDirection.In || param.Direction == ParameterDirection.InOut,
-            IsOutput = param.Direction == ParameterDirection.Out || param.Direction == ParameterDirection.InOut
+            IsInput = param.Direction is ParameterDirection.In or ParameterDirection.InOut,
+            IsOutput = param.Direction is ParameterDirection.Out or ParameterDirection.InOut
         };
     }
 }

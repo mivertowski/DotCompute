@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using DotCompute.Abstractions.Enums;
 
 namespace DotCompute.Abstractions.Kernels
@@ -26,10 +25,7 @@ namespace DotCompute.Abstractions.Kernels
         public BytecodeKernelSource(byte[] bytecode, string name = "main", KernelLanguage language = KernelLanguage.Binary,
                                    string entryPoint = "main", params string[] dependencies)
         {
-            if (bytecode == null)
-            {
-                throw new ArgumentNullException(nameof(bytecode));
-            }
+            ArgumentNullException.ThrowIfNull(bytecode);
 
             if (bytecode.Length == 0)
             {

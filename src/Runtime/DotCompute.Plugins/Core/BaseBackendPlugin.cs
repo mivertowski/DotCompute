@@ -5,7 +5,6 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Base backend plugin has dynamic logging requirements

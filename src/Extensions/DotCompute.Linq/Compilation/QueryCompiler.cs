@@ -1,16 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
-
-using DotCompute.Abstractions.Enums;
-using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Linq.Compilation;
 
 

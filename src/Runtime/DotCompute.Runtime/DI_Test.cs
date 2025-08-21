@@ -3,8 +3,6 @@
 
 #if DEBUG
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using DotCompute.Runtime;
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.Factories;
 using DotCompute.Runtime.Services;
@@ -96,13 +94,13 @@ public static class ConfigurationTest
         var pluginOptions = new DotComputePluginOptions
         {
             EnablePlugins = true,
-            PluginDirectories = new List<string> { "./plugins" },
+            PluginDirectories = ["./plugins"],
             EnableIsolation = true,
             EnableHotReload = false,
             MaxConcurrentLoads = 3,
             LoadTimeoutSeconds = 30,
             ValidateSignatures = false,
-            TrustedPublishers = new List<string>(),
+            TrustedPublishers = [],
             EnableDependencyInjection = true,
             PluginLifetime = (DotCompute.Runtime.Configuration.ServiceLifetime)Microsoft.Extensions.DependencyInjection.ServiceLifetime.Scoped
         };

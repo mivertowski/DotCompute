@@ -4,8 +4,6 @@
 using System.Linq.Expressions;
 using System.Text;
 using DotCompute.Abstractions;
-
-using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Linq.Operators;
 
 
@@ -24,7 +22,7 @@ public class KernelSourceGenerator
     public KernelSourceGenerator(AcceleratorType targetAcceleratorType)
     {
         _targetAcceleratorType = targetAcceleratorType;
-        _templates = new Dictionary<string, ICodeTemplate>();
+        _templates = [];
         InitializeTemplates();
     }
 
@@ -308,7 +306,7 @@ public interface ICodeTemplate
     /// <param name="definition">The kernel definition.</param>
     /// <param name="acceleratorType">The target accelerator type.</param>
     /// <returns>Generated code.</returns>
-    string GenerateCode(KernelDefinition definition, AcceleratorType acceleratorType);
+    public string GenerateCode(KernelDefinition definition, AcceleratorType acceleratorType);
 }
 
 /// <summary>

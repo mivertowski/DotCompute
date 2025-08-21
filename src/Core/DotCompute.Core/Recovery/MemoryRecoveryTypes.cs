@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Recovery;
@@ -14,7 +13,7 @@ public class MemoryRecoveryContext
     public string Operation { get; set; } = string.Empty;
     public long RequestedBytes { get; set; }
     public string? PoolId { get; set; }
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 /// <summary>
@@ -220,15 +219,15 @@ public sealed class MemoryPressureMonitor : IDisposable
 /// </summary>
 public interface IMemoryPool : IDisposable
 {
-    string PoolId { get; }
-    long TotalAllocated { get; }
-    long TotalAvailable { get; }
-    int ActiveAllocations { get; }
+    public string PoolId { get; }
+    public long TotalAllocated { get; }
+    public long TotalAvailable { get; }
+    public int ActiveAllocations { get; }
 
 
-    Task CleanupAsync(CancellationToken cancellationToken = default);
-    Task DefragmentAsync(CancellationToken cancellationToken = default);
-    Task EmergencyCleanupAsync(CancellationToken cancellationToken = default);
+    public Task CleanupAsync(CancellationToken cancellationToken = default);
+    public Task DefragmentAsync(CancellationToken cancellationToken = default);
+    public Task EmergencyCleanupAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>

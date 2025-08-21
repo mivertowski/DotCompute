@@ -540,15 +540,12 @@ namespace DotCompute.Backends.CUDA.Integration
     // Supporting types and extension methods
     public static class CudaContextExtensions
     {
-        private static readonly Dictionary<CudaContext, IAccelerator> _contextToAcceleratorMap = new();
+        private static readonly Dictionary<CudaContext, IAccelerator> _contextToAcceleratorMap = [];
         private static readonly object _mapLock = new();
 
         public static IAccelerator ToIAccelerator(this CudaContext context)
         {
-            if (context == null)
-            {
-                throw new ArgumentNullException(nameof(context));
-            }
+            ArgumentNullException.ThrowIfNull(context);
 
             lock (_mapLock)
             {
@@ -702,7 +699,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     _context = context ?? throw new ArgumentNullException(nameof(context));
                     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
                     Name = name;
-                    _kernelCache = new Dictionary<string, CudaCompiledKernel>();
+                    _kernelCache = [];
                 }
 
                 public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)

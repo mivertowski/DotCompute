@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
-using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
@@ -138,7 +137,7 @@ public sealed class CuBLASWrapper : IDisposable
     {
         _device = device ?? throw new ArgumentNullException(nameof(device));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _performanceCache = new Dictionary<string, PerformanceMetrics>();
+        _performanceCache = [];
 
         Initialize();
     }

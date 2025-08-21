@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Accelerators;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;

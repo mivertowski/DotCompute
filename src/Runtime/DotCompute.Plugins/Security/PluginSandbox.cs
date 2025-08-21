@@ -2,11 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Runtime.Loader;
 using System.Security;
-using System.Security.Permissions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Plugins.Security;

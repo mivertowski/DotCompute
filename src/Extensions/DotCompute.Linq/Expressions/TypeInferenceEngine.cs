@@ -260,8 +260,8 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
 
     private static HashSet<Type> InitializeSupportedTypes()
     {
-        return new HashSet<Type>
-    {
+        return
+    [
         // Primitive types
         typeof(bool), typeof(byte), typeof(sbyte),
         typeof(short), typeof(ushort),
@@ -271,7 +271,7 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
         
         // Array types are handled dynamically
         // Struct types need individual validation
-    };
+    ];
     }
 
     private bool IsGpuCompatible(Type type)
@@ -385,22 +385,22 @@ public interface ITypeInferenceEngine
     /// <summary>
     /// Infers types throughout an expression tree and validates GPU compatibility.
     /// </summary>
-    TypeInferenceResult InferTypes(Expression expression);
+    public TypeInferenceResult InferTypes(Expression expression);
 
     /// <summary>
     /// Validates that all types in an expression are GPU-compatible.
     /// </summary>
-    TypeValidationResult ValidateTypes(Expression expression);
+    public TypeValidationResult ValidateTypes(Expression expression);
 
     /// <summary>
     /// Suggests type optimizations for better GPU performance.
     /// </summary>
-    IEnumerable<TypeOptimizationSuggestion> SuggestOptimizations(Expression expression);
+    public IEnumerable<TypeOptimizationSuggestion> SuggestOptimizations(Expression expression);
 
     /// <summary>
     /// Determines the optimal GPU type for a given .NET type.
     /// </summary>
-    Type GetOptimalGpuType(Type netType);
+    public Type GetOptimalGpuType(Type netType);
 }
 
 /// <summary>
@@ -411,22 +411,22 @@ public sealed class TypeInferenceResult
     /// <summary>
     /// Gets the inferred types mapped by type.
     /// </summary>
-    public Dictionary<Type, TypeInfo> InferredTypes { get; init; } = new();
+    public Dictionary<Type, TypeInfo> InferredTypes { get; init; } = [];
 
     /// <summary>
     /// Gets the required type conversions.
     /// </summary>
-    public List<TypeConversion> TypeConversions { get; init; } = new();
+    public List<TypeConversion> TypeConversions { get; init; } = [];
 
     /// <summary>
     /// Gets validation errors found during inference.
     /// </summary>
-    public List<TypeValidationError> ValidationErrors { get; init; } = new();
+    public List<TypeValidationError> ValidationErrors { get; init; } = [];
 
     /// <summary>
     /// Gets metadata about the type analysis.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>
@@ -442,17 +442,17 @@ public sealed class TypeValidationResult
     /// <summary>
     /// Gets validation errors and warnings.
     /// </summary>
-    public List<TypeValidationError> Errors { get; init; } = new();
+    public List<TypeValidationError> Errors { get; init; } = [];
 
     /// <summary>
     /// Gets the inferred types.
     /// </summary>
-    public Dictionary<Type, TypeInfo> InferredTypes { get; init; } = new();
+    public Dictionary<Type, TypeInfo> InferredTypes { get; init; } = [];
 
     /// <summary>
     /// Gets required type conversions.
     /// </summary>
-    public List<TypeConversion> TypeConversions { get; init; } = new();
+    public List<TypeConversion> TypeConversions { get; init; } = [];
 }
 
 /// <summary>
@@ -468,12 +468,12 @@ public sealed class TypeInfo
     /// <summary>
     /// Gets the locations where this type is used.
     /// </summary>
-    public List<Expression> UsageLocations { get; init; } = new();
+    public List<Expression> UsageLocations { get; init; } = [];
 
     /// <summary>
     /// Gets the usage context (parameter, return value, intermediate, etc.).
     /// </summary>
-    public List<TypeUsageContext> UsageContexts { get; init; } = new();
+    public List<TypeUsageContext> UsageContexts { get; init; } = [];
 
     /// <summary>
     /// Gets whether this type needs conversion for GPU use.
@@ -739,9 +739,9 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
     private readonly HashSet<Type> _supportedTypes;
     private readonly Dictionary<Type, TypeCapabilities> _typeCapabilities;
     private readonly ILogger _logger;
-    private readonly Dictionary<Type, TypeInfo> _inferredTypes = new();
-    private readonly List<TypeConversion> _typeConversions = new();
-    private readonly List<TypeValidationError> _validationErrors = new();
+    private readonly Dictionary<Type, TypeInfo> _inferredTypes = [];
+    private readonly List<TypeConversion> _typeConversions = [];
+    private readonly List<TypeValidationError> _validationErrors = [];
 
     public TypeInferenceVisitor(
         HashSet<Type> supportedTypes,
@@ -931,7 +931,7 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
     private static bool IsNumericType(Type type)
     {
         var code = Type.GetTypeCode(type);
-        return code >= TypeCode.SByte && code <= TypeCode.Decimal;
+        return code is >= TypeCode.SByte and <= TypeCode.Decimal;
     }
 
     private static TypeCode GetWiderType(TypeCode code1, TypeCode code2)

@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.CompilerServices;
-
 namespace DotCompute.Algorithms.SignalProcessing;
 
 
@@ -140,7 +138,7 @@ public static class SignalProcessor
     /// <returns>The filter coefficients.</returns>
     public static float[] DesignLowPassFIR(float cutoffFreq, int filterLength, WindowType windowType = WindowType.Hamming)
     {
-        if (cutoffFreq <= 0 || cutoffFreq >= 0.5f)
+        if (cutoffFreq is <= 0 or >= 0.5f)
         {
             throw new ArgumentException("Cutoff frequency must be between 0 and 0.5 (Nyquist).");
         }

@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
-using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
@@ -35,7 +34,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         public IntPtr FunctionHandle => _function;
 
         private readonly string _entryPoint;
-        private static readonly Dictionary<IntPtr, CudaCompiledKernel> _kernelLookup = new();
+        private static readonly Dictionary<IntPtr, CudaCompiledKernel> _kernelLookup = [];
         private readonly object _lookupLock = new();
 
         public CudaCompiledKernel(

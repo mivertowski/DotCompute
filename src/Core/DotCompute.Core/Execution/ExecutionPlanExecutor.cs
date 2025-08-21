@@ -5,8 +5,11 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Kernels;
+using DotCompute.Core.Execution.Types;
+using DotCompute.Core.Execution.Plans;
 using Microsoft.Extensions.Logging;
+
+using DotCompute.Core.Execution.Metrics;
 
 namespace DotCompute.Core.Execution
 {
@@ -1003,7 +1006,7 @@ namespace DotCompute.Core.Execution
         public ResourceTracker(ILogger logger)
         {
             _logger = logger;
-            _deviceUsage = new Dictionary<string, DeviceResourceUsage>();
+            _deviceUsage = [];
         }
 
         public async ValueTask TrackExecutionStartAsync(IAccelerator[] devices, CancellationToken cancellationToken)
@@ -1073,7 +1076,7 @@ namespace DotCompute.Core.Execution
         public ExecutionProfiler(ILogger logger)
         {
             _logger = logger;
-            _profilingData = new Dictionary<Guid, ExecutionProfilingData>();
+            _profilingData = [];
         }
 
         public async ValueTask StartProfilingAsync(Guid executionId, ExecutionStrategyType strategy, CancellationToken cancellationToken)
@@ -1083,7 +1086,7 @@ namespace DotCompute.Core.Execution
                 ExecutionId = executionId,
                 Strategy = strategy,
                 StartTime = DateTimeOffset.UtcNow,
-                Events = new List<ProfilingEvent>()
+                Events = []
             };
 
             _logger.LogTrace("Started profiling for execution {ExecutionId} with strategy {Strategy}", executionId, strategy);
@@ -1110,7 +1113,7 @@ namespace DotCompute.Core.Execution
                 Strategy = ExecutionStrategyType.Single,
                 StartTime = DateTimeOffset.UtcNow,
                 EndTime = DateTimeOffset.UtcNow,
-                Events = new List<ProfilingEvent>()
+                Events = []
             };
         }
 
@@ -1134,7 +1137,7 @@ namespace DotCompute.Core.Execution
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
         public TimeSpan TotalDuration { get; set; }
-        public List<ProfilingEvent> Events { get; set; } = new();
+        public List<ProfilingEvent> Events { get; set; } = [];
     }
 
     public class ProfilingEvent
@@ -1142,7 +1145,7 @@ namespace DotCompute.Core.Execution
         public DateTimeOffset Timestamp { get; set; }
         public string EventType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public Dictionary<string, object> Properties { get; set; } = new();
+        public Dictionary<string, object> Properties { get; set; } = [];
     }
 
     // Extension to ParallelExecutionResult to include profiling data

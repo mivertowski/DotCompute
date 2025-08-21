@@ -5,7 +5,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.ObjectModel;
-using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using DotCompute.Plugins.Core;

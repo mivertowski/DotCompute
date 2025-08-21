@@ -611,7 +611,7 @@ public sealed class SandboxExecutionResult
     public bool Success { get; set; }
     public string? ErrorMessage { get; set; }
     public ResourceUsage? ResourceUsage { get; set; }
-    public List<string> SecurityViolations { get; } = new();
+    public List<string> SecurityViolations { get; } = [];
     public object? Result { get; set; }
 }
 

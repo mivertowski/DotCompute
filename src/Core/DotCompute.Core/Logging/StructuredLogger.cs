@@ -1,11 +1,6 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Core.Types;
@@ -386,7 +381,7 @@ public sealed class StructuredLogger : ILogger, IDisposable
         if (eventType == SecurityEventType.SecurityViolation)
         {
             _baseLogger.LogWarning("Security violation detected: {Description} with context {@Context}",
-                description, context ?? new Dictionary<string, object>());
+                description, context ?? []);
         }
     }
 
@@ -436,7 +431,7 @@ public sealed class StructuredLogger : ILogger, IDisposable
             FormattedMessage = formatter(state, exception),
             Exception = exception,
             EventId = eventId,
-            Properties = new Dictionary<string, object>()
+            Properties = []
         };
 
         // Add global context
@@ -591,7 +586,7 @@ public sealed class StructuredLogEntry
     public string? CorrelationId { get; set; }
     public string? TraceId { get; set; }
     public string? SpanId { get; set; }
-    public Dictionary<string, object> Properties { get; set; } = new();
+    public Dictionary<string, object> Properties { get; set; } = [];
     public LogPerformanceMetrics? PerformanceMetrics { get; set; }
 }
 
@@ -636,7 +631,7 @@ public sealed class DistributedOperationMetrics
     public double ParallelismEfficiency { get; set; }
     public double DeviceEfficiency { get; set; }
     public double CriticalPathDuration { get; set; }
-    public Dictionary<string, DeviceOperationMetrics> DeviceMetrics { get; set; } = new();
+    public Dictionary<string, DeviceOperationMetrics> DeviceMetrics { get; set; } = [];
 }
 
 public sealed class DeviceOperationMetrics

@@ -3,7 +3,6 @@ using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;

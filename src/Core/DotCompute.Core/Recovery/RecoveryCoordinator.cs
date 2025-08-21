@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using DotCompute.Core.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
 

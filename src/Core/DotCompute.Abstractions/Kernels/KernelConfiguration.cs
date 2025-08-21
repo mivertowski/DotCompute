@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Kernels;
@@ -31,7 +30,7 @@ public class KernelConfiguration
     /// A dictionary containing kernel-specific options such as grid dimensions,
     /// block dimensions, shared memory size, and other execution parameters.
     /// </value>
-    public Dictionary<string, object> Options { get; set; } = new();
+    public Dictionary<string, object> Options { get; set; } = [];
 
 
     /// <summary>
@@ -60,19 +59,13 @@ public class KernelConfiguration
     /// Gets the grid dimension from the options, if specified.
     /// </summary>
     /// <returns>The grid dimension, or null if not configured.</returns>
-    public Dim3? GetGridDimension()
-    {
-        return Options.TryGetValue("GridDimension", out var value) && value is Dim3 dim ? dim : null;
-    }
+    public Dim3? GetGridDimension() => Options.TryGetValue("GridDimension", out var value) && value is Dim3 dim ? dim : null;
 
     /// <summary>
     /// Gets the block dimension from the options, if specified.
     /// </summary>
     /// <returns>The block dimension, or null if not configured.</returns>
-    public Dim3? GetBlockDimension()
-    {
-        return Options.TryGetValue("BlockDimension", out var value) && value is Dim3 dim ? dim : null;
-    }
+    public Dim3? GetBlockDimension() => Options.TryGetValue("BlockDimension", out var value) && value is Dim3 dim ? dim : null;
 
     /// <summary>
     /// Sets the grid and block dimensions for kernel execution.

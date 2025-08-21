@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
@@ -800,7 +799,7 @@ namespace DotCompute.Backends.CUDA.Execution
         {
             lock (_lockObject)
             {
-                _ = _dependencies.GetOrAdd(dependent, _ => new HashSet<StreamId>()).Add(dependency);
+                _ = _dependencies.GetOrAdd(dependent, _ => []).Add(dependency);
             }
         }
 
@@ -859,7 +858,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaExecutionGraph
     {
-        private readonly List<CudaExecutionNode> _nodes = new();
+        private readonly List<CudaExecutionNode> _nodes = [];
 
         public void AddNode(string id, Func<IntPtr, Task> operation,
                            CudaStreamPriority priority = CudaStreamPriority.Normal,
@@ -917,7 +916,7 @@ namespace DotCompute.Backends.CUDA.Execution
         public string Id { get; set; } = string.Empty;
         public Func<IntPtr, Task> Operation { get; set; } = null!;
         public CudaStreamPriority Priority { get; set; }
-        public List<string> Dependencies { get; set; } = new();
+        public List<string> Dependencies { get; set; } = [];
     }
 
     /// <summary>
@@ -925,7 +924,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaExecutionLevel
     {
-        public List<CudaExecutionNode> Nodes { get; set; } = new();
+        public List<CudaExecutionNode> Nodes { get; set; } = [];
     }
 
     /// <summary>
@@ -933,7 +932,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaExecutionPlan
     {
-        public List<CudaExecutionLevel> Levels { get; set; } = new();
+        public List<CudaExecutionLevel> Levels { get; set; } = [];
         public int TotalNodes { get; set; }
     }
 }

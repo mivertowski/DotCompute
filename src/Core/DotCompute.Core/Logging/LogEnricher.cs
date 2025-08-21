@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -47,7 +44,7 @@ public sealed class LogEnricher : IDisposable
 
 
         _contextualData = new ConcurrentDictionary<string, object>();
-        _threadLocalContext = new ThreadLocal<Dictionary<string, object>>(() => new Dictionary<string, object>());
+        _threadLocalContext = new ThreadLocal<Dictionary<string, object>>(() => []);
 
         // Initialize system context
 
@@ -267,7 +264,7 @@ public sealed class LogEnricher : IDisposable
         {
             DeviceId = deviceId,
             DeviceType = deviceType,
-            Capabilities = capabilities ?? new Dictionary<string, object>(),
+            Capabilities = capabilities ?? [],
             Timestamp = DateTimeOffset.UtcNow
         };
 
@@ -704,7 +701,7 @@ public sealed class LogEnricherOptions
     public int ContextRetentionHours { get; set; } = 24;
     public bool EnablePerformanceContext { get; set; } = true;
     public bool EnableSecurityContext { get; set; } = true;
-    public List<string> AdditionalSensitivePatterns { get; set; } = new();
+    public List<string> AdditionalSensitivePatterns { get; set; } = [];
 }
 
 public enum ContextScope
@@ -727,7 +724,7 @@ public sealed class DeviceContext
 {
     public string DeviceId { get; set; } = string.Empty;
     public string DeviceType { get; set; } = string.Empty;
-    public Dictionary<string, object> Capabilities { get; set; } = new();
+    public Dictionary<string, object> Capabilities { get; set; } = [];
     public DateTimeOffset Timestamp { get; set; }
 }
 
@@ -742,5 +739,5 @@ public sealed class KernelCompilationInfo
 {
     public TimeSpan CompilationTime { get; set; }
     public string OptimizationLevel { get; set; } = string.Empty;
-    public Dictionary<string, object> CompilerFlags { get; set; } = new();
+    public Dictionary<string, object> CompilerFlags { get; set; } = [];
 }

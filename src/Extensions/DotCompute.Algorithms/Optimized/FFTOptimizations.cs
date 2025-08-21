@@ -1,13 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using SystemComplex = System.Numerics.Complex;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-using DotCompute.Algorithms.SignalProcessing;
 using Complex = DotCompute.Algorithms.SignalProcessing.Complex;
 
 namespace DotCompute.Algorithms.Optimized;
@@ -30,7 +26,7 @@ public static class FFTOptimizations
 
     // Pre-computed twiddle factor cache
 
-    private static readonly Dictionary<int, Complex[]> TwiddleCache = new();
+    private static readonly Dictionary<int, Complex[]> TwiddleCache = [];
     private static readonly object TwiddleCacheLock = new();
 
 
@@ -356,7 +352,7 @@ public static class FFTOptimizations
         }
 
 
-        return n == 1 ? factors : new List<int>();
+        return n == 1 ? factors : [];
     }
 
 

@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Accelerators;
 using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -10,8 +9,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading.Channels;
-using System.Numerics;
 using System.Buffers;
 
 namespace DotCompute.Runtime.Services;
@@ -739,7 +736,7 @@ public sealed class RuntimeAcceleratorManager : IAcceleratorManager
     public bool IsDisposed { get; private set; }
 
     private readonly ILogger<RuntimeAcceleratorManager> _logger;
-    private readonly List<IAccelerator> _accelerators = new();
+    private readonly List<IAccelerator> _accelerators = [];
     private readonly ConcurrentDictionary<string, IAcceleratorProvider> _providers = new();
     private readonly SemaphoreSlim _initializationSemaphore = new(1, 1);
     private bool _initialized;

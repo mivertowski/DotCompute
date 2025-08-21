@@ -774,13 +774,13 @@ public sealed class SecurityValidationOptions
     public int MaxRegistersPerThread { get; set; } = 32;
     public int MaxExecutionTimeMs { get; set; } = 10000;
     public KernelPrivilegeLevel RequiredPrivilegeLevel { get; set; } = KernelPrivilegeLevel.Standard;
-    public Collection<SecurityRule> CustomSecurityRules { get; init; } = new();
+    public Collection<SecurityRule> CustomSecurityRules { get; init; } = [];
 }
 
 public sealed class SecurityValidationResult
 {
     public bool IsSecure { get; set; }
-    public Collection<SecurityViolation> SecurityViolations { get; init; } = new();
+    public Collection<SecurityViolation> SecurityViolations { get; init; } = [];
     public SecurityValidationSummary ValidationSummary { get; set; } = new();
 }
 
@@ -864,20 +864,20 @@ public enum MemoryAccessType { Read, Write, ReadWrite }
 public sealed class MemoryValidationResult
 {
     public bool IsValid { get; set; }
-    public Collection<SecurityViolation> Violations { get; init; } = new();
+    public Collection<SecurityViolation> Violations { get; init; } = [];
 }
 
 public sealed class PrivilegeValidationResult
 {
     public bool HasSufficientPrivileges { get; set; }
-    public Collection<KernelPrivilege> RequiredPrivileges { get; init; } = new();
-    public Collection<string> ViolatedRestrictions { get; init; } = new();
+    public Collection<KernelPrivilege> RequiredPrivileges { get; init; } = [];
+    public Collection<string> ViolatedRestrictions { get; init; } = [];
 }
 
 public sealed class CodeInjectionValidationResult
 {
     public bool IsSafe { get; set; }
-    public Collection<InjectionVector> InjectionVectors { get; init; } = new();
+    public Collection<InjectionVector> InjectionVectors { get; init; } = [];
 }
 
 public sealed class InjectionVector
@@ -893,7 +893,7 @@ public enum InjectionType { SQL, Command, Script, Path }
 public sealed class CryptographicValidationResult
 {
     public bool IsSecure { get; set; }
-    public IList<CryptographicIssue> CryptographicIssues { get; } = new List<CryptographicIssue>();
+    public IList<CryptographicIssue> CryptographicIssues { get; } = [];
 }
 
 public sealed class CryptographicIssue
@@ -909,7 +909,7 @@ public enum CryptographicIssueType { WeakRandomNumberGeneration, WeakEncryption,
 public sealed class DataLeakageValidationResult
 {
     public bool IsSecure { get; set; }
-    public IList<DataLeakageRisk> DataLeakageRisks { get; } = new List<DataLeakageRisk>();
+    public IList<DataLeakageRisk> DataLeakageRisks { get; } = [];
 }
 
 public sealed class DataLeakageRisk

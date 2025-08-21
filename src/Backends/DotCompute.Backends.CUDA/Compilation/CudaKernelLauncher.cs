@@ -262,7 +262,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 {
                     var elementCount = buffer.SizeInBytes / size;
                     // Reasonable element count range
-                    if (elementCount >= 100 && elementCount <= 100_000_000)
+                    if (elementCount is >= 100 and <= 100_000_000)
                     {
                         return size;
                     }

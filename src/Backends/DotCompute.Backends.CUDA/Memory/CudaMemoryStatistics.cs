@@ -254,8 +254,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public double MemoryPressure { get; init; }
         public double FragmentationRatio { get; init; }
         public double MemoryUtilization { get; init; }
-        public Dictionary<string, long> OperationCounts { get; init; } = new();
-        public Dictionary<string, TimeSpan> OperationTimes { get; init; } = new();
+        public Dictionary<string, long> OperationCounts { get; init; } = [];
+        public Dictionary<string, TimeSpan> OperationTimes { get; init; } = [];
         public DateTime Timestamp { get; init; }
 
         // Computed properties

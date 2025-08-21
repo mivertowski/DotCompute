@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security;
 using System.Text;
 using System.Text.Json;
 using System.Xml;
@@ -26,7 +25,7 @@ public sealed class SecurityLogger : IDisposable
     private readonly Timer _auditFlushTimer;
     private readonly Timer _integrityCheckTimer;
     private readonly string _auditLogPath;
-    private readonly Dictionary<string, object> _sessionMetadata = new();
+    private readonly Dictionary<string, object> _sessionMetadata = [];
     private volatile bool _disposed;
     private long _sequenceNumber;
 
@@ -509,7 +508,7 @@ public sealed class SecurityLogger : IDisposable
 
                 new Dictionary<string, object>(additionalData) :
 
-                new Dictionary<string, object>()
+                []
         };
 
         // Security context already set in initializer above
@@ -573,7 +572,7 @@ public sealed class SecurityLogger : IDisposable
                 FirstEventTime = entry.Timestamp,
                 LastEventTime = entry.Timestamp,
                 EventCount = 1,
-                EventTypes = new HashSet<SecurityEventType> { entry.EventType }
+                EventTypes = [entry.EventType]
             },
             (key, existing) =>
             {
@@ -1120,7 +1119,7 @@ public sealed class ThreatDetails
     public required string Category { get; init; }
     public required string AttackVector { get; init; }
     public string? Mitigation { get; init; }
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>
@@ -1134,7 +1133,7 @@ public sealed class SourceInformation
     public string UserAgent { get; init; } = "Unknown";
     public int ProcessId { get; init; }
     public int ThreadId { get; init; }
-    public Dictionary<string, object> AdditionalContext { get; init; } = new();
+    public Dictionary<string, object> AdditionalContext { get; init; } = [];
 }
 
 /// <summary>

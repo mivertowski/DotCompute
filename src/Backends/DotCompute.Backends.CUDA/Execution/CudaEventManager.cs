@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
@@ -887,7 +886,7 @@ namespace DotCompute.Backends.CUDA.Execution
         public double AverageOverheadMs { get; set; }
 
         // Statistical analysis
-        public Dictionary<int, double> Percentiles { get; set; } = new();
+        public Dictionary<int, double> Percentiles { get; set; } = [];
         public double CoefficientOfVariation { get; set; }
         public int OutlierCount { get; set; }
         public double ThroughputOpsPerSecond { get; set; }

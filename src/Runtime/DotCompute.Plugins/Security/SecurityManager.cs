@@ -370,7 +370,7 @@ public class AssemblyMetadataAnalysis
     /// <summary>
     /// Gets the list of suspicious patterns found.
     /// </summary>
-    public List<string> SuspiciousPatterns { get; } = new();
+    public List<string> SuspiciousPatterns { get; } = [];
 
     /// <summary>
     /// Gets whether the analysis found any suspicious patterns.

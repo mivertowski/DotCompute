@@ -4,6 +4,10 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
+using DotCompute.Core.Execution.Workload;
+using DotCompute.Core.Execution.Types;
+using DotCompute.Core.Execution.Configuration;
+using DotCompute.Core.Execution.Metrics;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Execution
@@ -368,15 +372,9 @@ namespace DotCompute.Core.Execution
         IKernelManager kernelManager,
         CancellationToken cancellationToken)
         {
-            if (workItem == null)
-            {
-                throw new ArgumentNullException(nameof(workItem));
-            }
+            ArgumentNullException.ThrowIfNull(workItem);
 
-            if (device == null)
-            {
-                throw new ArgumentNullException(nameof(device));
-            }
+            ArgumentNullException.ThrowIfNull(device);
 
             var startTime = DateTimeOffset.UtcNow;
 

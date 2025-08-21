@@ -1,7 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Compilation;
@@ -9,8 +8,6 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
-
-using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Hardware.Cuda.Tests;
 

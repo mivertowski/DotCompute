@@ -3,7 +3,6 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
-using DotCompute.Linq.Operators;
 
 namespace DotCompute.Linq.Compilation;
 
@@ -174,32 +173,32 @@ public interface IComputePlan
     /// <summary>
     /// Gets the unique identifier for this compute plan.
     /// </summary>
-    Guid Id { get; }
+    public Guid Id { get; }
 
     /// <summary>
     /// Gets the stages in the compute plan.
     /// </summary>
-    IReadOnlyList<IComputeStage> Stages { get; }
+    public IReadOnlyList<IComputeStage> Stages { get; }
 
     /// <summary>
     /// Gets the input parameters required by the plan.
     /// </summary>
-    IReadOnlyDictionary<string, Type> InputParameters { get; }
+    public IReadOnlyDictionary<string, Type> InputParameters { get; }
 
     /// <summary>
     /// Gets the output type of the compute plan.
     /// </summary>
-    Type OutputType { get; }
+    public Type OutputType { get; }
 
     /// <summary>
     /// Gets the estimated memory requirements in bytes.
     /// </summary>
-    long EstimatedMemoryUsage { get; }
+    public long EstimatedMemoryUsage { get; }
 
     /// <summary>
     /// Gets metadata about the compute plan.
     /// </summary>
-    IReadOnlyDictionary<string, object> Metadata { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
 }
 
 /// <summary>
@@ -210,27 +209,27 @@ public interface IComputeStage
     /// <summary>
     /// Gets the stage identifier.
     /// </summary>
-    string Id { get; }
+    public string Id { get; }
 
     /// <summary>
     /// Gets the kernel to execute for this stage.
     /// </summary>
-    Operators.IKernel Kernel { get; }
+    public Operators.IKernel Kernel { get; }
 
     /// <summary>
     /// Gets the input buffers for this stage.
     /// </summary>
-    IReadOnlyList<string> InputBuffers { get; }
+    public IReadOnlyList<string> InputBuffers { get; }
 
     /// <summary>
     /// Gets the output buffer for this stage.
     /// </summary>
-    string OutputBuffer { get; }
+    public string OutputBuffer { get; }
 
     /// <summary>
     /// Gets the execution configuration for this stage.
     /// </summary>
-    ExecutionConfiguration Configuration { get; }
+    public ExecutionConfiguration Configuration { get; }
 }
 
 /// <summary>

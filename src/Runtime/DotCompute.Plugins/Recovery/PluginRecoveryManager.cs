@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Loader;
 using DotCompute.Core.Recovery;
-using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 using CorePluginHealthStatus = DotCompute.Core.Recovery.PluginHealthStatus;
@@ -502,12 +501,12 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
     private List<string> CheckDependencyConflicts(Assembly assembly)
         // Dependency conflict detection implementation
 
-        => new List<string>();
+        => [];
 
     private List<string> CheckSecurityIssues(Assembly assembly)
         // Security issue detection implementation
 
-        => new List<string>();
+        => [];
 
     private double CalculateOverallHealth(Dictionary<string, PluginHealthInfo> pluginHealth)
     {
@@ -758,7 +757,7 @@ public sealed class PluginHealthInfo
     /// <summary>
     /// Additional custom metrics
     /// </summary>
-    public Dictionary<string, object> CustomMetrics { get; set; } = new();
+    public Dictionary<string, object> CustomMetrics { get; set; } = [];
 
 
     /// <summary>
@@ -804,25 +803,25 @@ public sealed class PluginCompatibilityResult
     /// <summary>
     /// List of dependency conflicts found
     /// </summary>
-    public List<string> DependencyConflicts { get; set; } = new();
+    public List<string> DependencyConflicts { get; set; } = [];
 
 
     /// <summary>
     /// List of security issues identified
     /// </summary>
-    public List<string> SecurityIssues { get; set; } = new();
+    public List<string> SecurityIssues { get; set; } = [];
 
 
     /// <summary>
     /// List of compatibility warnings
     /// </summary>
-    public List<string> Warnings { get; set; } = new();
+    public List<string> Warnings { get; set; } = [];
 
 
     /// <summary>
     /// Recommended actions to resolve issues
     /// </summary>
-    public List<string> RecommendedActions { get; set; } = new();
+    public List<string> RecommendedActions { get; set; } = [];
 
 
     /// <summary>
@@ -846,7 +845,7 @@ public sealed class PluginCompatibilityResult
     /// <summary>
     /// Required dependencies and their versions
     /// </summary>
-    public Dictionary<string, string> RequiredDependencies { get; set; } = new();
+    public Dictionary<string, string> RequiredDependencies { get; set; } = [];
 
 
     /// <summary>
@@ -1287,8 +1286,8 @@ public sealed class PluginHealthState
     {
         PluginId = pluginId ?? throw new ArgumentNullException(nameof(pluginId));
         _config = config ?? throw new ArgumentNullException(nameof(config));
-        _errorTimestamps = new List<DateTimeOffset>();
-        _restartTimestamps = new List<DateTimeOffset>();
+        _errorTimestamps = [];
+        _restartTimestamps = [];
         CreatedAt = DateTimeOffset.UtcNow;
     }
 

@@ -1,12 +1,5 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -42,7 +35,7 @@ public sealed class LogBuffer : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options?.Value ?? new LogBufferOptions();
-        _sinks = sinks?.ToList() ?? new List<ILogSink>();
+        _sinks = sinks?.ToList() ?? [];
 
         // Create bounded channel for backpressure handling
 
@@ -146,7 +139,7 @@ public sealed class LogBuffer : IDisposable
         try
         {
             var entries = await CollectPendingEntriesAsync(cancellationToken);
-            if (entries.Any())
+            if (entries.Count != 0)
             {
                 await ProcessBatchAsync(entries, cancellationToken);
             }
@@ -172,7 +165,6 @@ public sealed class LogBuffer : IDisposable
     {
         ThrowIfDisposed();
 
-
         return new LogBufferStatistics
         {
             TotalEnqueued = Interlocked.Read(ref _totalEnqueued),
@@ -195,15 +187,9 @@ public sealed class LogBuffer : IDisposable
     {
         ThrowIfDisposed();
 
-
-        if (sink == null)
-        {
-            throw new ArgumentNullException(nameof(sink));
-        }
-
+        ArgumentNullException.ThrowIfNull(sink);
 
         _sinks.Add(sink);
-
 
         try
         {
@@ -253,7 +239,7 @@ public sealed class LogBuffer : IDisposable
     private async Task ProcessLogEntriesAsync()
     {
         var batch = new List<StructuredLogEntry>(_options.BatchSize);
-        var batchTimer = new Timer(async _ => await ProcessCurrentBatch(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        var batchTimer = new Timer(async _ => await ProcessCurrentBatchAsync(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
 
 
         try
@@ -277,7 +263,7 @@ public sealed class LogBuffer : IDisposable
 
             // Process any remaining entries
 
-            if (batch.Any())
+            if (batch.Count != 0)
             {
                 await ProcessBatchAsync(batch, _cancellationTokenSource.Token);
             }
@@ -292,13 +278,13 @@ public sealed class LogBuffer : IDisposable
         }
         finally
         {
-            batchTimer.Dispose();
+            await batchTimer.DisposeAsync();
         }
 
 
-        async Task ProcessCurrentBatch()
+        async Task ProcessCurrentBatchAsync()
         {
-            if (batch.Any())
+            if (batch.Count != 0)
             {
                 await ProcessBatchAsync(batch, _cancellationTokenSource.Token);
                 batch.Clear();
@@ -308,7 +294,7 @@ public sealed class LogBuffer : IDisposable
 
     private async Task ProcessBatchAsync(List<StructuredLogEntry> batch, CancellationToken cancellationToken)
     {
-        if (!batch.Any())
+        if (batch.Count == 0)
         {
             return;
         }
@@ -541,7 +527,7 @@ public sealed class LogBuffer : IDisposable
                 try
                 {
                     var entries = await CollectPendingEntriesAsync(_cancellationTokenSource.Token);
-                    if (entries.Any())
+                    if (entries.Count != 0)
                     {
                         await ProcessBatchAsync(entries, _cancellationTokenSource.Token);
                     }
@@ -628,17 +614,17 @@ public sealed class LogBuffer : IDisposable
 // Supporting interfaces and data structures
 public interface ILogSink : IDisposable
 {
-    void Initialize();
-    Task WriteAsync(StructuredLogEntry entry, CancellationToken cancellationToken = default);
-    Task WriteBatchAsync(List<StructuredLogEntry> entries, CancellationToken cancellationToken = default);
-    Task FlushAsync(CancellationToken cancellationToken = default);
+    public void Initialize();
+    public Task WriteAsync(StructuredLogEntry entry, CancellationToken cancellationToken = default);
+    public Task WriteBatchAsync(List<StructuredLogEntry> entries, CancellationToken cancellationToken = default);
+    public Task FlushAsync(CancellationToken cancellationToken = default);
 }
 
 public interface IHealthCheckable
 {
-    bool IsHealthy { get; }
-    void MarkUnhealthy(Exception? exception = null);
-    void MarkHealthy();
+    public bool IsHealthy { get; }
+    public void MarkUnhealthy(Exception? exception = null);
+    public void MarkHealthy();
 }
 
 public sealed class LogBufferOptions
@@ -653,8 +639,8 @@ public sealed class LogBufferOptions
 
     public int CompressionThreshold { get; set; } = 50;
     public LogLevel MinimumLogLevel { get; set; } = LogLevel.Debug;
-    public List<string> ExcludedCategories { get; set; } = new();
-    public List<Func<StructuredLogEntry, bool>> CustomFilters { get; set; } = new();
+    public List<string> ExcludedCategories { get; set; } = [];
+    public List<Func<StructuredLogEntry, bool>> CustomFilters { get; set; } = [];
 }
 
 public sealed class LogBufferStatistics
@@ -747,7 +733,7 @@ public sealed class FileSink : ILogSink, IHealthCheckable
     }
 
 
-    public async Task WriteAsync(StructuredLogEntry entry, CancellationToken cancellationToken = default) => await WriteBatchAsync(new List<StructuredLogEntry> { entry }, cancellationToken);
+    public async Task WriteAsync(StructuredLogEntry entry, CancellationToken cancellationToken = default) => await WriteBatchAsync([entry], cancellationToken);
 
 
     public async Task WriteBatchAsync(List<StructuredLogEntry> entries, CancellationToken cancellationToken = default)

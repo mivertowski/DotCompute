@@ -16,7 +16,7 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Gets the supported accelerator type for this generator.
         /// </summary>
-        AcceleratorType AcceleratorType { get; }
+        public AcceleratorType AcceleratorType { get; }
 
         /// <summary>
         /// Generates kernel source code from an expression.
@@ -24,7 +24,7 @@ namespace DotCompute.Core.Kernels
         /// <param name="expression">The expression to compile.</param>
         /// <param name="context">The kernel generation context.</param>
         /// <returns>The generated kernel.</returns>
-        GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context);
+        public GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context);
 
         /// <summary>
         /// Generates kernel source code for a specific operation.
@@ -34,21 +34,21 @@ namespace DotCompute.Core.Kernels
         /// <param name="outputType">The output data type.</param>
         /// <param name="context">The kernel generation context.</param>
         /// <returns>The generated kernel.</returns>
-        GeneratedKernel GenerateOperationKernel(string operation, Type[] inputTypes, Type outputType, KernelGenerationContext context);
+        public GeneratedKernel GenerateOperationKernel(string operation, Type[] inputTypes, Type outputType, KernelGenerationContext context);
 
         /// <summary>
         /// Validates if an expression can be compiled to a kernel.
         /// </summary>
         /// <param name="expression">The expression to validate.</param>
         /// <returns>True if the expression can be compiled, false otherwise.</returns>
-        bool CanCompile(Expression expression);
+        public bool CanCompile(Expression expression);
 
         /// <summary>
         /// Gets optimization hints for the kernel compiler.
         /// </summary>
         /// <param name="context">The kernel generation context.</param>
         /// <returns>Optimization hints.</returns>
-        KernelOptimizationHints GetOptimizationHints(KernelGenerationContext context);
+        public KernelOptimizationHints GetOptimizationHints(KernelGenerationContext context);
     }
 
     /// <summary>

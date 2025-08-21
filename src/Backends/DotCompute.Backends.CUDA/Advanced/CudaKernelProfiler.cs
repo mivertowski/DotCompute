@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
-using DotCompute.Core.Kernels;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
@@ -373,7 +372,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         public double MaxTime { get; set; }
         public double MedianTime { get; set; }
         public double StandardDeviation { get; set; }
-        public Dictionary<int, double> Percentiles { get; set; } = new();
+        public Dictionary<int, double> Percentiles { get; set; } = [];
     }
 
     /// <summary>
@@ -403,7 +402,7 @@ namespace DotCompute.Backends.CUDA.Advanced
     public sealed class BottleneckAnalysis
     {
         public BottleneckType PrimaryBottleneck { get; set; }
-        public List<string> Suggestions { get; set; } = new();
+        public List<string> Suggestions { get; set; } = [];
     }
 
     /// <summary>
@@ -425,7 +424,7 @@ namespace DotCompute.Backends.CUDA.Advanced
     {
         public string KernelName { get; set; } = string.Empty;
         public CudaLaunchConfig LaunchConfig { get; set; }
-        public List<double> Timings { get; set; } = new();
+        public List<double> Timings { get; set; } = [];
         public ProfilingStatistics Statistics { get; set; } = new();
         public OccupancyMetrics Occupancy { get; set; } = new();
         public DateTime LastProfiled { get; set; }

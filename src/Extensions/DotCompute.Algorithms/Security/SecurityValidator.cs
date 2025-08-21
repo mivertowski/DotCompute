@@ -2,16 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
-using System.IO.Compression;
 using Microsoft.Extensions.Logging;
-using DotCompute.Algorithms.Types.Security;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -980,8 +976,8 @@ public sealed class SecurityConfiguration
     public bool CacheValidationResults { get; init; } = true;
     public int MaxCacheSize { get; init; } = 1000;
     public TimeSpan ValidationTimeout { get; init; } = TimeSpan.FromMinutes(2);
-    public List<string> TrustedPublishers { get; init; } = new();
-    public List<string> BlockedPatterns { get; init; } = new();
+    public List<string> TrustedPublishers { get; init; } = [];
+    public List<string> BlockedPatterns { get; init; } = [];
 }
 
 
@@ -1038,7 +1034,7 @@ public sealed class ValidationResult
     public TimeSpan ValidationDuration => ValidationEndTime - ValidationStartTime;
     public bool IsValid { get; set; }
     public ThreatLevel SecurityLevel { get; set; } = ThreatLevel.None;
-    public List<SecurityThreat> SecurityThreats { get; } = new();
+    public List<SecurityThreat> SecurityThreats { get; } = [];
     public IDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
     public string? ErrorMessage { get; set; }
 }

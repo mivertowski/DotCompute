@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Loaders;
 using Microsoft.Extensions.Logging;

@@ -59,7 +59,7 @@ namespace DotCompute.Abstractions
     /// </summary>
     public class ValidationResult : IEquatable<ValidationResult>
     {
-        private readonly List<string> _warnings = new();
+        private readonly List<string> _warnings = [];
 
         /// <summary>
         /// Gets whether the validation passed.

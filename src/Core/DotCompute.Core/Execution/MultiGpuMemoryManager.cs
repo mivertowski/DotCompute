@@ -201,7 +201,7 @@ namespace DotCompute.Core.Execution
                     AllocatedBytes = poolStat.TotalAllocatedBytes,
                     AvailableBytes = poolStat.TotalAllocatedBytes, // Use same value for consistency
                     PooledBufferCount = poolStat.ActiveBuffers,
-                    AllocationSizeDistribution = new Dictionary<long, int>(), // Empty for now
+                    AllocationSizeDistribution = [], // Empty for now
                     FragmentationIndex = 0.0 // Calculate if needed
                 };
             }
@@ -221,7 +221,7 @@ namespace DotCompute.Core.Execution
 
             for (var i = 0; i < devices.Length; i++)
             {
-                p2pMatrix[devices[i].Info.Id] = new Dictionary<string, P2PConnectionCapability>();
+                p2pMatrix[devices[i].Info.Id] = [];
 
                 for (var j = 0; j < devices.Length; j++)
                 {
@@ -568,7 +568,7 @@ namespace DotCompute.Core.Execution
         public long AllocatedBytes { get; set; }
         public long AvailableBytes { get; set; }
         public int PooledBufferCount { get; set; }
-        public Dictionary<long, int> AllocationSizeDistribution { get; set; } = new();
+        public Dictionary<long, int> AllocationSizeDistribution { get; set; } = [];
         public double FragmentationIndex { get; set; }
         public long AllocationCount { get; set; }
         public long DeallocationCount { get; set; }

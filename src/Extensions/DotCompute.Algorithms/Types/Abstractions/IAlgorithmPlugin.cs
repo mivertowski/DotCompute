@@ -15,32 +15,32 @@ public interface IAlgorithmPlugin : IAsyncDisposable
     /// <summary>
     /// Gets the unique identifier for this plugin.
     /// </summary>
-    string Id { get; }
+    public string Id { get; }
 
     /// <summary>
     /// Gets the human-readable name of the plugin.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>
     /// Gets the version of the plugin.
     /// </summary>
-    string Version { get; }
+    public string Version { get; }
 
     /// <summary>
     /// Gets the description of what this plugin does.
     /// </summary>
-    string Description { get; }
+    public string Description { get; }
 
     /// <summary>
     /// Gets the accelerator types supported by this plugin.
     /// </summary>
-    IEnumerable<AcceleratorType> SupportedAccelerators { get; }
+    public IEnumerable<AcceleratorType> SupportedAccelerators { get; }
 
     /// <summary>
     /// Gets the input types that this plugin can process.
     /// </summary>
-    IEnumerable<Type> InputTypes { get; }
+    public IEnumerable<Type> InputTypes { get; }
 
     /// <summary>
     /// Initializes the plugin with the given accelerator and logger.
@@ -48,7 +48,7 @@ public interface IAlgorithmPlugin : IAsyncDisposable
     /// <param name="accelerator">The accelerator to use for computations.</param>
     /// <param name="logger">Optional logger for diagnostics.</param>
     /// <returns>A task representing the async initialization operation.</returns>
-    ValueTask InitializeAsync(IAccelerator accelerator, ILogger? logger = null);
+    public ValueTask InitializeAsync(IAccelerator accelerator, ILogger? logger = null);
 
     /// <summary>
     /// Executes the algorithm with the provided input data.
@@ -56,20 +56,20 @@ public interface IAlgorithmPlugin : IAsyncDisposable
     /// <param name="input">The input data for the algorithm.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>The result of the algorithm execution.</returns>
-    ValueTask<object> ExecuteAsync(object input, CancellationToken cancellationToken = default);
+    public ValueTask<object> ExecuteAsync(object input, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Validates that the provided input is compatible with this plugin.
     /// </summary>
     /// <param name="input">The input to validate.</param>
     /// <returns>True if the input is valid for this plugin, false otherwise.</returns>
-    bool ValidateInput(object input);
+    public bool ValidateInput(object input);
 
     /// <summary>
     /// Gets performance characteristics of this plugin.
     /// </summary>
     /// <returns>Performance profile information.</returns>
-    AlgorithmPerformanceProfile GetPerformanceProfile();
+    public AlgorithmPerformanceProfile GetPerformanceProfile();
 }
 
 /// <summary>

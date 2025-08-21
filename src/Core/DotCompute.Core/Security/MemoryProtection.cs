@@ -683,7 +683,7 @@ public sealed class MemoryProtection : IDisposable
                 }
             }
 
-            if (corruptedRegions.Any())
+            if (corruptedRegions.Count != 0)
             {
                 _logger.LogError("Integrity check failed: {Count} corrupted memory regions detected",
                     corruptedRegions.Count);

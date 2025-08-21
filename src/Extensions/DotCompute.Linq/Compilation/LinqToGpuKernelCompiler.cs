@@ -6,8 +6,6 @@ using System.Reflection;
 using System.Text;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-
-using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Linq.Compilation;
 

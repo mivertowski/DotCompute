@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Plugins.Core;
@@ -10,13 +9,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using AbstractionsAcceleratorInfo = DotCompute.Abstractions.AcceleratorInfo;
-using AbstractionsCompilationOptions = DotCompute.Abstractions.CompilationOptions;
-using AbstractionsIAccelerator = DotCompute.Abstractions.IAccelerator;
-using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using AbstractionsIMemoryManager = DotCompute.Abstractions.IMemoryManager;
-using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
-using AbstractionsKernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
 using IAccelerator = DotCompute.Abstractions.IAccelerator;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Plugin lifecycle logging is minimal and not performance-critical

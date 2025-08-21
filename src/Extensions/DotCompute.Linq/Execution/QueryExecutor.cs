@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
-using DotCompute.Linq.Operators;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -440,7 +439,7 @@ public interface IMemoryManagerFactory
     /// </summary>
     /// <param name="accelerator">The accelerator.</param>
     /// <returns>A memory manager instance.</returns>
-    IMemoryManager CreateMemoryManager(IAccelerator accelerator);
+    public IMemoryManager CreateMemoryManager(IAccelerator accelerator);
 }
 
 /// <summary>

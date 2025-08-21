@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Text;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Enums;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Types;
@@ -488,7 +487,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         private static bool ShouldUseCubinForArchitecture(int major, int minor, CompilationOptions? options)
         {
             // Use CUBIN for maximum optimization and modern architectures
-            if (options?.OptimizationLevel == OptimizationLevel.Maximum || options?.OptimizationLevel == OptimizationLevel.Aggressive)
+            if (options?.OptimizationLevel is OptimizationLevel.Maximum or OptimizationLevel.Aggressive)
             {
                 // CUBIN is supported on compute capability 3.5 and above
                 // Prefer it for modern architectures for better performance

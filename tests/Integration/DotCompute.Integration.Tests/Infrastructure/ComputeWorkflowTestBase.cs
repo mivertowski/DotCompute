@@ -4,17 +4,13 @@
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
-using DotCompute.Integration.Tests;
 using DotCompute.Tests.Common.Hardware;
 using DotCompute.Tests.Integration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
-
-using DotCompute.Abstractions.Kernels;
 #pragma warning disable CA1848 // Use LoggerMessage delegates - suppressed for test infrastructure
 
 namespace DotCompute.Integration.Tests.Infrastructure;
@@ -423,10 +419,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
     {
         private static readonly Random Random = new(42); // Fixed seed for reproducibility
 
-        public static float[] GenerateFloatArray(int size, float min = 0f, float max = 100f)
-        {
-            return [.. Enumerable.Range(0, size).Select(_ => min + (float)Random.NextDouble() * (max - min))];
-        }
+        public static float[] GenerateFloatArray(int size, float min = 0f, float max = 100f) => [.. Enumerable.Range(0, size).Select(_ => min + (float)Random.NextDouble() * (max - min))];
 
         public static float[] GenerateGaussianArray(int size, float mean = 0f, float stdDev = 1f)
         {
@@ -529,7 +522,7 @@ public class WorkflowExecutionStage
     public ExecutionOptions ExecutionOptions
     {
         get[]
-        public string[] ArgumentNames { get; set; } = Array.Empty<string>();
+        public private string[] ArgumentNames { get; set; } = Array.Empty<string>();
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Dictionary<string, object> Parameters { get; set; } = [];
 }

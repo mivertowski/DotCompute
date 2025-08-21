@@ -6,7 +6,6 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
@@ -1255,7 +1254,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         }
 
         // Return empty arguments if none provided
-        return new KernelArguments();
+        return [];
     }
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed != 0, this);

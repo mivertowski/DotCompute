@@ -544,8 +544,8 @@ public sealed class CpuAccelerator : IAccelerator
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false,
-            AdditionalFlags = new List<string>(),
-            Defines = new Dictionary<string, string>()
+            AdditionalFlags = [],
+            Defines = []
         };
 
         var coreDefinition = new CoreKernelDefinition(definition.Name, kernelSource.Code, kernelSource.EntryPoint);

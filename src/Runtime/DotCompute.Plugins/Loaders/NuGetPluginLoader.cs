@@ -2,17 +2,14 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using DotCompute.Plugins.Core;
-using DotCompute.Plugins.Exceptions;
+using DotCompute.Plugins.Exceptions.Loading;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Security;
 using Microsoft.Extensions.Logging;
@@ -774,7 +771,7 @@ public class NuGetPluginLoader : IDisposable
                     throw new SecurityException($"Assembly strong name public key token is invalid: {assemblyPath}");
                 }
             }
-            catch (Exception ex) when (!(ex is SecurityException))
+            catch (Exception ex) when (ex is not SecurityException)
             {
                 throw new SecurityException($"Strong name verification failed: {ex.Message}", ex);
             }
@@ -834,7 +831,7 @@ public class NuGetPluginLoader : IDisposable
                     }
                 }
             }
-            catch (Exception ex) when (!(ex is SecurityException))
+            catch (Exception ex) when (ex is not SecurityException)
             {
                 throw new SecurityException($"Dependency validation failed: {ex.Message}", ex);
             }
@@ -910,7 +907,7 @@ public class NuGetPluginLoader : IDisposable
                     }
                 }
             }
-            catch (Exception ex) when (!(ex is SecurityException))
+            catch (Exception ex) when (ex is not SecurityException)
             {
                 throw new SecurityException($"Metadata analysis failed: {ex.Message}", ex);
             }
@@ -977,7 +974,7 @@ public class NuGetPluginLoader : IDisposable
                     .ToList();
 
 
-                if (dangerousAttributes.Any())
+                if (dangerousAttributes.Count != 0)
                 {
                     var attrNames = string.Join(", ", dangerousAttributes.Select(a => a.GetType().Name));
                     _logger.LogWarning("Assembly {AssemblyName} contains dangerous attributes: {Attributes}",
@@ -993,7 +990,7 @@ public class NuGetPluginLoader : IDisposable
                     cancellationToken.ThrowIfCancellationRequested();
                 }
             }
-            catch (Exception ex) when (!(ex is SecurityException))
+            catch (Exception ex) when (ex is not SecurityException)
             {
                 throw new SecurityException($"Assembly validation failed: {ex.Message}", ex);
             }

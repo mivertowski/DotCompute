@@ -19,7 +19,7 @@ public interface IAcceleratorFactory
     /// <param name="acceleratorInfo">The accelerator information</param>
     /// <param name="serviceProvider">The service provider</param>
     /// <returns>The created accelerator instance</returns>
-    Task<IAccelerator> CreateAcceleratorAsync(AcceleratorInfo acceleratorInfo, IServiceProvider serviceProvider);
+    public Task<IAccelerator> CreateAcceleratorAsync(AcceleratorInfo acceleratorInfo, IServiceProvider serviceProvider);
 
     /// <summary>
     /// Creates an accelerator provider with DI support
@@ -27,34 +27,34 @@ public interface IAcceleratorFactory
     /// <typeparam name="TProvider">The provider type</typeparam>
     /// <param name="serviceProvider">The service provider</param>
     /// <returns>The created accelerator provider</returns>
-    Task<TProvider> CreateProviderAsync<TProvider>(IServiceProvider serviceProvider) where TProvider : class, IAcceleratorProvider;
+    public Task<TProvider> CreateProviderAsync<TProvider>(IServiceProvider serviceProvider) where TProvider : class, IAcceleratorProvider;
 
     /// <summary>
     /// Checks if an accelerator type can be created
     /// </summary>
     /// <param name="acceleratorType">The accelerator type</param>
     /// <returns>True if the accelerator can be created</returns>
-    bool CanCreateAccelerator(AcceleratorType acceleratorType);
+    public bool CanCreateAccelerator(AcceleratorType acceleratorType);
 
     /// <summary>
     /// Gets the supported accelerator types
     /// </summary>
     /// <returns>Supported accelerator types</returns>
-    IEnumerable<AcceleratorType> GetSupportedTypes();
+    public IEnumerable<AcceleratorType> GetSupportedTypes();
 
     /// <summary>
     /// Registers a custom accelerator provider type
     /// </summary>
     /// <param name="providerType">The provider type</param>
     /// <param name="supportedTypes">The accelerator types supported by this provider</param>
-    void RegisterProvider(Type providerType, params AcceleratorType[] supportedTypes);
+    public void RegisterProvider(Type providerType, params AcceleratorType[] supportedTypes);
 
     /// <summary>
     /// Creates a service scope for accelerator operations
     /// </summary>
     /// <param name="acceleratorId">The accelerator identifier</param>
     /// <returns>A service scope for the accelerator</returns>
-    IServiceScope CreateAcceleratorScope(string acceleratorId);
+    public IServiceScope CreateAcceleratorScope(string acceleratorId);
 }
 
 /// <summary>
@@ -80,7 +80,7 @@ public class AcceleratorCreationOptions
     /// <summary>
     /// Gets or sets custom properties for the accelerator
     /// </summary>
-    public Dictionary<string, object> CustomProperties { get; set; } = new();
+    public Dictionary<string, object> CustomProperties { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the service lifetime for this accelerator
@@ -126,7 +126,7 @@ public class AcceleratorCreationResult
     /// <summary>
     /// Gets additional metadata about the creation process
     /// </summary>
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>
@@ -157,7 +157,7 @@ public class AcceleratorValidationResult
     /// <summary>
     /// Gets the performance metrics from validation
     /// </summary>
-    public Dictionary<string, double> PerformanceMetrics { get; init; } = new();
+    public Dictionary<string, double> PerformanceMetrics { get; init; } = [];
 
     /// <summary>
     /// Creates a successful validation result
@@ -172,7 +172,7 @@ public class AcceleratorValidationResult
         {
             IsValid = true,
             SupportedFeatures = supportedFeatures,
-            PerformanceMetrics = performanceMetrics ?? new Dictionary<string, double>()
+            PerformanceMetrics = performanceMetrics ?? []
         };
 
     /// <summary>
@@ -188,6 +188,6 @@ public class AcceleratorValidationResult
         {
             IsValid = false,
             Errors = errors.ToList(),
-            Warnings = warnings?.ToList() ?? new List<string>()
+            Warnings = warnings?.ToList() ?? []
         };
 }

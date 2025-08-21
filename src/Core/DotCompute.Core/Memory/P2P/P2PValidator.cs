@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
@@ -47,22 +46,13 @@ namespace DotCompute.Core.Memory.P2P
             P2PTransferPlan transferPlan,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(sourceBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(sourceBuffer);
 
 
-            if (destinationBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(destinationBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(destinationBuffer);
 
 
-            if (transferPlan == null)
-            {
-                throw new ArgumentNullException(nameof(transferPlan));
-            }
+            ArgumentNullException.ThrowIfNull(transferPlan);
 
 
             await _validationSemaphore.WaitAsync(cancellationToken);
@@ -73,29 +63,30 @@ namespace DotCompute.Core.Memory.P2P
                     ValidationId = Guid.NewGuid().ToString(),
                     ValidationTime = DateTimeOffset.UtcNow,
                     IsValid = true,
-                    ValidationDetails = new List<P2PValidationDetail>()
+                    ValidationDetails = []
                 };
 
-                var validationTasks = new List<Task<P2PValidationDetail>>();
+                var validationTasks = new List<Task<P2PValidationDetail>>
+                {
+                    // Validate buffer compatibility
+                    ValidateBufferCompatibilityAsync(sourceBuffer, destinationBuffer, cancellationToken),
 
-                // Validate buffer compatibility
-                validationTasks.Add(ValidateBufferCompatibilityAsync(sourceBuffer, destinationBuffer, cancellationToken));
+                    // Validate device capabilities
+                    ValidateDeviceCapabilitiesAsync(sourceBuffer.Accelerator, destinationBuffer.Accelerator, transferPlan, cancellationToken),
 
-                // Validate device capabilities
-                validationTasks.Add(ValidateDeviceCapabilitiesAsync(sourceBuffer.Accelerator, destinationBuffer.Accelerator, transferPlan, cancellationToken));
+                    // Validate memory availability
+                    ValidateMemoryAvailabilityAsync(sourceBuffer, destinationBuffer, transferPlan, cancellationToken),
 
-                // Validate memory availability
-                validationTasks.Add(ValidateMemoryAvailabilityAsync(sourceBuffer, destinationBuffer, transferPlan, cancellationToken));
-
-                // Validate transfer strategy
-                validationTasks.Add(ValidateTransferStrategyAsync(transferPlan, cancellationToken));
+                    // Validate transfer strategy
+                    ValidateTransferStrategyAsync(transferPlan, cancellationToken)
+                };
 
                 var validationDetails = await Task.WhenAll(validationTasks);
                 validationResult.ValidationDetails.AddRange(validationDetails);
 
                 // Check if any validation failed
                 var failedValidations = validationDetails.Where(d => !d.IsValid).ToList();
-                if (failedValidations.Any())
+                if (failedValidations.Count != 0)
                 {
                     validationResult.IsValid = false;
                     validationResult.ErrorMessage = string.Join("; ", failedValidations.Select(v => v.ErrorMessage));
@@ -124,22 +115,13 @@ namespace DotCompute.Core.Memory.P2P
             P2PTransferPlan transferPlan,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(sourceBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(sourceBuffer);
 
 
-            if (destinationBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(destinationBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(destinationBuffer);
 
 
-            if (transferPlan == null)
-            {
-                throw new ArgumentNullException(nameof(transferPlan));
-            }
+            ArgumentNullException.ThrowIfNull(transferPlan);
 
 
             await _validationSemaphore.WaitAsync(cancellationToken);
@@ -150,7 +132,7 @@ namespace DotCompute.Core.Memory.P2P
                     ValidationId = Guid.NewGuid().ToString(),
                     ValidationTime = DateTimeOffset.UtcNow,
                     IsValid = true,
-                    ValidationDetails = new List<P2PValidationDetail>()
+                    ValidationDetails = []
                 };
 
                 // Perform different integrity checks based on buffer size
@@ -213,16 +195,10 @@ namespace DotCompute.Core.Memory.P2P
             P2PBenchmarkOptions? options = null,
             CancellationToken cancellationToken = default)
         {
-            if (sourceDevice == null)
-            {
-                throw new ArgumentNullException(nameof(sourceDevice));
-            }
+            ArgumentNullException.ThrowIfNull(sourceDevice);
 
 
-            if (targetDevice == null)
-            {
-                throw new ArgumentNullException(nameof(targetDevice));
-            }
+            ArgumentNullException.ThrowIfNull(targetDevice);
 
 
             options ??= P2PBenchmarkOptions.Default;
@@ -253,7 +229,7 @@ namespace DotCompute.Core.Memory.P2P
                     TargetDevice = targetDevice.Info.Name,
                     BenchmarkTime = DateTimeOffset.UtcNow,
                     BenchmarkOptions = options,
-                    TransferSizes = new List<P2PTransferBenchmark>(),
+                    TransferSizes = [],
                     IsSuccessful = true
                 };
 
@@ -327,10 +303,10 @@ namespace DotCompute.Core.Memory.P2P
                 BenchmarkId = Guid.NewGuid().ToString(),
                 BenchmarkTime = DateTimeOffset.UtcNow,
                 DeviceCount = devices.Length,
-                PairwiseBenchmarks = new List<P2PBenchmarkResult>(),
-                ScatterBenchmarks = new List<P2PScatterBenchmarkResult>(),
-                GatherBenchmarks = new List<P2PGatherBenchmarkResult>(),
-                AllToAllBenchmarks = new List<P2PAllToAllBenchmarkResult>(),
+                PairwiseBenchmarks = [],
+                ScatterBenchmarks = [],
+                GatherBenchmarks = [],
+                AllToAllBenchmarks = [],
                 IsSuccessful = true
             };
 
@@ -535,7 +511,7 @@ namespace DotCompute.Core.Memory.P2P
                     break;
 
                 case P2PTransferStrategy.PipelinedP2P:
-                    if (transferPlan.PipelineDepth <= 0 || transferPlan.PipelineDepth > 8)
+                    if (transferPlan.PipelineDepth is <= 0 or > 8)
                     {
                         detail.IsValid = false;
                         detail.ErrorMessage = $"Invalid pipeline depth: {transferPlan.PipelineDepth}";
@@ -834,7 +810,7 @@ namespace DotCompute.Core.Memory.P2P
 
         private static void CalculateAggregateStatistics(P2PBenchmarkResult benchmarkResult)
         {
-            if (benchmarkResult.TransferSizes.Any())
+            if (benchmarkResult.TransferSizes.Count != 0)
             {
                 benchmarkResult.PeakThroughputGBps = benchmarkResult.TransferSizes.Max(t => t.PeakThroughputGBps);
                 benchmarkResult.AverageThroughputGBps = benchmarkResult.TransferSizes.Average(t => t.ThroughputGBps);
@@ -932,7 +908,7 @@ namespace DotCompute.Core.Memory.P2P
 
         private static void CalculateMultiGpuAggregateStatistics(P2PMultiGpuBenchmarkResult benchmarkResult)
         {
-            if (benchmarkResult.PairwiseBenchmarks.Any())
+            if (benchmarkResult.PairwiseBenchmarks.Count != 0)
             {
                 benchmarkResult.PeakPairwiseThroughputGBps = benchmarkResult.PairwiseBenchmarks.Max(b => b.PeakThroughputGBps);
                 benchmarkResult.AveragePairwiseThroughputGBps = benchmarkResult.PairwiseBenchmarks.Average(b => b.AverageThroughputGBps);

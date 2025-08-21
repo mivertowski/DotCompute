@@ -510,3 +510,7 @@ arm-test/
 fix_quality_issues.sh
 scripts/update-namespace-references.ps1
 scripts/update-namespace-references.sh
+docs/COMPREHENSIVE_FOLDER_STRUCTURE_DESIGN.md
+docs/FinalRefactoringReport.md
+docs/RefactoringReport.md
+src/Runtime/DotCompute.Plugins/Exceptions/PluginExceptions.cs.bak

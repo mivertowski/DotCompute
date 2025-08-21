@@ -1,11 +1,6 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -46,7 +41,7 @@ public sealed class PerformanceProfiler : IDisposable
 #if WINDOWS
         _hwCounters = new Dictionary<string, System.Diagnostics.PerformanceCounter>();
 #else
-        _hwCounters = new Dictionary<string, object>();
+        _hwCounters = [];
 #endif
 
         // Initialize hardware performance counters if available
@@ -89,8 +84,8 @@ public sealed class PerformanceProfiler : IDisposable
                 CorrelationId = correlationId,
                 StartTime = startTime,
                 Options = options,
-                KernelExecutions = new ConcurrentBag<KernelExecutionProfile>(),
-                MemoryOperations = new ConcurrentBag<MemoryOperationProfile>(),
+                KernelExecutions = [],
+                MemoryOperations = [],
                 DeviceMetrics = new ConcurrentDictionary<string, DeviceProfileMetrics>(),
                 SystemSnapshots = new ConcurrentQueue<SystemSnapshot>()
             };
@@ -323,7 +318,7 @@ public sealed class PerformanceProfiler : IDisposable
             .ToList();
 
 
-        if (!kernelExecutions.Any())
+        if (kernelExecutions.Count == 0)
         {
             return new KernelAnalysisResult
             {
@@ -400,7 +395,7 @@ public sealed class PerformanceProfiler : IDisposable
             .ToList();
 
 
-        if (!memoryOperations.Any())
+        if (memoryOperations.Count == 0)
         {
             return new MemoryAccessAnalysisResult
             {
@@ -552,26 +547,26 @@ public sealed class PerformanceProfiler : IDisposable
             // Overall performance metrics
 
             TotalExecutionTime = kernelExecutions.Sum(k => k.ExecutionTime.TotalMilliseconds),
-            AverageKernelExecutionTime = kernelExecutions.Any() ?
+            AverageKernelExecutionTime = kernelExecutions.Count != 0 ?
 
                 kernelExecutions.Average(k => k.ExecutionTime.TotalMilliseconds) : 0,
 
             // Throughput analysis
 
-            OverallThroughput = kernelExecutions.Any() ?
+            OverallThroughput = kernelExecutions.Count != 0 ?
                 kernelExecutions.Sum(k => k.ThroughputOpsPerSecond) : 0,
 
             // Memory analysis
 
             TotalMemoryTransferred = memoryOperations.Sum(m => m.BytesTransferred),
-            AverageMemoryBandwidth = memoryOperations.Any() ?
+            AverageMemoryBandwidth = memoryOperations.Count != 0 ?
                 memoryOperations.Average(m => m.BandwidthGBPerSecond) : 0,
 
             // Efficiency metrics
 
-            AverageOccupancy = kernelExecutions.Any() ?
+            AverageOccupancy = kernelExecutions.Count != 0 ?
                 kernelExecutions.Average(k => k.OccupancyPercentage) : 0,
-            AverageCacheHitRate = kernelExecutions.Any() ?
+            AverageCacheHitRate = kernelExecutions.Count != 0 ?
                 kernelExecutions.Average(k => k.CacheHitRate) : 0,
 
             // Resource utilization
@@ -805,7 +800,7 @@ public sealed class PerformanceProfiler : IDisposable
             .ToList();
 
 
-        if (longRunningKernels.Any())
+        if (longRunningKernels.Count != 0)
         {
             bottlenecks.Add($"{longRunningKernels.Count} kernels are taking significantly longer than average");
         }

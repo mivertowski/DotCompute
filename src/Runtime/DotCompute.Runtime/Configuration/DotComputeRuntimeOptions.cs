@@ -87,7 +87,7 @@ public class DotComputeRuntimeOptions
     /// <summary>
     /// Gets or sets custom provider configuration
     /// </summary>
-    public Dictionary<string, object> ProviderSettings { get; set; } = new();
+    public Dictionary<string, object> ProviderSettings { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether to enable graceful degradation when accelerators fail
@@ -118,7 +118,7 @@ public class DotComputePluginOptions
     /// <summary>
     /// Gets or sets the plugin directories to scan
     /// </summary>
-    public List<string> PluginDirectories { get; set; } = new() { "plugins" };
+    public List<string> PluginDirectories { get; set; } = ["plugins"];
 
     /// <summary>
     /// Gets or sets whether to enable plugin isolation
@@ -152,12 +152,12 @@ public class DotComputePluginOptions
     /// <summary>
     /// Gets or sets the trusted plugin publishers
     /// </summary>
-    public List<string> TrustedPublishers { get; set; } = new();
+    public List<string> TrustedPublishers { get; set; } = [];
 
     /// <summary>
     /// Gets or sets plugin-specific configuration
     /// </summary>
-    public Dictionary<string, object> PluginSettings { get; set; } = new();
+    public Dictionary<string, object> PluginSettings { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether to enable dependency injection for plugins
@@ -262,7 +262,7 @@ public class PerformanceMonitoringOptions
     /// <summary>
     /// Gets or sets custom performance thresholds
     /// </summary>
-    public Dictionary<string, double> PerformanceThresholds { get; set; } = new();
+    public Dictionary<string, double> PerformanceThresholds { get; set; } = [];
 }
 
 /// <summary>
@@ -321,22 +321,22 @@ public class RuntimeOptionsValidator : IValidateOptions<DotComputeRuntimeOptions
     {
         var failures = new List<string>();
 
-        if (options.MaxAccelerators < 1 || options.MaxAccelerators > 64)
+        if (options.MaxAccelerators is < 1 or > 64)
         {
             failures.Add("MaxAccelerators must be between 1 and 64");
         }
 
-        if (options.MaxCacheSizeMB < 1 || options.MaxCacheSizeMB > 10240)
+        if (options.MaxCacheSizeMB is < 1 or > 10240)
         {
             failures.Add("MaxCacheSizeMB must be between 1 and 10240");
         }
 
-        if (options.InitialPoolSizeMB < 1 || options.InitialPoolSizeMB > 8192)
+        if (options.InitialPoolSizeMB is < 1 or > 8192)
         {
             failures.Add("InitialPoolSizeMB must be between 1 and 8192");
         }
 
-        if (options.InitializationTimeoutSeconds < 1 || options.InitializationTimeoutSeconds > 300)
+        if (options.InitializationTimeoutSeconds is < 1 or > 300)
         {
             failures.Add("InitializationTimeoutSeconds must be between 1 and 300");
         }

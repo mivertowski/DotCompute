@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using System.Globalization;
-using System.Text;
 using BenchmarkDotNet.Attributes;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;

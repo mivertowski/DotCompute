@@ -3,7 +3,6 @@
 
 #pragma warning disable CS0067 // Event is never used - test events don't need to be raised
 using DotCompute.Plugins.Core;
-using DotCompute.Plugins.Exceptions;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Configuration;
 using Microsoft.Extensions.Configuration;

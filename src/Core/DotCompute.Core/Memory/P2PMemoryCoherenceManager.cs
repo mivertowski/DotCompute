@@ -55,15 +55,9 @@ namespace DotCompute.Core.Memory
             int count,
             P2PConnectionCapability? p2pCapability) where T : unmanaged
         {
-            if (buffer == null)
-            {
-                throw new ArgumentNullException(nameof(buffer));
-            }
+            ArgumentNullException.ThrowIfNull(buffer);
 
-            if (sourceBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(sourceBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(sourceBuffer);
 
             var coherenceInfo = new P2PBufferCoherenceInfo
             {
@@ -78,8 +72,8 @@ namespace DotCompute.Core.Memory
                 CoherenceLevel = CoherenceLevel.Strong,
                 P2PCapability = p2pCapability,
                 AccessPattern = AccessPattern.Sequential,
-                Copies = new List<BufferCopy>
-            {
+                Copies =
+            [
                 new BufferCopy
                 {
                     Device = buffer.Accelerator,
@@ -88,7 +82,7 @@ namespace DotCompute.Core.Memory
                     AccessCount = 1,
                     IsWritten = false
                 }
-            }
+            ]
             };
 
             _bufferTracking[buffer] = coherenceInfo;
@@ -499,9 +493,9 @@ namespace DotCompute.Core.Memory
         {
             var analysis = new BufferPlacementAnalysis
             {
-                DeviceDistribution = new Dictionary<string, int>(),
-                HotspotDevices = new List<string>(),
-                UnderutilizedDevices = new List<string>()
+                DeviceDistribution = [],
+                HotspotDevices = [],
+                UnderutilizedDevices = []
             };
 
             // Count buffers per device

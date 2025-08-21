@@ -1,6 +1,5 @@
 using System.Buffers;
 using FluentAssertions;
-using DotCompute.Memory;
 using Xunit;
 
 namespace DotCompute.Memory.Tests;

@@ -4,7 +4,6 @@
 using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
-using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using FluentAssertions;

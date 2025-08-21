@@ -26,10 +26,7 @@ public class Dim3TypeConverter : TypeConverter
     /// <param name="context">An <see cref="ITypeDescriptorContext"/> that provides a format context.</param>
     /// <param name="sourceType">The type to convert from.</param>
     /// <returns><c>true</c> if conversion is possible; otherwise, <c>false</c>.</returns>
-    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
-    {
-        return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
-    }
+    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType) => sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
 
     /// <summary>
     /// Determines whether this converter can convert a <see cref="Dim3"/> to the specified type.
@@ -37,10 +34,7 @@ public class Dim3TypeConverter : TypeConverter
     /// <param name="context">An <see cref="ITypeDescriptorContext"/> that provides a format context.</param>
     /// <param name="destinationType">The type to convert to.</param>
     /// <returns><c>true</c> if conversion is possible; otherwise, <c>false</c>.</returns>
-    public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType)
-    {
-        return destinationType == typeof(string) || base.CanConvertTo(context, destinationType);
-    }
+    public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType) => destinationType == typeof(string) || base.CanConvertTo(context, destinationType);
 
     /// <summary>
     /// Converts the given object to a <see cref="Dim3"/>.
@@ -96,9 +90,19 @@ public class Dim3TypeConverter : TypeConverter
         {
             // Return in a clean format
             if (dim3.Y == 1 && dim3.Z == 1)
+            {
+
                 return dim3.X.ToString();
+            }
+
+
             if (dim3.Z == 1)
+            {
+
                 return $"{dim3.X}, {dim3.Y}";
+            }
+
+
             return $"{dim3.X}, {dim3.Y}, {dim3.Z}";
         }
 

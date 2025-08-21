@@ -1,4 +1,3 @@
-using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
@@ -92,7 +91,7 @@ public sealed class CompilationOptionsTests
     public void Defines_CanBeEmpty()
     {
         // Act
-        var options = new CompilationOptions { Defines = new Dictionary<string, string>() };
+        var options = new CompilationOptions { Defines = [] };
 
         // Assert
         _ = options.Defines.Should().BeEmpty();

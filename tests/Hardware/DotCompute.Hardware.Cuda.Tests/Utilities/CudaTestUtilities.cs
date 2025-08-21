@@ -4,7 +4,6 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
-using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;

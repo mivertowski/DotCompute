@@ -334,13 +334,13 @@ namespace DotCompute.Backends.CUDA
         public bool Success { get; set; }
 
         /// <summary>Gets the list of validation errors.</summary>
-        public List<string> Errors { get; } = new();
+        public List<string> Errors { get; } = [];
 
         /// <summary>Gets the list of validation warnings.</summary>
-        public List<string> Warnings { get; } = new();
+        public List<string> Warnings { get; } = [];
 
         /// <summary>Gets validation details and metrics.</summary>
-        public Dictionary<string, object> Details { get; } = new();
+        public Dictionary<string, object> Details { get; } = [];
 
         /// <summary>
         /// Gets a summary of the validation results.

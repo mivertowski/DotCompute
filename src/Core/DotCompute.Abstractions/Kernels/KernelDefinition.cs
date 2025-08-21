@@ -47,7 +47,7 @@ public class KernelDefinition
     /// Gets or sets kernel metadata for additional configuration and information.
     /// </summary>
     /// <value>A dictionary containing kernel-specific metadata such as compilation flags, device constraints, or custom attributes.</value>
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 
 
     /// <summary>

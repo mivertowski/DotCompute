@@ -20,7 +20,7 @@ public interface IKernelCompilerService
     /// <param name="accelerator">The target accelerator</param>
     /// <param name="options">Compilation options</param>
     /// <returns>The compiled kernel</returns>
-    Task<ICompiledKernel> CompileAsync(
+    public Task<ICompiledKernel> CompileAsync(
         KernelDefinition definition,
         IAccelerator accelerator,
         CompilationOptions? options = null);
@@ -31,13 +31,13 @@ public interface IKernelCompilerService
     /// <param name="definitions">The kernel definitions to pre-compile</param>
     /// <param name="accelerator">The target accelerator</param>
     /// <returns>A task representing the pre-compilation operation</returns>
-    Task PrecompileAsync(IEnumerable<KernelDefinition> definitions, IAccelerator accelerator);
+    public Task PrecompileAsync(IEnumerable<KernelDefinition> definitions, IAccelerator accelerator);
 
     /// <summary>
     /// Gets compilation statistics
     /// </summary>
     /// <returns>Compilation statistics</returns>
-    KernelCompilationStatistics GetStatistics();
+    public KernelCompilationStatistics GetStatistics();
 
     /// <summary>
     /// Optimizes a kernel definition for the target accelerator
@@ -45,7 +45,7 @@ public interface IKernelCompilerService
     /// <param name="definition">The kernel definition</param>
     /// <param name="accelerator">The target accelerator</param>
     /// <returns>The optimized kernel definition</returns>
-    Task<KernelDefinition> OptimizeAsync(KernelDefinition definition, IAccelerator accelerator);
+    public Task<KernelDefinition> OptimizeAsync(KernelDefinition definition, IAccelerator accelerator);
 
     /// <summary>
     /// Validates a kernel definition for compilation
@@ -53,7 +53,7 @@ public interface IKernelCompilerService
     /// <param name="definition">The kernel definition</param>
     /// <param name="accelerator">The target accelerator</param>
     /// <returns>Validation result</returns>
-    Task<KernelValidationResult> ValidateAsync(KernelDefinition definition, IAccelerator accelerator);
+    public Task<KernelValidationResult> ValidateAsync(KernelDefinition definition, IAccelerator accelerator);
 }
 
 /// <summary>
@@ -66,7 +66,7 @@ public interface IKernelCacheService
     /// </summary>
     /// <param name="cacheKey">The cache key</param>
     /// <returns>The cached kernel or null if not found</returns>
-    Task<ICompiledKernel?> GetAsync(string cacheKey);
+    public Task<ICompiledKernel?> GetAsync(string cacheKey);
 
     /// <summary>
     /// Stores a compiled kernel in the cache
@@ -74,7 +74,7 @@ public interface IKernelCacheService
     /// <param name="cacheKey">The cache key</param>
     /// <param name="kernel">The compiled kernel</param>
     /// <returns>A task representing the store operation</returns>
-    Task StoreAsync(string cacheKey, ICompiledKernel kernel);
+    public Task StoreAsync(string cacheKey, ICompiledKernel kernel);
 
     /// <summary>
     /// Generates a cache key for a kernel definition and accelerator
@@ -83,25 +83,25 @@ public interface IKernelCacheService
     /// <param name="accelerator">The target accelerator</param>
     /// <param name="options">Compilation options</param>
     /// <returns>The cache key</returns>
-    string GenerateCacheKey(KernelDefinition definition, IAccelerator accelerator, CompilationOptions? options);
+    public string GenerateCacheKey(KernelDefinition definition, IAccelerator accelerator, CompilationOptions? options);
 
     /// <summary>
     /// Clears the kernel cache
     /// </summary>
     /// <returns>A task representing the clear operation</returns>
-    Task ClearAsync();
+    public Task ClearAsync();
 
     /// <summary>
     /// Gets cache statistics
     /// </summary>
     /// <returns>Cache statistics</returns>
-    KernelCacheStatistics GetStatistics();
+    public KernelCacheStatistics GetStatistics();
 
     /// <summary>
     /// Evicts old or unused cached kernels
     /// </summary>
     /// <returns>The number of evicted kernels</returns>
-    Task<int> EvictAsync();
+    public Task<int> EvictAsync();
 }
 
 /// <summary>
@@ -113,7 +113,7 @@ public interface IAlgorithmPluginManager
     /// Loads all algorithm plugins from configured directories
     /// </summary>
     /// <returns>A task representing the load operation</returns>
-    Task LoadPluginsAsync();
+    public Task LoadPluginsAsync();
 
     /// <summary>
     /// Gets a plugin by its ID
@@ -121,14 +121,14 @@ public interface IAlgorithmPluginManager
     /// <typeparam name="T">The plugin interface type</typeparam>
     /// <param name="pluginId">The plugin ID</param>
     /// <returns>The plugin instance or null if not found</returns>
-    Task<T?> GetPluginAsync<T>(string pluginId) where T : class;
+    public Task<T?> GetPluginAsync<T>(string pluginId) where T : class;
 
     /// <summary>
     /// Gets all plugins of a specific type
     /// </summary>
     /// <typeparam name="T">The plugin interface type</typeparam>
     /// <returns>All plugins of the specified type</returns>
-    Task<IEnumerable<T>> GetPluginsAsync<T>() where T : class;
+    public Task<IEnumerable<T>> GetPluginsAsync<T>() where T : class;
 
     /// <summary>
     /// Registers a plugin instance
@@ -137,26 +137,26 @@ public interface IAlgorithmPluginManager
     /// <param name="pluginId">The plugin ID</param>
     /// <param name="plugin">The plugin instance</param>
     /// <returns>A task representing the registration operation</returns>
-    Task RegisterPluginAsync<T>(string pluginId, T plugin) where T : class;
+    public Task RegisterPluginAsync<T>(string pluginId, T plugin) where T : class;
 
     /// <summary>
     /// Unloads a plugin
     /// </summary>
     /// <param name="pluginId">The plugin ID</param>
     /// <returns>A task representing the unload operation</returns>
-    Task UnloadPluginAsync(string pluginId);
+    public Task UnloadPluginAsync(string pluginId);
 
     /// <summary>
     /// Gets plugin information
     /// </summary>
     /// <returns>Information about all loaded plugins</returns>
-    IEnumerable<PluginInfo> GetPluginInfo();
+    public IEnumerable<PluginInfo> GetPluginInfo();
 
     /// <summary>
     /// Reloads all plugins (if hot reload is enabled)
     /// </summary>
     /// <returns>A task representing the reload operation</returns>
-    Task ReloadPluginsAsync();
+    public Task ReloadPluginsAsync();
 }
 
 /// <summary>
@@ -192,7 +192,7 @@ public class KernelCompilationStatistics
     /// <summary>
     /// Gets compilation statistics by accelerator type
     /// </summary>
-    public Dictionary<string, AcceleratorCompilationStats> ByAcceleratorType { get; init; } = new();
+    public Dictionary<string, AcceleratorCompilationStats> ByAcceleratorType { get; init; } = [];
 
     /// <summary>
     /// Gets the timestamp when these statistics were collected
@@ -300,7 +300,7 @@ public class KernelValidationResult
     /// <summary>
     /// Gets performance predictions
     /// </summary>
-    public Dictionary<string, double> PerformancePredictions { get; init; } = new();
+    public Dictionary<string, double> PerformancePredictions { get; init; } = [];
 
     /// <summary>
     /// Creates a successful validation result
@@ -315,7 +315,7 @@ public class KernelValidationResult
         {
             IsValid = true,
             ResourceRequirements = resourceRequirements,
-            PerformancePredictions = performancePredictions ?? new Dictionary<string, double>()
+            PerformancePredictions = performancePredictions ?? []
         };
 
     /// <summary>
@@ -331,7 +331,7 @@ public class KernelValidationResult
         {
             IsValid = false,
             Errors = errors.ToList(),
-            Warnings = warnings?.ToList() ?? new List<string>()
+            Warnings = warnings?.ToList() ?? []
         };
 }
 
@@ -368,7 +368,7 @@ public class KernelResourceRequirements
     /// <summary>
     /// Gets additional resource metadata
     /// </summary>
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>
@@ -424,5 +424,5 @@ public class PluginInfo
     /// <summary>
     /// Gets plugin-specific metadata
     /// </summary>
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }

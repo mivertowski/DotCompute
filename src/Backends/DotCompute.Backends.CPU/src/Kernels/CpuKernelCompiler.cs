@@ -10,7 +10,6 @@ using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.CodeAnalysis.CSharp;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
 
@@ -986,13 +985,13 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
     public bool HasLoops { get; private set; }
     public bool HasRecursion { get; private set; }
     public bool HasIndirectMemoryAccess { get; private set; }
-    public List<AstNode> Operations { get; } = new();
-    public List<string> Variables { get; } = new();
-    public List<string> Parameters { get; } = new();
-    public List<string> FunctionCalls { get; } = new();
+    public List<AstNode> Operations { get; } = [];
+    public List<string> Variables { get; } = [];
+    public List<string> Parameters { get; } = [];
+    public List<string> FunctionCalls { get; } = [];
 
-    private readonly HashSet<string> _declaredMethods = new();
-    private readonly HashSet<string> _calledMethods = new();
+    private readonly HashSet<string> _declaredMethods = [];
+    private readonly HashSet<string> _calledMethods = [];
 
     public override void VisitIfStatement(Microsoft.CodeAnalysis.CSharp.Syntax.IfStatementSyntax node)
     {

@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Core.Memory;
+using DotCompute.Core.Device.Interfaces;
 
 namespace DotCompute.Core.Pipelines
 {

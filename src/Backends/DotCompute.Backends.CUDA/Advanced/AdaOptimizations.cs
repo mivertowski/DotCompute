@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Advanced
@@ -245,8 +244,8 @@ namespace DotCompute.Backends.CUDA.Advanced
     public sealed class ValidationResult
     {
         public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = new();
-        public List<string> Warnings { get; set; } = new();
+        public List<string> Errors { get; set; } = [];
+        public List<string> Warnings { get; set; } = [];
         public double Occupancy { get; set; }
         public int BlocksPerSM { get; set; }
     }

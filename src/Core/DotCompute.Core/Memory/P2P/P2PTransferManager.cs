@@ -141,16 +141,10 @@ namespace DotCompute.Core.Memory.P2P
             P2PTransferOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(sourceBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(sourceBuffer);
 
 
-            if (destinationBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(destinationBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(destinationBuffer);
 
 
             options ??= P2PTransferOptions.Default;
@@ -309,10 +303,7 @@ namespace DotCompute.Core.Memory.P2P
             P2PScatterOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (sourceBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(sourceBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(sourceBuffer);
 
 
             if (destinationBuffers == null || destinationBuffers.Length == 0)
@@ -381,10 +372,7 @@ namespace DotCompute.Core.Memory.P2P
             }
 
 
-            if (destinationBuffer == null)
-            {
-                throw new ArgumentNullException(nameof(destinationBuffer));
-            }
+            ArgumentNullException.ThrowIfNull(destinationBuffer);
 
 
             options ??= P2PGatherOptions.Default;
@@ -608,7 +596,7 @@ namespace DotCompute.Core.Memory.P2P
                     : 0.0;
 
                 // Update strategy counters
-                if (strategy == P2PTransferStrategy.DirectP2P || strategy == P2PTransferStrategy.ChunkedP2P || strategy == P2PTransferStrategy.PipelinedP2P)
+                if (strategy is P2PTransferStrategy.DirectP2P or P2PTransferStrategy.ChunkedP2P or P2PTransferStrategy.PipelinedP2P)
                 {
                     _statistics.DirectP2PTransfers++;
                 }
@@ -663,7 +651,7 @@ namespace DotCompute.Core.Memory.P2P
         public int SuccessfulConnections { get; set; }
         public int FailedConnections { get; set; }
         public string? ErrorMessage { get; set; }
-        public List<P2PDevicePair> DevicePairs { get; set; } = new();
+        public List<P2PDevicePair> DevicePairs { get; set; } = [];
     }
 
     /// <summary>

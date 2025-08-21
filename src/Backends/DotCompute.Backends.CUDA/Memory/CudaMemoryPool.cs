@@ -55,7 +55,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _pools = new Dictionary<int, ConcurrentQueue<PooledBuffer>>();
+            _pools = [];
             _poolLock = new ReaderWriterLockSlim();
 
             // Initialize pools for each bucket size

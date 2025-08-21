@@ -1061,7 +1061,7 @@ public sealed class MemoryLeakReport
 {
     public DateTimeOffset ScanTime { get; init; }
     public int TotalActiveAllocations { get; init; }
-    public List<LeakSuspect> SuspiciousAllocations { get; set; } = new();
+    public List<LeakSuspect> SuspiciousAllocations { get; set; } = [];
     public long TotalSuspiciousBytes { get; set; }
     public int HighSuspicionCount { get; set; }
 }

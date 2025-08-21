@@ -3,7 +3,6 @@
 
 using Xunit;
 using FluentAssertions;
-using System.Globalization;
 
 namespace DotCompute.Abstractions.Tests;
 

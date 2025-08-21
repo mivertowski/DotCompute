@@ -3,13 +3,8 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
-using DotCompute.Core.Kernels;
-using DotCompute.Linq.Expressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-
-using DotCompute.Abstractions.Enums;
-using DotCompute.Abstractions.Kernels;
 namespace DotCompute.Linq.Operators;
 
 
@@ -27,7 +22,7 @@ public class DefaultKernelFactory : IKernelFactory
     public DefaultKernelFactory(ILogger<DefaultKernelFactory>? logger = null)
     {
         _logger = logger ?? NullLogger<DefaultKernelFactory>.Instance;
-        _generators = new Dictionary<AcceleratorType, IKernelGenerator>();
+        _generators = [];
 
         // Register built-in generators
         RegisterBuiltInGenerators();
@@ -142,7 +137,7 @@ public class DefaultKernelFactory : IKernelFactory
         var context = CreateGenerationContext(accelerator, definition);
 
         // Add fusion-specific metadata to context
-        context.Metadata ??= new Dictionary<string, object>();
+        context.Metadata ??= [];
         context.Metadata["FusionType"] = fusionType;
         context.Metadata["FusedOperations"] = operations;
         context.Metadata["EstimatedSpeedup"] = fusionMetadata.GetValueOrDefault("EstimatedSpeedup", 1.2);
@@ -209,14 +204,14 @@ public class DefaultKernelFactory : IKernelFactory
     private static Type[] ExtractInputTypes(KernelDefinition definition)
     {
         return [.. definition.Parameters
-        .Where(p => p.Direction == ParameterDirection.In || p.Direction == ParameterDirection.InOut)
+        .Where(p => p.Direction is ParameterDirection.In or ParameterDirection.InOut)
         .Select(p => p.Type)];
     }
 
     private static Type ExtractOutputType(KernelDefinition definition)
     {
         var outputParam = definition.Parameters
-            .FirstOrDefault(p => p.Direction == ParameterDirection.Out || p.Direction == ParameterDirection.InOut);
+            .FirstOrDefault(p => p.Direction is ParameterDirection.Out or ParameterDirection.InOut);
         return outputParam?.Type ?? typeof(object);
     }
 

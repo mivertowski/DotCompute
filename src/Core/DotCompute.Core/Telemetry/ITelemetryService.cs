@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using DotCompute.Core.Types;
 using DotCompute.Core.Logging;
-using Logging = DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -17,7 +11,7 @@ public interface ITelemetryService
     /// <summary>
     /// Records a kernel execution event with performance metrics.
     /// </summary>
-    void RecordKernelExecution(string kernelName, string deviceId, TimeSpan executionTime,
+    public void RecordKernelExecution(string kernelName, string deviceId, TimeSpan executionTime,
 
         KernelPerformanceMetrics metrics, string? correlationId = null, Exception? exception = null);
 
@@ -25,27 +19,27 @@ public interface ITelemetryService
     /// <summary>
     /// Records a memory operation with transfer metrics.
     /// </summary>
-    void RecordMemoryOperation(string operationType, string deviceId, long bytes, TimeSpan duration,
+    public void RecordMemoryOperation(string operationType, string deviceId, long bytes, TimeSpan duration,
         Types.MemoryAccessMetrics metrics, string? correlationId = null, Exception? exception = null);
 
 
     /// <summary>
     /// Starts distributed tracing for cross-device operations.
     /// </summary>
-    TraceContext StartDistributedTrace(string operationName, string? correlationId = null,
+    public TraceContext StartDistributedTrace(string operationName, string? correlationId = null,
         Dictionary<string, object?>? tags = null);
 
 
     /// <summary>
     /// Finishes a distributed trace and returns analysis results.
     /// </summary>
-    Task<TraceData?> FinishDistributedTraceAsync(string correlationId, TraceStatus status = TraceStatus.Ok);
+    public Task<TraceData?> FinishDistributedTraceAsync(string correlationId, TraceStatus status = TraceStatus.Ok);
 
 
     /// <summary>
     /// Creates a performance profile for detailed analysis.
     /// </summary>
-    Task<PerformanceProfile> CreatePerformanceProfileAsync(string correlationId,
+    public Task<PerformanceProfile> CreatePerformanceProfileAsync(string correlationId,
 
         ProfileOptions? options = null, CancellationToken cancellationToken = default);
 
@@ -53,13 +47,13 @@ public interface ITelemetryService
     /// <summary>
     /// Gets current system health metrics.
     /// </summary>
-    SystemHealthMetrics GetSystemHealth();
+    public SystemHealthMetrics GetSystemHealth();
 
 
     /// <summary>
     /// Exports telemetry data to configured monitoring systems.
     /// </summary>
-    Task ExportTelemetryAsync(TelemetryExportFormat format = TelemetryExportFormat.Prometheus,
+    public Task ExportTelemetryAsync(TelemetryExportFormat format = TelemetryExportFormat.Prometheus,
         CancellationToken cancellationToken = default);
 }
 
@@ -83,7 +77,7 @@ public sealed class TelemetryServiceOptions
 
 
     public PrometheusOptions Prometheus { get; set; } = new();
-    public List<string> ExportEndpoints { get; set; } = new();
+    public List<string> ExportEndpoints { get; set; } = [];
 }
 
 /// <summary>
@@ -94,7 +88,7 @@ public sealed class PrometheusOptions
     public bool Enabled { get; set; } = true;
     public string MetricsPath { get; set; } = "/metrics";
     public int Port { get; set; } = 9090;
-    public Dictionary<string, string> Labels { get; set; } = new();
+    public Dictionary<string, string> Labels { get; set; } = [];
 }
 
 /// <summary>
@@ -184,7 +178,7 @@ public sealed class OpenTelemetryIntegration
 /// </summary>
 public interface ILogSink : IDisposable
 {
-    Task WriteAsync(StructuredLogEntry entry);
+    public Task WriteAsync(StructuredLogEntry entry);
 }
 
 /// <summary>

@@ -121,7 +121,7 @@ public static class SecurityExtensions
             .Where(attr => attr.GetType().Name.Contains("Security", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        if (securityAttributes.Any())
+        if (securityAttributes.Count != 0)
         {
             return false;
         }

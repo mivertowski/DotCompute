@@ -3,6 +3,7 @@
 
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Device.Interfaces;
 
 namespace DotCompute.Core.Pipelines
 {

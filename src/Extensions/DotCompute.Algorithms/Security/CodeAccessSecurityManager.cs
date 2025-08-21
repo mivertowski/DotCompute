@@ -2,9 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Reflection;
 using System.Runtime.Loader;
-using System.Security;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 

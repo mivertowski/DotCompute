@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;

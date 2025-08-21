@@ -4,7 +4,15 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Kernels;
+using DotCompute.Core.Execution.Types;
+using ExecutionBottleneckType = DotCompute.Core.Execution.Types.BottleneckType;
+using KernelBottleneckType = DotCompute.Core.Kernels.BottleneckType;
+
+using DotCompute.Core.Execution.Metrics;
+using DotCompute.Core.Execution.Workload;
+using DotCompute.Core.Execution.Pipeline;
+using DotCompute.Core.Device.Types;
+using DotCompute.Core.Execution.Plans;
 
 namespace DotCompute.Core.Execution
 {
@@ -373,7 +381,25 @@ namespace DotCompute.Core.Execution
             analysis.Bottlenecks = [.. IdentifyBottlenecks(executions, deviceProfiles)];
 
             // Generate optimization recommendations
-            analysis.OptimizationRecommendations = [.. GenerateOptimizationRecommendations(executions, analysis.Bottlenecks)];
+            // Convert execution bottlenecks to kernel bottlenecks for recommendations
+            var kernelBottlenecks = new List<Analysis.BottleneckAnalysis>();
+            foreach (var b in analysis.Bottlenecks)
+            {
+                kernelBottlenecks.Add(new Analysis.BottleneckAnalysis 
+                {
+                    Type = b.Type switch
+                    {
+                        ExecutionBottleneckType.MemoryBandwidth => KernelBottleneckType.MemoryBandwidth,
+                        ExecutionBottleneckType.Compute => KernelBottleneckType.Compute,
+                        _ => KernelBottleneckType.MemoryLatency
+                    },
+                    Severity = b.Severity,
+                    Details = b.Details,
+                    ResourceUtilization = new Dictionary<string, double>()
+                });
+            }
+            
+            analysis.OptimizationRecommendations = [.. GenerateOptimizationRecommendations(executions, kernelBottlenecks)];
 
             // Recommend optimal strategy
             analysis.RecommendedStrategy = RecommendStrategy(executions);
@@ -429,9 +455,9 @@ namespace DotCompute.Core.Execution
             return (efficiencyRating + successRating) / 2.0;
         }
 
-        private static IEnumerable<BottleneckAnalysis> IdentifyBottlenecks(ExecutionRecord[] executions, DevicePerformanceProfile[] deviceProfiles)
+        private static IEnumerable<Analysis.BottleneckAnalysis> IdentifyBottlenecks(ExecutionRecord[] executions, DevicePerformanceProfile[] deviceProfiles)
         {
-            var bottlenecks = new List<BottleneckAnalysis>();
+            var bottlenecks = new List<Analysis.BottleneckAnalysis>();
 
             // Memory bandwidth bottleneck
             var avgMemoryEfficiency = executions.Average(e =>
@@ -439,9 +465,9 @@ namespace DotCompute.Core.Execution
 
             if (avgMemoryEfficiency < 100) // Assuming 100 GB/s as baseline
             {
-                bottlenecks.Add(new BottleneckAnalysis
+                bottlenecks.Add(new Analysis.BottleneckAnalysis
                 {
-                    Type = BottleneckType.MemoryBandwidth,
+                    Type = Types.BottleneckType.MemoryBandwidth,
                     Severity = 1.0 - (avgMemoryEfficiency / 100),
                     Details = $"Average memory bandwidth utilization is low: {avgMemoryEfficiency:F1} GB/s"
                 });
@@ -451,9 +477,9 @@ namespace DotCompute.Core.Execution
             var avgParallelEfficiency = executions.Average(e => e.EfficiencyPercentage);
             if (avgParallelEfficiency < 60)
             {
-                bottlenecks.Add(new BottleneckAnalysis
+                bottlenecks.Add(new Analysis.BottleneckAnalysis
                 {
-                    Type = BottleneckType.Synchronization,
+                    Type = Types.BottleneckType.Synchronization,
                     Severity = (60 - avgParallelEfficiency) / 60,
                     Details = $"Low parallel efficiency: {avgParallelEfficiency:F1}%"
                 });
@@ -462,7 +488,7 @@ namespace DotCompute.Core.Execution
             return bottlenecks.OrderByDescending(b => b.Severity);
         }
 
-        private static IEnumerable<string> GenerateOptimizationRecommendations(ExecutionRecord[] executions, List<BottleneckAnalysis> bottlenecks)
+        private static IEnumerable<string> GenerateOptimizationRecommendations(ExecutionRecord[] executions, List<Analysis.BottleneckAnalysis> bottlenecks)
         {
             var recommendations = new List<string>();
 
@@ -470,13 +496,13 @@ namespace DotCompute.Core.Execution
             {
                 switch (bottleneck.Type)
                 {
-                    case BottleneckType.MemoryBandwidth:
+                    case KernelBottleneckType.MemoryBandwidth:
                         recommendations.Add("Consider using larger batch sizes or optimizing memory access patterns");
                         break;
-                    case BottleneckType.Synchronization:
+                    case KernelBottleneckType.MemoryLatency:
                         recommendations.Add("Reduce synchronization overhead by using asynchronous operations");
                         break;
-                    case BottleneckType.Compute:
+                    case KernelBottleneckType.Compute:
                         recommendations.Add("Optimize computational kernels or use higher compute capability devices");
                         break;
                     default:
@@ -681,6 +707,58 @@ namespace DotCompute.Core.Execution
                 _ => 0
             };
         }
+
+        /// <summary>
+        /// Estimates execution time for data parallel kernels.
+        /// </summary>
+        public double EstimateExecutionTime(string kernelName, ComputeDeviceType[] deviceTypes, int dataSize)
+        {
+            // Simple estimation based on historical data or defaults
+            const double baseTimeMs = 10.0; // Base execution time
+            const double dataSizeMultiplier = 0.001; // Time per data element
+            
+            var deviceMultiplier = deviceTypes.Length > 0 ? 1.0 / deviceTypes.Length : 1.0;
+            return (baseTimeMs + (dataSize * dataSizeMultiplier)) * deviceMultiplier;
+        }
+
+        /// <summary>
+        /// Estimates execution time for model parallel execution.
+        /// </summary>
+        public double EstimateModelParallelExecutionTime<T>(ModelParallelWorkload<T> workload, Dictionary<int, IAccelerator> layerAssignments) where T : unmanaged
+        {
+            // Estimate based on layer count and device distribution
+            const double baseLayerTimeMs = 5.0;
+            var totalLayers = workload.ModelLayers.Count;
+            var deviceCount = layerAssignments.Values.Distinct().Count();
+            
+            return totalLayers * baseLayerTimeMs / Math.Max(1, deviceCount);
+        }
+
+        /// <summary>
+        /// Estimates execution time for pipeline execution.
+        /// </summary>
+        public double EstimatePipelineExecutionTime(List<PipelineStageDefinition> pipelineStages, MicrobatchConfiguration microbatchConfig)
+        {
+            // Estimate based on stage count and microbatch configuration
+            const double baseStageTimeMs = 8.0;
+            var stageCount = pipelineStages.Count;
+            var microbatchOverhead = microbatchConfig.Count * 0.5; // Small overhead per microbatch
+            
+            return (stageCount * baseStageTimeMs) + microbatchOverhead;
+        }
+
+        /// <summary>
+        /// Estimates processing time for a pipeline stage.
+        /// </summary>
+        public double EstimateStageProcessingTime(PipelineStageDefinition stage, MicrobatchConfiguration microbatchConfig)
+        {
+            // Estimate based on stage complexity and microbatch size
+            const double baseProcessingTimeMs = 5.0;
+            var microbatchMultiplier = microbatchConfig.Count * 0.3;
+            
+            return baseProcessingTimeMs + microbatchMultiplier;
+        }
+
     }
 
     // Supporting data structures
@@ -742,7 +820,7 @@ namespace DotCompute.Core.Execution
         public double AverageUtilizationPercentage { get; private set; }
         public double PeakUtilizationPercentage { get; private set; }
         public double IdleTimePercentage { get; private set; }
-        public BottleneckAnalysis? PrimaryBottleneck { get; private set; }
+        public Analysis.BottleneckAnalysis? PrimaryBottleneck { get; private set; }
 
         public void AddExecution(DeviceExecutionResult result)
         {
@@ -767,7 +845,7 @@ namespace DotCompute.Core.Execution
                 recommendations.Add("Increase workload size or improve kernel efficiency");
             }
 
-            if (PrimaryBottleneck?.Type == BottleneckType.MemoryBandwidth)
+            if (PrimaryBottleneck is not null && PrimaryBottleneck.Type == ExecutionBottleneckType.MemoryBandwidth)
             {
                 recommendations.Add("Optimize memory access patterns or use memory coalescing");
             }

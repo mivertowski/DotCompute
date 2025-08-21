@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Recovery;
@@ -14,22 +13,22 @@ public interface IRecoveryStrategy<TContext>
     /// <summary>
     /// The type of errors this strategy can handle
     /// </summary>
-    RecoveryCapability Capability { get; }
+    public RecoveryCapability Capability { get; }
 
     /// <summary>
     /// Priority of this strategy (higher values = higher priority)
     /// </summary>
-    int Priority { get; }
+    public int Priority { get; }
 
     /// <summary>
     /// Determines if this strategy can handle the given error
     /// </summary>
-    bool CanHandle(Exception error, TContext context);
+    public bool CanHandle(Exception error, TContext context);
 
     /// <summary>
     /// Attempts to recover from the error
     /// </summary>
-    Task<RecoveryResult> RecoverAsync(Exception error, TContext context, RecoveryOptions options, CancellationToken cancellationToken = default);
+    public Task<RecoveryResult> RecoverAsync(Exception error, TContext context, RecoveryOptions options, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -106,7 +105,7 @@ public class RecoveryOptions
     public bool ForceGarbageCollection { get; set; }
 
     public TimeSpan MaxRecoveryTime { get; set; } = TimeSpan.FromSeconds(30);
-    public Dictionary<string, object> Context { get; set; } = new();
+    public Dictionary<string, object> Context { get; set; } = [];
 }
 
 /// <summary>
@@ -121,7 +120,7 @@ public class RecoveryResult
     public string Strategy { get; set; } = string.Empty;
     public int RetryAttempt { get; set; }
     public bool RequiresManualIntervention { get; set; }
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
 
 }
@@ -134,8 +133,8 @@ public class RecoveryMetrics
     private long _totalAttempts;
     private long _successfulRecoveries;
     private long _failedRecoveries;
-    private readonly List<TimeSpan> _recoveryTimes = new();
-    private readonly List<Exception?> _recentExceptions = new();
+    private readonly List<TimeSpan> _recoveryTimes = [];
+    private readonly List<Exception?> _recentExceptions = [];
     private readonly object _lock = new();
 
     public long TotalAttempts => _totalAttempts;

@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
@@ -587,6 +586,6 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     internal interface IStreamReturnManager
     {
-        void ReturnStreamToPool(StreamId streamId);
+        public void ReturnStreamToPool(StreamId streamId);
     }
 }

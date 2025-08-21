@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 // This is a redirect to the main Complex implementation
-using DotCompute.Algorithms.SignalProcessing;
-
 // Re-export the Complex type for compatibility
 namespace DotCompute.Algorithms.Types.SignalProcessing;
 

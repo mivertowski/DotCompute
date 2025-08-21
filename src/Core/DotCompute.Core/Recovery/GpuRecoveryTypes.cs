@@ -27,7 +27,7 @@ public class GpuRecoveryContext
     public string Operation { get; set; } = string.Empty;
     public Exception Error { get; set; } = null!;
     public DateTimeOffset Timestamp { get; set; }
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 /// <summary>
@@ -180,16 +180,16 @@ public class DeviceRecoveryState
 /// </summary>
 public interface IKernelExecutionMonitor : IDisposable
 {
-    string KernelId { get; }
-    string DeviceId { get; }
-    TimeSpan ExecutionTime { get; }
-    bool IsHanging { get; }
-    bool IsCompleted { get; }
+    public string KernelId { get; }
+    public string DeviceId { get; }
+    public TimeSpan ExecutionTime { get; }
+    public bool IsHanging { get; }
+    public bool IsCompleted { get; }
 
 
-    Task CancelAsync(CancellationToken cancellationToken = default);
-    Task WaitForCompletionAsync(CancellationToken cancellationToken = default);
-    void MarkCompleted();
+    public Task CancelAsync(CancellationToken cancellationToken = default);
+    public Task WaitForCompletionAsync(CancellationToken cancellationToken = default);
+    public void MarkCompleted();
 }
 
 /// <summary>
@@ -284,7 +284,7 @@ public class DeviceHealthStatus
 public class DeviceHealthReport
 {
     public DateTimeOffset Timestamp { get; set; }
-    public Dictionary<string, DeviceHealthStatus> DeviceHealth { get; set; } = new();
+    public Dictionary<string, DeviceHealthStatus> DeviceHealth { get; set; } = [];
     public double OverallHealth { get; set; }
     public int ActiveKernels { get; set; }
     public long TotalRecoveryAttempts { get; set; }

@@ -42,12 +42,12 @@ public class AlgorithmPerformanceProfile
     /// <summary>
     /// Gets or sets additional performance metrics.
     /// </summary>
-    public Dictionary<string, object> AdditionalMetrics { get; set; } = new();
+    public Dictionary<string, object> AdditionalMetrics { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the benchmark scores for different input sizes.
     /// </summary>
-    public Dictionary<int, double> BenchmarkScores { get; set; } = new();
+    public Dictionary<int, double> BenchmarkScores { get; set; } = [];
 
     /// <summary>
     /// Gets the estimated execution time for a given input size.

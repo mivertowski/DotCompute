@@ -1,7 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Plugins.Exceptions;
+using DotCompute.Plugins.Exceptions.Core;
+using DotCompute.Plugins.Exceptions.Loading;
+using DotCompute.Plugins.Exceptions.Configuration;
+using DotCompute.Plugins.Exceptions.Security;
+using DotCompute.Plugins.Exceptions.Validation;
 using Xunit;
 using FluentAssertions;
 

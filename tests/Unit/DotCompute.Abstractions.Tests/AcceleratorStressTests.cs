@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 

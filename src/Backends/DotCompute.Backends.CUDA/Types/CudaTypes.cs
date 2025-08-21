@@ -75,7 +75,7 @@ namespace DotCompute.Backends.CUDA.Types
     /// </summary>
     public sealed class CudaKernelArguments
     {
-        private readonly List<object> _arguments = new();
+        private readonly List<object> _arguments = [];
 
         public CudaKernelArguments() { }
 
@@ -101,7 +101,7 @@ namespace DotCompute.Backends.CUDA.Types
     {
         public bool IsValid { get; init; }
         public string? ErrorMessage { get; init; }
-        public List<string> Warnings { get; init; } = new();
+        public List<string> Warnings { get; init; } = [];
 
         public static ValidationResult Success() => new() { IsValid = true };
         public static ValidationResult Success(string message) => new() { IsValid = true, ErrorMessage = message };
