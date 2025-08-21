@@ -514,3 +514,9 @@ docs/COMPREHENSIVE_FOLDER_STRUCTURE_DESIGN.md
 docs/FinalRefactoringReport.md
 docs/RefactoringReport.md
 src/Runtime/DotCompute.Plugins/Exceptions/PluginExceptions.cs.bak
+src/Backends/DotCompute.Backends.CPU/src/Kernels/REFACTORING_NOTE.md
+scripts/validate-folder-structure.sh
+src/CopyrightHeaderTemplate.txt
+docs/FOLDER_STRUCTURE_DESIGN.md
+docs/CodeQualityAnalysisReport.md
+docs/ADR-001-Folder-Structure-Design.md

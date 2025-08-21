@@ -6,7 +6,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CPU.Kernels.Optimized;
+namespace DotCompute.Backends.CPU.Kernels.Base;
 
 /// <summary>
 /// Base class for optimized kernel implementations providing common functionality

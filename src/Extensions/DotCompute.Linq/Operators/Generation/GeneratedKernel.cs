@@ -1,0 +1,50 @@
+// <copyright file="GeneratedKernel.cs" company="DotCompute Project">
+// Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System.Collections.Generic;
+using DotCompute.Core.Kernels;
+
+namespace DotCompute.Linq.Operators.Generation;
+
+/// <summary>
+/// Represents a kernel generated from expressions with optimization metadata.
+/// </summary>
+public class GeneratedKernel
+{
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the generated kernel source code.
+    /// </summary>
+    public string Source { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the kernel language.
+    /// </summary>
+    public KernelLanguage Language { get; set; }
+
+    /// <summary>
+    /// Gets or sets the kernel parameters.
+    /// </summary>
+    public GeneratedKernelParameter[] Parameters { get; set; } = System.Array.Empty<GeneratedKernelParameter>();
+
+    /// <summary>
+    /// Gets or sets the required work group size.
+    /// </summary>
+    public int[]? RequiredWorkGroupSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the shared memory size in bytes.
+    /// </summary>
+    public int SharedMemorySize { get; set; }
+
+    /// <summary>
+    /// Gets or sets optimization metadata from expression analysis.
+    /// </summary>
+    public Dictionary<string, object>? OptimizationMetadata { get; set; }
+}

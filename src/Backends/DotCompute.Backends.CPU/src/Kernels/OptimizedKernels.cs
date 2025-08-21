@@ -1,6 +1,28 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+//
+// ⚠️  DEPRECATED: This file has been split into separate files for better maintainability.
+// ⚠️  The individual classes have been moved to their respective subdirectories:
+// ⚠️  
+// ⚠️  • OptimizedKernelBase                → Base/OptimizedKernelBase.cs
+// ⚠️  • OptimizedVectorAddKernel          → Optimized/OptimizedVectorAddKernel.cs  
+// ⚠️  • OptimizedMatrixMultiplyKernel     → Optimized/OptimizedMatrixMultiplyKernel.cs
+// ⚠️  • OptimizedReductionKernel          → Optimized/OptimizedReductionKernel.cs
+// ⚠️  • OptimizedMemoryKernel             → Optimized/OptimizedMemoryKernel.cs
+// ⚠️  • OptimizedComputeKernel            → Optimized/OptimizedComputeKernel.cs
+// ⚠️  • OptimizedVectorScaleKernel        → Optimized/OptimizedVectorScaleKernel.cs
+// ⚠️  • GenericOptimizedKernel            → Optimized/GenericOptimizedKernel.cs
+// ⚠️  • KernelType                        → Types/KernelType.cs
+// ⚠️  • KernelInfo                        → Types/KernelInfo.cs
+// ⚠️  • KernelParameter                   → Types/KernelParameter.cs
+// ⚠️  
+// ⚠️  Please update your using statements to reference the new file locations.
+// ⚠️  This file will be removed in a future version.
+//
+
+#pragma warning disable CS0618 // Type or member is obsolete
+
 using System.Numerics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
@@ -12,6 +34,7 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// <summary>
 /// Base class for optimized kernel implementations.
 /// </summary>
+[Obsolete("This class has been moved to Base/OptimizedKernelBase.cs. Please update your using statements.")]
 internal abstract class OptimizedKernelBase : ICompiledKernel
 {
     protected readonly ILogger Logger;
@@ -47,6 +70,7 @@ internal abstract class OptimizedKernelBase : ICompiledKernel
 /// <summary>
 /// Highly optimized vector addition kernel with SIMD support.
 /// </summary>
+[Obsolete("This class has been moved to Optimized/OptimizedVectorAddKernel.cs. Please update your using statements.")]
 internal class OptimizedVectorAddKernel : OptimizedKernelBase
 {
     public OptimizedVectorAddKernel(string name, CompilationOptions options, ILogger logger)
@@ -111,6 +135,7 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
 /// <summary>
 /// Cache-optimized matrix multiplication kernel.
 /// </summary>
+[Obsolete("This class has been moved to Optimized/OptimizedMatrixMultiplyKernel.cs. Please update your using statements.")]
 internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
 {
     public OptimizedMatrixMultiplyKernel(string name, CompilationOptions options, ILogger logger)
@@ -163,6 +188,7 @@ internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
 /// <summary>
 /// Tree-based reduction kernel with logarithmic scaling.
 /// </summary>
+[Obsolete("This class has been moved to Optimized/OptimizedReductionKernel.cs. Please update your using statements.")]
 internal class OptimizedReductionKernel : OptimizedKernelBase
 {
     public OptimizedReductionKernel(string name, CompilationOptions options, ILogger logger)
@@ -216,6 +242,7 @@ internal class OptimizedReductionKernel : OptimizedKernelBase
 /// <summary>
 /// Memory-intensive kernel optimized for bandwidth utilization.
 /// </summary>
+[Obsolete("This class has been moved to Optimized/OptimizedMemoryKernel.cs. Please update your using statements.")]
 internal class OptimizedMemoryKernel : OptimizedKernelBase
 {
     public OptimizedMemoryKernel(string name, CompilationOptions options, ILogger logger)
@@ -261,6 +288,7 @@ internal class OptimizedMemoryKernel : OptimizedKernelBase
 /// <summary>
 /// Compute-intensive kernel with transcendental functions.
 /// </summary>
+[Obsolete("This class has been moved to Optimized/OptimizedComputeKernel.cs. Please update your using statements.")]
 internal class OptimizedComputeKernel : OptimizedKernelBase
 {
     public OptimizedComputeKernel(string name, CompilationOptions options, ILogger logger)
@@ -313,6 +341,7 @@ internal class OptimizedComputeKernel : OptimizedKernelBase
 /// <summary>
 /// Highly optimized vector scaling kernel with SIMD support.
 /// </summary>
+[Obsolete("This class has been moved to Optimized/OptimizedVectorScaleKernel.cs. Please update your using statements.")]
 internal class OptimizedVectorScaleKernel : OptimizedKernelBase
 {
     public OptimizedVectorScaleKernel(string name, CompilationOptions options, ILogger logger)
@@ -369,6 +398,7 @@ internal class OptimizedVectorScaleKernel : OptimizedKernelBase
 /// <summary>
 /// Generic optimized kernel for unknown kernel types.
 /// </summary>
+[Obsolete("This class has been moved to Optimized/GenericOptimizedKernel.cs. Please update your using statements.")]
 internal class GenericOptimizedKernel : OptimizedKernelBase
 {
     private readonly KernelInfo _kernelInfo;
@@ -473,6 +503,7 @@ internal class GenericOptimizedKernel : OptimizedKernelBase
 }
 
 // Supporting data structures
+[Obsolete("This enum has been moved to Types/KernelType.cs. Please update your using statements.")]
 internal enum KernelType
 {
     Generic,
@@ -485,6 +516,7 @@ internal enum KernelType
     ComputeIntensive
 }
 
+[Obsolete("This class has been moved to Types/KernelInfo.cs. Please update your using statements.")]
 internal class KernelInfo
 {
     public string Name { get; set; } = string.Empty;
@@ -493,6 +525,7 @@ internal class KernelInfo
     public List<KernelParameter> Parameters { get; set; } = [];
 }
 
+[Obsolete("This class has been moved to Types/KernelParameter.cs. Please update your using statements.")]
 internal class KernelParameter
 {
     public string Name { get; set; } = string.Empty;

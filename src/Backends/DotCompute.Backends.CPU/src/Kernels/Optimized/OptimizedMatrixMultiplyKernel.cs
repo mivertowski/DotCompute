@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CPU.Kernels.Base;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Kernels.Optimized;

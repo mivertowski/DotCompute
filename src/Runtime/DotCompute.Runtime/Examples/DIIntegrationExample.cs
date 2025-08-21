@@ -1,6 +1,20 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+// ⚠️  DEPRECATED: This file has been split into organized components
+// 📁 New location: src/Runtime/DotCompute.Runtime/Examples/DependencyInjection/
+// 
+// Migration Guide:
+// - Main examples: DependencyInjection/DIIntegrationExample.cs
+// - Services: DependencyInjection/Services/
+// - Providers: DependencyInjection/Providers/
+// - Logging: DependencyInjection/Logging/
+// - Mocks: DependencyInjection/Mocks/
+// - Factories: DependencyInjection/Factories/
+// - Plugins: DependencyInjection/Plugins/
+// 
+// This file will be removed in a future version.
+
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 // using DotCompute.Algorithms.Types; // Temporarily commented out due to compilation issues
