@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
+using DotCompute.Backends.CUDA.BLAS.Enums;
+using DotCompute.Backends.CUDA.BLAS.Models;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
@@ -702,82 +704,11 @@ public sealed class CuBLASWrapper : IDisposable
     }
 }
 
-#region Supporting Types
-
-/// <summary>
-/// cuBLAS status codes
-/// </summary>
-public enum CublasStatus
-{
-    Success = 0,
-    NotInitialized = 1,
-    AllocFailed = 3,
-    InvalidValue = 7,
-    ArchMismatch = 8,
-    MappingError = 11,
-    ExecutionFailed = 13,
-    InternalError = 14,
-    NotSupported = 15,
-    LicenseError = 16
-}
-
-/// <summary>
-/// cuBLAS operation types
-/// </summary>
-public enum CublasOperation
-{
-    NonTranspose = 0,
-    Transpose = 1,
-    ConjugateTranspose = 2
-}
-
-/// <summary>
-/// cuBLAS fill mode
-/// </summary>
-public enum CublasFillMode
-{
-    Lower = 0,
-    Upper = 1
-}
-
-/// <summary>
-/// cuBLAS diagonal type
-/// </summary>
-public enum CublasDiagType
-{
-    NonUnit = 0,
-    Unit = 1
-}
-
-/// <summary>
-/// cuBLAS side mode
-/// </summary>
-public enum CublasSideMode
-{
-    Left = 0,
-    Right = 1
-}
-
-/// <summary>
-/// cuBLAS math mode
-/// </summary>
-public enum CublasMath
-{
-    DefaultMath = 0,
-    TensorOpMath = 1,
-    PedanticMath = 2,
-    TF32TensorOpMath = 3
-}
-
-/// <summary>
-/// Performance metrics for BLAS operations
-/// </summary>
-public class PerformanceMetrics
-{
-    public string Operation { get; set; } = string.Empty;
-    public long TotalFlops { get; set; }
-    public int CallCount { get; set; }
-    public double AverageFlops => CallCount > 0 ? (double)TotalFlops / CallCount : 0;
-}
-
-#endregion
+// Supporting types have been moved to separate files:
+// - Enums/CublasStatus.cs
+// - Enums/CublasOperation.cs
+// - Enums/CublasFillMode.cs
+// - Enums/CublasDiagType.cs
+// - Enums/CublasSideMode.cs
+// - Enums/CublasMath.cs
+// - Models/PerformanceMetrics.cs

@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime;
 using DotCompute.Abstractions;
+using DotCompute.Core.Recovery.Models;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Recovery;

@@ -6,6 +6,8 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Memory.Benchmarks;
+using DotCompute.Memory.Enums;
+using DotCompute.Memory.Internal;
 
 namespace DotCompute.Memory;
 
@@ -25,19 +27,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
     private readonly ConcurrentDictionary<object, WeakReference> _activeBuffers = new();
     private readonly Lock _lock = new();
 
-    // Performance optimization: Use thread-safe counters with padding to avoid false sharing
-    private readonly struct AlignedCounter
-    {
-#pragma warning disable CS0649 // Field is never assigned to - it's modified through Unsafe.AsRef
-        private readonly long _value;
-#pragma warning restore CS0649
-#pragma warning disable CS0169, CA1823 // The padding fields are intentionally unused to prevent false sharing
-        private readonly byte _padding1, _padding2, _padding3, _padding4, _padding5, _padding6, _padding7;
-#pragma warning restore CS0169, CA1823
-        public readonly long Value => Interlocked.Read(ref Unsafe.AsRef(in _value));
-        public readonly void Increment() => Interlocked.Increment(ref Unsafe.AsRef(in _value));
-        public readonly void Add(long value) => Interlocked.Add(ref Unsafe.AsRef(in _value), value);
-    }
+    // Performance counter using AlignedCounter from Internal namespace
 #pragma warning disable CS0649
     private readonly AlignedCounter _totalAllocations;
 #pragma warning restore CS0649
@@ -60,107 +50,13 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
     }
 
     private static IMemoryManager CreateDefaultMemoryManager()
+    {
         // Create a default memory manager using simple implementation
         // In a real scenario, this might be injected via DI
-
-        => new SimpleInMemoryManager();
-
-    /// <summary>
-    /// Simple in-memory implementation of IMemoryManager for default scenarios
-    /// </summary>
-    private sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
-    {
-        public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default)
-        {
-            var buffer = new SimpleMemoryBuffer(sizeInBytes, options);
-            return ValueTask.FromResult<IMemoryBuffer>(buffer);
-        }
-
-        public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            var buffer = new SimpleMemoryBuffer(sizeInBytes, options);
-            return ValueTask.FromResult<IMemoryBuffer>(buffer);
-        }
-
-        public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length) => new SimpleMemoryBuffer(length, buffer.Options);
-
-        public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
-        {
-            var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            return await AllocateAsync(sizeInBytes).ConfigureAwait(false);
-        }
-
-        public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
-        {
-            var memory = new ReadOnlyMemory<T>(data.ToArray());
-            buffer.CopyFromHostAsync(memory).AsTask().Wait();
-        }
-
-        public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
-        {
-            var memory = new Memory<T>(new T[data.Length]);
-            buffer.CopyToHostAsync(memory).AsTask().Wait();
-            memory.Span.CopyTo(data);
-        }
-
-        public void Free(IMemoryBuffer buffer) => buffer?.Dispose();
-
-        public void Dispose()
-        {
-            // Nothing to dispose for simple implementation
-        }
-
-        private sealed class SimpleMemoryBuffer : IMemoryBuffer
-        {
-            public long SizeInBytes { get; }
-            public DotCompute.Abstractions.MemoryOptions Options { get; }
-            public bool IsDisposed { get; private set; }
-
-            private readonly byte[] _data;
-
-            public SimpleMemoryBuffer(long sizeInBytes, DotCompute.Abstractions.MemoryOptions options)
-            {
-                SizeInBytes = sizeInBytes;
-                Options = options;
-                _data = new byte[sizeInBytes];
-            }
-
-            public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-            {
-                if (IsDisposed)
-                {
-                    throw new ObjectDisposedException(nameof(SimpleMemoryBuffer));
-                }
-
-                var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(source.Span);
-                var destSpan = _data.AsSpan((int)offset, sourceBytes.Length);
-                sourceBytes.CopyTo(destSpan);
-                return ValueTask.CompletedTask;
-            }
-
-            public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-            {
-                if (IsDisposed)
-                {
-                    throw new ObjectDisposedException(nameof(SimpleMemoryBuffer));
-                }
-
-                var sourceSpan = _data.AsSpan((int)offset, destination.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
-                var destBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(destination.Span);
-                sourceSpan.CopyTo(destBytes);
-                return ValueTask.CompletedTask;
-            }
-
-            public void Dispose() => IsDisposed = true;
-
-            public ValueTask DisposeAsync()
-            {
-                Dispose();
-                return ValueTask.CompletedTask;
-            }
-        }
+        return new SimpleInMemoryManager();
     }
+
+    // SimpleInMemoryManager and SimpleMemoryBuffer have been moved to Internal namespace
 
     /// <summary>
     /// Creates a unified buffer with both host and device memory coordination.

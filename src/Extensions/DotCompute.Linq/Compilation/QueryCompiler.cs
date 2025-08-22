@@ -4,6 +4,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Linq.Compilation.Context;
+using DotCompute.Linq.Compilation.Plans;
+using DotCompute.Linq.Compilation.Validation;
 using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
@@ -463,59 +466,3 @@ public class QueryCompiler : IQueryCompiler
     }
 }
 
-/// <summary>
-/// Implementation of a compute plan.
-/// </summary>
-internal class ComputePlan : IComputePlan
-{
-    public ComputePlan(
-        IReadOnlyList<IComputeStage> stages,
-        IReadOnlyDictionary<string, Type> inputParameters,
-        Type outputType,
-        long estimatedMemoryUsage)
-    {
-        Id = Guid.NewGuid();
-        Stages = stages;
-        InputParameters = inputParameters;
-        OutputType = outputType;
-        EstimatedMemoryUsage = estimatedMemoryUsage;
-        Metadata = new Dictionary<string, object>
-        {
-            ["CreatedAt"] = DateTime.UtcNow,
-            ["Version"] = "1.0"
-        };
-    }
-
-    public Guid Id { get; }
-    public IReadOnlyList<IComputeStage> Stages { get; }
-    public IReadOnlyDictionary<string, Type> InputParameters { get; }
-    public Type OutputType { get; }
-    public long EstimatedMemoryUsage { get; }
-    public IReadOnlyDictionary<string, object> Metadata { get; }
-}
-
-/// <summary>
-/// Implementation of a compute stage.
-/// </summary>
-internal class ComputeStage : IComputeStage
-{
-    public ComputeStage(
-        string id,
-        Operators.IKernel kernel,
-        IReadOnlyList<string> inputBuffers,
-        string outputBuffer,
-        ExecutionConfiguration configuration)
-    {
-        Id = id;
-        Kernel = kernel;
-        InputBuffers = inputBuffers;
-        OutputBuffer = outputBuffer;
-        Configuration = configuration;
-    }
-
-    public string Id { get; }
-    public Operators.IKernel Kernel { get; }
-    public IReadOnlyList<string> InputBuffers { get; }
-    public string OutputBuffer { get; }
-    public ExecutionConfiguration Configuration { get; }
-}

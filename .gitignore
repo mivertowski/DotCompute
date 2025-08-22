@@ -520,3 +520,13 @@ src/CopyrightHeaderTemplate.txt
 docs/FOLDER_STRUCTURE_DESIGN.md
 docs/CodeQualityAnalysisReport.md
 docs/ADR-001-Folder-Structure-Design.md
+.env
+mission.yaml
+.cco/config.yaml
+.cco/sessions/4c539feb-7508-4728-8710-4f9ce296ba25.json
+.cco/sessions/4f9981ca-6baa-4565-a9a5-0fc1ea683878.json
+docs/ADR-002-Clean-Architecture-Implementation.md
+docs/COMPREHENSIVE_CLEAN_ARCHITECTURE_DESIGN.md
+scripts/reorganize-clean-architecture.ps1
+scripts/update-namespaces.ps1
+scripts/validate-clean-architecture.sh

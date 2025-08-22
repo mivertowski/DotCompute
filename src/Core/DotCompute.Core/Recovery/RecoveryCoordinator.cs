@@ -6,6 +6,8 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
 
+using DotCompute.Core.Recovery.Models;
+
 namespace DotCompute.Core.Recovery;
 
 /// <summary>

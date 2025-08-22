@@ -34,11 +34,32 @@ public static class CompilationOptionsExtensions
         return new CompilationOptions
         {
             OptimizationLevel = options.OptimizationLevel,
-            FastMath = options.FastMath,
+            EnableFastMath = options.EnableFastMath,
             AggressiveOptimizations = options.AggressiveOptimizations,
             StrictFloatingPoint = options.StrictFloatingPoint,
             CompilerBackend = options.CompilerBackend,
-            ForceInterpretedMode = options.ForceInterpretedMode
+            ForceInterpretedMode = options.ForceInterpretedMode,
+            EnableDebugInfo = options.EnableDebugInfo,
+            TargetArchitecture = options.TargetArchitecture,
+            Defines = new Dictionary<string, string>(options.Defines),
+            IncludePaths = new List<string>(options.IncludePaths),
+            AdditionalFlags = new List<string>(options.AdditionalFlags),
+            CompilationTimeout = options.CompilationTimeout,
+            TreatWarningsAsErrors = options.TreatWarningsAsErrors,
+            WarningLevel = options.WarningLevel,
+            EnableLoopUnrolling = options.EnableLoopUnrolling,
+            EnableVectorization = options.EnableVectorization,
+            EnableInlining = options.EnableInlining,
+            MaxRegisters = options.MaxRegisters,
+            SharedMemoryLimit = options.SharedMemoryLimit,
+            ThreadBlockSize = options.ThreadBlockSize,
+            PreferredBlockSize = options.PreferredBlockSize,
+            SharedMemorySize = options.SharedMemorySize,
+            UnrollLoops = options.UnrollLoops,
+            UseNativeMathLibrary = options.UseNativeMathLibrary,
+            FloatingPointMode = options.FloatingPointMode,
+            EnableProfileGuidedOptimizations = options.EnableProfileGuidedOptimizations,
+            ProfileDataPath = options.ProfileDataPath
         };
     }
 }

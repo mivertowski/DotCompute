@@ -3,6 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
+using DotCompute.Core.Recovery.Models;
+
 namespace DotCompute.Core.Recovery;
 
 /// <summary>

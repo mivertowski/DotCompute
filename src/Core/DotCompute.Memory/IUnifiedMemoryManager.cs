@@ -5,8 +5,9 @@ using DotCompute.Abstractions;
 // Memory types are now in DotCompute.Abstractions
 using DotCompute.Memory.Benchmarks;
 
-namespace DotCompute.Memory;
+using DotCompute.Memory.Enums;
 
+namespace DotCompute.Memory;
 
 /// <summary>
 /// Unified memory manager interface that bridges the gap between Core and Abstractions interfaces.

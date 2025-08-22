@@ -3,6 +3,7 @@
 
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using DotCompute.Core.Device.Interfaces;
+using DotCompute.Core.Pipelines.Models;
 
 namespace DotCompute.Core.Pipelines
 {
