@@ -2,11 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using DotCompute.Core.Pipelines.Errors;
 using DotCompute.Core.Pipelines.Exceptions;
 using DotCompute.Core.Pipelines.Stages;
 using DotCompute.Core.Pipelines.Types;
-using DotCompute.Core.Pipelines.Validation;
+using DotCompute.Core.Pipelines.Models;
 
 namespace DotCompute.Core.Pipelines
 {

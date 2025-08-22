@@ -6,7 +6,10 @@ using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Kernels.Compilation;
+using DotCompute.Core.Kernels.Types;
 using Microsoft.Extensions.Logging;
+using KernelCompilationOptions = DotCompute.Core.Kernels.Types.CompilationOptions;
+using AbstractCompilationOptions = DotCompute.Abstractions.CompilationOptions;
 
 namespace DotCompute.Core.Kernels
 {
@@ -73,7 +76,7 @@ public sealed partial class KernelManager : IDisposable
         Expression expression,
         IAccelerator accelerator,
         KernelGenerationContext? context = null,
-        CompilationOptions? options = null,
+        KernelCompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         // Generate cache key
@@ -123,7 +126,7 @@ public sealed partial class KernelManager : IDisposable
         Type outputType,
         IAccelerator accelerator,
         KernelGenerationContext? context = null,
-        CompilationOptions? options = null,
+        KernelCompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         // Generate cache key
@@ -308,7 +311,7 @@ public sealed partial class KernelManager : IDisposable
         Expression expression,
         IAccelerator accelerator,
         KernelGenerationContext? context,
-        CompilationOptions? options,
+        KernelCompilationOptions? options,
         CancellationToken cancellationToken)
     {
         // Get generator
@@ -347,11 +350,11 @@ public sealed partial class KernelManager : IDisposable
         // Get compilation options
         options ??= GetDefaultCompilationOptions();
 
-        // Convert GeneratedKernel to KernelDefinition
-        var kernelDefinition = ConvertToKernelDefinition(generatedKernel);
+        // Convert GeneratedKernel to IKernelSource
+        var kernelSource = ConvertToKernelSource(generatedKernel);
         
         // Compile kernel
-        var compiledKernel = await compiler.CompileAsync(kernelDefinition, ConvertToAbstractionsOptions(options), cancellationToken).ConfigureAwait(false);
+        var compiledKernel = await compiler.CompileAsync(kernelSource, options ?? GetDefaultCompilationOptions(), cancellationToken).ConfigureAwait(false);
         
         // Convert back to ManagedCompiledKernel
         return ConvertToManagedCompiledKernel(compiledKernel, generatedKernel);
@@ -363,7 +366,7 @@ public sealed partial class KernelManager : IDisposable
         Type outputType,
         IAccelerator accelerator,
         KernelGenerationContext? context,
-        CompilationOptions? options,
+        KernelCompilationOptions? options,
         CancellationToken cancellationToken)
     {
         // Get generator
@@ -402,11 +405,11 @@ public sealed partial class KernelManager : IDisposable
         // Get compilation options
         options ??= GetDefaultCompilationOptions();
 
-        // Convert GeneratedKernel to KernelDefinition
-        var kernelDefinition = ConvertToKernelDefinition(generatedKernel);
+        // Convert GeneratedKernel to IKernelSource
+        var kernelSource = ConvertToKernelSource(generatedKernel);
         
         // Compile kernel
-        var compiledKernel = await compiler.CompileAsync(kernelDefinition, ConvertToAbstractionsOptions(options), cancellationToken).ConfigureAwait(false);
+        var compiledKernel = await compiler.CompileAsync(kernelSource, options ?? GetDefaultCompilationOptions(), cancellationToken).ConfigureAwait(false);
         
         // Convert back to ManagedCompiledKernel
         return ConvertToManagedCompiledKernel(compiledKernel, generatedKernel);
@@ -521,11 +524,11 @@ public sealed partial class KernelManager : IDisposable
     /// <summary>
     /// Gets default compilation options.
     /// </summary>
-    private static CompilationOptions GetDefaultCompilationOptions()
+    private static KernelCompilationOptions GetDefaultCompilationOptions()
     {
-        return new CompilationOptions
+        return new KernelCompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.O2,
+            OptimizationLevel = Types.OptimizationLevel.O2,
             GenerateDebugInfo = false,
             EnableFastMath = true,
             FiniteMathOnly = true,
@@ -536,25 +539,13 @@ public sealed partial class KernelManager : IDisposable
     /// <summary>
     /// Converts GeneratedKernel to KernelDefinition.
     /// </summary>
-    private static KernelDefinition ConvertToKernelDefinition(GeneratedKernel generatedKernel)
+    private static IKernelSource ConvertToKernelSource(GeneratedKernel generatedKernel)
     {
-        var kernelSource = new TextKernelSource(
+        return new TextKernelSource(
             generatedKernel.Source,
             generatedKernel.Name,
             ConvertKernelLanguage(generatedKernel.Language),
             generatedKernel.EntryPoint);
-
-        var compilationOptions = new DotCompute.Abstractions.CompilationOptions
-        {
-            OptimizationLevel = DotCompute.Abstractions.OptimizationLevel.Default
-        };
-
-        return new KernelDefinition
-        {
-            Name = generatedKernel.Name,
-            Source = kernelSource.Code ?? kernelSource.ToString() ?? "",
-            EntryPoint = generatedKernel.EntryPoint
-        };
     }
 
     /// <summary>
@@ -578,9 +569,9 @@ public sealed partial class KernelManager : IDisposable
     /// <summary>
     /// Converts Core CompilationOptions to Abstractions CompilationOptions.
     /// </summary>
-    private static DotCompute.Abstractions.CompilationOptions ConvertToAbstractionsOptions(CompilationOptions options)
+    private static AbstractCompilationOptions ConvertToAbstractionsOptions(KernelCompilationOptions options)
     {
-        return new DotCompute.Abstractions.CompilationOptions
+        return new AbstractCompilationOptions
         {
             OptimizationLevel = ConvertOptimizationLevel(options.OptimizationLevel),
             EnableDebugInfo = options.GenerateDebugInfo,
@@ -608,15 +599,15 @@ public sealed partial class KernelManager : IDisposable
     /// <summary>
     /// Converts Core OptimizationLevel to Abstractions OptimizationLevel.
     /// </summary>
-    private static DotCompute.Abstractions.OptimizationLevel ConvertOptimizationLevel(OptimizationLevel level)
+    private static DotCompute.Abstractions.OptimizationLevel ConvertOptimizationLevel(Types.OptimizationLevel level)
     {
         return level switch
         {
-            OptimizationLevel.O0 => DotCompute.Abstractions.OptimizationLevel.None,
-            OptimizationLevel.O1 => DotCompute.Abstractions.OptimizationLevel.Debug,
-            OptimizationLevel.O2 => DotCompute.Abstractions.OptimizationLevel.Default,
-            OptimizationLevel.O3 => DotCompute.Abstractions.OptimizationLevel.Maximum,
-            OptimizationLevel.Os => DotCompute.Abstractions.OptimizationLevel.Release,
+            Types.OptimizationLevel.O0 => DotCompute.Abstractions.OptimizationLevel.None,
+            Types.OptimizationLevel.O1 => DotCompute.Abstractions.OptimizationLevel.Debug,
+            Types.OptimizationLevel.O2 => DotCompute.Abstractions.OptimizationLevel.Default,
+            Types.OptimizationLevel.O3 => DotCompute.Abstractions.OptimizationLevel.Maximum,
+            Types.OptimizationLevel.Os => DotCompute.Abstractions.OptimizationLevel.Release,
             _ => DotCompute.Abstractions.OptimizationLevel.Default
         };
     }

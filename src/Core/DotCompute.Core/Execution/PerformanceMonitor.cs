@@ -4,13 +4,12 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Execution.Types;
-using ExecutionBottleneckType = DotCompute.Core.Execution.Types.BottleneckType;
-using KernelBottleneckType = DotCompute.Core.Kernels.BottleneckType;
+using DotCompute.Core.Kernels;
 
 using DotCompute.Core.Execution.Metrics;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Execution.Pipeline;
+using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Device.Types;
 using DotCompute.Core.Execution.Plans;
 
@@ -389,9 +388,9 @@ namespace DotCompute.Core.Execution
                 {
                     Type = b.Type switch
                     {
-                        ExecutionBottleneckType.MemoryBandwidth => KernelBottleneckType.MemoryBandwidth,
-                        ExecutionBottleneckType.Compute => KernelBottleneckType.Compute,
-                        _ => KernelBottleneckType.MemoryLatency
+                        BottleneckType.MemoryBandwidth => BottleneckType.MemoryBandwidth,
+                        BottleneckType.Compute => BottleneckType.Compute,
+                        _ => BottleneckType.MemoryLatency
                     },
                     Severity = b.Severity,
                     Details = b.Details,
@@ -467,7 +466,7 @@ namespace DotCompute.Core.Execution
             {
                 bottlenecks.Add(new Analysis.BottleneckAnalysis
                 {
-                    Type = Types.BottleneckType.MemoryBandwidth,
+                    Type = BottleneckType.MemoryBandwidth,
                     Severity = 1.0 - (avgMemoryEfficiency / 100),
                     Details = $"Average memory bandwidth utilization is low: {avgMemoryEfficiency:F1} GB/s"
                 });
@@ -479,7 +478,7 @@ namespace DotCompute.Core.Execution
             {
                 bottlenecks.Add(new Analysis.BottleneckAnalysis
                 {
-                    Type = Types.BottleneckType.Synchronization,
+                    Type = BottleneckType.Synchronization,
                     Severity = (60 - avgParallelEfficiency) / 60,
                     Details = $"Low parallel efficiency: {avgParallelEfficiency:F1}%"
                 });
@@ -496,13 +495,13 @@ namespace DotCompute.Core.Execution
             {
                 switch (bottleneck.Type)
                 {
-                    case KernelBottleneckType.MemoryBandwidth:
+                    case BottleneckType.MemoryBandwidth:
                         recommendations.Add("Consider using larger batch sizes or optimizing memory access patterns");
                         break;
-                    case KernelBottleneckType.MemoryLatency:
+                    case BottleneckType.MemoryLatency:
                         recommendations.Add("Reduce synchronization overhead by using asynchronous operations");
                         break;
-                    case KernelBottleneckType.Compute:
+                    case BottleneckType.Compute:
                         recommendations.Add("Optimize computational kernels or use higher compute capability devices");
                         break;
                     default:
@@ -845,7 +844,7 @@ namespace DotCompute.Core.Execution
                 recommendations.Add("Increase workload size or improve kernel efficiency");
             }
 
-            if (PrimaryBottleneck is not null && PrimaryBottleneck.Type == ExecutionBottleneckType.MemoryBandwidth)
+            if (PrimaryBottleneck is not null && PrimaryBottleneck.Type == BottleneckType.MemoryBandwidth)
             {
                 recommendations.Add("Optimize memory access patterns or use memory coalescing");
             }

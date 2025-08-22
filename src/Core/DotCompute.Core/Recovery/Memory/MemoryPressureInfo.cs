@@ -3,6 +3,8 @@
 
 using DotCompute.Core.Recovery.Models;
 
+using DotCompute.Core.Recovery.Types;
+
 namespace DotCompute.Core.Recovery.Memory;
 
 /// <summary>
@@ -102,6 +104,61 @@ public class MemoryPressureInfo
     /// reclaim memory, suggesting increased memory pressure in the managed heap.
     /// </remarks>
     public double GCPressure { get; set; }
+
+    /// <summary>
+    /// Gets or sets the amount of fragmented memory in bytes.
+    /// </summary>
+    public long FragmentedMemory { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ratio of managed to unmanaged memory.
+    /// </summary>
+    public double ManagedRatio { get; set; }
+
+    /// <summary>
+    /// Gets or sets the memory fragmentation ratio.
+    /// </summary>
+    public double FragmentationRatio { get; set; }
+
+    /// <summary>
+    /// Gets or sets the memory usage trend.
+    /// </summary>
+    public MemoryTrend Trend { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of generation 0 garbage collections.
+    /// </summary>
+    public int Generation0Collections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of generation 1 garbage collections.
+    /// </summary>
+    public int Generation1Collections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of generation 2 garbage collections.
+    /// </summary>
+    public int Generation2Collections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total committed bytes.
+    /// </summary>
+    public long TotalCommittedBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the promoted bytes during last GC.
+    /// </summary>
+    public long PromotedBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the count of pinned objects.
+    /// </summary>
+    public int PinnedObjectsCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the count of objects pending finalization.
+    /// </summary>
+    public int FinalizationPendingCount { get; set; }
 
     /// <summary>
     /// Returns a string representation of the memory pressure information.

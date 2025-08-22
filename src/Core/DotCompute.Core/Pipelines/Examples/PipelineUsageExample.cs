@@ -11,7 +11,7 @@ using DotCompute.Core.Device.Interfaces;
 using DotCompute.Core.Pipelines.Exceptions;
 using DotCompute.Core.Pipelines.Profiling;
 using DotCompute.Core.Pipelines.Stages;
-using DotCompute.Core.Pipelines.Validation;
+using DotCompute.Core.Pipelines.Models;
 using Microsoft.Extensions.Logging;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 

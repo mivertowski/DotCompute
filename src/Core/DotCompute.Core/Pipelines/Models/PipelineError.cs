@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Core.Pipelines.Types;
+
 namespace DotCompute.Core.Pipelines.Models;
 
 /// <summary>
@@ -22,6 +24,11 @@ public class PipelineError
     /// Gets or sets the pipeline stage where the error occurred
     /// </summary>
     public string Stage { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the unique identifier of the pipeline stage where the error occurred
+    /// </summary>
+    public string StageId { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the severity level of the error
@@ -54,33 +61,3 @@ public class PipelineError
     public List<string> SuggestedActions { get; set; } = new();
 }
 
-/// <summary>
-/// Represents the severity level of an error
-/// </summary>
-public enum ErrorSeverity
-{
-    /// <summary>
-    /// Informational message
-    /// </summary>
-    Info,
-
-    /// <summary>
-    /// Warning that doesn't prevent execution
-    /// </summary>
-    Warning,
-
-    /// <summary>
-    /// Error that prevents successful execution
-    /// </summary>
-    Error,
-
-    /// <summary>
-    /// Critical error that may cause system instability
-    /// </summary>
-    Critical,
-
-    /// <summary>
-    /// Fatal error that requires immediate shutdown
-    /// </summary>
-    Fatal
-}

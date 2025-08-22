@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Core.Kernels;
+
 namespace DotCompute.Core.Execution.Analysis
 {
     /// <summary>
@@ -17,10 +19,10 @@ namespace DotCompute.Core.Execution.Analysis
         /// Gets or sets the type of bottleneck identified.
         /// </summary>
         /// <value>
-        /// A <see cref="Types.BottleneckType"/> value indicating the category of bottleneck
+        /// A <see cref="BottleneckType"/> value indicating the category of bottleneck
         /// (e.g., Memory, Compute, Communication, IO).
         /// </value>
-        public Types.BottleneckType Type { get; set; }
+        public BottleneckType Type { get; set; }
 
         /// <summary>
         /// Gets or sets the severity of the bottleneck.
@@ -55,6 +57,14 @@ namespace DotCompute.Core.Execution.Analysis
         /// <c>true</c> if the severity is greater than 0.6; otherwise, <c>false</c>.
         /// </value>
         public bool RequiresAttention => Severity > 0.6;
+
+        /// <summary>
+        /// Gets or sets resource utilization percentages.
+        /// </summary>
+        /// <value>
+        /// A dictionary mapping resource names to their utilization percentages (0-100).
+        /// </value>
+        public Dictionary<string, double> ResourceUtilization { get; set; } = new();
 
         /// <summary>
         /// Returns a string representation of the bottleneck analysis.

@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Core.Recovery.Types;
+using DotCompute.Core.Recovery.Configuration;
 
 namespace DotCompute.Core.Recovery.Models;
 
@@ -86,59 +88,3 @@ public class CachedCompilationResult
     public string KernelName { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Configuration for compilation fallback operations
-/// </summary>
-public class CompilationFallbackConfiguration
-{
-    /// <summary>
-    /// Gets or sets the maximum number of fallback attempts
-    /// </summary>
-    public int MaxFallbackAttempts { get; set; } = 5;
-
-    /// <summary>
-    /// Gets or sets the timeout for each fallback attempt
-    /// </summary>
-    public TimeSpan FallbackTimeout { get; set; } = TimeSpan.FromMinutes(2);
-
-    /// <summary>
-    /// Gets or sets a value indicating whether caching is enabled
-    /// </summary>
-    public bool EnableCaching { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the cache expiration time
-    /// </summary>
-    public TimeSpan CacheExpirationTime { get; set; } = TimeSpan.FromHours(24);
-
-    /// <summary>
-    /// Gets or sets the maximum cache size (in MB)
-    /// </summary>
-    public int MaxCacheSizeMB { get; set; } = 1024;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether interpreted mode fallback is enabled
-    /// </summary>
-    public bool EnableInterpretedFallback { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the list of fallback strategies to try in order
-    /// </summary>
-    public List<CompilationFallbackStrategy> FallbackStrategies { get; set; } = new()
-    {
-        CompilationFallbackStrategy.ReduceOptimization,
-        CompilationFallbackStrategy.DisableFastMath,
-        CompilationFallbackStrategy.ChangeBackend,
-        CompilationFallbackStrategy.UseInterpretedMode
-    };
-
-    /// <summary>
-    /// Gets or sets a value indicating whether performance monitoring is enabled
-    /// </summary>
-    public bool EnablePerformanceMonitoring { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the minimum acceptable performance degradation percentage
-    /// </summary>
-    public double MaxAcceptablePerformanceDegradation { get; set; } = 50.0;
-}

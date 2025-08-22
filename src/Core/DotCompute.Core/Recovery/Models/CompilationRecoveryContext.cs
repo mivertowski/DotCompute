@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Core.Recovery.Types;
 
 namespace DotCompute.Core.Recovery.Models;
 
@@ -125,41 +126,6 @@ public class CompilationAttempt
     /// <summary>
     /// Gets or sets the fallback strategy used
     /// </summary>
-    public CompilationFallbackStrategy? Strategy { get; set; }
+    public Types.CompilationFallbackStrategy? Strategy { get; set; }
 }
 
-/// <summary>
-/// Represents different fallback strategies for compilation recovery
-/// </summary>
-public enum CompilationFallbackStrategy
-{
-    /// <summary>
-    /// Reduce optimization level
-    /// </summary>
-    ReduceOptimization,
-
-    /// <summary>
-    /// Disable fast math
-    /// </summary>
-    DisableFastMath,
-
-    /// <summary>
-    /// Use interpreted mode
-    /// </summary>
-    UseInterpretedMode,
-
-    /// <summary>
-    /// Change compiler backend
-    /// </summary>
-    ChangeBackend,
-
-    /// <summary>
-    /// Fallback to CPU execution
-    /// </summary>
-    FallbackToCpu,
-
-    /// <summary>
-    /// Custom strategy
-    /// </summary>
-    Custom
-}

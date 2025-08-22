@@ -6,7 +6,17 @@ using System.Diagnostics;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Core.Recovery.Models;
+using DotCompute.Core.Recovery.Statistics;
+using DotCompute.Core.Recovery.Types;
 using Microsoft.Extensions.Logging;
+using CompilationRecoveryContext = DotCompute.Core.Recovery.Compilation.CompilationRecoveryContext;
+using CompilationHistory = DotCompute.Core.Recovery.Compilation.CompilationHistory;
+using CachedCompilationResult = DotCompute.Core.Recovery.Compilation.CachedCompilationResult;
+using CompilationFallbackResult = DotCompute.Core.Recovery.Compilation.CompilationFallbackResult;
+using DotCompute.Core.Recovery.Configuration;
+using DotCompute.Core.Recovery.Compilation;
+using CompilationStatistics = DotCompute.Core.Recovery.Statistics.CompilationStatistics;
+using CompilationAttempt = DotCompute.Core.Recovery.Compilation.CompilationAttempt;
 
 namespace DotCompute.Core.Recovery;
 
@@ -92,7 +102,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
             if (result.Success)
             {
-                history.RecordSuccess(strategy);
+                history.RecordSuccess((Types.CompilationFallbackStrategy)strategy);
 
                 // Cache successful compilation
 
@@ -148,7 +158,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
                     strategy, kernelName);
 
 
-                var modifiedOptions = ApplyFallbackStrategy(strategy, currentOptions, context);
+                var modifiedOptions = ApplyFallbackStrategy((Types.CompilationFallbackStrategy)strategy, currentOptions, context);
                 var attempt = new CompilationAttempt
                 {
                     Strategy = strategy,
@@ -222,7 +232,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
     /// <summary>
     /// Gets compilation statistics and recommendations
     /// </summary>
-    public CompilationStatistics GetCompilationStatistics()
+    public Statistics.CompilationStatistics GetCompilationStatistics()
     {
         var totalCompilations = _compilationHistory.Count;
         var successfulCompilations = _compilationHistory.Values.Count(h => h.LastCompilationSuccessful);

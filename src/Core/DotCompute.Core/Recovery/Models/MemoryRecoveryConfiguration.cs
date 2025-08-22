@@ -47,6 +47,31 @@ public class MemoryRecoveryConfiguration
     /// Gets or sets the monitoring interval
     /// </summary>
     public TimeSpan MonitoringInterval { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Gets or sets the size of emergency memory reserve in MB
+    /// </summary>
+    public int EmergencyReserveSizeMB { get; set; } = 64;
+
+    /// <summary>
+    /// Gets or sets the defragmentation interval
+    /// </summary>
+    public TimeSpan DefragmentationInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// Gets or sets whether large object heap compaction is enabled
+    /// </summary>
+    public bool EnableLargeObjectHeapCompaction { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the allocation retry delay
+    /// </summary>
+    public TimeSpan AllocationRetryDelay { get; set; } = TimeSpan.FromMilliseconds(100);
+
+    /// <summary>
+    /// Gets the default configuration
+    /// </summary>
+    public static MemoryRecoveryConfiguration Default => new();
 }
 
 /// <summary>

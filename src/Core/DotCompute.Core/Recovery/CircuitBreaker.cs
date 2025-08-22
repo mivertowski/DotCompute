@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Core.Recovery.Models;
+using DotCompute.Core.Recovery.Statistics;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Recovery;

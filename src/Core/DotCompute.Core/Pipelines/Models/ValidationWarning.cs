@@ -34,6 +34,21 @@ public class ValidationWarning
     public string? WarningCode { get; set; }
 
     /// <summary>
+    /// Gets or sets the warning code
+    /// </summary>
+    public string Code { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the path to the source that caused the validation warning
+    /// </summary>
+    public string Path { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the recommendation to address this warning
+    /// </summary>
+    public string Recommendation { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets additional context information
     /// </summary>
     public Dictionary<string, object> Context { get; set; } = new();

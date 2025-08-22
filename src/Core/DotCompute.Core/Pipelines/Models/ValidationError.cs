@@ -29,6 +29,11 @@ public class ValidationError
     public object? AttemptedValue { get; set; }
 
     /// <summary>
+    /// Gets or sets the invalid value that caused the validation error
+    /// </summary>
+    public object? InvalidValue { get; set; }
+
+    /// <summary>
     /// Gets or sets the severity level of the validation error
     /// </summary>
     public ValidationSeverity Severity { get; set; } = ValidationSeverity.Error;
@@ -37,6 +42,16 @@ public class ValidationError
     /// Gets or sets the error code for programmatic handling
     /// </summary>
     public string? ErrorCode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the validation error code
+    /// </summary>
+    public string Code { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the path to the source that caused the validation error
+    /// </summary>
+    public string Path { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets additional context information

@@ -2,8 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Core.Recovery.Types;
 
 namespace DotCompute.Core.Recovery.Models;
+
+using RecoveryCompilationStatistics = DotCompute.Core.Recovery.Statistics.CompilationStatistics;
 
 /// <summary>
 /// Represents the result of a compilation fallback operation
@@ -23,7 +26,7 @@ public class CompilationFallbackResult
     /// <summary>
     /// Gets or sets the fallback strategy that was used
     /// </summary>
-    public CompilationFallbackStrategy Strategy { get; set; }
+    public Types.CompilationFallbackStrategy Strategy { get; set; }
 
     /// <summary>
     /// Gets or sets the number of attempts made before success or failure

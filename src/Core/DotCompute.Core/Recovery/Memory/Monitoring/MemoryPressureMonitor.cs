@@ -4,7 +4,7 @@
 // </copyright>
 
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Recovery.Memory.Types;
+using DotCompute.Core.Recovery.Types;
 
 namespace DotCompute.Core.Recovery.Memory.Monitoring;
 

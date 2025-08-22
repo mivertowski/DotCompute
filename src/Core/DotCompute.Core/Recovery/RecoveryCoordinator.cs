@@ -5,8 +5,12 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
-
 using DotCompute.Core.Recovery.Models;
+using DotCompute.Core.Recovery.Statistics;
+using DotCompute.Core.Recovery.Memory;
+using DotCompute.Core.Recovery.Types;
+using CompilationRecoveryContext = DotCompute.Core.Recovery.Compilation.CompilationRecoveryContext;
+using CompilationFallbackResult = DotCompute.Core.Recovery.Compilation.CompilationFallbackResult;
 
 namespace DotCompute.Core.Recovery;
 
@@ -178,7 +182,7 @@ public sealed class RecoveryCoordinator : IDisposable
     /// </summary>
     public async Task<RecoveryResult> RecoverMemoryErrorAsync(
         Exception error,
-        MemoryRecoveryContext context,
+        Models.MemoryRecoveryContext context,
         RecoveryOptions? options = null,
         CancellationToken cancellationToken = default) => await _memoryRecovery.RecoverAsync(error, context, options ?? new RecoveryOptions(), cancellationToken);
 
@@ -233,7 +237,7 @@ public sealed class RecoveryCoordinator : IDisposable
     /// <summary>
     /// Gets comprehensive recovery statistics
     /// </summary>
-    public RecoveryStatistics GetRecoveryStatistics()
+    public Statistics.RecoveryStatistics GetRecoveryStatistics()
     {
         var gpuReport = _gpuRecovery.GetDeviceHealthReport();
         var memoryPressure = _memoryRecovery.GetMemoryPressureInfo();
@@ -248,7 +252,7 @@ public sealed class RecoveryCoordinator : IDisposable
         };
 
 
-        return new RecoveryStatistics
+        return new Statistics.RecoveryStatistics
         {
             Timestamp = DateTimeOffset.UtcNow,
             GlobalMetrics = _globalMetrics,
@@ -271,14 +275,14 @@ public sealed class RecoveryCoordinator : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
 
-        var healthResults = new List<ComponentHealthResult>();
+        var healthResults = new List<Statistics.ComponentHealthResult>();
 
 
         try
         {
             // Check GPU health
             var gpuHealth = _gpuRecovery.GetDeviceHealthReport();
-            healthResults.Add(new ComponentHealthResult
+            healthResults.Add(new Statistics.ComponentHealthResult
             {
                 Component = "GPU",
                 IsHealthy = gpuHealth.OverallHealth > 0.7,
@@ -289,7 +293,7 @@ public sealed class RecoveryCoordinator : IDisposable
             // Check memory health
 
             var memoryHealth = _memoryRecovery.GetMemoryPressureInfo();
-            healthResults.Add(new ComponentHealthResult
+            healthResults.Add(new Statistics.ComponentHealthResult
             {
                 Component = "Memory",
                 IsHealthy = memoryHealth.Level <= MemoryPressureLevel.Medium,
@@ -300,7 +304,7 @@ public sealed class RecoveryCoordinator : IDisposable
             // Check compilation health
 
             var compilationHealth = _compilationFallback.GetCompilationStatistics();
-            healthResults.Add(new ComponentHealthResult
+            healthResults.Add(new Statistics.ComponentHealthResult
             {
                 Component = "Compilation",
                 IsHealthy = compilationHealth.SuccessRate > 0.8,
@@ -311,7 +315,7 @@ public sealed class RecoveryCoordinator : IDisposable
             // Check circuit breaker health
 
             var circuitHealth = _circuitBreaker.GetStatistics();
-            healthResults.Add(new ComponentHealthResult
+            healthResults.Add(new Statistics.ComponentHealthResult
             {
                 Component = "Network",
                 IsHealthy = circuitHealth.GlobalState == CircuitState.Closed,
@@ -322,7 +326,7 @@ public sealed class RecoveryCoordinator : IDisposable
             // Check plugin health
 
             var pluginHealth = _pluginRecovery.GetHealthReport();
-            healthResults.Add(new ComponentHealthResult
+            healthResults.Add(new Statistics.ComponentHealthResult
             {
                 Component = "Plugins",
                 IsHealthy = pluginHealth.OverallHealth > 0.8,
@@ -415,7 +419,7 @@ public sealed class RecoveryCoordinator : IDisposable
 
     private static double CalculateOverallSystemHealth(
         DeviceHealthReport gpuReport,
-        MemoryPressureInfo memoryInfo,
+        Memory.MemoryPressureInfo memoryInfo,
         PluginHealthReport pluginReport)
     {
         var healthFactors = new List<double>

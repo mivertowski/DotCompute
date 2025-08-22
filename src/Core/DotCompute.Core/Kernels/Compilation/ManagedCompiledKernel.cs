@@ -70,6 +70,27 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
     public bool IsCompiled => Handle != IntPtr.Zero && Binary.Length > 0;
 
     /// <summary>
+    /// Converts this ManagedCompiledKernel to an Abstractions CompiledKernel.
+    /// </summary>
+    /// <returns>A CompiledKernel instance with the same properties.</returns>
+    public CompiledKernel ToCompiledKernel()
+    {
+        var metadata = PerformanceMetadata ?? new Dictionary<string, object>();
+        metadata["Handle"] = Handle;
+        metadata["EntryPoint"] = Parameters.Length > 0 ? Name : "main";
+        metadata["SharedMemorySize"] = SharedMemorySize;
+        if (RequiredWorkGroupSize != null)
+            metadata["RequiredWorkGroupSize"] = RequiredWorkGroupSize;
+        
+        return new CompiledKernel
+        {
+            Name = Name,
+            CompiledBinary = Binary,
+            Metadata = metadata
+        };
+    }
+
+    /// <summary>
     /// Executes the compiled kernel asynchronously.
     /// </summary>
     /// <param name="arguments">The kernel arguments for execution.</param>

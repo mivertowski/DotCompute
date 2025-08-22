@@ -6,6 +6,9 @@
 using System;
 using System.Collections.Generic;
 
+using DotCompute.Core.Recovery;
+using DotCompute.Core.Recovery.Configuration;
+
 namespace DotCompute.Core.Recovery.Models;
 
 /// <summary>
@@ -112,6 +115,41 @@ public class RecoveryCoordinatorConfiguration
     /// Gets or sets custom recovery parameters.
     /// </summary>
     public Dictionary<string, object> CustomParameters { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the GPU recovery configuration.
+    /// </summary>
+    public GpuRecoveryConfiguration GpuRecoveryConfig { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the memory recovery configuration.
+    /// </summary>
+    public MemoryRecoveryConfiguration MemoryRecoveryConfig { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the compilation fallback configuration.
+    /// </summary>
+    public CompilationFallbackConfiguration CompilationFallbackConfig { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the circuit breaker configuration.
+    /// </summary>
+    public CircuitBreakerConfiguration CircuitBreakerConfig { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the plugin recovery configuration.
+    /// </summary>
+    public PluginRecoveryConfiguration PluginRecoveryConfig { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the metrics report interval.
+    /// </summary>
+    public TimeSpan MetricsReportInterval { get; set; } = TimeSpan.FromMinutes(1);
+
+    /// <summary>
+    /// Gets the default configuration.
+    /// </summary>
+    public static RecoveryCoordinatorConfiguration Default => new();
 }
 
 /// <summary>

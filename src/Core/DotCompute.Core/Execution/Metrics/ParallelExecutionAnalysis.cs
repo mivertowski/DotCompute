@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Execution.Analysis;
-
 using DotCompute.Core.Execution.Types;
+using DotCompute.Core.Kernels;
 
 namespace DotCompute.Core.Execution.Metrics
 {
@@ -36,7 +36,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// limitations identified during execution. These bottlenecks are ordered by
         /// severity and impact on overall performance.
         /// </value>
-        public List<BottleneckAnalysis> Bottlenecks { get; set; } = [];
+        public List<Analysis.BottleneckAnalysis> Bottlenecks { get; set; } = [];
 
         /// <summary>
         /// Gets or sets optimization recommendations.
@@ -121,7 +121,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// <value>
         /// The bottleneck with the highest severity score, or <c>null</c> if no bottlenecks exist.
         /// </value>
-        public BottleneckAnalysis? MostSevereBottleneck
+        public Analysis.BottleneckAnalysis? MostSevereBottleneck
             => Bottlenecks.Count > 0 ? Bottlenecks.MaxBy(b => b.Severity) : null;
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// </summary>
         /// <param name="bottleneck">The bottleneck analysis to add.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="bottleneck"/> is <c>null</c>.</exception>
-        public void AddBottleneck(BottleneckAnalysis bottleneck)
+        public void AddBottleneck(Analysis.BottleneckAnalysis bottleneck)
         {
             ArgumentNullException.ThrowIfNull(bottleneck);
             Bottlenecks.Add(bottleneck);
@@ -239,13 +239,13 @@ namespace DotCompute.Core.Execution.Metrics
             }
             
             // Recommendations based on specific bottleneck types
-            var memoryBottlenecks = Bottlenecks.Where(b => b.Type == Types.BottleneckType.MemoryBandwidth).Count();
+            var memoryBottlenecks = Bottlenecks.Where(b => b.Type == BottleneckType.MemoryBandwidth).Count();
             if (memoryBottlenecks > 0)
             {
                 AddRecommendation("Optimize memory access patterns and consider memory pooling strategies.");
             }
             
-            var communicationBottlenecks = Bottlenecks.Where(b => b.Type == Types.BottleneckType.Communication).Count();
+            var communicationBottlenecks = Bottlenecks.Where(b => b.Type == BottleneckType.Communication).Count();
             if (communicationBottlenecks > 0)
             {
                 AddRecommendation("Reduce communication overhead by overlapping computation with communication.");
