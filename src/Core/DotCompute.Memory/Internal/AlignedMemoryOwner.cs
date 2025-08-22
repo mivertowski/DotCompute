@@ -55,7 +55,7 @@ internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanage
         }
 
         _disposed = true;
-        _allocator.ReleaseAlignedMemory(_alignedPointer, _sizeInBytes);
+        _allocator.NotifyDeallocation(_sizeInBytes);
         GC.SuppressFinalize(this);
     }
 
@@ -66,7 +66,7 @@ internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanage
     {
         if (!_disposed)
         {
-            _allocator.ReleaseAlignedMemory(_alignedPointer, _sizeInBytes);
+            _allocator.NotifyDeallocation(_sizeInBytes);
         }
     }
 

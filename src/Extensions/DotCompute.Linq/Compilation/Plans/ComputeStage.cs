@@ -1,7 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation.Execution;
+using DotCompute.Linq.Operators.Execution;
 
 namespace DotCompute.Linq.Compilation.Plans;
 
@@ -30,7 +32,7 @@ internal class ComputeStage : IComputeStage
     /// </exception>
     public ComputeStage(
         string id,
-        Operators.IKernel kernel,
+        IKernel kernel,
         IReadOnlyList<string> inputBuffers,
         string outputBuffer,
         ExecutionConfiguration configuration)
@@ -46,7 +48,7 @@ internal class ComputeStage : IComputeStage
     public string Id { get; }
 
     /// <inheritdoc />
-    public Operators.IKernel Kernel { get; }
+    public IKernel Kernel { get; }
 
     /// <inheritdoc />
     public IReadOnlyList<string> InputBuffers { get; }

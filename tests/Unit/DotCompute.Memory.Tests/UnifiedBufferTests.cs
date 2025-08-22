@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 using NSubstitute;
 using Xunit;
 

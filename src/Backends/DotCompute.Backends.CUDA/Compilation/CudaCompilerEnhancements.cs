@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Native.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Types;
 

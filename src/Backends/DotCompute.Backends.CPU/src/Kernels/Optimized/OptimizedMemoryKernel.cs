@@ -18,7 +18,7 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// rather than computational complexity. It uses parallel processing to maximize
 /// memory throughput.
 /// </remarks>
-internal class OptimizedMemoryKernel : OptimizedKernelBase
+internal class OptimizedMemoryKernel : Base.OptimizedKernelBase
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="OptimizedMemoryKernel"/> class.

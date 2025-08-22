@@ -23,6 +23,7 @@ internal sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
 {
     private bool _disposed;
     private long _totalAllocated;
+    private long _totalFreed;
     private int _allocationCount;
 
     /// <summary>
@@ -36,7 +37,7 @@ internal sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
     public int AllocationCount => _allocationCount;
 
     /// <inheritdoc/>
-    public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+    public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         
@@ -57,7 +58,7 @@ internal sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
     }
 
     /// <inheritdoc/>
-    public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+    public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         cancellationToken.ThrowIfCancellationRequested();
@@ -129,6 +130,21 @@ internal sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
         return await AllocateAsync(sizeInBytes).ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
+    public void Free(IMemoryBuffer buffer)
+    {
+        if (buffer == null)
+        {
+            return;
+        }
+
+        buffer.Dispose();
+        
+        // Track statistics
+        Interlocked.Add(ref _totalFreed, buffer.SizeInBytes);
+        Interlocked.Decrement(ref _allocationCount);
+    }
+
     /// <summary>
     /// Copies data from host to device buffer.
     /// </summary>
@@ -175,7 +191,8 @@ internal sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
             throw new ArgumentNullException(nameof(buffer));
         }
 
-        buffer.SynchronizeAsync().AsTask().Wait();
+        // Note: SynchronizeAsync is implementation-specific and not on the IMemoryBuffer interface
+        // For SimpleMemoryBuffer, synchronization is a no-op since it's always in host memory
     }
 
     /// <summary>

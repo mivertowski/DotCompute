@@ -6,29 +6,28 @@ namespace DotCompute.Abstractions
 
     /// <summary>
     /// Represents a compute kernel that can be compiled and executed on an accelerator.
-    /// Implementations should be structs for AOT compatibility and performance.
     /// </summary>
     public interface IKernel
     {
         /// <summary>
         /// Gets the unique name of this kernel.
         /// </summary>
-        public static abstract string Name { get; }
+        string Name { get; }
 
         /// <summary>
         /// Gets the source code or IL representation of the kernel.
         /// </summary>
-        public static abstract string Source { get; }
+        string Source { get; }
 
         /// <summary>
         /// Gets the entry point method name for the kernel.
         /// </summary>
-        public static abstract string EntryPoint { get; }
+        string EntryPoint { get; }
 
         /// <summary>
         /// Gets the required shared memory size in bytes.
         /// </summary>
-        public static abstract int RequiredSharedMemory { get; }
+        int RequiredSharedMemory { get; }
     }
 
     // Note: KernelDefinition, CompilationOptions, and OptimizationLevel are defined in their respective files

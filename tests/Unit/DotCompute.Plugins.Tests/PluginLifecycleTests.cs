@@ -3,6 +3,7 @@
 
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
+using DotCompute.Plugins.Exceptions.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

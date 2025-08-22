@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using MemoryOptions = DotCompute.Abstractions.MemoryOptions;
 
 namespace DotCompute.Memory.Internal;
 
@@ -24,7 +25,7 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer, IDisposable
     private readonly byte[] _data;
     private readonly GCHandle _handle;
     private readonly long _sizeInBytes;
-    private readonly MemoryOptions _options;
+    private readonly DotCompute.Abstractions.MemoryOptions _options;
     private bool _disposed;
 
     /// <summary>
@@ -32,7 +33,7 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer, IDisposable
     /// </summary>
     /// <param name="sizeInBytes">The size of the buffer in bytes.</param>
     /// <param name="options">Memory allocation options.</param>
-    public SimpleMemoryBuffer(long sizeInBytes, MemoryOptions options = MemoryOptions.None)
+    public SimpleMemoryBuffer(long sizeInBytes, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None)
     {
         if (sizeInBytes <= 0)
         {
@@ -49,7 +50,7 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer, IDisposable
         _data = new byte[sizeInBytes];
 
         // Pin the memory if requested
-        if ((options & MemoryOptions.Pinned) != 0)
+        if ((options & DotCompute.Abstractions.MemoryOptions.Pinned) != 0)
         {
             _handle = GCHandle.Alloc(_data, GCHandleType.Pinned);
         }
@@ -59,7 +60,7 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer, IDisposable
     public long SizeInBytes => _sizeInBytes;
 
     /// <inheritdoc/>
-    public MemoryOptions Options => _options;
+    public DotCompute.Abstractions.MemoryOptions Options => _options;
 
     /// <inheritdoc/>
     public bool IsDisposed => _disposed;
@@ -86,6 +87,16 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer, IDisposable
     }
 
     /// <inheritdoc/>
+    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        var sourceBytes = MemoryMarshal.AsBytes(source.Span);
+        var offsetBytes = checked((int)offset);
+        var targetSpan = _data.AsSpan(offsetBytes);
+        sourceBytes.CopyTo(targetSpan);
+        return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public ValueTask CopyToHostAsync(Memory<byte> destination, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -103,7 +114,17 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer, IDisposable
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
     {
         var destinationBytes = MemoryMarshal.AsBytes(destination.Span);
-        return CopyToHostAsync(destinationBytes, cancellationToken);
+        return CopyToHostAsync(new Memory<byte>(destinationBytes.ToArray()), cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        var destinationBytes = MemoryMarshal.AsBytes(destination.Span);
+        var offsetBytes = checked((int)offset);
+        var sourceSpan = _data.AsSpan(offsetBytes);
+        sourceSpan.CopyTo(destinationBytes);
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
@@ -168,7 +189,7 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer, IDisposable
         }
 
         // Clear sensitive data if requested
-        if ((_options & MemoryOptions.SecureClear) != 0)
+        if ((_options & DotCompute.Abstractions.MemoryOptions.SecureClear) != 0)
         {
             Array.Clear(_data);
         }

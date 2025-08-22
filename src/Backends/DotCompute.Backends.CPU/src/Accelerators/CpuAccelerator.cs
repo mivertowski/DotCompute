@@ -7,6 +7,8 @@ using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
+using Optimized = DotCompute.Backends.CPU.Kernels.Optimized;
+using Types = DotCompute.Backends.CPU.Kernels.Types;
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -151,13 +153,13 @@ public sealed class CpuAccelerator : IAccelerator
             // Create optimized kernel based on type
             return kernelInfo.Type switch
             {
-                KernelType.VectorAdd => new OptimizedVectorAddKernel(kernelInfo.Name, options, _logger),
-                KernelType.VectorScale => new OptimizedVectorScaleKernel(kernelInfo.Name, options, _logger),
-                KernelType.MatrixMultiply => new OptimizedMatrixMultiplyKernel(kernelInfo.Name, options, _logger),
-                KernelType.Reduction => new OptimizedReductionKernel(kernelInfo.Name, options, _logger),
-                KernelType.MemoryIntensive => new OptimizedMemoryKernel(kernelInfo.Name, options, _logger),
-                KernelType.ComputeIntensive => new OptimizedComputeKernel(kernelInfo.Name, options, _logger),
-                _ => new GenericOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger)
+                Types.KernelType.VectorAdd => new Optimized.OptimizedVectorAddKernel(kernelInfo.Name, options, _logger),
+                Types.KernelType.VectorScale => new Optimized.OptimizedVectorScaleKernel(kernelInfo.Name, options, _logger),
+                Types.KernelType.MatrixMultiply => new Optimized.OptimizedMatrixMultiplyKernel(kernelInfo.Name, options, _logger),
+                Types.KernelType.Reduction => new Optimized.OptimizedReductionKernel(kernelInfo.Name, options, _logger),
+                Types.KernelType.MemoryIntensive => new Optimized.OptimizedMemoryKernel(kernelInfo.Name, options, _logger),
+                Types.KernelType.ComputeIntensive => new Optimized.OptimizedComputeKernel(kernelInfo.Name, options, _logger),
+                _ => new Optimized.GenericOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger)
             };
         }
         catch (Exception ex)
@@ -542,7 +544,7 @@ public sealed class CpuAccelerator : IAccelerator
 
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Default,
+            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Default,
             EnableDebugInfo = false,
             AdditionalFlags = [],
             Defines = []

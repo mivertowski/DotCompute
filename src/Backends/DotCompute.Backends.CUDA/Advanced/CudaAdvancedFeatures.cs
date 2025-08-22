@@ -3,6 +3,7 @@
 
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Memory;
+using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 

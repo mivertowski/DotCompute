@@ -3,6 +3,10 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Linq.Operators.Generation;
+using DotCompute.Linq.Operators.Types;
+using DotCompute.Linq.Operators.Kernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 namespace DotCompute.Linq.Operators;
@@ -34,7 +38,7 @@ public class DefaultKernelFactory : IKernelFactory
     /// <param name="accelerator">The target accelerator.</param>
     /// <param name="definition">The kernel definition.</param>
     /// <returns>A compiled kernel.</returns>
-    public IKernel CreateKernel(IAccelerator accelerator, KernelDefinition definition)
+    public IKernel CreateKernel(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
         // Try to find a matching generator
         if (_generators.TryGetValue(accelerator.Type, out var generator))
@@ -86,7 +90,7 @@ public class DefaultKernelFactory : IKernelFactory
         return new ExpressionFallbackKernel(expression);
     }
 
-    private IKernel CreateDynamicKernel(IAccelerator accelerator, KernelDefinition definition, IKernelGenerator generator)
+    private IKernel CreateDynamicKernel(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition, IKernelGenerator generator)
     {
         try
         {
@@ -121,7 +125,7 @@ public class DefaultKernelFactory : IKernelFactory
         }
     }
 
-    private IKernel CreateFusedKernel(IAccelerator accelerator, KernelDefinition definition,
+    private IKernel CreateFusedKernel(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition,
         IKernelGenerator generator, Dictionary<string, object> fusionMetadata)
     {
         var fusionType = fusionMetadata.GetValueOrDefault("FusionType")?.ToString() ?? "Generic";
@@ -152,7 +156,7 @@ public class DefaultKernelFactory : IKernelFactory
     /// <param name="accelerator">The target accelerator.</param>
     /// <param name="definition">The kernel definition to validate.</param>
     /// <returns>True if the kernel is supported; otherwise, false.</returns>
-    public bool IsKernelSupported(IAccelerator accelerator, KernelDefinition definition)
+    public bool IsKernelSupported(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
         if (_generators.TryGetValue(accelerator.Type, out var generator))
         {
@@ -192,7 +196,7 @@ public class DefaultKernelFactory : IKernelFactory
 
         => _logger.LogDebug("Built-in generators will be registered through backend plugins");
 
-    private static Dictionary<string, object>? ExtractFusionMetadata(KernelDefinition definition)
+    private static Dictionary<string, object>? ExtractFusionMetadata(DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
         if (definition.Metadata.TryGetValue("FusionMetadata", out var metadata) && metadata is Dictionary<string, object> fusionData)
         {
@@ -201,21 +205,21 @@ public class DefaultKernelFactory : IKernelFactory
         return null;
     }
 
-    private static Type[] ExtractInputTypes(KernelDefinition definition)
+    private static Type[] ExtractInputTypes(DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
         return [.. definition.Parameters
         .Where(p => p.Direction is ParameterDirection.In or ParameterDirection.InOut)
         .Select(p => p.Type)];
     }
 
-    private static Type ExtractOutputType(KernelDefinition definition)
+    private static Type ExtractOutputType(DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
         var outputParam = definition.Parameters
             .FirstOrDefault(p => p.Direction is ParameterDirection.Out or ParameterDirection.InOut);
         return outputParam?.Type ?? typeof(object);
     }
 
-    private static KernelGenerationContext CreateGenerationContext(IAccelerator accelerator, KernelDefinition definition)
+    private static KernelGenerationContext CreateGenerationContext(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
         return new KernelGenerationContext
         {
@@ -281,12 +285,12 @@ public class DefaultKernelFactory : IKernelFactory
 internal class PlaceholderKernel : IKernel
 {
     private bool _disposed;
-    private readonly KernelDefinition _definition;
+    private readonly DotCompute.Abstractions.Kernels.KernelDefinition _definition;
 
-    public PlaceholderKernel(string name, KernelDefinition? definition = null)
+    public PlaceholderKernel(string name, DotCompute.Abstractions.Kernels.KernelDefinition? definition = null)
     {
         Name = name;
-        _definition = definition ?? new KernelDefinition { Name = name };
+        _definition = definition ?? new DotCompute.Abstractions.Kernels.KernelDefinition { Name = name };
         Properties = new KernelProperties
         {
             MaxThreadsPerBlock = 1024,
@@ -299,6 +303,21 @@ internal class PlaceholderKernel : IKernel
     /// Gets the kernel name.
     /// </summary>
     public string Name { get; }
+
+    /// <summary>
+    /// Gets the source code or IL representation of the kernel.
+    /// </summary>
+    public string Source => _definition.Source ?? "// Placeholder kernel";
+
+    /// <summary>
+    /// Gets the entry point method name for the kernel.
+    /// </summary>
+    public string EntryPoint => _definition.EntryPoint ?? "main";
+
+    /// <summary>
+    /// Gets the required shared memory size in bytes.
+    /// </summary>
+    public int RequiredSharedMemory => 0;
 
     /// <summary>
     /// Gets the kernel properties.
@@ -332,10 +351,10 @@ internal class PlaceholderKernel : IKernel
     /// Gets information about the kernel parameters.
     /// </summary>
     /// <returns>The kernel parameter information.</returns>
-    public IReadOnlyList<KernelParameter> GetParameterInfo()
-        // Return parameters from definition if available
+    public IReadOnlyList<DotCompute.Abstractions.KernelParameter> GetParameterInfo()
+        // Return empty list as placeholder doesn't have parameters
 
-        => _definition.Parameters.ToArray();
+        => Array.Empty<DotCompute.Abstractions.KernelParameter>();
 
     /// <summary>
     /// Disposes the kernel.

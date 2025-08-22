@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// iterative mathematical operations including transcendental functions
 /// (sin, cos, sqrt, pow) that stress the CPU's floating-point units.
 /// </remarks>
-internal class OptimizedComputeKernel : OptimizedKernelBase
+internal class OptimizedComputeKernel : Base.OptimizedKernelBase
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="OptimizedComputeKernel"/> class.

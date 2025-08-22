@@ -3,6 +3,8 @@
 
 using DotCompute.Abstractions;
 
+using DotCompute.Abstractions.Memory;
+
 namespace DotCompute.Memory;
 
 
@@ -140,38 +142,4 @@ public interface IMemoryBuffer<T> : IDisposable where T : unmanaged
     public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default);
 }
 
-/// <summary>
-/// Represents the state of a memory buffer.
-/// </summary>
-public enum BufferState
-{
-    /// <summary>
-    /// Buffer is uninitialized.
-    /// </summary>
-    Uninitialized,
-
-    /// <summary>
-    /// Buffer is only on host.
-    /// </summary>
-    HostOnly,
-
-    /// <summary>
-    /// Buffer is only on device.
-    /// </summary>
-    DeviceOnly,
-
-    /// <summary>
-    /// Buffer is synchronized between host and device.
-    /// </summary>
-    Synchronized,
-
-    /// <summary>
-    /// Buffer is dirty on host (device copy is stale).
-    /// </summary>
-    HostDirty,
-
-    /// <summary>
-    /// Buffer is dirty on device (host copy is stale).
-    /// </summary>
-    DeviceDirty
-}
+// BufferState enum moved to DotCompute.Abstractions.Memory.BufferState

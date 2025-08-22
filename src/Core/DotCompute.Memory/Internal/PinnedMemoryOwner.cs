@@ -61,7 +61,7 @@ internal sealed class PinnedMemoryOwner<T> : IMemoryOwner<T> where T : unmanaged
             _handle.Free();
         }
 
-        _allocator.ReleasePinnedMemory(_sizeInBytes);
+        _allocator.NotifyDeallocation(_sizeInBytes);
         GC.SuppressFinalize(this);
     }
 
@@ -73,7 +73,7 @@ internal sealed class PinnedMemoryOwner<T> : IMemoryOwner<T> where T : unmanaged
         if (!_disposed && _handle.IsAllocated)
         {
             _handle.Free();
-            _allocator.ReleasePinnedMemory(_sizeInBytes);
+            _allocator.NotifyDeallocation(_sizeInBytes);
         }
     }
 }

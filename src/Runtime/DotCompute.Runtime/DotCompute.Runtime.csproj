@@ -28,6 +28,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\Extensions\DotCompute.Linq\DotCompute.Linq.csproj" />
     <!-- <ProjectReference Include="..\DotCompute.Algorithms\DotCompute.Algorithms.csproj" /> -->
   </ItemGroup>
 

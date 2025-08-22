@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using DotCompute.Core.Pipelines;
+using DotCompute.Core.Pipelines.Models;
+using DotCompute.Core.Pipelines.Types;
 using FluentAssertions;
 
 namespace DotCompute.Tests.Implementations.Pipelines;
@@ -40,7 +42,7 @@ public sealed class TestKernelPipeline : IKernelPipeline
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         var stopwatch = Stopwatch.StartNew();
-        var errors = new List<Core.Pipelines.PipelineError>();
+        var errors = new List<Core.Pipelines.Models.PipelineError>();
         var stageResults = new List<StageExecutionResult>();
         var outputs = new Dictionary<string, object>();
 
@@ -116,12 +118,12 @@ public sealed class TestKernelPipeline : IKernelPipeline
                     }
                     else
                     {
-                        var error = new Core.Pipelines.PipelineError
+                        var error = new Core.Pipelines.Models.PipelineError
                         {
                             Code = "STAGE_EXECUTION_FAILED",
                             Message = result.Error?.Message ?? "Stage execution failed",
                             StageId = stage.Id,
-                            Severity = Core.Pipelines.ErrorSeverity.Error,
+                            Severity = Core.Pipelines.Types.ErrorSeverity.Error,
                             Exception = result.Error,
                             Timestamp = DateTime.UtcNow
                         };
@@ -194,11 +196,11 @@ public sealed class TestKernelPipeline : IKernelPipeline
             stopwatch.Stop();
             _metrics.RecordExecutionComplete(stopwatch.Elapsed, false);
 
-            var error = new Core.Pipelines.PipelineError
+            var error = new Core.Pipelines.Models.PipelineError
             {
                 Code = "PIPELINE_EXECUTION_FAILED",
                 Message = ex.Message,
-                Severity = Core.Pipelines.ErrorSeverity.Critical,
+                Severity = Core.Pipelines.Types.ErrorSeverity.Critical,
                 Exception = ex,
                 Timestamp = DateTime.UtcNow
             };
@@ -314,8 +316,8 @@ public sealed class TestKernelPipeline : IKernelPipeline
 
     public PipelineValidationResult Validate()
     {
-        var errors = new List<Core.Pipelines.ValidationError>();
-        var warnings = new List<Core.Pipelines.ValidationWarning>();
+        var errors = new List<Core.Pipelines.Models.ValidationError>();
+        var warnings = new List<Core.Pipelines.Models.ValidationWarning>();
 
         // Validate stages
         foreach (var stage in _stages)
@@ -323,7 +325,7 @@ public sealed class TestKernelPipeline : IKernelPipeline
             var validation = stage.Validate();
             if (!validation.IsValid && validation.Errors != null)
             {
-                errors.AddRange(validation.Errors.Select(e => new Core.Pipelines.ValidationError
+                errors.AddRange(validation.Errors.Select(e => new Core.Pipelines.Models.ValidationError
                 {
                     Code = "STAGE_VALIDATION_ERROR",
                     Message = e,
@@ -333,7 +335,7 @@ public sealed class TestKernelPipeline : IKernelPipeline
 
             if (validation.Warnings != null)
             {
-                warnings.AddRange(validation.Warnings.Select(w => new Core.Pipelines.ValidationWarning
+                warnings.AddRange(validation.Warnings.Select(w => new Core.Pipelines.Models.ValidationWarning
                 {
                     Code = "STAGE_VALIDATION_WARNING",
                     Message = w,
@@ -345,7 +347,7 @@ public sealed class TestKernelPipeline : IKernelPipeline
         // Check for circular dependencies
         if (HasCircularDependencies())
         {
-            errors.Add(new Core.Pipelines.ValidationError
+            errors.Add(new Core.Pipelines.Models.ValidationError
             {
                 Code = "CIRCULAR_DEPENDENCIES",
                 Message = "Pipeline contains circular dependencies",
@@ -361,7 +363,7 @@ public sealed class TestKernelPipeline : IKernelPipeline
             {
                 if (!stageIds.Contains(dep))
                 {
-                    errors.Add(new Core.Pipelines.ValidationError
+                    errors.Add(new Core.Pipelines.Models.ValidationError
                     {
                         Code = "MISSING_DEPENDENCY",
                         Message = $"Dependency '{dep}' not found in pipeline",
@@ -374,8 +376,8 @@ public sealed class TestKernelPipeline : IKernelPipeline
         return new PipelineValidationResult
         {
             IsValid = errors.Count == 0,
-            Errors = errors.Count > 0 ? errors.Cast<Core.Pipelines.ValidationError>().ToList() : null,
-            Warnings = warnings.Count > 0 ? warnings.Cast<Core.Pipelines.ValidationWarning>().ToList() : null
+            Errors = errors.Count > 0 ? errors.Cast<Core.Pipelines.Models.ValidationError>().ToList() : null,
+            Warnings = warnings.Count > 0 ? warnings.Cast<Core.Pipelines.Models.ValidationWarning>().ToList() : null
         };
     }
 

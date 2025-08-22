@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Linq.Operators.Types;
 namespace DotCompute.Linq.Operators;
 
 
@@ -16,7 +18,7 @@ public interface IKernelFactory
     /// <param name="accelerator">The target accelerator.</param>
     /// <param name="definition">The kernel definition.</param>
     /// <returns>A compiled kernel.</returns>
-    public IKernel CreateKernel(IAccelerator accelerator, KernelDefinition definition);
+    public IKernel CreateKernel(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition);
 
     /// <summary>
     /// Validates whether a kernel definition is supported on the accelerator.
@@ -24,7 +26,7 @@ public interface IKernelFactory
     /// <param name="accelerator">The target accelerator.</param>
     /// <param name="definition">The kernel definition to validate.</param>
     /// <returns>True if the kernel is supported; otherwise, false.</returns>
-    public bool IsKernelSupported(IAccelerator accelerator, KernelDefinition definition);
+    public bool IsKernelSupported(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition);
 
     /// <summary>
     /// Gets the supported kernel languages for an accelerator.

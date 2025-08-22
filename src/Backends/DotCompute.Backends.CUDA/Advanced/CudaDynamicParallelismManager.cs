@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 

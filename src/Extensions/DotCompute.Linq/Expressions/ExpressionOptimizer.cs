@@ -4,6 +4,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Globalization;
+using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
 using Microsoft.Extensions.Logging;
 

@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Linq.Providers;
+using DotCompute.Linq.Queryables;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Linq;

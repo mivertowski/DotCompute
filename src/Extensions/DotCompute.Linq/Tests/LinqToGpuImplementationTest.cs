@@ -12,6 +12,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Linq.Compilation.Plans;
+using DotCompute.Linq.Compilation.Execution;
 namespace DotCompute.Linq.Tests;
 
 
@@ -417,7 +419,7 @@ internal class MockComputePlan : IComputePlan
 internal class MockComputeStage : IComputeStage
 {
     public string Id { get; init; } = string.Empty;
-    public Operators.IKernel Kernel { get; init; } = null!;
+    public IKernel Kernel { get; init; } = null!;
     public IReadOnlyList<string> InputBuffers { get; init; } = [];
     public string OutputBuffer { get; init; } = string.Empty;
     public ExecutionConfiguration Configuration { get; init; } = new();

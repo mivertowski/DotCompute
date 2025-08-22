@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Loaders.NuGet.Types;
 
 namespace DotCompute.Plugins.Loaders;
 

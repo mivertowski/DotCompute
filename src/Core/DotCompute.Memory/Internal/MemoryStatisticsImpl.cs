@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using DotCompute.Abstractions.Results;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Memory.Internal;
 
@@ -46,6 +46,29 @@ internal sealed class MemoryStatisticsImpl : IMemoryStatistics
 
     /// <inheritdoc/>
     public double FragmentationRatio => _stats.FragmentationRatio;
+
+    // Interface implementations mapped to internal stats
+    /// <inheritdoc/>
+    public long TotalAllocatedBytes => _stats.TotalAllocated;
+
+    /// <inheritdoc/>
+    public long AvailableBytes => Math.Max(0, _stats.TotalAllocated - _stats.CurrentUsage);
+
+    /// <inheritdoc/>
+    public long PeakUsageBytes => _stats.PeakUsage;
+
+    /// <inheritdoc/>
+    public double FragmentationPercentage => _stats.FragmentationRatio * 100.0;
+
+    /// <inheritdoc/>
+    public IReadOnlyDictionary<MemoryLocation, long> UsageByLocation => 
+        new Dictionary<MemoryLocation, long> 
+        { 
+            { MemoryLocation.Host, _stats.CurrentUsage },
+            { MemoryLocation.Device, 0 },
+            { MemoryLocation.HostPinned, 0 },
+            { MemoryLocation.Unified, 0 }
+        };
 }
 
 /// <summary>

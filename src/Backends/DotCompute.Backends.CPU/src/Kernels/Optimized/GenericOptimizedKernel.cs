@@ -19,7 +19,7 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// implementations for vector operations. Performance may be suboptimal compared
 /// to specialized kernel implementations.
 /// </remarks>
-internal class GenericOptimizedKernel : OptimizedKernelBase
+internal class GenericOptimizedKernel : Base.OptimizedKernelBase
 {
     private readonly KernelInfo _kernelInfo;
 

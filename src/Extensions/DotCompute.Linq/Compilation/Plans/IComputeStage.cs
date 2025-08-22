@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation.Execution;
 
 namespace DotCompute.Linq.Compilation.Plans;
@@ -29,7 +30,7 @@ public interface IComputeStage
     /// <value>
     /// The compiled kernel that will be executed during this stage.
     /// </value>
-    Operators.IKernel Kernel { get; }
+    IKernel Kernel { get; }
 
     /// <summary>
     /// Gets the input buffers for this stage.

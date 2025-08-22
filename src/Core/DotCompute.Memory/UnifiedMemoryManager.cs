@@ -5,8 +5,9 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Memory.Benchmarks;
-using DotCompute.Memory.Enums;
+// using DotCompute.Memory.Enums; // Removed - using DotCompute.Abstractions instead
 using DotCompute.Memory.Internal;
 
 namespace DotCompute.Memory;

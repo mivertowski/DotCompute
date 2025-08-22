@@ -5,6 +5,7 @@ using System.Collections;
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
+using DotCompute.Linq.Compilation.Context;
 using DotCompute.Linq.Execution;
 using Microsoft.Extensions.Logging;
 

@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// to maximize CPU utilization. The implementation uses row-major order and leverages
 /// parallel loops for optimal performance on multi-core systems.
 /// </remarks>
-internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
+internal class OptimizedMatrixMultiplyKernel : Base.OptimizedKernelBase
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="OptimizedMatrixMultiplyKernel"/> class.

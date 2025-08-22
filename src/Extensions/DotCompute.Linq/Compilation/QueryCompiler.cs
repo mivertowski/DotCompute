@@ -9,6 +9,9 @@ using DotCompute.Linq.Compilation.Plans;
 using DotCompute.Linq.Compilation.Validation;
 using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
+using DotCompute.Linq.Operators.Types;
+using DotCompute.Linq.Operators.Parameters;
+using DotCompute.Linq.Compilation.Execution;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Compilation;
 
@@ -176,16 +179,16 @@ public class QueryCompiler : IQueryCompiler
             var outputType = selectorLambda.Body.Type;
 
             // Create a map kernel
-            var kernelDefinition = new Operators.KernelDefinition
+            var kernelDefinition = new KernelDefinition
             {
                 Name = $"Select_{_stageCounter++}",
                 Parameters =
                 [
-                    new Operators.KernelParameter("input", CreateArrayType(inputType), Operators.ParameterDirection.In),
-                new Operators.KernelParameter("output", CreateArrayType(outputType), Operators.ParameterDirection.Out),
-                new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
+                    new KernelParameter("input", CreateArrayType(inputType), ParameterDirection.In),
+                new KernelParameter("output", CreateArrayType(outputType), ParameterDirection.Out),
+                new KernelParameter("count", typeof(int), ParameterDirection.In)
                 ],
-                Language = Operators.KernelLanguage.CSharp
+                Language = KernelLanguage.CSharp
             };
 
             var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
@@ -221,17 +224,17 @@ public class QueryCompiler : IQueryCompiler
             var elementType = predicateLambda.Parameters[0].Type;
 
             // Create a filter kernel
-            var kernelDefinition = new Operators.KernelDefinition
+            var kernelDefinition = new KernelDefinition
             {
                 Name = $"Where_{_stageCounter++}",
                 Parameters =
                 [
-                    new Operators.KernelParameter("input", CreateArrayType(elementType), Operators.ParameterDirection.In),
-                new Operators.KernelParameter("output", CreateArrayType(elementType), Operators.ParameterDirection.Out),
-                new Operators.KernelParameter("predicate_results", typeof(bool[]), Operators.ParameterDirection.Out),
-                new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
+                    new KernelParameter("input", CreateArrayType(elementType), ParameterDirection.In),
+                new KernelParameter("output", CreateArrayType(elementType), ParameterDirection.Out),
+                new KernelParameter("predicate_results", typeof(bool[]), ParameterDirection.Out),
+                new KernelParameter("count", typeof(int), ParameterDirection.In)
                 ],
-                Language = Operators.KernelLanguage.CSharp
+                Language = KernelLanguage.CSharp
             };
 
             var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
@@ -266,16 +269,16 @@ public class QueryCompiler : IQueryCompiler
             var resultType = node.Type;
 
             // Create an aggregation kernel
-            var kernelDefinition = new Operators.KernelDefinition
+            var kernelDefinition = new KernelDefinition
             {
                 Name = $"{node.Method.Name}_{_stageCounter++}",
                 Parameters =
                 [
-                    new Operators.KernelParameter("input", CreateArrayType(elementType), Operators.ParameterDirection.In),
-                new Operators.KernelParameter("result", resultType, Operators.ParameterDirection.Out),
-                new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
+                    new KernelParameter("input", CreateArrayType(elementType), ParameterDirection.In),
+                new KernelParameter("result", resultType, ParameterDirection.Out),
+                new KernelParameter("count", typeof(int), ParameterDirection.In)
                 ],
-                Language = Operators.KernelLanguage.CSharp
+                Language = KernelLanguage.CSharp
             };
 
             var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
@@ -312,17 +315,17 @@ public class QueryCompiler : IQueryCompiler
             var keyType = keySelectorLambda.Body.Type;
 
             // Create a sort kernel
-            var kernelDefinition = new Operators.KernelDefinition
+            var kernelDefinition = new KernelDefinition
             {
                 Name = $"{node.Method.Name}_{_stageCounter++}",
                 Parameters =
                 [
-                    new Operators.KernelParameter("input", CreateArrayType(elementType), Operators.ParameterDirection.In),
-                new Operators.KernelParameter("output", CreateArrayType(elementType), Operators.ParameterDirection.Out),
-                new Operators.KernelParameter("keys", CreateArrayType(keyType), Operators.ParameterDirection.InOut),
-                new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
+                    new KernelParameter("input", CreateArrayType(elementType), ParameterDirection.In),
+                new KernelParameter("output", CreateArrayType(elementType), ParameterDirection.Out),
+                new KernelParameter("keys", CreateArrayType(keyType), ParameterDirection.InOut),
+                new KernelParameter("count", typeof(int), ParameterDirection.In)
                 ],
-                Language = Operators.KernelLanguage.CSharp
+                Language = KernelLanguage.CSharp
             };
 
             var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);

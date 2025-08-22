@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
+using DotCompute.Linq.Compilation.Plans;
 
 namespace DotCompute.Linq.Execution;
 

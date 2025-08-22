@@ -5,6 +5,8 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Loaders.NuGet.Types;
+using DotCompute.Plugins.Loaders.NuGet.Results;
 
 namespace DotCompute.Plugins.Loaders;
 
@@ -59,11 +61,11 @@ public class CompatibilityChecker
             // Check dependency compatibility
             await ValidateDependencyCompatibilityAsync(manifest, compatibilityResult, cancellationToken);
 
-            result.CompatibilityCheck = compatibilityResult;
+            result.CompatibilityCheckPassed = compatibilityResult.IsCompatible;
 
             // Add errors and warnings to the validation result
-            result.ValidationErrors.AddRange(compatibilityResult.CompatibilityErrors);
-            result.ValidationWarnings.AddRange(compatibilityResult.CompatibilityWarnings);
+            result.Errors.AddRange(compatibilityResult.CompatibilityErrors);
+            result.Warnings.AddRange(compatibilityResult.CompatibilityWarnings);
 
             _logger.LogInformation("Compatibility validation completed for plugin: {PluginId}. Compatible: {IsCompatible}",
                 manifest.Id, compatibilityResult.IsCompatible);
@@ -71,7 +73,7 @@ public class CompatibilityChecker
         catch (Exception ex)
         {
             _logger.LogError(ex, "Compatibility validation failed for plugin: {PluginId}", manifest.Id);
-            result.ValidationErrors.Add($"Compatibility validation error: {ex.Message}");
+            result.Errors.Add($"Compatibility validation error: {ex.Message}");
         }
     }
 
@@ -103,20 +105,20 @@ public class CompatibilityChecker
         }
 
         // Check target framework moniker (TFM)
-        if (!string.IsNullOrEmpty(manifest.TargetFramework))
+        if (!string.IsNullOrEmpty(manifest.MinFrameworkVersion))
         {
-            var compatibility = await CheckTargetFrameworkCompatibilityAsync(manifest.TargetFramework, cancellationToken);
+            var compatibility = await CheckTargetFrameworkCompatibilityAsync(manifest.MinFrameworkVersion, cancellationToken);
             result.FrameworkCompatibility = compatibility;
 
             if (!compatibility.IsCompatible)
             {
                 if (_settings.FailOnFrameworkMismatch)
                 {
-                    result.CompatibilityErrors.Add($"Target framework {manifest.TargetFramework} is not compatible with current runtime {_runtimeEnvironment.RuntimeIdentifier}");
+                    result.CompatibilityErrors.Add($"Target framework {manifest.MinFrameworkVersion} is not compatible with current runtime {_runtimeEnvironment.RuntimeIdentifier}");
                 }
                 else
                 {
-                    result.CompatibilityWarnings.Add($"Target framework {manifest.TargetFramework} may not be fully compatible with current runtime {_runtimeEnvironment.RuntimeIdentifier}");
+                    result.CompatibilityWarnings.Add($"Target framework {manifest.MinFrameworkVersion} may not be fully compatible with current runtime {_runtimeEnvironment.RuntimeIdentifier}");
                 }
             }
         }
@@ -423,7 +425,7 @@ public class CompatibilityChecker
         await Task.CompletedTask; // Placeholder for async signature
 
         // Check for Windows-specific features
-        if (manifest.Metadata?.ContainsKey("RequiresWindows") == true &&
+        if (manifest.Configuration?.ContainsKey("RequiresWindows") == true &&
 
             !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -431,7 +433,7 @@ public class CompatibilityChecker
         }
 
         // Check for Linux-specific features
-        if (manifest.Metadata?.ContainsKey("RequiresLinux") == true &&
+        if (manifest.Configuration?.ContainsKey("RequiresLinux") == true &&
 
             !RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
@@ -439,7 +441,7 @@ public class CompatibilityChecker
         }
 
         // Check for macOS-specific features
-        if (manifest.Metadata?.ContainsKey("RequiresMacOS") == true &&
+        if (manifest.Configuration?.ContainsKey("RequiresMacOS") == true &&
 
             !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
@@ -455,18 +457,18 @@ public class CompatibilityChecker
         await Task.CompletedTask; // Placeholder for async signature
 
         // Check metadata for AOT compatibility markers
-        if (manifest.Metadata?.ContainsKey("IsAotCompatible") == true)
+        if (manifest.Configuration?.ContainsKey("IsAotCompatible") == true)
         {
-            return bool.TryParse(manifest.Metadata["IsAotCompatible"], out var isCompatible) && isCompatible;
+            return bool.TryParse(manifest.Configuration["IsAotCompatible"]?.ToString(), out var isCompatible) && isCompatible;
         }
 
         // Check for known AOT-incompatible features in metadata
         var aotIncompatibleFeatures = new[] { "UsesDynamicCode", "UsesReflection", "UsesEmit" };
         if (aotIncompatibleFeatures.Any(feature =>
 
-            manifest.Metadata?.ContainsKey(feature) == true &&
+            manifest.Configuration?.ContainsKey(feature) == true &&
 
-            bool.TryParse(manifest.Metadata[feature], out var uses) && uses))
+            bool.TryParse(manifest.Configuration[feature]?.ToString(), out var uses) && uses))
         {
             return false;
         }
@@ -483,9 +485,9 @@ public class CompatibilityChecker
         await Task.CompletedTask; // Placeholder for async signature
 
         // Check metadata for trimming compatibility
-        if (manifest.Metadata?.ContainsKey("IsTrimmable") == true)
+        if (manifest.Configuration?.ContainsKey("IsTrimmable") == true)
         {
-            return bool.TryParse(manifest.Metadata["IsTrimmable"], out var isTrimmable) && isTrimmable;
+            return bool.TryParse(manifest.Configuration["IsTrimmable"]?.ToString(), out var isTrimmable) && isTrimmable;
         }
 
         // Default to true
@@ -503,9 +505,9 @@ public class CompatibilityChecker
         var jitRequiredFeatures = new[] { "UsesDynamicCode", "UsesEmit", "UsesExpression" };
         return jitRequiredFeatures.Any(feature =>
 
-            manifest.Metadata?.ContainsKey(feature) == true &&
+            manifest.Configuration?.ContainsKey(feature) == true &&
 
-            bool.TryParse(manifest.Metadata[feature], out var uses) && uses);
+            bool.TryParse(manifest.Configuration[feature]?.ToString(), out var uses) && uses);
     }
 
     /// <summary>

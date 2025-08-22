@@ -4,6 +4,8 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Loaders.NuGet.Types;
+using DotCompute.Plugins.Loaders.NuGet.Results;
 
 namespace DotCompute.Plugins.Loaders;
 
@@ -46,16 +48,16 @@ public class SecurityValidator
 
             // Scan for vulnerabilities
             var scanResult = await ScanForVulnerabilitiesAsync(manifest, cancellationToken);
-            result.SecurityScan = scanResult;
+            // Store scan results (SecurityScan property not available in NuGetPluginValidationResult)
 
             if (scanResult.HasCriticalVulnerabilities)
             {
-                result.ValidationErrors.Add($"Plugin contains critical security vulnerabilities: {string.Join(", ", scanResult.CriticalVulnerabilities.Select(v => v.Id))}");
+                result.Errors.Add($"Plugin contains critical security vulnerabilities: {string.Join(", ", scanResult.CriticalVulnerabilities.Select(v => v.Id))}");
             }
 
             if (scanResult.HasHighRiskVulnerabilities && _securityPolicy?.BlockHighRiskPackages == true)
             {
-                result.ValidationErrors.Add($"Plugin contains high-risk vulnerabilities: {string.Join(", ", scanResult.HighRiskVulnerabilities.Select(v => v.Id))}");
+                result.Errors.Add($"Plugin contains high-risk vulnerabilities: {string.Join(", ", scanResult.HighRiskVulnerabilities.Select(v => v.Id))}");
             }
 
             // Analyze code for malicious patterns
@@ -65,12 +67,12 @@ public class SecurityValidator
             ValidatePermissions(manifest, result);
 
             _logger.LogInformation("Security validation completed for plugin: {PluginId}. Errors: {ErrorCount}, Warnings: {WarningCount}",
-                manifest.Id, result.ValidationErrors.Count, result.ValidationWarnings.Count);
+                manifest.Id, result.Errors.Count, result.Warnings.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Security validation failed for plugin: {PluginId}", manifest.Id);
-            result.ValidationErrors.Add($"Security validation error: {ex.Message}");
+            result.Errors.Add($"Security validation error: {ex.Message}");
         }
     }
 
@@ -149,22 +151,24 @@ public class SecurityValidator
         // Check if plugin is from allowed sources
         if (_securityPolicy.AllowedSources?.Any() == true)
         {
-            if (string.IsNullOrEmpty(manifest.PackageSource) ||
+            var packageSource = manifest.Configuration?.GetValueOrDefault("PackageSource")?.ToString();
+            if (string.IsNullOrEmpty(packageSource) ||
 
-                !_securityPolicy.AllowedSources.Contains(manifest.PackageSource, StringComparer.OrdinalIgnoreCase))
+                !_securityPolicy.AllowedSources.Contains(packageSource, StringComparer.OrdinalIgnoreCase))
             {
-                result.ValidationErrors.Add($"Plugin source '{manifest.PackageSource}' is not in the allowed sources list");
+                result.Errors.Add($"Plugin source '{packageSource}' is not in the allowed sources list");
             }
         }
 
         // Check if plugin is from blocked sources
         if (_securityPolicy.BlockedSources?.Any() == true)
         {
-            if (!string.IsNullOrEmpty(manifest.PackageSource) &&
+            var packageSource = manifest.Configuration?.GetValueOrDefault("PackageSource")?.ToString();
+            if (!string.IsNullOrEmpty(packageSource) &&
 
-                _securityPolicy.BlockedSources.Contains(manifest.PackageSource, StringComparer.OrdinalIgnoreCase))
+                _securityPolicy.BlockedSources.Contains(packageSource, StringComparer.OrdinalIgnoreCase))
             {
-                result.ValidationErrors.Add($"Plugin source '{manifest.PackageSource}' is blocked");
+                result.Errors.Add($"Plugin source '{packageSource}' is blocked");
             }
         }
 
@@ -174,16 +178,16 @@ public class SecurityValidator
             var assemblySize = new FileInfo(manifest.AssemblyPath).Length;
             if (assemblySize > _securityPolicy.MaxAssemblySize.Value)
             {
-                result.ValidationErrors.Add($"Assembly size ({assemblySize} bytes) exceeds maximum allowed size ({_securityPolicy.MaxAssemblySize.Value} bytes)");
+                result.Errors.Add($"Assembly size ({assemblySize} bytes) exceeds maximum allowed size ({_securityPolicy.MaxAssemblySize.Value} bytes)");
             }
         }
 
         // Check for unsafe features
-        if (_securityPolicy.BlockUnsafeCode && manifest.Metadata?.ContainsKey("AllowUnsafeBlocks") == true &&
+        if (_securityPolicy.BlockUnsafeCode && manifest.Configuration?.ContainsKey("AllowUnsafeBlocks") == true &&
 
-            manifest.Metadata["AllowUnsafeBlocks"].Equals("true", StringComparison.OrdinalIgnoreCase))
+            manifest.Configuration["AllowUnsafeBlocks"]?.ToString()?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
         {
-            result.ValidationErrors.Add("Plugin uses unsafe code which is not allowed");
+            result.Errors.Add("Plugin uses unsafe code which is not allowed");
         }
     }
 
@@ -203,7 +207,7 @@ public class SecurityValidator
             {
                 if (!File.Exists(manifest.AssemblyPath))
                 {
-                    result.ValidationErrors.Add($"Assembly file not found for signature verification: {manifest.AssemblyPath}");
+                    result.Errors.Add($"Assembly file not found for signature verification: {manifest.AssemblyPath}");
                     return;
                 }
 
@@ -212,13 +216,13 @@ public class SecurityValidator
 
                 if (!signatureInfo.IsSigned)
                 {
-                    result.ValidationErrors.Add("Assembly is not digitally signed");
+                    result.Errors.Add("Assembly is not digitally signed");
                     return;
                 }
 
                 if (!signatureInfo.IsValid)
                 {
-                    result.ValidationErrors.Add("Assembly has invalid digital signature");
+                    result.Errors.Add("Assembly has invalid digital signature");
                     return;
                 }
 
@@ -229,7 +233,7 @@ public class SecurityValidator
 
                         !_securityPolicy.TrustedPublishers.Contains(signatureInfo.Publisher, StringComparer.OrdinalIgnoreCase))
                     {
-                        result.ValidationErrors.Add($"Assembly publisher '{signatureInfo.Publisher}' is not in the trusted publishers list");
+                        result.Errors.Add($"Assembly publisher '{signatureInfo.Publisher}' is not in the trusted publishers list");
                     }
                 }
 
@@ -241,7 +245,7 @@ public class SecurityValidator
         catch (Exception ex)
         {
             _logger.LogError(ex, "Signature verification failed for plugin: {PluginId}", manifest.Id);
-            result.ValidationErrors.Add($"Signature verification failed: {ex.Message}");
+            result.Errors.Add($"Signature verification failed: {ex.Message}");
         }
     }
 
@@ -496,11 +500,11 @@ public class SecurityValidator
                 {
                     case SeverityLevel.Critical:
                     case SeverityLevel.High:
-                        result.ValidationErrors.Add($"Suspicious code pattern detected: {finding.Description}");
+                        result.Errors.Add($"Suspicious code pattern detected: {finding.Description}");
                         break;
                     case SeverityLevel.Medium:
                     case SeverityLevel.Low:
-                        result.ValidationWarnings.Add($"Potentially suspicious code pattern: {finding.Description}");
+                        result.Warnings.Add($"Potentially suspicious code pattern: {finding.Description}");
                         break;
                 }
             }
@@ -511,7 +515,7 @@ public class SecurityValidator
         catch (Exception ex)
         {
             _logger.LogError(ex, "Code analysis failed for plugin: {PluginId}", manifest.Id);
-            result.ValidationWarnings.Add($"Code analysis failed: {ex.Message}");
+            result.Warnings.Add($"Code analysis failed: {ex.Message}");
         }
     }
 
@@ -520,18 +524,19 @@ public class SecurityValidator
     /// </summary>
     private void ValidatePermissions(NuGetPluginManifest manifest, NuGetPluginValidationResult result)
     {
-        if (_securityPolicy?.AllowedPermissions == null || manifest.RequiredPermissions == null)
+        var requiredPermissions = manifest.Configuration?.GetValueOrDefault("RequiredPermissions") as List<string>;
+        if (_securityPolicy?.AllowedPermissions == null || requiredPermissions == null)
         {
             return;
         }
 
-        var unauthorizedPermissions = manifest.RequiredPermissions
+        var unauthorizedPermissions = requiredPermissions
             .Except(_securityPolicy.AllowedPermissions, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         foreach (var permission in unauthorizedPermissions)
         {
-            result.ValidationErrors.Add($"Plugin requires unauthorized permission: {permission}");
+            result.Errors.Add($"Plugin requires unauthorized permission: {permission}");
         }
 
         _logger.LogInformation("Permission validation completed for plugin: {PluginId}. Unauthorized permissions: {Count}",

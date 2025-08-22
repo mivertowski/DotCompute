@@ -12,6 +12,9 @@ using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Exceptions.Loading;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Security;
+using DotCompute.Plugins.Loaders.NuGet.Types;
+using DotCompute.Plugins.Loaders.NuGet.Results;
+using DotCompute.Plugins.Loaders.NuGet.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -166,7 +169,7 @@ public class NuGetPluginLoader : IDisposable
             var validationResult = await ValidatePluginAsync(manifest, cancellationToken);
             if (!validationResult.IsValid)
             {
-                return NuGetPluginLoadResult.ValidationFailed(manifest.Id, validationResult.ValidationErrors);
+                return NuGetPluginLoadResult.ValidationFailed(manifest.Id, validationResult.Errors);
             }
 
             // Resolve dependencies
@@ -246,13 +249,13 @@ public class NuGetPluginLoader : IDisposable
 
             await ValidateDependenciesAsync(manifest, result, cancellationToken);
 
-            result.IsValid = result.ValidationErrors.Count == 0;
+            result.IsValid = result.Errors.Count == 0;
         }
         catch (Exception ex)
         {
             LogValidationFailed(_logger, manifest.Id, ex);
             result.IsValid = false;
-            result.ValidationErrors.Add($"Validation error: {ex.Message}");
+            result.Errors.Add($"Validation error: {ex.Message}");
         }
 
         return result;
@@ -462,30 +465,30 @@ public class NuGetPluginLoader : IDisposable
     {
         if (string.IsNullOrWhiteSpace(manifest.Id))
         {
-            result.ValidationErrors.Add("Plugin ID is required");
+            result.Errors.Add("Plugin ID is required");
         }
 
         if (string.IsNullOrWhiteSpace(manifest.Name))
         {
-            result.ValidationErrors.Add("Plugin name is required");
+            result.Errors.Add("Plugin name is required");
         }
 
         if (string.IsNullOrWhiteSpace(manifest.Version))
         {
-            result.ValidationErrors.Add("Plugin version is required");
+            result.Errors.Add("Plugin version is required");
         }
         else if (!Version.TryParse(manifest.Version, out _))
         {
-            result.ValidationErrors.Add("Plugin version format is invalid");
+            result.Errors.Add("Plugin version format is invalid");
         }
 
         if (string.IsNullOrWhiteSpace(manifest.AssemblyPath))
         {
-            result.ValidationErrors.Add("Assembly path is required");
+            result.Errors.Add("Assembly path is required");
         }
         else if (!File.Exists(manifest.AssemblyPath))
         {
-            result.ValidationErrors.Add($"Assembly file not found: {manifest.AssemblyPath}");
+            result.Errors.Add($"Assembly file not found: {manifest.AssemblyPath}");
         }
     }
 
@@ -500,20 +503,20 @@ public class NuGetPluginLoader : IDisposable
         {
             if (string.IsNullOrWhiteSpace(dependency.Id))
             {
-                result.ValidationErrors.Add("Dependency ID cannot be empty");
+                result.Errors.Add("Dependency ID cannot be empty");
                 continue;
             }
 
             if (string.IsNullOrWhiteSpace(dependency.VersionRange))
             {
-                result.ValidationErrors.Add($"Dependency '{dependency.Id}' must specify a version range");
+                result.Errors.Add($"Dependency '{dependency.Id}' must specify a version range");
                 continue;
             }
 
             // Check if dependency exists (simplified check)
             if (!await DependencyExistsAsync(dependency, cancellationToken))
             {
-                result.ValidationErrors.Add($"Dependency '{dependency.Id}' not found");
+                result.Errors.Add($"Dependency '{dependency.Id}' not found");
             }
         }
     }

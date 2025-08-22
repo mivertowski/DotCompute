@@ -4,6 +4,10 @@
 using System.Linq.Expressions;
 using System.Text;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Linq.Operators.Generation;
+using DotCompute.Linq.Operators.Types;
+using CoreKernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
 namespace DotCompute.Linq.Operators;
 
 
@@ -32,7 +36,7 @@ public class KernelSourceGenerator
     /// <param name="operationType">The operation type.</param>
     /// <param name="definition">The kernel definition.</param>
     /// <returns>Generated source code.</returns>
-    public string GenerateSource(string operationType, KernelDefinition definition)
+    public string GenerateSource(string operationType, CoreKernelDefinition definition)
     {
         if (_templates.TryGetValue(operationType, out var template))
         {
@@ -71,7 +75,7 @@ public class KernelSourceGenerator
         _templates["Custom"] = new CustomCodeTemplate();
     }
 
-    private string GenerateGenericKernel(KernelDefinition definition)
+    private string GenerateGenericKernel(CoreKernelDefinition definition)
     {
         var sourceBuilder = new StringBuilder();
 
@@ -204,7 +208,7 @@ public class KernelSourceGenerator
         _ = sourceBuilder.AppendLine($"        output[idx] = left[idx] {operatorSymbol} right[idx];");
     }
 
-    private static void GenerateCudaKernel(StringBuilder sourceBuilder, KernelDefinition definition)
+    private static void GenerateCudaKernel(StringBuilder sourceBuilder, CoreKernelDefinition definition)
     {
         _ = sourceBuilder.AppendLine($"__global__ void {definition.Name}(");
         GenerateParameters(sourceBuilder, definition, "");
@@ -214,7 +218,7 @@ public class KernelSourceGenerator
         _ = sourceBuilder.AppendLine("}");
     }
 
-    private static void GenerateOpenCLKernel(StringBuilder sourceBuilder, KernelDefinition definition)
+    private static void GenerateOpenCLKernel(StringBuilder sourceBuilder, CoreKernelDefinition definition)
     {
         _ = sourceBuilder.AppendLine($"__kernel void {definition.Name}(");
         GenerateParameters(sourceBuilder, definition, "__global ");
@@ -224,7 +228,7 @@ public class KernelSourceGenerator
         _ = sourceBuilder.AppendLine("}");
     }
 
-    private static void GenerateMetalKernel(StringBuilder sourceBuilder, KernelDefinition definition)
+    private static void GenerateMetalKernel(StringBuilder sourceBuilder, CoreKernelDefinition definition)
     {
         _ = sourceBuilder.AppendLine($"kernel void {definition.Name}(");
         GenerateParameters(sourceBuilder, definition, "device ");
@@ -234,7 +238,7 @@ public class KernelSourceGenerator
         _ = sourceBuilder.AppendLine("}");
     }
 
-    private static void GenerateVulkanKernel(StringBuilder sourceBuilder, KernelDefinition definition)
+    private static void GenerateVulkanKernel(StringBuilder sourceBuilder, CoreKernelDefinition definition)
     {
         _ = sourceBuilder.AppendLine("#version 450");
         _ = sourceBuilder.AppendLine("layout(local_size_x = 256) in;");
@@ -245,7 +249,7 @@ public class KernelSourceGenerator
         _ = sourceBuilder.AppendLine("}");
     }
 
-    private static void GenerateCSharpKernel(StringBuilder sourceBuilder, KernelDefinition definition)
+    private static void GenerateCSharpKernel(StringBuilder sourceBuilder, CoreKernelDefinition definition)
     {
         _ = sourceBuilder.AppendLine($"public void {definition.Name}(");
         GenerateParameters(sourceBuilder, definition, "");
@@ -255,7 +259,7 @@ public class KernelSourceGenerator
         _ = sourceBuilder.AppendLine("}");
     }
 
-    private static void GenerateParameters(StringBuilder sourceBuilder, KernelDefinition definition, string qualifier)
+    private static void GenerateParameters(StringBuilder sourceBuilder, CoreKernelDefinition definition, string qualifier)
     {
         for (var i = 0; i < definition.Parameters.Count; i++)
         {
@@ -306,7 +310,7 @@ public interface ICodeTemplate
     /// <param name="definition">The kernel definition.</param>
     /// <param name="acceleratorType">The target accelerator type.</param>
     /// <returns>Generated code.</returns>
-    public string GenerateCode(KernelDefinition definition, AcceleratorType acceleratorType);
+    public string GenerateCode(CoreKernelDefinition definition, AcceleratorType acceleratorType);
 }
 
 /// <summary>
@@ -314,7 +318,7 @@ public interface ICodeTemplate
 /// </summary>
 public class MapCodeTemplate : ICodeTemplate
 {
-    public string GenerateCode(KernelDefinition definition, AcceleratorType acceleratorType)
+    public string GenerateCode(CoreKernelDefinition definition, AcceleratorType acceleratorType)
     {
         var sourceBuilder = new StringBuilder();
         _ = sourceBuilder.AppendLine($"// Map operation template for {acceleratorType}");
@@ -328,7 +332,7 @@ public class MapCodeTemplate : ICodeTemplate
 /// </summary>
 public class FilterCodeTemplate : ICodeTemplate
 {
-    public string GenerateCode(KernelDefinition definition, AcceleratorType acceleratorType)
+    public string GenerateCode(CoreKernelDefinition definition, AcceleratorType acceleratorType)
     {
         var sourceBuilder = new StringBuilder();
         _ = sourceBuilder.AppendLine($"// Filter operation template for {acceleratorType}");
@@ -342,7 +346,7 @@ public class FilterCodeTemplate : ICodeTemplate
 /// </summary>
 public class ReduceCodeTemplate : ICodeTemplate
 {
-    public string GenerateCode(KernelDefinition definition, AcceleratorType acceleratorType)
+    public string GenerateCode(CoreKernelDefinition definition, AcceleratorType acceleratorType)
     {
         var sourceBuilder = new StringBuilder();
         _ = sourceBuilder.AppendLine($"// Reduce operation template for {acceleratorType}");
@@ -356,7 +360,7 @@ public class ReduceCodeTemplate : ICodeTemplate
 /// </summary>
 public class SortCodeTemplate : ICodeTemplate
 {
-    public string GenerateCode(KernelDefinition definition, AcceleratorType acceleratorType)
+    public string GenerateCode(CoreKernelDefinition definition, AcceleratorType acceleratorType)
     {
         var sourceBuilder = new StringBuilder();
         _ = sourceBuilder.AppendLine($"// Sort operation template for {acceleratorType}");
@@ -370,7 +374,7 @@ public class SortCodeTemplate : ICodeTemplate
 /// </summary>
 public class CustomCodeTemplate : ICodeTemplate
 {
-    public string GenerateCode(KernelDefinition definition, AcceleratorType acceleratorType)
+    public string GenerateCode(CoreKernelDefinition definition, AcceleratorType acceleratorType)
     {
         var sourceBuilder = new StringBuilder();
         _ = sourceBuilder.AppendLine($"// Custom operation template for {acceleratorType}");

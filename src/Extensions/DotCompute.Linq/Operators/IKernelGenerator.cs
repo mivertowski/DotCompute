@@ -2,6 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Linq.Operators.Generation;
+using DotCompute.Linq.Operators.Types;
 namespace DotCompute.Linq.Operators;
 
 

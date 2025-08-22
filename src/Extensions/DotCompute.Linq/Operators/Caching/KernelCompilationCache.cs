@@ -17,7 +17,7 @@ namespace DotCompute.Linq.Operators.Caching;
 /// </summary>
 internal static class KernelCompilationCache
 {
-    private static readonly ConcurrentDictionary<string, WeakReference<ICompiledKernel>> Cache = new();
+    private static readonly ConcurrentDictionary<string, WeakReference<ICompiledKernel>> _cache = new();
 
     /// <summary>
     /// Generates a cache key from a kernel compilation request.
@@ -56,7 +56,7 @@ internal static class KernelCompilationCache
     {
         compiledKernel = null;
 
-        if (Cache.TryGetValue(cacheKey, out var weakRef))
+        if (_cache.TryGetValue(cacheKey, out var weakRef))
         {
             if (weakRef.TryGetTarget(out compiledKernel))
             {
@@ -65,7 +65,7 @@ internal static class KernelCompilationCache
             else
             {
                 // The kernel was garbage collected, remove the stale entry
-                Cache.TryRemove(cacheKey, out _);
+                _cache.TryRemove(cacheKey, out _);
             }
         }
 
@@ -81,7 +81,7 @@ internal static class KernelCompilationCache
     {
         if (compiledKernel != null)
         {
-            Cache[cacheKey] = new WeakReference<ICompiledKernel>(compiledKernel);
+            _cache[cacheKey] = new WeakReference<ICompiledKernel>(compiledKernel);
         }
     }
 
@@ -90,11 +90,11 @@ internal static class KernelCompilationCache
     /// </summary>
     public static void Clear()
     {
-        Cache.Clear();
+        _cache.Clear();
     }
 
     /// <summary>
     /// Gets the current number of entries in the cache.
     /// </summary>
-    public static int Count => Cache.Count;
+    public static int Count => _cache.Count;
 }

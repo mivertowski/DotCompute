@@ -3,7 +3,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using System.Collections.Generic;
 using System.Linq.Expressions;
+using DotCompute.Linq.Operators.Parameters;
 
 namespace DotCompute.Linq.Operators.Types;
 
@@ -31,4 +33,9 @@ public class KernelDefinition
     /// Gets or sets the kernel language.
     /// </summary>
     public KernelLanguage Language { get; set; } = KernelLanguage.CSharp;
+
+    /// <summary>
+    /// Gets or sets the kernel parameters.
+    /// </summary>
+    public List<KernelParameter> Parameters { get; set; } = new List<KernelParameter>();
 }

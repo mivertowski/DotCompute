@@ -4,6 +4,7 @@
 // </copyright>
 
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Types;
 
 namespace DotCompute.Backends.CUDA.Execution.Optimization;
 

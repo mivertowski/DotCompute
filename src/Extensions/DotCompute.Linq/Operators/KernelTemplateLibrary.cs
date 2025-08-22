@@ -2,7 +2,13 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Linq.Operators.Generation;
+using DotCompute.Linq.Operators.Types;
+using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
+using DotCompute.Linq.Operators.Parameters;
 using System.Text;
+using CoreKernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
 namespace DotCompute.Linq.Operators;
 
 
@@ -63,7 +69,7 @@ public interface IKernelTemplate
     /// <param name="definition">The kernel definition.</param>
     /// <param name="accelerator">The target accelerator.</param>
     /// <returns>A generated kernel.</returns>
-    public GeneratedKernel Generate(KernelDefinition definition, IAccelerator accelerator);
+    public GeneratedKernel Generate(CoreKernelDefinition definition, IAccelerator accelerator);
 }
 
 /// <summary>
@@ -72,7 +78,7 @@ public interface IKernelTemplate
 public class MapKernelTemplate : IKernelTemplate
 {
     /// <inheritdoc/>
-    public GeneratedKernel Generate(KernelDefinition definition, IAccelerator accelerator)
+    public GeneratedKernel Generate(CoreKernelDefinition definition, IAccelerator accelerator)
     {
         var sourceBuilder = new StringBuilder();
 
@@ -101,7 +107,7 @@ public class MapKernelTemplate : IKernelTemplate
         };
     }
 
-    private static void GenerateCudaMapKernel(StringBuilder source, KernelDefinition definition)
+    private static void GenerateCudaMapKernel(StringBuilder source, CoreKernelDefinition definition)
     {
         _ = source.AppendLine("__global__ void " + definition.Name + "(");
 
@@ -133,7 +139,7 @@ public class MapKernelTemplate : IKernelTemplate
         _ = source.AppendLine("}");
     }
 
-    private static void GenerateOpenCLMapKernel(StringBuilder source, KernelDefinition definition)
+    private static void GenerateOpenCLMapKernel(StringBuilder source, CoreKernelDefinition definition)
     {
         _ = source.AppendLine("__kernel void " + definition.Name + "(");
 
@@ -165,7 +171,7 @@ public class MapKernelTemplate : IKernelTemplate
         _ = source.AppendLine("}");
     }
 
-    private static void GenerateGenericMapKernel(StringBuilder source, KernelDefinition definition)
+    private static void GenerateGenericMapKernel(StringBuilder source, CoreKernelDefinition definition)
     {
         _ = source.AppendLine("// Generic map kernel template");
         _ = source.AppendLine("public void " + definition.Name + "(");
@@ -246,7 +252,7 @@ public class MapKernelTemplate : IKernelTemplate
         };
     }
 
-    private static GeneratedKernelParameter ConvertParameter(KernelParameter param)
+    private static GeneratedKernelParameter ConvertParameter(LinqKernelParameter param)
     {
         return new GeneratedKernelParameter
         {
@@ -264,7 +270,7 @@ public class MapKernelTemplate : IKernelTemplate
 public class FilterKernelTemplate : IKernelTemplate
 {
     /// <inheritdoc/>
-    public GeneratedKernel Generate(KernelDefinition definition, IAccelerator accelerator)
+    public GeneratedKernel Generate(CoreKernelDefinition definition, IAccelerator accelerator)
     {
         var sourceBuilder = new StringBuilder();
 
@@ -282,7 +288,7 @@ public class FilterKernelTemplate : IKernelTemplate
         };
     }
 
-    private static GeneratedKernelParameter ConvertParameter(KernelParameter param)
+    private static GeneratedKernelParameter ConvertParameter(LinqKernelParameter param)
     {
         return new GeneratedKernelParameter
         {
@@ -300,7 +306,7 @@ public class FilterKernelTemplate : IKernelTemplate
 public class ReduceKernelTemplate : IKernelTemplate
 {
     /// <inheritdoc/>
-    public GeneratedKernel Generate(KernelDefinition definition, IAccelerator accelerator)
+    public GeneratedKernel Generate(CoreKernelDefinition definition, IAccelerator accelerator)
     {
         var sourceBuilder = new StringBuilder();
 
@@ -318,7 +324,7 @@ public class ReduceKernelTemplate : IKernelTemplate
         };
     }
 
-    private static GeneratedKernelParameter ConvertParameter(KernelParameter param)
+    private static GeneratedKernelParameter ConvertParameter(LinqKernelParameter param)
     {
         return new GeneratedKernelParameter
         {
@@ -336,7 +342,7 @@ public class ReduceKernelTemplate : IKernelTemplate
 public class SortKernelTemplate : IKernelTemplate
 {
     /// <inheritdoc/>
-    public GeneratedKernel Generate(KernelDefinition definition, IAccelerator accelerator)
+    public GeneratedKernel Generate(CoreKernelDefinition definition, IAccelerator accelerator)
     {
         var sourceBuilder = new StringBuilder();
 
@@ -354,7 +360,7 @@ public class SortKernelTemplate : IKernelTemplate
         };
     }
 
-    private static GeneratedKernelParameter ConvertParameter(KernelParameter param)
+    private static GeneratedKernelParameter ConvertParameter(LinqKernelParameter param)
     {
         return new GeneratedKernelParameter
         {

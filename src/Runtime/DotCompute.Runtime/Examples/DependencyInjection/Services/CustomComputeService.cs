@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using DotCompute.Runtime.Examples.DependencyInjection.Interfaces;
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Runtime.Services;
 using Microsoft.Extensions.Logging;
 

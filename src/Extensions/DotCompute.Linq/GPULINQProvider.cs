@@ -10,6 +10,7 @@ using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Logging;
 using DotCompute.Linq.Operators;
+using DotCompute.Linq.Operators.Types;
 using DotCompute.Linq.Query;
 using Microsoft.Extensions.Logging;
 

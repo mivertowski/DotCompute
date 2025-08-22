@@ -57,7 +57,7 @@ internal static partial class CpuKernelCompiler
 
             // Step 4: Apply optimization passes
             // Apply optimization passes if enabled
-            if (options.OptimizationLevel != OptimizationLevel.None)
+            if ((DotCompute.Abstractions.Enums.OptimizationLevel)(int)options.OptimizationLevel != DotCompute.Abstractions.Enums.OptimizationLevel.None)
             {
                 kernelAst = await OptimizeKernelAstAsync(kernelAst!, options, analysis, cancellationToken).ConfigureAwait(false);
             }
@@ -81,7 +81,7 @@ internal static partial class CpuKernelCompiler
             }
 
             stopwatch.Stop();
-            logger.LogInformation("Successfully compiled kernel '{KernelName}' in {ElapsedMs}ms with {OptimizationLevel} optimization",
+            logger.LogInformation("Successfully compiled kernel '{KernelName}' in {ElapsedMs}ms with {DotCompute.Abstractions.Enums.OptimizationLevel} optimization",
                 definition.Name, stopwatch.ElapsedMilliseconds, options.OptimizationLevel);
 
             return compiledKernel;
@@ -207,7 +207,7 @@ internal static partial class CpuKernelCompiler
             VectorizationFactor = analysis.VectorizationFactor,
             WorkGroupSize = analysis.PreferredWorkGroupSize,
             MemoryPrefetchDistance = CalculateMemoryPrefetchDistance(analysis),
-            EnableLoopUnrolling = context.Options.OptimizationLevel == OptimizationLevel.Maximum,
+            EnableLoopUnrolling = (DotCompute.Abstractions.Enums.OptimizationLevel)(int)context.Options.OptimizationLevel == DotCompute.Abstractions.Enums.OptimizationLevel.Maximum,
             InstructionSets = simdCapabilities.SupportedInstructionSets
         };
     }
@@ -370,14 +370,14 @@ internal static partial class CpuKernelCompiler
         // Use static methods directly
 
         // Apply optimization passes based on optimization level
-        switch (options.OptimizationLevel)
+        switch ((DotCompute.Abstractions.Enums.OptimizationLevel)(int)options.OptimizationLevel)
         {
-            case OptimizationLevel.None:
+            case DotCompute.Abstractions.Enums.OptimizationLevel.None:
                 // Minimal optimization for debugging
                 ast = KernelOptimizer.ApplyBasicOptimizations(ast);
                 break;
 
-            case OptimizationLevel.Default:
+            case DotCompute.Abstractions.Enums.OptimizationLevel.Default:
                 // Standard optimizations
                 ast = KernelOptimizer.ApplyStandardOptimizations(ast);
                 if (analysis.CanVectorize)
@@ -386,7 +386,7 @@ internal static partial class CpuKernelCompiler
                 }
                 break;
 
-            case OptimizationLevel.Maximum:
+            case DotCompute.Abstractions.Enums.OptimizationLevel.Maximum:
                 // Aggressive optimizations
                 ast = KernelOptimizer.ApplyAggressiveOptimizations(ast);
                 if (analysis.CanVectorize)
@@ -395,7 +395,7 @@ internal static partial class CpuKernelCompiler
                     ast = KernelOptimizer.ApplyLoopUnrolling(ast, analysis.VectorizationFactor);
                 }
                 // Fast math for maximum optimization
-                if (options.OptimizationLevel == OptimizationLevel.Maximum)
+                if ((DotCompute.Abstractions.Enums.OptimizationLevel)(int)options.OptimizationLevel == DotCompute.Abstractions.Enums.OptimizationLevel.Maximum)
                 {
                     ast = KernelOptimizer.ApplyFastMathOptimizations(ast);
                 }
@@ -522,7 +522,7 @@ internal static partial class CpuKernelCompiler
 
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Default,
+            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Default,
             EnableDebugInfo = false,
             AdditionalFlags = [],
             Defines = []

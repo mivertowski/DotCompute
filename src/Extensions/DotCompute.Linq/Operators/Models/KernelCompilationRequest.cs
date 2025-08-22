@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using DotCompute.Abstractions;
+using DotCompute.Linq.Operators.Types;
 
 namespace DotCompute.Linq.Operators.Models;
 

@@ -9,9 +9,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Linq.Operators.Caching;
 using DotCompute.Linq.Operators.Compilation;
+using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Models;
+using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Linq.Operators.Kernels;
@@ -24,7 +27,7 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
     private readonly GeneratedKernel _generatedKernel;
     private readonly IAccelerator _accelerator;
     private readonly ILogger _logger;
-    private readonly Lazy<IKernelCompiler> _compiler;
+    private readonly Lazy<Compilation.IKernelCompiler> _compiler;
     private bool _disposed;
     private Execution.ICompiledKernel? _compiledKernel;
 
@@ -40,7 +43,7 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
         _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _compiler = new Lazy<IKernelCompiler>(() => CreateCompiler());
+        _compiler = new Lazy<Compilation.IKernelCompiler>(() => CreateCompiler());
 
         Properties = CreateKernelProperties();
     }
@@ -49,6 +52,21 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
     /// Gets the kernel name.
     /// </summary>
     public string Name => _generatedKernel.Name;
+
+    /// <summary>
+    /// Gets the source code or IL representation of the kernel.
+    /// </summary>
+    public string Source => _generatedKernel.Source;
+
+    /// <summary>
+    /// Gets the entry point method name for the kernel.
+    /// </summary>
+    public string EntryPoint => _generatedKernel.EntryPoint ?? "main";
+
+    /// <summary>
+    /// Gets the required shared memory size in bytes.
+    /// </summary>
+    public int RequiredSharedMemory => _generatedKernel.RequiredSharedMemory;
 
     /// <summary>
     /// Gets the kernel properties.
@@ -202,7 +220,7 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
         await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
     }
 
-    private IKernelCompiler CreateCompiler()
+    private Compilation.IKernelCompiler CreateCompiler()
     {
         // Create a kernel compiler adapter that bridges to the backend-specific compiler
         // This uses the accelerator's built-in compiler capabilities

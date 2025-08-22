@@ -3,7 +3,7 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
-using DotCompute.Linq.Compilation.Options;
+using LinqCompilationOptions = DotCompute.Linq.Compilation.Options.CompilationOptions;
 
 namespace DotCompute.Linq.Compilation.Context;
 
@@ -30,7 +30,7 @@ public class CompilationContext
         Accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
         Expression = expression ?? throw new ArgumentNullException(nameof(expression));
         Parameters = [];
-        Options = new CompilationOptions();
+        Options = new DotCompute.Abstractions.CompilationOptions();
     }
 
     /// <summary>
@@ -67,5 +67,5 @@ public class CompilationContext
     /// <value>
     /// The options that control various aspects of the compilation process.
     /// </value>
-    public CompilationOptions Options { get; set; }
+    public DotCompute.Abstractions.CompilationOptions Options { get; set; }
 }

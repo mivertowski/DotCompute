@@ -8,7 +8,8 @@ using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DotCompute.Memory.Enums;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Memory.Internal;
 
@@ -61,6 +62,72 @@ internal sealed class PooledMemoryBuffer<T> : IMemoryBuffer<T>, IDisposable wher
     public bool IsDisposed => _disposed;
 
     /// <inheritdoc/>
+    public bool IsOnHost => _state == BufferState.HostAccess || _state == BufferState.HostOnly || _state == BufferState.Synchronized;
+
+    /// <inheritdoc/>
+    public bool IsOnDevice => _state == BufferState.DeviceAccess || _state == BufferState.DeviceOnly || _state == BufferState.Synchronized;
+
+    /// <inheritdoc/>
+    public bool IsDirty => _state == BufferState.HostDirty || _state == BufferState.DeviceDirty;
+
+    /// <inheritdoc/>
+    public Span<T> AsSpan() => GetHostMemory().Span;
+
+    /// <inheritdoc/>
+    public ReadOnlySpan<T> AsReadOnlySpan() => GetHostMemory().Span;
+
+    /// <inheritdoc/>
+    public Memory<T> AsMemory() => GetHostMemory();
+
+    /// <inheritdoc/>
+    public ReadOnlyMemory<T> AsReadOnlyMemory() => GetHostMemory();
+
+    /// <inheritdoc/>
+    public DeviceMemory GetDeviceMemory() => new DeviceMemory(GetDevicePointer(), SizeInBytes);
+
+    /// <inheritdoc/>
+    public void EnsureOnHost() { /* Already on host in this implementation */ }
+
+    /// <inheritdoc/>
+    public void EnsureOnDevice() { /* Device access through pointer */ }
+
+    /// <inheritdoc/>
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) 
+        => ValueTask.CompletedTask;
+
+    /// <inheritdoc/>
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) 
+        => ValueTask.CompletedTask;
+
+    /// <inheritdoc/>
+    public void MarkHostDirty() 
+    {
+        lock (_syncLock) { _state = BufferState.HostDirty; }
+    }
+
+    /// <inheritdoc/>
+    public void MarkDeviceDirty() 
+    {
+        lock (_syncLock) { _state = BufferState.DeviceDirty; }
+    }
+
+    /// <inheritdoc/>
+    public void Synchronize() 
+    {
+        lock (_syncLock) { _state = BufferState.Synchronized; }
+    }
+
+    /// <inheritdoc/>
+    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        Synchronize();
+        return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Memory<T> GetMemory() => GetHostMemory();
+
+    /// <inheritdoc/>
     public Memory<T> GetHostMemory()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -92,8 +159,11 @@ internal sealed class PooledMemoryBuffer<T> : IMemoryBuffer<T>, IDisposable wher
         lock (_syncLock)
         {
             _state = BufferState.DeviceAccess;
-            using var handle = _owner.Memory.Pin();
-            return new IntPtr(handle.Pointer);
+            unsafe
+            {
+                using var handle = _owner.Memory.Pin();
+                return new IntPtr(handle.Pointer);
+            }
         }
     }
 
@@ -201,7 +271,7 @@ internal sealed class PooledMemoryBuffer<T> : IMemoryBuffer<T>, IDisposable wher
         }
 
         _owner.Dispose();
-        _pool.ReturnBuffer(this);
+        _pool.Return(this, _length);
         GC.SuppressFinalize(this);
     }
 
@@ -252,6 +322,27 @@ internal sealed class PooledMemoryBufferSlice<T> : IMemoryBuffer<T> where T : un
     public long SizeInBytes => _length * Unsafe.SizeOf<T>();
     public BufferState State => _parent.State;
     public bool IsDisposed => _parent.IsDisposed;
+    public bool IsOnHost => _parent.IsOnHost;
+    public bool IsOnDevice => _parent.IsOnDevice;
+    public bool IsDirty => _parent.IsDirty;
+
+    public Span<T> AsSpan() => GetHostMemory().Span;
+    public ReadOnlySpan<T> AsReadOnlySpan() => GetHostMemory().Span;
+    public Memory<T> AsMemory() => GetHostMemory();
+    public ReadOnlyMemory<T> AsReadOnlyMemory() => GetHostMemory();
+    public DeviceMemory GetDeviceMemory() => new DeviceMemory(GetDevicePointer(), SizeInBytes);
+    public void EnsureOnHost() => _parent.EnsureOnHost();
+    public void EnsureOnDevice() => _parent.EnsureOnDevice();
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) 
+        => _parent.EnsureOnHostAsync(context, cancellationToken);
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) 
+        => _parent.EnsureOnDeviceAsync(context, cancellationToken);
+    public void MarkHostDirty() => _parent.MarkHostDirty();
+    public void MarkDeviceDirty() => _parent.MarkDeviceDirty();
+    public void Synchronize() => _parent.Synchronize();
+    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        => _parent.SynchronizeAsync(context, cancellationToken);
+    public Memory<T> GetMemory() => GetHostMemory();
 
     public Memory<T> GetHostMemory() => _parent.GetHostMemory().Slice(_offset, _length);
     public ValueTask<Memory<T>> GetHostMemoryAsync(CancellationToken cancellationToken = default) 

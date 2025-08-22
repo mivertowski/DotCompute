@@ -4,6 +4,7 @@
 // </copyright>
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Enums;
 
 namespace DotCompute.Linq.Operators.Mocks;
 
@@ -36,4 +37,9 @@ internal class MockKernelSource : IKernelSource
     /// Gets or sets the source metadata.
     /// </summary>
     public object? Metadata { get; set; }
+
+    /// <summary>
+    /// Gets or sets the kernel dependencies.
+    /// </summary>
+    public string[] Dependencies { get; set; } = [];
 }

@@ -20,10 +20,10 @@ public sealed class IKernelTests
     /// </summary>
     private struct TestKernel : IKernel
     {
-        public static string Name => "TestKernel";
-        public static string Source => "__global__ void test() { }";
-        public static string EntryPoint => "test";
-        public static int RequiredSharedMemory => 1024;
+        public string Name => "TestKernel";
+        public string Source => "__global__ void test() { }";
+        public string EntryPoint => "test";
+        public int RequiredSharedMemory => 1024;
     }
 
     /// <summary>
@@ -31,10 +31,10 @@ public sealed class IKernelTests
     /// </summary>
     private struct VectorAddKernel : IKernel
     {
-        public static string Name => "VectorAdd";
-        public static string Source => "__global__ void vectorAdd(float* a, float* b, float* c) { int i = threadIdx.x; c[i] = a[i] + b[i]; }";
-        public static string EntryPoint => "vectorAdd";
-        public static int RequiredSharedMemory => 0;
+        public string Name => "VectorAdd";
+        public string Source => "__global__ void vectorAdd(float* a, float* b, float* c) { int i = threadIdx.x; c[i] = a[i] + b[i]; }";
+        public string EntryPoint => "vectorAdd";
+        public int RequiredSharedMemory => 0;
     }
 
     /// <summary>
@@ -42,10 +42,10 @@ public sealed class IKernelTests
     /// </summary>
     private struct SharedMemoryKernel : IKernel
     {
-        public static string Name => "SharedMemoryKernel";
-        public static string Source => "__global__ void sharedMemTest() { __shared__ float data[1024]; }";
-        public static string EntryPoint => "sharedMemTest";
-        public static int RequiredSharedMemory => 4096;
+        public string Name => "SharedMemoryKernel";
+        public string Source => "__global__ void sharedMemTest() { __shared__ float data[1024]; }";
+        public string EntryPoint => "sharedMemTest";
+        public int RequiredSharedMemory => 4096;
     }
 
     /// <summary>
@@ -53,10 +53,10 @@ public sealed class IKernelTests
     /// </summary>
     private struct MinimalKernel : IKernel
     {
-        public static string Name => "Minimal";
-        public static string Source => "void main() {}";
-        public static string EntryPoint => "main";
-        public static int RequiredSharedMemory => 0;
+        public string Name => "Minimal";
+        public string Source => "void main() {}";
+        public string EntryPoint => "main";
+        public int RequiredSharedMemory => 0;
     }
 
     #endregion
@@ -64,44 +64,56 @@ public sealed class IKernelTests
     #region IKernel Static Abstract Members Tests
 
     [Fact]
-    public void TestKernel_StaticProperties_ShouldReturnCorrectValues()
+    public void TestKernel_Properties_ShouldReturnCorrectValues()
     {
+        // Arrange
+        var kernel = new TestKernel();
+        
         // Act & Assert
-        _ = TestKernel.Name.Should().Be("TestKernel");
-        _ = TestKernel.Source.Should().Be("__global__ void test() { }");
-        _ = TestKernel.EntryPoint.Should().Be("test");
-        _ = TestKernel.RequiredSharedMemory.Should().Be(1024);
+        _ = kernel.Name.Should().Be("TestKernel");
+        _ = kernel.Source.Should().Be("__global__ void test() { }");
+        _ = kernel.EntryPoint.Should().Be("test");
+        _ = kernel.RequiredSharedMemory.Should().Be(1024);
     }
 
     [Fact]
-    public void VectorAddKernel_StaticProperties_ShouldReturnCorrectValues()
+    public void VectorAddKernel_Properties_ShouldReturnCorrectValues()
     {
+        // Arrange
+        var kernel = new VectorAddKernel();
+        
         // Act & Assert
-        _ = VectorAddKernel.Name.Should().Be("VectorAdd");
-        _ = VectorAddKernel.Source.Should().Contain("vectorAdd");
-        _ = VectorAddKernel.Source.Should().Contain("float* a"); // float* b;
-        _ = VectorAddKernel.EntryPoint.Should().Be("vectorAdd");
-        _ = VectorAddKernel.RequiredSharedMemory.Should().Be(0);
+        _ = kernel.Name.Should().Be("VectorAdd");
+        _ = kernel.Source.Should().Contain("vectorAdd");
+        _ = kernel.Source.Should().Contain("float* a"); // float* b;
+        _ = kernel.EntryPoint.Should().Be("vectorAdd");
+        _ = kernel.RequiredSharedMemory.Should().Be(0);
     }
 
     [Fact]
-    public void SharedMemoryKernel_StaticProperties_ShouldReturnCorrectValues()
+    public void SharedMemoryKernel_Properties_ShouldReturnCorrectValues()
     {
+        // Arrange
+        var kernel = new SharedMemoryKernel();
+        
         // Act & Assert
-        _ = SharedMemoryKernel.Name.Should().Be("SharedMemoryKernel");
-        _ = SharedMemoryKernel.Source.Should().Contain("__shared__");
-        _ = SharedMemoryKernel.EntryPoint.Should().Be("sharedMemTest");
-        _ = SharedMemoryKernel.RequiredSharedMemory.Should().Be(4096);
+        _ = kernel.Name.Should().Be("SharedMemoryKernel");
+        _ = kernel.Source.Should().Contain("__shared__");
+        _ = kernel.EntryPoint.Should().Be("sharedMemTest");
+        _ = kernel.RequiredSharedMemory.Should().Be(4096);
     }
 
     [Fact]
-    public void MinimalKernel_StaticProperties_ShouldReturnCorrectValues()
+    public void MinimalKernel_Properties_ShouldReturnCorrectValues()
     {
+        // Arrange
+        var kernel = new MinimalKernel();
+        
         // Act & Assert
-        _ = MinimalKernel.Name.Should().Be("Minimal");
-        _ = MinimalKernel.Source.Should().Be("void main() {}");
-        _ = MinimalKernel.EntryPoint.Should().Be("main");
-        _ = MinimalKernel.RequiredSharedMemory.Should().Be(0);
+        _ = kernel.Name.Should().Be("Minimal");
+        _ = kernel.Source.Should().Be("void main() {}");
+        _ = kernel.EntryPoint.Should().Be("main");
+        _ = kernel.RequiredSharedMemory.Should().Be(0);
     }
 
     #endregion
@@ -112,40 +124,40 @@ public sealed class IKernelTests
     public void IKernel_Name_ShouldNotBeNullOrEmpty()
     {
         // Act & Assert
-        _ = TestKernel.Name.Should().NotBeNullOrEmpty();
-        _ = VectorAddKernel.Name.Should().NotBeNullOrEmpty();
-        _ = SharedMemoryKernel.Name.Should().NotBeNullOrEmpty();
-        _ = MinimalKernel.Name.Should().NotBeNullOrEmpty();
+        _ = new TestKernel().Name.Should().NotBeNullOrEmpty();
+        _ = new VectorAddKernel().Name.Should().NotBeNullOrEmpty();
+        _ = new SharedMemoryKernel().Name.Should().NotBeNullOrEmpty();
+        _ = new MinimalKernel().Name.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
     public void IKernel_Source_ShouldNotBeNullOrEmpty()
     {
         // Act & Assert
-        _ = TestKernel.Source.Should().NotBeNullOrEmpty();
-        _ = VectorAddKernel.Source.Should().NotBeNullOrEmpty();
-        _ = SharedMemoryKernel.Source.Should().NotBeNullOrEmpty();
-        _ = MinimalKernel.Source.Should().NotBeNullOrEmpty();
+        _ = new TestKernel().Source.Should().NotBeNullOrEmpty();
+        _ = new VectorAddKernel().Source.Should().NotBeNullOrEmpty();
+        _ = new SharedMemoryKernel().Source.Should().NotBeNullOrEmpty();
+        _ = new MinimalKernel().Source.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
     public void IKernel_EntryPoint_ShouldNotBeNullOrEmpty()
     {
         // Act & Assert
-        _ = TestKernel.EntryPoint.Should().NotBeNullOrEmpty();
-        _ = VectorAddKernel.EntryPoint.Should().NotBeNullOrEmpty();
-        _ = SharedMemoryKernel.EntryPoint.Should().NotBeNullOrEmpty();
-        _ = MinimalKernel.EntryPoint.Should().NotBeNullOrEmpty();
+        _ = new TestKernel().EntryPoint.Should().NotBeNullOrEmpty();
+        _ = new VectorAddKernel().EntryPoint.Should().NotBeNullOrEmpty();
+        _ = new SharedMemoryKernel().EntryPoint.Should().NotBeNullOrEmpty();
+        _ = new MinimalKernel().EntryPoint.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
     public void IKernel_RequiredSharedMemory_ShouldBeNonNegative()
     {
         // Act & Assert
-        _ = TestKernel.RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
-        _ = VectorAddKernel.RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
-        _ = SharedMemoryKernel.RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
-        _ = MinimalKernel.RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
+        _ = new TestKernel().RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
+        _ = new VectorAddKernel().RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
+        _ = new SharedMemoryKernel().RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
+        _ = new MinimalKernel().RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
     }
 
     #endregion
@@ -195,10 +207,10 @@ public sealed class IKernelTests
         // through the interface implementations
 
         // Act
-        var testKernelName = TestKernel.Name;
-        var testKernelSource = TestKernel.Source;
-        var testKernelEntryPoint = TestKernel.EntryPoint;
-        var testKernelSharedMemory = TestKernel.RequiredSharedMemory;
+        var testKernelName = new TestKernel().Name;
+        var testKernelSource = new TestKernel().Source;
+        var testKernelEntryPoint = new TestKernel().EntryPoint;
+        var testKernelSharedMemory = new TestKernel().RequiredSharedMemory;
 
         // Assert
         Assert.NotNull(testKernelName);
@@ -213,14 +225,14 @@ public sealed class IKernelTests
         // Test that accessing static members multiple times returns same values
 
         // Act
-        var name1 = TestKernel.Name;
-        var name2 = TestKernel.Name;
-        var source1 = TestKernel.Source;
-        var source2 = TestKernel.Source;
-        var entryPoint1 = TestKernel.EntryPoint;
-        var entryPoint2 = TestKernel.EntryPoint;
-        var sharedMemory1 = TestKernel.RequiredSharedMemory;
-        var sharedMemory2 = TestKernel.RequiredSharedMemory;
+        var name1 = new TestKernel().Name;
+        var name2 = new TestKernel().Name;
+        var source1 = new TestKernel().Source;
+        var source2 = new TestKernel().Source;
+        var entryPoint1 = new TestKernel().EntryPoint;
+        var entryPoint2 = new TestKernel().EntryPoint;
+        var sharedMemory1 = new TestKernel().RequiredSharedMemory;
+        var sharedMemory2 = new TestKernel().RequiredSharedMemory;
 
         // Assert
         Assert.Equal(name2, name1);
@@ -237,21 +249,21 @@ public sealed class IKernelTests
     public void DifferentKernels_ShouldHaveDifferentProperties()
     {
         // Assert - Each kernel should have unique characteristics
-        _ = TestKernel.Name.Should().NotBe(VectorAddKernel.Name);
-        _ = TestKernel.Name.Should().NotBe(SharedMemoryKernel.Name);
-        _ = TestKernel.Name.Should().NotBe(MinimalKernel.Name);
+        _ = new TestKernel().Name.Should().NotBe(new VectorAddKernel().Name);
+        _ = new TestKernel().Name.Should().NotBe(new SharedMemoryKernel().Name);
+        _ = new TestKernel().Name.Should().NotBe(new MinimalKernel().Name);
 
-        _ = TestKernel.Source.Should().NotBe(VectorAddKernel.Source);
-        _ = TestKernel.EntryPoint.Should().NotBe(VectorAddKernel.EntryPoint);
+        _ = new TestKernel().Source.Should().NotBe(new VectorAddKernel().Source);
+        _ = new TestKernel().EntryPoint.Should().NotBe(new VectorAddKernel().EntryPoint);
     }
 
     [Fact]
     public void SharedMemoryKernel_ShouldHaveLargerSharedMemory()
     {
         // Assert
-        _ = (SharedMemoryKernel.RequiredSharedMemory > TestKernel.RequiredSharedMemory).Should().BeTrue();
-        _ = (SharedMemoryKernel.RequiredSharedMemory > VectorAddKernel.RequiredSharedMemory).Should().BeTrue();
-        _ = SharedMemoryKernel.RequiredSharedMemory.Should().BeGreaterThan(MinimalKernel.RequiredSharedMemory);
+        _ = (new SharedMemoryKernel().RequiredSharedMemory > new TestKernel().RequiredSharedMemory).Should().BeTrue();
+        _ = (new SharedMemoryKernel().RequiredSharedMemory > new VectorAddKernel().RequiredSharedMemory).Should().BeTrue();
+        _ = new SharedMemoryKernel().RequiredSharedMemory.Should().BeGreaterThan(new MinimalKernel().RequiredSharedMemory);
     }
 
     #endregion
@@ -269,10 +281,10 @@ public sealed class IKernelTests
         // Act - Access properties many times
         for (var i = 0; i < 10000; i++)
         {
-            _ = TestKernel.Name;
-            var __ = TestKernel.Source;
-            var ___ = TestKernel.EntryPoint;
-            var ____ = TestKernel.RequiredSharedMemory;
+            _ = new TestKernel().Name;
+            var __ = new TestKernel().Source;
+            var ___ = new TestKernel().EntryPoint;
+            var ____ = new TestKernel().RequiredSharedMemory;
         }
 
         var endTime = DateTime.UtcNow;
@@ -304,12 +316,12 @@ public sealed class IKernelTests
         // Test kernels should handle various content types
 
         // Assert - Properties should contain expected content
-        _ = VectorAddKernel.Source.Should().Contain("*"); // Pointer syntax
-        _ = VectorAddKernel.Source.Should().Contain("+"); // Arithmetic operator
-        _ = VectorAddKernel.Source.Should().Contain("["); // Array access
-        _ = VectorAddKernel.Source.Should().Contain("]"); // Array access
+        _ = new VectorAddKernel().Source.Should().Contain("*"); // Pointer syntax
+        _ = new VectorAddKernel().Source.Should().Contain("+"); // Arithmetic operator
+        _ = new VectorAddKernel().Source.Should().Contain("["); // Array access
+        _ = new VectorAddKernel().Source.Should().Contain("]"); // Array access
 
-        _ = SharedMemoryKernel.Source.Should().Contain("__shared__"); // CUDA shared memory keyword
+        _ = new SharedMemoryKernel().Source.Should().Contain("__shared__"); // CUDA shared memory keyword
     }
 
     [Fact]
@@ -318,10 +330,10 @@ public sealed class IKernelTests
         // Kernel names should be valid programming identifiers
 
         // Assert
-        _ = TestKernel.Name.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
-        _ = VectorAddKernel.Name.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
-        _ = SharedMemoryKernel.Name.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
-        _ = MinimalKernel.Name.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
+        _ = new TestKernel().Name.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
+        _ = new VectorAddKernel().Name.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
+        _ = new SharedMemoryKernel().Name.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
+        _ = new MinimalKernel().Name.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
     }
 
     [Fact]
@@ -330,10 +342,10 @@ public sealed class IKernelTests
         // Entry points should be valid method names
 
         // Assert
-        _ = TestKernel.EntryPoint.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
-        _ = VectorAddKernel.EntryPoint.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
-        _ = SharedMemoryKernel.EntryPoint.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
-        _ = MinimalKernel.EntryPoint.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
+        _ = new TestKernel().EntryPoint.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
+        _ = new VectorAddKernel().EntryPoint.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
+        _ = new SharedMemoryKernel().EntryPoint.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
+        _ = new MinimalKernel().EntryPoint.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
     }
 
     #endregion
@@ -367,12 +379,12 @@ public sealed class IKernelTests
         // Test that kernel properties provide enough context for compilation
 
         // Act & Assert
-        _ = TestKernel.Name.Should().NotBeNullOrEmpty("Name is required for kernel identification");
-        _ = TestKernel.Source.Should().NotBeNullOrEmpty("Source code is required for compilation");
-        _ = TestKernel.EntryPoint.Should().NotBeNullOrEmpty("Entry point is required for execution");
+        _ = new TestKernel().Name.Should().NotBeNullOrEmpty("Name is required for kernel identification");
+        _ = new TestKernel().Source.Should().NotBeNullOrEmpty("Source code is required for compilation");
+        _ = new TestKernel().EntryPoint.Should().NotBeNullOrEmpty("Entry point is required for execution");
 
         // Shared memory can be zero(valid case)
-        _ = (TestKernel.RequiredSharedMemory >= 0).Should().BeTrue();
+        _ = (new TestKernel().RequiredSharedMemory >= 0).Should().BeTrue();
     }
 
     [Fact]
@@ -381,11 +393,11 @@ public sealed class IKernelTests
         // Test that properties contain compilation-ready information
 
         // Assert
-        _ = VectorAddKernel.Source.Should().Contain("void"); // Should contain function declaration
-        _ = VectorAddKernel.EntryPoint.Should().Be("vectorAdd"); // Should match function name
+        _ = new VectorAddKernel().Source.Should().Contain("void"); // Should contain function declaration
+        _ = new VectorAddKernel().EntryPoint.Should().Be("vectorAdd"); // Should match function name
 
-        _ = SharedMemoryKernel.RequiredSharedMemory.Should().BePositive("Kernel declares shared memory usage");
-        _ = SharedMemoryKernel.Source.Should().Contain("__shared__"); // Should match memory requirement
+        _ = new SharedMemoryKernel().RequiredSharedMemory.Should().BePositive("Kernel declares shared memory usage");
+        _ = new SharedMemoryKernel().Source.Should().Contain("__shared__"); // Should match memory requirement
     }
 
     #endregion
@@ -405,10 +417,10 @@ public sealed class IKernelTests
         {
             tasks.Add(System.Threading.Tasks.Task.Run(() =>
             {
-                var name = TestKernel.Name;
-                var source = TestKernel.Source;
-                var entryPoint = TestKernel.EntryPoint;
-                var sharedMemory = TestKernel.RequiredSharedMemory;
+                var name = new TestKernel().Name;
+                var source = new TestKernel().Source;
+                var entryPoint = new TestKernel().EntryPoint;
+                var sharedMemory = new TestKernel().RequiredSharedMemory;
 
                 results.Add($"{name}:{source}:{entryPoint}:{sharedMemory}");
             }));
@@ -420,7 +432,7 @@ public sealed class IKernelTests
         Assert.Equal(10, results.Count);
         _ = results.Distinct().Should().HaveCount(1); // All results should be the same
 
-        var expectedResult = $"{TestKernel.Name}:{TestKernel.Source}:{TestKernel.EntryPoint}:{TestKernel.RequiredSharedMemory}";
+        var expectedResult = $"{new TestKernel().Name}:{new TestKernel().Source}:{new TestKernel().EntryPoint}:{new TestKernel().RequiredSharedMemory}";
         _ = results.Should().AllBe(expectedResult);
     }
 

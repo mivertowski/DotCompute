@@ -9,6 +9,7 @@ using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
+using DotCompute.Linq.Compilation.Plans;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Linq.Execution;

@@ -18,7 +18,7 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// It automatically falls back to scalar operations for elements that don't fit into
 /// vector lanes. The implementation uses <see cref="Vector{T}"/> for hardware acceleration.
 /// </remarks>
-internal class OptimizedVectorScaleKernel : OptimizedKernelBase
+internal class OptimizedVectorScaleKernel : Base.OptimizedKernelBase
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="OptimizedVectorScaleKernel"/> class.

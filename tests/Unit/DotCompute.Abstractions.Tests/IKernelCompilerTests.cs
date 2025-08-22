@@ -83,7 +83,6 @@ public sealed class IKernelCompilerTests
     [Fact]
     public void SupportedSourceTypes_ShouldNotReturnNull()
     {
-        []
         // Arrange
         _ = _mockCompiler.Setup(c => c.SupportedSourceTypes).Returns(Array.Empty<KernelSourceType>());
 

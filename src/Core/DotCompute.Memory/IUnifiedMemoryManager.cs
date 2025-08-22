@@ -5,7 +5,7 @@ using DotCompute.Abstractions;
 // Memory types are now in DotCompute.Abstractions
 using DotCompute.Memory.Benchmarks;
 
-using DotCompute.Memory.Enums;
+// using DotCompute.Memory.Enums; // Removed - using DotCompute.Abstractions instead
 
 namespace DotCompute.Memory;
 

@@ -4,8 +4,11 @@
 using System.Linq.Expressions;
 using System.Text;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
+using DotCompute.Linq.Operators.Generation;
+using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Compilation;
 
@@ -40,7 +43,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
     /// <summary>
     /// Compiles an expression tree into a GPU kernel.
     /// </summary>
-    public async Task<Operators.IKernel> CompileExpressionAsync(
+    public async Task<IKernel> CompileExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
         CompilationOptions? options = null,
@@ -105,7 +108,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         };
     }
 
-    private Task<Operators.IKernel> CompileFusedExpressionAsync(
+    private Task<IKernel> CompileFusedExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
         FusionContext fusionContext,
@@ -116,7 +119,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
             fusionContext.FusedOperations.Count);
 
         // Create kernel definition for fused operations
-        var definition = CreateFusedKernelDefinition(fusionContext, expression);
+        var definition = CreateFusedDotCompute.Abstractions.Kernels.KernelDefinition(fusionContext, expression);
 
         // Add fusion metadata
         definition.Metadata["FusionMetadata"] = fusionContext.Metadata;
@@ -132,7 +135,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         return Task.FromResult(_kernelFactory.CreateKernel(accelerator, definition));
     }
 
-    private async Task<Operators.IKernel> CompileSimpleExpressionAsync(
+    private async Task<IKernel> CompileSimpleExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
         ExpressionAnalysisResult analysis,
@@ -150,7 +153,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         }
 
         // Create new kernel definition
-        var definition = CreateKernelDefinition(analysis, expression);
+        var definition = CreateDotCompute.Abstractions.Kernels.KernelDefinition(analysis, expression);
 
         // Create kernel
         if (_kernelFactory is DefaultKernelFactory enhancedFactory)
@@ -204,7 +207,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         return null;
     }
 
-    private Operators.KernelDefinition CreateFusedKernelDefinition(FusionContext fusionContext, Expression expression)
+    private DotCompute.Abstractions.Kernels.KernelDefinition CreateFusedKernelDefinition(FusionContext fusionContext, Expression expression)
     {
         var name = $"fused_kernel_{string.Join("_", fusionContext.FusedOperations).ToLowerInvariant()}_{Guid.NewGuid():N}";
 
@@ -226,7 +229,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         // Add size parameter
         parameters.Add(new Operators.KernelParameter("size", typeof(int), ParameterDirection.In));
 
-        return new Operators.KernelDefinition
+        return new DotCompute.Abstractions.Kernels.KernelDefinition
         {
             Name = name,
             Parameters = parameters.ToArray(),
@@ -240,7 +243,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         };
     }
 
-    private static Operators.KernelDefinition CreateKernelDefinition(ExpressionAnalysisResult analysis, Expression expression)
+    private static DotCompute.Abstractions.Kernels.KernelDefinition CreateKernelDefinition(ExpressionAnalysisResult analysis, Expression expression)
     {
         var name = $"expression_kernel_{expression.NodeType.ToString().ToLowerInvariant()}_{Guid.NewGuid():N}";
         var parameters = new List<Operators.KernelParameter>();
@@ -254,7 +257,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         // Add output parameter
         parameters.Add(new Operators.KernelParameter("output", analysis.OutputType, ParameterDirection.Out));
 
-        return new Operators.KernelDefinition
+        return new DotCompute.Abstractions.Kernels.KernelDefinition
         {
             Name = name,
             Parameters = parameters.ToArray(),
@@ -268,12 +271,12 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         };
     }
 
-    private static Operators.KernelGenerationContext CreateGenerationContext(
+    private static KernelGenerationContext CreateGenerationContext(
         IAccelerator accelerator,
         CompilationOptions options,
         Dictionary<string, object>? additionalMetadata = null)
     {
-        var context = new Operators.KernelGenerationContext
+        var context = new KernelGenerationContext
         {
             DeviceInfo = accelerator.Info,
             UseSharedMemory = options.EnableMemoryCoalescing,
@@ -319,7 +322,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         return keyBuilder.ToString();
     }
 
-    private async Task<Operators.IKernel> CompileFromTemplate(
+    private async Task<IKernel> CompileFromTemplate(
         KernelTemplate template,
         IAccelerator accelerator,
         Expression expression,
@@ -422,7 +425,7 @@ public interface IExpressionToKernelCompiler
     /// <summary>
     /// Compiles an expression tree into a GPU kernel.
     /// </summary>
-    public Task<Operators.IKernel> CompileExpressionAsync(
+    public Task<IKernel> CompileExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
         CompilationOptions? options = null,
@@ -487,7 +490,7 @@ public sealed class ExpressionResourceEstimate
 public sealed class KernelTemplate
 {
     public string Name { get; init; } = string.Empty;
-    public Func<Expression, Operators.KernelDefinition> CreateDefinition { get; init; } = _ => new Operators.KernelDefinition();
+    public Func<Expression, DotCompute.Abstractions.Kernels.KernelDefinition> CreateDefinition { get; init; } = _ => new DotCompute.Abstractions.Kernels.KernelDefinition();
     public Dictionary<string, object> Metadata { get; init; } = [];
 }
 

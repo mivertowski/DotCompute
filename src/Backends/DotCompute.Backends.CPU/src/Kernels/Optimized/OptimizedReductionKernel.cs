@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// to sum all elements in a vector. The algorithm divides the input into partitions
 /// processed by different threads, then combines the results for the final sum.
 /// </remarks>
-internal class OptimizedReductionKernel : OptimizedKernelBase
+internal class OptimizedReductionKernel : Base.OptimizedKernelBase
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="OptimizedReductionKernel"/> class.

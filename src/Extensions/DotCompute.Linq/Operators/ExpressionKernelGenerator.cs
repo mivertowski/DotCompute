@@ -3,6 +3,9 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Linq.Operators.Generation;
+using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Operators;
 

@@ -5,6 +5,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
+using DotCompute.Linq.Compilation.Plans;
+using DotCompute.Linq.Operators.Types;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -255,11 +257,11 @@ public class QueryExecutor : IQueryExecutor
         return defaultElementCount * elementSize;
     }
 
-    private static Operators.WorkItems CalculateWorkItems(IComputeStage stage, ExecutionContext context)
+    private static WorkItems CalculateWorkItems(IComputeStage stage, ExecutionContext context)
     {
         var config = stage.Configuration;
 
-        return new Operators.WorkItems
+        return new WorkItems
         {
             GlobalWorkSize =
             [
@@ -367,7 +369,7 @@ public class QueryExecutor : IQueryExecutor
 
     [RequiresDynamicCode("This method uses Array.CreateInstance for simulation purposes only")]
     [RequiresUnreferencedCode("This method uses Activator.CreateInstance for simulation purposes only")]
-    private static object? SimulateKernelResult(IComputeStage stage, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type resultType, Operators.WorkItems workItems)
+    private static object? SimulateKernelResult(IComputeStage stage, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type resultType, WorkItems workItems)
     {
         // Simulate different types of kernel results based on the stage
         var totalWorkItems = workItems.GlobalWorkSize.Aggregate(1, (a, b) => a * b);

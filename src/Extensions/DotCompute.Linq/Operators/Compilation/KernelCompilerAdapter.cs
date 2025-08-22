@@ -10,6 +10,7 @@ using DotCompute.Abstractions;
 using DotCompute.Linq.Operators.Execution;
 using DotCompute.Linq.Operators.Models;
 using DotCompute.Linq.Operators.Mocks;
+using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Linq.Operators.Compilation;
@@ -78,14 +79,14 @@ internal class KernelCompilerAdapter : IKernelCompiler
         }
     }
 
-    private static DotCompute.Abstractions.OptimizationLevel ConvertOptimizationLevel(OptimizationLevel level)
+    private static DotCompute.Abstractions.OptimizationLevel ConvertOptimizationLevel(Models.OptimizationLevel level)
     {
         return level switch
         {
-            OptimizationLevel.Debug => DotCompute.Abstractions.OptimizationLevel.Debug,
-            OptimizationLevel.Default => DotCompute.Abstractions.OptimizationLevel.Default,
-            OptimizationLevel.Release => DotCompute.Abstractions.OptimizationLevel.Release,
-            OptimizationLevel.Aggressive => DotCompute.Abstractions.OptimizationLevel.Aggressive,
+            Models.OptimizationLevel.Debug => DotCompute.Abstractions.OptimizationLevel.Debug,
+            Models.OptimizationLevel.Default => DotCompute.Abstractions.OptimizationLevel.Default,
+            Models.OptimizationLevel.Release => DotCompute.Abstractions.OptimizationLevel.Release,
+            Models.OptimizationLevel.Aggressive => DotCompute.Abstractions.OptimizationLevel.Aggressive,
             _ => DotCompute.Abstractions.OptimizationLevel.Default
         };
     }

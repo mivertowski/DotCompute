@@ -9,6 +9,9 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Linq.Operators.Generation;
+using DotCompute.Linq.Operators.Types;
 
 namespace DotCompute.Linq.Operators.Kernels;
 
@@ -47,6 +50,21 @@ internal class ExpressionFallbackKernel : IKernel
     /// Gets the kernel name.
     /// </summary>
     public string Name { get; }
+
+    /// <summary>
+    /// Gets the source code or IL representation of the kernel.
+    /// </summary>
+    public string Source => _expression.ToString();
+
+    /// <summary>
+    /// Gets the entry point method name for the kernel.
+    /// </summary>
+    public string EntryPoint => "Execute";
+
+    /// <summary>
+    /// Gets the required shared memory size in bytes.
+    /// </summary>
+    public int RequiredSharedMemory => 0;
 
     /// <summary>
     /// Gets the kernel properties.
