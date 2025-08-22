@@ -21,6 +21,11 @@ public sealed class HardwareSimdKernelExecutor
     private readonly bool _supportsAvx2;
     private readonly bool _supportsFma;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HardwareSimdKernelExecutor"/> class.
+    /// </summary>
+    /// <param name="simdCapabilities">The simd capabilities.</param>
+    /// <exception cref="System.ArgumentNullException">simdCapabilities</exception>
     public HardwareSimdKernelExecutor(SimdSummary simdCapabilities)
     {
         _simdCapabilities = simdCapabilities ?? throw new ArgumentNullException(nameof(simdCapabilities));
@@ -541,26 +546,48 @@ public sealed class HardwareSimdKernelExecutor
 /// </summary>
 public enum UnaryOperation
 {
+    /// <summary>
+    /// The copy
+    /// </summary>
     Copy,
-    Sqrt,
-    Abs,
-    Negate,
-    Exp,
-    Log,
-    Sin,
-    Cos,
-    Tan
-}
 
-/// <summary>
-/// Performance metrics for SIMD operations.
-/// </summary>
-public sealed class SimdPerformanceMetrics
-{
-    public required string OperationType { get; init; }
-    public required int VectorWidth { get; init; }
-    public required long ElementsProcessed { get; init; }
-    public required double ExecutionTimeMs { get; init; }
-    public required double ThroughputGFlops { get; init; }
-    public required string InstructionSet { get; init; }
+    /// <summary>
+    /// The SQRT
+    /// </summary>
+    Sqrt,
+
+    /// <summary>
+    /// The abs
+    /// </summary>
+    Abs,
+
+    /// <summary>
+    /// The negate
+    /// </summary>
+    Negate,
+
+    /// <summary>
+    /// The exp
+    /// </summary>
+    Exp,
+
+    /// <summary>
+    /// The log
+    /// </summary>
+    Log,
+
+    /// <summary>
+    /// The sin
+    /// </summary>
+    Sin,
+
+    /// <summary>
+    /// The cos
+    /// </summary>
+    Cos,
+
+    /// <summary>
+    /// The tan
+    /// </summary>
+    Tan
 }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.ComponentModel.DataAnnotations;
+using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions;
@@ -202,7 +203,7 @@ public class CompilationOptions
     /// </summary>
     public static CompilationOptions Debug => new()
     {
-        OptimizationLevel = OptimizationLevel.Debug,
+        OptimizationLevel = OptimizationLevel.Minimal,
         EnableDebugInfo = true,
         EnableFastMath = false,
         TreatWarningsAsErrors = false,
@@ -263,91 +264,13 @@ public class CompilationOptions
         };
     }
 
+    /// <summary>
+    /// Converts to string.
+    /// </summary>
+    /// <returns>
+    /// A <see cref="System.String" /> that represents this instance.
+    /// </returns>
     public override string ToString()
 
         => $"OptLevel={OptimizationLevel}, FastMath={EnableFastMath}, Debug={EnableDebugInfo}, UnrollLoops={UnrollLoops}";
-}
-
-/// <summary>
-/// Optimization levels for compilation
-/// </summary>
-public enum OptimizationLevel
-{
-    /// <summary>
-    /// No optimizations, fastest compilation
-    /// </summary>
-    None = 0,
-
-    /// <summary>
-    /// Debug optimizations, preserving debuggability
-    /// </summary>
-    Debug = 1,
-
-    /// <summary>
-    /// Default optimizations, balanced performance/compile time
-    /// </summary>
-    Default = 2,
-
-    /// <summary>
-    /// Full optimizations, longer compilation time
-    /// </summary>
-    Full = 3,
-
-    /// <summary>
-    /// Release optimizations, longer compilation time
-    /// </summary>
-    Release = 4,
-
-
-    /// <summary>
-    /// Maximum optimizations, longest compilation time
-    /// </summary>
-    Maximum = 5,
-
-    /// <summary>
-    /// Aggressive optimizations, may affect numerical stability
-    /// </summary>
-    Aggressive = 6,
-
-    /// <summary>
-    /// Size optimizations, minimize binary size
-    /// </summary>
-    Size = 7
-}
-
-/// <summary>
-/// Floating point precision modes
-/// </summary>
-public enum FloatingPointMode
-{
-    /// <summary>
-    /// Default floating point behavior
-    /// </summary>
-    Default,
-
-    /// <summary>
-    /// Strict IEEE 754 compliance
-    /// </summary>
-    Strict,
-
-    /// <summary>
-    /// Fast floating point, may reduce precision
-    /// </summary>
-    Fast,
-
-    /// <summary>
-    /// Precise floating point operations
-    /// </summary>
-    Precise
-}
-
-/// <summary>
-/// Extension methods for CompilationOptions
-/// </summary>
-public static class CompilationOptionsExtensions
-{
-    /// <summary>
-    /// Creates a copy of the compilation options
-    /// </summary>
-    public static CompilationOptions Clone(this CompilationOptions options) => options.Clone();
 }

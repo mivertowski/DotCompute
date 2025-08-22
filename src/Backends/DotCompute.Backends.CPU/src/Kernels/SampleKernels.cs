@@ -7,7 +7,7 @@ using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
-using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
+using DotCompute.Core.Compute;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -388,7 +388,7 @@ public static class CpuKernelUtils
     /// Executes a vectorized kernel with automatic SIMD selection.
     /// </summary>
     public static void ExecuteVectorizedKernel<T>(
-        CoreKernelExecutionContext context,
+        KernelExecutionContext context,
         VectorizedKernelDelegate<T> kernelDelegate) where T : unmanaged
     {
         // Extract buffer arguments

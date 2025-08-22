@@ -17,6 +17,7 @@ using CoreAcceleratorType = DotCompute.Abstractions.AcceleratorType;
 using CoreCompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using CoreICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using CoreKernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
+using DotCompute.Backends.CPU.Kernels.Types;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
 
@@ -153,12 +154,12 @@ public sealed class CpuAccelerator : IAccelerator
             // Create optimized kernel based on type
             return kernelInfo.Type switch
             {
-                Types.KernelType.VectorAdd => new Optimized.OptimizedVectorAddKernel(kernelInfo.Name, options, _logger),
-                Types.KernelType.VectorScale => new Optimized.OptimizedVectorScaleKernel(kernelInfo.Name, options, _logger),
-                Types.KernelType.MatrixMultiply => new Optimized.OptimizedMatrixMultiplyKernel(kernelInfo.Name, options, _logger),
-                Types.KernelType.Reduction => new Optimized.OptimizedReductionKernel(kernelInfo.Name, options, _logger),
-                Types.KernelType.MemoryIntensive => new Optimized.OptimizedMemoryKernel(kernelInfo.Name, options, _logger),
-                Types.KernelType.ComputeIntensive => new Optimized.OptimizedComputeKernel(kernelInfo.Name, options, _logger),
+                KernelType.VectorAdd => new Optimized.OptimizedVectorAddKernel(kernelInfo.Name, options, _logger),
+                KernelType.VectorScale => new Optimized.OptimizedVectorScaleKernel(kernelInfo.Name, options, _logger),
+                KernelType.MatrixMultiply => new Optimized.OptimizedMatrixMultiplyKernel(kernelInfo.Name, options, _logger),
+                KernelType.Reduction => new Optimized.OptimizedReductionKernel(kernelInfo.Name, options, _logger),
+                KernelType.MemoryIntensive => new Optimized.OptimizedMemoryKernel(kernelInfo.Name, options, _logger),
+                KernelType.ComputeIntensive => new Optimized.OptimizedComputeKernel(kernelInfo.Name, options, _logger),
                 _ => new Optimized.GenericOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger)
             };
         }
@@ -544,7 +545,7 @@ public sealed class CpuAccelerator : IAccelerator
 
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Default,
+            OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false,
             AdditionalFlags = [],
             Defines = []

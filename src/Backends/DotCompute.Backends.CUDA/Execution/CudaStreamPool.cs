@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using DotCompute.Backends.CUDA.Native.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
@@ -527,14 +528,76 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaStreamPoolStatistics
     {
+        /// <summary>
+        /// Gets or sets the high priority streams.
+        /// </summary>
+        /// <value>
+        /// The high priority streams.
+        /// </value>
         public int HighPriorityStreams { get; set; }
+
+        /// <summary>
+        /// Gets or sets the normal priority streams.
+        /// </summary>
+        /// <value>
+        /// The normal priority streams.
+        /// </value>
         public int NormalPriorityStreams { get; set; }
+
+        /// <summary>
+        /// Gets or sets the low priority streams.
+        /// </summary>
+        /// <value>
+        /// The low priority streams.
+        /// </value>
         public int LowPriorityStreams { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total pooled streams.
+        /// </summary>
+        /// <value>
+        /// The total pooled streams.
+        /// </value>
         public int TotalPooledStreams { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total acquired.
+        /// </summary>
+        /// <value>
+        /// The total acquired.
+        /// </value>
         public long TotalAcquired { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total returned.
+        /// </summary>
+        /// <value>
+        /// The total returned.
+        /// </value>
         public long TotalReturned { get; set; }
+
+        /// <summary>
+        /// Gets or sets the active streams.
+        /// </summary>
+        /// <value>
+        /// The active streams.
+        /// </value>
         public long ActiveStreams { get; set; }
+
+        /// <summary>
+        /// Gets or sets the pool utilization.
+        /// </summary>
+        /// <value>
+        /// The pool utilization.
+        /// </value>
         public double PoolUtilization { get; set; }
+
+        /// <summary>
+        /// Gets or sets the average acquire count.
+        /// </summary>
+        /// <value>
+        /// The average acquire count.
+        /// </value>
         public double AverageAcquireCount { get; set; }
     }
 

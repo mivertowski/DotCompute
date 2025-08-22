@@ -434,17 +434,58 @@ public static class StructureOfArrays
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct Point3D(float x, float y, float z) : IEquatable<Point3D>
 {
+    /// <summary>
+    /// The x
+    /// </summary>
     public readonly float X = x;
+
+    /// <summary>
+    /// The y
+    /// </summary>
     public readonly float Y = y;
+
+    /// <summary>
+    /// The z
+    /// </summary>
     public readonly float Z = z;
 
+    /// <summary>
+    /// Equalses the specified object.
+    /// </summary>
+    /// <param name="obj">The object.</param>
+    /// <returns></returns>
     public override bool Equals(object? obj) => obj is Point3D other && Equals(other);
 
+    /// <summary>
+    /// Equalses the specified other.
+    /// </summary>
+    /// <param name="other">The other.</param>
+    /// <returns></returns>
     public bool Equals(Point3D other) => X == other.X && Y == other.Y && Z == other.Z;
 
+    /// <summary>
+    /// Gets the hash code.
+    /// </summary>
+    /// <returns></returns>
     public override int GetHashCode() => HashCode.Combine(X, Y, Z);
 
+    /// <summary>
+    /// Implements the operator op_Equality.
+    /// </summary>
+    /// <param name="left">The left.</param>
+    /// <param name="right">The right.</param>
+    /// <returns>
+    /// The result of the operator.
+    /// </returns>
     public static bool operator ==(Point3D left, Point3D right) => left.Equals(right);
 
+    /// <summary>
+    /// Implements the operator op_Inequality.
+    /// </summary>
+    /// <param name="left">The left.</param>
+    /// <param name="right">The right.</param>
+    /// <returns>
+    /// The result of the operator.
+    /// </returns>
     public static bool operator !=(Point3D left, Point3D right) => !left.Equals(right);
 }

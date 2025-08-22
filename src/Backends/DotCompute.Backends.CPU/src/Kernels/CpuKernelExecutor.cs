@@ -1061,8 +1061,35 @@ internal readonly ref struct VectorizedBuffers
 /// </summary>
 public sealed class ExecutorPerformanceMetrics
 {
+    /// <summary>
+    /// Gets the execution count.
+    /// </summary>
+    /// <value>
+    /// The execution count.
+    /// </value>
     public required long ExecutionCount { get; init; }
+
+    /// <summary>
+    /// Gets the total execution time ms.
+    /// </summary>
+    /// <value>
+    /// The total execution time ms.
+    /// </value>
     public required double TotalExecutionTimeMs { get; init; }
+
+    /// <summary>
+    /// Gets the average execution time ms.
+    /// </summary>
+    /// <value>
+    /// The average execution time ms.
+    /// </value>
     public required double AverageExecutionTimeMs { get; init; }
+
+    /// <summary>
+    /// Gets the thread pool statistics.
+    /// </summary>
+    /// <value>
+    /// The thread pool statistics.
+    /// </value>
     public required ThreadPoolStatistics ThreadPoolStatistics { get; init; }
 }

@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using DotCompute.Backends.CUDA.Native.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution

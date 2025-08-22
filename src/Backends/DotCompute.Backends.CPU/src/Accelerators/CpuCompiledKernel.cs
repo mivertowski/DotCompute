@@ -6,25 +6,22 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
+using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging;
-using CoreICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using CoreKernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
-using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
-using IMemoryBuffer = DotCompute.Abstractions.IMemoryBuffer;
 
 namespace DotCompute.Backends.CPU.Accelerators;
-
 
 /// <summary>
 /// Represents a compiled kernel for CPU execution with vectorization support.
 /// </summary>
-internal sealed class CpuCompiledKernel : CoreICompiledKernel
+internal sealed class CpuCompiledKernel : ICompiledKernel
 {
-    private readonly CoreKernelDefinition _definition;
+    private readonly KernelDefinition _definition;
     private readonly KernelExecutionPlan _executionPlan;
     private readonly CpuThreadPool _threadPool;
     private readonly ILogger _logger;
@@ -36,7 +33,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     private int _disposed;
 
     public CpuCompiledKernel(
-        CoreKernelDefinition definition,
+        KernelDefinition definition,
         KernelExecutionPlan executionPlan,
         CpuThreadPool threadPool,
         ILogger logger)
@@ -64,17 +61,14 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         }
     }
 
-    // Interface implementation for Core.ICompiledKernel - no longer needed
-    // CoreKernelDefinition CoreICompiledKernel.Definition => _definition;
-
-    public ValueTask ExecuteAsync(CoreKernelExecutionContext context, CancellationToken cancellationToken = default)
+    public ValueTask ExecuteAsync(KernelExecutionContext context, CancellationToken cancellationToken = default)
     {
         // Convert KernelExecutionContext to KernelArguments for internal processing
         var arguments = ConvertContextToArguments(context);
         return ExecuteAsync(arguments, cancellationToken);
     }
 
-    public CoreKernelDefinition Definition => _definition;
+    public KernelDefinition Definition => _definition;
 
     public string Name => _definition.Name;
 
@@ -99,7 +93,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         // KernelArguments is non-nullable, so no need for null check
 
         // Convert KernelArguments to KernelExecutionContext for internal processing
-        var context = new CoreKernelExecutionContext
+        var context = new KernelExecutionContext
         {
             Name = _definition.Name,
             WorkDimensions = [1024L], // Default work size - should be configurable
@@ -115,12 +109,12 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
             _executionPlan.UseVectorization ? $"{_executionPlan.VectorWidth}-bit" : "disabled");
 
         // Validate work dimensions
-        if (context.WorkDimensions.Count == 0)
+        if (context.WorkDimensions.Length == 0)
         {
             throw new ArgumentException("Global work size must have at least one dimension", nameof(arguments));
         }
 
-        if (context.WorkDimensions.Count > 3)
+        if (context.WorkDimensions.Length > 3)
         {
             throw new ArgumentException("Global work size cannot exceed 3 dimensions", nameof(arguments));
         }
@@ -217,7 +211,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     }
 
     private void ExecuteWorkItems(
-        CoreKernelExecutionContext context,
+        KernelExecutionContext context,
         long startIndex,
         long endIndex,
         Barrier barrier,
@@ -578,7 +572,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         return total;
     }
 
-    private void ExecuteSingleWorkItem(CoreKernelExecutionContext context, long[] workItemId)
+    private void ExecuteSingleWorkItem(KernelExecutionContext context, long[] workItemId)
     {
         // If we have a compiled delegate, use it
         if (_compiledDelegate != null)
@@ -608,7 +602,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         ExecuteSingleWorkItemDefault(context, workItemId);
     }
 
-    private void ExecuteSingleWorkItemDefault(CoreKernelExecutionContext context, long[] workItemId)
+    private void ExecuteSingleWorkItemDefault(KernelExecutionContext context, long[] workItemId)
     {
         // Extract arguments based on their types
         var args = context.Arguments;
@@ -698,7 +692,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         return linearIndex;
     }
 
-    private static KernelOperationType InferOperationType(CoreKernelDefinition definition, object[] args)
+    private static KernelOperationType InferOperationType(KernelDefinition definition, object[] args)
     {
         // Check metadata first
         if (definition.Metadata?.TryGetValue("OperationType", out var opTypeObj) == true)
@@ -958,7 +952,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         }
     }
 
-    private static unsafe void ExecuteUnaryFunction(object[] args, long linearIndex, CoreKernelDefinition? definition)
+    private static unsafe void ExecuteUnaryFunction(object[] args, long linearIndex, KernelDefinition? definition)
     {
         if (args.Length < 2 ||
             args[0] is not IMemoryBuffer input ||
@@ -1007,7 +1001,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         }
     }
 
-    private void ExecuteReduction(object[] args, long linearIndex, long[] workItemId, CoreKernelExecutionContext context)
+    private void ExecuteReduction(object[] args, long linearIndex, long[] workItemId, KernelExecutionContext context)
     {
         // Reduction operations need special handling - typically done in shared memory
         // This is a simplified implementation
@@ -1023,7 +1017,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         ExecuteUnaryFunction(args, linearIndex, _definition);
     }
 
-    private static void ExecuteMatrixMultiply(object[] args, long linearIndex, long[] workItemId, CoreKernelExecutionContext context)
+    private static void ExecuteMatrixMultiply(object[] args, long linearIndex, long[] workItemId, KernelExecutionContext context)
     {
         // Matrix multiplication requires understanding of matrix dimensions
         // This is a placeholder implementation
@@ -1041,7 +1035,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     }
 
     private void ExecuteCustomKernel(object[] args, long linearIndex, long[] workItemId,
-        CoreKernelExecutionContext context, CoreKernelDefinition definition)
+        KernelExecutionContext context, KernelDefinition definition)
     {
         // Custom kernel execution would parse the kernel source and interpret it
         // For now, fall back to simple pattern matching
@@ -1180,7 +1174,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         return ValueTask.CompletedTask;
     }
 
-    private static bool TryGetBufferArguments(CoreKernelExecutionContext context, out IMemoryBuffer? input1, out IMemoryBuffer? input2, out IMemoryBuffer? output)
+    private static bool TryGetBufferArguments(KernelExecutionContext context, out IMemoryBuffer? input1, out IMemoryBuffer? input2, out IMemoryBuffer? output)
     {
         input1 = null;
         input2 = null;
@@ -1243,7 +1237,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         };
     }
 
-    private static KernelArguments ConvertContextToArguments(CoreKernelExecutionContext context)
+    private static KernelArguments ConvertContextToArguments(KernelExecutionContext context)
     {
         // Convert KernelExecutionContext arguments to KernelArguments
         // The KernelArguments expects an array of objects
@@ -1279,7 +1273,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 /// </summary>
 internal sealed class VectorizedExecutionContext
 {
-    public required CoreKernelExecutionContext KernelContext { get; init; }
+    public required KernelExecutionContext KernelContext { get; init; }
     public required KernelExecutionPlan ExecutionPlan { get; init; }
     public required CancellationToken CancellationToken { get; init; }
 }

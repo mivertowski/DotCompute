@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Threading;
+using DotCompute.Core;
+using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
@@ -347,37 +349,7 @@ ILogger logger) : ICompiledKernel
     }
 }
 
-/// <summary>
-/// Kernel execution context for AOT scenarios.
-/// </summary>
-public sealed class KernelExecutionContext
-{
-    private readonly Dictionary<int, object> _parameters = [];
 
-    public void SetParameter(int index, object value) => _parameters[index] = value;
-
-    public void SetBuffer<T>(int index, Memory<T> buffer) where T : struct => _parameters[index] = buffer;
-
-    public void SetScalar<T>(int index, T value) where T : struct => _parameters[index] = value;
-
-    public Memory<T> GetBuffer<T>(int index) where T : struct
-    {
-        if (_parameters.TryGetValue(index, out var parameter) && parameter is Memory<T> buffer)
-        {
-            return buffer;
-        }
-        throw new ArgumentException($"Buffer parameter at index {index} not found or type mismatch");
-    }
-
-    public T GetScalar<T>(int index) where T : struct
-    {
-        if (_parameters.TryGetValue(index, out var parameter) && parameter is T scalar)
-        {
-            return scalar;
-        }
-        throw new ArgumentException($"Scalar parameter at index {index} not found or type mismatch");
-    }
-}
 
 /// <summary>
 /// SIMD-optimized math operations for AOT kernels.

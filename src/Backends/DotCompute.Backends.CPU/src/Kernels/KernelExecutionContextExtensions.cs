@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Core.Compute;
+
 namespace DotCompute.Backends.CPU.Kernels;
 
 
@@ -11,11 +13,11 @@ internal sealed class ExtendedKernelExecutionContext
 {
     private readonly Dictionary<int, object> _parameters = [];
     private readonly Dictionary<int, Memory<byte>> _buffers = [];
-    private readonly DotCompute.Core.KernelExecutionContext _innerContext;
+    private readonly KernelExecutionContext _innerContext;
 
     public ExtendedKernelExecutionContext()
     {
-        _innerContext = new DotCompute.Core.KernelExecutionContext
+        _innerContext = new KernelExecutionContext
         {
             Name = "CPU Kernel",
             WorkDimensions = new[] { 1L }

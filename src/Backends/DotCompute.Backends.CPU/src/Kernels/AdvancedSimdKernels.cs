@@ -828,14 +828,53 @@ public static class AdvancedSimdKernels
 /// </summary>
 public enum NeonOperation
 {
+    /// <summary>
+    /// The add
+    /// </summary>
     Add,
+
+    /// <summary>
+    /// The multiply
+    /// </summary>
     Multiply,
+
+    /// <summary>
+    /// The multiply add
+    /// </summary>
     MultiplyAdd,
+
+    /// <summary>
+    /// The multiply subtract
+    /// </summary>
     MultiplySubtract,
+
+    /// <summary>
+    /// The reciprocate estimate
+    /// </summary>
     ReciprocateEstimate,
+
+    /// <summary>
+    /// The reciprocal square root estimate
+    /// </summary>
     ReciprocalSquareRootEstimate,
+
+    /// <summary>
+    /// The absolute difference
+    /// </summary>
     AbsoluteDifference,
+
+    /// <summary>
+    /// The maximum
+    /// </summary>
     Maximum,
+
+    /// <summary>
+    /// The minimum
+    /// </summary>
     Minimum,
+
+    /// <summary>
+    /// The round
+    /// </summary>
     Round
 }

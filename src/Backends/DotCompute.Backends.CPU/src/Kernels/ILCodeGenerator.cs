@@ -4,6 +4,7 @@
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
 
 namespace DotCompute.Backends.CPU.Kernels;

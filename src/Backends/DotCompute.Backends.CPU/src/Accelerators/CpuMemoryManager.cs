@@ -25,12 +25,22 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     private long _totalAllocated;
     private int _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CpuMemoryManager"/> class.
+    /// </summary>
+    /// <param name="defaultPolicy">The default policy.</param>
     public CpuMemoryManager(NumaMemoryPolicy? defaultPolicy = null)
     {
         _topology = NumaInfo.Topology;
         _defaultPolicy = defaultPolicy ?? CreateDefaultPolicy();
     }
 
+    /// <summary>
+    /// Gets the total allocated bytes.
+    /// </summary>
+    /// <value>
+    /// The total allocated bytes.
+    /// </value>
     public long TotalAllocatedBytes => Interlocked.Read(ref _totalAllocated);
 
     /// <summary>
@@ -38,6 +48,13 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     /// </summary>
     public NumaTopology Topology => _topology;
 
+    /// <summary>
+    /// Allocates memory on the accelerator.
+    /// </summary>
+    /// <param name="sizeInBytes"></param>
+    /// <param name="options"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,
         MemoryOptions options = MemoryOptions.None,
@@ -89,6 +106,14 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
 
+    /// <summary>
+    /// Allocates memory and copies data from host.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="source"></param>
+    /// <param name="options"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
         ReadOnlyMemory<T> source,
         MemoryOptions options = MemoryOptions.None,
@@ -102,6 +127,15 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return buffer;
     }
 
+    /// <summary>
+    /// Creates a view over existing memory.
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="offset"></param>
+    /// <param name="length"></param>
+    /// <returns></returns>
+    /// <exception cref="System.ArgumentNullException"></exception>
+    /// <exception cref="System.ArgumentException">Buffer must be a CPU memory buffer - buffer</exception>
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
         ArgumentNullException.ThrowIfNull(buffer);
@@ -244,6 +278,9 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         };
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)

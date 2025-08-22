@@ -14,11 +14,3 @@ public abstract class AlgorithmKernel
     public virtual bool IsVectorized => false;
 }
 
-/// <summary>
-/// Kernel execution context.
-/// </summary>
-public sealed class KernelExecutionContext
-{
-    public required object[] Parameters { get; init; }
-    public CancellationToken CancellationToken { get; init; }
-}

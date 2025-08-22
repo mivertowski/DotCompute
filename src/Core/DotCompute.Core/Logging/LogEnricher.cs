@@ -728,12 +728,7 @@ public sealed class DeviceContext
     public DateTimeOffset Timestamp { get; set; }
 }
 
-public sealed class KernelExecutionContext
-{
-    public string KernelName { get; set; } = string.Empty;
-    public KernelCompilationInfo CompilationInfo { get; set; } = new();
-    public DateTimeOffset Timestamp { get; set; }
-}
+
 
 public sealed class KernelCompilationInfo
 {
