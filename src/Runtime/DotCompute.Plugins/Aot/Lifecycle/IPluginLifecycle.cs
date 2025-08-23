@@ -1,0 +1,111 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using DotCompute.Plugins.Interfaces;
+
+namespace DotCompute.Plugins.Aot.Lifecycle;
+
+/// <summary>
+/// Interface for plugin lifecycle management operations.
+/// Segregated interface following the Interface Segregation Principle.
+/// </summary>
+public interface IPluginLifecycle : IDisposable
+{
+    /// <summary>
+    /// Unloads and disposes a plugin by its unique identifier.
+    /// </summary>
+    /// <param name="pluginId">The unique identifier of the plugin to unload.</param>
+    /// <returns>True if the plugin was successfully unloaded; false if not found or unloading failed.</returns>
+    /// <exception cref="ArgumentException">Thrown when pluginId is null, empty, or whitespace.</exception>
+    bool UnloadPlugin(string pluginId);
+
+    /// <summary>
+    /// Attempts to unload a plugin, providing detailed information about the operation.
+    /// </summary>
+    /// <param name="pluginId">The unique identifier of the plugin to unload.</param>
+    /// <param name="errorMessage">Error message if unloading failed.</param>
+    /// <returns>True if the plugin was successfully unloaded; false otherwise.</returns>
+    bool TryUnloadPlugin(string pluginId, out string? errorMessage);
+
+    /// <summary>
+    /// Unloads all currently loaded plugins.
+    /// </summary>
+    /// <returns>The number of plugins that were successfully unloaded.</returns>
+    int UnloadAllPlugins();
+
+    /// <summary>
+    /// Registers a plugin instance for lifecycle management.
+    /// </summary>
+    /// <param name="plugin">The plugin instance to register for management.</param>
+    /// <exception cref="ArgumentNullException">Thrown when plugin is null.</exception>
+    void RegisterPluginForManagement(IBackendPlugin plugin);
+
+    /// <summary>
+    /// Unregisters a plugin from lifecycle management without disposing it.
+    /// </summary>
+    /// <param name="pluginId">The plugin ID to unregister.</param>
+    /// <returns>True if the plugin was unregistered; false if not found.</returns>
+    bool UnregisterPlugin(string pluginId);
+
+    /// <summary>
+    /// Event raised when a plugin is successfully loaded and registered.
+    /// </summary>
+    event EventHandler<PluginLifecycleEventArgs>? PluginLoaded;
+
+    /// <summary>
+    /// Event raised when a plugin is unloaded and disposed.
+    /// </summary>
+    event EventHandler<PluginLifecycleEventArgs>? PluginUnloaded;
+
+    /// <summary>
+    /// Event raised when a plugin lifecycle operation encounters an error.
+    /// </summary>
+    event EventHandler<PluginLifecycleErrorEventArgs>? LifecycleError;
+}
+
+/// <summary>
+/// Event arguments for plugin lifecycle events.
+/// </summary>
+public class PluginLifecycleEventArgs(string pluginId, string pluginName) : EventArgs
+{
+    /// <summary>
+    /// Gets the unique identifier of the plugin.
+    /// </summary>
+    public string PluginId { get; } = pluginId;
+
+    /// <summary>
+    /// Gets the display name of the plugin.
+    /// </summary>
+    public string PluginName { get; } = pluginName;
+
+    /// <summary>
+    /// Gets the timestamp when the lifecycle event occurred.
+    /// </summary>
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Event arguments for plugin lifecycle errors.
+/// </summary>
+public class PluginLifecycleErrorEventArgs(string pluginId, Exception exception, string operation) : EventArgs
+{
+    /// <summary>
+    /// Gets the unique identifier of the plugin that caused the error.
+    /// </summary>
+    public string PluginId { get; } = pluginId;
+
+    /// <summary>
+    /// Gets the exception that occurred during the lifecycle operation.
+    /// </summary>
+    public Exception Exception { get; } = exception;
+
+    /// <summary>
+    /// Gets the lifecycle operation that was being performed when the error occurred.
+    /// </summary>
+    public string Operation { get; } = operation;
+
+    /// <summary>
+    /// Gets the timestamp when the error occurred.
+    /// </summary>
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
+}

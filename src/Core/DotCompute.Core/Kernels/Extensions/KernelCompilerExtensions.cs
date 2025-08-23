@@ -3,6 +3,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using DotCompute.Abstractions.Enums;
+
 namespace DotCompute.Core.Kernels.Extensions;
 
 /// <summary>
@@ -18,7 +20,7 @@ public static class KernelCompilerExtensions
     /// <param name="options">The abstractions compilation options to convert.</param>
     /// <returns>Core compilation options with equivalent settings.</returns>
     /// <exception cref="ArgumentNullException">Thrown when options is null.</exception>
-    public static Types.CompilationOptions ToCoreOptions(this DotCompute.Abstractions.CompilationOptions options)
+    public static Types.CompilationOptions ToCoreOptions(this DotCompute.Abstractions.Configuration.CompilationOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -39,17 +41,19 @@ public static class KernelCompilerExtensions
     /// </summary>
     /// <param name="level">The abstraction optimization level.</param>
     /// <returns>The corresponding core optimization level.</returns>
-    private static Types.OptimizationLevel ConvertOptimizationLevel(DotCompute.Abstractions.OptimizationLevel level)
+    private static OptimizationLevel ConvertOptimizationLevel(DotCompute.Abstractions.Enums.OptimizationLevel level)
     {
         return level switch
         {
-            DotCompute.Abstractions.OptimizationLevel.None => Types.OptimizationLevel.O0,
-            DotCompute.Abstractions.OptimizationLevel.Debug => Types.OptimizationLevel.O1,
-            DotCompute.Abstractions.OptimizationLevel.Default => Types.OptimizationLevel.O2,
-            DotCompute.Abstractions.OptimizationLevel.Release => Types.OptimizationLevel.O2,
-            DotCompute.Abstractions.OptimizationLevel.Maximum => Types.OptimizationLevel.O3,
-            DotCompute.Abstractions.OptimizationLevel.Aggressive => Types.OptimizationLevel.O3,
-            _ => Types.OptimizationLevel.O2 // Default to standard optimization
+            DotCompute.Abstractions.Enums.OptimizationLevel.None => OptimizationLevel.None,
+            DotCompute.Abstractions.Enums.OptimizationLevel.Minimal => OptimizationLevel.Minimal,
+            DotCompute.Abstractions.Enums.OptimizationLevel.Default => OptimizationLevel.Default,
+            DotCompute.Abstractions.Enums.OptimizationLevel.High => OptimizationLevel.High,
+            DotCompute.Abstractions.Enums.OptimizationLevel.Maximum => OptimizationLevel.Maximum,
+            DotCompute.Abstractions.Enums.OptimizationLevel.Size => OptimizationLevel.Size,
+            DotCompute.Abstractions.Enums.OptimizationLevel.Aggressive => OptimizationLevel.Aggressive,
+            DotCompute.Abstractions.Enums.OptimizationLevel.Custom => OptimizationLevel.Custom,
+            _ => OptimizationLevel.Default // Default to standard optimization
         };
     }
 }

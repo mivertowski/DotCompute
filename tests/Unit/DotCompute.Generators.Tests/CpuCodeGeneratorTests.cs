@@ -2,7 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Generic;
+using System.Linq;
 using DotCompute.Generators.Backend;
+using DotCompute.Generators.Models;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
@@ -18,12 +20,12 @@ public class CpuCodeGeneratorTests
     {
         // Arrange
         var methodName = "AddArrays";
-        var parameters = new List<(string name, string type, bool isBuffer)>
+        var parameters = new List<KernelParameter>
         {
-           ("input1", "float[]", true),
-           ("input2", "float[]", true),
-           ("output", "float[]", true),
-           ("length", "int", false)
+           new KernelParameter("input1", "float[]", true),
+           new KernelParameter("input2", "float[]", true),
+           new KernelParameter("output", "float[]", true),
+           new KernelParameter("length", "int", false)
         };
         var methodSyntax = CreateSimpleMethodSyntax();
         var generator = new CpuCodeGenerator(methodName, parameters, methodSyntax);
@@ -48,13 +50,13 @@ public class CpuCodeGeneratorTests
     {
         // Arrange
         var methodName = "ProcessData";
-        var parameters = new List<(string name, string type, bool isBuffer)>
+        var parameters = new List<KernelParameter>
         {
-           ("intArray", "int[]", true),
-           ("doubleArray", "double[]", true),
-           ("floatPtr", "float*", true),
-           ("count", "int", false),
-           ("scale", "double", false)
+           new KernelParameter("intArray", "int[]", true),
+           new KernelParameter("doubleArray", "double[]", true),
+           new KernelParameter("floatPtr", "float*", true),
+           new KernelParameter("count", "int", false),
+           new KernelParameter("scale", "double", false)
         };
         var methodSyntax = CreateSimpleMethodSyntax();
         var generator = new CpuCodeGenerator(methodName, parameters, methodSyntax);
@@ -203,10 +205,10 @@ public class CpuCodeGeneratorTests
     {
         // Arrange
         var methodName = "ComplexKernel";
-        var parameters = new List<(string name, string type, bool isBuffer)>
+        var parameters = new List<KernelParameter>
         {
-           ("input", "float[]", true),
-           ("output", "float[]", true)
+           new KernelParameter("input", "float[]", true),
+           new KernelParameter("output", "float[]", true)
         };
         var complexMethod = CreateComplexMethodSyntax();
         var generator = new CpuCodeGenerator(methodName, parameters, complexMethod);
@@ -263,7 +265,7 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Contain("[MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        result.Should().Contain("[MethodImpl(MethodImplOptions.AggressiveInlining)]");
     }
 
     [Fact]
@@ -292,7 +294,7 @@ public class CpuCodeGeneratorTests
 
         // Assert
         Assert.Contains("// Process remainder", result);
-        result.Contain("ifalignedEnd < end)");
+        result.Should().Contain("if (alignedEnd < end)");
         Assert.Contains("ExecuteScalar(", result);
     }
 
@@ -320,10 +322,10 @@ public class CpuCodeGeneratorTests
     {
         // Arrange
         var methodName = "SimpleCalculation";
-        var parameters = new List<(string name, string type, bool isBuffer)>
+        var parameters = new List<KernelParameter>
         {
-           ("value", "float", false),
-           ("multiplier", "float", false)
+           new KernelParameter("value", "float", false),
+           new KernelParameter("multiplier", "float", false)
         };
         var methodSyntax = CreateSimpleMethodSyntax();
         var generator = new CpuCodeGenerator(methodName, parameters, methodSyntax);
@@ -341,11 +343,11 @@ public class CpuCodeGeneratorTests
     private CpuCodeGenerator CreateBasicGenerator()
     {
         var methodName = "TestKernel";
-        var parameters = new List<(string name, string type, bool isBuffer)>
+        var parameters = new List<KernelParameter>
         {
-           ("input", "float[]", true),
-           ("output", "float[]", true),
-           ("length", "int", false)
+           new KernelParameter("input", "float[]", true),
+           new KernelParameter("output", "float[]", true),
+           new KernelParameter("length", "int", false)
         };
         var methodSyntax = CreateSimpleMethodSyntax();
         return new CpuCodeGenerator(methodName, parameters, methodSyntax);
@@ -354,12 +356,12 @@ public class CpuCodeGeneratorTests
     private CpuCodeGenerator CreateGeneratorWithMethod(MethodDeclarationSyntax methodSyntax)
     {
         var methodName = "TestKernel";
-        var parameters = new List<(string name, string type, bool isBuffer)>
+        var parameters = new List<KernelParameter>
         {
-           ("input1", "float[]", true),
-           ("input2", "float[]", true),
-           ("output", "float[]", true),
-           ("length", "int", false)
+           new KernelParameter("input1", "float[]", true),
+           new KernelParameter("input2", "float[]", true),
+           new KernelParameter("output", "float[]", true),
+           new KernelParameter("length", "int", false)
         };
         return new CpuCodeGenerator(methodName, parameters, methodSyntax);
     }

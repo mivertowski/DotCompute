@@ -128,8 +128,19 @@ DotCompute.Generators/
 │   └── AcceleratorType.cs          # Backend enum
 ├── Backend/
 │   └── CpuCodeGenerator.cs         # CPU code generation
+├── Models/
+│   ├── KernelParameter.cs          # Parameter model
+│   └── VectorizationInfo.cs        # Vectorization analysis model
+├── Configuration/
+│   └── GeneratorConfiguration.cs   # Generator configuration
 └── Utils/
-    └── SourceGeneratorHelpers.cs   # Helper utilities
+    ├── SourceGeneratorHelpers.cs   # Legacy facade (deprecated)
+    ├── CodeFormatter.cs             # Code formatting utilities
+    ├── ParameterValidator.cs       # Parameter validation
+    ├── LoopOptimizer.cs            # Loop optimization
+    ├── VectorizationAnalyzer.cs    # Vectorization analysis
+    ├── MethodBodyExtractor.cs      # Method body extraction
+    └── SimdTypeMapper.cs           # SIMD type mapping
 ```
 
 ## Future Enhancements

@@ -1,0 +1,228 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using System.Collections.Concurrent;
+using DotCompute.Algorithms.Management.Configuration;
+using Microsoft.Extensions.Logging;
+
+namespace DotCompute.Algorithms.Management.Core;
+
+/// <summary>
+/// Service responsible for hot reload functionality.
+/// </summary>
+public sealed class HotReloadService : IHotReloadService, IDisposable
+{
+    private readonly ILogger<HotReloadService> _logger;
+    private readonly IPluginLifecycleManager _lifecycleManager;
+    private readonly AlgorithmPluginManagerOptions _options;
+    private readonly ConcurrentDictionary<string, FileSystemWatcher> _watchers = new();
+    private bool _disposed;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HotReloadService"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="lifecycleManager">The plugin lifecycle manager.</param>
+    /// <param name="options">Configuration options.</param>
+    public HotReloadService(
+        ILogger<HotReloadService> logger,
+        IPluginLifecycleManager lifecycleManager,
+        AlgorithmPluginManagerOptions options)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+    }
+
+    /// <inheritdoc/>
+    public void SetupHotReload(string assemblyPath)
+    {
+        if (!_options.EnableHotReload || _watchers.ContainsKey(assemblyPath))
+        {
+            return;
+        }
+
+        try
+        {
+            var directory = Path.GetDirectoryName(assemblyPath);
+            if (directory == null) return;
+
+            var fileName = Path.GetFileName(assemblyPath);
+
+            var watcher = new FileSystemWatcher(directory, fileName)
+            {
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.CreationTime,
+                EnableRaisingEvents = true,
+                IncludeSubdirectories = false
+            };
+
+            // Handle both file changes and dependency changes
+            watcher.Changed += OnAssemblyChanged;
+            watcher.Created += OnAssemblyChanged;
+            watcher.Error += OnFileWatcherError;
+
+            // Also watch for .pdb files (debug symbols) and .json manifest files
+            var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
+            var manifestPath = Path.ChangeExtension(assemblyPath, ".json");
+
+            if (File.Exists(pdbPath))
+            {
+                var pdbWatcher = new FileSystemWatcher(directory, Path.GetFileName(pdbPath))
+                {
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
+                    EnableRaisingEvents = true
+                };
+                pdbWatcher.Changed += OnAssemblyChanged;
+                _watchers.TryAdd(pdbPath, pdbWatcher);
+            }
+
+            if (File.Exists(manifestPath))
+            {
+                var manifestWatcher = new FileSystemWatcher(directory, Path.GetFileName(manifestPath))
+                {
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
+                    EnableRaisingEvents = true
+                };
+                manifestWatcher.Changed += OnAssemblyChanged;
+                _watchers.TryAdd(manifestPath, manifestWatcher);
+            }
+
+            _watchers.TryAdd(assemblyPath, watcher);
+            LogHotReloadSetup(assemblyPath);
+        }
+        catch (Exception ex)
+        {
+            LogHotReloadSetupFailed(assemblyPath, ex.Message);
+        }
+    }
+
+    /// <inheritdoc/>
+    public void StopHotReload(string assemblyPath)
+    {
+        if (_watchers.TryRemove(assemblyPath, out var watcher))
+        {
+            watcher.EnableRaisingEvents = false;
+            watcher.Changed -= OnAssemblyChanged;
+            watcher.Created -= OnAssemblyChanged;
+            watcher.Error -= OnFileWatcherError;
+            watcher.Dispose();
+        }
+    }
+
+    /// <inheritdoc/>
+    public void StopAllHotReload()
+    {
+        foreach (var watcher in _watchers.Values)
+        {
+            watcher.EnableRaisingEvents = false;
+            watcher.Changed -= OnAssemblyChanged;
+            watcher.Created -= OnAssemblyChanged;
+            watcher.Error -= OnFileWatcherError;
+            watcher.Dispose();
+        }
+        _watchers.Clear();
+    }
+
+    /// <summary>
+    /// Handles assembly file changes for hot reload.
+    /// </summary>
+    private async void OnAssemblyChanged(object sender, FileSystemEventArgs e)
+    {
+        try
+        {
+            // Small delay to allow file to be fully written
+            await Task.Delay(500).ConfigureAwait(false);
+
+            // Find plugins from this assembly (check both direct path and related files)
+            var assemblyPath = e.FullPath;
+
+            // If this is a .pdb or .json file, find the corresponding assembly
+            if (Path.GetExtension(assemblyPath).Equals(".pdb", StringComparison.OrdinalIgnoreCase) ||
+                Path.GetExtension(assemblyPath).Equals(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                assemblyPath = Path.ChangeExtension(assemblyPath, ".dll");
+                if (!File.Exists(assemblyPath))
+                {
+                    assemblyPath = Path.ChangeExtension(e.FullPath, ".exe");
+                }
+            }
+
+            var pluginsToReload = new List<string>();
+            foreach (var pluginId in _lifecycleManager.RegisteredPlugins)
+            {
+                var pluginInfo = _lifecycleManager.GetLoadedPluginInfo(pluginId);
+                if (pluginInfo != null && 
+                    string.Equals(pluginInfo.Metadata.AssemblyPath, assemblyPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    pluginsToReload.Add(pluginId);
+                }
+            }
+
+            foreach (var pluginId in pluginsToReload)
+            {
+                _ = Task.Run(async () => await _lifecycleManager.ReloadPluginAsync(pluginId).ConfigureAwait(false));
+            }
+
+            if (pluginsToReload.Count > 0)
+            {
+                LogHotReloadTriggered(e.FullPath, pluginsToReload.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            LogHotReloadFailed(e.FullPath, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Handles file watcher errors.
+    /// </summary>
+    private async void OnFileWatcherError(object sender, ErrorEventArgs e)
+    {
+        _logger.LogError(e.GetException(), "File watcher error occurred");
+
+        // Try to restart the watcher if it's a temporary error
+        if (sender is FileSystemWatcher watcher)
+        {
+            try
+            {
+                watcher.EnableRaisingEvents = false;
+                await Task.Delay(1000, CancellationToken.None).ConfigureAwait(false); // Wait a bit before restarting
+                watcher.EnableRaisingEvents = true;
+                _logger.LogInformation("Successfully restarted file watcher for: {Path}", watcher.Path);
+            }
+            catch (Exception restartEx)
+            {
+                _logger.LogError(restartEx, "Failed to restart file watcher for: {Path}", watcher.Path);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Disposes of managed resources.
+    /// </summary>
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            StopAllHotReload();
+            _disposed = true;
+        }
+    }
+
+    #region Logger Messages
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Hot reload setup for {AssemblyPath}")]
+    private partial void LogHotReloadSetup(string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Hot reload setup failed for {AssemblyPath}: {Reason}")]
+    private partial void LogHotReloadSetupFailed(string assemblyPath, string reason);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Hot reload failed for {AssemblyPath}: {Reason}")]
+    private partial void LogHotReloadFailed(string assemblyPath, string reason);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Hot reload triggered for {FilePath}, reloading {PluginCount} plugins")]
+    private partial void LogHotReloadTriggered(string filePath, int pluginCount);
+
+    #endregion
+}

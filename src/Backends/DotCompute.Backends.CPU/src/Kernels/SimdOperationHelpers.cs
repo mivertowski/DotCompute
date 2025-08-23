@@ -4,6 +4,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using DotCompute.Backends.CPU.Kernels.Generators;
 
 namespace DotCompute.Backends.CPU.Kernels;
 

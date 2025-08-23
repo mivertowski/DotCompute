@@ -1,20 +1,37 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
-using DotCompute.Backends.CUDA.Native;
+using System.Threading;
+using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Execution.Graph;
+using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
+using DotCompute.Backends.CUDA.Execution.Graph.Enums;
+using DotCompute.Backends.CUDA.Execution.Graph.Nodes;
+using DotCompute.Backends.CUDA.Execution.Graph.Options;
+using DotCompute.Backends.CUDA.Execution.Graph.Results;
+using DotCompute.Backends.CUDA.Execution.Graph.Statistics;
+using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CUDA.Native.Types;
 
 namespace DotCompute.Backends.CUDA.Execution
 {
-
     /// <summary>
-    /// Advanced CUDA Graph support for kernel fusion and optimization on RTX 2000 Ada
+    /// Advanced CUDA Graph support for kernel fusion and optimization on RTX 2000 Ada architecture.
+    /// Provides comprehensive graph management, execution, and optimization capabilities.
     /// </summary>
+    /// <remarks>
+    /// This class manages the complete lifecycle of CUDA graphs including creation, instantiation,
+    /// execution, and optimization. It provides advanced features like kernel fusion, Ada Lovelace
+    /// architecture optimizations, and performance monitoring for high-throughput computing scenarios.
+    /// </remarks>
     public sealed class CudaGraphSupport : IDisposable
     {
         private readonly CudaContext _context;
@@ -27,10 +44,18 @@ namespace DotCompute.Backends.CUDA.Execution
         private readonly Timer _optimizationTimer;
         private bool _disposed;
 
-        // Graph configuration
+        // Graph configuration constants
         private const int MaxGraphInstances = 100;
         private const int MaxNodesPerGraph = 1000;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CudaGraphSupport"/> class.
+        /// </summary>
+        /// <param name="context">The CUDA context for graph operations.</param>
+        /// <param name="streamManager">The stream manager for execution scheduling.</param>
+        /// <param name="eventManager">The event manager for timing and synchronization.</param>
+        /// <param name="logger">The logger for diagnostic information.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public CudaGraphSupport(
             CudaContext context,
             CudaStreamManager streamManager,
@@ -54,8 +79,14 @@ namespace DotCompute.Backends.CUDA.Execution
         }
 
         /// <summary>
-        /// Creates a CUDA graph from a sequence of kernel operations
+        /// Creates a CUDA graph from a sequence of kernel operations.
         /// </summary>
+        /// <param name="graphId">The unique identifier for the graph.</param>
+        /// <param name="operations">The sequence of kernel operations to include in the graph.</param>
+        /// <param name="options">Optional optimization settings for the graph.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous graph creation operation, returning the graph ID.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
         public async Task<string> CreateGraphAsync(
             string graphId,
             IEnumerable<CudaKernelOperation> operations,
@@ -101,8 +132,13 @@ namespace DotCompute.Backends.CUDA.Execution
         }
 
         /// <summary>
-        /// Instantiates a graph for execution
+        /// Instantiates a graph for execution.
         /// </summary>
+        /// <param name="graphId">The identifier of the graph to instantiate.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous instantiation operation, returning the graph instance.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
+        /// <exception cref="ArgumentException">Thrown if the specified graph is not found.</exception>
         public async Task<CudaGraphInstance> InstantiateGraphAsync(
             string graphId,
             CancellationToken cancellationToken = default)
@@ -156,8 +192,14 @@ namespace DotCompute.Backends.CUDA.Execution
         }
 
         /// <summary>
-        /// Executes a graph instance
+        /// Executes a graph instance.
         /// </summary>
+        /// <param name="instance">The graph instance to execute.</param>
+        /// <param name="stream">The CUDA stream for execution (default stream if not specified).</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous execution operation, returning the execution results.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if the graph instance is not valid.</exception>
         public Task<CudaGraphExecutionResult> ExecuteGraphAsync(
             CudaGraphInstance instance,
             IntPtr stream = default,
@@ -231,8 +273,13 @@ namespace DotCompute.Backends.CUDA.Execution
         }
 
         /// <summary>
-        /// Updates a graph instance with new parameters
+        /// Updates a graph instance with new parameters.
         /// </summary>
+        /// <param name="instance">The graph instance to update.</param>
+        /// <param name="updateParams">The parameters for the update operation.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous update operation, returning true if successful.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
         public async Task<bool> UpdateGraphAsync(
             CudaGraphInstance instance,
             CudaGraphUpdateParameters updateParams,
@@ -282,8 +329,14 @@ namespace DotCompute.Backends.CUDA.Execution
         }
 
         /// <summary>
-        /// Captures a sequence of operations into a graph
+        /// Captures a sequence of operations into a graph.
         /// </summary>
+        /// <param name="graphId">The unique identifier for the captured graph.</param>
+        /// <param name="operations">A function that executes operations to be captured.</param>
+        /// <param name="mode">The capture mode for the operation.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous capture operation, returning the graph ID.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
         public async Task<string> CaptureGraphAsync(
             string graphId,
             Func<IntPtr, Task> operations,
@@ -361,8 +414,14 @@ namespace DotCompute.Backends.CUDA.Execution
         }
 
         /// <summary>
-        /// Fuses multiple kernels into a single optimized graph
+        /// Fuses multiple kernels into a single optimized graph.
         /// </summary>
+        /// <param name="graphId">The unique identifier for the fused graph.</param>
+        /// <param name="kernels">The kernels to fuse together.</param>
+        /// <param name="fusionOptions">Configuration options for the fusion operation.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous fusion operation, returning the graph ID.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
         public async Task<string> FuseKernelsAsync(
             string graphId,
             IEnumerable<CudaCompiledKernel> kernels,
@@ -391,8 +450,11 @@ namespace DotCompute.Backends.CUDA.Execution
         }
 
         /// <summary>
-        /// Gets performance statistics for a graph
+        /// Gets performance statistics for a graph.
         /// </summary>
+        /// <param name="graphId">The identifier of the graph for which to retrieve statistics.</param>
+        /// <returns>A <see cref="CudaGraphStatistics"/> object containing performance metrics.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
         public CudaGraphStatistics GetGraphStatistics(string graphId)
         {
             ThrowIfDisposed();
@@ -419,8 +481,11 @@ namespace DotCompute.Backends.CUDA.Execution
         }
 
         /// <summary>
-        /// Cleans up unused graph instances
+        /// Cleans up unused graph instances older than the specified age.
         /// </summary>
+        /// <param name="maxAge">The maximum age for keeping unused instances.</param>
+        /// <returns>The number of instances that were cleaned up.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
         public int CleanupUnusedInstances(TimeSpan maxAge)
         {
             ThrowIfDisposed();
@@ -655,6 +720,9 @@ namespace DotCompute.Backends.CUDA.Execution
             }
         }
 
+        /// <summary>
+        /// Disposes of the graph support resources and cleans up all managed graphs and instances.
+        /// </summary>
         public void Dispose()
         {
             if (!_disposed)
@@ -789,203 +857,5 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
             }
         }
-    }
-
-    // Supporting types and classes
-    public sealed class CudaGraph : IDisposable
-    {
-        public string Id { get; set; } = string.Empty;
-        public IntPtr Handle { get; set; }
-        public List<CudaKernelOperation> Operations { get; set; } = [];
-        public int NodeCount { get; set; }
-        public DateTimeOffset CreatedAt { get; set; }
-        public bool IsBuilt { get; set; }
-        public bool IsOptimized { get; set; }
-        public bool IsCaptured { get; set; }
-        public CudaGraphOptimizationOptions Options { get; set; } = new();
-
-        public void Dispose()
-        {
-            if (Handle != IntPtr.Zero)
-            {
-                try
-                {
-                    _ = CudaRuntime.cuGraphDestroy(Handle);
-                }
-                catch (Exception)
-                {
-                    // Ignore disposal errors
-                }
-                Handle = IntPtr.Zero;
-            }
-        }
-    }
-
-    public sealed class CudaGraphInstance : IDisposable
-    {
-        public string Id { get; set; } = string.Empty;
-        public string GraphId { get; set; } = string.Empty;
-        public IntPtr Handle { get; set; }
-        public DateTimeOffset CreatedAt { get; set; }
-        public DateTimeOffset? LastExecutedAt { get; set; }
-        public DateTimeOffset? LastUpdatedAt { get; set; }
-        public int ExecutionCount { get; set; }
-        public int UpdateCount { get; set; }
-        public float TotalGpuTime { get; set; }
-        public bool IsValid { get; set; }
-
-        public void Dispose()
-        {
-            if (Handle != IntPtr.Zero)
-            {
-                try
-                {
-                    _ = CudaRuntime.cuGraphExecDestroy(Handle);
-                }
-                catch (Exception)
-                {
-                    // Ignore disposal errors
-                }
-                Handle = IntPtr.Zero;
-                IsValid = false;
-            }
-        }
-    }
-
-    public sealed class CudaKernelOperation
-    {
-        public CudaCompiledKernel Kernel { get; set; } = null!;
-        public CudaKernelArguments Arguments { get; set; } = null!;
-        public CudaLaunchConfig LaunchConfig { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public CudaKernelType Type { get; set; } = CudaKernelType.Custom;
-        public bool UseTensorCores { get; set; }
-        public TensorCoreConfig? TensorCoreConfig { get; set; }
-        public MemoryAccessPattern MemoryAccessPattern { get; set; } = MemoryAccessPattern.Sequential;
-        public CacheConfig CacheConfig { get; set; } = CacheConfig.PreferNone;
-        public WarpSchedulingMode WarpScheduling { get; set; } = WarpSchedulingMode.Default;
-        public string OutputDimensions { get; set; } = string.Empty;
-        public string InputDimensions { get; set; } = string.Empty;
-        public bool IsFused { get; set; }
-        public CudaKernelOperation[]? OriginalOperations { get; set; }
-    }
-
-    public sealed class CudaGraphOptimizationOptions
-    {
-        public bool EnableOptimization { get; set; } = true;
-        public bool EnableKernelFusion { get; set; } = true;
-        public CudaGraphOptimizationLevel OptimizationLevel { get; set; } = CudaGraphOptimizationLevel.Balanced;
-        public CudaArchitecture TargetArchitecture { get; set; } = CudaArchitecture.Ada;
-    }
-
-    public enum CudaGraphOptimizationLevel
-    {
-        None,
-        Basic,
-        Balanced,
-        Aggressive
-    }
-
-    public enum CudaArchitecture
-    {
-        Turing,
-        Ampere,
-        Ada,
-        Hopper
-    }
-
-    public enum CudaGraphCaptureMode
-    {
-        Global = 0,
-        ThreadLocal = 1,
-        Relaxed = 2
-    }
-
-    public sealed class CudaGraphUpdateParameters
-    {
-        public IntPtr SourceGraph { get; set; }
-        public Dictionary<string, object> UpdatedParameters { get; set; } = [];
-    }
-
-    public sealed class CudaKernelFusionOptions
-    {
-        private readonly Dictionary<CudaCompiledKernel, CudaKernelArguments> _arguments = [];
-        private readonly Dictionary<CudaCompiledKernel, CudaLaunchConfig> _configs = [];
-
-        public CudaKernelArguments GetArgumentsForKernel(CudaCompiledKernel kernel) => _arguments.TryGetValue(kernel, out var args) ? args : new CudaKernelArguments([]);
-
-        public CudaLaunchConfig GetLaunchConfigForKernel(CudaCompiledKernel kernel) => _configs.TryGetValue(kernel, out var config) ? config : new CudaLaunchConfig(1, 1, 1, 256, 1, 1);
-
-        public void SetCudaKernelArguments(CudaCompiledKernel kernel, CudaKernelArguments arguments) => _arguments[kernel] = arguments;
-
-        public void SetKernelLaunchConfig(CudaCompiledKernel kernel, CudaLaunchConfig config) => _configs[kernel] = config;
-    }
-
-    public sealed class CudaGraphExecutionResult
-    {
-        public bool Success { get; set; }
-        public string InstanceId { get; set; } = string.Empty;
-        public string GraphId { get; set; } = string.Empty;
-        public TimeSpan ExecutionTime { get; set; }
-        public float GpuTimeMs { get; set; }
-        public int ExecutionCount { get; set; }
-        public string? ErrorMessage { get; set; }
-    }
-
-    public sealed class CudaGraphStatistics
-    {
-        public string GraphId { get; set; } = string.Empty;
-        public int InstanceCount { get; set; }
-        public int TotalExecutions { get; set; }
-        public float TotalGpuTimeMs { get; set; }
-        public float AverageExecutionTimeMs { get; set; }
-        public DateTimeOffset? LastExecutedAt { get; set; }
-        public bool IsOptimized { get; set; }
-    }
-
-    public sealed class KernelFusionCandidate
-    {
-        public CudaKernelOperation FirstKernel { get; set; } = null!;
-        public CudaKernelOperation SecondKernel { get; set; } = null!;
-        public double EstimatedBenefit { get; set; }
-    }
-
-    public sealed class TensorCoreConfig
-    {
-        public string DataType { get; set; } = "TF32";
-        public string Precision { get; set; } = "High";
-    }
-
-    public enum MemoryAccessPattern
-    {
-        Sequential,
-        Strided,
-        Coalesced,
-        Random
-    }
-
-    public enum CacheConfig
-    {
-        PreferNone,
-        PreferShared,
-        PreferL1,
-        PreferEqual
-    }
-
-    public enum WarpSchedulingMode
-    {
-        Default,
-        Persistent,
-        Dynamic
-    }
-
-    public enum CudaKernelType
-    {
-        ElementWise,
-        MatrixMultiply,
-        Reduction,
-        Transpose,
-        Custom,
-        Fused
     }
 }

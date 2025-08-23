@@ -5,10 +5,11 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
-using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 using DotCompute.Linq.Operators.Parameters;
+using DotCompute.Linq.Operators.Adapters;
 using System.Text;
 using CoreKernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
+using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 namespace DotCompute.Linq.Operators;
 
 
@@ -96,12 +97,16 @@ public class MapKernelTemplate : IKernelTemplate
                 break;
         }
 
+        // Use adapter to safely extract LINQ-specific data
+        var language = ConvertLanguage(KernelDefinitionAdapter.ExtractLanguage(definition, KernelLanguage.OpenCL));
+        var parameters = KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter).ToArray();
+
         return new GeneratedKernel
         {
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
-            Language = ConvertLanguage(definition.Language),
-            Parameters = [.. definition.Parameters.Select(ConvertParameter)],
+            Language = language,
+            Parameters = parameters,
             SharedMemorySize = 0,
             OptimizationMetadata = definition.Metadata
         };
@@ -112,7 +117,7 @@ public class MapKernelTemplate : IKernelTemplate
         _ = source.AppendLine("__global__ void " + definition.Name + "(");
 
         // Generate parameters
-        var parameters = definition.Parameters;
+        var parameters = KernelDefinitionAdapter.ExtractParameters(definition);
         for (var i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
@@ -144,7 +149,7 @@ public class MapKernelTemplate : IKernelTemplate
         _ = source.AppendLine("__kernel void " + definition.Name + "(");
 
         // Generate parameters
-        var parameters = definition.Parameters;
+        var parameters = KernelDefinitionAdapter.ExtractParameters(definition);
         for (var i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
@@ -177,7 +182,7 @@ public class MapKernelTemplate : IKernelTemplate
         _ = source.AppendLine("public void " + definition.Name + "(");
 
         // Generate parameters
-        var parameters = definition.Parameters;
+        var parameters = KernelDefinitionAdapter.ExtractParameters(definition);
         for (var i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
@@ -283,7 +288,7 @@ public class FilterKernelTemplate : IKernelTemplate
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
             Language = Core.Kernels.KernelLanguage.CSharp,
-            Parameters = [.. definition.Parameters.Select(ConvertParameter)],
+            Parameters = [.. KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter)],
             OptimizationMetadata = definition.Metadata
         };
     }
@@ -319,7 +324,7 @@ public class ReduceKernelTemplate : IKernelTemplate
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
             Language = Core.Kernels.KernelLanguage.CSharp,
-            Parameters = [.. definition.Parameters.Select(ConvertParameter)],
+            Parameters = [.. KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter)],
             OptimizationMetadata = definition.Metadata
         };
     }
@@ -355,7 +360,7 @@ public class SortKernelTemplate : IKernelTemplate
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
             Language = Core.Kernels.KernelLanguage.CSharp,
-            Parameters = [.. definition.Parameters.Select(ConvertParameter)],
+            Parameters = [.. KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter)],
             OptimizationMetadata = definition.Metadata
         };
     }

@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation.Execution;
+using DotCompute.Linq.Operators.Execution;
 
 namespace DotCompute.Linq.Compilation.Plans;
 
@@ -25,11 +26,15 @@ public interface IComputeStage
     string Id { get; }
 
     /// <summary>
-    /// Gets the kernel to execute for this stage.
+    /// Gets the executable kernel for this stage.
     /// </summary>
     /// <value>
-    /// The compiled kernel that will be executed during this stage.
+    /// The executable kernel that will be executed during this stage.
     /// </value>
+    /// <remarks>
+    /// This kernel must implement ExecuteAsync functionality, typically through
+    /// implementations like DynamicCompiledKernel that wrap ICompiledKernel.
+    /// </remarks>
     IKernel Kernel { get; }
 
     /// <summary>

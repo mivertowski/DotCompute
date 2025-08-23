@@ -2,7 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
-using DotCompute.Generators.Kernel;
+using DotCompute.Generators.Kernel.Attributes;
+using DotCompute.Generators.Kernel.Enums;
 using FluentAssertions;
 
 namespace DotCompute.Tests.Unit.TestData

@@ -7,6 +7,9 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using DotCompute.Generators.Kernel.Attributes;
+using DotCompute.Generators.Kernel.Enums;
+using DotCompute.Generators.Models.Kernel;
 
 namespace DotCompute.Generators.Kernel;
 
@@ -913,32 +916,4 @@ public class KernelSourceGenerator : IIncrementalGenerator
             _ => "float" // Default fallback
         };
     }
-}
-
-internal sealed class KernelMethodInfo
-{
-    public string Name { get; set; } = string.Empty;
-    public string ContainingType { get; set; } = string.Empty;
-    public string Namespace { get; set; } = string.Empty;
-    public List<ParameterInfo> Parameters { get; set; } = [];
-    public string ReturnType { get; set; } = string.Empty;
-    public List<string> Backends { get; set; } = [];
-    public int VectorSize { get; set; }
-    public bool IsParallel { get; set; }
-    public MethodDeclarationSyntax MethodDeclaration { get; set; } = null!;
-}
-
-internal sealed class KernelClassInfo
-{
-    public string Name { get; set; } = string.Empty;
-    public string Namespace { get; set; } = string.Empty;
-    public List<string> KernelMethodNames { get; set; } = [];
-}
-
-internal sealed class ParameterInfo
-{
-    public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty;
-    public bool IsBuffer { get; set; }
-    public bool IsReadOnly { get; set; }
 }

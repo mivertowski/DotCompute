@@ -4,6 +4,9 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Core.Compute.Enums;
+using DotCompute.Core.Compute.Interfaces;
+using DotCompute.Core.Compute.Options;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Compute

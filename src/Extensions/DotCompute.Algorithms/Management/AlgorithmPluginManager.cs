@@ -26,6 +26,7 @@ namespace DotCompute.Algorithms.Management
 
 /// <summary>
 /// Manages the loading, registration, and execution of algorithm plugins with advanced isolation and lifecycle management.
+/// This class has been refactored to use a component-based architecture for better maintainability.
 /// </summary>
 public sealed partial class AlgorithmPluginManager : IAsyncDisposable
 {
