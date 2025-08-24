@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Core.Device.Interfaces;
 
 namespace DotCompute.Core.Pipelines
@@ -107,7 +108,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Gets the memory access mode.
         /// </summary>
-        public Memory.MemoryAccess AccessMode { get; }
+        public MemoryAccess AccessMode { get; }
 
         /// <summary>
         /// Gets the device where memory is allocated.

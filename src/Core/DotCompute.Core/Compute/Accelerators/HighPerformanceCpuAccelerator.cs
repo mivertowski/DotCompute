@@ -20,7 +20,7 @@ namespace DotCompute.Core.Compute.Accelerators
     internal class HighPerformanceCpuAccelerator : IAccelerator
     {
         private readonly ILogger _logger;
-        private readonly HighPerformanceMemoryManager _memoryManager;
+        private readonly IUnifiedMemoryManager _memoryManager;
         private readonly OpenCLKernelParser _kernelParser;
         private bool _disposed;
 
@@ -34,7 +34,7 @@ namespace DotCompute.Core.Compute.Accelerators
         {
             Info = info ?? throw new ArgumentNullException(nameof(info));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _memoryManager = new HighPerformanceMemoryManager(this, logger);
+            _memoryManager = new IUnifiedMemoryManager(this, logger);
             _kernelParser = new OpenCLKernelParser(logger);
         }
 

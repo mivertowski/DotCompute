@@ -3,7 +3,9 @@
 
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core;
@@ -140,11 +142,8 @@ public abstract class BaseAccelerator : IAccelerator
     {
         return options ?? new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Balanced,
-            EnableDebugInfo = false,
-            EnableProfiling = false,
-            MaxRegisterCount = null,
-            PreferSharedMemory = false
+            OptimizationLevel = OptimizationLevel.Default,
+            EnableDebugInfo = false
         };
     }
     
@@ -317,4 +316,6 @@ public abstract class BaseCompiledKernel : ICompiledKernel
     {
         // Default implementation - derived classes can override
     }
+
+    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 }

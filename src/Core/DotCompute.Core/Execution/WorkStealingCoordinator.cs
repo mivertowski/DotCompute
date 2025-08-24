@@ -20,7 +20,7 @@ namespace DotCompute.Core.Execution
     {
         private readonly IAccelerator[] _devices;
         private readonly WorkStealingWorkload<T> _workload;
-        private readonly MultiGpuMemoryManager _memoryManager;
+        private readonly IUnifiedMemoryManager _memoryManager;
         private readonly ILogger _logger;
         private readonly DeviceWorkQueue<T>[] _deviceQueues;
         private readonly ConcurrentDictionary<int, WorkItemStatus<T>> _workItemStatuses;
@@ -49,7 +49,7 @@ namespace DotCompute.Core.Execution
         public WorkStealingCoordinator(
             IAccelerator[] devices,
             WorkStealingWorkload<T> workload,
-            MultiGpuMemoryManager memoryManager,
+            IUnifiedMemoryManager memoryManager,
             ILogger logger)
         {
             _devices = devices ?? throw new ArgumentNullException(nameof(devices));

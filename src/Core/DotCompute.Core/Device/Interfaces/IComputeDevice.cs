@@ -6,6 +6,7 @@ using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using KernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
 using DotCompute.Core.Device.Types;
 using DotCompute.Core.Device.Configuration;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Core.Device.Interfaces
 {
@@ -77,7 +78,7 @@ namespace DotCompute.Core.Device.Interfaces
         /// <exception cref="OutOfMemoryException">Thrown when there is insufficient device memory available.</exception>
         public ValueTask<IDeviceMemory> AllocateMemoryAsync(
             long sizeInBytes,
-            Memory.MemoryAccess access,
+            MemoryAccess access,
             CancellationToken cancellationToken = default);
 
         /// <summary>

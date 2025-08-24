@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Core.Memory;
 using DotCompute.Core.Device.Interfaces;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -61,12 +62,12 @@ namespace DotCompute.Core.Pipelines
             // Allocate new memory
             var memoryAccess = hint switch
             {
-                MemoryHint.Sequential => Memory.MemoryAccess.ReadWrite,
-                MemoryHint.Random => Memory.MemoryAccess.ReadWrite,
-                MemoryHint.Temporary => Memory.MemoryAccess.ReadWrite,
-                MemoryHint.Persistent => Memory.MemoryAccess.ReadWrite,
-                MemoryHint.Pinned => Memory.MemoryAccess.ReadWrite,
-                _ => Memory.MemoryAccess.ReadWrite
+                MemoryHint.Sequential => MemoryAccess.ReadWrite,
+                MemoryHint.Random => MemoryAccess.ReadWrite,
+                MemoryHint.Temporary => MemoryAccess.ReadWrite,
+                MemoryHint.Persistent => MemoryAccess.ReadWrite,
+                MemoryHint.Pinned => MemoryAccess.ReadWrite,
+                _ => MemoryAccess.ReadWrite
             };
 
             var deviceMemory = await _device.AllocateMemoryAsync(sizeInBytes, memoryAccess, cancellationToken);
@@ -316,7 +317,7 @@ namespace DotCompute.Core.Pipelines
         public bool IsLocked => _isLocked;
 
         /// <inheritdoc/>
-        public Memory.MemoryAccess AccessMode => _deviceMemory.AccessMode;
+        public MemoryAccess AccessMode => _deviceMemory.AccessMode;
 
         /// <inheritdoc/>
         public IComputeDevice Device => _device;

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Enums;
 using DotCompute.Core.Execution.Types;
 
 namespace DotCompute.Core.Execution.Configuration
@@ -75,7 +76,6 @@ namespace DotCompute.Core.Execution.Configuration
         /// <remarks>
         /// <list type="bullet">
         /// <item><description><see cref="MemoryOptimizationLevel.None"/>: No memory optimizations, maximum performance</description></item>
-        /// <item><description><see cref="MemoryOptimizationLevel.Basic"/>: Simple optimizations like buffer reuse</description></item>
         /// <item><description><see cref="MemoryOptimizationLevel.Balanced"/>: Balanced approach optimizing memory and performance</description></item>
         /// <item><description><see cref="MemoryOptimizationLevel.Aggressive"/>: Maximum memory savings, potential performance impact</description></item>
         /// </list>

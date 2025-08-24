@@ -23,7 +23,7 @@ public sealed class PerformanceProfiler : IDisposable
     // Hardware performance counters (platform-specific)
 
 #if WINDOWS
-    private readonly Dictionary<string, System.Diagnostics.PerformanceCounter> _hwCounters;
+    private readonly Dictionary<string, PerformanceCounter> _hwCounters;
 #else
     private readonly Dictionary<string, object> _hwCounters;
 #endif
@@ -39,7 +39,7 @@ public sealed class PerformanceProfiler : IDisposable
         _profileSamples = new ConcurrentQueue<ProfileSample>();
         _profilingSemaphore = new SemaphoreSlim(_options.MaxConcurrentProfiles, _options.MaxConcurrentProfiles);
 #if WINDOWS
-        _hwCounters = new Dictionary<string, System.Diagnostics.PerformanceCounter>();
+        _hwCounters = new Dictionary<string, PerformanceCounter>();
 #else
         _hwCounters = [];
 #endif
@@ -643,8 +643,8 @@ public sealed class PerformanceProfiler : IDisposable
         try
         {
 #if WINDOWS
-            _hwCounters["processor_time"] = new System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total");
-            _hwCounters["memory_available"] = new System.Diagnostics.PerformanceCounter("Memory", "Available MBytes");
+            _hwCounters["processor_time"] = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            _hwCounters["memory_available"] = new PerformanceCounter("Memory", "Available MBytes");
 #endif
         }
         catch (Exception ex)

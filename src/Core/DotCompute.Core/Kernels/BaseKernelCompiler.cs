@@ -4,7 +4,10 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Core.Kernels.Compilation;
+using DotCompute.Core.Kernels.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Kernels;
@@ -39,7 +42,11 @@ public abstract class BaseKernelCompiler : IKernelCompiler
     /// Gets whether compilation caching is enabled.
     /// </summary>
     protected virtual bool EnableCaching => true;
-    
+
+    public IReadOnlyList<KernelSourceType> SupportedSourceTypes => throw new NotImplementedException();
+
+    public IReadOnlyDictionary<string, object> Capabilities => throw new NotImplementedException();
+
     /// <inheritdoc/>
     public virtual async ValueTask<ICompiledKernel> CompileAsync(
         KernelDefinition definition,
@@ -184,11 +191,10 @@ public abstract class BaseKernelCompiler : IKernelCompiler
     {
         return new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Balanced,
+            OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false,
-            EnableProfiling = false,
-            MaxRegisterCount = null,
-            PreferSharedMemory = false
+            EnableProfileGuidedOptimizations =false,
+            MaxRegisters = null
         };
     }
     
@@ -248,6 +254,10 @@ public abstract class BaseKernelCompiler : IKernelCompiler
             Metadata = metadata
         };
     }
+
+    public Task<ManagedCompiledKernel> CompileAsync(IKernelSource source, CompilationOptions options, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<KernelValidationResult> ValidateAsync(IKernelSource source, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    public Task<ManagedCompiledKernel> OptimizeAsync(ManagedCompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 }
 
 /// <summary>

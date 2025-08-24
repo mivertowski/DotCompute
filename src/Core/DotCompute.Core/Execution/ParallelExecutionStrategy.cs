@@ -26,7 +26,7 @@ namespace DotCompute.Core.Execution
         private readonly ILogger<ParallelExecutionStrategy> _logger;
         private readonly IAcceleratorManager _acceleratorManager;
         private readonly IKernelManager _kernelManager;
-        private readonly MultiGpuMemoryManager _memoryManager;
+        private readonly IUnifiedMemoryManager _memoryManager;
         private readonly ExecutionCoordinator _coordinator;
         private readonly PerformanceMonitor _performanceMonitor;
         private readonly ILoggerFactory _loggerFactory;
@@ -123,7 +123,7 @@ namespace DotCompute.Core.Execution
             _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
             _loggerFactory = loggerFactory ?? new NullLoggerFactory();
 
-            _memoryManager = new MultiGpuMemoryManager(_loggerFactory.CreateLogger<MultiGpuMemoryManager>());
+            _memoryManager = new IUnifiedMemoryManager(_loggerFactory.CreateLogger<IUnifiedMemoryManager>());
             _coordinator = new ExecutionCoordinator(_loggerFactory.CreateLogger<ExecutionCoordinator>());
             _performanceMonitor = new PerformanceMonitor(_loggerFactory.CreateLogger<PerformanceMonitor>());
             _distributedKernelCache = new ConcurrentDictionary<string, CompiledKernelCache>();

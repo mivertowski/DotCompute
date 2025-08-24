@@ -8,8 +8,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Kernels.Compilation;
 using DotCompute.Core.Kernels.Types;
 using Microsoft.Extensions.Logging;
-using KernelCompilationOptions = DotCompute.Core.Kernels.Types.CompilationOptions;
-using AbstractCompilationOptions = DotCompute.Abstractions.CompilationOptions;
+using DotCompute.Abstractions.Enums;
 
 namespace DotCompute.Core.Kernels
 {
@@ -76,7 +75,7 @@ public sealed partial class KernelManager : IDisposable
         Expression expression,
         IAccelerator accelerator,
         KernelGenerationContext? context = null,
-        KernelCompilationOptions? options = null,
+        CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         // Generate cache key
@@ -126,7 +125,7 @@ public sealed partial class KernelManager : IDisposable
         Type outputType,
         IAccelerator accelerator,
         KernelGenerationContext? context = null,
-        KernelCompilationOptions? options = null,
+        CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         // Generate cache key
@@ -311,7 +310,7 @@ public sealed partial class KernelManager : IDisposable
         Expression expression,
         IAccelerator accelerator,
         KernelGenerationContext? context,
-        KernelCompilationOptions? options,
+        CompilationOptions? options,
         CancellationToken cancellationToken)
     {
         // Get generator
@@ -366,7 +365,7 @@ public sealed partial class KernelManager : IDisposable
         Type outputType,
         IAccelerator accelerator,
         KernelGenerationContext? context,
-        KernelCompilationOptions? options,
+        CompilationOptions? options,
         CancellationToken cancellationToken)
     {
         // Get generator
@@ -524,15 +523,15 @@ public sealed partial class KernelManager : IDisposable
     /// <summary>
     /// Gets default compilation options.
     /// </summary>
-    private static KernelCompilationOptions GetDefaultCompilationOptions()
+    private static CompilationOptions GetDefaultCompilationOptions()
     {
-        return new KernelCompilationOptions
+        return new CompilationOptions
         {
-            OptimizationLevel = Types.OptimizationLevel.O2,
-            GenerateDebugInfo = false,
+            OptimizationLevel = OptimizationLevel.Default,
+            EnableDebugInfo = false,
             EnableFastMath = true,
-            FiniteMathOnly = true,
-            EnableUnsafeOptimizations = false
+            FastMath = true,
+            AggressiveOptimizations = false
         };
     }
 
@@ -567,21 +566,6 @@ public sealed partial class KernelManager : IDisposable
     }
 
     /// <summary>
-    /// Converts Core CompilationOptions to Abstractions CompilationOptions.
-    /// </summary>
-    private static AbstractCompilationOptions ConvertToAbstractionsOptions(KernelCompilationOptions options)
-    {
-        return new AbstractCompilationOptions
-        {
-            OptimizationLevel = ConvertOptimizationLevel(options.OptimizationLevel),
-            EnableDebugInfo = options.GenerateDebugInfo,
-            FastMath = options.EnableFastMath,
-            AdditionalFlags = options.AdditionalFlags?.ToList() ?? [],
-            Defines = options.Defines
-        };
-    }
-
-    /// <summary>
     /// Converts ICompiledKernel back to ManagedCompiledKernel.
     /// </summary>
     private static ManagedCompiledKernel ConvertToManagedCompiledKernel(ICompiledKernel compiledKernel, GeneratedKernel generatedKernel)
@@ -593,22 +577,6 @@ public sealed partial class KernelManager : IDisposable
             Parameters = generatedKernel.Parameters,
             RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize,
             SharedMemorySize = generatedKernel.SharedMemorySize
-        };
-    }
-
-    /// <summary>
-    /// Converts Core OptimizationLevel to Abstractions OptimizationLevel.
-    /// </summary>
-    private static DotCompute.Abstractions.OptimizationLevel ConvertOptimizationLevel(Types.OptimizationLevel level)
-    {
-        return level switch
-        {
-            Types.OptimizationLevel.O0 => DotCompute.Abstractions.OptimizationLevel.None,
-            Types.OptimizationLevel.O1 => DotCompute.Abstractions.OptimizationLevel.Debug,
-            Types.OptimizationLevel.O2 => DotCompute.Abstractions.OptimizationLevel.Default,
-            Types.OptimizationLevel.O3 => DotCompute.Abstractions.OptimizationLevel.Maximum,
-            Types.OptimizationLevel.Os => DotCompute.Abstractions.OptimizationLevel.Release,
-            _ => DotCompute.Abstractions.OptimizationLevel.Default
         };
     }
 

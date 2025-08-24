@@ -4,6 +4,7 @@
 // </copyright>
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Enums;
 using DotCompute.Core.Kernels.Compilation;
 using DotCompute.Core.Kernels.Validation;
 
@@ -27,7 +28,7 @@ public interface IKernelCompiler
     /// <exception cref="CompilationException">Thrown when compilation fails.</exception>
     public Task<ManagedCompiledKernel> CompileAsync(
         IKernelSource source,
-        Types.CompilationOptions options,
+        CompilationOptions options,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -51,7 +52,7 @@ public interface IKernelCompiler
     /// <returns>A task that represents the asynchronous optimization operation, containing the optimized kernel.</returns>
     public Task<ManagedCompiledKernel> OptimizeAsync(
         ManagedCompiledKernel kernel,
-        Types.OptimizationLevel level,
+        OptimizationLevel level,
         CancellationToken cancellationToken = default);
 
     /// <summary>

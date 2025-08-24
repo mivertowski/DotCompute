@@ -18,6 +18,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Benchmarks\**" />
+    <Compile Remove="Integration\**" />
+    <Compile Remove="TestData\**" />
+    <Compile Remove="Utilities\**" />
+    <EmbeddedResource Remove="Benchmarks\**" />
+    <EmbeddedResource Remove="Integration\**" />
+    <EmbeddedResource Remove="TestData\**" />
+    <EmbeddedResource Remove="Utilities\**" />
+    <None Remove="Benchmarks\**" />
+    <None Remove="Integration\**" />
+    <None Remove="TestData\**" />
+    <None Remove="Utilities\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
     <PackageReference Include="System.Numerics.Vectors" Version="4.6.1" />
@@ -35,10 +50,6 @@
 
   <ItemGroup>
     <Folder Include="Kernels\" />
-    <Folder Include="TestData\" />
-    <Folder Include="Benchmarks\" />
-    <Folder Include="Integration\" />
-    <Folder Include="Utilities\" />
   </ItemGroup>
 
   <ItemGroup>

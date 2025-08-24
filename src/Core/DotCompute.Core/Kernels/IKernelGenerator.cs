@@ -173,41 +173,7 @@ namespace DotCompute.Core.Kernels
         }
     }
 
-    /// <summary>
-    /// Represents a kernel parameter.
-    /// </summary>
-    public sealed class KernelParameter
-    {
-        /// <summary>
-        /// Gets or sets the parameter name.
-        /// </summary>
-        public required string Name { get; init; }
-
-        /// <summary>
-        /// Gets or sets the parameter type.
-        /// </summary>
-        public required Type Type { get; init; }
-
-        /// <summary>
-        /// Gets or sets whether this is an input parameter.
-        /// </summary>
-        public bool IsInput { get; init; }
-
-        /// <summary>
-        /// Gets or sets whether this is an output parameter.
-        /// </summary>
-        public bool IsOutput { get; init; }
-
-        /// <summary>
-        /// Gets or sets the memory space.
-        /// </summary>
-        public MemorySpace MemorySpace { get; init; } = MemorySpace.Global;
-
-        /// <summary>
-        /// Gets or sets whether this parameter is read-only.
-        /// </summary>
-        public bool IsReadOnly { get; init; }
-    }
+    
 
     /// <summary>
     /// Kernel optimization hints.

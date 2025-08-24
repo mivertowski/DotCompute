@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
+
 namespace DotCompute.Core.Device.Interfaces
 {
     /// <summary>
@@ -25,7 +27,7 @@ namespace DotCompute.Core.Device.Interfaces
         /// Gets the access mode specified when this memory was allocated.
         /// </summary>
         /// <value>The memory access mode (read-only, write-only, or read-write).</value>
-        public Memory.MemoryAccess AccessMode { get; }
+        public MemoryAccess AccessMode { get; }
 
         /// <summary>
         /// Asynchronously writes data from host memory to device memory.
