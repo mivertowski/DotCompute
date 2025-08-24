@@ -241,6 +241,12 @@ namespace DotCompute.Backends.CUDA.Advanced
         {
             var analysis = new CudaCooperativeGroupsAnalysis();
 
+            // TODO: Production - Implement proper cooperative groups analysis
+            // Missing: Grid-wide synchronization pattern detection
+            // Missing: Thread block clustering analysis
+            // Missing: Warp-level primitives usage detection
+            // Missing: Multi-grid cooperative launch support
+            // Missing: Dynamic group partitioning analysis
             // Simple heuristics for cooperative groups benefits
             // In a real implementation, this would analyze the kernel code
 
