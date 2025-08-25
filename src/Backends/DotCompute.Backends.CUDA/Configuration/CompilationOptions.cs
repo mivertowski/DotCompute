@@ -70,7 +70,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public new static CudaCompilationOptions Default => new()
         {
             CudaArchitecture = "sm_60",
-            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Default
+            OptimizationLevel = OptimizationLevel.Default
         };
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public static CudaCompilationOptions Performance => new()
         {
             CudaArchitecture = "sm_80",
-            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Aggressive,
+            OptimizationLevel = OptimizationLevel.Aggressive,
             UseFastMath = true,
             EnableDebugInfo = false,
             EnableLoopUnrolling = true,
@@ -94,7 +94,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public new static CudaCompilationOptions Debug => new()
         {
             CudaArchitecture = "sm_60",
-            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Minimal,
+            OptimizationLevel = OptimizationLevel.Minimal,
             UseFastMath = false,
             EnableDebugInfo = true,
             GeneratePositionIndependentCode = false
@@ -106,7 +106,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public static CudaCompilationOptions ForAda => new()
         {
             CudaArchitecture = "sm_89",
-            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Aggressive,
+            OptimizationLevel = OptimizationLevel.Aggressive,
             UseFastMath = true,
             EnableDebugInfo = false,
             EnableLoopUnrolling = true,

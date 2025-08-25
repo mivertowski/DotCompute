@@ -3,7 +3,7 @@
 
 using System;
 
-namespace DotCompute.Backends.CUDA.Memory.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Information about an asynchronous CUDA memory allocation.
@@ -13,7 +13,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
         /// <summary>
         /// Gets or initializes the device pointer to the allocated memory.
         /// </summary>
-        public IntPtr Pointer { get; init; }
+        public nint Pointer { get; init; }
 
         /// <summary>
         /// Gets or initializes the size of the allocation in bytes.
@@ -23,12 +23,12 @@ namespace DotCompute.Backends.CUDA.Memory.Models
         /// <summary>
         /// Gets or initializes the stream on which the allocation was made.
         /// </summary>
-        public IntPtr Stream { get; init; }
+        public nint Stream { get; init; }
 
         /// <summary>
         /// Gets or initializes the memory pool from which the allocation was made.
         /// </summary>
-        public IntPtr Pool { get; init; }
+        public nint Pool { get; init; }
 
         /// <summary>
         /// Gets or initializes when the allocation was made.

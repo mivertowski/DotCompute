@@ -1,6 +1,6 @@
 using System;
 
-namespace DotCompute.Backends.CUDA.Memory.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Statistics about memory access patterns for optimization.
@@ -57,7 +57,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
         /// Gets the access ratio (device accesses / total accesses).
         /// </summary>
         public double DeviceAccessRatio => 
-            (HostAccessCount + DeviceAccessCount) > 0 
+            HostAccessCount + DeviceAccessCount > 0 
                 ? (double)DeviceAccessCount / (HostAccessCount + DeviceAccessCount) 
                 : 0;
     }

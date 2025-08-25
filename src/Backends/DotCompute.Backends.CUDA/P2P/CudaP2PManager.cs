@@ -649,24 +649,6 @@ namespace DotCompute.Backends.CUDA.P2P
         public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; set; } = [];
     }
 
-    public sealed class CudaDeviceInfo
-    {
-        public int DeviceId { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string ComputeCapability { get; set; } = string.Empty;
-        public ulong TotalMemoryBytes { get; set; }
-        public int MultiprocessorCount { get; set; }
-        public int MaxThreadsPerBlock { get; set; }
-        public int MaxThreadsPerMultiprocessor { get; set; }
-        public int WarpSize { get; set; }
-        public int MemoryClockRate { get; set; }
-        public int MemoryBusWidth { get; set; }
-        public int L2CacheSize { get; set; }
-        public bool UnifiedAddressing { get; set; }
-        public bool CanMapHostMemory { get; set; }
-        public bool ConcurrentKernels { get; set; }
-    }
-
     public sealed class CudaP2PTransferResult
     {
         public Guid TransferId { get; set; }

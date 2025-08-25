@@ -6,7 +6,7 @@ namespace DotCompute.Backends.CUDA.Advanced.Features.Models
     /// <summary>
     /// Comprehensive metrics for advanced CUDA features.
     /// </summary>
-    public sealed class CudaAdvancedFeatureMetrics
+    public sealed class CudaFeatureMetrics
     {
         /// <summary>
         /// Gets or sets the cooperative groups metrics.

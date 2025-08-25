@@ -6,9 +6,12 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Types;
+using DotCompute.Core.Execution;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Compilation;
@@ -791,105 +794,5 @@ public sealed class CudaKernelCache : IDisposable
         }
     }
 
-    /// <summary>
-    /// Cached kernel information.
-    /// </summary>
-    private sealed class CachedKernel
-    {
-        public CompiledKernel Kernel { get; init; } = null!;
-        public string CacheKey { get; init; } = string.Empty;
-        public long Size { get; init; }
-        public DateTimeOffset CreatedAt { get; init; }
-        public DateTimeOffset LastAccessTime { get; set; }
-        public int AccessCount { get; set; }
-    }
-
-    /// <summary>
-    /// Kernel metadata for disk cache.
-    /// </summary>
-    private sealed class KernelMetadata
-    {
-        public string CacheKey { get; init; } = string.Empty;
-        public string KernelName { get; init; } = string.Empty;
-        public string DiskPath { get; init; } = string.Empty;
-        public ComputeCapability ComputeCapability { get; init; }
-        public double CompilationTime { get; init; }
-        public DateTimeOffset CompiledAt { get; init; }
-        public long FileSize { get; init; }
-    }
 }
 
-/// <summary>
-/// Compiled kernel result.
-/// </summary>
-public sealed class CompiledKernel
-{
-    public string Name { get; init; } = string.Empty;
-    public string Ptx { get; init; } = string.Empty;
-    public byte[]? Cubin { get; init; }
-    public byte[] Binary { get; init; } = Array.Empty<byte>();
-    public ComputeCapability ComputeCapability { get; init; }
-    public double CompilationTime { get; init; }
-    public DateTimeOffset CompiledAt { get; init; }
-}
-
-/// <summary>
-/// Kernel compilation options.
-/// </summary>
-public sealed class CompilationOptions
-{
-    public ComputeCapability ComputeCapability { get; init; } = new() { Major = 7, Minor = 0 };
-    public OptimizationLevel OptimizationLevel { get; init; } = OptimizationLevel.Default;
-    public bool GenerateDebugInfo { get; init; }
-    public bool UseFastMath { get; init; } = true;
-    public bool FusedMultiplyAdd { get; init; } = true;
-    public bool RelocatableDeviceCode { get; init; }
-    public bool CompileToCubin { get; init; } = true;
-    public int MaxRegistersPerThread { get; init; }
-    public List<string> IncludePaths { get; init; } = new();
-    public Dictionary<string, string> Defines { get; init; } = new();
-}
-
-/// <summary>
-/// Compute capability.
-/// </summary>
-public struct ComputeCapability
-{
-    public int Major { get; init; }
-    public int Minor { get; init; }
-}
-
-
-/// <summary>
-/// Kernel cache configuration.
-/// </summary>
-public sealed class KernelCacheConfig
-{
-    public int MaxMemoryCacheSizeMB { get; init; } = 256;
-    public bool EnableDiskCache { get; set; } = true;
-    public string? DiskCachePath { get; init; }
-    public int DiskCacheExpirationDays { get; init; } = 30;
-    public int MaxCacheEntries { get; init; } = 1000;
-}
-
-/// <summary>
-/// Kernel cache statistics.
-/// </summary>
-public sealed class KernelCacheStatistics
-{
-    public long TotalHits { get; init; }
-    public long TotalMisses { get; init; }
-    public double HitRate { get; init; }
-    public int MemoryCacheEntries { get; init; }
-    public int DiskCacheEntries { get; init; }
-    public double CurrentMemoryUsageMB { get; init; }
-}
-
-/// <summary>
-/// Kernel compilation exception.
-/// </summary>
-public sealed class KernelCompilationException : Exception
-{
-    public KernelCompilationException(string message) : base(message) { }
-    public KernelCompilationException(string message, Exception inner) : base(message, inner) { }
-}
