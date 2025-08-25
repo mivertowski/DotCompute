@@ -69,8 +69,8 @@ namespace DotCompute.Core.Execution.Memory
                 await buffer.DisposeAsync();
             }
 
-            // Create new buffer (using mock implementation for now)
-            var newBuffer = new MockMemoryBuffer(sizeInBytes, options);
+            // Create new buffer - TODO
+            var newBuffer = new MemoryBuffer(sizeInBytes, options);
             _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
             _ = _allocationSizes.AddOrUpdate(sizeInBytes, 1, (k, v) => v + 1);
 

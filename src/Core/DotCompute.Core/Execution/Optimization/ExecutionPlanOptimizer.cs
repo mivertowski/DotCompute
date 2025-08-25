@@ -105,7 +105,7 @@ namespace DotCompute.Core.Execution.Optimization
                     _logger.LogInformation("Low efficiency detected for {StrategyType}: {Efficiency:F1}%, applying optimizations",
                         plan.StrategyType, strategyMetrics.AverageEfficiencyPercentage);
 
-                    // Could apply strategy-specific optimizations here
+                    // Could apply strategy-specific optimizations here - TODO
                 }
             }
 

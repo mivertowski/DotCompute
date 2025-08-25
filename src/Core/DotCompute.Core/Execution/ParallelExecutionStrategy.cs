@@ -837,7 +837,7 @@ namespace DotCompute.Core.Execution
                     StageId = i,
                     Name = pipeline.Stages[i].Name,
                     Device = devices[i],
-                    Kernel = null!, // Would be compiled in full implementation
+                    Kernel = null!, // Would be compiled in full implementation - TODO
                     InputBuffers = [],
                     OutputBuffers = [],
                     EstimatedProcessingTimeMs = 20.0
@@ -929,8 +929,8 @@ namespace DotCompute.Core.Execution
             return new DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel
             {
                 Name = executionKernel.Name,
-                Binary = [], // Simplified for demo
-                Parameters = [], // Simplified for demo
+                Binary = [], // Simplified for demo - TODO
+                Parameters = [], // Simplified for demo - TODO
                 Handle = IntPtr.Zero,
                 SharedMemorySize = 0,
                 PerformanceMetadata = new Dictionary<string, object>

@@ -109,7 +109,7 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
 
         // Platform-specific execution logic would go here
         // This is a placeholder for the actual implementation
-        // STUB
+        // STUB - TODO
         await Task.Yield();
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -131,7 +131,7 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
         if (Handle != IntPtr.Zero)
         {
             // Platform-specific cleanup would go here
-            // STUB
+            // STUB - TODO
             await Task.Yield();
         }
 
@@ -153,7 +153,7 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
         if (Handle != IntPtr.Zero)
         {
             // Platform-specific cleanup would go here
-            // STUB
+            // STUB - TODO
         }
 
         _disposed = true;

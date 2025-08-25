@@ -13,6 +13,7 @@ using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Analysis;
 using Microsoft.Extensions.Logging;
 using ExecutionPerformanceMonitor = DotCompute.Core.Execution.PerformanceMonitor;
+using DotCompute.Core.Execution.Optimization;
 
 namespace DotCompute.Core.Execution
 {
@@ -476,7 +477,7 @@ namespace DotCompute.Core.Execution
         private static ManagedCompiledKernel CompileKernelForDeviceAsync(string kernelName, IAccelerator device, CancellationToken cancellationToken)
         {
             // This would typically compile the kernel for the specific device
-            // For now, return a mock compiled kernel
+            // For now, return a mock compiled kernel - TODO
             return new ManagedCompiledKernel(
                 kernelName,
                 device,
@@ -504,7 +505,7 @@ namespace DotCompute.Core.Execution
         {
             await Task.CompletedTask.ConfigureAwait(false);
             // Create appropriate input buffers based on stage requirements
-            // This is a simplified implementation
+            // This is a simplified implementation - TODO
             return [];
         }
 
@@ -516,7 +517,7 @@ namespace DotCompute.Core.Execution
         {
             await Task.CompletedTask.ConfigureAwait(false);
             // Create appropriate output buffers based on stage requirements
-            // This is a simplified implementation
+            // This is a simplified implementation - TODO
             return [];
         }
 

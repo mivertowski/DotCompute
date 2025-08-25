@@ -342,7 +342,7 @@ namespace DotCompute.Core.Execution
         private int SelectNearestVictim(int thiefIndex)
         {
             // For simplicity, use adjacent device indices as "nearest"
-            // Real implementation would consider NUMA topology
+            // Real implementation would consider NUMA topology - TODO
             var candidates = new[]
             {
             thiefIndex == 0 ? _devices.Length - 1 : thiefIndex - 1,
@@ -362,7 +362,7 @@ namespace DotCompute.Core.Execution
 
         private int SelectHierarchicalVictim(int thiefIndex)
             // Implement hierarchical stealing based on device hierarchy
-            // For now, fallback to richest victim strategy
+            // For now, fallback to richest victim strategy - TODO
 
             => SelectRichestVictim(thiefIndex);
 
@@ -426,7 +426,7 @@ namespace DotCompute.Core.Execution
 
                 // Get or compile kernel for this device
                 var compiledKernel = await kernelManager.GetOrCompileOperationKernelAsync(
-                    "work_item_kernel", // This would be determined by the work item type
+                    "work_item_kernel", // This would be determined by the work item type - TODO
                     new[] { typeof(T) },
                     typeof(T),
                     device,

@@ -2,11 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Compute.Types;
 using Microsoft.Extensions.Logging;
-using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using KernelArguments = DotCompute.Abstractions.Kernels.KernelArguments;
 
 namespace DotCompute.Core.Compute.Kernels
 {
@@ -58,7 +56,7 @@ namespace DotCompute.Core.Compute.Kernels
             _logger.LogDebug("Executing simple optimized kernel: {KernelName}", Name);
 
             // Simple implementation - in a real scenario this would perform optimized execution
-            // based on the kernel type and arguments
+            // based on the kernel type and arguments - TODO
             return ValueTask.CompletedTask;
         }
 

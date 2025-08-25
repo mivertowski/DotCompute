@@ -47,7 +47,6 @@ namespace DotCompute.Core.Compute.Interfaces
         /// <exception cref="ArgumentNullException">Thrown when kernel or arguments are null.</exception>
         /// <exception cref="ArgumentException">Thrown when arguments don't match kernel parameter requirements.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the specified backend is not available.</exception>
-        /// <exception cref="ExecutionException">Thrown when kernel execution fails on the target backend.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
         ValueTask ExecuteAsync(
             ICompiledKernel kernel,

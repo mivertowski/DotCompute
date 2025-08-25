@@ -15,9 +15,9 @@ namespace DotCompute.Core.Compute
     /// <summary>
     /// Simple implementation of IKernelSource for testing.
     /// </summary>
-    internal class SimpleKernelSource : IKernelSource
+    internal class KernelSource : IKernelSource
     {
-        public SimpleKernelSource(string name, string code, KernelLanguage language, string entryPoint, string[]? dependencies = null)
+        public KernelSource(string name, string code, KernelLanguage language, string entryPoint, string[]? dependencies = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Code = code ?? throw new ArgumentNullException(nameof(code));
@@ -130,7 +130,7 @@ namespace DotCompute.Core.Compute
             }
 
             // Create a simple kernel source implementation
-            var kernelSourceImpl = new SimpleKernelSource(
+            var kernelSourceImpl = new KernelSource(
                 entryPoint ?? "kernel",
                 kernelSource,
                 KernelLanguage.OpenCL,
@@ -240,7 +240,7 @@ namespace DotCompute.Core.Compute
             // Check for CUDA support
             try
             {
-                // Simple check - in production, this would properly detect CUDA
+                // Simple check - in production, this would properly detect CUDA - TODO
                 var cudaAvailable = global::System.IO.File.Exists("/usr/lib/wsl/lib/libcuda.so.1") ||
                                   global::System.IO.File.Exists("/usr/local/cuda/lib64/libcudart.so");
                 if (cudaAvailable)
@@ -255,7 +255,7 @@ namespace DotCompute.Core.Compute
             }
 
             // OpenCL could be detected similarly
-            // For now, just return what we have
+            // For now, just return what we have - TODO
 
             return backends;
         }

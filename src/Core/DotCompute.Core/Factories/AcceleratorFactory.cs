@@ -257,7 +257,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         ArgumentNullException.ThrowIfNull(providerType);
         
         // For simplicity, we'll remove all backends that were registered with this provider type
-        // In production, you'd track which backends are associated with which provider
+        // In production, you'd track which backends are associated with which provider - TODO
         _logger.LogInformation("Unregistering provider {ProviderType}", providerType.Name);
         
         // Since we don't track provider associations, we can't fully implement this
@@ -502,7 +502,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         _deviceCache.TryAdd("CPU_0", cpuInfo);
         
         // Discover other devices through backend-specific APIs
-        // This would involve calling into CUDA, OpenCL, etc. APIs
+        // This would involve calling into CUDA, OpenCL, etc. APIs - TODO
         
         await Task.CompletedTask;
     }

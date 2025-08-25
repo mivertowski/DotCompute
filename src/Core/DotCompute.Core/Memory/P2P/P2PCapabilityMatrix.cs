@@ -220,7 +220,7 @@ namespace DotCompute.Core.Memory.P2P
                     var capability = kvp.Value;
                     if (capability.IsSupported)
                     {
-                        // Find the target device info (simplified - would need device registry in real implementation)
+                        // Find the target device info (simplified - would need device registry in real implementation) - TODO
                         var connection = new P2PConnection
                         {
                             SourceDeviceId = device.Info.Id,
@@ -454,7 +454,7 @@ namespace DotCompute.Core.Memory.P2P
                         }
 
                         // Find device object for connection.Key (simplified - would need device registry)
-                        // This is a placeholder - real implementation would maintain device registry
+                        // This is a placeholder - real implementation would maintain device registry - TODO
 
 
                         if (connection.Key == targetDevice.Info.Id)
@@ -547,12 +547,12 @@ namespace DotCompute.Core.Memory.P2P
 
         private static bool IsCapabilityFresh(P2PConnectionCapability capability)
             // In a real implementation, capabilities would have timestamps
-            // For now, assume all cached capabilities are fresh
+            // For now, assume all cached capabilities are fresh - TODO
 
             => true;
 
         private static DateTimeOffset GetCapabilityTimestamp(P2PConnectionCapability capability)
-            // Placeholder - would return actual timestamp in real implementation
+            // Placeholder - would return actual timestamp in real implementation - TODO
 
             => DateTimeOffset.UtcNow;
 
@@ -777,12 +777,12 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private static int CountExpiredCapabilities()
-            // Placeholder - in real implementation would check timestamps
+            // Placeholder - in real implementation would check timestamps - TODO
 
             => 0;
 
         private static double CalculateCacheHitRatio()
-            // Placeholder - would track cache hits/misses in real implementation
+            // Placeholder - would track cache hits/misses in real implementation - TODO
 
             => 0.95; // Assume 95% cache hit ratio
 
@@ -791,7 +791,7 @@ namespace DotCompute.Core.Memory.P2P
             try
             {
                 // Background task to refresh expired capabilities
-                // In a real implementation, this would check timestamps and refresh expired entries
+                // In a real implementation, this would check timestamps and refresh expired entries - TODO
                 _logger.LogTrace("Checking for expired P2P capabilities");
             }
             catch (Exception ex)

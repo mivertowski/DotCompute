@@ -19,6 +19,14 @@ namespace DotCompute.Core.Compute
         private bool _initialized;
         private bool _disposed;
 
+        /// <summary>
+        /// Gets the default accelerator instance.
+        /// </summary>
+        /// <exception cref="System.InvalidOperationException">
+        /// AcceleratorManager must be initialized before accessing Default
+        /// or
+        /// No default accelerator available
+        /// </exception>
         public IAccelerator Default
         {
             get
@@ -32,11 +40,25 @@ namespace DotCompute.Core.Compute
             }
         }
 
+        /// <summary>
+        /// Gets all available accelerators.
+        /// </summary>
         public IReadOnlyList<IAccelerator> AvailableAccelerators => _accelerators.AsReadOnly();
 
+        /// <summary>
+        /// Gets the number of available accelerators.
+        /// </summary>
         public int Count => _accelerators.Count;
+
         private static readonly char[] _separator = ['-', '_'];
 
+        /// <summary>
+        /// Discovers and initializes all available accelerators.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>
+        /// A task representing the async operation.
+        /// </returns>
         public async ValueTask InitializeAsync(CancellationToken cancellationToken = default)
         {
             if (_initialized)
@@ -69,6 +91,15 @@ namespace DotCompute.Core.Compute
             _logger.LogInformation("Initialized with {Count} accelerators", _accelerators.Count);
         }
 
+        /// <summary>
+        /// Gets an accelerator by index.
+        /// </summary>
+        /// <param name="index">The index of the accelerator.</param>
+        /// <returns>
+        /// The accelerator at the specified index.
+        /// </returns>
+        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException">index</exception>
         public IAccelerator GetAccelerator(int index)
         {
             if (!_initialized)
@@ -84,6 +115,14 @@ namespace DotCompute.Core.Compute
             return _accelerators[index];
         }
 
+        /// <summary>
+        /// Gets an accelerator by its unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the accelerator.</param>
+        /// <returns>
+        /// The accelerator with the specified ID, or null if not found.
+        /// </returns>
+        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
         public IAccelerator? GetAcceleratorById(string id)
         {
             if (!_initialized)
@@ -94,6 +133,14 @@ namespace DotCompute.Core.Compute
             return _accelerators.FirstOrDefault(a => a.Info.Id == id);
         }
 
+        /// <summary>
+        /// Gets accelerators of a specific type.
+        /// </summary>
+        /// <param name="type">The type of accelerators to get.</param>
+        /// <returns>
+        /// A list of accelerators of the specified type.
+        /// </returns>
+        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
         public IEnumerable<IAccelerator> GetAcceleratorsByType(AcceleratorType type)
         {
             if (!_initialized)
@@ -105,6 +152,14 @@ namespace DotCompute.Core.Compute
             return _accelerators.Where(a => a.Info.DeviceType.Equals(typeString, StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>
+        /// Selects the best accelerator based on the given criteria.
+        /// </summary>
+        /// <param name="criteria">The selection criteria.</param>
+        /// <returns>
+        /// The best matching accelerator, or null if none match.
+        /// </returns>
+        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
         public IAccelerator? SelectBest(AcceleratorSelectionCriteria criteria)
         {
             if (!_initialized)
@@ -146,6 +201,15 @@ namespace DotCompute.Core.Compute
                 .FirstOrDefault();
         }
 
+        /// <summary>
+        /// Creates a new accelerator context for the specified accelerator.
+        /// </summary>
+        /// <param name="accelerator">The accelerator to create a context for.</param>
+        /// <returns>
+        /// A new accelerator context.
+        /// </returns>
+        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
+        /// <exception cref="System.ArgumentException">Accelerator is not managed by this manager - accelerator</exception>
         public AcceleratorContext CreateContext(IAccelerator accelerator)
         {
             if (!_initialized)
@@ -175,6 +239,12 @@ namespace DotCompute.Core.Compute
             return new AcceleratorContext(contextHandle, deviceId);
         }
 
+        /// <summary>
+        /// Registers a custom accelerator provider.
+        /// </summary>
+        /// <param name="provider">The accelerator provider to register.</param>
+        /// <exception cref="System.InvalidOperationException">Cannot register providers after initialization</exception>
+        /// <exception cref="System.ArgumentNullException">provider</exception>
         public void RegisterProvider(IAcceleratorProvider provider)
         {
             if (_initialized)
@@ -186,6 +256,13 @@ namespace DotCompute.Core.Compute
             _logger.LogInformation("Registered accelerator provider: {Provider}", provider.Name);
         }
 
+        /// <summary>
+        /// Refreshes the list of available accelerators.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>
+        /// A task representing the async operation.
+        /// </returns>
         public async ValueTask RefreshAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Refreshing accelerator list");
@@ -197,6 +274,14 @@ namespace DotCompute.Core.Compute
             await InitializeAsync(cancellationToken);
         }
 
+        /// <summary>
+        /// Gets all available accelerators asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>
+        /// A task representing the async operation that returns all available accelerators.
+        /// </returns>
+        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
         public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
         {
             if (!_initialized)
@@ -207,6 +292,16 @@ namespace DotCompute.Core.Compute
             return Task.FromResult<IEnumerable<IAccelerator>>(_accelerators.AsReadOnly());
         }
 
+
+        /// <summary>
+        /// Gets accelerators of a specific type asynchronously.
+        /// </summary>
+        /// <param name="type">The type of accelerators to get.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>
+        /// A task representing the async operation that returns accelerators of the specified type.
+        /// </returns>
+        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
         public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
         {
             if (!_initialized)
@@ -218,6 +313,15 @@ namespace DotCompute.Core.Compute
             return Task.FromResult(result);
         }
 
+        /// <summary>
+        /// Gets the best accelerator for the specified type asynchronously.
+        /// </summary>
+        /// <param name="type">The preferred accelerator type, or null for any type.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>
+        /// A task representing the async operation that returns the best matching accelerator, or null if none match.
+        /// </returns>
+        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
         public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default)
         {
             if (!_initialized)
@@ -266,12 +370,5 @@ namespace DotCompute.Core.Compute
             _default = null;
             _disposed = true;
         }
-    }
-
-    /// <summary>
-    /// Production implementation of AcceleratorManager with additional features.
-    /// </summary>
-    public class ProductionAcceleratorManager(ILogger<ProductionAcceleratorManager> logger) : DefaultAcceleratorManager(logger)
-    {
     }
 }

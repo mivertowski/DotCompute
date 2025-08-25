@@ -6,12 +6,8 @@ using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
-using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
-using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using KernelArguments = DotCompute.Abstractions.Kernels.KernelArguments;
-using KernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Abstractions.Kernels;
 
 namespace DotCompute.Core.Compute
 {
@@ -22,12 +18,25 @@ namespace DotCompute.Core.Compute
     public class CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger) : IAcceleratorProvider
     {
         private readonly ILogger<CpuAcceleratorProvider> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-        public string Name => "CPU";
-
-        public AcceleratorType[] SupportedTypes => [AcceleratorType.CPU];
         private static readonly char[] _separator = [' '];
 
+        /// <summary>
+        /// Gets the name of this provider.
+        /// </summary>
+        public string Name => "CPU";
+
+        /// <summary>
+        /// Gets the types of accelerators this provider can create.
+        /// </summary>
+        public AcceleratorType[] SupportedTypes => [AcceleratorType.CPU];
+
+        /// <summary>
+        /// Discovers available accelerators.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>
+        /// A list of discovered accelerators.
+        /// </returns>
         public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Discovering CPU accelerators");
@@ -49,6 +58,15 @@ namespace DotCompute.Core.Compute
             return ValueTask.FromResult<IEnumerable<IAccelerator>>(new[] { accelerator });
         }
 
+        /// <summary>
+        /// Creates an accelerator instance.
+        /// </summary>
+        /// <param name="info">The accelerator information.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>
+        /// The created accelerator instance.
+        /// </returns>
+        /// <exception cref="System.ArgumentException">Can only create CPU accelerators - info</exception>
         public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
         {
             if (info.DeviceType != "CPU")
@@ -68,11 +86,11 @@ namespace DotCompute.Core.Compute
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                return "Linux CPU"; // Would need to parse /proc/cpuinfo
+                return "Linux CPU"; // Would need to parse /proc/cpuinfo - TODO
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                return "macOS CPU"; // Would need to use sysctl
+                return "macOS CPU"; // Would need to use sysctl - TODO
             }
             else
             {
@@ -311,7 +329,7 @@ namespace DotCompute.Core.Compute
 
             // Simple kernel execution - in a real implementation,
             // this would parse and execute the kernel code
-            // For now, this is a no-op placeholder
+            // For now, this is a no-op placeholder - TODO
             return ValueTask.CompletedTask;
         }
 

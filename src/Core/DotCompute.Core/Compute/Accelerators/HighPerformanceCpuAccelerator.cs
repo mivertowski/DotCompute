@@ -7,10 +7,7 @@ using DotCompute.Core.Compute.Parsing;
 using DotCompute.Core.Compute.Kernels;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
-using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
-using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using KernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
+using DotCompute.Abstractions.Kernels;
 
 namespace DotCompute.Core.Compute.Accelerators
 {
@@ -104,7 +101,7 @@ namespace DotCompute.Core.Compute.Accelerators
         /// <returns>Optimized compiled kernel.</returns>
         private ICompiledKernel CreateOptimizedKernel(Types.KernelInfo kernelInfo, CompilationOptions options)
             // For now, just create a simple kernel since we moved the optimized ones to Backends.CPU
-            // In a full implementation, this would try to load the CPU backend dynamically
+            // In a full implementation, this would try to load the CPU backend dynamically - TODO
 
             => new SimpleOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger);
 

@@ -46,7 +46,7 @@ internal sealed class CompiledKernelWrapper : ICompiledKernel
             throw new ObjectDisposedException(nameof(CompiledKernelWrapper));
         }
 
-        // Simulate kernel execution - in real implementation would call native kernel
+        // Simulate kernel execution - in real implementation would call native kernel - TODO
         await Task.Delay(1, cancellationToken).ConfigureAwait(false);
     }
 

@@ -213,7 +213,7 @@ public sealed class LogEnricher : IDisposable
 
             case ContextScope.Request:
                 // Request scope would typically use HttpContext or similar
-                // For now, treat as thread-local
+                // For now, treat as thread-local - TODO
                 if (_threadLocalContext.Value != null)
                 {
                     _threadLocalContext.Value[$"req_{key}"] = value;

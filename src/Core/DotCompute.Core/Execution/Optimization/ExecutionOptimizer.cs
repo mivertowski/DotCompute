@@ -155,7 +155,7 @@ namespace DotCompute.Core.Execution.Optimization
             
             _logger.LogTrace("Analyzing {DependencyCount} task dependencies for synchronization optimization", taskDependencies.Count);
 
-            // Additional synchronization optimization logic would go here
+            // Additional synchronization optimization logic would go here - TODO
             await ValueTask.CompletedTask;
         }
 
