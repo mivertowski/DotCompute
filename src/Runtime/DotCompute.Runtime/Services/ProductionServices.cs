@@ -7,8 +7,8 @@ using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using global::System.Runtime.CompilerServices;
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Runtime.Services;
@@ -191,7 +191,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
-        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var sizeInBytes = count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         return await AllocateAsync(sizeInBytes);
     }
 

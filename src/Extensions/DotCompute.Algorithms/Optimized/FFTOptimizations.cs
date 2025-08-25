@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Runtime.Intrinsics.X86;
+using global::System.Runtime.CompilerServices;
+using global::System.Runtime.Intrinsics.X86;
 using Complex = DotCompute.Algorithms.SignalProcessing.Complex;
 
 namespace DotCompute.Algorithms.Optimized;

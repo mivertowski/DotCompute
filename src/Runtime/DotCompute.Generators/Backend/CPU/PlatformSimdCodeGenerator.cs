@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace DotCompute.Generators.Backend.CPU;
 
 /// <summary>
-/// Generates platform-agnostic SIMD code using System.Numerics.Vector.
+/// Generates platform-agnostic SIMD code using global::System.Numerics.Vector.
 /// </summary>
 public class PlatformSimdCodeGenerator : CpuCodeGeneratorBase
 {

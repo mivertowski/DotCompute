@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.CompilerServices;
+using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Threading;
@@ -359,21 +359,21 @@ internal static class VectorizedMath
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Add(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
     {
-        var vectorCount = length / System.Numerics.Vector<float>.Count;
-        _ = length % System.Numerics.Vector<float>.Count;
+        var vectorCount = length / global::System.Numerics.Vector<float>.Count;
+        _ = length % global::System.Numerics.Vector<float>.Count;
 
         // Vectorized portion
         for (var i = 0; i < vectorCount; i++)
         {
-            var offset = i * System.Numerics.Vector<float>.Count;
-            var va = new System.Numerics.Vector<float>(a[offset..]);
-            var vb = new System.Numerics.Vector<float>(b[offset..]);
+            var offset = i * global::System.Numerics.Vector<float>.Count;
+            var va = new global::System.Numerics.Vector<float>(a[offset..]);
+            var vb = new global::System.Numerics.Vector<float>(b[offset..]);
             var vr = va + vb;
             vr.CopyTo(result[offset..]);
         }
 
         // Scalar remainder
-        var remainderStart = vectorCount * System.Numerics.Vector<float>.Count;
+        var remainderStart = vectorCount * global::System.Numerics.Vector<float>.Count;
         for (var i = remainderStart; i < length; i++)
         {
             result[i] = a[i] + b[i];
@@ -383,18 +383,18 @@ internal static class VectorizedMath
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Multiply(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
     {
-        var vectorCount = length / System.Numerics.Vector<float>.Count;
+        var vectorCount = length / global::System.Numerics.Vector<float>.Count;
 
         for (var i = 0; i < vectorCount; i++)
         {
-            var offset = i * System.Numerics.Vector<float>.Count;
-            var va = new System.Numerics.Vector<float>(a[offset..]);
-            var vb = new System.Numerics.Vector<float>(b[offset..]);
+            var offset = i * global::System.Numerics.Vector<float>.Count;
+            var va = new global::System.Numerics.Vector<float>(a[offset..]);
+            var vb = new global::System.Numerics.Vector<float>(b[offset..]);
             var vr = va * vb;
             vr.CopyTo(result[offset..]);
         }
 
-        var remainderStart = vectorCount * System.Numerics.Vector<float>.Count;
+        var remainderStart = vectorCount * global::System.Numerics.Vector<float>.Count;
         for (var i = remainderStart; i < length; i++)
         {
             result[i] = a[i] * b[i];
@@ -404,19 +404,19 @@ internal static class VectorizedMath
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float Sum(ReadOnlySpan<float> values)
     {
-        var vectorCount = values.Length / System.Numerics.Vector<float>.Count;
-        var sum = System.Numerics.Vector<float>.Zero;
+        var vectorCount = values.Length / global::System.Numerics.Vector<float>.Count;
+        var sum = global::System.Numerics.Vector<float>.Zero;
 
         for (var i = 0; i < vectorCount; i++)
         {
-            var offset = i * System.Numerics.Vector<float>.Count;
-            var v = new System.Numerics.Vector<float>(values[offset..]);
+            var offset = i * global::System.Numerics.Vector<float>.Count;
+            var v = new global::System.Numerics.Vector<float>(values[offset..]);
             sum += v;
         }
 
-        var result = System.Numerics.Vector.Dot(sum, System.Numerics.Vector<float>.One);
+        var result = global::System.Numerics.Vector.Dot(sum, global::System.Numerics.Vector<float>.One);
 
-        var remainderStart = vectorCount * System.Numerics.Vector<float>.Count;
+        var remainderStart = vectorCount * global::System.Numerics.Vector<float>.Count;
         for (var i = remainderStart; i < values.Length; i++)
         {
             result += values[i];

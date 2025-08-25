@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
-using System.Security.Cryptography;
+using global::System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 

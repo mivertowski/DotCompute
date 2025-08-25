@@ -90,7 +90,7 @@ public static class LoopOptimizer
         {
             _ = sb.AppendLine("// Prefetch data for better cache utilization");
             _ = sb.AppendLine("#if NET7_0_OR_GREATER");
-            _ = sb.AppendLine("System.Runtime.Intrinsics.X86.Sse.Prefetch0(ref Unsafe.AsRef<byte>(null));");
+            _ = sb.AppendLine("global::System.Runtime.Intrinsics.X86.Sse.Prefetch0(ref Unsafe.AsRef<byte>(null));");
             _ = sb.AppendLine("#endif");
             _ = sb.AppendLine();
         }

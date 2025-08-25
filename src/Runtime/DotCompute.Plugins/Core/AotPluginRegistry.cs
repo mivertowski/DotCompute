@@ -397,7 +397,7 @@ namespace DotCompute.Plugins.Core
         /// </summary>
         public static bool IsAotCompatible =>
 #if NETCOREAPP
-            !System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
+            !global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
 #else
         false;
 #endif

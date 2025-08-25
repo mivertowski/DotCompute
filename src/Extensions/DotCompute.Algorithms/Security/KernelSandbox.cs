@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using System.Security;
 using Microsoft.Extensions.Logging;
 
@@ -323,7 +323,7 @@ public sealed class KernelSandbox : IDisposable
         var forbiddenOperations = new[]
         {
             "file://", "http://", "https://", "ftp://",
-            "System.IO.File", "System.Net", "System.Diagnostics.Process",
+            "global::System.IO.File", "System.Net", "System.Diagnostics.Process",
             "malloc", "free", "memcpy", "system(", "exec(",
             "CreateProcess", "LoadLibrary", "GetProcAddress"
         };

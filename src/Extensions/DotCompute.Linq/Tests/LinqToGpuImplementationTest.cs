@@ -349,7 +349,7 @@ internal class MockMemoryManager : IUnifiedMemoryManager
 
     public ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count) where T : unmanaged
     {
-        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var sizeInBytes = count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         return AllocateAsync(sizeInBytes);
     }
 

@@ -7,8 +7,8 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Runtime.Loader;
-using System.Security.Cryptography;
+using global::System.Runtime.Loader;
+using global::System.Security.Cryptography;
 using System.Text.Json;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
@@ -1074,8 +1074,8 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 if (_authenticodeValidator.ExtractCertificateInfo(assemblyPath)?.Subject != null)
                 {
                     // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
-                    var cert = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
-                    context.Certificate = cert != null ? new System.Security.Cryptography.X509Certificates.X509Certificate2(cert) : null;
+                    var cert = global::System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
+                    context.Certificate = cert != null ? new global::System.Security.Cryptography.X509Certificates.X509Certificate2(cert) : null;
                 }
                 else
                 {

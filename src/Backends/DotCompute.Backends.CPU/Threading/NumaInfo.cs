@@ -4,7 +4,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Management;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace DotCompute.Backends.CPU.Threading;
@@ -59,7 +59,7 @@ public static partial class NumaInfo
         }
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static NumaTopology DiscoverWindowsTopology()
     {
         try
@@ -75,7 +75,7 @@ public static partial class NumaInfo
         }
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static NumaTopology DiscoverWindowsTopologyNative()
     {
         var nodes = new List<NumaNode>();
@@ -123,7 +123,7 @@ public static partial class NumaInfo
         };
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static NumaTopology DiscoverWindowsTopologyWmi()
     {
         var nodes = new List<NumaNode>();
@@ -185,7 +185,7 @@ public static partial class NumaInfo
         };
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static NumaTopology DiscoverLinuxTopology()
     {
         try
@@ -201,7 +201,7 @@ public static partial class NumaInfo
         }
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static NumaTopology DiscoverLinuxTopologyAdvanced()
     {
         var processorCount = Environment.ProcessorCount;
@@ -262,7 +262,7 @@ public static partial class NumaInfo
         return DiscoverLinuxTopologySysfs();
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static NumaTopology DiscoverLinuxTopologySysfs()
     {
         var processorCount = Environment.ProcessorCount;
@@ -433,7 +433,7 @@ public static partial class NumaInfo
     private static extern bool GetNumaHighestNodeNumber(out uint HighestNodeNumber);
 #pragma warning restore IDE1006 // Naming Styles
 
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static int GetNumaHighestNodeNumber() => GetNumaHighestNodeNumber(out var highest) ? (int)highest : 0;
 
     [DllImport("kernel32.dll", SetLastError = true)]
@@ -965,7 +965,7 @@ public static partial class NumaInfo
         return count;
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static ulong GetProcessorMaskFromWmi(System.Management.ManagementObject node)
     {
         // Extract processor mask from WMI object
@@ -984,7 +984,7 @@ public static partial class NumaInfo
         return 0;
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static long GetMemorySizeFromWmi(System.Management.ManagementObject node)
     {
         try

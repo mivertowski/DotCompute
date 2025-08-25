@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.CompilerServices;
+using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
@@ -586,7 +586,7 @@ namespace DotCompute.Core.Memory
             try
             {
                 var copyStrategy = DetermineP2PCopyStrategy(_accelerator, destination._accelerator);
-                var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var elementSize = global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
                 var transferSize = count * elementSize;
                 var sourceOffsetBytes = sourceOffset * elementSize;
                 var destOffsetBytes = destinationOffset * elementSize;

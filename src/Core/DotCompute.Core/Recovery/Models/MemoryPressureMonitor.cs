@@ -3,7 +3,7 @@
 
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Recovery.Types;

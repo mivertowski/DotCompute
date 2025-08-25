@@ -4,8 +4,8 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
+using global::System.Security.Cryptography;
+using global::System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 

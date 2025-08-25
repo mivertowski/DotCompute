@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using global::System.Runtime.CompilerServices;
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 // using DotCompute.Core.Types; // Commented out missing namespace

@@ -810,7 +810,7 @@ namespace DotCompute.Core.Execution
                 return 0;
             }
 
-            var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
+            var elementSize = global::System.Runtime.InteropServices.Marshal.SizeOf<T>();
             var totalBytes = (deviceTask.InputBuffers.Length + deviceTask.OutputBuffers.Length) * deviceTask.ElementCount * elementSize;
             var bytesPerSecond = (totalBytes / executionTimeMs) * 1000.0;
 

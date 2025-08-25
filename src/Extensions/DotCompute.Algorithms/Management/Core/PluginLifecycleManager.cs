@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Runtime.Loader;
+using global::System.Runtime.Loader;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Metadata;

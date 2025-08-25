@@ -938,22 +938,22 @@ namespace DotCompute.Core.Pipelines
             // Check SIMD capabilities and return optimal vector width
             try
             {
-                if (System.Runtime.Intrinsics.X86.Avx512F.IsSupported)
+                if (global::System.Runtime.Intrinsics.X86.Avx512F.IsSupported)
                 {
                     return AVX512_VECTOR_BITS;
                 }
 
-                if (System.Runtime.Intrinsics.X86.Avx2.IsSupported)
+                if (global::System.Runtime.Intrinsics.X86.Avx2.IsSupported)
                 {
                     return AVX_VECTOR_BITS;
                 }
 
-                if (System.Runtime.Intrinsics.X86.Sse2.IsSupported)
+                if (global::System.Runtime.Intrinsics.X86.Sse2.IsSupported)
                 {
                     return SSE_VECTOR_BITS;
                 }
 
-                if (System.Runtime.Intrinsics.Arm.AdvSimd.IsSupported)
+                if (global::System.Runtime.Intrinsics.Arm.AdvSimd.IsSupported)
                 {
                     return NEON_VECTOR_BITS;
                 }
@@ -964,7 +964,7 @@ namespace DotCompute.Core.Pipelines
             }
 
             // Use .NET Vector<T> as fallback
-            return System.Numerics.Vector<byte>.Count * 8;
+            return global::System.Numerics.Vector<byte>.Count * 8;
         }
 
         private static long OptimizeForCacheLocality(long baseSize)

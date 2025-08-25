@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.CompilerServices;
+using global::System.Runtime.CompilerServices;
 using System.Text;
 using DotCompute.Algorithms.LinearAlgebra;
 

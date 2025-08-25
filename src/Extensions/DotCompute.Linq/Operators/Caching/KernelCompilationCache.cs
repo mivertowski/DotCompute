@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Security.Cryptography;
+using global::System.Security.Cryptography;
 using System.Text;
 using DotCompute.Linq.Operators.Execution;
 using DotCompute.Linq.Operators.Models;

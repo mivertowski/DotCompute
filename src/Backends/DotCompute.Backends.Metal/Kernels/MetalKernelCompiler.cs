@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Native;
@@ -261,7 +261,7 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
     private static string ComputeHash(string text)
     {
         var bytes = Encoding.UTF8.GetBytes(text);
-        var hash = System.Security.Cryptography.SHA256.HashData(bytes);
+        var hash = global::System.Security.Cryptography.SHA256.HashData(bytes);
         return Convert.ToBase64String(hash);
     }
 

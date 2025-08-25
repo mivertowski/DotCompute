@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.Intrinsics.X86;
+using global::System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
@@ -101,7 +101,7 @@ namespace DotCompute.Core.Compute.Providers
                 return new Version(1, 4);
             }
 
-            if (System.Numerics.Vector.IsHardwareAccelerated)
+            if (global::System.Numerics.Vector.IsHardwareAccelerated)
             {
                 return new Version(1, 0);
             }

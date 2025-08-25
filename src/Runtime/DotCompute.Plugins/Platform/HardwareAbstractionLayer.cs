@@ -563,10 +563,10 @@ namespace DotCompute.Plugins.Platform
 
             return platform.ProcessArchitecture switch
             {
-                System.Runtime.InteropServices.Architecture.X64 => "x86_64",
-                System.Runtime.InteropServices.Architecture.Arm64 => "aarch64",
-                System.Runtime.InteropServices.Architecture.X86 => "x86",
-                System.Runtime.InteropServices.Architecture.Arm => "arm",
+                global::System.Runtime.InteropServices.Architecture.X64 => "x86_64",
+                global::System.Runtime.InteropServices.Architecture.Arm64 => "aarch64",
+                global::System.Runtime.InteropServices.Architecture.X86 => "x86",
+                global::System.Runtime.InteropServices.Architecture.Arm => "arm",
                 _ => "generic"
             };
         }

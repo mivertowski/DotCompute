@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Security.Cryptography.X509Certificates;
+using global::System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Types.Security;

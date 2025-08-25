@@ -70,7 +70,7 @@ namespace DotCompute.Core.Memory
 
             ArgumentNullException.ThrowIfNull(strategy);
 
-            var transferSize = elementCount * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var transferSize = elementCount * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             var operation = new P2PTransferOperation<T>
             {
                 Id = Guid.NewGuid(),
@@ -567,7 +567,7 @@ namespace DotCompute.Core.Memory
 
         public override async Task ExecuteStreamingTransferAsync(int chunkSize, CancellationToken cancellationToken)
         {
-            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var elementSize = global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             var elementsPerChunk = Math.Max(1, chunkSize / elementSize);
             var remainingElements = ElementCount;
             var currentSourceOffset = SourceOffset;

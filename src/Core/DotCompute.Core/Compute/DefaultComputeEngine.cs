@@ -241,8 +241,8 @@ namespace DotCompute.Core.Compute
             try
             {
                 // Simple check - in production, this would properly detect CUDA
-                var cudaAvailable = System.IO.File.Exists("/usr/lib/wsl/lib/libcuda.so.1") ||
-                                  System.IO.File.Exists("/usr/local/cuda/lib64/libcudart.so");
+                var cudaAvailable = global::System.IO.File.Exists("/usr/lib/wsl/lib/libcuda.so.1") ||
+                                  global::System.IO.File.Exists("/usr/local/cuda/lib64/libcudart.so");
                 if (cudaAvailable)
                 {
                     backends.Add(ComputeBackendType.CUDA);

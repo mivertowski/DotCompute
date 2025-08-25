@@ -4,7 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.Loader;
+using global::System.Runtime.Loader;
 using DotCompute.Core.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -289,7 +289,7 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
 
             // Check .NET version compatibility
 
-            var targetFramework = pluginAssembly.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>();
+            var targetFramework = pluginAssembly.GetCustomAttribute<global::System.Runtime.Versioning.TargetFrameworkAttribute>();
             result.FrameworkCompatible = IsFrameworkCompatible(targetFramework?.FrameworkName);
 
             // Check dependency versions

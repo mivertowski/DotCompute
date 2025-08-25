@@ -4,7 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Runtime.Loader;
+using global::System.Runtime.Loader;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Management.Metadata;

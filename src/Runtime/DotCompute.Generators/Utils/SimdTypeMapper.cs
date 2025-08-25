@@ -326,7 +326,7 @@ public static class SimdTypeMapper
     private static bool IsAvx2Supported()
     {
 #if NET7_0_OR_GREATER
-        return System.Runtime.Intrinsics.X86.Avx2.IsSupported;
+        return global::System.Runtime.Intrinsics.X86.Avx2.IsSupported;
 #else
         return false;
 #endif
@@ -338,7 +338,7 @@ public static class SimdTypeMapper
     private static bool IsAvx512Supported()
     {
 #if NET8_0_OR_GREATER
-        return System.Runtime.Intrinsics.X86.Avx512F.IsSupported;
+        return global::System.Runtime.Intrinsics.X86.Avx512F.IsSupported;
 #else
         return false;
 #endif
@@ -350,7 +350,7 @@ public static class SimdTypeMapper
     private static bool IsSseSupported()
     {
 #if NET7_0_OR_GREATER
-        return System.Runtime.Intrinsics.X86.Sse.IsSupported;
+        return global::System.Runtime.Intrinsics.X86.Sse.IsSupported;
 #else
         return false;
 #endif

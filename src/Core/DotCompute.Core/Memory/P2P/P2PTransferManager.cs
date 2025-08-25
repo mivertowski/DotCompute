@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
+using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 

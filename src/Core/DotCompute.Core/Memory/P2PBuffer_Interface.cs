@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.CompilerServices;
+using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 

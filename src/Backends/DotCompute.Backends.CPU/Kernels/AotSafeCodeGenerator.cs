@@ -530,13 +530,13 @@ internal sealed class AotSafeCodeGenerator
         var workItemId = context.GetParameter(3) as long[] ?? [0];
 
         var index = (int)workItemId[0];
-        var vectorSize = System.Numerics.Vector<float>.Count;
+        var vectorSize = global::System.Numerics.Vector<float>.Count;
 
         // Vectorized operation
         if (index + vectorSize <= a.Length)
         {
-            var va = new System.Numerics.Vector<float>(a.Span[index..]);
-            var vb = new System.Numerics.Vector<float>(b.Span[index..]);
+            var va = new global::System.Numerics.Vector<float>(a.Span[index..]);
+            var vb = new global::System.Numerics.Vector<float>(b.Span[index..]);
             var vc = va + vb;
             vc.CopyTo(c.Span[index..]);
         }
@@ -557,12 +557,12 @@ internal sealed class AotSafeCodeGenerator
         var workItemId = context.GetParameter(3) as long[] ?? [0];
 
         var index = (int)workItemId[0];
-        var vectorSize = System.Numerics.Vector<float>.Count;
+        var vectorSize = global::System.Numerics.Vector<float>.Count;
 
         if (index + vectorSize <= a.Length)
         {
-            var va = new System.Numerics.Vector<float>(a.Span[index..]);
-            var vb = new System.Numerics.Vector<float>(b.Span[index..]);
+            var va = new global::System.Numerics.Vector<float>(a.Span[index..]);
+            var vb = new global::System.Numerics.Vector<float>(b.Span[index..]);
             var vc = va * vb;
             vc.CopyTo(c.Span[index..]);
         }
@@ -633,14 +633,14 @@ internal sealed class AotSafeCodeGenerator
         if (workItemId[0] == 0)
         {
             float sum = 0;
-            var vectorSize = System.Numerics.Vector<float>.Count;
+            var vectorSize = global::System.Numerics.Vector<float>.Count;
             var vectorCount = input.Length / vectorSize;
 
             // Vectorized sum
-            var vsum = System.Numerics.Vector<float>.Zero;
+            var vsum = global::System.Numerics.Vector<float>.Zero;
             for (var i = 0; i < vectorCount; i++)
             {
-                var v = new System.Numerics.Vector<float>(input.Span[(i * vectorSize)..]);
+                var v = new global::System.Numerics.Vector<float>(input.Span[(i * vectorSize)..]);
                 vsum += v;
             }
 

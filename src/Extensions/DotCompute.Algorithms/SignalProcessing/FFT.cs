@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using System.Runtime.CompilerServices;
+using global::System.Runtime.CompilerServices;
 
 namespace DotCompute.Algorithms.SignalProcessing;
 

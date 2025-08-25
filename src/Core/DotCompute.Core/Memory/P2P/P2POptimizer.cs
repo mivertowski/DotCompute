@@ -202,7 +202,7 @@ namespace DotCompute.Core.Memory.P2P
                     EstimatedTimeMs = await EstimateChunkTransferTimeAsync(
                         sourceBuffer.Accelerator, destinationBuffers[i].Accelerator,
 
-                        chunkSize * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken)
+                        chunkSize * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken)
                 };
 
                 scatterPlan.Chunks.Add(chunk);

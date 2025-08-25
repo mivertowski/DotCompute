@@ -146,7 +146,7 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets the size in bytes of the tensor.
         /// Calculated based on element count and the size of type T.
         /// </summary>
-        public long SizeInBytes => ElementCount * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        public long SizeInBytes => ElementCount * global::System.Runtime.InteropServices.Marshal.SizeOf<T>();
     }
 
     /// <summary>

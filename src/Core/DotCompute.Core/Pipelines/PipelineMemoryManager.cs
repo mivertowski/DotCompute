@@ -44,7 +44,7 @@ namespace DotCompute.Core.Pipelines
         {
             ThrowIfDisposed();
 
-            var sizeInBytes = elementCount * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var sizeInBytes = elementCount * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
 
             // Try to get from pool first
             if (_pools.TryGetValue(typeof(T), out var pool))
@@ -350,7 +350,7 @@ namespace DotCompute.Core.Pipelines
         {
             ThrowIfDisposed();
 
-            var byteOffset = offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var byteOffset = offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             await _deviceMemory.WriteAsync(source, byteOffset, cancellationToken);
         }
 
@@ -365,7 +365,7 @@ namespace DotCompute.Core.Pipelines
 
             var actualCount = count ?? Math.Min(destination.Length, (int)(_elementCount - offset));
             var actualDestination = destination[..actualCount];
-            var byteOffset = offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var byteOffset = offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
 
             await _deviceMemory.ReadAsync(actualDestination, byteOffset, cancellationToken);
         }

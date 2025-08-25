@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
-using System.Runtime.Intrinsics.Arm;
+using global::System.Runtime.InteropServices;
+using global::System.Runtime.Intrinsics;
+using global::System.Runtime.Intrinsics.X86;
+using global::System.Runtime.Intrinsics.Arm;
 
 namespace DotCompute.Plugins.Platform
 {
@@ -208,7 +208,7 @@ namespace DotCompute.Plugins.Platform
                 SupportsSsse3 = Ssse3.IsSupported,
                 SupportsSse41 = Sse41.IsSupported,
                 SupportsSse42 = Sse42.IsSupported,
-                SupportsAes = System.Runtime.Intrinsics.X86.Aes.IsSupported,
+                SupportsAes = global::System.Runtime.Intrinsics.X86.Aes.IsSupported,
                 SupportsFma = Fma.IsSupported,
                 SupportsPopcnt = Popcnt.IsSupported,
                 SupportsLzcnt = Lzcnt.IsSupported,
@@ -217,7 +217,7 @@ namespace DotCompute.Plugins.Platform
 
                 // ARM Features (if running on ARM)
                 SupportsArmBase = AdvSimd.IsSupported,
-                SupportsArmAes = System.Runtime.Intrinsics.Arm.Aes.IsSupported,
+                SupportsArmAes = global::System.Runtime.Intrinsics.Arm.Aes.IsSupported,
                 SupportsArmSha1 = Sha1.IsSupported,
                 SupportsArmSha256 = Sha256.IsSupported,
                 SupportsArmCrc32 = Crc32.IsSupported,
@@ -225,7 +225,7 @@ namespace DotCompute.Plugins.Platform
                 SupportsArmRdm = Rdm.IsSupported,
 
                 // Vector capabilities
-                VectorSizeBytes = System.Numerics.Vector<byte>.Count,
+                VectorSizeBytes = global::System.Numerics.Vector<byte>.Count,
                 Vector128IsSupported = Vector128.IsHardwareAccelerated,
                 Vector256IsSupported = Vector256.IsHardwareAccelerated,
                 Vector512IsSupported = Vector512.IsHardwareAccelerated,

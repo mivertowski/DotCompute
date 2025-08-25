@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Recovery.Models;
 using DotCompute.Core.Recovery.Statistics;
 using DotCompute.Core.Recovery.Types;
@@ -568,7 +569,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
     private static string CalculateKernelHash(string sourceCode)
     {
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        using var sha256 = global::System.Security.Cryptography.SHA256.Create();
         var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(sourceCode));
         return Convert.ToBase64String(hash);
     }

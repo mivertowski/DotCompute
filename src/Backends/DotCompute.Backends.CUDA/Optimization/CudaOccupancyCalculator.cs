@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.DeviceManagement;
 using DotCompute.Backends.CUDA.Execution.Models;

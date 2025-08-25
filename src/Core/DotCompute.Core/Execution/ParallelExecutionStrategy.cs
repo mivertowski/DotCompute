@@ -492,7 +492,7 @@ namespace DotCompute.Core.Execution
             // Validate buffer sizes are divisible by device count for even distribution
             foreach (var buffer in inputBuffers)
             {
-                var bufferElementCount = (int)(buffer.SizeInBytes / System.Runtime.InteropServices.Marshal.SizeOf<T>());
+                var bufferElementCount = (int)(buffer.SizeInBytes / global::System.Runtime.InteropServices.Marshal.SizeOf<T>());
                 if (bufferElementCount % devices.Length != 0)
                 {
                     LogBufferSizeMismatch(_logger, bufferElementCount, devices.Length, null);
@@ -519,7 +519,7 @@ namespace DotCompute.Core.Execution
             };
 
             // Calculate work distribution
-            var totalElements = (int)(inputBuffers[0].SizeInBytes / System.Runtime.InteropServices.Marshal.SizeOf<T>());
+            var totalElements = (int)(inputBuffers[0].SizeInBytes / global::System.Runtime.InteropServices.Marshal.SizeOf<T>());
             var elementsPerDevice = totalElements / devices.Length;
             var remainingElements = totalElements % devices.Length;
 
@@ -712,7 +712,7 @@ namespace DotCompute.Core.Execution
 
         private static double CalculateMemoryBandwidth<T>(DataParallelDeviceTask<T> task, double executionTimeMs) where T : unmanaged
         {
-            var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
+            var elementSize = global::System.Runtime.InteropServices.Marshal.SizeOf<T>();
             var totalBytes = (task.InputBuffers.Length + task.OutputBuffers.Length) *
                             task.ElementCount * elementSize;
             return (totalBytes / 1e9) / (executionTimeMs / 1000.0); // GB/s

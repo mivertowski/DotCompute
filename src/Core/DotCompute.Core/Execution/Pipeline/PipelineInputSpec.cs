@@ -27,7 +27,7 @@ namespace DotCompute.Core.Execution.Pipeline
         public AbstractionsMemory.IUnifiedMemoryBuffer<T>? Buffer { get; set; }
 
         /// <summary>Gets the total size of the tensor in bytes.</summary>
-        public long SizeInBytes => ElementCount * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        public long SizeInBytes => ElementCount * global::System.Runtime.InteropServices.Marshal.SizeOf<T>();
 
         /// <summary>Gets the total number of elements in the tensor.</summary>
         public long ElementCount => Dimensions.Aggregate(1L, (acc, dim) => acc * dim);

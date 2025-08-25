@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using global::System.Runtime.CompilerServices;
+using global::System.Runtime.InteropServices;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 
@@ -523,7 +523,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         };
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static void SetThreadAffinityWindows(NumaThreadAffinityInfo affinityInfo)
     {
         try
@@ -541,7 +541,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         }
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static void SetThreadAffinityLinux(NumaThreadAffinityInfo affinityInfo)
     {
         try

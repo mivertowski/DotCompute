@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.IO.Compression;
+using global::System.IO.Compression;
 using System.Reflection;
-using System.Runtime.Loader;
+using global::System.Runtime.Loader;
 using System.Security;
-using System.Security.Cryptography;
+using global::System.Security.Cryptography;
 using System.Text.Json;
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Exceptions.Loading;
@@ -346,7 +346,7 @@ public class NuGetPluginLoader : IDisposable
         return result;
     }
 
-    private async IAsyncEnumerable<NuGetPluginManifest> DiscoverPluginsInDirectoryAsync(string directory, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    private async IAsyncEnumerable<NuGetPluginManifest> DiscoverPluginsInDirectoryAsync(string directory, [global::System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var manifestFiles = Directory.EnumerateFiles(directory, "*.plugin.json", SearchOption.AllDirectories);
         var packageFiles = Directory.EnumerateFiles(directory, "*.nupkg", SearchOption.AllDirectories);
@@ -364,7 +364,7 @@ public class NuGetPluginLoader : IDisposable
         }
     }
 
-    private async IAsyncEnumerable<NuGetPluginManifest> DiscoverFromManifestFilesAsync(IEnumerable<string> manifestFiles, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    private async IAsyncEnumerable<NuGetPluginManifest> DiscoverFromManifestFilesAsync(IEnumerable<string> manifestFiles, [global::System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         foreach (var file in manifestFiles)
         {
@@ -389,7 +389,7 @@ public class NuGetPluginLoader : IDisposable
         }
     }
 
-    private async IAsyncEnumerable<NuGetPluginManifest> DiscoverFromPackagesAsync(IEnumerable<string> packageFiles, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    private async IAsyncEnumerable<NuGetPluginManifest> DiscoverFromPackagesAsync(IEnumerable<string> packageFiles, [global::System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         foreach (var packageFile in packageFiles)
         {
@@ -819,7 +819,7 @@ public class NuGetPluginLoader : IDisposable
                         "System.Management", "Microsoft.Win32.Registry",
 
                         "System.Diagnostics.Process", "System.DirectoryServices",
-                        "System.Security.Principal", "System.ServiceProcess"
+                        "global::System.Security.Principal", "System.ServiceProcess"
                     };
 
                         if (dangerousAssemblies.Any(dangerous =>
@@ -1015,7 +1015,7 @@ public class NuGetPluginLoader : IDisposable
         // Check for dangerous base types
         var dangerousBaseTypes = new[]
         {
-            "System.Runtime.InteropServices.Marshal",
+            "global::System.Runtime.InteropServices.Marshal",
             "System.Reflection.Assembly",
             "System.AppDomain"
         };
@@ -1038,10 +1038,10 @@ public class NuGetPluginLoader : IDisposable
     {
         var dangerousAttributes = new[]
         {
-            "System.Security.AllowPartiallyTrustedCallersAttribute",
-            "System.Security.SecurityCriticalAttribute",
-            "System.Security.SuppressUnmanagedCodeSecurityAttribute",
-            "System.Security.UnverifiableCodeAttribute"
+            "global::System.Security.AllowPartiallyTrustedCallersAttribute",
+            "global::System.Security.SecurityCriticalAttribute",
+            "global::System.Security.SuppressUnmanagedCodeSecurityAttribute",
+            "global::System.Security.UnverifiableCodeAttribute"
         };
 
         return dangerousAttributes.Contains(attributeType.FullName);

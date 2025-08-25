@@ -100,10 +100,10 @@ public class CpuCodeGenerator
     {
         _ = sb.Append(CodeFormatter.GenerateHeader(
             "System",
-            "System.Runtime.CompilerServices",
-            "System.Runtime.Intrinsics",
-            "System.Runtime.Intrinsics.X86",
-            "System.Runtime.Intrinsics.Arm",
+            "global::System.Runtime.CompilerServices",
+            "global::System.Runtime.Intrinsics",
+            "global::System.Runtime.Intrinsics.X86",
+            "global::System.Runtime.Intrinsics.Arm",
             "System.Threading.Tasks",
             "System.Numerics"
         ));
@@ -241,7 +241,7 @@ public class CpuCodeGenerator
     #region Private Methods - SIMD Implementation
 
     /// <summary>
-    /// Generates SIMD implementation using platform-agnostic System.Numerics.Vector.
+    /// Generates SIMD implementation using platform-agnostic global::System.Numerics.Vector.
     /// </summary>
     /// <param name="sb">The StringBuilder to append the generated code to.</param>
     private void GenerateSimdImplementation(StringBuilder sb)
@@ -502,7 +502,7 @@ public class CpuCodeGenerator
     #region Private Methods - Vector Operations Generation
 
     /// <summary>
-    /// Generates optimized SIMD operations using System.Numerics.Vector.
+    /// Generates optimized SIMD operations using global::System.Numerics.Vector.
     /// </summary>
     private void GenerateSimdOperations(StringBuilder sb)
     {

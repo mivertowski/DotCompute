@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
@@ -119,7 +119,7 @@ public sealed partial class MetalBackend : IDisposable
             throw new InvalidOperationException("No Metal accelerator available");
         }
 
-        return await accelerator.Memory.AllocateAsync(size * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()).ConfigureAwait(false);
+        return await accelerator.Memory.AllocateAsync(size * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>()).ConfigureAwait(false);
     }
 
     /// <summary>

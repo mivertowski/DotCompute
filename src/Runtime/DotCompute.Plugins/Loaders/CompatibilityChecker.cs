@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Loaders.NuGet.Types;
 using DotCompute.Plugins.Loaders.NuGet.Results;
@@ -524,7 +524,7 @@ public class CompatibilityChecker
 
             // Get target framework from assembly attributes
 
-            var targetFrameworkAttr = assembly.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>();
+            var targetFrameworkAttr = assembly.GetCustomAttribute<global::System.Runtime.Versioning.TargetFrameworkAttribute>();
             if (targetFrameworkAttr != null)
             {
                 info.TargetFramework = targetFrameworkAttr.FrameworkName;
@@ -853,5 +853,5 @@ internal class RuntimeEnvironment
     public string OSDescription { get; } = RuntimeInformation.OSDescription;
     public Architecture Architecture { get; } = RuntimeInformation.OSArchitecture;
     public string RuntimeIdentifier { get; } = RuntimeInformation.RuntimeIdentifier;
-    public bool IsAotRuntime { get; } = !System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
+    public bool IsAotRuntime { get; } = !global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
 }

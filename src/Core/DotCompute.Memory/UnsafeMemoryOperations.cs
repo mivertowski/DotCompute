@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
+using global::System.Runtime.CompilerServices;
+using global::System.Runtime.InteropServices;
+using global::System.Runtime.Intrinsics;
+using global::System.Runtime.Intrinsics.X86;
 
 namespace DotCompute.Memory;
 

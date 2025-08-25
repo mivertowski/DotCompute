@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Abstractions.Types;

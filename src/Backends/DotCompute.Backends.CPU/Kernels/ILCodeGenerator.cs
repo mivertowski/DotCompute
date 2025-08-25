@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
+using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -258,7 +258,7 @@ internal sealed class ILCodeGenerator
 
     private static List<Expression> GenerateDefaultScalarAddition(List<ParameterExpression> parameters, Expression indexExpr) => GenerateDefaultVectorAddition(parameters, indexExpr); // Same as vector addition but without SIMD
 
-    private static List<Expression> GenerateVectorAdd(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarAdd(parameters, indexExpr); // For simplicity, delegate to scalar addition. In a full implementation, this would use System.Numerics.Vector<T>
+    private static List<Expression> GenerateVectorAdd(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarAdd(parameters, indexExpr); // For simplicity, delegate to scalar addition. In a full implementation, this would use global::System.Numerics.Vector<T>
 
     private static List<Expression> GenerateVectorMultiply(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarMultiply(parameters, indexExpr);
 

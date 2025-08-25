@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
+using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
@@ -421,11 +421,11 @@ namespace DotCompute.Core.Memory
                 // Copy source to memory-mapped file
                 var hostData = new T[BufferHelpers.GetElementCount(source)];
                 await source.CopyToHostAsync<T>(hostData, 0, cancellationToken);
-                await File.WriteAllBytesAsync(tempFile, System.Runtime.InteropServices.MemoryMarshal.AsBytes(hostData.AsSpan()).ToArray(), cancellationToken);
+                await File.WriteAllBytesAsync(tempFile, global::System.Runtime.InteropServices.MemoryMarshal.AsBytes(hostData.AsSpan()).ToArray(), cancellationToken);
 
                 // Copy from memory-mapped file to target
                 var fileData = await File.ReadAllBytesAsync(tempFile, cancellationToken);
-                var targetData = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(fileData);
+                var targetData = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(fileData);
                 await target.CopyFromHostAsync<T>(targetData.ToArray(), 0, cancellationToken);
             }
             finally

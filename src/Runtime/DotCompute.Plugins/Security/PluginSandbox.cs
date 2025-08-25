@@ -362,10 +362,10 @@ public class PluginSandbox : IDisposable
     /// <summary>
     /// Creates a security principal for the sandbox context.
     /// </summary>
-    private System.Security.Principal.IPrincipal CreateSecurityPrincipal(SecurityContext context)
+    private global::System.Security.Principal.IPrincipal CreateSecurityPrincipal(SecurityContext context)
     {
-        var identity = new System.Security.Principal.GenericIdentity("SandboxedPlugin", "Custom");
-        var principal = new System.Security.Principal.GenericPrincipal(identity, [.. context.AllowedPermissions]);
+        var identity = new global::System.Security.Principal.GenericIdentity("SandboxedPlugin", "Custom");
+        var principal = new global::System.Security.Principal.GenericPrincipal(identity, [.. context.AllowedPermissions]);
         return principal;
     }
 

@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

@@ -223,7 +223,7 @@ namespace DotCompute.Abstractions
             ArgumentNullException.ThrowIfNull(definition);
             ArgumentNullException.ThrowIfNull(options);
 
-            var codeHash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(definition.Code ?? ""));
+            var codeHash = global::System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(definition.Code ?? ""));
             var codeHashString = Convert.ToHexString(codeHash);
 
             return $"{definition.Name}_{codeHashString}_{options.OptimizationLevel}_{options.EnableDebugInfo}";

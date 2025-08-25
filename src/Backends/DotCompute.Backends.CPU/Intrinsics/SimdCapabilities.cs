@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.Arm;
-using System.Runtime.Intrinsics.X86;
+using global::System.Runtime.Intrinsics;
+using global::System.Runtime.Intrinsics.Arm;
+using global::System.Runtime.Intrinsics.X86;
 
 namespace DotCompute.Backends.CPU.Intrinsics;
 
@@ -364,7 +364,7 @@ public sealed class ArmSimdInfo
     /// <value>
     ///   <c>true</c> if this instance has aes; otherwise, <c>false</c>.
     /// </value>
-    public static bool HasAes => System.Runtime.Intrinsics.Arm.Aes.IsSupported;
+    public static bool HasAes => global::System.Runtime.Intrinsics.Arm.Aes.IsSupported;
 
     /// <summary>
     /// Gets a value indicating whether this instance has sha1.

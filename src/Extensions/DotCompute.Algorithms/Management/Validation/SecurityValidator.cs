@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
+using global::System.Security.Cryptography.X509Certificates;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Types.Security;
 using Microsoft.Extensions.Logging;

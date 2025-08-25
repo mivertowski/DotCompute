@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using global::System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;

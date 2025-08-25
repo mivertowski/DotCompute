@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
@@ -94,17 +94,17 @@ namespace DotCompute.Core.Compute
         private static Version GetProcessorCapability()
         {
             // Simple version based on SIMD support
-            if (System.Runtime.Intrinsics.X86.Avx2.IsSupported)
+            if (global::System.Runtime.Intrinsics.X86.Avx2.IsSupported)
             {
                 return new Version(2, 0);
             }
-            else if (System.Runtime.Intrinsics.X86.Sse41.IsSupported)
+            else if (global::System.Runtime.Intrinsics.X86.Sse41.IsSupported)
             {
                 return new Version(1, 4);
             }
             else
             {
-                return System.Numerics.Vector.IsHardwareAccelerated ? new Version(1, 0) : new Version(0, 1);
+                return global::System.Numerics.Vector.IsHardwareAccelerated ? new Version(1, 0) : new Version(0, 1);
             }
         }
 
@@ -176,9 +176,9 @@ namespace DotCompute.Core.Compute
         {
             try
             {
-                if (System.IO.File.Exists("/proc/meminfo"))
+                if (global::System.IO.File.Exists("/proc/meminfo"))
                 {
-                    var lines = System.IO.File.ReadAllLines("/proc/meminfo");
+                    var lines = global::System.IO.File.ReadAllLines("/proc/meminfo");
                     var availableLine = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:"));
                     if (availableLine != null)
                     {

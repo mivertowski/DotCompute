@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-// using System.Security.Permissions; // Commented out for .NET compatibility
+// using global::System.Security.Permissions; // Commented out for .NET compatibility
 using System.Text.Json;
 using DotCompute.Algorithms.Types.Security;
 using Microsoft.Extensions.Logging;

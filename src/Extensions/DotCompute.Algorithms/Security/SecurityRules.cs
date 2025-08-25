@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
+using global::System.Security.Cryptography;
+using global::System.Security.Cryptography.X509Certificates;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -256,7 +256,7 @@ public sealed class MetadataAnalysisSecurityRule : SecurityRule
     "System.Net",
     "System.Reflection.Emit",
     "Microsoft.Win32",
-    "System.Security.Cryptography"
+    "global::System.Security.Cryptography"
 };
 
     private static readonly HashSet<string> SuspiciousTypeNames = new(StringComparer.OrdinalIgnoreCase)

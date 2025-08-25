@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Security;
-using System.Security.Cryptography;
+using global::System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Security;

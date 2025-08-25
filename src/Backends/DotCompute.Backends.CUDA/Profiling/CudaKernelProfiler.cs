@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;

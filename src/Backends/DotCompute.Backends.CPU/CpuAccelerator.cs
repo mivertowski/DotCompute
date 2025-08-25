@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -75,7 +75,7 @@ public sealed class CpuAccelerator : BaseAccelerator
         };
 
         // Use AOT-compatible compiler when dynamic code compilation is not available
-        var coreCompiledKernel = System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled
+        var coreCompiledKernel = global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled
             ? await CpuKernelCompiler.CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false)
             : await new AotCpuKernelCompiler().CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false);
 
@@ -190,14 +190,14 @@ public sealed class CpuAccelerator : BaseAccelerator
         }
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
+    [global::System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static long GetLinuxPhysicalMemory()
     {
         try
         {
-            if (System.IO.File.Exists("/proc/meminfo"))
+            if (global::System.IO.File.Exists("/proc/meminfo"))
             {
-                var lines = System.IO.File.ReadAllLines("/proc/meminfo");
+                var lines = global::System.IO.File.ReadAllLines("/proc/meminfo");
                 var totalLine = lines.FirstOrDefault(l => l.StartsWith("MemTotal:", StringComparison.Ordinal));
                 if (totalLine != null)
                 {

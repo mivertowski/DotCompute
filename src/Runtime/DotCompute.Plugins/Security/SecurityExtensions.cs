@@ -100,7 +100,7 @@ public static class SecurityExtensions
         {
             typeof(System.Reflection.Assembly),
             typeof(System.AppDomain),
-            typeof(System.Runtime.InteropServices.Marshal),
+            typeof(global::System.Runtime.InteropServices.Marshal),
             typeof(System.Diagnostics.Process)
         };
 

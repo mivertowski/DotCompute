@@ -194,7 +194,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     {
         // Use kernel name, code hash, and optimization level for cache key
         var codeHash = definition.Code != null 
-            ? BitConverter.ToString(System.Security.Cryptography.SHA256.HashData(definition.Code)).Replace("-", "")
+            ? BitConverter.ToString(global::System.Security.Cryptography.SHA256.HashData(definition.Code)).Replace("-", "")
             : "empty";
         
         return $"{definition.Name}_{codeHash}_{options.OptimizationLevel}_{CompilerName}";

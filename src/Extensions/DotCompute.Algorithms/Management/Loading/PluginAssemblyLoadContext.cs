@@ -5,7 +5,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Runtime.Loader;
+using global::System.Runtime.Loader;
 
 namespace DotCompute.Algorithms.Management.Loading;
 

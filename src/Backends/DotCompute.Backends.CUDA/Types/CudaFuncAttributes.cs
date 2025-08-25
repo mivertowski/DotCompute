@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
-using System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices;
 
 namespace DotCompute.Backends.CUDA.Optimization.Types
 {

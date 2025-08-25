@@ -2,10 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.IO.Compression;
+using global::System.IO.Compression;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
+using global::System.Runtime.InteropServices;
+using global::System.Security.Cryptography;
 using System.Text.Json;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;

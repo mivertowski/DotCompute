@@ -3,8 +3,8 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Runtime.Intrinsics.X86;
+using global::System.Runtime.CompilerServices;
+using global::System.Runtime.Intrinsics.X86;
 using DotCompute.Algorithms.LinearAlgebra;
 
 namespace DotCompute.Algorithms.Optimized;
@@ -527,15 +527,15 @@ public static class AlgorithmSelector
     }
 
 
-    private static System.Numerics.Complex[] CreateRandomComplexArray(int size)
+    private static global::System.Numerics.Complex[] CreateRandomComplexArray(int size)
     {
-        var array = new System.Numerics.Complex[size];
+        var array = new global::System.Numerics.Complex[size];
         var random = new Random(42);
 
 
         for (var i = 0; i < size; i++)
         {
-            array[i] = new System.Numerics.Complex(random.NextDouble(), random.NextDouble());
+            array[i] = new global::System.Numerics.Complex(random.NextDouble(), random.NextDouble());
         }
 
 
@@ -597,7 +597,7 @@ public static class AlgorithmSelector
     }
 
 
-    private static double BenchmarkFFT(System.Numerics.Complex[] data, FFTStrategy strategy)
+    private static double BenchmarkFFT(global::System.Numerics.Complex[] data, FFTStrategy strategy)
     {
         var dataCopy = data.ToArray();
         var stopwatch = Stopwatch.StartNew();

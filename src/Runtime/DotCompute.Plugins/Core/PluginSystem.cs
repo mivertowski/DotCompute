@@ -3,7 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Runtime.Loader;
+using global::System.Runtime.Loader;
 using DotCompute.Plugins.Exceptions.Loading;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -409,7 +409,7 @@ public class PluginSystem : IDisposable
             }
 
             // Fall back to Activator.CreateInstance if dynamic code is available
-            if (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+            if (global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
             {
                 return Activator.CreateInstance(pluginType) as IBackendPlugin;
             }

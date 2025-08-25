@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
+using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
@@ -548,8 +548,8 @@ namespace DotCompute.Core.Memory.P2P
                 );
 
                 // Compare data byte by byte
-                var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(sourceData.AsSpan());
-                var destBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(destData.AsSpan());
+                var sourceBytes = global::System.Runtime.InteropServices.MemoryMarshal.AsBytes(sourceData.AsSpan());
+                var destBytes = global::System.Runtime.InteropServices.MemoryMarshal.AsBytes(destData.AsSpan());
 
                 if (!sourceBytes.SequenceEqual(destBytes))
                 {
@@ -631,8 +631,8 @@ namespace DotCompute.Core.Memory.P2P
                     );
 
                     // Compare samples
-                    var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(sourceData.AsSpan());
-                    var destBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(destData.AsSpan());
+                    var sourceBytes = global::System.Runtime.InteropServices.MemoryMarshal.AsBytes(sourceData.AsSpan());
+                    var destBytes = global::System.Runtime.InteropServices.MemoryMarshal.AsBytes(destData.AsSpan());
 
                     if (!sourceBytes.SequenceEqual(destBytes))
                     {
@@ -702,7 +702,7 @@ namespace DotCompute.Core.Memory.P2P
             await bufferSlice.CopyToHostAsync<T>(sampleData, 0, cancellationToken);
 
             // Simple checksum calculation (in production would use xxHash or similar)
-            var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(sampleData.AsSpan());
+            var bytes = global::System.Runtime.InteropServices.MemoryMarshal.AsBytes(sampleData.AsSpan());
             ulong checksum = 0;
 
 
@@ -714,7 +714,7 @@ namespace DotCompute.Core.Memory.P2P
 
                 if (chunk.Length >= 8)
                 {
-                    checksum ^= System.Runtime.InteropServices.MemoryMarshal.Read<ulong>(chunk);
+                    checksum ^= global::System.Runtime.InteropServices.MemoryMarshal.Read<ulong>(chunk);
                 }
                 else
                 {

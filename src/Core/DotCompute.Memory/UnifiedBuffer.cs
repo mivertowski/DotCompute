@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using global::System.Runtime.CompilerServices;
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 
@@ -917,7 +917,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
     /// <returns>A view of this buffer as the new type.</returns>
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
-        var newLength = Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
+        var newLength = Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
         return new UnifiedBufferView<T, TNew>(this, newLength);
     }
 
@@ -1059,7 +1059,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
         }
 
         var typedSource = MemoryMarshal.Cast<TSource, T>(source.Span);
-        var elementOffset = (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+        var elementOffset = (int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
 
         await WriteAsync(typedSource.ToArray(), elementOffset, cancellationToken).ConfigureAwait(false);
     }
@@ -1082,7 +1082,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
             throw new ArgumentException($"Destination type {typeof(TDestination)} does not match buffer type {typeof(T)}");
         }
 
-        var elementOffset = (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+        var elementOffset = (int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
         var elementCount = destination.Length;
 
         var sourceData = await ReadAsync(elementOffset, elementCount, cancellationToken).ConfigureAwait(false);
@@ -1155,7 +1155,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
 
     public IAccelerator Accelerator => _parent.Accelerator;
     public int Length => _length;
-    public long SizeInBytes => _length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+    public long SizeInBytes => _length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
     public DotCompute.Abstractions.Memory.MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
 
@@ -1167,7 +1167,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
         }
 
         var typedSource = MemoryMarshal.Cast<TSource, T>(source.Span);
-        return _parent.WriteAsync(typedSource.ToArray(), _offset + (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<T>()), cancellationToken);
+        return _parent.WriteAsync(typedSource.ToArray(), _offset + (int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>()), cancellationToken);
     }
 
     public ValueTask CopyToHostAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged
@@ -1177,7 +1177,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
             throw new ArgumentException($"Destination type {typeof(TDestination)} does not match buffer type {typeof(T)}");
         }
 
-        return _parent.CopyToHostAsync(destination, offset + _offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken);
+        return _parent.CopyToHostAsync(destination, offset + _offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken);
     }
 
     public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
@@ -1191,7 +1191,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
-        var newLength = _length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
+        var newLength = _length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
         return new UnifiedBufferView<T, TNew>(_parent, newLength);
     }
 
@@ -1227,7 +1227,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
     private static async ValueTask CopyToAsyncWithOffsetImplAsync(ValueTask<T[]> readTask, IUnifiedMemoryBuffer<T> destination, int destinationOffset, CancellationToken cancellationToken)
     {
         var data = await readTask.ConfigureAwait(false);
-        await destination.CopyFromHostAsync<T>(data.AsMemory(), destinationOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken).ConfigureAwait(false);
+        await destination.CopyFromHostAsync<T>(data.AsMemory(), destinationOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken).ConfigureAwait(false);
     }
 
     public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
@@ -1297,7 +1297,7 @@ where TNew : unmanaged
 
     public IAccelerator Accelerator => _parent.Accelerator;
     public int Length => _length;
-    public long SizeInBytes => _length * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
+    public long SizeInBytes => _length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
     public DotCompute.Abstractions.Memory.MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
 
@@ -1311,9 +1311,9 @@ where TNew : unmanaged
         // Convert from TNew to TOriginal
         var sourceSpan = MemoryMarshal.Cast<TSource, TNew>(source.Span);
         var originalSpan = MemoryMarshal.Cast<TNew, TOriginal>(sourceSpan);
-        var elementOffset = (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
+        var elementOffset = (int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
 
-        return _parent.CopyFromHostAsync<TOriginal>(originalSpan.ToArray().AsMemory(), elementOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>(), cancellationToken);
+        return _parent.CopyFromHostAsync<TOriginal>(originalSpan.ToArray().AsMemory(), elementOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>(), cancellationToken);
     }
 
     public async ValueTask CopyToHostAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged
@@ -1323,12 +1323,12 @@ where TNew : unmanaged
             throw new ArgumentException($"Destination type {typeof(TDestination)} does not match buffer type {typeof(TNew)}");
         }
 
-        var elementOffset = (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
+        var elementOffset = (int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
         var elementCount = destination.Length;
 
         // Calculate how many TOriginal elements we need
-        var originalElementCount = (elementCount * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
-        var originalOffset = (elementOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
+        var originalElementCount = (elementCount * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
+        var originalOffset = (elementOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
 
         var originalData = await _parent.ReadAsync(originalOffset, originalElementCount, cancellationToken);
         var newSpan = MemoryMarshal.Cast<TOriginal, TNew>(originalData.AsSpan());
@@ -1344,8 +1344,8 @@ where TNew : unmanaged
         ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, _length);
 
         // Create a slice view by adjusting the parent offset
-        var originalOffset = (offset * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
-        var originalLength = (length * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
+        var originalOffset = (offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
+        var originalLength = (length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
 
         // The slice is wrapped by the view which manages its lifetime
 #pragma warning disable CA2000 // Dispose objects before losing scope
@@ -1356,7 +1356,7 @@ where TNew : unmanaged
 
     public IUnifiedMemoryBuffer<TNew2> AsType<TNew2>() where TNew2 : unmanaged
     {
-        var newLength = _length * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew2>();
+        var newLength = _length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>() / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew2>();
         return new UnifiedBufferView<TOriginal, TNew2>(_parent, newLength);
     }
 
@@ -1378,8 +1378,8 @@ where TNew : unmanaged
         ArgumentOutOfRangeException.ThrowIfGreaterThan(sourceOffset + count, _length);
 
         var tempData = new TNew[count];
-        await CopyToHostAsync<TNew>(tempData.AsMemory(), sourceOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>(), cancellationToken);
-        await destination.CopyFromHostAsync<TNew>(tempData.AsMemory(), destinationOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>(), cancellationToken);
+        await CopyToHostAsync<TNew>(tempData.AsMemory(), sourceOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>(), cancellationToken);
+        await destination.CopyFromHostAsync<TNew>(tempData.AsMemory(), destinationOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>(), cancellationToken);
     }
 
     public async ValueTask FillAsync(TNew value, CancellationToken cancellationToken = default)
@@ -1397,7 +1397,7 @@ where TNew : unmanaged
 
         var fillData = new TNew[count];
         Array.Fill(fillData, value);
-        await CopyFromHostAsync<TNew>(fillData.AsMemory(), offset * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>(), cancellationToken);
+        await CopyFromHostAsync<TNew>(fillData.AsMemory(), offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>(), cancellationToken);
     }
 
     public DotCompute.Abstractions.MappedMemory<TNew> Map(DotCompute.Abstractions.MapMode mode = DotCompute.Abstractions.MapMode.ReadWrite)

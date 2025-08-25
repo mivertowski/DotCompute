@@ -12,7 +12,7 @@ namespace DotCompute.Generators.Backend.CPU.Interfaces;
 public interface IVectorOperationGenerator
 {
     /// <summary>
-    /// Generates SIMD operations using System.Numerics.Vector.
+    /// Generates SIMD operations using global::System.Numerics.Vector.
     /// </summary>
     void GenerateSimdOperations(StringBuilder sb, VectorizationInfo vectorizationInfo);
     
