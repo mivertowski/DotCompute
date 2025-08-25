@@ -51,7 +51,7 @@ namespace DotCompute.Core.Compute.Accelerators
         /// <summary>
         /// Gets the memory manager for this accelerator.
         /// </summary>
-        public IMemoryManager Memory => _memoryManager;
+        public IUnifiedMemoryManager Memory => _memoryManager;
 
         /// <summary>
         /// Gets the accelerator context.

@@ -415,7 +415,7 @@ namespace DotCompute.Core.Execution
                     {
                         Name = $"arg_{index}",
                         Value = buffer,
-                        Type = typeof(AbstractionsMemory.IBuffer<T>),
+                        Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
                         IsDeviceMemory = true,
                         MemoryBuffer = buffer as AbstractionsMemory.IMemoryBuffer
                     })

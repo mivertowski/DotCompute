@@ -13,7 +13,7 @@ namespace DotCompute.Linq.Operators.Compilation;
 /// <summary>
 /// Accelerator-based kernel compiler that uses the accelerator's native compilation capabilities.
 /// </summary>
-internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IKernelCompiler
+internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKernelCompiler
 {
     private readonly IAccelerator _accelerator;
 
@@ -63,18 +63,18 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IKernelCompil
     /// </summary>
     /// <param name="definition">The kernel definition to validate.</param>
     /// <returns>The validation result.</returns>
-    public DotCompute.Abstractions.ValidationResult Validate(DotCompute.Abstractions.Kernels.KernelDefinition definition)
+    public DotCompute.Abstractions.UnifiedValidationResult Validate(DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
         if (definition == null)
         {
-            return DotCompute.Abstractions.ValidationResult.Failure("Kernel definition cannot be null");
+            return DotCompute.Abstractions.UnifiedValidationResult.Failure("Kernel definition cannot be null");
         }
 
         if (string.IsNullOrEmpty(definition.Name))
         {
-            return DotCompute.Abstractions.ValidationResult.Failure("Kernel name cannot be empty");
+            return DotCompute.Abstractions.UnifiedValidationResult.Failure("Kernel name cannot be empty");
         }
 
-        return DotCompute.Abstractions.ValidationResult.Success();
+        return DotCompute.Abstractions.UnifiedValidationResult.Success();
     }
 }

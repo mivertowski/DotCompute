@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Concurrent;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Execution.Memory
 {
@@ -14,7 +15,7 @@ namespace DotCompute.Core.Execution.Memory
     public sealed class DeviceBufferPool : IAsyncDisposable
     {
         private readonly string _deviceId;
-        private readonly ConcurrentQueue<AbstractionsMemory.IMemoryBuffer> _availableBuffers;
+        private readonly ConcurrentQueue<AbstractionsMemory.IUnifiedMemoryBuffer> _availableBuffers;
         private readonly ConcurrentDictionary<long, int> _allocationSizes;
         private long _totalAllocated;
         private long _totalAvailable;
@@ -28,7 +29,7 @@ namespace DotCompute.Core.Execution.Memory
         public DeviceBufferPool(string deviceId)
         {
             _deviceId = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
-            _availableBuffers = new ConcurrentQueue<AbstractionsMemory.IMemoryBuffer>();
+            _availableBuffers = new ConcurrentQueue<AbstractionsMemory.IUnifiedMemoryBuffer>();
             _allocationSizes = new ConcurrentDictionary<long, int>();
         }
 
@@ -47,7 +48,7 @@ namespace DotCompute.Core.Execution.Memory
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A memory buffer that meets the specified requirements.</returns>
         /// <exception cref="ObjectDisposedException">Thrown when the pool has been disposed.</exception>
-        public async ValueTask<AbstractionsMemory.IMemoryBuffer> AllocateBufferAsync(
+        public async ValueTask<AbstractionsMemory.IUnifiedMemoryBuffer> AllocateBufferAsync(
             long sizeInBytes,
             AbstractionsMemory.MemoryOptions options,
             CancellationToken cancellationToken = default)
@@ -80,7 +81,7 @@ namespace DotCompute.Core.Execution.Memory
         /// If the pool has been disposed, the buffer is disposed immediately.
         /// </summary>
         /// <param name="buffer">The buffer to return to the pool.</param>
-        public void ReturnBuffer(AbstractionsMemory.IMemoryBuffer buffer)
+        public void ReturnBuffer(AbstractionsMemory.IUnifiedMemoryBuffer buffer)
         {
             if (_disposed || buffer == null)
             {

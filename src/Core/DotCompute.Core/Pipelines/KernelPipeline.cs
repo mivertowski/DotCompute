@@ -103,7 +103,7 @@ namespace DotCompute.Core.Pipelines
                 {
                     throw new PipelineValidationException(
                         "Pipeline validation failed",
-                        validationResult.Errors ?? new List<ValidationError>(),
+                        validationResult.Errors ?? new List<ValidationIssue>(),
                         validationResult.Warnings);
                 }
 
@@ -254,13 +254,13 @@ namespace DotCompute.Core.Pipelines
         /// <inheritdoc/>
         public PipelineValidationResult Validate()
         {
-            var errors = new List<ValidationError>();
+            var errors = new List<ValidationIssue>();
             var warnings = new List<ValidationWarning>();
 
             // Validate basic structure
             if (_stages.Count == 0)
             {
-                errors.Add(new ValidationError
+                errors.Add(new ValidationIssue
                 {
                     Code = "NO_STAGES",
                     Message = "Pipeline must contain at least one stage",
@@ -277,7 +277,7 @@ namespace DotCompute.Core.Pipelines
                 {
                     foreach (var error in stageValidation.Errors)
                     {
-                        errors.Add(new ValidationError
+                        errors.Add(new ValidationIssue
                         {
                             Code = $"STAGE_ERROR_{stage.Id}",
                             Message = $"Stage '{stage.Name}': {error}",
@@ -304,7 +304,7 @@ namespace DotCompute.Core.Pipelines
                 {
                     if (!stageIds.Contains(dep))
                     {
-                        errors.Add(new ValidationError
+                        errors.Add(new ValidationIssue
                         {
                             Code = "INVALID_DEPENDENCY",
                             Message = $"Stage '{stage.Name}' depends on non-existent stage '{dep}'",
@@ -318,7 +318,7 @@ namespace DotCompute.Core.Pipelines
             // Check for circular dependencies
             if (HasCircularDependencies())
             {
-                errors.Add(new ValidationError
+                errors.Add(new ValidationIssue
                 {
                     Code = "CIRCULAR_DEPENDENCY",
                     Message = "Pipeline contains circular dependencies",

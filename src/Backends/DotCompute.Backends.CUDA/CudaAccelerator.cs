@@ -172,7 +172,7 @@ namespace DotCompute.Backends.CUDA
             }
         }
 
-        private static IMemoryManager CreateMemoryAdapter(int deviceId, ILogger logger)
+        private static IUnifiedMemoryManager CreateMemoryAdapter(int deviceId, ILogger logger)
         {
             var context = new CudaContext(deviceId);
             var memoryManager = new CudaMemoryManager(context, logger);

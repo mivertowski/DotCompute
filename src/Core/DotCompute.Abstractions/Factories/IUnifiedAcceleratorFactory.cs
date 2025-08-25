@@ -127,6 +127,16 @@ public class AcceleratorConfiguration
     public MemoryAllocationStrategy MemoryStrategy { get; set; } = MemoryAllocationStrategy.Default;
     
     /// <summary>
+    /// Gets or sets whether to enable NUMA optimization for CPU.
+    /// </summary>
+    public bool EnableNumaOptimization { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the performance profile.
+    /// </summary>
+    public PerformanceProfile PerformanceProfile { get; set; } = PerformanceProfile.Balanced;
+    
+    /// <summary>
     /// Gets or sets custom properties for backend-specific configuration.
     /// </summary>
     public Dictionary<string, object> CustomProperties { get; set; } = new();
@@ -146,6 +156,11 @@ public enum MemoryAllocationStrategy
     /// Pooled memory allocation.
     /// </summary>
     Pooled,
+    
+    /// <summary>
+    /// Optimized pooled memory allocation with lock-free structures.
+    /// </summary>
+    OptimizedPooled,
     
     /// <summary>
     /// Unified memory allocation.

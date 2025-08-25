@@ -479,7 +479,7 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Copies data from host to device asynchronously.
         /// </summary>
-        public static async Task CopyToDeviceAsync(IntPtr hostPtr, IMemoryBuffer deviceBuffer, ulong sizeInBytes, CancellationToken cancellationToken = default)
+        public static async Task CopyToDeviceAsync(IntPtr hostPtr, IUnifiedMemoryBuffer deviceBuffer, ulong sizeInBytes, CancellationToken cancellationToken = default)
         {
             if (deviceBuffer is CudaMemoryBuffer cudaBuffer)
             {
@@ -501,7 +501,7 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Allocates memory on this device asynchronously.
         /// </summary>
-        public async Task<IMemoryBuffer> AllocateAsync(ulong sizeInBytes) => await Memory.AllocateAsync((long)sizeInBytes).ConfigureAwait(false);
+        public async Task<IUnifiedMemoryBuffer> AllocateAsync(ulong sizeInBytes) => await Memory.AllocateAsync((long)sizeInBytes).ConfigureAwait(false);
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 

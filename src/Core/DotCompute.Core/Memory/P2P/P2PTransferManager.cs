@@ -136,8 +136,8 @@ namespace DotCompute.Core.Memory.P2P
         /// Executes a high-performance P2P transfer with full optimization and validation.
         /// </summary>
         public async Task<P2PTransferResult> ExecuteP2PTransferAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             P2PTransferOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -298,8 +298,8 @@ namespace DotCompute.Core.Memory.P2P
         /// Executes a multi-buffer scatter operation with P2P optimization.
         /// </summary>
         public async Task<P2PScatterResult> ExecuteP2PScatterAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T>[] destinationBuffers,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T>[] destinationBuffers,
             P2PScatterOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -360,8 +360,8 @@ namespace DotCompute.Core.Memory.P2P
         /// Executes a multi-buffer gather operation with P2P optimization.
         /// </summary>
         public async Task<P2PGatherResult> ExecuteP2PGatherAsync<T>(
-            IBuffer<T>[] sourceBuffers,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T>[] sourceBuffers,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             P2PGatherOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -454,8 +454,8 @@ namespace DotCompute.Core.Memory.P2P
         #region Private Implementation
 
         private async Task ExecuteOptimizedTransferAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             P2PTransferPlan transferPlan,
             P2PTransferSession session,
             CancellationToken cancellationToken) where T : unmanaged
@@ -484,8 +484,8 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private static async Task ExecuteDirectP2PTransferAsync<T>(
-            IBuffer<T> source,
-            IBuffer<T> destination,
+            IUnifiedMemoryBuffer<T> source,
+            IUnifiedMemoryBuffer<T> destination,
             P2PTransferPlan plan,
             CancellationToken cancellationToken) where T : unmanaged
             // Single direct P2P transfer
@@ -493,8 +493,8 @@ namespace DotCompute.Core.Memory.P2P
             => await source.CopyToAsync(destination, cancellationToken);
 
         private static async Task ExecuteChunkedP2PTransferAsync<T>(
-            IBuffer<T> source,
-            IBuffer<T> destination,
+            IUnifiedMemoryBuffer<T> source,
+            IUnifiedMemoryBuffer<T> destination,
             P2PTransferPlan plan,
             CancellationToken cancellationToken) where T : unmanaged
         {
@@ -526,8 +526,8 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private async Task ExecutePipelinedP2PTransferAsync<T>(
-            IBuffer<T> source,
-            IBuffer<T> destination,
+            IUnifiedMemoryBuffer<T> source,
+            IUnifiedMemoryBuffer<T> destination,
             P2PTransferPlan plan,
             CancellationToken cancellationToken) where T : unmanaged
         {
@@ -537,8 +537,8 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private static async Task ExecuteHostMediatedTransferAsync<T>(
-            IBuffer<T> source,
-            IBuffer<T> destination,
+            IUnifiedMemoryBuffer<T> source,
+            IUnifiedMemoryBuffer<T> destination,
             P2PTransferPlan plan,
             CancellationToken cancellationToken) where T : unmanaged
         {
@@ -549,8 +549,8 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private async Task<P2PTransferResult> ExecuteScatterChunkAsync<T>(
-            IBuffer<T> source,
-            IBuffer<T> destination,
+            IUnifiedMemoryBuffer<T> source,
+            IUnifiedMemoryBuffer<T> destination,
             P2PTransferChunk chunk,
             P2PTransferOptions options,
             CancellationToken cancellationToken) where T : unmanaged
@@ -563,8 +563,8 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private async Task<P2PTransferResult> ExecuteGatherChunkAsync<T>(
-            IBuffer<T> source,
-            IBuffer<T> destination,
+            IUnifiedMemoryBuffer<T> source,
+            IUnifiedMemoryBuffer<T> destination,
             P2PTransferChunk chunk,
             P2PTransferOptions options,
             CancellationToken cancellationToken) where T : unmanaged

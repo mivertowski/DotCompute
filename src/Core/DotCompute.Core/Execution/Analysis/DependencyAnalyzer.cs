@@ -46,8 +46,8 @@ namespace DotCompute.Core.Execution.Analysis
         /// Thrown when <paramref name="inputBuffers"/> or <paramref name="outputBuffers"/> is null.
         /// </exception>
         public async ValueTask<DependencyGraph> AnalyzeDataDependenciesAsync<T>(
-            IBuffer<T>[] inputBuffers,
-            IBuffer<T>[] outputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] outputBuffers,
             CancellationToken cancellationToken) where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(inputBuffers);
@@ -173,7 +173,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <param name="buffer1">The first buffer to compare.</param>
         /// <param name="buffer2">The second buffer to compare.</param>
         /// <returns><c>true</c> if the buffers overlap in memory; otherwise, <c>false</c>.</returns>
-        private static bool BuffersOverlap<T>(IBuffer<T> buffer1, IBuffer<T> buffer2) where T : unmanaged
+        private static bool BuffersOverlap<T>(IUnifiedMemoryBuffer<T> buffer1, IUnifiedMemoryBuffer<T> buffer2) where T : unmanaged
             // Simplified overlap detection - real implementation would check memory addresses
             // For now, assume buffers don't overlap unless they're the same reference
             => ReferenceEquals(buffer1, buffer2);

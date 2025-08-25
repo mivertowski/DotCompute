@@ -120,7 +120,7 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Gets or sets the memory buffer if applicable.
         /// </summary>
-        public IMemoryBuffer? MemoryBuffer { get; init; }
+        public IUnifiedMemoryBuffer? MemoryBuffer { get; init; }
 
         /// <summary>
         /// Gets or sets the size in bytes for raw buffers.

@@ -125,7 +125,7 @@ public sealed partial class MetalBackend : IDisposable
     /// <summary>
     /// Copy data to a Metal buffer asynchronously
     /// </summary>
-    public Task CopyToBufferAsync<T>(IBuffer<T> buffer, T[] data) where T : unmanaged
+    public Task CopyToBufferAsync<T>(IUnifiedMemoryBuffer<T> buffer, T[] data) where T : unmanaged
     {
         var accelerator = GetDefaultAccelerator();
         if (accelerator == null)
@@ -139,7 +139,7 @@ public sealed partial class MetalBackend : IDisposable
     /// <summary>
     /// Copy data from a Metal buffer asynchronously
     /// </summary>
-    public Task CopyFromBufferAsync<T>(IBuffer<T> buffer, T[] data) where T : unmanaged
+    public Task CopyFromBufferAsync<T>(IUnifiedMemoryBuffer<T> buffer, T[] data) where T : unmanaged
     {
         var accelerator = GetDefaultAccelerator();
         if (accelerator == null)

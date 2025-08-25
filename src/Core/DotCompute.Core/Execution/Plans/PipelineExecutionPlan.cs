@@ -77,13 +77,13 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the input buffers for this stage.
         /// Buffers containing the input data that this stage will process.
         /// </summary>
-        public required AbstractionsMemory.IBuffer<T>[] InputBuffers { get; set; }
+        public required AbstractionsMemory.IUnifiedMemoryBuffer<T>[] InputBuffers { get; set; }
 
         /// <summary>
         /// Gets or sets the output buffers for this stage.
         /// Buffers where this stage will write its computed results.
         /// </summary>
-        public required AbstractionsMemory.IBuffer<T>[] OutputBuffers { get; set; }
+        public required AbstractionsMemory.IUnifiedMemoryBuffer<T>[] OutputBuffers { get; set; }
 
         /// <summary>
         /// Gets or sets the processing time estimate for this stage in milliseconds.

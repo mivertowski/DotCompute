@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Runtime;
 
@@ -59,7 +60,7 @@ public static class ServiceCollectionExtensions
         // services.TryAddSingleton<IAcceleratorManager, DefaultAcceleratorManager>();
 
         // Register accelerator factory for proper DI-based creation
-        services.TryAddSingleton<IAcceleratorFactory, DefaultAcceleratorFactory>();
+        services.TryAddSingleton<IUnifiedAcceleratorFactory, DefaultAcceleratorFactory>();
 
         // Register memory services
         services.TryAddTransient<IMemoryPoolService, MemoryPoolService>();
@@ -115,10 +116,10 @@ public static class ServiceCollectionExtensions
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddDotComputeRuntimeWithFactory<TFactory>(
         this IServiceCollection services)
-        where TFactory : class, IAcceleratorFactory
+        where TFactory : class, IUnifiedAcceleratorFactory
     {
         _ = services.AddDotComputeRuntime();
-        _ = services.Replace(ServiceDescriptor.Singleton<IAcceleratorFactory, TFactory>());
+        _ = services.Replace(ServiceDescriptor.Singleton<IUnifiedAcceleratorFactory, TFactory>());
         return services;
     }
 

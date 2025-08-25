@@ -18,9 +18,9 @@ public static class MetalValidation
     /// </summary>
     /// <param name="logger">Logger for diagnostics.</param>
     /// <returns>Validation result with details.</returns>
-    public static ValidationResult ValidateConfiguration(ILogger? logger = null)
+    public static UnifiedValidationResult ValidateConfiguration(ILogger? logger = null)
     {
-        var result = new ValidationResult();
+        var result = new UnifiedValidationResult();
 
 
         try
@@ -116,9 +116,9 @@ public static class MetalValidation
     /// <param name="deviceIndex">Index of the device to validate.</param>
     /// <param name="logger">Logger for diagnostics.</param>
     /// <returns>Validation result for the device.</returns>
-    public static ValidationResult ValidateDevice(int deviceIndex, ILogger? logger = null)
+    public static UnifiedValidationResult ValidateDevice(int deviceIndex, ILogger? logger = null)
     {
-        var result = new ValidationResult();
+        var result = new UnifiedValidationResult();
         var device = IntPtr.Zero;
 
         try
@@ -189,9 +189,9 @@ public static class MetalValidation
     /// </summary>
     /// <param name="logger">Logger for diagnostics.</param>
     /// <returns>Validation result for basic functionality.</returns>
-    public static ValidationResult TestBasicFunctionality(ILogger? logger = null)
+    public static UnifiedValidationResult TestBasicFunctionality(ILogger? logger = null)
     {
-        var result = new ValidationResult();
+        var result = new UnifiedValidationResult();
         var device = IntPtr.Zero;
         var commandQueue = IntPtr.Zero;
         var buffer = IntPtr.Zero;
@@ -277,9 +277,9 @@ public static class MetalValidation
     /// <param name="device">Metal device handle.</param>
     /// <param name="logger">Logger for diagnostics.</param>
     /// <returns>Validation result for shader compilation.</returns>
-    public static ValidationResult TestShaderCompilation(IntPtr device, ILogger? logger = null)
+    public static UnifiedValidationResult TestShaderCompilation(IntPtr device, ILogger? logger = null)
     {
-        var result = new ValidationResult();
+        var result = new UnifiedValidationResult();
         var library = IntPtr.Zero;
         var function = IntPtr.Zero;
         var pipelineState = IntPtr.Zero;
@@ -375,7 +375,7 @@ public static class MetalValidation
 /// <summary>
 /// Represents the result of a validation operation.
 /// </summary>
-public sealed class ValidationResult
+public sealed class UnifiedValidationResult
 {
     private readonly List<string> _errors = [];
     private readonly List<string> _warnings = [];
@@ -451,7 +451,7 @@ public sealed class ValidationResult
     /// Merges another validation result into this one.
     /// </summary>
     /// <param name="other">The validation result to merge.</param>
-    public void Merge(ValidationResult other)
+    public void Merge(UnifiedValidationResult other)
     {
         if (other == null)
         {
@@ -516,5 +516,5 @@ public sealed class ValidationResult
     /// <summary>
     /// Returns a string representation of the validation result.
     /// </summary>
-    public override string ToString() => $"ValidationResult: {(IsValid ? "Valid" : "Invalid")} - Errors: {ErrorCount}, Warnings: {WarningCount}";
+    public override string ToString() => $"UnifiedValidationResult: {(IsValid ? "Valid" : "Invalid")} - Errors: {ErrorCount}, Warnings: {WarningCount}";
 }

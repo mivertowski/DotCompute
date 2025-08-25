@@ -78,11 +78,11 @@ public class QueryCompiler : IQueryCompiler
     }
 
     /// <inheritdoc/>
-    public DotCompute.Abstractions.ValidationResult Validate(Expression expression)
+    public DotCompute.Abstractions.UnifiedValidationResult Validate(Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
 
-        var errors = new List<ValidationError>();
+        var errors = new List<ValidationIssue>();
         var validator = new ExpressionValidator();
 
         try
@@ -92,16 +92,16 @@ public class QueryCompiler : IQueryCompiler
         catch (Exception ex)
         {
             _logger.LogError(ex, "Expression validation failed with exception");
-            errors.Add(new ValidationError("VALIDATION_ERROR", ex.Message, expression));
+            errors.Add(new ValidationIssue("VALIDATION_ERROR", ex.Message, expression));
         }
 
         if (errors.Count > 0)
         {
             var message = $"Expression validation failed with {errors.Count} errors";
-            return DotCompute.Abstractions.ValidationResult.Failure(message);
+            return DotCompute.Abstractions.UnifiedValidationResult.Failure(message);
         }
 
-        return DotCompute.Abstractions.ValidationResult.Success();
+        return DotCompute.Abstractions.UnifiedValidationResult.Success();
     }
 
     /// <summary>
@@ -408,9 +408,9 @@ public class QueryCompiler : IQueryCompiler
     /// </summary>
     private class ExpressionValidator : ExpressionVisitor
     {
-        private List<ValidationError> _errors = [];
+        private List<ValidationIssue> _errors = [];
 
-        public void Visit(Expression expression, List<ValidationError> errors)
+        public void Visit(Expression expression, List<ValidationIssue> errors)
         {
             _errors = errors;
             _ = base.Visit(expression);
@@ -421,12 +421,12 @@ public class QueryCompiler : IQueryCompiler
             // Check for unsupported method calls
             if (node.Method.DeclaringType?.Namespace?.StartsWith("System.IO") == true)
             {
-                _errors.Add(new ValidationError("UNSUPPORTED_IO", "I/O operations are not supported in GPU queries", node));
+                _errors.Add(new ValidationIssue("UNSUPPORTED_IO", "I/O operations are not supported in GPU queries", node));
             }
 
             if (node.Method.DeclaringType?.Namespace?.StartsWith("System.Net") == true)
             {
-                _errors.Add(new ValidationError("UNSUPPORTED_NETWORK", "Network operations are not supported in GPU queries", node));
+                _errors.Add(new ValidationIssue("UNSUPPORTED_NETWORK", "Network operations are not supported in GPU queries", node));
             }
 
             return base.VisitMethodCall(node);
@@ -437,7 +437,7 @@ public class QueryCompiler : IQueryCompiler
             // Check for unsupported types
             if (!IsGpuCompatibleType(node.Type))
             {
-                _errors.Add(new ValidationError("UNSUPPORTED_TYPE", $"Type {node.Type} is not GPU-compatible", node));
+                _errors.Add(new ValidationIssue("UNSUPPORTED_TYPE", $"Type {node.Type} is not GPU-compatible", node));
             }
 
             return base.VisitNew(node);

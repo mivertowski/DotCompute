@@ -17,7 +17,7 @@ public sealed class PipelineValidationException : PipelineException
     /// Gets the validation errors that caused the exception.
     /// These errors must be resolved before the pipeline can execute.
     /// </summary>
-    public IReadOnlyList<ValidationError> Errors { get; }
+    public IReadOnlyList<ValidationIssue> Errors { get; }
 
     /// <summary>
     /// Gets the validation warnings encountered during validation.
@@ -63,7 +63,7 @@ public sealed class PipelineValidationException : PipelineException
     /// <param name="warnings">The validation warnings.</param>
     public PipelineValidationException(
         string message,
-        IReadOnlyList<ValidationError> errors,
+        IReadOnlyList<ValidationIssue> errors,
         IReadOnlyList<ValidationWarning>? warnings = null)
         : base(message, "PIPELINE_VALIDATION_FAILED")
     {

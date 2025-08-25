@@ -8,7 +8,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
     /// <summary>
     /// Represents a CUDA unified memory buffer accessible from both host and device.
     /// </summary>
-    public class UnifiedMemoryBuffer : IMemoryBuffer
+    public class UnifiedMemoryBuffer : IUnifiedMemoryBuffer
     {
         /// <summary>
         /// Gets the pointer to the unified memory.

@@ -118,7 +118,7 @@ internal class GenericOptimizedKernel : Base.OptimizedKernelBase
             scaleFactor = (float)i;
         }
 
-        if (arguments.Arguments[0] is IMemoryBuffer inputBuffer && arguments.Arguments[2] is IMemoryBuffer resultBuffer)
+        if (arguments.Arguments[0] is IUnifiedMemoryBuffer inputBuffer && arguments.Arguments[2] is IUnifiedMemoryBuffer resultBuffer)
         {
             var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
             var inputData = new float[elementCount];
@@ -150,8 +150,8 @@ internal class GenericOptimizedKernel : Base.OptimizedKernelBase
     {
         // Generic element-wise operation - just copy input to output as fallback
         if (arguments.Arguments.Count >= 2 &&
-            arguments.Arguments[0] is IMemoryBuffer inputBuffer &&
-            arguments.Arguments[1] is IMemoryBuffer outputBuffer)
+            arguments.Arguments[0] is IUnifiedMemoryBuffer inputBuffer &&
+            arguments.Arguments[1] is IUnifiedMemoryBuffer outputBuffer)
         {
             var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
             var data = new float[elementCount];

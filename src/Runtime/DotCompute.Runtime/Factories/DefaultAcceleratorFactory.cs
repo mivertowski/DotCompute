@@ -16,7 +16,7 @@ namespace DotCompute.Runtime.Factories;
 /// <summary>
 /// Default implementation of accelerator factory with comprehensive DI support
 /// </summary>
-public class DefaultAcceleratorFactory : IAcceleratorFactory, IDisposable
+public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DefaultAcceleratorFactory> _logger;

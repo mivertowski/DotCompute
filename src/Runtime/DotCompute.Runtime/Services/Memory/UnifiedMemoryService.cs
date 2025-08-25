@@ -13,15 +13,15 @@ namespace DotCompute.Runtime.Services.Memory;
 public class UnifiedMemoryService : IUnifiedMemoryService
 {
     private readonly ILogger<UnifiedMemoryService> _logger;
-    private readonly ConcurrentDictionary<IMemoryBuffer, HashSet<string>> _bufferAccelerators = new();
-    private readonly ConcurrentDictionary<IMemoryBuffer, MemoryCoherenceStatus> _coherenceStatus = new();
+    private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, HashSet<string>> _bufferAccelerators = new();
+    private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, MemoryCoherenceStatus> _coherenceStatus = new();
 
     public UnifiedMemoryService(ILogger<UnifiedMemoryService> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<IMemoryBuffer> AllocateUnifiedAsync(long sizeInBytes, params string[] acceleratorIds)
+    public async Task<IUnifiedMemoryBuffer> AllocateUnifiedAsync(long sizeInBytes, params string[] acceleratorIds)
     {
         ArgumentNullException.ThrowIfNull(acceleratorIds);
 
@@ -43,7 +43,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
         return buffer;
     }
 
-    public async Task MigrateAsync(IMemoryBuffer buffer, string sourceAcceleratorId, string targetAcceleratorId)
+    public async Task MigrateAsync(IUnifiedMemoryBuffer buffer, string sourceAcceleratorId, string targetAcceleratorId)
     {
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceAcceleratorId);
@@ -63,7 +63,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
         _coherenceStatus[buffer] = MemoryCoherenceStatus.Coherent;
     }
 
-    public async Task SynchronizeCoherenceAsync(IMemoryBuffer buffer, params string[] acceleratorIds)
+    public async Task SynchronizeCoherenceAsync(IUnifiedMemoryBuffer buffer, params string[] acceleratorIds)
     {
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentNullException.ThrowIfNull(acceleratorIds);
@@ -76,7 +76,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
         _coherenceStatus[buffer] = MemoryCoherenceStatus.Coherent;
     }
 
-    public MemoryCoherenceStatus GetCoherenceStatus(IMemoryBuffer buffer)
+    public MemoryCoherenceStatus GetCoherenceStatus(IUnifiedMemoryBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(buffer);
 

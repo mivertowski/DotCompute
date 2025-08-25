@@ -39,9 +39,9 @@ internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
     /// <exception cref="ArgumentException">Thrown when arguments are invalid or insufficient.</exception>
     /// <remarks>
     /// Requires 3 arguments:
-    /// - Argument 0: Input vector A (IMemoryBuffer)
-    /// - Argument 1: Input vector B (IMemoryBuffer)
-    /// - Argument 2: Output vector (IMemoryBuffer)
+    /// - Argument 0: Input vector A (IUnifiedMemoryBuffer)
+    /// - Argument 1: Input vector B (IUnifiedMemoryBuffer)
+    /// - Argument 2: Output vector (IUnifiedMemoryBuffer)
     /// </remarks>
     public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
@@ -52,9 +52,9 @@ internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
             throw new ArgumentException("Vector add requires 3 arguments: input A, input B, output");
         }
 
-        var bufferA = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var bufferB = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
-        var bufferResult = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
+        var bufferA = arguments.Arguments[0] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IUnifiedMemoryBuffer");
+        var bufferB = arguments.Arguments[1] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IUnifiedMemoryBuffer");
+        var bufferResult = arguments.Arguments[2] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IUnifiedMemoryBuffer");
 
         var elementCount = (int)(bufferA.SizeInBytes / sizeof(float));
 
@@ -68,9 +68,9 @@ internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
     /// <param name="bufferB">The second input vector buffer.</param>
     /// <param name="bufferResult">The output vector buffer.</param>
     /// <param name="elementCount">The number of elements to process.</param>
-    private static async void ExecuteVectorAddOptimized(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
+    private static async void ExecuteVectorAddOptimized(IUnifiedMemoryBuffer bufferA, IUnifiedMemoryBuffer bufferB, IUnifiedMemoryBuffer bufferResult, int elementCount)
         // Use generic implementation since we don't have direct access to HighPerformanceMemoryBuffer here
-        // This could be optimized further by exposing unsafe pointers through IMemoryBuffer
+        // This could be optimized further by exposing unsafe pointers through IUnifiedMemoryBuffer
 
         => await ExecuteVectorAddGenericAsync(bufferA, bufferB, bufferResult, elementCount);
 
@@ -81,7 +81,7 @@ internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
     /// <param name="bufferB">The second input vector buffer.</param>
     /// <param name="bufferResult">The output vector buffer.</param>
     /// <param name="elementCount">The number of elements to process.</param>
-    private static async Task ExecuteVectorAddGenericAsync(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
+    private static async Task ExecuteVectorAddGenericAsync(IUnifiedMemoryBuffer bufferA, IUnifiedMemoryBuffer bufferB, IUnifiedMemoryBuffer bufferResult, int elementCount)
     {
         var dataA = new float[elementCount];
         var dataB = new float[elementCount];

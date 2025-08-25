@@ -148,7 +148,7 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
         // Set buffer arguments
         foreach (var arg in arguments.Arguments)
         {
-            if (arg is IMemoryBuffer memoryBuffer)
+            if (arg is IUnifiedMemoryBuffer memoryBuffer)
             {
                 // Ensure it's a Metal buffer
                 if (memoryBuffer is MetalMemoryBuffer metalMemory)

@@ -27,7 +27,7 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
     private readonly GeneratedKernel _generatedKernel;
     private readonly IAccelerator _accelerator;
     private readonly ILogger _logger;
-    private readonly Lazy<Compilation.IKernelCompiler> _compiler;
+    private readonly Lazy<Compilation.IUnifiedKernelCompiler> _compiler;
     private bool _disposed;
     private Execution.ICompiledKernel? _compiledKernel;
 
@@ -43,7 +43,7 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
         _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _compiler = new Lazy<Compilation.IKernelCompiler>(() => CreateCompiler());
+        _compiler = new Lazy<Compilation.IUnifiedKernelCompiler>(() => CreateCompiler());
 
         Properties = CreateKernelProperties();
     }
@@ -220,7 +220,7 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
         await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
     }
 
-    private Compilation.IKernelCompiler CreateCompiler()
+    private Compilation.IUnifiedKernelCompiler CreateCompiler()
     {
         // Create a kernel compiler adapter that bridges to the backend-specific compiler
         // This uses the accelerator's built-in compiler capabilities

@@ -8,7 +8,7 @@ using DotCompute.Abstractions.Enums;
 namespace DotCompute.Core.Kernels.Extensions;
 
 /// <summary>
-/// Extension methods for IKernelCompiler to provide compatibility with Core types.
+/// Extension methods for IUnifiedKernelCompiler to provide compatibility with Core types.
 /// Provides conversion utilities between Abstractions and Core compilation options.
 /// </summary>
 public static class KernelCompilerExtensions

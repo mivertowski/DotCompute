@@ -9,6 +9,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Backends.CUDA.Memory;
 
@@ -121,7 +122,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     /// <summary>
     /// Allocates memory asynchronously on the specified stream.
     /// </summary>
-    public async ValueTask<IMemoryBuffer> AllocateAsyncOnStream(
+    public async ValueTask<IUnifiedMemoryBuffer> AllocateAsyncOnStream(
         long sizeInBytes,
         IntPtr stream,
         MemoryOptions options = MemoryOptions.None,
@@ -429,7 +430,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc/>
-    protected override async ValueTask<IMemoryBuffer> AllocateBufferCoreAsync(
+    protected override async ValueTask<IUnifiedMemoryBuffer> AllocateBufferCoreAsync(
         long sizeInBytes,
         MemoryOptions options,
         CancellationToken cancellationToken)
@@ -450,7 +451,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc/>
-    protected override IMemoryBuffer CreateViewCore(IMemoryBuffer buffer, long offset, long length)
+    protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)
     {
         if (buffer is CudaAsyncMemoryBuffer cudaBuffer)
         {
@@ -518,7 +519,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
 /// <summary>
 /// CUDA async memory buffer implementation.
 /// </summary>
-internal sealed class CudaAsyncMemoryBuffer : IMemoryBuffer
+internal sealed class CudaAsyncMemoryBuffer : IUnifiedMemoryBuffer
 {
     private readonly IntPtr _devicePtr;
     private readonly long _sizeInBytes;
@@ -595,7 +596,7 @@ internal sealed class CudaAsyncMemoryBuffer : IMemoryBuffer
 /// <summary>
 /// View over a CUDA async memory buffer.
 /// </summary>
-internal sealed class CudaAsyncMemoryBufferView : IMemoryBuffer
+internal sealed class CudaAsyncMemoryBufferView : IUnifiedMemoryBuffer
 {
     private readonly CudaAsyncMemoryBuffer _parent;
     private readonly long _offset;

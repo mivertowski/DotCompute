@@ -3,6 +3,7 @@
 
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Compute.Memory
 {
@@ -10,7 +11,7 @@ namespace DotCompute.Core.Compute.Memory
     /// High-performance memory buffer with aligned allocation.
     /// Provides SIMD-optimized memory allocation with 64-byte alignment for optimal performance.
     /// </summary>
-    internal class HighPerformanceMemoryBuffer : IMemoryBuffer
+    internal class HighPerformanceMemoryBuffer : IUnifiedMemoryBuffer
     {
         private byte[] _data = null!;
         private GCHandle _handle;

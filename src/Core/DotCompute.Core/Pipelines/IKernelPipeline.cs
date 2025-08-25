@@ -332,7 +332,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Gets validation errors.
         /// </summary>
-        public IReadOnlyList<ValidationError>? Errors { get; init; }
+        public IReadOnlyList<ValidationIssue>? Errors { get; init; }
 
         /// <summary>
         /// Gets validation warnings.

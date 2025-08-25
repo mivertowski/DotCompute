@@ -157,8 +157,8 @@ namespace DotCompute.Core.Memory.P2P
         /// Creates an optimized scatter plan for multi-target P2P operations.
         /// </summary>
         public async Task<P2PScatterPlan> CreateScatterPlanAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T>[] destinationBuffers,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T>[] destinationBuffers,
             P2PScatterOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -220,8 +220,8 @@ namespace DotCompute.Core.Memory.P2P
         /// Creates an optimized gather plan for multi-source P2P operations.
         /// </summary>
         public async Task<P2PGatherPlan> CreateGatherPlanAsync<T>(
-            IBuffer<T>[] sourceBuffers,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T>[] sourceBuffers,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             P2PGatherOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {

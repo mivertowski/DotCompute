@@ -760,7 +760,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// <summary>
         /// Validates CUDA source code for common issues before compilation
         /// </summary>
-        private Types.ValidationResult ValidateCudaSource(string cudaSource, string kernelName)
+        private Types.UnifiedValidationResult ValidateCudaSource(string cudaSource, string kernelName)
         {
             var warnings = new List<string>();
 
@@ -769,7 +769,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // Check for basic CUDA kernel structure
                 if (!cudaSource.Contains("__global__", StringComparison.Ordinal) && !cudaSource.Contains("__device__", StringComparison.Ordinal))
                 {
-                    return Types.ValidationResult.Failure("CUDA source must contain at least one __global__ or __device__ function");
+                    return Types.UnifiedValidationResult.Failure("CUDA source must contain at least one __global__ or __device__ function");
                 }
 
                 // Check for potential issues
@@ -796,13 +796,13 @@ namespace DotCompute.Backends.CUDA.Compilation
                 }
 
                 return warnings.Count > 0
-                    ? Types.ValidationResult.SuccessWithWarnings(warnings.ToArray())
-                    : Types.ValidationResult.Success();
+                    ? Types.UnifiedValidationResult.SuccessWithWarnings(warnings.ToArray())
+                    : Types.UnifiedValidationResult.Success();
             }
             catch (Exception ex)
             {
                 LogCudaSourceValidationError(_logger, ex, kernelName);
-                return Types.ValidationResult.Success("Source validation failed, proceeding with compilation");
+                return Types.UnifiedValidationResult.Success("Source validation failed, proceeding with compilation");
             }
         }
 

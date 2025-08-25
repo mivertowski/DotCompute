@@ -46,7 +46,7 @@ public interface IUnifiedKernelCompiler<TSource, TResult> where TResult : ICompi
     /// </summary>
     /// <param name="source">The kernel source to validate.</param>
     /// <returns>A validation result indicating whether compilation is possible.</returns>
-    ValidationResult Validate(TSource source);
+    UnifiedValidationResult Validate(TSource source);
     
     /// <summary>
     /// Asynchronously validates a kernel source with detailed analysis.
@@ -54,7 +54,7 @@ public interface IUnifiedKernelCompiler<TSource, TResult> where TResult : ICompi
     /// <param name="source">The kernel source to validate.</param>
     /// <param name="cancellationToken">Token to cancel the validation operation.</param>
     /// <returns>A task that represents the asynchronous validation operation.</returns>
-    ValueTask<ValidationResult> ValidateAsync(
+    ValueTask<UnifiedValidationResult> ValidateAsync(
         TSource source,
         CancellationToken cancellationToken = default);
     
@@ -81,7 +81,7 @@ public interface IUnifiedKernelCompiler : IUnifiedKernelCompiler<KernelDefinitio
 /// <summary>
 /// Enhanced validation result that combines all validation features.
 /// </summary>
-public sealed class ValidationResult
+public sealed class UnifiedValidationResult
 {
     private readonly List<ValidationIssue> _issues = new();
     
@@ -152,14 +152,14 @@ public sealed class ValidationResult
     /// <summary>
     /// Creates a successful validation result.
     /// </summary>
-    public static ValidationResult Success() => new();
+    public static UnifiedValidationResult Success() => new();
     
     /// <summary>
     /// Creates a failed validation result with an error.
     /// </summary>
-    public static ValidationResult Failure(string errorMessage)
+    public static UnifiedValidationResult Failure(string errorMessage)
     {
-        var result = new ValidationResult();
+        var result = new UnifiedValidationResult();
         result.AddError(errorMessage);
         return result;
     }

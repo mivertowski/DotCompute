@@ -20,7 +20,7 @@ public class QueryExecutor : IQueryExecutor
 {
     private readonly IMemoryManagerFactory _memoryManagerFactory;
     private readonly ILogger<QueryExecutor> _logger;
-    private readonly ConcurrentDictionary<IAccelerator, IMemoryManager> _memoryManagers = new();
+    private readonly ConcurrentDictionary<IAccelerator, IUnifiedMemoryManager> _memoryManagers = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QueryExecutor"/> class.
@@ -101,7 +101,7 @@ public class QueryExecutor : IQueryExecutor
     }
 
     /// <inheritdoc/>
-    public DotCompute.Abstractions.ValidationResult Validate(IComputePlan plan, IAccelerator accelerator)
+    public DotCompute.Abstractions.UnifiedValidationResult Validate(IComputePlan plan, IAccelerator accelerator)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(accelerator);
@@ -137,13 +137,13 @@ public class QueryExecutor : IQueryExecutor
 
         if (hasErrors)
         {
-            return DotCompute.Abstractions.ValidationResult.Failure(errorMessage);
+            return DotCompute.Abstractions.UnifiedValidationResult.Failure(errorMessage);
         }
 
-        return DotCompute.Abstractions.ValidationResult.Success();
+        return DotCompute.Abstractions.UnifiedValidationResult.Success();
     }
 
-    private IMemoryManager GetMemoryManager(IAccelerator accelerator)
+    private IUnifiedMemoryManager GetMemoryManager(IAccelerator accelerator)
     {
         return _memoryManagers.GetOrAdd(accelerator, acc =>
         {
@@ -152,7 +152,7 @@ public class QueryExecutor : IQueryExecutor
         });
     }
 
-    private async Task<object?> ExecuteStage(IComputeStage stage, ExecutionContext context, IMemoryManager memoryManager)
+    private async Task<object?> ExecuteStage(IComputeStage stage, ExecutionContext context, IUnifiedMemoryManager memoryManager)
     {
         _logger.LogDebug("Executing stage {StageId}", stage.Id);
 
@@ -199,7 +199,7 @@ public class QueryExecutor : IQueryExecutor
     private async Task<object?> ExecuteStageAsync(
         IComputeStage stage,
         ExecutionContext context,
-        IMemoryManager memoryManager,
+        IUnifiedMemoryManager memoryManager,
         CancellationToken cancellationToken)
     {
         _logger.LogDebug("Executing stage {StageId} asynchronously", stage.Id);
@@ -441,7 +441,7 @@ public interface IMemoryManagerFactory
     /// </summary>
     /// <param name="accelerator">The accelerator.</param>
     /// <returns>A memory manager instance.</returns>
-    public IMemoryManager CreateMemoryManager(IAccelerator accelerator);
+    public IUnifiedMemoryManager CreateMemoryManager(IAccelerator accelerator);
 }
 
 /// <summary>
@@ -461,5 +461,5 @@ public class DefaultMemoryManagerFactory : IMemoryManagerFactory
     }
 
     /// <inheritdoc/>
-    public IMemoryManager CreateMemoryManager(IAccelerator accelerator) => new UnifiedMemoryManager(accelerator.Memory);
+    public IUnifiedMemoryManager CreateMemoryManager(IAccelerator accelerator) => new UnifiedMemoryManager(accelerator.Memory);
 }

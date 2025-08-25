@@ -38,8 +38,8 @@ internal class OptimizedReductionKernel : Base.OptimizedKernelBase
     /// <exception cref="ArgumentException">Thrown when arguments are invalid or insufficient.</exception>
     /// <remarks>
     /// Requires 2 arguments:
-    /// - Argument 0: Input vector (IMemoryBuffer)
-    /// - Argument 1: Output scalar (IMemoryBuffer) - single element result
+    /// - Argument 0: Input vector (IUnifiedMemoryBuffer)
+    /// - Argument 1: Output scalar (IUnifiedMemoryBuffer) - single element result
     /// </remarks>
     public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
@@ -50,8 +50,8 @@ internal class OptimizedReductionKernel : Base.OptimizedKernelBase
             throw new ArgumentException("Reduction requires 2 arguments: input, output");
         }
 
-        var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
+        var inputBuffer = arguments.Arguments[0] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IUnifiedMemoryBuffer");
+        var outputBuffer = arguments.Arguments[1] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IUnifiedMemoryBuffer");
 
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
 
@@ -69,7 +69,7 @@ internal class OptimizedReductionKernel : Base.OptimizedKernelBase
     /// partial sums in parallel, then combines the results for the final sum.
     /// Uses double precision for intermediate calculations to avoid precision loss.
     /// </remarks>
-    private static async Task ExecuteReductionGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
+    private static async Task ExecuteReductionGenericAsync(IUnifiedMemoryBuffer inputBuffer, IUnifiedMemoryBuffer outputBuffer, int elementCount)
     {
         var input = new float[elementCount];
         await inputBuffer.CopyToHostAsync<float>(input);

@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Memory
 {
@@ -18,8 +19,8 @@ namespace DotCompute.Core.Memory
         private readonly IAccelerator _device;
         private readonly DeviceCapabilities _deviceCapabilities;
         private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<int, ConcurrentQueue<IMemoryBuffer>> _sizeBasedPools;
-        private readonly ConcurrentQueue<IMemoryBuffer> _largeBufferPool;
+        private readonly ConcurrentDictionary<int, ConcurrentQueue<IUnifiedMemoryBuffer>> _sizeBasedPools;
+        private readonly ConcurrentQueue<IUnifiedMemoryBuffer> _largeBufferPool;
         private readonly Lock _statisticsLock = new();
         private readonly Timer _cleanupTimer;
         private readonly PoolStatistics _statistics;
@@ -40,8 +41,8 @@ namespace DotCompute.Core.Memory
             _deviceCapabilities = deviceCapabilities ?? throw new ArgumentNullException(nameof(deviceCapabilities));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _sizeBasedPools = new ConcurrentDictionary<int, ConcurrentQueue<IMemoryBuffer>>();
-            _largeBufferPool = new ConcurrentQueue<IMemoryBuffer>();
+            _sizeBasedPools = new ConcurrentDictionary<int, ConcurrentQueue<IUnifiedMemoryBuffer>>();
+            _largeBufferPool = new ConcurrentQueue<IUnifiedMemoryBuffer>();
             _statistics = new PoolStatistics();
 
             // Start periodic cleanup
@@ -56,7 +57,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Allocates a buffer with standard pooling strategy.
         /// </summary>
-        public async ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, CancellationToken cancellationToken = default)
+        public async ValueTask<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
@@ -116,7 +117,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Allocates a buffer optimized for streaming transfers.
         /// </summary>
-        public async ValueTask<IMemoryBuffer> AllocateStreamingAsync(
+        public async ValueTask<IUnifiedMemoryBuffer> AllocateStreamingAsync(
             long sizeInBytes,
             int chunkSize,
             CancellationToken cancellationToken = default)
@@ -160,7 +161,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Allocates a memory-mapped buffer for very large datasets.
         /// </summary>
-        public async ValueTask<IMemoryBuffer> AllocateMemoryMappedAsync(
+        public async ValueTask<IUnifiedMemoryBuffer> AllocateMemoryMappedAsync(
             long sizeInBytes,
             CancellationToken cancellationToken = default)
         {
@@ -203,7 +204,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Returns a buffer to the pool for reuse.
         /// </summary>
-        internal void ReturnBuffer(IMemoryBuffer buffer, long originalSize)
+        internal void ReturnBuffer(IUnifiedMemoryBuffer buffer, long originalSize)
         {
             if (_disposed || buffer.IsDisposed)
             {
@@ -217,7 +218,7 @@ namespace DotCompute.Core.Memory
                 // Only pool reasonably sized buffers
                 if (roundedSize <= MaxPooledBufferSize)
                 {
-                    var pool = _sizeBasedPools.GetOrAdd(roundedSize, _ => new ConcurrentQueue<IMemoryBuffer>());
+                    var pool = _sizeBasedPools.GetOrAdd(roundedSize, _ => new ConcurrentQueue<IUnifiedMemoryBuffer>());
 
                     // Check pool size limit
                     if (GetPoolSize(pool) < MaxBuffersPerSize)
@@ -380,7 +381,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Tries to get a buffer from the appropriate pool.
         /// </summary>
-        private bool TryGetFromPool(int roundedSize, out IMemoryBuffer buffer)
+        private bool TryGetFromPool(int roundedSize, out IUnifiedMemoryBuffer buffer)
         {
             buffer = default!;
 
@@ -424,7 +425,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Gets the approximate size of a concurrent queue (for pool size checking).
         /// </summary>
-        private static int GetPoolSize(ConcurrentQueue<IMemoryBuffer> pool) => pool.Count; // This is approximate but sufficient for our needs
+        private static int GetPoolSize(ConcurrentQueue<IUnifiedMemoryBuffer> pool) => pool.Count; // This is approximate but sufficient for our needs
 
         /// <summary>
         /// Periodic cleanup callback.
@@ -504,14 +505,14 @@ namespace DotCompute.Core.Memory
     /// <summary>
     /// Wrapper for memory buffers that automatically returns to pool on disposal.
     /// </summary>
-    internal sealed class PooledMemoryBuffer : IMemoryBuffer
+    internal sealed class PooledMemoryBuffer : IUnifiedMemoryBuffer
     {
-        private readonly IMemoryBuffer _underlyingBuffer;
+        private readonly IUnifiedMemoryBuffer _underlyingBuffer;
         private readonly DeviceBufferPool _pool;
         private readonly long _originalSize;
         private bool _disposed;
 
-        public PooledMemoryBuffer(IMemoryBuffer underlyingBuffer, DeviceBufferPool pool, long originalSize)
+        public PooledMemoryBuffer(IUnifiedMemoryBuffer underlyingBuffer, DeviceBufferPool pool, long originalSize)
         {
             _underlyingBuffer = underlyingBuffer;
             _pool = pool;

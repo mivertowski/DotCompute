@@ -14,7 +14,7 @@ namespace DotCompute.Core.Execution.Memory
     public static class ExecutionMemoryManager
     {
         private static readonly ConcurrentDictionary<string, DeviceBufferPool> _devicePools = new();
-        private static readonly ConcurrentDictionary<Guid, List<AbstractionsMemory.IMemoryBuffer>> _executionBuffers = new();
+        private static readonly ConcurrentDictionary<Guid, List<AbstractionsMemory.IUnifiedMemoryBuffer>> _executionBuffers = new();
 
         /// <summary>
         /// Gets or creates a buffer pool for the specified device.
@@ -30,12 +30,12 @@ namespace DotCompute.Core.Execution.Memory
         /// <param name="requests">The collection of buffer allocation requests.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A list of allocated memory buffers.</returns>
-        public static async ValueTask<List<AbstractionsMemory.IMemoryBuffer>> AllocateExecutionBuffersAsync(
+        public static async ValueTask<List<AbstractionsMemory.IUnifiedMemoryBuffer>> AllocateExecutionBuffersAsync(
             Guid executionId,
             IEnumerable<BufferAllocationRequest> requests,
             CancellationToken cancellationToken = default)
         {
-            var buffers = new List<AbstractionsMemory.IMemoryBuffer>();
+            var buffers = new List<AbstractionsMemory.IUnifiedMemoryBuffer>();
 
             foreach (var request in requests)
             {

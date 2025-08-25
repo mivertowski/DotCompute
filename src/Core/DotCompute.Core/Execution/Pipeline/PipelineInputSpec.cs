@@ -24,7 +24,7 @@ namespace DotCompute.Core.Execution.Pipeline
         public bool IsShared { get; set; }
 
         /// <summary>Gets or sets the buffer containing the tensor data.</summary>
-        public AbstractionsMemory.IBuffer<T>? Buffer { get; set; }
+        public AbstractionsMemory.IUnifiedMemoryBuffer<T>? Buffer { get; set; }
 
         /// <summary>Gets the total size of the tensor in bytes.</summary>
         public long SizeInBytes => ElementCount * System.Runtime.InteropServices.Marshal.SizeOf<T>();

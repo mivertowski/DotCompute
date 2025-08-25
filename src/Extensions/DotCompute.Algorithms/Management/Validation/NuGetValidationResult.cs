@@ -33,7 +33,7 @@ public sealed class NuGetValidationResult
     /// Gets or sets the validation error message if validation failed.
     /// Null if the package is valid, otherwise contains the failure reason.
     /// </summary>
-    public string? ValidationError { get; init; }
+    public string? ValidationIssue { get; init; }
 
     /// <summary>
     /// Gets or sets the number of assemblies found in the package.
@@ -90,5 +90,5 @@ public sealed class NuGetValidationResult
     public string Summary
         => IsValid
             ? $"Package {PackageId} v{Version} validated successfully"
-            : $"Package {PackageId} v{Version} validation failed: {ValidationError}";
+            : $"Package {PackageId} v{Version} validation failed: {ValidationIssue}";
 }

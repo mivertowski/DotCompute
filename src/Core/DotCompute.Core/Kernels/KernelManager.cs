@@ -20,7 +20,7 @@ public sealed partial class KernelManager : IDisposable
 {
     private readonly ILogger<KernelManager> _logger;
     private readonly Dictionary<AcceleratorType, IKernelGenerator> _generators;
-    private readonly Dictionary<AcceleratorType, IKernelCompiler> _compilers;
+    private readonly Dictionary<AcceleratorType, IUnifiedKernelCompiler> _compilers;
     private readonly Dictionary<AcceleratorType, IKernelExecutor> _executors;
     private readonly ConcurrentDictionary<string, ManagedCompiledKernel> _kernelCache;
     private readonly SemaphoreSlim _compilationSemaphore;
@@ -53,7 +53,7 @@ public sealed partial class KernelManager : IDisposable
     /// <summary>
     /// Registers a kernel compiler for a specific accelerator type.
     /// </summary>
-    public void RegisterCompiler(AcceleratorType acceleratorType, IKernelCompiler compiler)
+    public void RegisterCompiler(AcceleratorType acceleratorType, IUnifiedKernelCompiler compiler)
     {
         _compilers[acceleratorType] = compiler;
         LogCompilerRegistered(acceleratorType.ToString());

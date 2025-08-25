@@ -8,7 +8,7 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
-using AbstractionsValidationResult = DotCompute.Abstractions.ValidationResult;
+using AbstractionsValidationResult = DotCompute.Abstractions.UnifiedValidationResult;
 
 using DotCompute.Abstractions.Kernels;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
@@ -19,7 +19,7 @@ namespace DotCompute.Backends.Metal.Kernels;
 /// <summary>
 /// Compiles kernels to Metal Shading Language and creates compute pipeline states.
 /// </summary>
-public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILogger logger, MetalCommandBufferPool? commandBufferPool = null) : IKernelCompiler, IDisposable
+public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILogger logger, MetalCommandBufferPool? commandBufferPool = null) : IUnifiedKernelCompiler, IDisposable
 {
     private readonly IntPtr _device = device;
     private readonly IntPtr _commandQueue = commandQueue;
@@ -33,7 +33,7 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
     public string Name => "Metal Shader Compiler";
 
     /// <inheritdoc/>
-#pragma warning disable CA1819 // Properties should not return arrays - Required by IKernelCompiler interface
+#pragma warning disable CA1819 // Properties should not return arrays - Required by IUnifiedKernelCompiler interface
     public KernelSourceType[] SupportedSourceTypes { get; } =
     [
         KernelSourceType.Metal,

@@ -38,8 +38,8 @@ internal class OptimizedComputeKernel : Base.OptimizedKernelBase
     /// <exception cref="ArgumentException">Thrown when arguments are invalid or insufficient.</exception>
     /// <remarks>
     /// Requires 3 arguments:
-    /// - Argument 0: Input vector (IMemoryBuffer)
-    /// - Argument 1: Output vector (IMemoryBuffer)
+    /// - Argument 0: Input vector (IUnifiedMemoryBuffer)
+    /// - Argument 1: Output vector (IUnifiedMemoryBuffer)
     /// - Argument 2: Number of iterations (int)
     /// </remarks>
     public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
@@ -51,8 +51,8 @@ internal class OptimizedComputeKernel : Base.OptimizedKernelBase
             throw new ArgumentException("Compute kernel requires 3 arguments: input, output, iterations");
         }
 
-        var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
+        var inputBuffer = arguments.Arguments[0] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IUnifiedMemoryBuffer");
+        var outputBuffer = arguments.Arguments[1] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IUnifiedMemoryBuffer");
         var iterations = Convert.ToInt32(arguments.Arguments[2]);
 
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
@@ -72,7 +72,7 @@ internal class OptimizedComputeKernel : Base.OptimizedKernelBase
     /// square roots, and power operations to create a compute-bound workload that
     /// stresses the floating-point execution units.
     /// </remarks>
-    private static async void ExecuteComputeIntensiveOptimized(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount, int iterations)
+    private static async void ExecuteComputeIntensiveOptimized(IUnifiedMemoryBuffer inputBuffer, IUnifiedMemoryBuffer outputBuffer, int elementCount, int iterations)
     {
         var input = new float[elementCount];
         var output = new float[elementCount];

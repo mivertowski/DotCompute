@@ -93,16 +93,16 @@ internal static partial class CpuKernelCompiler
         }
     }
 
-    private static ValidationResult ValidateKernelDefinition(KernelDefinition definition)
+    private static UnifiedValidationResult ValidateKernelDefinition(KernelDefinition definition)
     {
         if (string.IsNullOrWhiteSpace(definition.Name))
         {
-            return new ValidationResult(false, "Kernel name cannot be empty");
+            return new UnifiedValidationResult(false, "Kernel name cannot be empty");
         }
 
         if (definition.Code == null || definition.Code.Length == 0)
         {
-            return new ValidationResult(false, "Kernel code cannot be null or empty");
+            return new UnifiedValidationResult(false, "Kernel code cannot be null or empty");
         }
 
         // Validate work dimensions if available in metadata
@@ -110,7 +110,7 @@ internal static partial class CpuKernelCompiler
         {
             if (workDimsObj is int workDimensions && (workDimensions < 1 || workDimensions > 3))
             {
-                return new ValidationResult(false, "Work dimensions must be between 1 and 3");
+                return new UnifiedValidationResult(false, "Work dimensions must be between 1 and 3");
             }
         }
 
@@ -121,7 +121,7 @@ internal static partial class CpuKernelCompiler
             {
                 if (parameters.Count == 0)
                 {
-                    return new ValidationResult(false, "Kernel must have at least one parameter");
+                    return new UnifiedValidationResult(false, "Kernel must have at least one parameter");
                 }
 
                 // Validate each parameter
@@ -133,25 +133,25 @@ internal static partial class CpuKernelCompiler
                             nameObj is not string name ||
                             string.IsNullOrWhiteSpace(name))
                         {
-                            return new ValidationResult(false, $"Parameter at index {i} must have a valid name");
+                            return new UnifiedValidationResult(false, $"Parameter at index {i} must have a valid name");
                         }
 
                         if (!param.TryGetValue("Type", out var typeObj) ||
                             typeObj is not string type ||
                             string.IsNullOrWhiteSpace(type))
                         {
-                            return new ValidationResult(false, $"Parameter '{name}' must have a valid type");
+                            return new UnifiedValidationResult(false, $"Parameter '{name}' must have a valid type");
                         }
                     }
                     else
                     {
-                        return new ValidationResult(false, $"Invalid parameter format at index {i}");
+                        return new UnifiedValidationResult(false, $"Invalid parameter format at index {i}");
                     }
                 }
             }
         }
 
-        return new ValidationResult(true, null);
+        return new UnifiedValidationResult(true, null);
     }
 
     private static async ValueTask<KernelAst> ParseKernelSourceAsync(string sourceCode, CancellationToken cancellationToken)
@@ -611,7 +611,7 @@ internal enum ComputeIntensity
 /// <summary>
 /// Represents a validation result for kernel compilation.
 /// </summary>
-internal readonly struct ValidationResult(bool isValid, string? errorMessage)
+internal readonly struct UnifiedValidationResult(bool isValid, string? errorMessage)
 {
     public bool IsValid { get; } = isValid;
     public string? ErrorMessage { get; } = errorMessage;

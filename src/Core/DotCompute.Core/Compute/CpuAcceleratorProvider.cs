@@ -10,6 +10,7 @@ using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using KernelArguments = DotCompute.Abstractions.Kernels.KernelArguments;
 using KernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Compute
 {
@@ -253,7 +254,7 @@ namespace DotCompute.Core.Compute
 
         public AcceleratorType Type => AcceleratorType.CPU;
 
-        public IMemoryManager Memory => _memoryManager;
+        public IUnifiedMemoryManager Memory => _memoryManager;
 
         public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
 
@@ -292,23 +293,23 @@ namespace DotCompute.Core.Compute
     /// <summary>
     /// Simple CPU memory manager implementation.
     /// </summary>
-    internal class SimpleCpuMemoryManager(IAccelerator accelerator, ILogger logger) : IMemoryManager, IDisposable
+    internal class SimpleCpuMemoryManager(IAccelerator accelerator, ILogger logger) : IUnifiedMemoryManager, IDisposable
     {
         private readonly IAccelerator _accelerator = accelerator;
         private readonly ILogger _logger = logger;
         private readonly List<SimpleCpuMemoryBuffer> _allocatedBuffers = [];
 
-        public ValueTask<IMemoryBuffer> AllocateAsync(
+        public ValueTask<IUnifiedMemoryBuffer> AllocateAsync(
             long sizeInBytes,
             MemoryOptions options = MemoryOptions.None,
             CancellationToken cancellationToken = default)
         {
             var buffer = new SimpleCpuMemoryBuffer(sizeInBytes, options);
             _allocatedBuffers.Add(buffer);
-            return ValueTask.FromResult<IMemoryBuffer>(buffer);
+            return ValueTask.FromResult<IUnifiedMemoryBuffer>(buffer);
         }
 
-        public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
+        public async ValueTask<IUnifiedMemoryBuffer> AllocateAndCopyAsync<T>(
             ReadOnlyMemory<T> source,
             MemoryOptions options = MemoryOptions.None,
             CancellationToken cancellationToken = default) where T : unmanaged
@@ -320,7 +321,7 @@ namespace DotCompute.Core.Compute
             return buffer;
         }
 
-        public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+        public IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
         {
             if (buffer is not SimpleCpuMemoryBuffer cpuBuffer)
             {
@@ -330,21 +331,21 @@ namespace DotCompute.Core.Compute
             return new SimpleCpuMemoryBufferView(cpuBuffer, offset, length);
         }
 
-        public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+        public async ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count) where T : unmanaged
         {
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
             var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             return await AllocateAsync(sizeInBytes);
         }
 
-        public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+        public void CopyToDevice<T>(IUnifiedMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(buffer);
             var memory = new ReadOnlyMemory<T>(data.ToArray());
             buffer.CopyFromHostAsync(memory).AsTask().Wait();
         }
 
-        public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+        public void CopyFromDevice<T>(Span<T> data, IUnifiedMemoryBuffer buffer) where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(buffer);
             var memory = new Memory<T>(new T[data.Length]);
@@ -352,7 +353,7 @@ namespace DotCompute.Core.Compute
             memory.Span.CopyTo(data);
         }
 
-        public void Free(IMemoryBuffer buffer)
+        public void Free(IUnifiedMemoryBuffer buffer)
         {
             if (buffer is SimpleCpuMemoryBuffer cpuBuffer)
             {
@@ -378,7 +379,7 @@ namespace DotCompute.Core.Compute
     /// <summary>
     /// Simple CPU memory buffer implementation.
     /// </summary>
-    internal class SimpleCpuMemoryBuffer : IMemoryBuffer
+    internal class SimpleCpuMemoryBuffer : IUnifiedMemoryBuffer
     {
         private readonly byte[] _data;
         internal bool _disposed;
@@ -447,7 +448,7 @@ namespace DotCompute.Core.Compute
     /// <summary>
     /// View over a CPU memory buffer.
     /// </summary>
-    internal class SimpleCpuMemoryBufferView(SimpleCpuMemoryBuffer parent, long offset, long length) : IMemoryBuffer
+    internal class SimpleCpuMemoryBufferView(SimpleCpuMemoryBuffer parent, long offset, long length) : IUnifiedMemoryBuffer
     {
         private readonly SimpleCpuMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
         private readonly long _offset = offset;

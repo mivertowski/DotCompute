@@ -6,6 +6,7 @@ using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Memory;
 
@@ -16,7 +17,7 @@ namespace DotCompute.Memory;
 /// </summary>
 public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
 {
-    private readonly IMemoryManager _memoryManager;
+    private readonly IUnifiedMemoryManager _memoryManager;
     private readonly ConcurrentQueue<TransferOperation> _transferQueue = new();
     private readonly SemaphoreSlim _concurrencyLimiter;
     private readonly CancellationTokenSource _shutdownCts = new();
@@ -36,7 +37,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     private double _currentMemoryPressure;
     private volatile bool _disposed;
 
-    public AdvancedMemoryTransferEngine(IMemoryManager memoryManager)
+    public AdvancedMemoryTransferEngine(IUnifiedMemoryManager memoryManager)
     {
         _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
         _concurrencyLimiter = new SemaphoreSlim(MaxConcurrentTransfers, MaxConcurrentTransfers);
@@ -74,7 +75,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
                 UsedMemoryMapping = options.EnableMemoryMapping && sizeInBytes > LargeDatasetThreshold
             };
 
-            IMemoryBuffer? buffer = null;
+            IUnifiedMemoryBuffer? buffer = null;
 
             try
             {
@@ -214,7 +215,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Transfers data using memory-mapped files for ultra-large datasets.
     /// </summary>
-    private async Task<IMemoryBuffer> TransferWithMemoryMappingAsync<T>(
+    private async Task<IUnifiedMemoryBuffer> TransferWithMemoryMappingAsync<T>(
         T[] data,
         IAccelerator accelerator,
         TransferOptions options,
@@ -265,7 +266,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Transfers data using streaming with chunked processing for large datasets.
     /// </summary>
-    private async Task<IMemoryBuffer> TransferWithStreamingAsync<T>(
+    private async Task<IUnifiedMemoryBuffer> TransferWithStreamingAsync<T>(
         T[] data,
         IAccelerator accelerator,
         TransferOptions options,
@@ -310,7 +311,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// </summary>
     private static async Task ProcessChunkAsync<T>(
         T[] data,
-        IMemoryBuffer buffer,
+        IUnifiedMemoryBuffer buffer,
         int chunkIndex,
         int chunkSize,
         int elementSize,
@@ -345,7 +346,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// Verifies data integrity using optimized sampling for large datasets.
     /// </summary>
     private static async Task<bool> VerifyDataIntegrityAsync<T>(
-        IMemoryBuffer buffer,
+        IUnifiedMemoryBuffer buffer,
         T[] originalData,
         TransferOptions options,
         CancellationToken cancellationToken) where T : unmanaged
@@ -651,7 +652,7 @@ public class AdvancedTransferResult
     /// <value>
     /// The transferred buffer.
     /// </value>
-    public IMemoryBuffer? TransferredBuffer { get; set; }
+    public IUnifiedMemoryBuffer? TransferredBuffer { get; set; }
 }
 
 /// <summary>

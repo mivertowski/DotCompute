@@ -39,9 +39,9 @@ internal class OptimizedVectorScaleKernel : Base.OptimizedKernelBase
     /// <exception cref="ArgumentException">Thrown when arguments are invalid or insufficient.</exception>
     /// <remarks>
     /// Requires 3 arguments:
-    /// - Argument 0: Input vector (IMemoryBuffer)
+    /// - Argument 0: Input vector (IUnifiedMemoryBuffer)
     /// - Argument 1: Scale factor (float, double, or int)
-    /// - Argument 2: Output vector (IMemoryBuffer)
+    /// - Argument 2: Output vector (IUnifiedMemoryBuffer)
     /// </remarks>
     public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
@@ -52,9 +52,9 @@ internal class OptimizedVectorScaleKernel : Base.OptimizedKernelBase
             throw new ArgumentException("Vector scale requires 3 arguments: input, scale factor, result");
         }
 
-        var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
+        var inputBuffer = arguments.Arguments[0] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IUnifiedMemoryBuffer");
         var scaleFactor = Convert.ToSingle(arguments.Arguments[1]);
-        var resultBuffer = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
+        var resultBuffer = arguments.Arguments[2] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IUnifiedMemoryBuffer");
 
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
 
@@ -73,7 +73,7 @@ internal class OptimizedVectorScaleKernel : Base.OptimizedKernelBase
     /// falling back to scalar operations for remaining elements. The algorithm creates
     /// a vector of scale factors for efficient SIMD multiplication.
     /// </remarks>
-    private static async Task ExecuteVectorScaleGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer resultBuffer, float scaleFactor, int elementCount)
+    private static async Task ExecuteVectorScaleGenericAsync(IUnifiedMemoryBuffer inputBuffer, IUnifiedMemoryBuffer resultBuffer, float scaleFactor, int elementCount)
     {
         var inputData = new float[elementCount];
         var resultData = new float[elementCount];

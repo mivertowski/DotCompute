@@ -1,4 +1,4 @@
-// <copyright file="IKernelCompiler.cs" company="DotCompute Project">
+// <copyright file="IUnifiedKernelCompiler.cs" company="DotCompute Project">
 // Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -12,7 +12,7 @@ namespace DotCompute.Linq.Operators.Compilation;
 /// <summary>
 /// Interface for kernel compilers used by LINQ operations.
 /// </summary>
-public interface IKernelCompiler
+public interface IUnifiedKernelCompiler
 {
     /// <summary>
     /// Compiles a kernel asynchronously from the provided compilation request.

@@ -97,18 +97,18 @@ namespace DotCompute.Backends.CUDA.Types
     /// <summary>
     /// Validation result for CUDA operations
     /// </summary>
-    public sealed class ValidationResult
+    public sealed class UnifiedValidationResult
     {
         public bool IsValid { get; init; }
         public string? ErrorMessage { get; init; }
         public List<string> Warnings { get; init; } = [];
 
-        public static ValidationResult Success() => new() { IsValid = true };
-        public static ValidationResult Success(string message) => new() { IsValid = true, ErrorMessage = message };
-        public static ValidationResult Error(string message) => new() { IsValid = false, ErrorMessage = message };
-        public static ValidationResult Failure(string message) => new() { IsValid = false, ErrorMessage = message };
-        public static ValidationResult SuccessWithWarnings(List<string> warnings) => new() { IsValid = true, Warnings = warnings };
-        public static ValidationResult SuccessWithWarnings(string[] warnings) => new() { IsValid = true, Warnings = new List<string>(warnings) };
+        public static UnifiedValidationResult Success() => new() { IsValid = true };
+        public static UnifiedValidationResult Success(string message) => new() { IsValid = true, ErrorMessage = message };
+        public static UnifiedValidationResult Error(string message) => new() { IsValid = false, ErrorMessage = message };
+        public static UnifiedValidationResult Failure(string message) => new() { IsValid = false, ErrorMessage = message };
+        public static UnifiedValidationResult SuccessWithWarnings(List<string> warnings) => new() { IsValid = true, Warnings = warnings };
+        public static UnifiedValidationResult SuccessWithWarnings(string[] warnings) => new() { IsValid = true, Warnings = new List<string>(warnings) };
     }
 
     /// <summary>

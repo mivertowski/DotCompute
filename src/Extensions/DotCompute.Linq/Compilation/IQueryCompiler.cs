@@ -27,7 +27,7 @@ public interface IQueryCompiler
     /// </summary>
     /// <param name="expression">The expression to validate.</param>
     /// <returns>A validation result indicating whether compilation is possible.</returns>
-    public DotCompute.Abstractions.ValidationResult Validate(Expression expression);
+    public DotCompute.Abstractions.UnifiedValidationResult Validate(Expression expression);
 }
 
 

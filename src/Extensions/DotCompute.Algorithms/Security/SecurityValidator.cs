@@ -19,7 +19,7 @@ public sealed class SecurityValidator : IDisposable
 {
     private readonly ILogger _logger;
     private readonly SecurityConfiguration _configuration;
-    private readonly ConcurrentDictionary<string, ValidationResult> _validationCache = new();
+    private readonly ConcurrentDictionary<string, UnifiedValidationResult> _validationCache = new();
     private readonly SemaphoreSlim _validationLock = new(1, 1);
     private readonly Timer _cacheCleanupTimer;
     private readonly SHA256 _hashAlgorithm;
@@ -160,7 +160,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Validates kernel code for security threats before compilation or execution.
     /// </summary>
-    public async Task<ValidationResult> ValidateKernelCodeAsync(string kernelCode, string kernelName,
+    public async Task<UnifiedValidationResult> ValidateKernelCodeAsync(string kernelCode, string kernelName,
 
         CancellationToken cancellationToken = default)
     {
@@ -187,7 +187,7 @@ public sealed class SecurityValidator : IDisposable
             _logger.LogInformation("Starting security validation for kernel: {KernelName}", kernelName);
 
 
-            var result = new ValidationResult
+            var result = new UnifiedValidationResult
             {
                 ValidationType = ValidationType.KernelCode,
                 TargetName = kernelName,
@@ -242,7 +242,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Validates assembly files for malicious code, signature verification, and security compliance.
     /// </summary>
-    public async Task<ValidationResult> ValidateAssemblyAsync(string assemblyPath,
+    public async Task<UnifiedValidationResult> ValidateAssemblyAsync(string assemblyPath,
 
         CancellationToken cancellationToken = default)
     {
@@ -257,7 +257,7 @@ public sealed class SecurityValidator : IDisposable
 
         if (!File.Exists(assemblyPath))
         {
-            var result = new ValidationResult
+            var result = new UnifiedValidationResult
             {
                 ValidationType = ValidationType.Assembly,
                 TargetName = assemblyPath,
@@ -286,7 +286,7 @@ public sealed class SecurityValidator : IDisposable
             _logger.LogInformation("Starting security validation for assembly: {AssemblyPath}", assemblyPath);
 
 
-            var result = new ValidationResult
+            var result = new UnifiedValidationResult
             {
                 ValidationType = ValidationType.Assembly,
                 TargetName = assemblyPath,
@@ -362,7 +362,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Validates runtime parameters for security compliance.
     /// </summary>
-    public async Task<ValidationResult> ValidateRuntimeParametersAsync(IDictionary<string, object> parameters,
+    public async Task<UnifiedValidationResult> ValidateRuntimeParametersAsync(IDictionary<string, object> parameters,
 
         string context, CancellationToken cancellationToken = default)
     {
@@ -382,7 +382,7 @@ public sealed class SecurityValidator : IDisposable
             _logger.LogDebug("Validating runtime parameters for context: {Context}", context);
 
 
-            var result = new ValidationResult
+            var result = new UnifiedValidationResult
             {
                 ValidationType = ValidationType.RuntimeParameters,
                 TargetName = context,
@@ -412,7 +412,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Analyzes static code for security threats and malicious patterns.
     /// </summary>
-    private async Task AnalyzeStaticCodeAsync(string code, ValidationResult result, CancellationToken cancellationToken)
+    private async Task AnalyzeStaticCodeAsync(string code, UnifiedValidationResult result, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -454,7 +454,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Detects potential injection attacks in the code.
     /// </summary>
-    private void DetectInjectionAttacks(string code, ValidationResult result)
+    private void DetectInjectionAttacks(string code, UnifiedValidationResult result)
     {
         var injectionPatterns = new[]
         {
@@ -483,7 +483,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Detects potential infinite loops in kernel code.
     /// </summary>
-    private void DetectInfiniteLoops(string code, ValidationResult result)
+    private void DetectInfiniteLoops(string code, UnifiedValidationResult result)
     {
         var infiniteLoopPatterns = new[]
         {
@@ -511,7 +511,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Validates buffer operations for potential overflows.
     /// </summary>
-    private void ValidateBufferOperations(string code, ValidationResult result)
+    private void ValidateBufferOperations(string code, UnifiedValidationResult result)
     {
         var bufferPatterns = new[]
         {
@@ -539,7 +539,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Validates resource usage patterns for abuse.
     /// </summary>
-    private void ValidateResourceUsage(string code, ValidationResult result)
+    private void ValidateResourceUsage(string code, UnifiedValidationResult result)
     {
         var resourcePatterns = new[]
         {
@@ -567,7 +567,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Validates file integrity using hash verification.
     /// </summary>
-    private async Task ValidateFileIntegrityAsync(string filePath, ValidationResult result, CancellationToken cancellationToken)
+    private async Task ValidateFileIntegrityAsync(string filePath, UnifiedValidationResult result, CancellationToken cancellationToken)
     {
         try
         {
@@ -596,7 +596,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Validates PE structure for malformations.
     /// </summary>
-    private async Task ValidatePEStructureAsync(string assemblyPath, ValidationResult result, CancellationToken cancellationToken)
+    private async Task ValidatePEStructureAsync(string assemblyPath, UnifiedValidationResult result, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -637,7 +637,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Validates digital signatures if required.
     /// </summary>
-    private async Task ValidateDigitalSignatureAsync(string assemblyPath, ValidationResult result, CancellationToken cancellationToken)
+    private async Task ValidateDigitalSignatureAsync(string assemblyPath, UnifiedValidationResult result, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -692,7 +692,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Analyzes assembly metadata for suspicious patterns.
     /// </summary>
-    private async Task AnalyzeAssemblyMetadataAsync(string assemblyPath, ValidationResult result, CancellationToken cancellationToken)
+    private async Task AnalyzeAssemblyMetadataAsync(string assemblyPath, UnifiedValidationResult result, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -737,7 +737,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Analyzes strings and resources for malicious content.
     /// </summary>
-    private async Task AnalyzeStringResourcesAsync(string assemblyPath, ValidationResult result, CancellationToken cancellationToken)
+    private async Task AnalyzeStringResourcesAsync(string assemblyPath, UnifiedValidationResult result, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -751,7 +751,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Analyzes imports and exports for suspicious APIs.
     /// </summary>
-    private async Task AnalyzeImportsExportsAsync(string assemblyPath, ValidationResult result, CancellationToken cancellationToken)
+    private async Task AnalyzeImportsExportsAsync(string assemblyPath, UnifiedValidationResult result, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -765,7 +765,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Analyzes file entropy for packed/encrypted detection.
     /// </summary>
-    private async Task AnalyzeEntropyAsync(string assemblyPath, ValidationResult result, CancellationToken cancellationToken)
+    private async Task AnalyzeEntropyAsync(string assemblyPath, UnifiedValidationResult result, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -805,7 +805,7 @@ public sealed class SecurityValidator : IDisposable
     /// <summary>
     /// Validates individual runtime parameters.
     /// </summary>
-    private void ValidateParameter(string key, object value, ValidationResult result)
+    private void ValidateParameter(string key, object value, UnifiedValidationResult result)
     {
         // Check parameter name for suspicious patterns
         var suspiciousKeys = new[] { "password", "token", "secret", "key", "auth" };
@@ -1025,7 +1025,7 @@ public sealed class SecurityThreat
 /// <summary>
 /// Result of security validation.
 /// </summary>
-public sealed class ValidationResult
+public sealed class UnifiedValidationResult
 {
     public required ValidationType ValidationType { get; init; }
     public required string TargetName { get; init; }

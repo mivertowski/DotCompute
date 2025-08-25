@@ -475,7 +475,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 PackageId = packageSource,
                 Version = "Unknown",
                 IsValid = false,
-                ValidationError = ex.Message,
+                ValidationIssue = ex.Message,
                 AssemblyCount = 0,
                 DependencyCount = 0,
                 SecurityValidationPassed = false,
@@ -1833,7 +1833,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     [LoggerMessage(Level = LogLevel.Information, Message = "NuGet dependencies resolved for {PackageId}: {Dependencies}")]
     private partial void LogNuGetDependenciesResolved(string packageId, string dependencies);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "NuGet security validation for {PackageId}: {ValidationResult}")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "NuGet security validation for {PackageId}: {UnifiedValidationResult}")]
     private partial void LogNuGetSecurityValidation(string packageId, string validationResult);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "NuGet package warning for {PackageId}: {Warning}")]
@@ -2179,7 +2179,7 @@ public sealed class NuGetValidationResult
     /// <summary>
     /// Gets or sets the validation error message (if not valid).
     /// </summary>
-    public string? ValidationError { get; init; }
+    public string? ValidationIssue { get; init; }
 
     /// <summary>
     /// Gets or sets the number of assemblies found in the package.

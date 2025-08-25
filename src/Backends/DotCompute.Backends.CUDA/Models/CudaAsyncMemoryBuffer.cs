@@ -5,13 +5,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Backends.CUDA.Memory.Models
 {
     /// <summary>
     /// CUDA async memory buffer implementation with stream-ordered allocation.
     /// </summary>
-    internal sealed class CudaAsyncMemoryBuffer : IMemoryBuffer
+    internal sealed class CudaAsyncMemoryBuffer : IUnifiedMemoryBuffer
     {
         private readonly IntPtr _devicePtr;
         private readonly long _sizeInBytes;

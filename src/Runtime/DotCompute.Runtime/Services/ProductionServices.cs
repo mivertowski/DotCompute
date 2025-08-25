@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Runtime.Services;
 
@@ -17,7 +18,7 @@ namespace DotCompute.Runtime.Services;
 /// Production memory manager implementation with advanced memory pool management, P2P transfers, 
 /// and comprehensive error handling for accelerated computing workloads.
 /// </summary>
-public sealed class ProductionMemoryManager : IMemoryManager, IDisposable
+public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
 {
     private readonly ILogger<ProductionMemoryManager> _logger;
     private readonly ConcurrentDictionary<long, ProductionMemoryBuffer> _buffers = new();
@@ -39,7 +40,7 @@ public sealed class ProductionMemoryManager : IMemoryManager, IDisposable
         _logger.LogInformation("Production memory manager initialized with advanced memory pooling");
     }
 
-    public async ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+    public async ValueTask<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
     {
         if (_disposed)
         {
@@ -126,7 +127,7 @@ public sealed class ProductionMemoryManager : IMemoryManager, IDisposable
         }
     }
 
-    public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+    public async ValueTask<IUnifiedMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (_disposed)
         {
@@ -148,7 +149,7 @@ public sealed class ProductionMemoryManager : IMemoryManager, IDisposable
         }
     }
 
-    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+    public IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
     {
         if (_disposed)
         {
@@ -181,7 +182,7 @@ public sealed class ProductionMemoryManager : IMemoryManager, IDisposable
     /// <typeparam name="T">The element type.</typeparam>
     /// <param name="count">The number of elements to allocate.</param>
     /// <returns>A memory buffer for the allocated elements.</returns>
-    public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    public async ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count) where T : unmanaged
     {
         if (_disposed)
         {
@@ -201,7 +202,7 @@ public sealed class ProductionMemoryManager : IMemoryManager, IDisposable
     /// <param name="buffer">The destination buffer.</param>
     /// <param name="data">The source data span.</param>
     /// <returns>A task representing the async operation.</returns>
-    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    public void CopyToDevice<T>(IUnifiedMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
     {
         if (_disposed)
         {
@@ -220,7 +221,7 @@ public sealed class ProductionMemoryManager : IMemoryManager, IDisposable
     /// <typeparam name="T">The element type.</typeparam>
     /// <param name="data">The destination data span.</param>
     /// <param name="buffer">The source buffer.</param>
-    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    public void CopyFromDevice<T>(Span<T> data, IUnifiedMemoryBuffer buffer) where T : unmanaged
     {
         if (_disposed)
         {
@@ -238,7 +239,7 @@ public sealed class ProductionMemoryManager : IMemoryManager, IDisposable
     /// Frees a memory buffer.
     /// </summary>
     /// <param name="buffer">The buffer to free.</param>
-    public void Free(IMemoryBuffer buffer)
+    public void Free(IUnifiedMemoryBuffer buffer)
     {
         if (buffer is ProductionMemoryBuffer prodBuffer)
         {
@@ -327,7 +328,7 @@ public sealed class ProductionMemoryManager : IMemoryManager, IDisposable
 /// <summary>
 /// Production memory buffer implementation with comprehensive error handling and performance monitoring.
 /// </summary>
-public sealed class ProductionMemoryBuffer : IMemoryBuffer, IDisposable
+public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
 {
     public long Id { get; }
     public long SizeInBytes { get; }
@@ -493,18 +494,18 @@ public sealed class ProductionMemoryBuffer : IMemoryBuffer, IDisposable
 /// <summary>
 /// Production memory buffer view implementation.
 /// </summary>
-public sealed class ProductionMemoryBufferView : IMemoryBuffer
+public sealed class ProductionMemoryBufferView : IUnifiedMemoryBuffer
 {
     public long SizeInBytes { get; }
     public MemoryOptions Options => _parentBuffer.Options;
     public bool IsDisposed { get; private set; }
 
     private readonly long _viewId;
-    private readonly IMemoryBuffer _parentBuffer;
+    private readonly IUnifiedMemoryBuffer _parentBuffer;
     private readonly long _offset;
     private readonly ILogger _logger;
 
-    public ProductionMemoryBufferView(long viewId, IMemoryBuffer parentBuffer, long offset, long length, ILogger logger)
+    public ProductionMemoryBufferView(long viewId, IUnifiedMemoryBuffer parentBuffer, long offset, long length, ILogger logger)
     {
         _viewId = viewId;
         _parentBuffer = parentBuffer;
@@ -749,7 +750,7 @@ public sealed class MemoryStatistics
 /// <summary>
 /// Production kernel compiler implementation with comprehensive error handling and optimization.
 /// </summary>
-public sealed class ProductionKernelCompiler : IKernelCompiler, IDisposable
+public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposable
 {
     private readonly ILogger<ProductionKernelCompiler> _logger;
     private readonly ConcurrentDictionary<string, WeakReference<ProductionCompiledKernel>> _kernelCache = new();
@@ -822,7 +823,7 @@ public sealed class ProductionKernelCompiler : IKernelCompiler, IDisposable
         }
     }
 
-    public ValidationResult Validate(KernelDefinition definition)
+    public UnifiedValidationResult Validate(KernelDefinition definition)
     {
         ArgumentNullException.ThrowIfNull(definition);
 
@@ -866,13 +867,13 @@ public sealed class ProductionKernelCompiler : IKernelCompiler, IDisposable
 
         if (errors.Count > 0)
         {
-            return ValidationResult.Failure(string.Join("; ", errors));
+            return UnifiedValidationResult.Failure(string.Join("; ", errors));
         }
 
-        var result = ValidationResult.Success();
+        var result = UnifiedValidationResult.Success();
         foreach (var warning in warnings)
         {
-            // Note: ValidationResult struct doesn't have AddWarning method in current implementation
+            // Note: UnifiedValidationResult struct doesn't have AddWarning method in current implementation
         }
 
         return result;

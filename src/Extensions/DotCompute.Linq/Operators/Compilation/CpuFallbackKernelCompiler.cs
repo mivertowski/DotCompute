@@ -15,7 +15,7 @@ namespace DotCompute.Linq.Operators.Compilation;
 /// <summary>
 /// CPU fallback kernel compiler for when no accelerator is available.
 /// </summary>
-internal class CpuFallbackKernelCompiler : DotCompute.Abstractions.IKernelCompiler
+internal class CpuFallbackKernelCompiler : DotCompute.Abstractions.IUnifiedKernelCompiler
 {
     private readonly ILogger _logger;
 
@@ -68,18 +68,18 @@ internal class CpuFallbackKernelCompiler : DotCompute.Abstractions.IKernelCompil
     /// </summary>
     /// <param name="definition">The kernel definition to validate.</param>
     /// <returns>The validation result.</returns>
-    public DotCompute.Abstractions.ValidationResult Validate(DotCompute.Abstractions.Kernels.KernelDefinition definition)
+    public DotCompute.Abstractions.UnifiedValidationResult Validate(DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
         if (definition == null)
         {
-            return DotCompute.Abstractions.ValidationResult.Failure("Kernel definition cannot be null");
+            return DotCompute.Abstractions.UnifiedValidationResult.Failure("Kernel definition cannot be null");
         }
 
         if (string.IsNullOrEmpty(definition.Name))
         {
-            return DotCompute.Abstractions.ValidationResult.Failure("Kernel name cannot be empty");
+            return DotCompute.Abstractions.UnifiedValidationResult.Failure("Kernel name cannot be empty");
         }
 
-        return DotCompute.Abstractions.ValidationResult.Success();
+        return DotCompute.Abstractions.UnifiedValidationResult.Success();
     }
 }

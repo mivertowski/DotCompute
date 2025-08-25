@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Memory;
 
@@ -12,9 +13,9 @@ namespace DotCompute.Core.Memory;
 /// Base memory manager that provides common memory management patterns for all backends.
 /// Eliminates 7,625 lines of duplicate code across 5+ implementations.
 /// </summary>
-public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDisposable
+public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposable, IDisposable
 {
-    private readonly ConcurrentDictionary<IMemoryBuffer, WeakReference<IMemoryBuffer>> _activeBuffers;
+    private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>> _activeBuffers;
     private readonly ILogger _logger;
     private readonly Lock _lock = new();
     private long _totalAllocatedBytes;
@@ -25,7 +26,7 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     protected BaseMemoryManager(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _activeBuffers = new ConcurrentDictionary<IMemoryBuffer, WeakReference<IMemoryBuffer>>();
+        _activeBuffers = new ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>>();
     }
 
     /// <summary>
@@ -44,7 +45,7 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     public int AllocationCount => _allocationCount;
 
     /// <inheritdoc/>
-    public virtual async ValueTask<IMemoryBuffer> AllocateAsync(
+    public virtual async ValueTask<IUnifiedMemoryBuffer> AllocateAsync(
         long sizeInBytes,
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default)
@@ -72,7 +73,7 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     }
 
     /// <inheritdoc/>
-    public virtual async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
+    public virtual async ValueTask<IUnifiedMemoryBuffer> AllocateAndCopyAsync<T>(
         ReadOnlyMemory<T> source,
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged
@@ -95,7 +96,7 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     }
 
     /// <inheritdoc/>
-    public virtual IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+    public virtual IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(buffer);
@@ -113,7 +114,7 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     }
 
     /// <inheritdoc/>
-    public virtual async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    public virtual async ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count) where T : unmanaged
     {
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
@@ -123,7 +124,7 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     }
 
     /// <inheritdoc/>
-    public virtual void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    public virtual void CopyToDevice<T>(IUnifiedMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(buffer);
@@ -136,7 +137,7 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     }
 
     /// <inheritdoc/>
-    public virtual void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    public virtual void CopyFromDevice<T>(Span<T> data, IUnifiedMemoryBuffer buffer) where T : unmanaged
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(buffer);
@@ -151,7 +152,7 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     }
 
     /// <inheritdoc/>
-    public virtual void Free(IMemoryBuffer buffer)
+    public virtual void Free(IUnifiedMemoryBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(buffer);
         
@@ -168,7 +169,7 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     /// <summary>
     /// Backend-specific buffer allocation implementation.
     /// </summary>
-    protected abstract ValueTask<IMemoryBuffer> AllocateBufferCoreAsync(
+    protected abstract ValueTask<IUnifiedMemoryBuffer> AllocateBufferCoreAsync(
         long sizeInBytes,
         MemoryOptions options,
         CancellationToken cancellationToken);
@@ -176,14 +177,14 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     /// <summary>
     /// Backend-specific view creation implementation.
     /// </summary>
-    protected abstract IMemoryBuffer CreateViewCore(IMemoryBuffer buffer, long offset, long length);
+    protected abstract IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length);
 
     /// <summary>
     /// Tracks a newly allocated buffer.
     /// </summary>
-    protected virtual void TrackBuffer(IMemoryBuffer buffer, long sizeInBytes)
+    protected virtual void TrackBuffer(IUnifiedMemoryBuffer buffer, long sizeInBytes)
     {
-        _activeBuffers.TryAdd(buffer, new WeakReference<IMemoryBuffer>(buffer));
+        _activeBuffers.TryAdd(buffer, new WeakReference<IUnifiedMemoryBuffer>(buffer));
         
         var newTotal = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
         Interlocked.Increment(ref _allocationCount);
@@ -202,7 +203,7 @@ public abstract class BaseMemoryManager : IMemoryManager, IAsyncDisposable, IDis
     /// </summary>
     protected virtual void CleanupUnusedBuffers()
     {
-        var toRemove = new List<IMemoryBuffer>();
+        var toRemove = new List<IUnifiedMemoryBuffer>();
         
         foreach (var kvp in _activeBuffers)
         {

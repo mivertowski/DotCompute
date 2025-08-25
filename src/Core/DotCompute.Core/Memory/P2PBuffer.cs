@@ -4,6 +4,7 @@
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Memory
 {
@@ -12,7 +13,7 @@ namespace DotCompute.Core.Memory
     /// P2P-optimized buffer that supports direct GPU-to-GPU transfers and host-mediated fallbacks.
     /// Implements type-aware transfer pipelines with proper error handling and synchronization.
     /// </summary>
-    public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmanaged
+    public sealed class P2PBuffer<T> : IUnifiedMemoryBuffer<T>, IAsyncDisposable where T : unmanaged
     {
         private readonly IMemoryBuffer _underlyingBuffer;
         private readonly IAccelerator _accelerator;
@@ -249,7 +250,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Copies to another P2P buffer with optimizations.
         /// </summary>
-        public async ValueTask CopyToAsync(IBuffer<T> destination, CancellationToken cancellationToken = default)
+        public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(destination);
@@ -270,7 +271,7 @@ namespace DotCompute.Core.Memory
         /// </summary>
         public async ValueTask CopyToAsync(
             int sourceOffset,
-            IBuffer<T> destination,
+            IUnifiedMemoryBuffer<T> destination,
             int destinationOffset,
             int count,
             CancellationToken cancellationToken = default)
@@ -361,7 +362,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Creates a slice of this buffer.
         /// </summary>
-        public IBuffer<T> Slice(int offset, int count)
+        public IUnifiedMemoryBuffer<T> Slice(int offset, int count)
         {
             ThrowIfDisposed();
             ArgumentOutOfRangeException.ThrowIfNegative(offset);
@@ -380,7 +381,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Converts this buffer to a different type.
         /// </summary>
-        public IBuffer<TNew> AsType<TNew>() where TNew : unmanaged
+        public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
         {
             ThrowIfDisposed();
 
@@ -472,7 +473,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Copy to standard (non-P2P) buffer.
         /// </summary>
-        private async ValueTask CopyToStandardBufferAsync(IBuffer<T> destination, CancellationToken cancellationToken)
+        private async ValueTask CopyToStandardBufferAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
         {
             var hostData = new T[Length];
             await CopyToHostAsync(hostData, 0, cancellationToken);
@@ -504,7 +505,7 @@ namespace DotCompute.Core.Memory
         /// </summary>
         private async ValueTask CopyRangeToStandardBufferAsync(
             int sourceOffset,
-            IBuffer<T> destination,
+            IUnifiedMemoryBuffer<T> destination,
             int destinationOffset,
             int count,
             CancellationToken cancellationToken)

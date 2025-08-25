@@ -37,7 +37,7 @@ namespace DotCompute.Core.Memory
         /// Creates a P2P-optimized buffer on the target device with data from the source buffer.
         /// </summary>
         public async ValueTask<P2PBuffer<T>> CreateP2PBufferAsync<T>(
-            IBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
             IAccelerator targetDevice,
             P2PBufferOptions? options = null,
             CancellationToken cancellationToken = default) where T : unmanaged
@@ -267,7 +267,7 @@ namespace DotCompute.Core.Memory
         /// Transfers data to P2P buffer using the optimal strategy.
         /// </summary>
         private async ValueTask TransferDataToP2PBufferAsync<T>(
-            IBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
             P2PBuffer<T> targetBuffer,
             TransferStrategy strategy,
             CancellationToken cancellationToken) where T : unmanaged
@@ -328,7 +328,7 @@ namespace DotCompute.Core.Memory
         /// Performs direct P2P transfer between GPU devices.
         /// </summary>
         private static async ValueTask TransferDirectP2PAsync<T>(
-            IBuffer<T> source,
+            IUnifiedMemoryBuffer<T> source,
             P2PBuffer<T> target,
             TransferStrategy strategy,
             CancellationToken cancellationToken) where T : unmanaged
@@ -342,7 +342,7 @@ namespace DotCompute.Core.Memory
         /// Performs host-mediated transfer via CPU memory.
         /// </summary>
         private static async ValueTask TransferHostMediatedAsync<T>(
-        IBuffer<T> source,
+        IUnifiedMemoryBuffer<T> source,
         P2PBuffer<T> target,
         TransferStrategy strategy,
         CancellationToken cancellationToken) where T : unmanaged
@@ -361,7 +361,7 @@ namespace DotCompute.Core.Memory
         /// Performs streaming transfer with chunking for large datasets.
         /// </summary>
         private async ValueTask TransferStreamingAsync<T>(
-            IBuffer<T> source,
+            IUnifiedMemoryBuffer<T> source,
             P2PBuffer<T> target,
             TransferStrategy strategy,
             CancellationToken cancellationToken) where T : unmanaged
@@ -399,7 +399,7 @@ namespace DotCompute.Core.Memory
         /// Transfers a single chunk of data.
         /// </summary>
         private static async Task TransferChunkAsync<T>(
-            IBuffer<T> source,
+            IUnifiedMemoryBuffer<T> source,
             P2PBuffer<T> target,
             int startElement,
             int elementCount,
@@ -409,7 +409,7 @@ namespace DotCompute.Core.Memory
         /// Performs memory-mapped transfer for very large datasets.
         /// </summary>
         private static async ValueTask TransferMemoryMappedAsync<T>(
-        IBuffer<T> source,
+        IUnifiedMemoryBuffer<T> source,
         P2PBuffer<T> target,
         TransferStrategy strategy,
         CancellationToken cancellationToken) where T : unmanaged

@@ -40,7 +40,7 @@ public class CommentStyle
     /// /// &lt;/summary&gt;
     /// /// &lt;param name="userData"&gt;The user data to process.&lt;/param&gt;
     /// /// &lt;returns&gt;A validation result indicating success or failure.&lt;/returns&gt;
-    /// public ValidationResult ProcessUserData(UserData userData)
+    /// public UnifiedValidationResult ProcessUserData(UserData userData)
     /// </code>
     /// 
     /// Disabling this option can significantly reduce generated code size but

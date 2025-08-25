@@ -22,7 +22,7 @@ namespace DotCompute.Core.Memory
         /// Extension method to safely get the length for any IBuffer.
         /// This provides a fallback calculation if Length isn't implemented.
         /// </summary>
-        public static int GetElementCount<T>(this IBuffer<T> buffer) where T : unmanaged
+        public static int GetElementCount<T>(this IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
         {
             try
             {

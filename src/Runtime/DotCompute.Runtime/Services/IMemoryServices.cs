@@ -57,7 +57,7 @@ public interface IUnifiedMemoryService
     /// <param name="sizeInBytes">The size in bytes</param>
     /// <param name="acceleratorIds">The accelerator IDs that will access this memory</param>
     /// <returns>The allocated unified memory buffer</returns>
-    public Task<IMemoryBuffer> AllocateUnifiedAsync(long sizeInBytes, params string[] acceleratorIds);
+    public Task<IUnifiedMemoryBuffer> AllocateUnifiedAsync(long sizeInBytes, params string[] acceleratorIds);
 
     /// <summary>
     /// Migrates data between accelerators
@@ -66,7 +66,7 @@ public interface IUnifiedMemoryService
     /// <param name="sourceAcceleratorId">The source accelerator ID</param>
     /// <param name="targetAcceleratorId">The target accelerator ID</param>
     /// <returns>A task representing the migration operation</returns>
-    public Task MigrateAsync(IMemoryBuffer buffer, string sourceAcceleratorId, string targetAcceleratorId);
+    public Task MigrateAsync(IUnifiedMemoryBuffer buffer, string sourceAcceleratorId, string targetAcceleratorId);
 
     /// <summary>
     /// Synchronizes memory coherence across accelerators
@@ -74,14 +74,14 @@ public interface IUnifiedMemoryService
     /// <param name="buffer">The memory buffer to synchronize</param>
     /// <param name="acceleratorIds">The accelerator IDs to synchronize</param>
     /// <returns>A task representing the synchronization operation</returns>
-    public Task SynchronizeCoherenceAsync(IMemoryBuffer buffer, params string[] acceleratorIds);
+    public Task SynchronizeCoherenceAsync(IUnifiedMemoryBuffer buffer, params string[] acceleratorIds);
 
     /// <summary>
     /// Gets memory coherence status for a buffer
     /// </summary>
     /// <param name="buffer">The memory buffer</param>
     /// <returns>The coherence status</returns>
-    public MemoryCoherenceStatus GetCoherenceStatus(IMemoryBuffer buffer);
+    public MemoryCoherenceStatus GetCoherenceStatus(IUnifiedMemoryBuffer buffer);
 }
 
 /// <summary>
@@ -114,14 +114,14 @@ public interface IMemoryPool : IDisposable
     /// </summary>
     /// <param name="sizeInBytes">The size to allocate</param>
     /// <returns>The allocated memory buffer</returns>
-    public Task<IMemoryBuffer> AllocateAsync(long sizeInBytes);
+    public Task<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes);
 
     /// <summary>
     /// Returns memory to the pool
     /// </summary>
     /// <param name="buffer">The memory buffer to return</param>
     /// <returns>A task representing the return operation</returns>
-    public Task ReturnAsync(IMemoryBuffer buffer);
+    public Task ReturnAsync(IUnifiedMemoryBuffer buffer);
 
     /// <summary>
     /// Defragments the memory pool

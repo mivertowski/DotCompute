@@ -14,8 +14,8 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     internal sealed class P2PPipeline<T> : IAsyncDisposable where T : unmanaged
     {
-        private readonly IBuffer<T> _sourceBuffer;
-        private readonly IBuffer<T> _destinationBuffer;
+        private readonly IUnifiedMemoryBuffer<T> _sourceBuffer;
+        private readonly IUnifiedMemoryBuffer<T> _destinationBuffer;
         private readonly int _chunkSize;
         private readonly int _pipelineDepth;
         private readonly ILogger _logger;
@@ -29,8 +29,8 @@ namespace DotCompute.Core.Memory.P2P
         private const int MaxPipelineDepth = 8;
 
         public P2PPipeline(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             int chunkSize,
             int pipelineDepth,
             ILogger logger)

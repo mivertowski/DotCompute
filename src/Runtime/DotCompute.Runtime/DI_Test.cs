@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.Factories;
 using DotCompute.Runtime.Services;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Runtime;
 
@@ -55,7 +56,7 @@ public static class DICompilationTest
 
         // Test that core services can be resolved
         var runtime = serviceProvider.GetService<AcceleratorRuntime>();
-        var factory = serviceProvider.GetService<IAcceleratorFactory>();
+        var factory = serviceProvider.GetService<IUnifiedAcceleratorFactory>();
         var memoryService = serviceProvider.GetService<IMemoryPoolService>();
         var kernelService = serviceProvider.GetService<IKernelCompilerService>();
 

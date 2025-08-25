@@ -6,6 +6,7 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -33,7 +34,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     /// <summary>
     /// Allocates memory with NUMA-aware placement.
     /// </summary>
-    public ValueTask<IMemoryBuffer> AllocateAsync(
+    public ValueTask<IUnifiedMemoryBuffer> AllocateAsync(
         long sizeInBytes,
         MemoryOptions options,
         NumaMemoryPolicy? policy,
@@ -50,7 +51,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc/>
-    protected override async ValueTask<IMemoryBuffer> AllocateBufferCoreAsync(
+    protected override async ValueTask<IUnifiedMemoryBuffer> AllocateBufferCoreAsync(
         long sizeInBytes,
         MemoryOptions options,
         CancellationToken cancellationToken)
@@ -66,11 +67,11 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         // For now, create a simple CPU buffer
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this, preferredNode, _defaultPolicy);
         
-        return await ValueTask.FromResult<IMemoryBuffer>(buffer);
+        return await ValueTask.FromResult<IUnifiedMemoryBuffer>(buffer);
     }
 
     /// <inheritdoc/>
-    protected override IMemoryBuffer CreateViewCore(IMemoryBuffer buffer, long offset, long length)
+    protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)
     {
         ArgumentNullException.ThrowIfNull(buffer);
         
@@ -122,7 +123,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
 /// <summary>
 /// Simple CPU memory buffer view implementation.
 /// </summary>
-internal sealed class CpuMemoryBufferView : IMemoryBuffer
+internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
 {
     private readonly CpuMemoryBuffer _parent;
     private readonly long _offset;

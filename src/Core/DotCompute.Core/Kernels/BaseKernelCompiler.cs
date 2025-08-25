@@ -16,7 +16,7 @@ namespace DotCompute.Core.Kernels;
 /// Base abstract class for kernel compiler implementations, consolidating common patterns.
 /// This addresses the critical issue of 15+ duplicate compiler implementations.
 /// </summary>
-public abstract class BaseKernelCompiler : IKernelCompiler
+public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 {
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<string, ICompiledKernel> _compilationCache;
@@ -129,16 +129,16 @@ public abstract class BaseKernelCompiler : IKernelCompiler
     /// Validates kernel definition parameters.
     /// Common validation logic that was duplicated across implementations.
     /// </summary>
-    protected virtual ValidationResult ValidateKernelDefinition(KernelDefinition definition)
+    protected virtual UnifiedValidationResult ValidateKernelDefinition(KernelDefinition definition)
     {
         if (string.IsNullOrWhiteSpace(definition.Name))
         {
-            return new ValidationResult(false, "Kernel name cannot be empty");
+            return new UnifiedValidationResult(false, "Kernel name cannot be empty");
         }
         
         if (definition.Code == null || definition.Code.Length == 0)
         {
-            return new ValidationResult(false, "Kernel code cannot be null or empty");
+            return new UnifiedValidationResult(false, "Kernel code cannot be null or empty");
         }
         
         // Validate work dimensions if available
@@ -146,7 +146,7 @@ public abstract class BaseKernelCompiler : IKernelCompiler
         {
             if (workDimsObj is int workDimensions && (workDimensions < 1 || workDimensions > 3))
             {
-                return new ValidationResult(false, "Work dimensions must be between 1 and 3");
+                return new UnifiedValidationResult(false, "Work dimensions must be between 1 and 3");
             }
         }
         
@@ -155,7 +155,7 @@ public abstract class BaseKernelCompiler : IKernelCompiler
         {
             if (paramsObj is IList<object> parameters && parameters.Count == 0)
             {
-                return new ValidationResult(false, "Kernel must have at least one parameter");
+                return new UnifiedValidationResult(false, "Kernel must have at least one parameter");
             }
         }
         
@@ -166,9 +166,9 @@ public abstract class BaseKernelCompiler : IKernelCompiler
     /// <summary>
     /// Hook for derived classes to add additional validation.
     /// </summary>
-    protected virtual ValidationResult AdditionalValidation(KernelDefinition definition)
+    protected virtual UnifiedValidationResult AdditionalValidation(KernelDefinition definition)
     {
-        return new ValidationResult(true, null);
+        return new UnifiedValidationResult(true, null);
     }
     
     /// <summary>
@@ -263,7 +263,7 @@ public abstract class BaseKernelCompiler : IKernelCompiler
 /// <summary>
 /// Represents the result of kernel validation.
 /// </summary>
-public record ValidationResult(bool IsValid, string? ErrorMessage);
+public record UnifiedValidationResult(bool IsValid, string? ErrorMessage);
 
 /// <summary>
 /// Represents compilation metrics for performance analysis.

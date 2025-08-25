@@ -50,7 +50,7 @@ namespace DotCompute.Core.Memory
         /// </summary>
         public void TrackP2PBuffer<T>(
             P2PBuffer<T> buffer,
-            IBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
             int offset,
             int count,
             P2PConnectionCapability? p2pCapability) where T : unmanaged
@@ -103,7 +103,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Synchronizes a buffer across all devices that have copies of it.
         /// </summary>
-        public async ValueTask SynchronizeBufferAsync<T>(IBuffer<T> buffer, CancellationToken cancellationToken = default) where T : unmanaged
+        public async ValueTask SynchronizeBufferAsync<T>(IUnifiedMemoryBuffer<T> buffer, CancellationToken cancellationToken = default) where T : unmanaged
         {
             if (!_bufferTracking.TryGetValue(buffer, out var coherenceInfo))
             {
@@ -217,7 +217,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Records a buffer access for coherence tracking and optimization.
         /// </summary>
-        public void RecordBufferAccess<T>(IBuffer<T> buffer, AccessType accessType) where T : unmanaged
+        public void RecordBufferAccess<T>(IUnifiedMemoryBuffer<T> buffer, AccessType accessType) where T : unmanaged
         {
             if (_bufferTracking.TryGetValue(buffer, out var coherenceInfo))
             {

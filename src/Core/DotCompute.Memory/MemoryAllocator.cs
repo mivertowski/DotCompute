@@ -114,7 +114,7 @@ public sealed class MemoryAllocator : IDisposable
     /// <param name="memoryManager">The memory manager for device operations.</param>
     /// <param name="length">The number of elements to allocate.</param>
     /// <returns>A unified buffer.</returns>
-    public IMemoryBuffer<T> CreateUnifiedBuffer<T>(IMemoryManager memoryManager, int length) where T : unmanaged
+    public IUnifiedMemoryBuffer<T> CreateUnifiedBuffer<T>(IUnifiedMemoryManager memoryManager, int length) where T : unmanaged
     {
         ArgumentNullException.ThrowIfNull(memoryManager);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
@@ -130,7 +130,7 @@ public sealed class MemoryAllocator : IDisposable
     /// <param name="memoryManager">The memory manager for device operations.</param>
     /// <param name="data">The initial data to populate the buffer with.</param>
     /// <returns>A unified buffer.</returns>
-    public IMemoryBuffer<T> CreateUnifiedBuffer<T>(IMemoryManager memoryManager, ReadOnlySpan<T> data) where T : unmanaged
+    public IUnifiedMemoryBuffer<T> CreateUnifiedBuffer<T>(IUnifiedMemoryManager memoryManager, ReadOnlySpan<T> data) where T : unmanaged
     {
         ArgumentNullException.ThrowIfNull(memoryManager);
         ObjectDisposedException.ThrowIf(_disposed, this);

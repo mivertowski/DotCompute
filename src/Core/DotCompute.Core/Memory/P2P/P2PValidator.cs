@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -41,8 +42,8 @@ namespace DotCompute.Core.Memory.P2P
         /// Validates transfer readiness before executing a P2P transfer.
         /// </summary>
         public async Task<P2PValidationResult> ValidateTransferReadinessAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             P2PTransferPlan transferPlan,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -110,8 +111,8 @@ namespace DotCompute.Core.Memory.P2P
         /// Validates transfer integrity after a P2P transfer completes.
         /// </summary>
         public async Task<P2PValidationResult> ValidateTransferIntegrityAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             P2PTransferPlan transferPlan,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -389,8 +390,8 @@ namespace DotCompute.Core.Memory.P2P
         #region Private Implementation
 
         private static async Task<P2PValidationDetail> ValidateBufferCompatibilityAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             CancellationToken cancellationToken) where T : unmanaged
         {
             await Task.CompletedTask; // Simulate async validation
@@ -461,8 +462,8 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private static async Task<P2PValidationDetail> ValidateMemoryAvailabilityAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             P2PTransferPlan transferPlan,
             CancellationToken cancellationToken) where T : unmanaged
         {
@@ -525,8 +526,8 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private static async Task<P2PValidationDetail> ValidateFullDataIntegrityAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             CancellationToken cancellationToken) where T : unmanaged
         {
             var detail = new P2PValidationDetail
@@ -583,8 +584,8 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private static async Task<P2PValidationDetail> ValidateSampledDataIntegrityAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             P2PTransferPlan transferPlan,
             CancellationToken cancellationToken) where T : unmanaged
         {
@@ -653,8 +654,8 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private async Task<P2PValidationDetail> ValidateChecksumIntegrityAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> destinationBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> destinationBuffer,
             CancellationToken cancellationToken) where T : unmanaged
         {
             var detail = new P2PValidationDetail
@@ -688,7 +689,7 @@ namespace DotCompute.Core.Memory.P2P
         }
 
         private static async Task<ulong> CalculateBufferChecksumAsync<T>(
-            IBuffer<T> buffer,
+            IUnifiedMemoryBuffer<T> buffer,
             CancellationToken cancellationToken) where T : unmanaged
         {
             // For large buffers, use sampling-based checksum
@@ -778,7 +779,7 @@ namespace DotCompute.Core.Memory.P2P
             };
         }
 
-        private static async Task<IBuffer<T>> CreateTestBufferAsync<T>(
+        private static async Task<IUnifiedMemoryBuffer<T>> CreateTestBufferAsync<T>(
             IAccelerator device,
             int elementCount,
             CancellationToken cancellationToken) where T : unmanaged
@@ -979,7 +980,7 @@ namespace DotCompute.Core.Memory.P2P
     /// <summary>
     /// Mock buffer implementation for testing purposes.
     /// </summary>
-    internal sealed class MockBuffer<T> : IBuffer<T> where T : unmanaged
+    internal sealed class MockBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
     {
         public MockBuffer(IAccelerator accelerator, int length)
         {
@@ -1006,10 +1007,10 @@ namespace DotCompute.Core.Memory.P2P
         public ValueTask CopyToHostAsync<TData>(Memory<TData> destination, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
             => ValueTask.CompletedTask;
 
-        public ValueTask CopyToAsync(IBuffer<T> destination, CancellationToken cancellationToken = default)
+        public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
-        public ValueTask CopyToAsync(int sourceOffset, IBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
+        public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
         public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
@@ -1021,10 +1022,10 @@ namespace DotCompute.Core.Memory.P2P
         public static Task ClearAsync(CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
-        public IBuffer<T> Slice(int offset, int count)
+        public IUnifiedMemoryBuffer<T> Slice(int offset, int count)
             => new MockBuffer<T>(Accelerator, count);
 
-        public IBuffer<TNew> AsType<TNew>() where TNew : unmanaged
+        public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
             => new MockBuffer<TNew>(Accelerator, (int)(SizeInBytes / Unsafe.SizeOf<TNew>()));
 
         public MappedMemory<T> Map(MapMode mode) => default;

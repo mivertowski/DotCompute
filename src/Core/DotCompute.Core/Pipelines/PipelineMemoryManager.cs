@@ -14,7 +14,7 @@ namespace DotCompute.Core.Pipelines
     /// </summary>
     internal sealed class PipelineMemoryManager : IPipelineMemoryManager
     {
-        private readonly IMemoryManager _memoryManager;
+        private readonly IUnifiedMemoryManager _memoryManager;
         private readonly IComputeDevice _device;
         private readonly ConcurrentDictionary<string, object> _sharedMemories;
         private readonly ConcurrentDictionary<Type, MemoryPool> _pools;
@@ -28,7 +28,7 @@ namespace DotCompute.Core.Pipelines
         private double _cacheHitRate;
         private bool _isDisposed;
 
-        public PipelineMemoryManager(IMemoryManager memoryManager, IComputeDevice device)
+        public PipelineMemoryManager(IUnifiedMemoryManager memoryManager, IComputeDevice device)
         {
             _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
             _device = device ?? throw new ArgumentNullException(nameof(device));

@@ -25,7 +25,7 @@ public abstract class BaseAccelerator : IAccelerator
     protected BaseAccelerator(
         AcceleratorInfo info,
         AcceleratorType type,
-        IMemoryManager memory,
+        IUnifiedMemoryManager memory,
         AcceleratorContext context,
         ILogger logger)
     {
@@ -55,7 +55,7 @@ public abstract class BaseAccelerator : IAccelerator
     public AcceleratorType Type { get; }
     
     /// <inheritdoc/>
-    public IMemoryManager Memory { get; }
+    public IUnifiedMemoryManager Memory { get; }
     
     /// <inheritdoc/>
     public AcceleratorContext Context { get; }

@@ -105,7 +105,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
         /// <exception cref="ArgumentException">Thrown when no devices are provided</exception>
         public async ValueTask<WorkloadDistribution> DistributeWorkloadAsync<T>(
-            IBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
             IAccelerator[] devices,
             LoadBalancingStrategy strategy,
             CancellationToken cancellationToken) where T : unmanaged
@@ -242,7 +242,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// Distributes workload using round-robin strategy.
         /// </summary>
         private static async ValueTask<List<DeviceWorkAssignment>> DistributeRoundRobinAsync<T>(
-            IBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
             IAccelerator[] devices,
             CancellationToken cancellationToken) where T : unmanaged
         {
@@ -279,7 +279,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// Distributes workload using weighted strategy based on device performance.
         /// </summary>
         private async ValueTask<List<DeviceWorkAssignment>> DistributeWeightedAsync<T>(
-            IBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
             IAccelerator[] devices,
             CancellationToken cancellationToken) where T : unmanaged
         {
@@ -335,7 +335,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// Distributes workload using adaptive strategy.
         /// </summary>
         private async ValueTask<List<DeviceWorkAssignment>> DistributeAdaptiveAsync<T>(
-            IBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
             IAccelerator[] devices,
             CancellationToken cancellationToken) where T : unmanaged
             // Start with weighted distribution and adapt based on historical performance
@@ -345,7 +345,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// Distributes workload using dynamic strategy with work stealing.
         /// </summary>
         private async ValueTask<List<DeviceWorkAssignment>> DistributeDynamicAsync<T>(
-        IBuffer<T>[] inputBuffers,
+        IUnifiedMemoryBuffer<T>[] inputBuffers,
         IAccelerator[] devices,
         CancellationToken cancellationToken) where T : unmanaged
         {
@@ -485,7 +485,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <summary>
         /// Creates a slice of buffers for workload distribution.
         /// </summary>
-        private static object[] GetBufferSlice<T>(IBuffer<T>[] buffers, int startIndex, int count) where T : unmanaged
+        private static object[] GetBufferSlice<T>(IUnifiedMemoryBuffer<T>[] buffers, int startIndex, int count) where T : unmanaged
             // Simplified buffer slicing - in practice would create proper buffer views
             => [.. buffers.Cast<object>()];
 

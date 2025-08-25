@@ -56,8 +56,8 @@ namespace DotCompute.Core.Memory
         /// Schedules a P2P-optimized transfer with bandwidth management.
         /// </summary>
         public async ValueTask ScheduleP2PTransferAsync<T>(
-            IBuffer<T> sourceBuffer,
-            IBuffer<T> targetBuffer,
+            IUnifiedMemoryBuffer<T> sourceBuffer,
+            IUnifiedMemoryBuffer<T> targetBuffer,
             int sourceOffset,
             int targetOffset,
             int elementCount,
@@ -541,8 +541,8 @@ namespace DotCompute.Core.Memory
     /// </summary>
     internal sealed class P2PTransferOperation<T> : P2PTransferOperation where T : unmanaged
     {
-        public required IBuffer<T> SourceBuffer { get; init; }
-        public required IBuffer<T> TargetBuffer { get; init; }
+        public required IUnifiedMemoryBuffer<T> SourceBuffer { get; init; }
+        public required IUnifiedMemoryBuffer<T> TargetBuffer { get; init; }
         public required int SourceOffset { get; init; }
         public required int TargetOffset { get; init; }
         public required int ElementCount { get; init; }

@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Compilation.Plans;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Linq.Execution;
 
@@ -34,7 +35,7 @@ public interface IQueryExecutor
     /// <param name="plan">The compute plan to validate.</param>
     /// <param name="accelerator">The target accelerator.</param>
     /// <returns>A validation result.</returns>
-    public DotCompute.Abstractions.ValidationResult Validate(IComputePlan plan, IAccelerator accelerator);
+    public DotCompute.Abstractions.UnifiedValidationResult Validate(IComputePlan plan, IAccelerator accelerator);
 }
 
 /// <summary>
@@ -117,7 +118,7 @@ public class ExecutionOptions
 /// </summary>
 public class BufferPool
 {
-    private readonly Dictionary<string, IMemoryBuffer> _buffers = [];
+    private readonly Dictionary<string, IUnifiedMemoryBuffer> _buffers = [];
     private readonly Lock _lock = new();
 
     /// <summary>
@@ -127,7 +128,7 @@ public class BufferPool
     /// <param name="size">The required size in bytes.</param>
     /// <param name="manager">The memory manager to use for allocation.</param>
     /// <returns>The memory buffer.</returns>
-    public async Task<IMemoryBuffer> GetOrCreateAsync(string key, long size, IMemoryManager manager)
+    public async Task<IUnifiedMemoryBuffer> GetOrCreateAsync(string key, long size, IUnifiedMemoryManager manager)
     {
         lock (_lock)
         {

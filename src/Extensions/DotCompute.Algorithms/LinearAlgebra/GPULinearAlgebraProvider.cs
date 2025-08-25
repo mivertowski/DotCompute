@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.KernelExecutionParameters;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Algorithms.LinearAlgebra
 {

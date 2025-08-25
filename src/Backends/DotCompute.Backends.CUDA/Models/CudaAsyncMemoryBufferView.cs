@@ -5,13 +5,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Backends.CUDA.Memory.Models
 {
     /// <summary>
     /// View over a CUDA async memory buffer.
     /// </summary>
-    internal sealed class CudaAsyncMemoryBufferView : IMemoryBuffer
+    internal sealed class CudaAsyncMemoryBufferView : IUnifiedMemoryBuffer
     {
         private readonly CudaAsyncMemoryBuffer _parent;
         private readonly long _offset;

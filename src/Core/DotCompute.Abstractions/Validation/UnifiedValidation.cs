@@ -271,23 +271,23 @@ public sealed class ValidationException : Exception
     /// <summary>
     /// Gets the validation result that caused this exception.
     /// </summary>
-    public UnifiedValidationResult ValidationResult { get; }
+    public UnifiedValidationResult UnifiedValidationResult { get; }
     
     public ValidationException(UnifiedValidationResult validationResult)
         : base(validationResult?.GetErrorSummary() ?? "Validation failed")
     {
-        ValidationResult = validationResult ?? throw new ArgumentNullException(nameof(validationResult));
+        UnifiedValidationResult = validationResult ?? throw new ArgumentNullException(nameof(validationResult));
     }
     
     public ValidationException(string message)
         : base(message)
     {
-        ValidationResult = UnifiedValidationResult.Failure(message);
+        UnifiedValidationResult = UnifiedValidationResult.Failure(message);
     }
     
     public ValidationException(string message, Exception innerException)
         : base(message, innerException)
     {
-        ValidationResult = UnifiedValidationResult.Failure(message);
+        UnifiedValidationResult = UnifiedValidationResult.Failure(message);
     }
 }

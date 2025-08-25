@@ -12,7 +12,7 @@ namespace DotCompute.Memory;
 /// Base abstract class for memory buffer implementations, consolidating common patterns.
 /// This addresses the critical issue of 15+ duplicate buffer implementations.
 /// </summary>
-public abstract class BaseMemoryBuffer<T> : IMemoryBuffer<T> where T : unmanaged
+public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
     private volatile int _disposed;
     private readonly int _elementSize;
@@ -56,7 +56,7 @@ public abstract class BaseMemoryBuffer<T> : IMemoryBuffer<T> where T : unmanaged
     public abstract ValueTask CopyToAsync(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default);
     
     /// <inheritdoc/>
-    public abstract ValueTask CopyFromAsync(IMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default);
+    public abstract ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Validates copy parameters.

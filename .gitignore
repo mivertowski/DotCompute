@@ -807,3 +807,6 @@ docs/production-implementation-progress.md
 docs/type-extraction-complete-summary.md
 docs/type-extraction-summary.md
 src/Backends/DotCompute.Backends.CUDA/cs_files.txt
+fix_duplicates.sh
+add_using_statements.sh
+fix_interfaces.sh

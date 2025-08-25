@@ -18,9 +18,9 @@ namespace DotCompute.Linq.Operators.Compilation;
 /// <summary>
 /// Adapter that bridges the Core kernel compilers with the LINQ interface.
 /// </summary>
-internal class KernelCompilerAdapter : IKernelCompiler
+internal class KernelCompilerAdapter : IUnifiedKernelCompiler
 {
-    private readonly DotCompute.Abstractions.IKernelCompiler _coreCompiler;
+    private readonly DotCompute.Abstractions.IUnifiedKernelCompiler _coreCompiler;
     private readonly ILogger _logger;
 
     /// <summary>
@@ -28,7 +28,7 @@ internal class KernelCompilerAdapter : IKernelCompiler
     /// </summary>
     /// <param name="coreCompiler">The core kernel compiler to adapt.</param>
     /// <param name="logger">The logger instance.</param>
-    public KernelCompilerAdapter(DotCompute.Abstractions.IKernelCompiler coreCompiler, ILogger logger)
+    public KernelCompilerAdapter(DotCompute.Abstractions.IUnifiedKernelCompiler coreCompiler, ILogger logger)
     {
         _coreCompiler = coreCompiler ?? throw new ArgumentNullException(nameof(coreCompiler));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

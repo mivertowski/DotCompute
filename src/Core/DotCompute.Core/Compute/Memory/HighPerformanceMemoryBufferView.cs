@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Compute.Memory
 {
@@ -9,7 +10,7 @@ namespace DotCompute.Core.Compute.Memory
     /// View over a high-performance memory buffer.
     /// Provides a window into a parent buffer without additional memory allocation.
     /// </summary>
-    internal class HighPerformanceMemoryBufferView(HighPerformanceMemoryBuffer parent, long offset, long length) : IMemoryBuffer
+    internal class HighPerformanceMemoryBufferView(HighPerformanceMemoryBuffer parent, long offset, long length) : IUnifiedMemoryBuffer
     {
         private readonly HighPerformanceMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
         private readonly long _offset = offset;

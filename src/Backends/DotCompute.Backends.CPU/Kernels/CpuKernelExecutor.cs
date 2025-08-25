@@ -871,9 +871,9 @@ internal sealed class CpuKernelExecutor
         // For now, assume the size is determined by buffer size
         // In a real implementation, this would be configurable
         var argumentsArray = arguments.Arguments.ToArray();
-        if (argumentsArray.Any(arg => arg is IMemoryBuffer))
+        if (argumentsArray.Any(arg => arg is IUnifiedMemoryBuffer))
         {
-            var firstBuffer = argumentsArray.OfType<IMemoryBuffer>().First();
+            var firstBuffer = argumentsArray.OfType<IUnifiedMemoryBuffer>().First();
             return firstBuffer.SizeInBytes / sizeof(float);
         }
 

@@ -61,8 +61,8 @@ namespace DotCompute.Core.Execution
         public async ValueTask<DataParallelExecutionPlan<T>> GenerateDataParallelPlanAsync<T>(
             string kernelName,
             IAccelerator[] devices,
-            IBuffer<T>[] inputBuffers,
-            IBuffer<T>[] outputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] outputBuffers,
             DataParallelismOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -317,8 +317,8 @@ namespace DotCompute.Core.Execution
                 {
                     Device = assignment.Device,
                     CompiledKernel = compiledKernel,
-                    InputBuffers = [.. assignment.InputBuffers.Cast<IBuffer<T>>()],
-                    OutputBuffers = [.. assignment.OutputBuffers.Cast<IBuffer<T>>()],
+                    InputBuffers = [.. assignment.InputBuffers.Cast<IUnifiedMemoryBuffer<T>>()],
+                    OutputBuffers = [.. assignment.OutputBuffers.Cast<IUnifiedMemoryBuffer<T>>()],
                     StartIndex = assignment.StartIndex,
                     ElementCount = assignment.ElementCount,
                     Dependencies = dependencyGraph.GetDependencies(i)
@@ -499,7 +499,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Creates input buffers for a pipeline stage.
         /// </summary>
-        private static async ValueTask<IBuffer<T>[]> CreateStageInputBuffersAsync<T>(
+        private static async ValueTask<IUnifiedMemoryBuffer<T>[]> CreateStageInputBuffersAsync<T>(
             PipelineStageDefinition stageDef, IAccelerator device, CancellationToken cancellationToken) where T : unmanaged
         {
             await Task.CompletedTask.ConfigureAwait(false);
@@ -511,7 +511,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Creates output buffers for a pipeline stage.
         /// </summary>
-        private static async ValueTask<IBuffer<T>[]> CreateStageOutputBuffersAsync<T>(
+        private static async ValueTask<IUnifiedMemoryBuffer<T>[]> CreateStageOutputBuffersAsync<T>(
             PipelineStageDefinition stageDef, IAccelerator device, CancellationToken cancellationToken) where T : unmanaged
         {
             await Task.CompletedTask.ConfigureAwait(false);

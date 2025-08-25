@@ -128,7 +128,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Validates configuration against RTX 2000 Ada capabilities
         /// </summary>
-        public static ValidationResult ValidateForAda(int gridX, int gridY, int gridZ,
+        public static UnifiedValidationResult ValidateForAda(int gridX, int gridY, int gridZ,
             int blockX, int blockY, int blockZ, int sharedMem, ILogger? logger = null)
         {
             var errors = new List<string>();
@@ -170,7 +170,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             logger?.LogInformation("Ada validation: Occupancy={Occupancy:P1}, BlocksPerSM={BlocksPerSM}",
                 occupancy, blocksPerSM);
 
-            return new ValidationResult
+            return new UnifiedValidationResult
             {
                 IsValid = errors.Count == 0,
                 Errors = errors,
@@ -241,7 +241,7 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// <summary>
     /// Validation result for Ada configurations
     /// </summary>
-    public sealed class ValidationResult
+    public sealed class UnifiedValidationResult
     {
         public bool IsValid { get; set; }
         public List<string> Errors { get; set; } = [];

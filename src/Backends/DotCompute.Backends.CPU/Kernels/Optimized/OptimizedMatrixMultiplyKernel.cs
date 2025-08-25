@@ -38,9 +38,9 @@ internal class OptimizedMatrixMultiplyKernel : Base.OptimizedKernelBase
     /// <exception cref="ArgumentException">Thrown when arguments are invalid or insufficient.</exception>
     /// <remarks>
     /// Requires 4 arguments:
-    /// - Argument 0: Input matrix A (IMemoryBuffer)
-    /// - Argument 1: Input matrix B (IMemoryBuffer)
-    /// - Argument 2: Output matrix C (IMemoryBuffer)
+    /// - Argument 0: Input matrix A (IUnifiedMemoryBuffer)
+    /// - Argument 1: Input matrix B (IUnifiedMemoryBuffer)
+    /// - Argument 2: Output matrix C (IUnifiedMemoryBuffer)
     /// - Argument 3: Matrix size (int) - assumes square matrices
     /// </remarks>
     public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
@@ -52,9 +52,9 @@ internal class OptimizedMatrixMultiplyKernel : Base.OptimizedKernelBase
             throw new ArgumentException("Matrix multiply requires 4 arguments: matrix A, matrix B, result C, size");
         }
 
-        var bufferA = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var bufferB = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
-        var bufferC = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
+        var bufferA = arguments.Arguments[0] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IUnifiedMemoryBuffer");
+        var bufferB = arguments.Arguments[1] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IUnifiedMemoryBuffer");
+        var bufferC = arguments.Arguments[2] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IUnifiedMemoryBuffer");
         var size = Convert.ToInt32(arguments.Arguments[3]);
 
         await Task.Run(() => ExecuteMatrixMultiplyGenericAsync(bufferA, bufferB, bufferC, size), cancellationToken);
@@ -71,7 +71,7 @@ internal class OptimizedMatrixMultiplyKernel : Base.OptimizedKernelBase
     /// Implements the standard matrix multiplication algorithm C[i,j] = Σ(A[i,k] * B[k,j])
     /// using parallel processing for the outer loop to maximize CPU utilization.
     /// </remarks>
-    private static async Task ExecuteMatrixMultiplyGenericAsync(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferC, int size)
+    private static async Task ExecuteMatrixMultiplyGenericAsync(IUnifiedMemoryBuffer bufferA, IUnifiedMemoryBuffer bufferB, IUnifiedMemoryBuffer bufferC, int size)
     {
         var matrixA = new float[size * size];
         var matrixB = new float[size * size];

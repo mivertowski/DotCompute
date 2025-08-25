@@ -258,7 +258,7 @@ public sealed class MetalAccelerator : BaseAccelerator
         }
     }
 
-    private static IMemoryManager CreateMemoryManager(MetalAcceleratorOptions options)
+    private static IUnifiedMemoryManager CreateMemoryManager(MetalAcceleratorOptions options)
     {
         var device = MetalNative.CreateSystemDefaultDevice();
         if (device == IntPtr.Zero)

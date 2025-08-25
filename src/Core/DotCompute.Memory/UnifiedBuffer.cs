@@ -14,9 +14,9 @@ namespace DotCompute.Memory;
 /// Uses pinned memory allocation for zero-copy operations and GCHandle for AOT compatibility.
 /// </summary>
 /// <typeparam name="T">The element type.</typeparam>
-public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : unmanaged
+public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T> where T : unmanaged
 {
-    private readonly IMemoryManager _memoryManager;
+    private readonly IUnifiedMemoryManager _memoryManager;
     private readonly SemaphoreSlim _asyncLock = new(1, 1);
     private readonly Lock _lock = new();
 
@@ -77,7 +77,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// </summary>
     /// <param name="memoryManager">The memory manager to use for device operations.</param>
     /// <param name="length">The length of the buffer in elements.</param>
-    public UnifiedBuffer(IMemoryManager memoryManager, int length)
+    public UnifiedBuffer(IUnifiedMemoryManager memoryManager, int length)
     {
         ArgumentNullException.ThrowIfNull(memoryManager);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
@@ -100,7 +100,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// </summary>
     /// <param name="memoryManager">The memory manager to use for device operations.</param>
     /// <param name="data">The initial data to populate the buffer with.</param>
-    public UnifiedBuffer(IMemoryManager memoryManager, ReadOnlySpan<T> data)
+    public UnifiedBuffer(IUnifiedMemoryManager memoryManager, ReadOnlySpan<T> data)
         : this(memoryManager, data.Length)
     {
         data.CopyTo(AsSpan());
@@ -893,7 +893,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 
     #endregion
 
-    #region IBuffer<T> Interface Implementation
+    #region IUnifiedMemoryBuffer<T> Interface Implementation
 
     /// <summary>
     /// Creates a slice of this buffer.
@@ -901,7 +901,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// <param name="offset">The offset in elements.</param>
     /// <param name="length">The length of the slice in elements.</param>
     /// <returns>A slice of this buffer.</returns>
-    public IBuffer<T> Slice(int offset, int length)
+    public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -915,7 +915,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// </summary>
     /// <typeparam name="TNew">The new element type.</typeparam>
     /// <returns>A view of this buffer as the new type.</returns>
-    public IBuffer<TNew> AsType<TNew>() where TNew : unmanaged
+    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         var newLength = Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
         return new UnifiedBufferView<T, TNew>(this, newLength);
@@ -927,7 +927,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// <param name="destination">The destination buffer.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the copy operation.</returns>
-    public async ValueTask CopyToAsync(IBuffer<T> destination, CancellationToken cancellationToken = default)
+    public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(destination);
 
@@ -946,7 +946,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// <returns>A task representing the copy operation.</returns>
     public async ValueTask CopyToAsync(
         int sourceOffset,
-        IBuffer<T> destination,
+        IUnifiedMemoryBuffer<T> destination,
         int destinationOffset,
         int count,
         CancellationToken cancellationToken = default)
@@ -1145,7 +1145,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 /// Represents a slice of a unified buffer.
 /// </summary>
 /// <typeparam name="T">The element type.</typeparam>
-internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset, int length) : IBuffer<T>, IMemoryBuffer, IDisposable where T : unmanaged
+internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset, int length) : IUnifiedMemoryBuffer<T>, IMemoryBuffer, IDisposable where T : unmanaged
 {
 #pragma warning disable CA2213 // Disposable fields should be disposed - Slice doesn't own parent buffer
     private readonly UnifiedBuffer<T> _parent = parent ?? throw new ArgumentNullException(nameof(parent));
@@ -1180,7 +1180,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
         return _parent.CopyToHostAsync(destination, offset + _offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken);
     }
 
-    public IBuffer<T> Slice(int offset, int length)
+    public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -1189,13 +1189,13 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
         return new UnifiedBufferSlice<T>(_parent, _offset + offset, length);
     }
 
-    public IBuffer<TNew> AsType<TNew>() where TNew : unmanaged
+    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         var newLength = _length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
         return new UnifiedBufferView<T, TNew>(_parent, newLength);
     }
 
-    public ValueTask CopyToAsync(IBuffer<T> destination, CancellationToken cancellationToken = default)
+    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(destination);
 
@@ -1205,13 +1205,13 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
         return CopyToAsyncImplAsync(readTask, destination, cancellationToken);
     }
 
-    private static async ValueTask CopyToAsyncImplAsync(ValueTask<T[]> readTask, IBuffer<T> destination, CancellationToken cancellationToken)
+    private static async ValueTask CopyToAsyncImplAsync(ValueTask<T[]> readTask, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
     {
         var data = await readTask.ConfigureAwait(false);
         await destination.CopyFromHostAsync<T>(data.AsMemory(), 0, cancellationToken).ConfigureAwait(false);
     }
 
-    public ValueTask CopyToAsync(int sourceOffset, IBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
+    public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(destination);
         ArgumentOutOfRangeException.ThrowIfNegative(sourceOffset);
@@ -1224,7 +1224,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
         return CopyToAsyncWithOffsetImplAsync(readTask, destination, destinationOffset, cancellationToken);
     }
 
-    private static async ValueTask CopyToAsyncWithOffsetImplAsync(ValueTask<T[]> readTask, IBuffer<T> destination, int destinationOffset, CancellationToken cancellationToken)
+    private static async ValueTask CopyToAsyncWithOffsetImplAsync(ValueTask<T[]> readTask, IUnifiedMemoryBuffer<T> destination, int destinationOffset, CancellationToken cancellationToken)
     {
         var data = await readTask.ConfigureAwait(false);
         await destination.CopyFromHostAsync<T>(data.AsMemory(), destinationOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken).ConfigureAwait(false);
@@ -1286,7 +1286,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
 /// </summary>
 /// <typeparam name="TOriginal">The original element type.</typeparam>
 /// <typeparam name="TNew">The new element type.</typeparam>
-internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal> parent, int length) : IBuffer<TNew>, IMemoryBuffer, IDisposable
+internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal> parent, int length) : IUnifiedMemoryBuffer<TNew>, IMemoryBuffer, IDisposable
 where TOriginal : unmanaged
 where TNew : unmanaged
 {
@@ -1337,7 +1337,7 @@ where TNew : unmanaged
         newSpan[..Math.Min(newSpan.Length, destSpan.Length)].CopyTo(destSpan);
     }
 
-    public IBuffer<TNew> Slice(int offset, int length)
+    public IUnifiedMemoryBuffer<TNew> Slice(int offset, int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -1354,13 +1354,13 @@ where TNew : unmanaged
         return new UnifiedBufferView<TOriginal, TNew>(parentSlice as UnifiedBuffer<TOriginal> ?? _parent, length);
     }
 
-    public IBuffer<TNew2> AsType<TNew2>() where TNew2 : unmanaged
+    public IUnifiedMemoryBuffer<TNew2> AsType<TNew2>() where TNew2 : unmanaged
     {
         var newLength = _length * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew2>();
         return new UnifiedBufferView<TOriginal, TNew2>(_parent, newLength);
     }
 
-    public async ValueTask CopyToAsync(IBuffer<TNew> destination, CancellationToken cancellationToken = default)
+    public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<TNew> destination, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(destination);
 
@@ -1369,7 +1369,7 @@ where TNew : unmanaged
         await destination.CopyFromHostAsync<TNew>(tempData.AsMemory(), 0, cancellationToken);
     }
 
-    public async ValueTask CopyToAsync(int sourceOffset, IBuffer<TNew> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
+    public async ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<TNew> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(destination);
         ArgumentOutOfRangeException.ThrowIfNegative(sourceOffset);

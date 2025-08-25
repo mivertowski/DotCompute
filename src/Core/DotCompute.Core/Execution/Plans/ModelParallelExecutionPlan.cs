@@ -134,7 +134,7 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the buffer containing the tensor data.
         /// The actual memory buffer where tensor data is stored, if allocated.
         /// </summary>
-        public AbstractionsMemory.IBuffer<T>? Buffer { get; set; }
+        public AbstractionsMemory.IUnifiedMemoryBuffer<T>? Buffer { get; set; }
 
         /// <summary>
         /// Gets the total number of elements in the tensor.

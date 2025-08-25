@@ -8,6 +8,7 @@ using DotCompute.Core.Kernels;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.ManagedCompiledKernel;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Algorithms.Plugins
 {

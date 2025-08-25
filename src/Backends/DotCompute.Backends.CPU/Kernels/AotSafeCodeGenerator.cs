@@ -455,7 +455,7 @@ internal sealed class AotSafeCodeGenerator
             for (var i = 0; i < parameters.Length && i < paramTypes.Count; i++)
             {
                 // Try to set as buffer first, fallback to parameter
-                if (parameters[i] is IMemoryBuffer buffer)
+                if (parameters[i] is IUnifiedMemoryBuffer buffer)
                 {
                     var cpuBuffer = buffer as CpuMemoryBuffer ?? throw new InvalidOperationException("Buffer must be a CpuMemoryBuffer for CPU backend");
                     context.SetBuffer(i, cpuBuffer.GetMemory());
@@ -484,7 +484,7 @@ internal sealed class AotSafeCodeGenerator
                 // Handle different parameter types
                 switch (parameter)
                 {
-                    case IMemoryBuffer buffer:
+                    case IUnifiedMemoryBuffer buffer:
                         var cpuBuffer = buffer as CpuMemoryBuffer ?? throw new InvalidOperationException("Buffer must be a CpuMemoryBuffer for CPU backend");
                         context.SetBuffer(i, cpuBuffer.GetMemory());
                         break;

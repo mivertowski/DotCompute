@@ -4,6 +4,7 @@
 // </copyright>
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Memory.Types;
 

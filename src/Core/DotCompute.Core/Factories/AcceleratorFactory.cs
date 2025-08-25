@@ -4,6 +4,8 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Accelerators;
+using DotCompute.Abstractions.Factories;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Factories;
@@ -12,7 +14,7 @@ namespace DotCompute.Core.Factories;
 /// Default implementation of the accelerator factory.
 /// Provides centralized accelerator creation with configuration management and caching.
 /// </summary>
-public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
+public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<AcceleratorFactory> _logger;
@@ -30,10 +32,9 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         _backends = new ConcurrentDictionary<string, Func<AcceleratorConfiguration, ILoggerFactory, ValueTask<IAccelerator>>>(StringComparer.OrdinalIgnoreCase);
         _deviceCache = new ConcurrentDictionary<string, AcceleratorInfo>();
         _deviceDiscoverySemaphore = new SemaphoreSlim(1, 1);
-        
         RegisterDefaultBackends();
     }
-    
+
     /// <inheritdoc/>
     public async ValueTask<IAccelerator> CreateAsync(
         AcceleratorType type,
@@ -41,11 +42,10 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
         var backendName = type.ToString();
         return await CreateAsync(backendName, configuration, cancellationToken).ConfigureAwait(false);
     }
-    
+
     /// <inheritdoc/>
     public async ValueTask<IAccelerator> CreateAsync(
         string backendName,
@@ -81,7 +81,7 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
             throw new InvalidOperationException($"Failed to create {backendName} accelerator", ex);
         }
     }
-    
+
     /// <inheritdoc/>
     public async ValueTask<IReadOnlyList<AcceleratorType>> GetAvailableTypesAsync(
         CancellationToken cancellationToken = default)
@@ -110,7 +110,7 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         
         return availableTypes;
     }
-    
+
     /// <inheritdoc/>
     public async ValueTask<IReadOnlyList<AcceleratorInfo>> GetAvailableDevicesAsync(
         CancellationToken cancellationToken = default)
@@ -132,7 +132,7 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
             _deviceDiscoverySemaphore.Release();
         }
     }
-    
+
     /// <inheritdoc/>
     public void RegisterBackend(
         string backendName,
@@ -149,7 +149,7 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         
         _logger.LogInformation("Registered backend: {Backend}", backendName);
     }
-    
+
     /// <inheritdoc/>
     public async ValueTask<IAccelerator> CreateBestForWorkloadAsync(
         WorkloadProfile workloadProfile,
@@ -169,7 +169,6 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         
         // Score each available accelerator type
         var scores = new Dictionary<AcceleratorType, int>();
-        
         foreach (var type in availableTypes)
         {
             scores[type] = CalculateWorkloadScore(type, workloadProfile);
@@ -177,7 +176,6 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         
         // Select the best scoring accelerator
         var bestType = scores.OrderByDescending(kvp => kvp.Value).First().Key;
-        
         _logger.LogInformation("Selected {AcceleratorType} as best for workload (score: {Score})",
             bestType, scores[bestType]);
         
@@ -186,7 +184,7 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         
         return await CreateAsync(bestType, configuration, cancellationToken).ConfigureAwait(false);
     }
-    
+
     private void RegisterDefaultBackends()
     {
         // Register CPU backend (always available)
@@ -229,8 +227,8 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         
         // Additional backends can be registered here
     }
-    
-    private IMemoryManager CreateMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
+
+    private IUnifiedMemoryManager CreateMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
     {
         return config.MemoryStrategy switch
         {
@@ -240,32 +238,31 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
             _ => CreateDirectMemoryManager(config, loggerFactory)
         };
     }
-    
-    private IMemoryManager CreateOptimizedPooledMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
+
+    private IUnifiedMemoryManager CreateOptimizedPooledMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
     {
         // Use our new optimized memory pool
         var baseManager = CreateDirectMemoryManager(config, loggerFactory);
-        
         // TODO: Production - Wrap with OptimizedMemoryPool implementation
         // Missing: Bucket-based pooling, lock-free allocation, automatic sizing
         return baseManager; // Placeholder - would wrap with OptimizedMemoryPool
     }
-    
-    private IMemoryManager CreatePooledMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
+
+    private IUnifiedMemoryManager CreatePooledMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
     {
         // TODO: Production - Implement standard pooled memory manager
         // Missing: Pool size management, eviction policies, fragmentation handling
         return CreateDirectMemoryManager(config, loggerFactory); // Placeholder
     }
-    
-    private IMemoryManager CreateUnifiedMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
+
+    private IUnifiedMemoryManager CreateUnifiedMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
     {
         // TODO: Production - Implement unified memory manager for CUDA
         // Missing: cudaMallocManaged, prefetching, migration hints
         return CreateDirectMemoryManager(config, loggerFactory); // Placeholder
     }
-    
-    private IMemoryManager CreateDirectMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
+
+    private IUnifiedMemoryManager CreateDirectMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
     {
         // Direct memory manager without pooling
         var type = Type.GetType("DotCompute.Memory.Internal.SimpleInMemoryManager, DotCompute.Memory");
@@ -274,10 +271,10 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
             throw new InvalidOperationException("Memory manager type not found");
         }
         
-        var instance = Activator.CreateInstance(type) as IMemoryManager;
+        var instance = Activator.CreateInstance(type) as IUnifiedMemoryManager;
         return instance ?? throw new InvalidOperationException("Failed to create memory manager");
     }
-    
+
     private static AcceleratorConfiguration GetDefaultConfiguration(string backendName)
     {
         return backendName.ToUpperInvariant() switch
@@ -296,7 +293,7 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
             _ => new AcceleratorConfiguration()
         };
     }
-    
+
     private static int CalculateWorkloadScore(AcceleratorType type, WorkloadProfile profile)
     {
         var score = 0;
@@ -330,7 +327,7 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         
         return score;
     }
-    
+
     private static AcceleratorConfiguration CreateOptimizedConfiguration(
         AcceleratorType type,
         WorkloadProfile profile)
@@ -354,7 +351,7 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         
         return config;
     }
-    
+
     private async ValueTask ConfigureAcceleratorAsync(
         IAccelerator accelerator,
         AcceleratorConfiguration configuration,
@@ -375,7 +372,7 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         
         await Task.CompletedTask;
     }
-    
+
     private async ValueTask DiscoverDevicesAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Discovering available accelerator devices");
@@ -394,20 +391,20 @@ public sealed class AcceleratorFactory : IAcceleratorFactory, IDisposable
         
         await Task.CompletedTask;
     }
-    
+
     private static long GetSystemMemory()
     {
         // TODO: Production - Implement proper system memory detection
         // Missing: Platform-specific memory queries (Windows WMI, Linux /proc/meminfo)
         return GC.GetTotalMemory(false) * 10; // Rough estimate
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed()
     {
         ObjectDisposedException.ThrowIf(_disposed, GetType());
     }
-    
+
     public void Dispose()
     {
         if (!_disposed)

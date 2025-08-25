@@ -7,7 +7,7 @@ namespace DotCompute.Core.Extensions
 {
 
     /// <summary>
-    /// Extension methods for IMemoryBuffer.
+    /// Extension methods for IUnifiedMemoryBuffer.
     /// </summary>
     public static class MemoryBufferExtensions
     {
@@ -15,7 +15,7 @@ namespace DotCompute.Core.Extensions
         /// Writes data to the memory buffer from a host array.
         /// </summary>
         public static ValueTask WriteAsync<T>(
-            this IMemoryBuffer buffer,
+            this IUnifiedMemoryBuffer buffer,
             T[] data,
             long offset,
             CancellationToken cancellationToken = default) where T : unmanaged => buffer.CopyFromHostAsync<T>(data.AsMemory(), offset, cancellationToken);
@@ -24,7 +24,7 @@ namespace DotCompute.Core.Extensions
         /// Writes data to the memory buffer from a host memory.
         /// </summary>
         public static ValueTask WriteAsync<T>(
-            this IMemoryBuffer buffer,
+            this IUnifiedMemoryBuffer buffer,
             ReadOnlyMemory<T> data,
             long offset,
             CancellationToken cancellationToken = default) where T : unmanaged => buffer.CopyFromHostAsync<T>(data, offset, cancellationToken);
@@ -33,7 +33,7 @@ namespace DotCompute.Core.Extensions
         /// Reads data from the memory buffer to a host array.
         /// </summary>
         public static ValueTask ReadAsync<T>(
-            this IMemoryBuffer buffer,
+            this IUnifiedMemoryBuffer buffer,
             T[] data,
             long offset,
             CancellationToken cancellationToken = default) where T : unmanaged => buffer.CopyToHostAsync<T>(data.AsMemory(), offset, cancellationToken);
@@ -42,7 +42,7 @@ namespace DotCompute.Core.Extensions
         /// Reads data from the memory buffer to a host memory.
         /// </summary>
         public static ValueTask ReadAsync<T>(
-            this IMemoryBuffer buffer,
+            this IUnifiedMemoryBuffer buffer,
             Memory<T> data,
             long offset,
             CancellationToken cancellationToken = default) where T : unmanaged => buffer.CopyToHostAsync<T>(data, offset, cancellationToken);

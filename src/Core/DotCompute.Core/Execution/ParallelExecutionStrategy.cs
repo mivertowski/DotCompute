@@ -148,8 +148,8 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask<ParallelExecutionResult> ExecuteDataParallelAsync<T>(
             string kernelName,
-            AbstractionsMemory.IBuffer<T>[] inputBuffers,
-            AbstractionsMemory.IBuffer<T>[] outputBuffers,
+            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers,
+            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers,
             DataParallelismOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -470,8 +470,8 @@ namespace DotCompute.Core.Execution
         }
 
         private void ValidateDataParallelInputs<T>(
-            AbstractionsMemory.IBuffer<T>[] inputBuffers,
-            AbstractionsMemory.IBuffer<T>[] outputBuffers,
+            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers,
+            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers,
             IAccelerator[] devices) where T : unmanaged
         {
             if (inputBuffers == null || inputBuffers.Length == 0)
@@ -502,8 +502,8 @@ namespace DotCompute.Core.Execution
 
         private async ValueTask<DataParallelExecutionPlan<T>> CreateDataParallelExecutionPlanAsync<T>(
             string kernelName,
-            AbstractionsMemory.IBuffer<T>[] inputBuffers,
-            AbstractionsMemory.IBuffer<T>[] outputBuffers,
+            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers,
+            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers,
             IAccelerator[] devices,
             DataParallelismOptions options,
             CancellationToken cancellationToken) where T : unmanaged
@@ -553,14 +553,14 @@ namespace DotCompute.Core.Execution
             return plan;
         }
 
-        private async ValueTask<AbstractionsMemory.IBuffer<T>[]> CreateDeviceBufferSlicesAsync<T>(
-            AbstractionsMemory.IBuffer<T>[] sourceBuffers,
+        private async ValueTask<AbstractionsMemory.IUnifiedMemoryBuffer<T>[]> CreateDeviceBufferSlicesAsync<T>(
+            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] sourceBuffers,
             IAccelerator device,
             int startIndex,
             int elementCount,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            var deviceBuffers = new AbstractionsMemory.IBuffer<T>[sourceBuffers.Length];
+            var deviceBuffers = new AbstractionsMemory.IUnifiedMemoryBuffer<T>[sourceBuffers.Length];
 
             for (var i = 0; i < sourceBuffers.Length; i++)
             {
@@ -679,7 +679,7 @@ namespace DotCompute.Core.Execution
             return results!;
         }
 
-        private static KernelArgument[] CreateKernelArguments<T>(AbstractionsMemory.IBuffer<T>[] inputBuffers, AbstractionsMemory.IBuffer<T>[] outputBuffers) where T : unmanaged
+        private static KernelArgument[] CreateKernelArguments<T>(AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers, AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers) where T : unmanaged
         {
             var args = new KernelArgument[inputBuffers.Length + outputBuffers.Length];
 
@@ -689,7 +689,7 @@ namespace DotCompute.Core.Execution
                 {
                     Name = $"input_{i}",
                     Value = inputBuffers[i],
-                    Type = typeof(AbstractionsMemory.IBuffer<T>),
+                    Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
                     IsDeviceMemory = true,
                     MemoryBuffer = inputBuffers[i] as AbstractionsMemory.IMemoryBuffer
                 };
@@ -701,7 +701,7 @@ namespace DotCompute.Core.Execution
                 {
                     Name = $"output_{i}",
                     Value = outputBuffers[i],
-                    Type = typeof(AbstractionsMemory.IBuffer<T>),
+                    Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
                     IsDeviceMemory = true,
                     MemoryBuffer = outputBuffers[i] as AbstractionsMemory.IMemoryBuffer
                 };

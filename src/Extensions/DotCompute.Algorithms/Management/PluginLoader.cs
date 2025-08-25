@@ -41,7 +41,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
     {
         public required Assembly Assembly { get; init; }
         public required PluginAssemblyLoadContext LoadContext { get; init; }
-        public required SecurityValidationResult ValidationResult { get; init; }
+        public required SecurityValidationResult UnifiedValidationResult { get; init; }
         public required DateTime LoadTime { get; init; }
         public required string AssemblyPath { get; init; }
         public bool IsIsolated { get; init; }
@@ -178,7 +178,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 LogAssemblyValidationFailed(assemblyPath, string.Join(", ", validationResult.Errors));
                 var result = new PluginLoadResult();
                 result.Success = false;
-                result.ValidationResult = validationResult;
+                result.UnifiedValidationResult = validationResult;
                 result.ErrorMessage = $"Assembly validation failed: {string.Join(", ", validationResult.Errors)}";
                 return result;
             }
@@ -201,7 +201,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                     loadContext.Unload();
                     var duplicateResult = new PluginLoadResult();
                     duplicateResult.Success = false;
-                    duplicateResult.ValidationResult = validationResult;
+                    duplicateResult.UnifiedValidationResult = validationResult;
                     duplicateResult.ErrorMessage = $"Assembly {assemblyName} is already loaded";
                     return duplicateResult;
                 }
@@ -214,7 +214,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 {
                     Assembly = assembly,
                     LoadContext = loadContext,
-                    ValidationResult = validationResult,
+                    UnifiedValidationResult = validationResult,
                     LoadTime = DateTime.UtcNow,
                     AssemblyPath = assemblyPath,
                     IsIsolated = _options.EnableIsolation
@@ -229,7 +229,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 var result = new PluginLoadResult();
                 result.Success = true;
                 result.Plugins.AddRange(plugins);
-                result.ValidationResult = validationResult;
+                result.UnifiedValidationResult = validationResult;
                 result.LoadContext = loadContext;
                 result.Assembly = assembly;
                 return result;
@@ -249,7 +249,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
             var errorValidationResult = new SecurityValidationResult();
             errorValidationResult.IsValid = false;
             errorValidationResult.Errors.Add(ex.Message);
-            result.ValidationResult = errorValidationResult;
+            result.UnifiedValidationResult = errorValidationResult;
             result.ErrorMessage = ex.Message;
             return result;
         }
@@ -630,7 +630,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 AssemblyPath = la.AssemblyPath,
                 LoadTime = la.LoadTime,
                 IsIsolated = la.IsIsolated,
-                ValidationResult = la.ValidationResult,
+                UnifiedValidationResult = la.UnifiedValidationResult,
                 PluginCount = la.Plugins.Count
             };
 
@@ -1061,7 +1061,7 @@ public sealed class PluginLoadResult
     /// <summary>
     /// Gets or sets the security validation result.
     /// </summary>
-    public SecurityValidationResult ValidationResult { get; set; } = new();
+    public SecurityValidationResult UnifiedValidationResult { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the error message if loading failed.
@@ -1107,7 +1107,7 @@ public sealed class LoadedAssemblyInfo
     /// <summary>
     /// Gets or sets the security validation result.
     /// </summary>
-    public required SecurityValidationResult ValidationResult { get; set; }
+    public required SecurityValidationResult UnifiedValidationResult { get; set; }
 
     /// <summary>
     /// Gets or sets the number of plugins in the assembly.

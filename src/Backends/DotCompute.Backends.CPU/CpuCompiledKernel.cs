@@ -735,11 +735,11 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         }
 
         // Infer from argument patterns
-        if (args.Length >= 3 && args.Take(3).All(a => a is IMemoryBuffer))
+        if (args.Length >= 3 && args.Take(3).All(a => a is IUnifiedMemoryBuffer))
         {
             return KernelOperationType.ElementwiseAdd; // Most common case
         }
-        if (args.Length == 2 && args.All(a => a is IMemoryBuffer))
+        if (args.Length == 2 && args.All(a => a is IUnifiedMemoryBuffer))
         {
             return KernelOperationType.UnaryFunction;
         }
@@ -751,17 +751,17 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     {
         // Simple fallback patterns for common operations
         if (args.Length >= 3 &&
-            args[0] is IMemoryBuffer &&
-            args[1] is IMemoryBuffer &&
-            args[2] is IMemoryBuffer)
+            args[0] is IUnifiedMemoryBuffer &&
+            args[1] is IUnifiedMemoryBuffer &&
+            args[2] is IUnifiedMemoryBuffer)
         {
             ExecuteElementwiseAdd(args, linearIndex);
             return true;
         }
 
         if (args.Length == 2 &&
-            args[0] is IMemoryBuffer &&
-            args[1] is IMemoryBuffer)
+            args[0] is IUnifiedMemoryBuffer &&
+            args[1] is IUnifiedMemoryBuffer)
         {
             ExecuteUnaryFunction(args, linearIndex, _definition);
             return true;
@@ -785,9 +785,9 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     private static unsafe void ExecuteElementwiseAdd(object[] args, long linearIndex)
     {
         if (args.Length < 3 ||
-            args[0] is not IMemoryBuffer input1 ||
-            args[1] is not IMemoryBuffer input2 ||
-            args[2] is not IMemoryBuffer output)
+            args[0] is not IUnifiedMemoryBuffer input1 ||
+            args[1] is not IUnifiedMemoryBuffer input2 ||
+            args[2] is not IUnifiedMemoryBuffer output)
         {
             return;
         }
@@ -825,9 +825,9 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     private static unsafe void ExecuteElementwiseMultiply(object[] args, long linearIndex)
     {
         if (args.Length < 3 ||
-            args[0] is not IMemoryBuffer input1 ||
-            args[1] is not IMemoryBuffer input2 ||
-            args[2] is not IMemoryBuffer output)
+            args[0] is not IUnifiedMemoryBuffer input1 ||
+            args[1] is not IUnifiedMemoryBuffer input2 ||
+            args[2] is not IUnifiedMemoryBuffer output)
         {
             return;
         }
@@ -865,9 +865,9 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     private static unsafe void ExecuteElementwiseSubtract(object[] args, long linearIndex)
     {
         if (args.Length < 3 ||
-            args[0] is not IMemoryBuffer input1 ||
-            args[1] is not IMemoryBuffer input2 ||
-            args[2] is not IMemoryBuffer output)
+            args[0] is not IUnifiedMemoryBuffer input1 ||
+            args[1] is not IUnifiedMemoryBuffer input2 ||
+            args[2] is not IUnifiedMemoryBuffer output)
         {
             return;
         }
@@ -905,9 +905,9 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     private static unsafe void ExecuteElementwiseDivide(object[] args, long linearIndex)
     {
         if (args.Length < 3 ||
-            args[0] is not IMemoryBuffer input1 ||
-            args[1] is not IMemoryBuffer input2 ||
-            args[2] is not IMemoryBuffer output)
+            args[0] is not IUnifiedMemoryBuffer input1 ||
+            args[1] is not IUnifiedMemoryBuffer input2 ||
+            args[2] is not IUnifiedMemoryBuffer output)
         {
             return;
         }
@@ -955,8 +955,8 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     private static unsafe void ExecuteUnaryFunction(object[] args, long linearIndex, KernelDefinition? definition)
     {
         if (args.Length < 2 ||
-            args[0] is not IMemoryBuffer input ||
-            args[1] is not IMemoryBuffer output)
+            args[0] is not IUnifiedMemoryBuffer input ||
+            args[1] is not IUnifiedMemoryBuffer output)
         {
             return;
         }
@@ -1006,8 +1006,8 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         // Reduction operations need special handling - typically done in shared memory
         // This is a simplified implementation
         if (args.Length < 2 ||
-            args[0] is not IMemoryBuffer ||
-            args[1] is not IMemoryBuffer)
+            args[0] is not IUnifiedMemoryBuffer ||
+            args[1] is not IUnifiedMemoryBuffer)
         {
             return;
         }
@@ -1022,9 +1022,9 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         // Matrix multiplication requires understanding of matrix dimensions
         // This is a placeholder implementation
         if (args.Length < 3 ||
-            args[0] is not IMemoryBuffer ||
-            args[1] is not IMemoryBuffer ||
-            args[2] is not IMemoryBuffer)
+            args[0] is not IUnifiedMemoryBuffer ||
+            args[1] is not IUnifiedMemoryBuffer ||
+            args[2] is not IUnifiedMemoryBuffer)
         {
             return;
         }
@@ -1047,9 +1047,9 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     }
 
     private static unsafe void ExecuteVectorOperation(
-        IMemoryBuffer input1,
-        IMemoryBuffer input2,
-        IMemoryBuffer output,
+        IUnifiedMemoryBuffer input1,
+        IUnifiedMemoryBuffer input2,
+        IUnifiedMemoryBuffer output,
         long index)
     {
         // Get element size based on buffer type (defaulting to float for numeric operations)
@@ -1088,8 +1088,8 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     }
 
     private static unsafe void ExecuteUnaryOperation(
-        IMemoryBuffer input,
-        IMemoryBuffer output,
+        IUnifiedMemoryBuffer input,
+        IUnifiedMemoryBuffer output,
         long index)
     {
         // Get element size based on buffer type (defaulting to float for numeric operations)
@@ -1123,7 +1123,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     }
 
     private static unsafe void ExecuteInPlaceOperation(
-        IMemoryBuffer buffer,
+        IUnifiedMemoryBuffer buffer,
         long index,
         object[]? args)
     {
@@ -1174,7 +1174,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         return ValueTask.CompletedTask;
     }
 
-    private static bool TryGetBufferArguments(KernelExecutionContext context, out IMemoryBuffer? input1, out IMemoryBuffer? input2, out IMemoryBuffer? output)
+    private static bool TryGetBufferArguments(KernelExecutionContext context, out IUnifiedMemoryBuffer? input1, out IUnifiedMemoryBuffer? input2, out IUnifiedMemoryBuffer? output)
     {
         input1 = null;
         input2 = null;
@@ -1186,9 +1186,9 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         }
 
         // Try to extract buffer arguments (assuming simple vector operation kernel)
-        if (context.Arguments[0] is IMemoryBuffer buf1 &&
-            context.Arguments[1] is IMemoryBuffer buf2 &&
-            context.Arguments[2] is IMemoryBuffer buf3)
+        if (context.Arguments[0] is IUnifiedMemoryBuffer buf1 &&
+            context.Arguments[1] is IUnifiedMemoryBuffer buf2 &&
+            context.Arguments[2] is IUnifiedMemoryBuffer buf3)
         {
             input1 = buf1;
             input2 = buf2;
@@ -1199,7 +1199,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         return false;
     }
 
-    private static unsafe bool TryGetBufferSpan<T>(IMemoryBuffer buffer, out Span<T> span) where T : unmanaged
+    private static unsafe bool TryGetBufferSpan<T>(IUnifiedMemoryBuffer buffer, out Span<T> span) where T : unmanaged
     {
         span = default;
 
@@ -1256,7 +1256,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     private static bool IsSupportedArgumentType(Type type)
     {
         // Check if the type is a supported kernel argument type
-        return type == typeof(IMemoryBuffer) ||
+        return type == typeof(IUnifiedMemoryBuffer) ||
                type == typeof(CpuMemoryBuffer) ||
                type.IsArray ||
                type.IsPrimitive ||

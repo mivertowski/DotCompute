@@ -39,8 +39,8 @@ internal class OptimizedMemoryKernel : Base.OptimizedKernelBase
     /// <exception cref="ArgumentException">Thrown when arguments are invalid or insufficient.</exception>
     /// <remarks>
     /// Requires 2 arguments:
-    /// - Argument 0: Input vector (IMemoryBuffer)
-    /// - Argument 1: Output vector (IMemoryBuffer)
+    /// - Argument 0: Input vector (IUnifiedMemoryBuffer)
+    /// - Argument 1: Output vector (IUnifiedMemoryBuffer)
     /// </remarks>
     public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
@@ -51,8 +51,8 @@ internal class OptimizedMemoryKernel : Base.OptimizedKernelBase
             throw new ArgumentException("Memory kernel requires 2 arguments: input, output");
         }
 
-        var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
+        var inputBuffer = arguments.Arguments[0] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IUnifiedMemoryBuffer");
+        var outputBuffer = arguments.Arguments[1] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IUnifiedMemoryBuffer");
 
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
 
@@ -70,7 +70,7 @@ internal class OptimizedMemoryKernel : Base.OptimizedKernelBase
     /// per element to test memory subsystem performance. The operations are designed
     /// to be memory-bandwidth limited rather than compute-limited.
     /// </remarks>
-    private static async Task ExecuteMemoryIntensiveGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
+    private static async Task ExecuteMemoryIntensiveGenericAsync(IUnifiedMemoryBuffer inputBuffer, IUnifiedMemoryBuffer outputBuffer, int elementCount)
     {
         var input = new float[elementCount];
         var output = new float[elementCount];

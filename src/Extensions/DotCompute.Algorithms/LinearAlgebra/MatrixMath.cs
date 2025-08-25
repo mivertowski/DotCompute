@@ -11,6 +11,7 @@ using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Algorithms.LinearAlgebra
 {

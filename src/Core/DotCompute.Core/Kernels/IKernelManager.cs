@@ -21,7 +21,7 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Registers a kernel compiler for a specific accelerator type.
         /// </summary>
-        public void RegisterCompiler(AcceleratorType acceleratorType, IKernelCompiler compiler);
+        public void RegisterCompiler(AcceleratorType acceleratorType, IUnifiedKernelCompiler compiler);
 
         /// <summary>
         /// Registers a kernel executor for a specific accelerator type.

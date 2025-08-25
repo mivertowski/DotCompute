@@ -285,7 +285,7 @@ public sealed class NuGetPluginService : INuGetPluginService
                 PackageId = packageSource,
                 Version = "Unknown",
                 IsValid = false,
-                ValidationError = ex.Message,
+                ValidationIssue = ex.Message,
                 AssemblyCount = 0,
                 DependencyCount = 0,
                 SecurityValidationPassed = false,
@@ -311,7 +311,7 @@ public sealed class NuGetPluginService : INuGetPluginService
     [LoggerMessage(Level = LogLevel.Information, Message = "NuGet dependencies resolved for {PackageId}: {Dependencies}")]
     private partial void LogNuGetDependenciesResolved(string packageId, string dependencies);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "NuGet security validation for {PackageId}: {ValidationResult}")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "NuGet security validation for {PackageId}: {UnifiedValidationResult}")]
     private partial void LogNuGetSecurityValidation(string packageId, string validationResult);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "NuGet package warning for {PackageId}: {Warning}")]

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Memory;
 namespace DotCompute.Backends.CUDA.Integration
 {
 
@@ -574,7 +575,7 @@ namespace DotCompute.Backends.CUDA.Integration
             private bool _disposed;
 
             // Memory manager implementation that delegates to the underlying CUDA memory manager
-            private sealed class CudaContextMemoryManager : IMemoryManager, IDisposable
+            private sealed class CudaContextMemoryManager : IUnifiedMemoryManager, IDisposable
 
             {
                 private readonly CudaMemoryManager _cudaMemoryManager;
@@ -586,7 +587,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     _asyncAdapter = new CudaAsyncMemoryManagerAdapter(_cudaMemoryManager);
                 }
 
-                public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+                public ValueTask<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
                 {
                     try
                     {
@@ -598,7 +599,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     }
                 }
 
-                public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+                public ValueTask<IUnifiedMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
                 {
                     try
                     {
@@ -610,7 +611,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     }
                 }
 
-                public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+                public IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
                 {
                     try
                     {
@@ -622,7 +623,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     }
                 }
 
-                public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+                public ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count) where T : unmanaged
                 {
                     try
                     {
@@ -634,7 +635,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     }
                 }
 
-                public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+                public void CopyToDevice<T>(IUnifiedMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
                 {
                     try
                     {
@@ -646,7 +647,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     }
                 }
 
-                public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+                public void CopyFromDevice<T>(Span<T> data, IUnifiedMemoryBuffer buffer) where T : unmanaged
                 {
                     try
                     {
@@ -658,7 +659,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     }
                 }
 
-                public void Free(IMemoryBuffer buffer)
+                public void Free(IUnifiedMemoryBuffer buffer)
                 {
                     try
                     {
@@ -849,7 +850,7 @@ namespace DotCompute.Backends.CUDA.Integration
 
             public AcceleratorInfo Info => _info;
             public AcceleratorType Type => AcceleratorType.CUDA;
-            public IMemoryManager Memory => _memoryManager;
+            public IUnifiedMemoryManager Memory => _memoryManager;
             public AcceleratorContext Context => _acceleratorContext;
 
             public ValueTask<ICompiledKernel> CompileKernelAsync(

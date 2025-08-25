@@ -13,6 +13,7 @@ using DotCompute.Linq.Operators;
 using DotCompute.Linq.Operators.Types;
 using DotCompute.Linq.Query;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Linq;
 
@@ -300,7 +301,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
         return parameters;
     }
 
-    private async ValueTask<IMemoryBuffer> AllocateOutputBufferAsync(Type outputType, long size, CancellationToken cancellationToken)
+    private async ValueTask<IUnifiedMemoryBuffer> AllocateOutputBufferAsync(Type outputType, long size, CancellationToken cancellationToken)
     {
         var elementSize = GetElementSize(outputType);
         var totalSize = size * elementSize;
@@ -354,7 +355,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
     [RequiresUnreferencedCode("Creating instances may require unreferenced code")]
     private static object? ExtractSingleValue(object buffer, Type expectedType)
     {
-        if (buffer is IMemoryBuffer memoryBuffer)
+        if (buffer is IUnifiedMemoryBuffer memoryBuffer)
         {
             // Read single value from device memory
             var elementSize = GetElementSize(expectedType);
@@ -371,7 +372,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
     [RequiresDynamicCode("Array.CreateInstance requires dynamic code")]
     private static object? ExtractArrayResult(object buffer, Type expectedType)
     {
-        if (buffer is IMemoryBuffer memoryBuffer)
+        if (buffer is IUnifiedMemoryBuffer memoryBuffer)
         {
             // This would need proper implementation to read from device memory
             // For now, return empty array of the expected type

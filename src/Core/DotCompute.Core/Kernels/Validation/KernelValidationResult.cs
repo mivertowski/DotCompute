@@ -21,7 +21,7 @@ public sealed class KernelValidationResult
     /// Gets validation errors that prevent kernel compilation.
     /// Empty list indicates no errors found.
     /// </summary>
-    public List<ValidationError> Errors { get; init; } = [];
+    public List<ValidationIssue> Errors { get; init; } = [];
 
     /// <summary>
     /// Gets validation warnings that don't prevent compilation.
