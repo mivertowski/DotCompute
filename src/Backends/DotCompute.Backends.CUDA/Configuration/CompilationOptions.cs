@@ -1,31 +1,16 @@
 using System.Collections.Generic;
 
-namespace DotCompute.Backends.CUDA.Compilation.Configuration
+namespace DotCompute.Backends.CUDA.Configuration
 {
     /// <summary>
-    /// Options for CUDA kernel compilation.
+    /// CUDA-specific compilation options extending the base compilation options.
     /// </summary>
-    public class CompilationOptions
+    public class CudaCompilationOptions : DotCompute.Abstractions.CompilationOptions
     {
         /// <summary>
-        /// Gets or sets the target architecture (e.g., "sm_70", "sm_80").
+        /// Gets or sets the CUDA target architecture (e.g., "sm_70", "sm_80", "sm_90").
         /// </summary>
-        public string Architecture { get; set; } = "sm_60";
-
-        /// <summary>
-        /// Gets or sets whether to enable debug information.
-        /// </summary>
-        public bool EnableDebugInfo { get; set; } = false;
-
-        /// <summary>
-        /// Gets or sets the optimization level (0-3).
-        /// </summary>
-        public int OptimizationLevel { get; set; } = 3;
-
-        /// <summary>
-        /// Gets or sets whether to use fast math operations.
-        /// </summary>
-        public bool UseFastMath { get; set; } = true;
+        public string CudaArchitecture { get; set; } = "sm_60";
 
         /// <summary>
         /// Gets or sets whether to generate position-independent code.
@@ -33,48 +18,109 @@ namespace DotCompute.Backends.CUDA.Compilation.Configuration
         public bool GeneratePositionIndependentCode { get; set; } = false;
 
         /// <summary>
-        /// Gets or sets the maximum register count per thread.
+        /// Gets or sets the maximum register count per thread (CUDA-specific).
         /// </summary>
-        public int? MaxRegistersPerThread { get; set; }
+        public int? MaxRegistersPerThread 
+        { 
+            get => MaxRegisters;
+            set => MaxRegisters = value;
+        }
 
         /// <summary>
-        /// Gets or sets additional compiler flags.
+        /// Gets or sets include directories for CUDA compilation.
         /// </summary>
-        public List<string> AdditionalFlags { get; set; } = new();
+        public List<string> IncludeDirectories 
+        { 
+            get => IncludePaths;
+            set => IncludePaths = value;
+        }
 
         /// <summary>
-        /// Gets or sets include directories for compilation.
+        /// Gets or sets whether to use CUDA fast math operations.
         /// </summary>
-        public List<string> IncludeDirectories { get; set; } = new();
-
-        /// <summary>
-        /// Gets or sets preprocessor definitions.
-        /// </summary>
-        public Dictionary<string, string> Defines { get; set; } = new();
-
-        /// <summary>
-        /// Gets a default set of compilation options.
-        /// </summary>
-        public static CompilationOptions Default => new();
-
-        /// <summary>
-        /// Gets options optimized for performance.
-        /// </summary>
-        public static CompilationOptions Performance => new()
+        public bool UseFastMath
         {
-            OptimizationLevel = 3,
+            get => EnableFastMath;
+            set => EnableFastMath = value;
+        }
+
+        /// <summary>
+        /// Gets or sets whether to enable CUDA Cooperative Groups.
+        /// </summary>
+        public bool EnableCooperativeGroups { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets whether to enable CUDA Dynamic Parallelism.
+        /// </summary>
+        public bool EnableDynamicParallelism { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets whether to enable CUDA Unified Memory.
+        /// </summary>
+        public bool EnableUnifiedMemory { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the CUDA compute mode.
+        /// </summary>
+        public string ComputeMode { get; set; } = "Default";
+
+        /// <summary>
+        /// Gets a default set of CUDA compilation options.
+        /// </summary>
+        public new static CudaCompilationOptions Default => new()
+        {
+            CudaArchitecture = "sm_60",
+            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Default
+        };
+
+        /// <summary>
+        /// Gets CUDA options optimized for performance.
+        /// </summary>
+        public static CudaCompilationOptions Performance => new()
+        {
+            CudaArchitecture = "sm_80",
+            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Aggressive,
             UseFastMath = true,
-            EnableDebugInfo = false
+            EnableDebugInfo = false,
+            EnableLoopUnrolling = true,
+            EnableVectorization = true,
+            EnableInlining = true,
+            AggressiveOptimizations = true
         };
 
         /// <summary>
-        /// Gets options for debugging.
+        /// Gets CUDA options for debugging.
         /// </summary>
-        public static CompilationOptions Debug => new()
+        public new static CudaCompilationOptions Debug => new()
         {
-            OptimizationLevel = 0,
+            CudaArchitecture = "sm_60",
+            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Minimal,
             UseFastMath = false,
-            EnableDebugInfo = true
+            EnableDebugInfo = true,
+            GeneratePositionIndependentCode = false
         };
+
+        /// <summary>
+        /// Gets CUDA options optimized for Ada Lovelace architecture (RTX 40 series).
+        /// </summary>
+        public static CudaCompilationOptions ForAda => new()
+        {
+            CudaArchitecture = "sm_89",
+            OptimizationLevel = DotCompute.Abstractions.Enums.OptimizationLevel.Aggressive,
+            UseFastMath = true,
+            EnableDebugInfo = false,
+            EnableLoopUnrolling = true,
+            EnableVectorization = true,
+            MaxRegistersPerThread = 255,
+            AggressiveOptimizations = true
+        };
+    }
+
+    /// <summary>
+    /// Alias for backward compatibility.
+    /// </summary>
+    [Obsolete("Use CudaCompilationOptions instead")]
+    public class CompilationOptions : CudaCompilationOptions
+    {
     }
 }

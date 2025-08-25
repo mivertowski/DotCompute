@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace DotCompute.Backends.CUDA.Execution.Configuration;
+namespace DotCompute.Backends.CUDA.Configuration;
 
 /// <summary>
 /// Configuration options for CUDA graph optimization.

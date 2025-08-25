@@ -1,9 +1,10 @@
-using DotCompute.Backends.CUDA.Advanced.Types;
+using DotCompute.Backends.CUDA.Types;
 
-namespace DotCompute.Backends.CUDA.Advanced.Configuration
+namespace DotCompute.Backends.CUDA.Configuration
 {
     /// <summary>
-    /// Configuration options for tensor core operations.
+    /// Comprehensive configuration for Tensor Core operations on NVIDIA GPUs.
+    /// Tensor Cores provide specialized hardware acceleration for matrix operations.
     /// </summary>
     public class TensorCoreConfiguration
     {
@@ -16,6 +17,19 @@ namespace DotCompute.Backends.CUDA.Advanced.Configuration
         /// Gets or sets the preferred data type for computations.
         /// </summary>
         public DataType PreferredDataType { get; set; } = DataType.FP16;
+
+        /// <summary>
+        /// Gets or sets the data type string for Tensor Core operations.
+        /// Supported types include TF32, FP16, BF16, INT8, and FP8.
+        /// </summary>
+        public string DataType { get; set; } = "TF32";
+
+        /// <summary>
+        /// Gets or sets the precision mode for Tensor Core operations.
+        /// Options include "High" for maximum precision, "Medium" for balanced performance,
+        /// and "Fast" for maximum throughput with reduced precision.
+        /// </summary>
+        public string Precision { get; set; } = "High";
 
         /// <summary>
         /// Gets or sets whether to enable sparsity acceleration.
@@ -48,7 +62,9 @@ namespace DotCompute.Backends.CUDA.Advanced.Configuration
         public static TensorCoreConfiguration ForAI => new()
         {
             EnableAutoMixedPrecision = true,
-            PreferredDataType = DataType.FP16,
+            PreferredDataType = Types.DataType.FP16,
+            DataType = "FP16",
+            Precision = "Fast",
             EnableSparsity = true,
             UseTransformerEngine = true
         };
@@ -59,7 +75,9 @@ namespace DotCompute.Backends.CUDA.Advanced.Configuration
         public static TensorCoreConfiguration ForHPC => new()
         {
             EnableAutoMixedPrecision = false,
-            PreferredDataType = DataType.FP64,
+            PreferredDataType = Types.DataType.FP64,
+            DataType = "FP64",
+            Precision = "High",
             EnableSparsity = false,
             UseTransformerEngine = false
         };

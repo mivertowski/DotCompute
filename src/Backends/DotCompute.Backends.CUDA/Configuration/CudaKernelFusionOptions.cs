@@ -6,7 +6,7 @@
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Types;
 
-namespace DotCompute.Backends.CUDA.Execution.Optimization;
+namespace DotCompute.Backends.CUDA.Configuration;
 
 /// <summary>
 /// Configuration options for kernel fusion optimization.
