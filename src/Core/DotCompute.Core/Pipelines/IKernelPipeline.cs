@@ -335,7 +335,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Gets validation errors.
         /// </summary>
-        public IReadOnlyList<DotCompute.Abstractions.ValidationIssue>? Errors { get; init; }
+        public IReadOnlyList<DotCompute.Abstractions.Validation.ValidationIssue>? Errors { get; init; }
 
         /// <summary>
         /// Gets validation warnings.
