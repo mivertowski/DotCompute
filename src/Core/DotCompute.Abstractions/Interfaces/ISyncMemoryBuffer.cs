@@ -7,7 +7,7 @@ namespace DotCompute.Abstractions
     /// <summary>
     /// Extended memory buffer interface with synchronous operations and additional capabilities.
     /// </summary>
-    public interface ISyncMemoryBuffer : IMemoryBuffer, IDisposable
+    public interface ISyncMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
     {
         /// <summary>
         /// Gets a pointer to the host memory, if available.

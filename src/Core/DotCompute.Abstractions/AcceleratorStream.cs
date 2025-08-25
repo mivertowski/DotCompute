@@ -60,8 +60,8 @@ namespace DotCompute.Abstractions
         /// <param name="count">The number of elements to copy.</param>
         /// <returns>A task representing the copy operation.</returns>
         public abstract ValueTask CopyAsync<T>(
-            IMemoryBuffer source,
-            IMemoryBuffer destination,
+            IUnifiedMemoryBuffer source,
+            IUnifiedMemoryBuffer destination,
             int count) where T : unmanaged;
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace DotCompute.Abstractions
         /// <param name="count">The number of elements to fill.</param>
         /// <returns>A task representing the fill operation.</returns>
         public abstract ValueTask FillAsync<T>(
-            IMemoryBuffer buffer,
+            IUnifiedMemoryBuffer buffer,
             T value,
             int count) where T : unmanaged;
 

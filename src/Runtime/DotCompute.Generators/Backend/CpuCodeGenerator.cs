@@ -660,7 +660,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates method documentation comments.
     /// </summary>
-    private void GenerateMethodDocumentation(StringBuilder sb, string summary, string remarks = null)
+    private void GenerateMethodDocumentation(StringBuilder sb, string summary, string? remarks = null)
     {
         _ = sb.AppendLine("        /// <summary>");
         _ = sb.AppendLine($"        /// {summary}");

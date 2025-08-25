@@ -83,7 +83,7 @@ public abstract class CpuCodeGeneratorBase
     /// <summary>
     /// Generates method documentation comments.
     /// </summary>
-    protected void GenerateMethodDocumentation(StringBuilder sb, string summary, string remarks = null)
+    protected void GenerateMethodDocumentation(StringBuilder sb, string summary, string? remarks = null)
     {
         _ = sb.AppendLine("        /// <summary>");
         _ = sb.AppendLine($"        /// {summary}");

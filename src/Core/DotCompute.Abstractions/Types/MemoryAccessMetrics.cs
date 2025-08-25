@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Types;
 
@@ -96,8 +97,8 @@ public readonly struct MemoryAccessMetrics
         double cacheHitRate = 0.0,
         int cacheMisses = 0,
         long latencyNanoseconds = 0,
-        MemoryType sourceMemoryType = MemoryType.HostVisible,
-        MemoryType destinationMemoryType = MemoryType.DeviceLocal,
+        MemoryType sourceMemoryType = MemoryType.Host,
+        MemoryType destinationMemoryType = MemoryType.Device,
         int alignmentBytes = 1,
         bool isCoalesced = false,
         long peakMemoryUsage = 0,

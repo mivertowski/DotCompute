@@ -149,7 +149,7 @@ public sealed class MappedMemory<T> : IDisposable where T : unmanaged
     /// <summary>
     /// Gets the mapped memory span.
     /// </summary>
-    public Span<T> Span { get; }
+    public unsafe Span<T> Span => new Span<T>(Pointer, Length);
     
     /// <summary>
     /// Gets the pointer to the mapped memory.
@@ -168,7 +168,6 @@ public sealed class MappedMemory<T> : IDisposable where T : unmanaged
     {
         Pointer = pointer;
         Length = length;
-        Span = new Span<T>(pointer, length);
         _unmapAction = unmapAction ?? throw new ArgumentNullException(nameof(unmapAction));
     }
     

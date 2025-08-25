@@ -21,12 +21,12 @@ namespace DotCompute.Abstractions
         /// <param name="allocateFunc">The actual allocation function</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>The allocated memory buffer</returns>
-        public static async ValueTask<IMemoryBuffer> AllocateWithLoggingAsync(
+        public static async ValueTask<IUnifiedMemoryBuffer> AllocateWithLoggingAsync(
             long sizeInBytes,
             string memoryType,
             ILogger logger,
             string backendType,
-            Func<long, CancellationToken, ValueTask<IMemoryBuffer>> allocateFunc,
+            Func<long, CancellationToken, ValueTask<IUnifiedMemoryBuffer>> allocateFunc,
             CancellationToken cancellationToken = default)
         {
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
@@ -59,10 +59,10 @@ namespace DotCompute.Abstractions
         /// <param name="freeFunc">The actual free function</param>
         /// <param name="cancellationToken">Cancellation token</param>
         public static async ValueTask FreeWithLoggingAsync(
-            IMemoryBuffer buffer,
+            IUnifiedMemoryBuffer buffer,
             ILogger logger,
             string backendType,
-            Func<IMemoryBuffer, CancellationToken, ValueTask> freeFunc,
+            Func<IUnifiedMemoryBuffer, CancellationToken, ValueTask> freeFunc,
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(buffer);
@@ -94,12 +94,12 @@ namespace DotCompute.Abstractions
         /// <param name="copyFunc">The actual copy function</param>
         /// <param name="cancellationToken">Cancellation token</param>
         public static async ValueTask CopyWithLoggingAsync(
-            IMemoryBuffer source,
-            IMemoryBuffer destination,
+            IUnifiedMemoryBuffer source,
+            IUnifiedMemoryBuffer destination,
             long size,
             ILogger logger,
             string backendType,
-            Func<IMemoryBuffer, IMemoryBuffer, long, CancellationToken, ValueTask> copyFunc,
+            Func<IUnifiedMemoryBuffer, IUnifiedMemoryBuffer, long, CancellationToken, ValueTask> copyFunc,
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(source);
@@ -293,8 +293,8 @@ namespace DotCompute.Abstractions
         /// <param name="sourceOffset">Source offset</param>
         /// <param name="destinationOffset">Destination offset</param>
         public static void ValidateCopyParameters(
-        IMemoryBuffer source,
-        IMemoryBuffer destination,
+        IUnifiedMemoryBuffer source,
+        IUnifiedMemoryBuffer destination,
         long size,
         long sourceOffset = 0,
         long destinationOffset = 0)
