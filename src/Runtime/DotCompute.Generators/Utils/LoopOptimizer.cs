@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
+using DotCompute.Generators.Utils;
 
 namespace DotCompute.Generators.Utils;
 
@@ -45,9 +46,9 @@ public static class LoopOptimizer
     /// <returns>Generated optimized loop code.</returns>
     public static string GenerateOptimizedLoop(string indexVar, string limitVar, string body, LoopOptimizationOptions? options = null)
     {
-        ArgumentException.ThrowIfNullOrEmpty(indexVar);
-        ArgumentException.ThrowIfNullOrEmpty(limitVar);
-        ArgumentException.ThrowIfNullOrEmpty(body);
+        ArgumentValidation.ThrowIfNullOrEmpty(indexVar);
+        ArgumentValidation.ThrowIfNullOrEmpty(limitVar);
+        ArgumentValidation.ThrowIfNullOrEmpty(body);
         
         options ??= new LoopOptimizationOptions();
         
@@ -74,7 +75,7 @@ public static class LoopOptimizer
     /// <returns>Generated unrolled loop code.</returns>
     public static string GenerateUnrolledLoop(LoopContext context)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        ArgumentValidation.ThrowIfNull(context);
         
         var sb = new StringBuilder();
         var unrollFactor = context.Options.UnrollFactor;
@@ -124,7 +125,7 @@ public static class LoopOptimizer
     /// <returns>Generated regular loop code.</returns>
     public static string GenerateRegularLoop(LoopContext context)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        ArgumentValidation.ThrowIfNull(context);
         
         var sb = new StringBuilder();
         
@@ -212,9 +213,9 @@ public static class LoopOptimizer
     /// <returns>Generated tiled loop code.</returns>
     public static string GenerateTiledLoop(string outerLimit, string innerLimit, int tileSize, string body)
     {
-        ArgumentException.ThrowIfNullOrEmpty(outerLimit);
-        ArgumentException.ThrowIfNullOrEmpty(innerLimit);
-        ArgumentException.ThrowIfNullOrEmpty(body);
+        ArgumentValidation.ThrowIfNullOrEmpty(outerLimit);
+        ArgumentValidation.ThrowIfNullOrEmpty(innerLimit);
+        ArgumentValidation.ThrowIfNullOrEmpty(body);
         
         var sb = new StringBuilder();
         

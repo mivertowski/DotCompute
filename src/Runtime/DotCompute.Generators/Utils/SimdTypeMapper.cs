@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using DotCompute.Generators.Utils;
 
 namespace DotCompute.Generators.Utils;
 
@@ -46,7 +47,7 @@ public static class SimdTypeMapper
     /// <returns>The SIMD type name as a string.</returns>
     public static string GetSimdType(string elementType, int vectorSize)
     {
-        ArgumentException.ThrowIfNullOrEmpty(elementType);
+        ArgumentValidation.ThrowIfNullOrEmpty(elementType);
         
         if (vectorSize <= 0)
         {
@@ -89,8 +90,8 @@ public static class SimdTypeMapper
     /// <returns>The intrinsic operation as a string.</returns>
     public static string GetIntrinsicOperation(string operation, string vectorType)
     {
-        ArgumentException.ThrowIfNullOrEmpty(operation);
-        ArgumentException.ThrowIfNullOrEmpty(vectorType);
+        ArgumentValidation.ThrowIfNullOrEmpty(operation);
+        ArgumentValidation.ThrowIfNullOrEmpty(vectorType);
 
         // Extract base vector type (e.g., Vector256 from Vector256<float>)
         var baseVectorType = ExtractBaseVectorType(vectorType);
@@ -130,7 +131,7 @@ public static class SimdTypeMapper
     /// <returns>Optimal vector size in bytes.</returns>
     public static int GetOptimalVectorSize(string elementType, SimdConfiguration? config = null)
     {
-        ArgumentException.ThrowIfNullOrEmpty(elementType);
+        ArgumentValidation.ThrowIfNullOrEmpty(elementType);
         
         config ??= new SimdConfiguration();
         
@@ -213,9 +214,9 @@ public static class SimdTypeMapper
     /// <returns>Load operation code.</returns>
     public static string GenerateVectorLoad(string vectorType, string sourceExpression, string offset)
     {
-        ArgumentException.ThrowIfNullOrEmpty(vectorType);
-        ArgumentException.ThrowIfNullOrEmpty(sourceExpression);
-        ArgumentException.ThrowIfNullOrEmpty(offset);
+        ArgumentValidation.ThrowIfNullOrEmpty(vectorType);
+        ArgumentValidation.ThrowIfNullOrEmpty(sourceExpression);
+        ArgumentValidation.ThrowIfNullOrEmpty(offset);
         
         var baseType = ExtractBaseVectorType(vectorType);
         return $"{baseType}.Load({sourceExpression}, {offset})";
@@ -230,9 +231,9 @@ public static class SimdTypeMapper
     /// <returns>Store operation code.</returns>
     public static string GenerateVectorStore(string vectorExpression, string destinationExpression, string offset)
     {
-        ArgumentException.ThrowIfNullOrEmpty(vectorExpression);
-        ArgumentException.ThrowIfNullOrEmpty(destinationExpression);
-        ArgumentException.ThrowIfNullOrEmpty(offset);
+        ArgumentValidation.ThrowIfNullOrEmpty(vectorExpression);
+        ArgumentValidation.ThrowIfNullOrEmpty(destinationExpression);
+        ArgumentValidation.ThrowIfNullOrEmpty(offset);
         
         return $"{vectorExpression}.Store({destinationExpression}, {offset})";
     }
@@ -246,8 +247,8 @@ public static class SimdTypeMapper
     /// <returns>Platform-specific intrinsic name.</returns>
     public static string GetPlatformIntrinsic(string operation, string platform, int vectorWidth)
     {
-        ArgumentException.ThrowIfNullOrEmpty(operation);
-        ArgumentException.ThrowIfNullOrEmpty(platform);
+        ArgumentValidation.ThrowIfNullOrEmpty(operation);
+        ArgumentValidation.ThrowIfNullOrEmpty(platform);
         
         if (platform.Equals("X86", StringComparison.OrdinalIgnoreCase))
         {
@@ -268,7 +269,7 @@ public static class SimdTypeMapper
     private static string ExtractBaseVectorType(string vectorType)
     {
         var genericIndex = vectorType.IndexOf('<');
-        return genericIndex > 0 ? vectorType[..genericIndex] : vectorType;
+        return genericIndex > 0 ? vectorType.Substring(0, genericIndex) : vectorType;
     }
 
     /// <summary>

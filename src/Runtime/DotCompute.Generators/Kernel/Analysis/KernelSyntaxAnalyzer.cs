@@ -53,7 +53,7 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
-        var methodSymbol = model.GetDeclaredSymbol(methodDeclaration);
+        var methodSymbol = model.GetDeclaredSymbol(methodDeclaration) as IMethodSymbol;
 
         if (methodSymbol is null)
         {
@@ -86,7 +86,7 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
     {
         var classDeclaration = (ClassDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
-        var classSymbol = model.GetDeclaredSymbol(classDeclaration);
+        var classSymbol = model.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
 
         if (classSymbol is null)
         {
@@ -98,7 +98,7 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
             .Where(m => m.GetAttributes().Any(a => a.AttributeClass?.Name == "KernelAttribute"))
             .ToList();
 
-        if (kernelMethods.Count == 0)
+        if (!kernelMethods.Any())
         {
             return null;
         }

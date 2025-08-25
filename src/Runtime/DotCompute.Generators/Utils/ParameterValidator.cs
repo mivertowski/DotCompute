@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
+using DotCompute.Generators.Utils;
 using DotCompute.Generators.Models;
 
 namespace DotCompute.Generators.Utils;
@@ -18,7 +19,7 @@ public static class ParameterValidator
     /// <returns>Generated validation code.</returns>
     public static string GenerateParameterValidation(IEnumerable<KernelParameter> parameters)
     {
-        ArgumentNullException.ThrowIfNull(parameters);
+        ArgumentValidation.ThrowIfNull(parameters);
         
         var sb = new StringBuilder();
 
@@ -41,14 +42,14 @@ public static class ParameterValidator
     /// <returns>Generated validation code for buffer parameter.</returns>
     public static string ValidateBufferParameter(KernelParameter parameter)
     {
-        ArgumentNullException.ThrowIfNull(parameter);
+        ArgumentValidation.ThrowIfNull(parameter);
         
         if (!parameter.IsBuffer)
         {
             throw new ArgumentException("Parameter is not a buffer type", nameof(parameter));
         }
 
-        return $"ArgumentNullException.ThrowIfNull({parameter.Name}, nameof({parameter.Name}));";
+        return $"ArgumentValidation.ThrowIfNull({parameter.Name}, nameof({parameter.Name}));";
     }
 
     /// <summary>
@@ -58,7 +59,7 @@ public static class ParameterValidator
     /// <returns>Generated validation code for span/memory parameter.</returns>
     public static string ValidateSpanParameter(KernelParameter parameter)
     {
-        ArgumentNullException.ThrowIfNull(parameter);
+        ArgumentValidation.ThrowIfNull(parameter);
         
         if (!IsSpanOrMemoryType(parameter.Type))
         {
@@ -92,8 +93,8 @@ public static class ParameterValidator
     /// </summary>
     private static bool IsSpanOrMemoryType(string type)
     {
-        return type.Contains("Span", StringComparison.Ordinal) || 
-               type.Contains("Memory", StringComparison.Ordinal);
+        return type.IndexOf("Span", StringComparison.OrdinalIgnoreCase) >= 0 || 
+               type.IndexOf("Memory", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     /// <summary>
@@ -105,7 +106,7 @@ public static class ParameterValidator
     /// <returns>Generated range validation code.</returns>
     public static string ValidateNumericRange(KernelParameter parameter, double? min = null, double? max = null)
     {
-        ArgumentNullException.ThrowIfNull(parameter);
+        ArgumentValidation.ThrowIfNull(parameter);
         
         var sb = new StringBuilder();
         
@@ -129,7 +130,7 @@ public static class ParameterValidator
     /// <returns>Generated dimension validation code.</returns>
     public static string ValidateDimensionCompatibility(IEnumerable<KernelParameter> parameters)
     {
-        ArgumentNullException.ThrowIfNull(parameters);
+        ArgumentValidation.ThrowIfNull(parameters);
         
         var bufferParams = parameters.Where(p => p.IsBuffer || IsSpanOrMemoryType(p.Type)).ToList();
         

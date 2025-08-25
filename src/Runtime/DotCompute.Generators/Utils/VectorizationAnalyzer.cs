@@ -20,7 +20,7 @@ public static class VectorizationAnalyzer
     /// <returns>Information about vectorization opportunities.</returns>
     public static VectorizationInfo AnalyzeVectorization(MethodDeclarationSyntax method)
     {
-        ArgumentNullException.ThrowIfNull(method);
+        ArgumentValidation.ThrowIfNull(method);
         
         var info = new VectorizationInfo();
         var body = method.Body;
@@ -74,7 +74,7 @@ public static class VectorizationAnalyzer
     /// <returns>True if the loop can be vectorized, false otherwise.</returns>
     public static bool IsVectorizableLoop(ForStatementSyntax loop)
     {
-        ArgumentNullException.ThrowIfNull(loop);
+        ArgumentValidation.ThrowIfNull(loop);
         
         // Check for simple increment pattern
         if (!HasSimpleIncrement(loop))
@@ -128,8 +128,8 @@ public static class VectorizationAnalyzer
     /// <param name="info">The vectorization info to update.</param>
     public static void AnalyzeDataDependencies(BlockSyntax block, VectorizationInfo info)
     {
-        ArgumentNullException.ThrowIfNull(block);
-        ArgumentNullException.ThrowIfNull(info);
+        ArgumentValidation.ThrowIfNull(block);
+        ArgumentValidation.ThrowIfNull(info);
         
         var assignments = block.DescendantNodes().OfType<AssignmentExpressionSyntax>().ToList();
         var readVariables = new HashSet<string>();
@@ -165,8 +165,8 @@ public static class VectorizationAnalyzer
     /// <param name="info">The vectorization info to update.</param>
     public static void DetectVectorizationPatterns(SyntaxNode node, VectorizationInfo info)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(info);
+        ArgumentValidation.ThrowIfNull(node);
+        ArgumentValidation.ThrowIfNull(info);
         
         // Detect reduction patterns (sum, min, max, etc.)
         DetectReductionPattern(node, info);
@@ -192,9 +192,9 @@ public static class VectorizationAnalyzer
         }
 
         var incrementor = loop.Incrementors[0];
-        return incrementor is PostfixUnaryExpressionSyntax { OperatorToken.Text: "++" } or
-               PrefixUnaryExpressionSyntax { OperatorToken.Text: "++" } or
-               AssignmentExpressionSyntax { Kind: SyntaxKind.AddAssignmentExpression };
+        return incrementor is PostfixUnaryExpressionSyntax postfix && postfix.OperatorToken.Text == "++" ||
+               incrementor is PrefixUnaryExpressionSyntax prefix && prefix.OperatorToken.Text == "++" ||
+               incrementor is AssignmentExpressionSyntax assignment && assignment.Kind() == SyntaxKind.AddAssignmentExpression;
     }
 
     /// <summary>
@@ -220,7 +220,7 @@ public static class VectorizationAnalyzer
             if (argument?.Expression is BinaryExpressionSyntax binary)
             {
                 // Check for patterns like arr[i-1] or arr[i+1]
-                if (ContainsOffsetFromLoopVariable(binary, loopVariable))
+                if (loopVariable != null && ContainsOffsetFromLoopVariable(binary, loopVariable))
                 {
                     return true;
                 }
@@ -312,7 +312,6 @@ public static class VectorizationAnalyzer
             .ToList();
         
         info.ArithmeticOperationCount = binaryOps.Count;
-        info.IsArithmetic = binaryOps.Count > 0;
         
         return info;
     }
@@ -342,7 +341,7 @@ public static class VectorizationAnalyzer
         
         foreach (var assignment in addAssignments)
         {
-            if (assignment.Right is BinaryExpressionSyntax { Kind: SyntaxKind.MultiplyExpression } multiply)
+            if (assignment.Right is BinaryExpressionSyntax multiply && multiply.Kind() == SyntaxKind.MultiplyExpression)
             {
                 var leftAccess = multiply.Left is ElementAccessExpressionSyntax;
                 var rightAccess = multiply.Right is ElementAccessExpressionSyntax;

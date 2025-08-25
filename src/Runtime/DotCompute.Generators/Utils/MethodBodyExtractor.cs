@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
+using DotCompute.Generators.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -33,7 +34,7 @@ public static class MethodBodyExtractor
     /// <returns>The extracted method body, or null if no body exists.</returns>
     public static string? ExtractMethodBody(MethodDeclarationSyntax method, ExtractionOptions? options = null)
     {
-        ArgumentNullException.ThrowIfNull(method);
+        ArgumentValidation.ThrowIfNull(method);
         
         options ??= new ExtractionOptions();
         
@@ -60,7 +61,7 @@ public static class MethodBodyExtractor
     /// <returns>The extracted expression body.</returns>
     public static string ExtractExpressionBody(ArrowExpressionClauseSyntax expressionBody, ExtractionOptions? options = null)
     {
-        ArgumentNullException.ThrowIfNull(expressionBody);
+        ArgumentValidation.ThrowIfNull(expressionBody);
         
         options ??= new ExtractionOptions();
         
@@ -88,7 +89,7 @@ public static class MethodBodyExtractor
     /// <returns>The extracted block body.</returns>
     public static string ExtractBlockBody(BlockSyntax block, ExtractionOptions? options = null)
     {
-        ArgumentNullException.ThrowIfNull(block);
+        ArgumentValidation.ThrowIfNull(block);
         
         options ??= new ExtractionOptions();
         
@@ -108,7 +109,7 @@ public static class MethodBodyExtractor
     /// <returns>Processed statements as a string.</returns>
     public static string ProcessStatements(IEnumerable<StatementSyntax> statements, ExtractionOptions? options = null)
     {
-        ArgumentNullException.ThrowIfNull(statements);
+        ArgumentValidation.ThrowIfNull(statements);
         
         options ??= new ExtractionOptions();
         
@@ -150,7 +151,7 @@ public static class MethodBodyExtractor
     /// <returns>List of variable declarations.</returns>
     public static IEnumerable<VariableDeclarationInfo> ExtractVariableDeclarations(MethodDeclarationSyntax method)
     {
-        ArgumentNullException.ThrowIfNull(method);
+        ArgumentValidation.ThrowIfNull(method);
         
         var declarations = new List<VariableDeclarationInfo>();
         
@@ -190,7 +191,7 @@ public static class MethodBodyExtractor
     /// <returns>List of return statements.</returns>
     public static IEnumerable<ReturnStatementInfo> ExtractReturnStatements(MethodDeclarationSyntax method)
     {
-        ArgumentNullException.ThrowIfNull(method);
+        ArgumentValidation.ThrowIfNull(method);
         
         var returns = new List<ReturnStatementInfo>();
         
@@ -235,7 +236,7 @@ public static class MethodBodyExtractor
     /// <returns>List of method invocations.</returns>
     public static IEnumerable<MethodInvocationInfo> ExtractMethodCalls(MethodDeclarationSyntax method)
     {
-        ArgumentNullException.ThrowIfNull(method);
+        ArgumentValidation.ThrowIfNull(method);
         
         var invocations = new List<MethodInvocationInfo>();
         
@@ -271,8 +272,8 @@ public static class MethodBodyExtractor
     /// <returns>Transformed method body.</returns>
     public static string? TransformMethodBody(MethodDeclarationSyntax method, Func<string, string> transformer)
     {
-        ArgumentNullException.ThrowIfNull(method);
-        ArgumentNullException.ThrowIfNull(transformer);
+        ArgumentValidation.ThrowIfNull(method);
+        ArgumentValidation.ThrowIfNull(transformer);
         
         var body = ExtractMethodBody(method);
         return body != null ? transformer(body) : null;
@@ -308,7 +309,7 @@ public static class MethodBodyExtractor
     /// <returns>Analysis results.</returns>
     public static MethodBodyAnalysis AnalyzeMethodBody(MethodDeclarationSyntax method)
     {
-        ArgumentNullException.ThrowIfNull(method);
+        ArgumentValidation.ThrowIfNull(method);
         
         var analysis = new MethodBodyAnalysis
         {

@@ -3,6 +3,7 @@
 
 using System;
 using System.Text;
+using DotCompute.Generators.Utils;
 using DotCompute.Generators.Configuration;
 
 namespace DotCompute.Generators.Utils;
@@ -371,7 +372,7 @@ public static class CodeFormatter
     /// <returns>The namespace declaration opening.</returns>
     public static string BeginNamespace(string namespaceName, CodeStyle? style = null)
     {
-        ArgumentException.ThrowIfNullOrEmpty(namespaceName);
+        ArgumentValidation.ThrowIfNullOrEmpty(namespaceName);
         style ??= _defaultStyle;
         
         var sb = new StringBuilder();

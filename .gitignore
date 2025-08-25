@@ -810,3 +810,4 @@ src/Backends/DotCompute.Backends.CUDA/cs_files.txt
 fix_duplicates.sh
 add_using_statements.sh
 fix_interfaces.sh
+fix_generators_netstandard.sh
