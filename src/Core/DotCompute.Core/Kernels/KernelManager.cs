@@ -348,11 +348,15 @@ public sealed partial class KernelManager : IDisposable
         // Get compilation options
         options ??= GetDefaultCompilationOptions();
 
-        // Convert GeneratedKernel to IKernelSource
-        var kernelSource = ConvertToKernelSource(generatedKernel);
+        // Convert GeneratedKernel to KernelDefinition
+        var kernelDefinition = new KernelDefinition(
+            generatedKernel.Name,
+            generatedKernel.Source,
+            generatedKernel.Name // Use name as entry point
+        );
         
         // Compile kernel
-        var compiledKernel = await compiler.CompileAsync(kernelSource, options ?? GetDefaultCompilationOptions(), cancellationToken).ConfigureAwait(false);
+        var compiledKernel = await compiler.CompileAsync(kernelDefinition, options ?? GetDefaultCompilationOptions(), cancellationToken).ConfigureAwait(false);
         
         // Convert back to ManagedCompiledKernel
         return ConvertToManagedCompiledKernel(compiledKernel, generatedKernel);
@@ -403,11 +407,15 @@ public sealed partial class KernelManager : IDisposable
         // Get compilation options
         options ??= GetDefaultCompilationOptions();
 
-        // Convert GeneratedKernel to IKernelSource
-        var kernelSource = ConvertToKernelSource(generatedKernel);
+        // Convert GeneratedKernel to KernelDefinition
+        var kernelDefinition = new KernelDefinition(
+            generatedKernel.Name,
+            generatedKernel.Source,
+            generatedKernel.Name // Use name as entry point
+        );
         
         // Compile kernel
-        var compiledKernel = await compiler.CompileAsync(kernelSource, options ?? GetDefaultCompilationOptions(), cancellationToken).ConfigureAwait(false);
+        var compiledKernel = await compiler.CompileAsync(kernelDefinition, options ?? GetDefaultCompilationOptions(), cancellationToken).ConfigureAwait(false);
         
         // Convert back to ManagedCompiledKernel
         return ConvertToManagedCompiledKernel(compiledKernel, generatedKernel);

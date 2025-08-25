@@ -99,7 +99,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                 if (Enum.TryParse<AcceleratorType>(backend, ignoreCase: true, out var type))
                 {
                     // Try to create a test instance to verify availability
-                    using var testAccelerator = await CreateAsync(type, new AcceleratorConfiguration { EnableDebugMode = false }, cancellationToken).ConfigureAwait(false);
+                    using var testAccelerator = await CreateAsync(type, new AcceleratorConfiguration { EnableDebugMode = false }, serviceProvider: null, cancellationToken).ConfigureAwait(false);
                     availableTypes.Add(type);
                 }
             }
@@ -222,7 +222,27 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                     throw new InvalidOperationException($"Failed to create instance of {providerType.Name}");
                 }
                 
-                return await provider.CreateAcceleratorAsync(type, config, cancellationToken).ConfigureAwait(false);
+                // Provider should create the accelerator based on type and config
+                // The actual CreateAsync method signature may vary
+                if (provider is IAccelerator accelerator)
+                {
+                    return accelerator;
+                }
+                
+                // Try to find a Create method on the provider
+                var createMethod = provider.GetType().GetMethod("CreateAccelerator") 
+                    ?? provider.GetType().GetMethod("Create");
+                    
+                if (createMethod != null)
+                {
+                    var result = createMethod.Invoke(provider, new object[] { type, config });
+                    if (result is IAccelerator acc)
+                    {
+                        return acc;
+                    }
+                }
+                
+                throw new NotSupportedException($"Provider {providerType.Name} does not have a suitable creation method");
             });
         }
         

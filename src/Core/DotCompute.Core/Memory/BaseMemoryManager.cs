@@ -203,11 +203,19 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(buffer);
         
-        // Use async method synchronously for compatibility
-        buffer.CopyFromAsync(data.ToArray().AsMemory(), 0, CancellationToken.None)
-            .AsTask()
-            .GetAwaiter()
-            .GetResult();
+        // Cast to generic buffer for typed operations
+        if (buffer is IUnifiedMemoryBuffer<T> typedBuffer)
+        {
+            // Use async method synchronously for compatibility
+            typedBuffer.CopyFromAsync(data.ToArray().AsMemory(), CancellationToken.None)
+                .AsTask()
+                .GetAwaiter()
+                .GetResult();
+        }
+        else
+        {
+            throw new InvalidOperationException($"Buffer is not of type IUnifiedMemoryBuffer<{typeof(T).Name}>");
+        }
     }
 
     /// <inheritdoc/>
@@ -216,13 +224,21 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(buffer);
         
-        // Use async method synchronously for compatibility
-        var temp = new T[data.Length];
-        buffer.CopyToAsync(temp.AsMemory(), 0, CancellationToken.None)
-            .AsTask()
-            .GetAwaiter()
-            .GetResult();
-        temp.AsSpan().CopyTo(data);
+        // Cast to generic buffer for typed operations
+        if (buffer is IUnifiedMemoryBuffer<T> typedBuffer)
+        {
+            // Use async method synchronously for compatibility
+            var temp = new T[data.Length];
+            typedBuffer.CopyToAsync(temp.AsMemory(), CancellationToken.None)
+                .AsTask()
+                .GetAwaiter()
+                .GetResult();
+            temp.AsSpan().CopyTo(data);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Buffer is not of type IUnifiedMemoryBuffer<{typeof(T).Name}>");
+        }
     }
 
     /// <inheritdoc/>

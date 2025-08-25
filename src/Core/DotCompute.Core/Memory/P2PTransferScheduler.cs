@@ -558,11 +558,11 @@ namespace DotCompute.Core.Memory
 
             // Copy from source to host
             var fullSourceData = new T[SourceBuffer.Length];
-            await SourceBuffer.CopyToAsync<T>(fullSourceData, 0, cancellationToken);
+            await SourceBuffer.CopyToAsync(fullSourceData.AsMemory(), cancellationToken);
             Array.Copy(fullSourceData, SourceOffset, hostData, 0, ElementCount);
 
             // Copy from host to target
-            await TargetBuffer.CopyFromAsync<T>(hostData, TargetOffset, cancellationToken);
+            await TargetBuffer.CopyFromAsync(hostData.AsMemory(), cancellationToken);
         }
 
         public override async Task ExecuteStreamingTransferAsync(int chunkSize, CancellationToken cancellationToken)
@@ -592,11 +592,11 @@ namespace DotCompute.Core.Memory
 
             // Copy source range to host
             var fullSourceData = new T[SourceBuffer.Length];
-            await SourceBuffer.CopyToAsync<T>(fullSourceData, 0, cancellationToken);
+            await SourceBuffer.CopyToAsync(fullSourceData.AsMemory(), cancellationToken);
             Array.Copy(fullSourceData, SourceOffset, hostData, 0, ElementCount);
 
             // Copy from host to target
-            await TargetBuffer.CopyFromAsync<T>(hostData, TargetOffset, cancellationToken);
+            await TargetBuffer.CopyFromAsync(hostData.AsMemory(), cancellationToken);
         }
     }
 
