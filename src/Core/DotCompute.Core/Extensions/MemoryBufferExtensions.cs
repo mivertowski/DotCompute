@@ -15,36 +15,56 @@ namespace DotCompute.Core.Extensions
         /// Writes data to the memory buffer from a host array.
         /// </summary>
         public static ValueTask WriteAsync<T>(
-            this IUnifiedMemoryBuffer buffer,
+            this IUnifiedMemoryBuffer<T> buffer,
             T[] data,
             long offset,
-            CancellationToken cancellationToken = default) where T : unmanaged => buffer.CopyFromHostAsync<T>(data.AsMemory(), offset, cancellationToken);
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            // For now, just copy to the buffer 
+            // TODO: handle offset properly
+            return buffer.CopyFromAsync(data.AsMemory(), cancellationToken);
+        }
 
         /// <summary>
         /// Writes data to the memory buffer from a host memory.
         /// </summary>
         public static ValueTask WriteAsync<T>(
-            this IUnifiedMemoryBuffer buffer,
+            this IUnifiedMemoryBuffer<T> buffer,
             ReadOnlyMemory<T> data,
             long offset,
-            CancellationToken cancellationToken = default) where T : unmanaged => buffer.CopyFromHostAsync<T>(data, offset, cancellationToken);
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            // For now, just copy to the buffer 
+            // TODO: handle offset properly
+            return buffer.CopyFromAsync(data, cancellationToken);
+        }
 
         /// <summary>
         /// Reads data from the memory buffer to a host array.
         /// </summary>
         public static ValueTask ReadAsync<T>(
-            this IUnifiedMemoryBuffer buffer,
+            this IUnifiedMemoryBuffer<T> buffer,
             T[] data,
             long offset,
-            CancellationToken cancellationToken = default) where T : unmanaged => buffer.CopyToHostAsync<T>(data.AsMemory(), offset, cancellationToken);
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            // For now, just copy from the buffer 
+            // TODO: handle offset properly
+            return buffer.CopyToAsync(data.AsMemory(), cancellationToken);
+        }
 
         /// <summary>
         /// Reads data from the memory buffer to a host memory.
         /// </summary>
         public static ValueTask ReadAsync<T>(
-            this IUnifiedMemoryBuffer buffer,
+            this IUnifiedMemoryBuffer<T> buffer,
             Memory<T> data,
             long offset,
-            CancellationToken cancellationToken = default) where T : unmanaged => buffer.CopyToHostAsync<T>(data, offset, cancellationToken);
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            // For now, just copy from the buffer 
+            // TODO: handle offset properly
+            return buffer.CopyToAsync(data, cancellationToken);
+        }
     }
 }

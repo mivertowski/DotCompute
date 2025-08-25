@@ -61,5 +61,15 @@ public enum BufferState
     /// <summary>
     /// Device has more recent data than host.
     /// </summary>
-    DeviceDirty
+    DeviceDirty,
+    
+    /// <summary>
+    /// Buffer data is ready on the host.
+    /// </summary>
+    HostReady,
+    
+    /// <summary>
+    /// Buffer data is ready on the device.
+    /// </summary>
+    DeviceReady
 }
