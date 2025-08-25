@@ -48,5 +48,15 @@ public enum OptimizationLevel
     /// <summary>
     /// Custom optimization level defined by backend-specific flags.
     /// </summary>
-    Custom = 7
+    Custom = 7,
+
+    /// <summary>
+    /// Debug optimization level (alias for None).
+    /// </summary>
+    Debug = None,
+
+    /// <summary>
+    /// Full optimization level (alias for Maximum).
+    /// </summary>
+    Full = Maximum
 }

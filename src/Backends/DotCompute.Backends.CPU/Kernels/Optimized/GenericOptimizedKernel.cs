@@ -124,7 +124,7 @@ internal class GenericOptimizedKernel : Base.OptimizedKernelBase
             var inputData = new float[elementCount];
             var resultData = new float[elementCount];
 
-            await inputBuffer.CopyToHostAsync<float>(inputData, cancellationToken: cancellationToken);
+            await inputBuffer.CopyToAsync<float>(inputData, cancellationToken: cancellationToken);
 
             // Perform scaling
             for (var idx = 0; idx < elementCount; idx++)
@@ -132,7 +132,7 @@ internal class GenericOptimizedKernel : Base.OptimizedKernelBase
                 resultData[idx] = inputData[idx] * scaleFactor;
             }
 
-            await resultBuffer.CopyFromHostAsync<float>(resultData, cancellationToken: cancellationToken);
+            await resultBuffer.CopyFromAsync<float>(resultData, cancellationToken: cancellationToken);
             Logger.LogInformation("Generic vector scale executed: {Elements} elements scaled by {Factor}", elementCount, scaleFactor);
         }
     }
@@ -156,8 +156,8 @@ internal class GenericOptimizedKernel : Base.OptimizedKernelBase
             var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
             var data = new float[elementCount];
 
-            await inputBuffer.CopyToHostAsync<float>(data, cancellationToken: cancellationToken);
-            await outputBuffer.CopyFromHostAsync<float>(data, cancellationToken: cancellationToken);
+            await inputBuffer.CopyToAsync<float>(data, cancellationToken: cancellationToken);
+            await outputBuffer.CopyFromAsync<float>(data, cancellationToken: cancellationToken);
 
             Logger.LogInformation("Generic element-wise operation executed: {Elements} elements copied", elementCount);
         }

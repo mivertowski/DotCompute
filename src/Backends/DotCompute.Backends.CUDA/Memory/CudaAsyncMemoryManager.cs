@@ -555,7 +555,7 @@ internal sealed class CudaAsyncMemoryBuffer : IUnifiedMemoryBuffer
         ThrowIfDisposed();
         
         var destPtr = _devicePtr + (nint)offset;
-        await _manager.CopyFromHostAsyncOnStream(source, destPtr, _stream, cancellationToken);
+        await _manager.CopyFromAsyncOnStream(source, destPtr, _stream, cancellationToken);
     }
 
     public async ValueTask CopyToHostAsync<T>(
@@ -566,7 +566,7 @@ internal sealed class CudaAsyncMemoryBuffer : IUnifiedMemoryBuffer
         ThrowIfDisposed();
         
         var srcPtr = _devicePtr + (nint)offset;
-        await _manager.CopyToHostAsyncOnStream(srcPtr, destination, _stream, cancellationToken);
+        await _manager.CopyToAsyncOnStream(srcPtr, destination, _stream, cancellationToken);
     }
 
     private void ThrowIfDisposed()
@@ -614,10 +614,10 @@ internal sealed class CudaAsyncMemoryBufferView : IUnifiedMemoryBuffer
     public bool IsDisposed => _parent.IsDisposed;
 
     public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
+        => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
 
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+        => _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
 
     public void Dispose() { /* View doesn't own memory */ }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;

@@ -51,7 +51,7 @@ namespace DotCompute.Core.Compute.Memory
             ReadOnlyMemory<T> source,
             long offset = 0,
             CancellationToken cancellationToken = default) where T : unmanaged
-            => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
+            => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
 
         /// <summary>
         /// Copies data from this buffer view to host memory.
@@ -65,7 +65,7 @@ namespace DotCompute.Core.Compute.Memory
             Memory<T> destination,
             long offset = 0,
             CancellationToken cancellationToken = default) where T : unmanaged
-            => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+            => _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
 
         /// <summary>
         /// Disposes the view. Note: This does not dispose the parent buffer.

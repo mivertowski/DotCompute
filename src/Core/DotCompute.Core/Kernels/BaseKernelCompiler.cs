@@ -6,6 +6,7 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Kernels.Compilation;
 using DotCompute.Core.Kernels.Validation;
 using Microsoft.Extensions.Logging;
@@ -194,7 +195,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     {
         // Use kernel name, code hash, and optimization level for cache key
         var codeHash = definition.Code != null 
-            ? BitConverter.ToString(global::System.Security.Cryptography.SHA256.HashData(definition.Code)).Replace("-", "")
+            ? BitConverter.ToString(global::System.Security.Cryptography.SHA256.HashData(global::System.Text.Encoding.UTF8.GetBytes(definition.Code))).Replace("-", "")
             : "empty";
         
         return $"{definition.Name}_{codeHash}_{options.OptimizationLevel}_{CompilerName}";

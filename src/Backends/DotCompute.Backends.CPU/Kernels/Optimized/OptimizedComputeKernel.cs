@@ -77,7 +77,7 @@ internal class OptimizedComputeKernel : Base.OptimizedKernelBase
         var input = new float[elementCount];
         var output = new float[elementCount];
 
-        await inputBuffer.CopyToHostAsync<float>(input);
+        await inputBuffer.CopyToAsync<float>(input);
 
         // Parallel compute-intensive operations with transcendental functions
         _ = Parallel.For(0, elementCount, i =>
@@ -95,6 +95,6 @@ internal class OptimizedComputeKernel : Base.OptimizedKernelBase
             output[i] = value;
         });
 
-        await outputBuffer.CopyFromHostAsync<float>(output);
+        await outputBuffer.CopyFromAsync<float>(output);
     }
 }

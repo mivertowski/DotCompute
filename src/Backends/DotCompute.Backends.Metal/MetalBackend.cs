@@ -133,7 +133,7 @@ public sealed partial class MetalBackend : IDisposable
             throw new InvalidOperationException("No Metal accelerator available");
         }
 
-        return buffer.CopyFromHostAsync<T>(data.AsMemory()).AsTask();
+        return buffer.CopyFromAsync<T>(data.AsMemory()).AsTask();
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public sealed partial class MetalBackend : IDisposable
             throw new InvalidOperationException("No Metal accelerator available");
         }
 
-        return buffer.CopyToHostAsync<T>(data.AsMemory()).AsTask();
+        return buffer.CopyToAsync<T>(data.AsMemory()).AsTask();
     }
 
     /// <summary>

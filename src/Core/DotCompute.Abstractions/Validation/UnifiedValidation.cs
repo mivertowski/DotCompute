@@ -24,6 +24,11 @@ public sealed class UnifiedValidationResult
     public bool HasWarnings => _warnings.Count > 0;
     
     /// <summary>
+    /// Gets the first error message if any.
+    /// </summary>
+    public string? ErrorMessage => _errors.FirstOrDefault()?.Message;
+    
+    /// <summary>
     /// Gets all validation errors.
     /// </summary>
     public IReadOnlyList<ValidationIssue> Errors => _errors;

@@ -204,7 +204,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         ArgumentNullException.ThrowIfNull(buffer);
         
         // Use async method synchronously for compatibility
-        buffer.CopyFromHostAsync(data.ToArray().AsMemory(), 0, CancellationToken.None)
+        buffer.CopyFromAsync(data.ToArray().AsMemory(), 0, CancellationToken.None)
             .AsTask()
             .GetAwaiter()
             .GetResult();
@@ -218,7 +218,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         
         // Use async method synchronously for compatibility
         var temp = new T[data.Length];
-        buffer.CopyToHostAsync(temp.AsMemory(), 0, CancellationToken.None)
+        buffer.CopyToAsync(temp.AsMemory(), 0, CancellationToken.None)
             .AsTask()
             .GetAwaiter()
             .GetResult();
@@ -313,13 +313,11 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
             TotalAllocated = TotalAllocatedBytes,
             CurrentUsed = TotalAllocatedBytes,
             PeakUsage = PeakAllocatedBytes,
-            AvailableCapacity = MaxAllocationSize - TotalAllocatedBytes,
-            FragmentationRatio = 0.0,
-            AllocationCount = AllocationCount,
-            DeallocationCount = 0,
-            LastGarbageCollection = DateTime.UtcNow,
-            PooledBuffers = 0,
-            CacheHitRate = 0.0
+            ActiveAllocations = AllocationCount,
+            TotalAllocationCount = AllocationCount,
+            TotalDeallocationCount = 0,
+            PoolHitRate = 0.0,
+            FragmentationPercentage = 0.0
         };
     }
 
@@ -352,7 +350,6 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
                 }
                 
                 _activeBuffers.Clear();
-                _lock?.Dispose();
             }
             
             _disposed = true;

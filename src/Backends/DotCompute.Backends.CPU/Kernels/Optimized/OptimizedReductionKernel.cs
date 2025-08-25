@@ -72,7 +72,7 @@ internal class OptimizedReductionKernel : Base.OptimizedKernelBase
     private static async Task ExecuteReductionGenericAsync(IUnifiedMemoryBuffer inputBuffer, IUnifiedMemoryBuffer outputBuffer, int elementCount)
     {
         var input = new float[elementCount];
-        await inputBuffer.CopyToHostAsync<float>(input);
+        await inputBuffer.CopyToAsync<float>(input);
 
         // Parallel reduction with partitioning based on processor count
         var numPartitions = Environment.ProcessorCount;
@@ -94,6 +94,6 @@ internal class OptimizedReductionKernel : Base.OptimizedKernelBase
 
         // Combine partial sums to get final result
         var totalSum = partitionSums.Sum();
-        await outputBuffer.CopyFromHostAsync<float>(new[] { (float)totalSum });
+        await outputBuffer.CopyFromAsync<float>(new[] { (float)totalSum });
     }
 }

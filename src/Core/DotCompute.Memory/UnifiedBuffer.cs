@@ -607,7 +607,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
 
         // Transfer data from host to device using the memory manager
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for synchronous transfer
-        _deviceBuffer.CopyFromHostAsync<T>(_hostArray.AsMemory())
+        _deviceBuffer.CopyFromAsync<T>(_hostArray.AsMemory())
             .AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
     }
@@ -626,7 +626,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
 
         // Transfer data from device to host using the memory manager
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for synchronous transfer
-        _deviceBuffer.CopyToHostAsync<T>(_hostArray.AsMemory())
+        _deviceBuffer.CopyToAsync<T>(_hostArray.AsMemory())
             .AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
     }
@@ -653,7 +653,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
         try
         {
             // Transfer data from host to device using the actual device buffer
-            await _deviceBuffer.CopyFromHostAsync<T>(_hostArray.AsMemory(), 0, cancellationToken).ConfigureAwait(false);
+            await _deviceBuffer.CopyFromAsync<T>(_hostArray.AsMemory(), 0, cancellationToken).ConfigureAwait(false);
 
             // Check cancellation after transfer
             cancellationToken.ThrowIfCancellationRequested();
@@ -691,7 +691,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
         try
         {
             // Transfer data from device to host using the actual device buffer
-            await _deviceBuffer.CopyToHostAsync<T>(_hostArray.AsMemory(), 0, cancellationToken).ConfigureAwait(false);
+            await _deviceBuffer.CopyToAsync<T>(_hostArray.AsMemory(), 0, cancellationToken).ConfigureAwait(false);
 
             // Check cancellation after transfer
             cancellationToken.ThrowIfCancellationRequested();
@@ -878,7 +878,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
         {
             var hostMemory = new Memory<T>(_hostArray);
             // Transfer data from device to host using the actual device buffer
-            await _deviceBuffer.CopyToHostAsync<T>(hostMemory, 0, cancellationToken).ConfigureAwait(false);
+            await _deviceBuffer.CopyToAsync<T>(hostMemory, 0, cancellationToken).ConfigureAwait(false);
 
             lock (_lock)
             {
@@ -932,7 +932,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
         ArgumentNullException.ThrowIfNull(destination);
 
         var sourceData = await ReadAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-        await destination.CopyFromHostAsync<T>(sourceData, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await destination.CopyFromAsync<T>(sourceData, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -954,7 +954,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
         ArgumentNullException.ThrowIfNull(destination);
 
         var sourceData = await ReadAsync(sourceOffset, count, cancellationToken).ConfigureAwait(false);
-        await destination.CopyFromHostAsync<T>(sourceData.AsMemory(), offset: destinationOffset, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await destination.CopyFromAsync<T>(sourceData.AsMemory(), offset: destinationOffset, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1177,7 +1177,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
             throw new ArgumentException($"Destination type {typeof(TDestination)} does not match buffer type {typeof(T)}");
         }
 
-        return _parent.CopyToHostAsync(destination, offset + _offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken);
+        return _parent.CopyToAsync(destination, offset + _offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken);
     }
 
     public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
@@ -1208,7 +1208,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
     private static async ValueTask CopyToAsyncImplAsync(ValueTask<T[]> readTask, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
     {
         var data = await readTask.ConfigureAwait(false);
-        await destination.CopyFromHostAsync<T>(data.AsMemory(), 0, cancellationToken).ConfigureAwait(false);
+        await destination.CopyFromAsync<T>(data.AsMemory(), 0, cancellationToken).ConfigureAwait(false);
     }
 
     public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
@@ -1227,7 +1227,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
     private static async ValueTask CopyToAsyncWithOffsetImplAsync(ValueTask<T[]> readTask, IUnifiedMemoryBuffer<T> destination, int destinationOffset, CancellationToken cancellationToken)
     {
         var data = await readTask.ConfigureAwait(false);
-        await destination.CopyFromHostAsync<T>(data.AsMemory(), destinationOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken).ConfigureAwait(false);
+        await destination.CopyFromAsync<T>(data.AsMemory(), destinationOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken).ConfigureAwait(false);
     }
 
     public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
@@ -1313,7 +1313,7 @@ where TNew : unmanaged
         var originalSpan = MemoryMarshal.Cast<TNew, TOriginal>(sourceSpan);
         var elementOffset = (int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
 
-        return _parent.CopyFromHostAsync<TOriginal>(originalSpan.ToArray().AsMemory(), elementOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>(), cancellationToken);
+        return _parent.CopyFromAsync<TOriginal>(originalSpan.ToArray().AsMemory(), elementOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>(), cancellationToken);
     }
 
     public async ValueTask CopyToHostAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged
@@ -1366,7 +1366,7 @@ where TNew : unmanaged
 
         var tempData = new TNew[_length];
         await CopyToHostAsync<TNew>(tempData.AsMemory(), 0, cancellationToken);
-        await destination.CopyFromHostAsync<TNew>(tempData.AsMemory(), 0, cancellationToken);
+        await destination.CopyFromAsync<TNew>(tempData.AsMemory(), 0, cancellationToken);
     }
 
     public async ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<TNew> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
@@ -1379,7 +1379,7 @@ where TNew : unmanaged
 
         var tempData = new TNew[count];
         await CopyToHostAsync<TNew>(tempData.AsMemory(), sourceOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>(), cancellationToken);
-        await destination.CopyFromHostAsync<TNew>(tempData.AsMemory(), destinationOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>(), cancellationToken);
+        await destination.CopyFromAsync<TNew>(tempData.AsMemory(), destinationOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>(), cancellationToken);
     }
 
     public async ValueTask FillAsync(TNew value, CancellationToken cancellationToken = default)

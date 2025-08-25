@@ -522,22 +522,18 @@ namespace DotCompute.Core.Memory
         public long SizeInBytes => _underlyingBuffer.SizeInBytes;
         public DotCompute.Abstractions.Memory.MemoryOptions Options => _underlyingBuffer.Options;
         public bool IsDisposed => _disposed;
-        public BufferState State 
-        { 
-            get => _underlyingBuffer.State;
-            set => _underlyingBuffer.State = value;
-        }
+        public BufferState State => _underlyingBuffer.State;
 
         public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
             ThrowIfDisposed();
-            return _underlyingBuffer.CopyFromHostAsync(source, offset, cancellationToken);
+            return _underlyingBuffer.CopyFromAsync(source, offset, cancellationToken);
         }
 
         public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
             ThrowIfDisposed();
-            return _underlyingBuffer.CopyToHostAsync(destination, offset, cancellationToken);
+            return _underlyingBuffer.CopyToAsync(destination, offset, cancellationToken);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

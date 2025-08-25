@@ -178,16 +178,30 @@ public sealed partial class SystemInfoManager
         {
             if (OperatingSystem.IsWindows())
             {
-                using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem");
-                using var collection = searcher.Get();
-                
-                foreach (ManagementObject mo in collection)
+                // Use dynamic loading for Windows Management Instrumentation
+                // This avoids compile-time dependency on System.Management
+                var wmiType = Type.GetType("System.Management.ManagementObjectSearcher, System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+                if (wmiType != null)
                 {
-                    info.Total = Convert.ToInt64(mo["TotalVisibleMemorySize"]) * 1024;
-                    info.Available = Convert.ToInt64(mo["FreePhysicalMemory"]) * 1024;
-                    info.Used = info.Total - info.Available;
-                    info.UsagePercentage = (double)info.Used / info.Total * 100;
-                    break;
+                    dynamic searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_OperatingSystem");
+                    dynamic collection = searcher.Get();
+                    
+                    foreach (dynamic mo in collection)
+                    {
+                        info.Total = Convert.ToInt64(mo["TotalVisibleMemorySize"]) * 1024;
+                        info.Available = Convert.ToInt64(mo["FreePhysicalMemory"]) * 1024;
+                        info.Used = info.Total - info.Available;
+                        info.UsagePercentage = (double)info.Used / info.Total * 100;
+                        break;
+                    }
+                    
+                    collection?.Dispose();
+                    searcher?.Dispose();
+                }
+                else
+                {
+                    _logger.LogWarning("System.Management not available, using fallback");
+                    return GetFallbackMemoryInfo();
                 }
             }
         }
@@ -409,16 +423,28 @@ public sealed partial class SystemInfoManager
         
         try
         {
-            using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
-            using var collection = searcher.Get();
-            
-            foreach (ManagementObject mo in collection)
+            // Use dynamic loading for Windows Management Instrumentation
+            var wmiType = Type.GetType("System.Management.ManagementObjectSearcher, System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            if (wmiType != null)
             {
-                info.Name = mo["Name"]?.ToString() ?? "Unknown";
-                info.FrequencyMHz = Convert.ToInt32(mo["MaxClockSpeed"]);
-                info.PhysicalCores = Convert.ToInt32(mo["NumberOfCores"]);
-                info.Architecture = mo["Architecture"]?.ToString() ?? "Unknown";
-                break;
+                dynamic searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_Processor");
+                dynamic collection = searcher.Get();
+                
+                foreach (dynamic mo in collection)
+                {
+                    info.Name = mo["Name"]?.ToString() ?? "Unknown";
+                    info.FrequencyMHz = Convert.ToInt32(mo["MaxClockSpeed"]);
+                    info.PhysicalCores = Convert.ToInt32(mo["NumberOfCores"]);
+                    info.Architecture = mo["Architecture"]?.ToString() ?? "Unknown";
+                    break;
+                }
+                
+                collection?.Dispose();
+                searcher?.Dispose();
+            }
+            else
+            {
+                _logger.LogWarning("System.Management not available for CPU info");
             }
         }
         catch (Exception ex)

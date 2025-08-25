@@ -68,6 +68,36 @@ namespace DotCompute.Abstractions.Types
         /// Pre-compiled binary kernel code.
         /// Platform-specific executable binary format ready for direct execution.
         /// </summary>
-        Binary
+        Binary,
+
+        /// <summary>
+        /// C# source code for managed kernel implementations.
+        /// High-level C# code that will be compiled to optimized kernels.
+        /// </summary>
+        CSharp,
+
+        /// <summary>
+        /// DirectCompute shader code for Windows GPU programming.
+        /// Microsoft's GPU compute API integrated with Direct3D.
+        /// </summary>
+        DirectCompute,
+
+        /// <summary>
+        /// CUDA kernel source code (alias for Cuda).
+        /// NVIDIA GPU programming using CUDA C/C++.
+        /// </summary>
+        CUDA = Cuda,
+
+        /// <summary>
+        /// Vulkan compute shader code.
+        /// Cross-platform GPU compute using Vulkan API.
+        /// </summary>
+        Vulkan,
+
+        /// <summary>
+        /// WebGPU shader code for web-based GPU computing.
+        /// Modern web standard for GPU access in browsers.
+        /// </summary>
+        WebGPU
     }
 }

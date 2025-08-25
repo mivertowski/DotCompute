@@ -544,8 +544,8 @@ namespace DotCompute.Core.Memory.P2P
         {
             // Host-mediated transfer via CPU memory
             var hostData = new T[source.Length];
-            await source.CopyToHostAsync<T>(hostData, 0, cancellationToken);
-            await destination.CopyFromHostAsync<T>(hostData, 0, cancellationToken);
+            await source.CopyToAsync<T>(hostData, 0, cancellationToken);
+            await destination.CopyFromAsync<T>(hostData, 0, cancellationToken);
         }
 
         private async Task<P2PTransferResult> ExecuteScatterChunkAsync<T>(

@@ -338,7 +338,7 @@ public sealed partial class KernelManager : IDisposable
             return new ManagedCompiledKernel
             {
                 Name = generatedKernel.Name,
-                Binary = System.Text.Encoding.UTF8.GetBytes(generatedKernel.Source),
+                Binary = global::System.Text.Encoding.UTF8.GetBytes(generatedKernel.Source),
                 Parameters = generatedKernel.Parameters,
                 RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize,
                 SharedMemorySize = generatedKernel.SharedMemorySize
@@ -393,7 +393,7 @@ public sealed partial class KernelManager : IDisposable
             return new ManagedCompiledKernel
             {
                 Name = generatedKernel.Name,
-                Binary = System.Text.Encoding.UTF8.GetBytes(generatedKernel.Source),
+                Binary = global::System.Text.Encoding.UTF8.GetBytes(generatedKernel.Source),
                 Parameters = generatedKernel.Parameters,
                 RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize,
                 SharedMemorySize = generatedKernel.SharedMemorySize

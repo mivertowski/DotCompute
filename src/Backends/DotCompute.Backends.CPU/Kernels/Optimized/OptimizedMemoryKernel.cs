@@ -75,7 +75,7 @@ internal class OptimizedMemoryKernel : Base.OptimizedKernelBase
         var input = new float[elementCount];
         var output = new float[elementCount];
 
-        await inputBuffer.CopyToHostAsync<float>(input);
+        await inputBuffer.CopyToAsync<float>(input);
 
         // Parallel memory-intensive operations with multiple memory accesses per element
         _ = Parallel.For(0, elementCount, i =>
@@ -87,6 +87,6 @@ internal class OptimizedMemoryKernel : Base.OptimizedKernelBase
             output[i] = value;
         });
 
-        await outputBuffer.CopyFromHostAsync<float>(output);
+        await outputBuffer.CopyFromAsync<float>(output);
     }
 }

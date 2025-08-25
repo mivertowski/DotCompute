@@ -139,7 +139,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
 
         try
         {
-            await buffer.CopyFromHostAsync(source, 0, cancellationToken);
+            await buffer.CopyFromAsync(source, 0, cancellationToken);
             return buffer;
         }
         catch
@@ -212,7 +212,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         ArgumentNullException.ThrowIfNull(buffer);
 
         var memory = new ReadOnlyMemory<T>(data.ToArray());
-        buffer.CopyFromHostAsync(memory).AsTask().Wait();
+        buffer.CopyFromAsync(memory).AsTask().Wait();
     }
 
     /// <summary>
@@ -231,7 +231,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         ArgumentNullException.ThrowIfNull(buffer);
 
         var memory = new Memory<T>(new T[data.Length]);
-        buffer.CopyToHostAsync(memory).AsTask().Wait();
+        buffer.CopyToAsync(memory).AsTask().Wait();
         memory.Span.CopyTo(data);
     }
 
@@ -521,7 +521,7 @@ public sealed class ProductionMemoryBufferView : IUnifiedMemoryBuffer
             throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
         }
 
-        return _parentBuffer.CopyFromHostAsync(source, _offset + offset, cancellationToken);
+        return _parentBuffer.CopyFromAsync(source, _offset + offset, cancellationToken);
     }
 
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
@@ -531,7 +531,7 @@ public sealed class ProductionMemoryBufferView : IUnifiedMemoryBuffer
             throw new ObjectDisposedException(nameof(ProductionCompiledKernel));
         }
 
-        return _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+        return _parentBuffer.CopyToAsync(destination, _offset + offset, cancellationToken);
     }
 
     public void Dispose()

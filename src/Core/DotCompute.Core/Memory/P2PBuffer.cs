@@ -100,7 +100,7 @@ namespace DotCompute.Core.Memory
 
             try
             {
-                await _underlyingBuffer.CopyFromHostAsync<TData>(source, offset, cancellationToken);
+                await _underlyingBuffer.CopyFromAsync<TData>(source, offset, cancellationToken);
                 _logger.LogTrace("Host to P2P buffer copy completed: {Bytes} bytes to {Device}",
                     source.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
@@ -130,7 +130,7 @@ namespace DotCompute.Core.Memory
 
             try
             {
-                await _underlyingBuffer.CopyFromHostAsync<TData>(source, offset, cancellationToken);
+                await _underlyingBuffer.CopyFromAsync<TData>(source, offset, cancellationToken);
                 _logger.LogTrace("Host memory to P2P buffer copy completed: {Bytes} bytes to {Device}",
                     source.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
@@ -160,7 +160,7 @@ namespace DotCompute.Core.Memory
 
             try
             {
-                await _underlyingBuffer.CopyToHostAsync<TData>(destination, offset, cancellationToken);
+                await _underlyingBuffer.CopyToAsync<TData>(destination, offset, cancellationToken);
                 _logger.LogTrace("P2P buffer to host copy completed: {Bytes} bytes from {Device}",
                     destination.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
@@ -190,7 +190,7 @@ namespace DotCompute.Core.Memory
 
             try
             {
-                await _underlyingBuffer.CopyToHostAsync<TData>(destination, offset, cancellationToken);
+                await _underlyingBuffer.CopyToAsync<TData>(destination, offset, cancellationToken);
                 _logger.LogTrace("P2P buffer to host memory copy completed: {Bytes} bytes from {Device}",
                     destination.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
@@ -211,7 +211,7 @@ namespace DotCompute.Core.Memory
 
             try
             {
-                await _underlyingBuffer.CopyFromHostAsync<byte>(new ReadOnlyMemory<byte>(), 0, cancellationToken);
+                await _underlyingBuffer.CopyFromAsync<byte>(new ReadOnlyMemory<byte>(), 0, cancellationToken);
                 _logger.LogTrace("Memory buffer to P2P buffer copy completed: {Bytes} bytes to {Device}",
                     source.SizeInBytes, _accelerator.Info.Name);
             }
@@ -234,8 +234,8 @@ namespace DotCompute.Core.Memory
             {
                 // Direct copy between memory buffers
                 var tempData = new byte[SizeInBytes];
-                await _underlyingBuffer.CopyToHostAsync<byte>(tempData, 0, cancellationToken);
-                await destination.CopyFromHostAsync<byte>(tempData, 0, cancellationToken);
+                await _underlyingBuffer.CopyToAsync<byte>(tempData, 0, cancellationToken);
+                await destination.CopyFromAsync<byte>(tempData, 0, cancellationToken);
 
                 _logger.LogTrace("P2P buffer to memory buffer copy completed: {Bytes} bytes from {Device}",
                     SizeInBytes, _accelerator.Info.Name);
@@ -477,7 +477,7 @@ namespace DotCompute.Core.Memory
         {
             var hostData = new T[Length];
             await CopyToHostAsync(hostData, 0, cancellationToken);
-            await destination.CopyFromHostAsync<T>(hostData.AsMemory(), 0, cancellationToken);
+            await destination.CopyFromAsync<T>(hostData.AsMemory(), 0, cancellationToken);
         }
 
         /// <summary>
@@ -517,7 +517,7 @@ namespace DotCompute.Core.Memory
             Array.Copy(fullData, sourceOffset, hostData, 0, count);
 
             // Copy from host to destination
-            await destination.CopyFromHostAsync<T>(hostData.AsMemory(), destinationOffset, cancellationToken);
+            await destination.CopyFromAsync<T>(hostData.AsMemory(), destinationOffset, cancellationToken);
         }
 
         /// <summary>
@@ -570,7 +570,7 @@ namespace DotCompute.Core.Memory
         {
             var hostData = new T[Length];
             await CopyToHostAsync(hostData, 0, cancellationToken);
-            await destination.CopyFromHostAsync<T>(hostData.AsMemory(), 0, cancellationToken);
+            await destination.CopyFromAsync<T>(hostData.AsMemory(), 0, cancellationToken);
         }
 
         /// <summary>
@@ -635,7 +635,7 @@ namespace DotCompute.Core.Memory
             var fullData = new T[Length];
             await CopyToHostAsync(fullData, 0, cancellationToken);
             Array.Copy(fullData, sourceOffset, rangeData, 0, count);
-            await destination.CopyFromHostAsync(rangeData, destinationOffset, cancellationToken);
+            await destination.CopyFromAsync(rangeData, destinationOffset, cancellationToken);
         }
 
         /// <summary>

@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
+using DotCompute.Core.Memory.Utilities;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Memory
@@ -351,10 +352,10 @@ namespace DotCompute.Core.Memory
             var hostData = new T[BufferHelpers.GetElementCount(source)];
 
             // Copy from source to host  
-            await source.CopyToHostAsync<T>(hostData, 0, cancellationToken);
+            await source.CopyToAsync<T>(hostData, 0, cancellationToken);
 
             // Copy from host to target
-            await target.CopyFromHostAsync<T>(hostData, 0, cancellationToken);
+            await target.CopyFromAsync<T>(hostData, 0, cancellationToken);
         }
 
         /// <summary>
@@ -420,13 +421,13 @@ namespace DotCompute.Core.Memory
             {
                 // Copy source to memory-mapped file
                 var hostData = new T[BufferHelpers.GetElementCount(source)];
-                await source.CopyToHostAsync<T>(hostData, 0, cancellationToken);
+                await source.CopyToAsync<T>(hostData, 0, cancellationToken);
                 await File.WriteAllBytesAsync(tempFile, global::System.Runtime.InteropServices.MemoryMarshal.AsBytes(hostData.AsSpan()).ToArray(), cancellationToken);
 
                 // Copy from memory-mapped file to target
                 var fileData = await File.ReadAllBytesAsync(tempFile, cancellationToken);
                 var targetData = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(fileData);
-                await target.CopyFromHostAsync<T>(targetData.ToArray(), 0, cancellationToken);
+                await target.CopyFromAsync<T>(targetData.ToArray(), 0, cancellationToken);
             }
             finally
             {

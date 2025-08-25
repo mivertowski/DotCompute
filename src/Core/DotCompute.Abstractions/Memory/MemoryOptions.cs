@@ -57,6 +57,16 @@ namespace DotCompute.Abstractions.Memory
         /// <summary>
         /// Memory should be zero-initialized.
         /// </summary>
-        ZeroInitialized = 1 << 8
+        ZeroInitialized = 1 << 8,
+
+        /// <summary>
+        /// Memory should be aligned to specific boundary.
+        /// </summary>
+        Aligned = 1 << 9,
+
+        /// <summary>
+        /// Memory should be visible to host.
+        /// </summary>
+        HostVisible = 1 << 10
     }
 }

@@ -78,7 +78,7 @@ internal class OptimizedVectorScaleKernel : Base.OptimizedKernelBase
         var inputData = new float[elementCount];
         var resultData = new float[elementCount];
 
-        await inputBuffer.CopyToHostAsync<float>(inputData);
+        await inputBuffer.CopyToAsync<float>(inputData);
 
         // Vectorized scaling using SIMD when available
         var vectorSize = Vector<float>.Count;
@@ -100,6 +100,6 @@ internal class OptimizedVectorScaleKernel : Base.OptimizedKernelBase
             resultData[i] = inputData[i] * scaleFactor;
         }
 
-        await resultBuffer.CopyFromHostAsync<float>(resultData);
+        await resultBuffer.CopyFromAsync<float>(resultData);
     }
 }

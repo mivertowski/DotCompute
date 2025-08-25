@@ -543,8 +543,8 @@ namespace DotCompute.Core.Memory.P2P
                 var destData = new T[destinationBuffer.Length];
 
                 await Task.WhenAll(
-                    sourceBuffer.CopyToHostAsync<T>(sourceData, 0, cancellationToken).AsTask(),
-                    destinationBuffer.CopyToHostAsync<T>(destData, 0, cancellationToken).AsTask()
+                    sourceBuffer.CopyToAsync<T>(sourceData, 0, cancellationToken).AsTask(),
+                    destinationBuffer.CopyToAsync<T>(destData, 0, cancellationToken).AsTask()
                 );
 
                 // Compare data byte by byte
@@ -626,8 +626,8 @@ namespace DotCompute.Core.Memory.P2P
                     var destSample = destinationBuffer.Slice((int)offset, (int)actualSampleElements);
 
                     await Task.WhenAll(
-                        sourceSample.CopyToHostAsync<T>(sourceData, 0, cancellationToken).AsTask(),
-                        destSample.CopyToHostAsync<T>(destData, 0, cancellationToken).AsTask()
+                        sourceSample.CopyToAsync<T>(sourceData, 0, cancellationToken).AsTask(),
+                        destSample.CopyToAsync<T>(destData, 0, cancellationToken).AsTask()
                     );
 
                     // Compare samples
@@ -699,7 +699,7 @@ namespace DotCompute.Core.Memory.P2P
 
             var sampleData = new T[sampleElements];
             var bufferSlice = buffer.Slice(0, (int)sampleElements);
-            await bufferSlice.CopyToHostAsync<T>(sampleData, 0, cancellationToken);
+            await bufferSlice.CopyToAsync<T>(sampleData, 0, cancellationToken);
 
             // Simple checksum calculation (in production would use xxHash or similar)
             var bytes = global::System.Runtime.InteropServices.MemoryMarshal.AsBytes(sampleData.AsSpan());

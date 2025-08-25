@@ -87,8 +87,8 @@ internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
         var dataB = new float[elementCount];
         var dataResult = new float[elementCount];
 
-        await bufferA.CopyToHostAsync<float>(dataA);
-        await bufferB.CopyToHostAsync<float>(dataB);
+        await bufferA.CopyToAsync<float>(dataA);
+        await bufferB.CopyToAsync<float>(dataB);
 
         // Vectorized addition using SIMD when available
         var vectorSize = Vector<float>.Count;
@@ -110,6 +110,6 @@ internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
             dataResult[i] = dataA[i] + dataB[i];
         }
 
-        await bufferResult.CopyFromHostAsync<float>(dataResult);
+        await bufferResult.CopyFromAsync<float>(dataResult);
     }
 }

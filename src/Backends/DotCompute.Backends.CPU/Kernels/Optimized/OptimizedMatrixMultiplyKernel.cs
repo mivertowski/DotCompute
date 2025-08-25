@@ -77,8 +77,8 @@ internal class OptimizedMatrixMultiplyKernel : Base.OptimizedKernelBase
         var matrixB = new float[size * size];
         var matrixC = new float[size * size];
 
-        await bufferA.CopyToHostAsync<float>(matrixA);
-        await bufferB.CopyToHostAsync<float>(matrixB);
+        await bufferA.CopyToAsync<float>(matrixA);
+        await bufferB.CopyToAsync<float>(matrixB);
 
         // Parallel matrix multiplication using cache-optimized access patterns
         _ = Parallel.For(0, size, i =>
@@ -94,6 +94,6 @@ internal class OptimizedMatrixMultiplyKernel : Base.OptimizedKernelBase
             }
         });
 
-        await bufferC.CopyFromHostAsync<float>(matrixC);
+        await bufferC.CopyFromAsync<float>(matrixC);
     }
 }

@@ -153,7 +153,7 @@ namespace DotCompute.Core.Kernels
         private static Guid GenerateIdFromName(string name)
         {
             // Generate a deterministic GUID from the name
-            var bytes = System.Text.Encoding.UTF8.GetBytes(name);
+            var bytes = global::System.Text.Encoding.UTF8.GetBytes(name);
             var hash = global::System.Security.Cryptography.SHA1.Create().ComputeHash(bytes);
             var guid = new byte[16];
             Array.Copy(hash, guid, 16);

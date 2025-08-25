@@ -142,12 +142,12 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
 
     public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        return _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
+        return _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
     }
 
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        return _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+        return _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
     }
 
     public void Dispose() 

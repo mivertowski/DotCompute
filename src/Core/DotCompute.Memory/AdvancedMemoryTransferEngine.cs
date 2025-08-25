@@ -241,7 +241,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             // Read from memory-mapped file and copy to buffer
             var tempBuffer = new byte[sizeInBytes];
             _ = accessor.ReadArray(0, tempBuffer, 0, tempBuffer.Length);
-            await buffer.CopyFromHostAsync<byte>(tempBuffer, 0, cancellationToken).ConfigureAwait(false);
+            await buffer.CopyFromAsync<byte>(tempBuffer, 0, cancellationToken).ConfigureAwait(false);
 
             result.UsedMemoryMapping = true;
             return buffer;
@@ -334,7 +334,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             Array.Copy(data, startIndex, chunkData, 0, actualChunkSize);
 
             var byteOffset = startIndex * elementSize;
-            await buffer.CopyFromHostAsync<T>(chunkData, byteOffset, cancellationToken).ConfigureAwait(false);
+            await buffer.CopyFromAsync<T>(chunkData, byteOffset, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -353,7 +353,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     {
         var sizeInBytes = originalData.Length * Unsafe.SizeOf<T>();
         var readBuffer = new byte[sizeInBytes];
-        await buffer.CopyToHostAsync<byte>(readBuffer, 0, cancellationToken).ConfigureAwait(false);
+        await buffer.CopyToAsync<byte>(readBuffer, 0, cancellationToken).ConfigureAwait(false);
 
         var readData = MemoryMarshal.Cast<byte, T>(readBuffer);
 

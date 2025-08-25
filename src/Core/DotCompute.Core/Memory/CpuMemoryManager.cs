@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using global::System.Runtime.CompilerServices;
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
@@ -34,13 +35,7 @@ public class CpuMemoryManager : BaseMemoryManager
         TotalAllocated = _currentAllocatedBytes,
         CurrentUsed = _currentAllocatedBytes,
         PeakUsage = _peakAllocatedBytes,
-        AvailableCapacity = MaxAllocationSize - _currentAllocatedBytes,
-        FragmentationRatio = 0.0,
-        AllocationCount = (int)_totalAllocations,
-        DeallocationCount = (int)_totalDeallocations,
-        LastGarbageCollection = DateTime.UtcNow,
-        PooledBuffers = 0,
-        CacheHitRate = 0.0
+        ActiveAllocations = (int)_totalAllocations - (int)_totalDeallocations
     };
     
     /// <inheritdoc/>
@@ -296,11 +291,7 @@ public class CpuMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
     public long SizeInBytes => _underlyingBuffer.SizeInBytes;
     public IAccelerator Accelerator => null!; // CPU doesn't have a specific accelerator
     public MemoryOptions Options => _underlyingBuffer.Options;
-    public BufferState State 
-    { 
-        get => _underlyingBuffer.State;
-        set => _underlyingBuffer.State = value;
-    }
+    public BufferState State => _underlyingBuffer.State;
     public bool IsDisposed => _underlyingBuffer.IsDisposed;
     public bool IsOnHost => true;
     public bool IsOnDevice => false;
@@ -398,24 +389,24 @@ public class CpuMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
     
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
-        await _underlyingBuffer.CopyFromHostAsync(source, cancellationToken: cancellationToken);
+        await _underlyingBuffer.CopyFromAsync(source, cancellationToken: cancellationToken);
     }
     
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
     {
-        await _underlyingBuffer.CopyToHostAsync(destination, cancellationToken: cancellationToken);
+        await _underlyingBuffer.CopyToAsync(destination, cancellationToken: cancellationToken);
     }
     
     public ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, 
         CancellationToken cancellationToken = default) where TSource : unmanaged
     {
-        return _underlyingBuffer.CopyFromHostAsync(source, offset, cancellationToken);
+        return _underlyingBuffer.CopyFromAsync(source, offset, cancellationToken);
     }
     
     public ValueTask CopyToHostAsync<TDest>(Memory<TDest> destination, long offset = 0, 
         CancellationToken cancellationToken = default) where TDest : unmanaged
     {
-        return _underlyingBuffer.CopyToHostAsync(destination, offset, cancellationToken);
+        return _underlyingBuffer.CopyToAsync(destination, offset, cancellationToken);
     }
     
     public void Dispose() => _underlyingBuffer.Dispose();
