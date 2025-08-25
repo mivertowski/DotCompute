@@ -55,6 +55,21 @@ public class KernelExecutionContext
     public bool EnableDebugMode { get; set; }
 
     /// <summary>
+    /// Gets or sets the name of the kernel being executed.
+    /// </summary>
+    public string? KernelName { get; set; }
+
+    /// <summary>
+    /// Gets or sets compilation information for the kernel.
+    /// </summary>
+    public string? CompilationInfo { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp when this context was created.
+    /// </summary>
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
     /// Creates a default execution context.
     /// </summary>
     /// <returns>A new instance of <see cref="KernelExecutionContext"/> with default settings.</returns>

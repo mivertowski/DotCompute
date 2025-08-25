@@ -140,9 +140,9 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// Validates kernel definition parameters.
     /// Common validation logic that was duplicated across implementations.
     /// </summary>
-    protected virtual DotCompute.Abstractions.UnifiedValidationResult ValidateKernelDefinition(KernelDefinition definition)
+    protected virtual DotCompute.Abstractions.Validation.UnifiedValidationResult ValidateKernelDefinition(KernelDefinition definition)
     {
-        var result = new DotCompute.Abstractions.UnifiedValidationResult();
+        var result = new DotCompute.Abstractions.Validation.UnifiedValidationResult();
         
         if (string.IsNullOrWhiteSpace(definition.Name))
         {
@@ -183,9 +183,9 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// <summary>
     /// Hook for derived classes to add additional validation.
     /// </summary>
-    protected virtual DotCompute.Abstractions.UnifiedValidationResult AdditionalValidation(KernelDefinition definition)
+    protected virtual DotCompute.Abstractions.Validation.UnifiedValidationResult AdditionalValidation(KernelDefinition definition)
     {
-        return DotCompute.Abstractions.UnifiedValidationResult.Success();
+        return DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
     }
     
     /// <summary>
@@ -275,7 +275,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     public Task<ManagedCompiledKernel> CompileAsync(IKernelSource source, CompilationOptions options, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     public Task<KernelValidationResult> ValidateAsync(IKernelSource source, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     /// <inheritdoc/>
-    public virtual DotCompute.Abstractions.UnifiedValidationResult Validate(KernelDefinition source)
+    public virtual DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(KernelDefinition source)
     {
         ArgumentNullException.ThrowIfNull(source);
         
@@ -284,7 +284,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     }
     
     /// <inheritdoc/>
-    public virtual async ValueTask<DotCompute.Abstractions.UnifiedValidationResult> ValidateAsync(
+    public virtual async ValueTask<DotCompute.Abstractions.Validation.UnifiedValidationResult> ValidateAsync(
         KernelDefinition source,
         CancellationToken cancellationToken = default)
     {

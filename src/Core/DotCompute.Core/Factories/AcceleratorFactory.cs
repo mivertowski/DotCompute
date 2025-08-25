@@ -99,7 +99,15 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                 if (Enum.TryParse<AcceleratorType>(backend, ignoreCase: true, out var type))
                 {
                     // Try to create a test instance to verify availability
-                    using var testAccelerator = await CreateAsync(type, new AcceleratorConfiguration { EnableDebugMode = false }, serviceProvider: null, cancellationToken).ConfigureAwait(false);
+                    var testAccelerator = await CreateAsync(type, new AcceleratorConfiguration { EnableDebugMode = false }, serviceProvider: null, cancellationToken).ConfigureAwait(false);
+                    if (testAccelerator is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                    else if (testAccelerator is IAsyncDisposable asyncDisposable)
+                    {
+                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                    }
                     availableTypes.Add(type);
                 }
             }
