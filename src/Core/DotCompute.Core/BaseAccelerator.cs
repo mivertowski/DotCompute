@@ -3,8 +3,8 @@
 
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 

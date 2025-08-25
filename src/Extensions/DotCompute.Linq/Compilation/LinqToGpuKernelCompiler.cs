@@ -7,6 +7,7 @@ using System.Text;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 namespace DotCompute.Linq.Compilation;
 
 
@@ -447,7 +448,7 @@ public sealed class StringKernelSource : IKernelSource
     public string Name => "LinqGeneratedKernel";
     public KernelSourceType Type => KernelSourceType.CUDA;
     public string Code => _source;
-    public DotCompute.Abstractions.Enums.KernelLanguage Language => DotCompute.Abstractions.Enums.KernelLanguage.Cuda;
+    public KernelLanguage Language => KernelLanguage.Cuda;
     public string EntryPoint => "LinqGeneratedKernel";
     public string[] Dependencies => Array.Empty<string>();
 

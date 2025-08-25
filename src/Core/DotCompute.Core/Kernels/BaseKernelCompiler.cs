@@ -4,8 +4,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Kernels.Compilation;
 using DotCompute.Core.Kernels.Validation;
 using Microsoft.Extensions.Logging;

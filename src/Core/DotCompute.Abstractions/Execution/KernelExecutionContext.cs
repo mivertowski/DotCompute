@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Execution;
 

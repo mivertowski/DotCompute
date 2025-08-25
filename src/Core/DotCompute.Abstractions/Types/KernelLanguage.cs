@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions.Enums
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Defines the language or format of kernel source code.

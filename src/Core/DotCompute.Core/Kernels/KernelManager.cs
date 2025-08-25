@@ -8,7 +8,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Kernels.Compilation;
 using DotCompute.Core.Kernels.Types;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Kernels
 {
@@ -550,18 +550,18 @@ public sealed partial class KernelManager : IDisposable
     /// <summary>
     /// Converts Core KernelLanguage to Abstractions KernelLanguage.
     /// </summary>
-    private static DotCompute.Abstractions.Enums.KernelLanguage ConvertKernelLanguage(KernelLanguage language)
+    private static AbstractionsMemory.Types.KernelLanguage ConvertKernelLanguage(KernelLanguage language)
     {
         return language switch
         {
-            KernelLanguage.CSharp => DotCompute.Abstractions.Enums.KernelLanguage.CSharpIL,
-            KernelLanguage.OpenCL => DotCompute.Abstractions.Enums.KernelLanguage.OpenCL,
-            KernelLanguage.CUDA => DotCompute.Abstractions.Enums.KernelLanguage.Cuda,
-            KernelLanguage.Metal => DotCompute.Abstractions.Enums.KernelLanguage.Metal,
-            KernelLanguage.DirectCompute => DotCompute.Abstractions.Enums.KernelLanguage.HLSL,
-            KernelLanguage.Vulkan => DotCompute.Abstractions.Enums.KernelLanguage.SPIRV,
-            KernelLanguage.WebGPU => DotCompute.Abstractions.Enums.KernelLanguage.SPIRV,
-            _ => DotCompute.Abstractions.Enums.KernelLanguage.CSharpIL
+            KernelLanguage.CSharp => AbstractionsMemory.Types.KernelLanguage.CSharpIL,
+            KernelLanguage.OpenCL => AbstractionsMemory.Types.KernelLanguage.OpenCL,
+            KernelLanguage.CUDA => AbstractionsMemory.Types.KernelLanguage.Cuda,
+            KernelLanguage.Metal => AbstractionsMemory.Types.KernelLanguage.Metal,
+            KernelLanguage.DirectCompute => AbstractionsMemory.Types.KernelLanguage.HLSL,
+            KernelLanguage.Vulkan => AbstractionsMemory.Types.KernelLanguage.SPIRV,
+            KernelLanguage.WebGPU => AbstractionsMemory.Types.KernelLanguage.SPIRV,
+            _ => AbstractionsMemory.Types.KernelLanguage.CSharpIL
         };
     }
 

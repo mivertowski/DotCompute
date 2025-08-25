@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.ComponentModel.DataAnnotations;
-using DotCompute.Abstractions.Enums;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions;

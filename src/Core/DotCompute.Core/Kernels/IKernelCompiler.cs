@@ -4,7 +4,7 @@
 // </copyright>
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Kernels.Compilation;
 using DotCompute.Core.Kernels.Validation;
 

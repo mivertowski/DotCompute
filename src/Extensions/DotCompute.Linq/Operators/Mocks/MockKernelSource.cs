@@ -4,7 +4,7 @@
 // </copyright>
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Enums;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Linq.Operators.Mocks;
 
