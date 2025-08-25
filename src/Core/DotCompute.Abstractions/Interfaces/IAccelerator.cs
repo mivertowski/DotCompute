@@ -18,7 +18,7 @@ namespace DotCompute.Abstractions
         public AcceleratorType Type { get; }
 
         /// <summary>Gets memory manager for this accelerator.</summary>
-        public IMemoryManager Memory { get; }
+        public IUnifiedMemoryManager Memory { get; }
 
         /// <summary>Gets the accelerator context.</summary>
         public AcceleratorContext Context { get; }

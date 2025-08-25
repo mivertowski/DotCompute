@@ -1,14 +1,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
+using DotCompute.Abstractions.Exceptions;
 
-namespace DotCompute.Backends.CUDA.Optimization.Exceptions
+namespace DotCompute.Backends.CUDA.ErrorHandling
 {
     /// <summary>
     /// Exception thrown when occupancy calculation fails.
     /// </summary>
-    internal class OccupancyException : Exception
+    internal sealed class OccupancyException : AcceleratorException
     {
         /// <summary>
         /// Initializes a new instance of the OccupancyException class.
