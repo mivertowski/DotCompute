@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Compute.Memory;
 using DotCompute.Core.Compute.Parsing;
 using DotCompute.Core.Compute.Kernels;
+using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
@@ -34,7 +35,8 @@ namespace DotCompute.Core.Compute.Accelerators
         {
             Info = info ?? throw new ArgumentNullException(nameof(info));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _memoryManager = new IUnifiedMemoryManager(this, logger);
+            _memoryManager = new CpuMemoryManager(this, logger as ILogger<CpuMemoryManager> ?? 
+                                                      throw new ArgumentException("Logger must be ILogger<CpuMemoryManager>", nameof(logger)));
             _kernelParser = new OpenCLKernelParser(logger);
         }
 

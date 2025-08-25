@@ -123,7 +123,9 @@ namespace DotCompute.Core.Execution
             _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
             _loggerFactory = loggerFactory ?? new NullLoggerFactory();
 
-            _memoryManager = new IUnifiedMemoryManager(_loggerFactory.CreateLogger<IUnifiedMemoryManager>());
+            // For parallel execution, we need a memory manager but we don't have an accelerator yet - TODO
+            // This will be set when execution starts
+            _memoryManager = null!;
             _coordinator = new ExecutionCoordinator(_loggerFactory.CreateLogger<ExecutionCoordinator>());
             _performanceMonitor = new PerformanceMonitor(_loggerFactory.CreateLogger<PerformanceMonitor>());
             _distributedKernelCache = new ConcurrentDictionary<string, CompiledKernelCache>();

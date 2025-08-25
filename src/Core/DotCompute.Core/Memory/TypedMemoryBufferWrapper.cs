@@ -105,7 +105,7 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
     public DeviceMemory GetDeviceMemory()
     {
         // Return a default device memory handle
-        return new DeviceMemory { Handle = IntPtr.Zero, Size = SizeInBytes };
+        return new DeviceMemory(IntPtr.Zero, SizeInBytes);
     }
     
     public MappedMemory<T> Map(MapMode mode)

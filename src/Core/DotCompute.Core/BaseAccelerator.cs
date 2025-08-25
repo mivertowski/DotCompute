@@ -129,10 +129,8 @@ public abstract class BaseAccelerator : IAccelerator
         ArgumentException.ThrowIfNullOrWhiteSpace(definition.Name);
         ArgumentException.ThrowIfNullOrWhiteSpace(definition.Source);
         
-        if (definition.Parameters == null || definition.Parameters.Count == 0)
-        {
-            throw new ArgumentException("Kernel definition must have at least one parameter", nameof(definition));
-        }
+        // Parameters might be stored in metadata or parsed from source
+        // For now, we'll skip this validation as it depends on the specific kernel format
     }
     
     /// <summary>

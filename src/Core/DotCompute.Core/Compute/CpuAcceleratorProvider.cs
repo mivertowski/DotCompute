@@ -56,7 +56,7 @@ namespace DotCompute.Core.Compute
                 throw new ArgumentException("Can only create CPU accelerators", nameof(info));
             }
 
-            var accelerator = new Accelerators.HighPerformanceCpuAccelerator(info, _logger, null);
+            var accelerator = new Accelerators.HighPerformanceCpuAccelerator(info, _logger);
             return ValueTask.FromResult<IAccelerator>(accelerator);
         }
 

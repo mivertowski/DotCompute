@@ -66,8 +66,19 @@ public sealed partial class SystemInfoManager
     {
         try
         {
+            // Get all information first
+            var memInfo = GetMemoryInfo();
+            var virtMemInfo = GetVirtualMemoryInfo();
+            var cpuInfo = GetCpuInfo();
+            var diskInfo = GetDiskInfo();
+            
+            // Get process information
+            using var process = Process.GetCurrentProcess();
+            
+            // Create SystemInfo with all properties initialized
             var info = new SystemInfo
             {
+                // Platform
                 Platform = GetPlatform(),
                 Architecture = RuntimeInformation.ProcessArchitecture.ToString(),
                 OSDescription = RuntimeInformation.OSDescription,
@@ -76,44 +87,39 @@ public sealed partial class SystemInfoManager
                 MachineName = Environment.MachineName,
                 Is64BitOS = Environment.Is64BitOperatingSystem,
                 Is64BitProcess = Environment.Is64BitProcess,
-                Timestamp = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.UtcNow,
+                
+                // Memory
+                TotalPhysicalMemory = memInfo.Total,
+                AvailablePhysicalMemory = memInfo.Available,
+                UsedPhysicalMemory = memInfo.Used,
+                MemoryUsagePercentage = memInfo.UsagePercentage,
+                
+                // Virtual Memory
+                TotalVirtualMemory = virtMemInfo.Total,
+                AvailableVirtualMemory = virtMemInfo.Available,
+                
+                // CPU
+                CpuName = cpuInfo.Name,
+                CpuFrequencyMHz = cpuInfo.FrequencyMHz,
+                CpuCores = cpuInfo.PhysicalCores,
+                CpuThreads = cpuInfo.LogicalCores,
+                CpuUsagePercentage = cpuInfo.UsagePercentage,
+                CpuArchitecture = cpuInfo.Architecture,
+                CpuFeatures = cpuInfo.Features,
+                
+                // Process
+                ProcessMemory = process.WorkingSet64,
+                ProcessVirtualMemory = process.VirtualMemorySize64,
+                ProcessThreadCount = process.Threads.Count,
+                ProcessHandleCount = process.HandleCount,
+                ProcessUptime = DateTimeOffset.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime(),
+                
+                // Disk
+                DiskSpaceTotal = diskInfo.Total,
+                DiskSpaceAvailable = diskInfo.Available,
+                DiskSpaceUsed = diskInfo.Used
             };
-
-            // Get memory information
-            var memInfo = GetMemoryInfo();
-            info.TotalPhysicalMemory = memInfo.Total;
-            info.AvailablePhysicalMemory = memInfo.Available;
-            info.UsedPhysicalMemory = memInfo.Used;
-            info.MemoryUsagePercentage = memInfo.UsagePercentage;
-            
-            // Get virtual memory info
-            var virtMemInfo = GetVirtualMemoryInfo();
-            info.TotalVirtualMemory = virtMemInfo.Total;
-            info.AvailableVirtualMemory = virtMemInfo.Available;
-            
-            // Get CPU information
-            var cpuInfo = GetCpuInfo();
-            info.CpuName = cpuInfo.Name;
-            info.CpuFrequencyMHz = cpuInfo.FrequencyMHz;
-            info.CpuCores = cpuInfo.PhysicalCores;
-            info.CpuThreads = cpuInfo.LogicalCores;
-            info.CpuUsagePercentage = cpuInfo.UsagePercentage;
-            info.CpuArchitecture = cpuInfo.Architecture;
-            info.CpuFeatures = cpuInfo.Features;
-            
-            // Get process information
-            using var process = Process.GetCurrentProcess();
-            info.ProcessMemory = process.WorkingSet64;
-            info.ProcessVirtualMemory = process.VirtualMemorySize64;
-            info.ProcessThreadCount = process.Threads.Count;
-            info.ProcessHandleCount = process.HandleCount;
-            info.ProcessUptime = DateTimeOffset.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime();
-            
-            // Get disk information
-            var diskInfo = GetDiskInfo();
-            info.DiskSpaceTotal = diskInfo.Total;
-            info.DiskSpaceAvailable = diskInfo.Available;
-            info.DiskSpaceUsed = diskInfo.Used;
             
             _cachedInfo = info;
             
