@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -69,9 +69,7 @@
   <!-- Build targets for native library -->
   <Target Name="BuildNativeLibrary" BeforeTargets="BeforeBuild" Condition="$([MSBuild]::IsOSPlatform('OSX')) AND !Exists('libDotComputeMetal.dylib') AND !Exists('native/libDotComputeMetal.dylib')">
     <Message Text="Building Metal native library..." Importance="high" />
-    <Exec Command="cd native &amp;&amp; chmod +x build.sh &amp;&amp; ./build.sh $(Configuration)" 
-          IgnoreExitCode="false" 
-          ContinueOnError="false" />
+    <Exec Command="cd native &amp;&amp; chmod +x build.sh &amp;&amp; ./build.sh $(Configuration)" IgnoreExitCode="false" ContinueOnError="false" />
   </Target>
   
   <!-- Clean target for native library -->
