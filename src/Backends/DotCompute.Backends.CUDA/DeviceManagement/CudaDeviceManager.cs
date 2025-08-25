@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Native.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.DeviceManagement;

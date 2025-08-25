@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Native.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 

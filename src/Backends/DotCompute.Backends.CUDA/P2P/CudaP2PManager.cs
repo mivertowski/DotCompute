@@ -3,9 +3,9 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.P2P
 {

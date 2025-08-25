@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Native.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;

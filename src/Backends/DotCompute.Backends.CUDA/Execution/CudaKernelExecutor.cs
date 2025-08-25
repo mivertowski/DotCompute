@@ -4,12 +4,12 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CUDA.Types.Native;
 namespace DotCompute.Backends.CUDA.Execution
 {
 

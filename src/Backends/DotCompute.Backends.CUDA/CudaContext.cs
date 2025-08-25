@@ -3,7 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Native.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA
 {
