@@ -1,6 +1,6 @@
 using System;
 
-namespace DotCompute.Backends.CUDA.ErrorHandling.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Result of an error recovery attempt.

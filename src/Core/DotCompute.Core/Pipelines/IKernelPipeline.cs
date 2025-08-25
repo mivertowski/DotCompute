@@ -1,9 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Validation;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using DotCompute.Core.Device.Interfaces;
 using DotCompute.Core.Pipelines.Models;
+using DotCompute.Core.Validation;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -332,7 +335,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Gets validation errors.
         /// </summary>
-        public IReadOnlyList<ValidationIssue>? Errors { get; init; }
+        public IReadOnlyList<DotCompute.Abstractions.ValidationIssue>? Errors { get; init; }
 
         /// <summary>
         /// Gets validation warnings.

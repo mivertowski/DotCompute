@@ -1,6 +1,6 @@
 using System;
 
-namespace DotCompute.Backends.CUDA.Memory.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Statistics for unified memory management.

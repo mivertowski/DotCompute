@@ -1,6 +1,6 @@
 using System;
 
-namespace DotCompute.Backends.CUDA.Analysis.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents runtime profiling results for memory coalescing analysis.

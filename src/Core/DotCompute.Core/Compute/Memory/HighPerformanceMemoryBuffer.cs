@@ -43,6 +43,11 @@ namespace DotCompute.Core.Compute.Memory
         /// Gets a value indicating whether the buffer has been disposed.
         /// </summary>
         public bool IsDisposed => _disposed;
+        
+        /// <summary>
+        /// Gets or sets the buffer state.
+        /// </summary>
+        public BufferState State { get; set; } = BufferState.HostReady;
 
         /// <summary>
         /// Resets the buffer with new size and options, reusing the existing instance.

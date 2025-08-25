@@ -1,6 +1,6 @@
 using System;
 
-namespace DotCompute.Backends.CUDA.Advanced.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents the result of a tensor core operation.

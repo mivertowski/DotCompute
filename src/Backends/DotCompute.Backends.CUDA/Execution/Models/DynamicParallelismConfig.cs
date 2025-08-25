@@ -1,6 +1,5 @@
-using DotCompute.Backends.CUDA.Optimization.Configuration;
 
-namespace DotCompute.Backends.CUDA.Optimization.Models
+namespace DotCompute.Backends.CUDA.Execution.Models
 {
     /// <summary>
     /// Configuration for dynamic parallelism kernel launches.

@@ -800,7 +800,7 @@ public class TransferOptions
     /// <value>
     /// The memory options.
     /// </value>
-    public DotCompute.Abstractions.MemoryOptions MemoryOptions { get; set; } = DotCompute.Abstractions.MemoryOptions.None;
+    public DotCompute.Abstractions.Memory.MemoryOptions MemoryOptions { get; set; } = DotCompute.Abstractions.Memory.MemoryOptions.None;
 }
 
 /// <summary>
@@ -862,7 +862,7 @@ public class ConcurrentTransferOptions
     /// <value>
     /// The memory options.
     /// </value>
-    public DotCompute.Abstractions.MemoryOptions MemoryOptions { get; set; } = DotCompute.Abstractions.MemoryOptions.None;
+    public DotCompute.Abstractions.Memory.MemoryOptions MemoryOptions { get; set; } = DotCompute.Abstractions.Memory.MemoryOptions.None;
 }
 
 /// <summary>

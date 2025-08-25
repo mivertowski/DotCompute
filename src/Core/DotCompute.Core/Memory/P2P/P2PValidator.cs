@@ -992,8 +992,12 @@ namespace DotCompute.Core.Memory.P2P
         public int Length { get; }
         public long SizeInBytes { get; }
         public IAccelerator Accelerator { get; }
-        public MemoryOptions Options => new();
+        public MemoryOptions Options => MemoryOptions.None;
         public bool IsDisposed => false;
+        public BufferState State { get; set; } = BufferState.HostReady;
+        public bool IsOnHost => State == BufferState.HostReady || State == BufferState.HostDirty;
+        public bool IsOnDevice => State == BufferState.DeviceReady || State == BufferState.DeviceDirty;
+        public bool IsDirty => State == BufferState.HostDirty || State == BufferState.DeviceDirty;
 
         public static ValueTask CopyFromHostAsync<TData>(TData[] source, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
             => ValueTask.CompletedTask;
@@ -1028,9 +1032,42 @@ namespace DotCompute.Core.Memory.P2P
         public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
             => new MockBuffer<TNew>(Accelerator, (int)(SizeInBytes / Unsafe.SizeOf<TNew>()));
 
-        public MappedMemory<T> Map(MapMode mode) => default;
-        public MappedMemory<T> MapRange(int offset, int count, MapMode mode) => default;
-        public ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => default;
+        // Memory access methods
+        public Span<T> AsSpan() => Span<T>.Empty;
+        public ReadOnlySpan<T> AsReadOnlySpan() => ReadOnlySpan<T>.Empty;
+        public Memory<T> AsMemory() => Memory<T>.Empty;
+        public ReadOnlyMemory<T> AsReadOnlyMemory() => ReadOnlyMemory<T>.Empty;
+        public DeviceMemory GetDeviceMemory() => DeviceMemory.Invalid;
+        
+        // Synchronization methods
+        public void EnsureOnHost() => State = BufferState.HostReady;
+        public void EnsureOnDevice() => State = BufferState.DeviceReady;
+        public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
+        {
+            EnsureOnHost();
+            return ValueTask.CompletedTask;
+        }
+        public ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
+        {
+            EnsureOnDevice();
+            return ValueTask.CompletedTask;
+        }
+        public void Synchronize() { }
+        public ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
+            => ValueTask.CompletedTask;
+        public void MarkHostDirty() => State = BufferState.HostDirty;
+        public void MarkDeviceDirty() => State = BufferState.DeviceDirty;
+        
+        // Copy methods
+        public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
+            => ValueTask.CompletedTask;
+        public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
+            => ValueTask.CompletedTask;
+
+        public MappedMemory<T> Map(MapMode mode) => MappedMemory<T>.Invalid;
+        public MappedMemory<T> MapRange(int offset, int count, MapMode mode) => MappedMemory<T>.Invalid;
+        public ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default)
+            => ValueTask.FromResult(MappedMemory<T>.Invalid);
 
         public void Dispose() { }
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;

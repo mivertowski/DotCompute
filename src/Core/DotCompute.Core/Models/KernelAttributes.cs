@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Compilation.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Attributes of a compiled CUDA kernel.

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DotCompute.Backends.CUDA.Optimization.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents an analysis of register usage and pressure for kernel optimization.

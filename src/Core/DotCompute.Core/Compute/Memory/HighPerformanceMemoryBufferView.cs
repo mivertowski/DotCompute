@@ -29,6 +29,15 @@ namespace DotCompute.Core.Compute.Memory
         /// Gets a value indicating whether the parent buffer has been disposed.
         /// </summary>
         public bool IsDisposed => _parent.IsDisposed;
+        
+        /// <summary>
+        /// Gets or sets the buffer state from the parent.
+        /// </summary>
+        public BufferState State 
+        { 
+            get => _parent.State;
+            set => _parent.State = value;
+        }
 
         /// <summary>
         /// Copies data from host memory to this buffer view.

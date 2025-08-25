@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using DotCompute.Backends.CUDA.Analysis.Enums;
 using DotCompute.Backends.CUDA.Analysis.Types;
 
-namespace DotCompute.Backends.CUDA.Analysis.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents the analysis results for 2D matrix memory access patterns.

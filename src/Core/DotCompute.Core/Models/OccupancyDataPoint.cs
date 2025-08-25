@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Optimization.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents a single data point in an occupancy curve.

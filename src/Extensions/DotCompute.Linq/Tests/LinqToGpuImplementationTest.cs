@@ -337,9 +337,9 @@ internal class MockMemoryManager : IUnifiedMemoryManager
     public long TotalMemory => 8L * 1024 * 1024 * 1024;
     public long AvailableMemory => TotalMemory / 2;
 
-    public ValueTask<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default) => ValueTask.FromResult<IUnifiedMemoryBuffer>(new MockMemoryBuffer(sizeInBytes));
+    public ValueTask<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions options = DotCompute.Abstractions.Memory.MemoryOptions.None, CancellationToken cancellationToken = default) => ValueTask.FromResult<IUnifiedMemoryBuffer>(new MockMemoryBuffer(sizeInBytes));
 
-    public unsafe ValueTask<IUnifiedMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> data, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+    public unsafe ValueTask<IUnifiedMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> data, DotCompute.Abstractions.Memory.MemoryOptions options = DotCompute.Abstractions.Memory.MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
     {
         var buffer = new MockMemoryBuffer(data.Length * sizeof(T));
         return ValueTask.FromResult<IUnifiedMemoryBuffer>(buffer);
@@ -378,7 +378,7 @@ internal class MockMemoryBuffer : IUnifiedMemoryBuffer
     public long SizeInBytes { get; }
     public IntPtr DevicePointer => IntPtr.Zero;
     public bool IsDisposed => false;
-    public DotCompute.Abstractions.MemoryOptions Options => DotCompute.Abstractions.MemoryOptions.None;
+    public DotCompute.Abstractions.Memory.MemoryOptions Options => DotCompute.Abstractions.Memory.MemoryOptions.None;
 
     public void Dispose() { }
 

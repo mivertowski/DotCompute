@@ -39,17 +39,19 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     public async ValueTask<IAccelerator> CreateAsync(
         AcceleratorType type,
         AcceleratorConfiguration? configuration = null,
+        IServiceProvider? serviceProvider = null,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         var backendName = type.ToString();
-        return await CreateAsync(backendName, configuration, cancellationToken).ConfigureAwait(false);
+        return await CreateAsync(backendName, configuration, serviceProvider, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
     public async ValueTask<IAccelerator> CreateAsync(
         string backendName,
         AcceleratorConfiguration? configuration = null,
+        IServiceProvider? serviceProvider = null,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -151,6 +153,99 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     }
 
     /// <inheritdoc/>
+    public async ValueTask<IAccelerator> CreateAsync(
+        AcceleratorInfo acceleratorInfo,
+        IServiceProvider? serviceProvider = null,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(acceleratorInfo);
+        
+        var configuration = new AcceleratorConfiguration
+        {
+            DeviceIndex = 0,
+            CustomProperties = new Dictionary<string, object>
+            {
+                ["DeviceInfo"] = acceleratorInfo
+            }
+        };
+        
+        return await CreateAsync(acceleratorInfo.Type, configuration, serviceProvider, cancellationToken).ConfigureAwait(false);
+    }
+    
+    /// <inheritdoc/>
+    public async ValueTask<TProvider> CreateProviderAsync<TProvider>(
+        IServiceProvider serviceProvider,
+        CancellationToken cancellationToken = default) 
+        where TProvider : class, IAcceleratorProvider
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+        
+        var provider = serviceProvider.GetService(typeof(TProvider)) as TProvider;
+        if (provider == null)
+        {
+            throw new InvalidOperationException($"Provider type {typeof(TProvider).Name} is not registered in the service provider");
+        }
+        
+        return await ValueTask.FromResult(provider);
+    }
+    
+    /// <inheritdoc/>
+    public bool CanCreateAccelerator(AcceleratorType acceleratorType)
+    {
+        ThrowIfDisposed();
+        var backendName = acceleratorType.ToString();
+        return _backends.ContainsKey(backendName);
+    }
+    
+    /// <inheritdoc/>
+    public void RegisterProvider(Type providerType, params AcceleratorType[] supportedTypes)
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(providerType);
+        ArgumentNullException.ThrowIfNull(supportedTypes);
+        
+        if (!typeof(IAcceleratorProvider).IsAssignableFrom(providerType))
+        {
+            throw new ArgumentException($"Type {providerType.Name} must implement IAcceleratorProvider", nameof(providerType));
+        }
+        
+        foreach (var type in supportedTypes)
+        {
+            var backendName = type.ToString();
+            RegisterBackend(backendName, async (config, loggerFactory) =>
+            {
+                var provider = Activator.CreateInstance(providerType) as IAcceleratorProvider;
+                if (provider == null)
+                {
+                    throw new InvalidOperationException($"Failed to create instance of {providerType.Name}");
+                }
+                
+                return await provider.CreateAcceleratorAsync(type, config, cancellationToken).ConfigureAwait(false);
+            });
+        }
+        
+        _logger.LogInformation("Registered provider {ProviderType} for types: {Types}",
+            providerType.Name, string.Join(", ", supportedTypes));
+    }
+    
+    /// <inheritdoc/>
+    public bool UnregisterProvider(Type providerType)
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(providerType);
+        
+        // For simplicity, we'll remove all backends that were registered with this provider type
+        // In production, you'd track which backends are associated with which provider
+        _logger.LogInformation("Unregistering provider {ProviderType}", providerType.Name);
+        
+        // Since we don't track provider associations, we can't fully implement this
+        // Return false to indicate no providers were unregistered
+        return false;
+    }
+    
+    /// <inheritdoc/>
     public async ValueTask<IAccelerator> CreateBestForWorkloadAsync(
         WorkloadProfile workloadProfile,
         CancellationToken cancellationToken = default)
@@ -182,7 +277,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         // Create optimized configuration for the workload
         var configuration = CreateOptimizedConfiguration(bestType, workloadProfile);
         
-        return await CreateAsync(bestType, configuration, cancellationToken).ConfigureAwait(false);
+        return await CreateAsync(bestType, configuration, null, cancellationToken).ConfigureAwait(false);
     }
 
     private void RegisterDefaultBackends()

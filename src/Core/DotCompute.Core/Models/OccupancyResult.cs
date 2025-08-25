@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Optimization.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents the result of an occupancy calculation.

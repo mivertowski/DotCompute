@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.DeviceManagement;
+using DotCompute.Backends.CUDA.Execution.Models;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Optimization
@@ -726,16 +727,6 @@ namespace DotCompute.Backends.CUDA.Optimization
             public List<string> Suggestions { get; } = new();
         }
 
-        public class DynamicParallelismConfig
-        {
-            public LaunchConfiguration ParentConfig { get; set; } = null!;
-            public LaunchConfiguration ChildConfig { get; set; } = null!;
-            public int MaxNestingDepth { get; set; }
-            public int TotalWarpsAvailable { get; set; }
-            public int ParentWarpsNeeded { get; set; }
-            public int ChildWarpsPerParent { get; set; }
-            public int MaxChildrenPerParent { get; set; }
-        }
 
         private class DeviceProperties
         {

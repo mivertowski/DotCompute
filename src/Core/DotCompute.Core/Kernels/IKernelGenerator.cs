@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution;
 
 namespace DotCompute.Core.Kernels
@@ -209,47 +210,6 @@ namespace DotCompute.Core.Kernels
         /// Gets or sets additional hints.
         /// </summary>
         public Dictionary<string, object>? AdditionalHints { get; init; }
-    }
-
-    /// <summary>
-    /// Kernel language.
-    /// </summary>
-    public enum KernelLanguage
-    {
-        /// <summary>
-        /// C# kernel language
-        /// </summary>
-        CSharp,
-
-        /// <summary>
-        /// OpenCL C
-        /// </summary>
-        OpenCL,
-
-        /// <summary>
-        /// CUDA C++
-        /// </summary>
-        CUDA,
-
-        /// <summary>
-        /// Metal Shading Language
-        /// </summary>
-        Metal,
-
-        /// <summary>
-        /// DirectCompute HLSL
-        /// </summary>
-        DirectCompute,
-
-        /// <summary>
-        /// Vulkan GLSL
-        /// </summary>
-        Vulkan,
-
-        /// <summary>
-        /// WebGPU WGSL
-        /// </summary>
-        WebGPU
     }
 
     /// <summary>

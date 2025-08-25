@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace DotCompute.Backends.CUDA.Advanced.Profiling.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Profiling statistics container for kernel execution timing.

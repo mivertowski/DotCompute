@@ -1,6 +1,6 @@
 using System;
 
-namespace DotCompute.Backends.CUDA.Execution.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Statistics for CUDA stream management.

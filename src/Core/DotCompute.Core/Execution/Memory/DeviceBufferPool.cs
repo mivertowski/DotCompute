@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Concurrent;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Execution.Memory
@@ -48,9 +49,9 @@ namespace DotCompute.Core.Execution.Memory
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A memory buffer that meets the specified requirements.</returns>
         /// <exception cref="ObjectDisposedException">Thrown when the pool has been disposed.</exception>
-        public async ValueTask<AbstractionsMemory.IUnifiedMemoryBuffer> AllocateBufferAsync(
+        public async ValueTask<IUnifiedMemoryBuffer<byte>> AllocateBufferAsync(
             long sizeInBytes,
-            AbstractionsMemory.MemoryOptions options,
+            MemoryOptions options,
             CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);

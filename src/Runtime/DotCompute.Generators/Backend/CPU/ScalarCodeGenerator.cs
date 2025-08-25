@@ -56,7 +56,7 @@ public class ScalarCodeGenerator : CpuCodeGeneratorBase
         var methodBody = MethodBodyExtractor.ExtractMethodBody(MethodSyntax);
         if (!string.IsNullOrEmpty(methodBody))
         {
-            GenerateTransformedScalarLoop(sb, methodBody);
+            GenerateTransformedScalarLoop(sb, methodBody!);
         }
         else
         {

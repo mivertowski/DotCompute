@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DotCompute.Backends.CUDA.Profiling.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents a comprehensive profiling report containing kernel and memory performance data.

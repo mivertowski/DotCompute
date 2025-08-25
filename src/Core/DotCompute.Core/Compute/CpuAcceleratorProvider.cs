@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
+using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
@@ -43,8 +44,8 @@ namespace DotCompute.Core.Compute
                 true // is unified memory
             );
 
-            // Create a simple CPU accelerator implementation
-            var accelerator = new SimpleCpuAccelerator(cpuInfo, _logger);
+            // Create a CPU accelerator implementation
+            var accelerator = new CpuAccelerator(cpuInfo, _logger);
             return ValueTask.FromResult<IEnumerable<IAccelerator>>(new[] { accelerator });
         }
 
@@ -234,20 +235,19 @@ namespace DotCompute.Core.Compute
     }
 
     /// <summary>
-    /// Simple CPU accelerator implementation for Core.
-    /// The optimized implementation is available in DotCompute.Backends.CPU.
+    /// CPU accelerator implementation for Core.
     /// </summary>
-    internal class SimpleCpuAccelerator : IAccelerator
+    internal class CpuAccelerator : IAccelerator
     {
         private readonly ILogger _logger;
-        private readonly SimpleCpuMemoryManager _memoryManager;
+        private readonly CpuMemoryManager _memoryManager;
         private bool _disposed;
 
-        public SimpleCpuAccelerator(AcceleratorInfo info, ILogger logger)
+        public CpuAccelerator(AcceleratorInfo info, ILogger logger)
         {
             Info = info ?? throw new ArgumentNullException(nameof(info));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _memoryManager = new SimpleCpuMemoryManager(this, logger);
+            _memoryManager = new CpuMemoryManager(this, logger as ILogger<CpuMemoryManager> ?? new LoggerFactory().CreateLogger<CpuMemoryManager>());
         }
 
         public AcceleratorInfo Info { get; }
@@ -266,12 +266,12 @@ namespace DotCompute.Core.Compute
             ArgumentNullException.ThrowIfNull(definition);
             options ??= new CompilationOptions();
 
-            _logger.LogDebug("Compiling simple CPU kernel: {KernelName}", definition.Name);
+            _logger.LogDebug("Compiling CPU kernel: {KernelName}", definition.Name);
 
-            // Create a simple compiled kernel that does basic execution
-            var compiledKernel = new SimpleCpuCompiledKernel(definition.Name, definition);
+            // Create a compiled kernel that does basic execution
+            var compiledKernel = new CpuCompiledKernel(definition.Name, definition);
 
-            _logger.LogInformation("Successfully compiled simple CPU kernel: {KernelName}", definition.Name);
+            _logger.LogInformation("Successfully compiled CPU kernel: {KernelName}", definition.Name);
             return await ValueTask.FromResult<ICompiledKernel>(compiledKernel);
         }
 
@@ -291,198 +291,9 @@ namespace DotCompute.Core.Compute
     }
 
     /// <summary>
-    /// Simple CPU memory manager implementation.
+    /// CPU compiled kernel implementation.
     /// </summary>
-    internal class SimpleCpuMemoryManager(IAccelerator accelerator, ILogger logger) : IUnifiedMemoryManager, IDisposable
-    {
-        private readonly IAccelerator _accelerator = accelerator;
-        private readonly ILogger _logger = logger;
-        private readonly List<SimpleCpuMemoryBuffer> _allocatedBuffers = [];
-
-        public ValueTask<IUnifiedMemoryBuffer> AllocateAsync(
-            long sizeInBytes,
-            MemoryOptions options = MemoryOptions.None,
-            CancellationToken cancellationToken = default)
-        {
-            var buffer = new SimpleCpuMemoryBuffer(sizeInBytes, options);
-            _allocatedBuffers.Add(buffer);
-            return ValueTask.FromResult<IUnifiedMemoryBuffer>(buffer);
-        }
-
-        public async ValueTask<IUnifiedMemoryBuffer> AllocateAndCopyAsync<T>(
-            ReadOnlyMemory<T> source,
-            MemoryOptions options = MemoryOptions.None,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            var buffer = new SimpleCpuMemoryBuffer(sizeInBytes, options);
-            await buffer.CopyFromHostAsync(source, cancellationToken: cancellationToken);
-            _allocatedBuffers.Add(buffer);
-            return buffer;
-        }
-
-        public IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
-        {
-            if (buffer is not SimpleCpuMemoryBuffer cpuBuffer)
-            {
-                throw new ArgumentException("Buffer must be a CPU buffer", nameof(buffer));
-            }
-
-            return new SimpleCpuMemoryBufferView(cpuBuffer, offset, length);
-        }
-
-        public async ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count) where T : unmanaged
-        {
-            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
-            var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            return await AllocateAsync(sizeInBytes);
-        }
-
-        public void CopyToDevice<T>(IUnifiedMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
-        {
-            ArgumentNullException.ThrowIfNull(buffer);
-            var memory = new ReadOnlyMemory<T>(data.ToArray());
-            buffer.CopyFromHostAsync(memory).AsTask().Wait();
-        }
-
-        public void CopyFromDevice<T>(Span<T> data, IUnifiedMemoryBuffer buffer) where T : unmanaged
-        {
-            ArgumentNullException.ThrowIfNull(buffer);
-            var memory = new Memory<T>(new T[data.Length]);
-            buffer.CopyToHostAsync(memory).AsTask().Wait();
-            memory.Span.CopyTo(data);
-        }
-
-        public void Free(IUnifiedMemoryBuffer buffer)
-        {
-            if (buffer is SimpleCpuMemoryBuffer cpuBuffer)
-            {
-                _ = _allocatedBuffers.Remove(cpuBuffer);
-                cpuBuffer.Dispose();
-            }
-            else
-            {
-                buffer?.Dispose();
-            }
-        }
-
-        public void Dispose()
-        {
-            foreach (var buffer in _allocatedBuffers)
-            {
-                buffer.Dispose();
-            }
-            _allocatedBuffers.Clear();
-        }
-    }
-
-    /// <summary>
-    /// Simple CPU memory buffer implementation.
-    /// </summary>
-    internal class SimpleCpuMemoryBuffer : IUnifiedMemoryBuffer
-    {
-        private readonly byte[] _data;
-        internal bool _disposed;
-
-        public SimpleCpuMemoryBuffer(long sizeInBytes, MemoryOptions options)
-        {
-            if (sizeInBytes > int.MaxValue)
-            {
-                throw new ArgumentException("Size too large for CPU buffer", nameof(sizeInBytes));
-            }
-
-            _data = new byte[sizeInBytes];
-            SizeInBytes = sizeInBytes;
-            Options = options;
-        }
-
-        public long SizeInBytes { get; }
-
-        public MemoryOptions Options { get; }
-
-        public bool IsDisposed => _disposed;
-
-        public ValueTask CopyFromHostAsync<T>(
-            ReadOnlyMemory<T> source,
-            long offset = 0,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            var sourceSpan = source.Span;
-            var destSpan = MemoryMarshal.Cast<byte, T>(_data.AsSpan((int)offset));
-            sourceSpan.CopyTo(destSpan);
-            return ValueTask.CompletedTask;
-        }
-
-        public ValueTask CopyToHostAsync<T>(
-            Memory<T> destination,
-            long offset = 0,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            var sourceSpan = MemoryMarshal.Cast<byte, T>(_data.AsSpan((int)offset));
-            var destSpan = destination.Span;
-            sourceSpan.CopyTo(destSpan);
-            return ValueTask.CompletedTask;
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            Dispose();
-            return ValueTask.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            if (!_disposed)
-            {
-                // Clear the data array to help GC
-                if (_data != null && _data.Length > 0)
-                {
-                    Array.Clear(_data, 0, _data.Length);
-                }
-                _disposed = true;
-                GC.SuppressFinalize(this);
-            }
-        }
-    }
-
-    /// <summary>
-    /// View over a CPU memory buffer.
-    /// </summary>
-    internal class SimpleCpuMemoryBufferView(SimpleCpuMemoryBuffer parent, long offset, long length) : IUnifiedMemoryBuffer
-    {
-        private readonly SimpleCpuMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
-        private readonly long _offset = offset;
-
-        public long SizeInBytes { get; } = length;
-
-        public MemoryOptions Options { get; } = parent.Options;
-
-        public bool IsDisposed => _parent._disposed;
-
-        public ValueTask CopyFromHostAsync<T>(
-            ReadOnlyMemory<T> source,
-            long offset = 0,
-            CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
-
-        public ValueTask CopyToHostAsync<T>(
-            Memory<T> destination,
-            long offset = 0,
-            CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
-
-        public void Dispose()
-        {
-            // Views don't dispose the parent
-        }
-
-        public ValueTask DisposeAsync()
-            // Views don't own the memory
-            => ValueTask.CompletedTask;
-    }
-
-    /// <summary>
-    /// Simple CPU compiled kernel implementation.
-    /// </summary>
-    internal class SimpleCpuCompiledKernel(string name, KernelDefinition definition) : ICompiledKernel
+    internal class CpuCompiledKernel(string name, KernelDefinition definition) : ICompiledKernel
     {
         private readonly KernelDefinition _definition = definition;
         private bool _disposed;
@@ -495,7 +306,7 @@ namespace DotCompute.Core.Compute
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(SimpleCpuCompiledKernel));
+                throw new ObjectDisposedException(nameof(CpuCompiledKernel));
             }
 
             // Simple kernel execution - in a real implementation,

@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
 
-namespace DotCompute.Backends.CUDA.Advanced.Profiling.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Bottleneck analysis results for kernel execution.

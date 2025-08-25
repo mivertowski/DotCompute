@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using DotCompute.Backends.CUDA.Profiling.Types;
 
-namespace DotCompute.Backends.CUDA.Profiling.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents an analysis of memory transfer patterns and performance.

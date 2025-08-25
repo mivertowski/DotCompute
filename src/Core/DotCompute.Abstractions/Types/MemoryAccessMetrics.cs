@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions.Memory;
 
-namespace DotCompute.Core.Types;
+namespace DotCompute.Abstractions.Types;
 
 /// <summary>
 /// Comprehensive metrics for memory access operations including performance counters,

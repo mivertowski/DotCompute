@@ -3,6 +3,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using DotCompute.Abstractions.Memory;
+
 namespace DotCompute.Core.Execution.Memory
 {
     /// <summary>
@@ -25,6 +27,6 @@ namespace DotCompute.Core.Execution.Memory
         /// Gets or sets the memory options for the buffer allocation.
         /// Defaults to <see cref="AbstractionsMemory.MemoryOptions.None"/>.
         /// </summary>
-        public AbstractionsMemory.MemoryOptions Options { get; init; } = AbstractionsMemory.MemoryOptions.None;
+        public MemoryOptions Options { get; init; } = MemoryOptions.None;
     }
 }

@@ -141,9 +141,9 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
 
             // Allocate device memory
             var sizeInBytes = length * sizeof(float);
-            var bufferA = await Accelerator.Memory.AllocateAsync(sizeInBytes, DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-            var bufferB = await Accelerator.Memory.AllocateAsync(sizeInBytes, DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-            var bufferResult = await Accelerator.Memory.AllocateAsync(sizeInBytes, DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferA = await Accelerator.Memory.AllocateAsync(sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferB = await Accelerator.Memory.AllocateAsync(sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferResult = await Accelerator.Memory.AllocateAsync(sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
             try
             {

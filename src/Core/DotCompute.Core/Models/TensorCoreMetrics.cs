@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Advanced.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Performance metrics for tensor core operations.

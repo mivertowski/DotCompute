@@ -43,9 +43,19 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// </summary>
     protected virtual bool EnableCaching => true;
 
-    public IReadOnlyList<KernelSourceType> SupportedSourceTypes => throw new NotImplementedException();
+    /// <inheritdoc/>
+    public virtual string Name => CompilerName;
 
-    public IReadOnlyDictionary<string, object> Capabilities => throw new NotImplementedException();
+    /// <inheritdoc/>
+    public abstract IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; }
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyDictionary<string, object> Capabilities { get; } = new Dictionary<string, object>
+    {
+        ["SupportsAsync"] = true,
+        ["SupportsCaching"] = true,
+        ["SupportsOptimization"] = true
+    };
 
     /// <inheritdoc/>
     public virtual async ValueTask<ICompiledKernel> CompileAsync(
@@ -129,16 +139,20 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// Validates kernel definition parameters.
     /// Common validation logic that was duplicated across implementations.
     /// </summary>
-    protected virtual UnifiedValidationResult ValidateKernelDefinition(KernelDefinition definition)
+    protected virtual DotCompute.Abstractions.UnifiedValidationResult ValidateKernelDefinition(KernelDefinition definition)
     {
+        var result = new DotCompute.Abstractions.UnifiedValidationResult();
+        
         if (string.IsNullOrWhiteSpace(definition.Name))
         {
-            return new UnifiedValidationResult(false, "Kernel name cannot be empty");
+            result.AddError("Kernel name cannot be empty");
+            return result;
         }
         
         if (definition.Code == null || definition.Code.Length == 0)
         {
-            return new UnifiedValidationResult(false, "Kernel code cannot be null or empty");
+            result.AddError("Kernel code cannot be null or empty");
+            return result;
         }
         
         // Validate work dimensions if available
@@ -146,7 +160,8 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         {
             if (workDimsObj is int workDimensions && (workDimensions < 1 || workDimensions > 3))
             {
-                return new UnifiedValidationResult(false, "Work dimensions must be between 1 and 3");
+                result.AddError("Work dimensions must be between 1 and 3");
+                return result;
             }
         }
         
@@ -155,7 +170,8 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         {
             if (paramsObj is IList<object> parameters && parameters.Count == 0)
             {
-                return new UnifiedValidationResult(false, "Kernel must have at least one parameter");
+                result.AddError("Kernel must have at least one parameter");
+                return result;
             }
         }
         
@@ -166,9 +182,9 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// <summary>
     /// Hook for derived classes to add additional validation.
     /// </summary>
-    protected virtual UnifiedValidationResult AdditionalValidation(KernelDefinition definition)
+    protected virtual DotCompute.Abstractions.UnifiedValidationResult AdditionalValidation(KernelDefinition definition)
     {
-        return new UnifiedValidationResult(true, null);
+        return DotCompute.Abstractions.UnifiedValidationResult.Success();
     }
     
     /// <summary>
@@ -257,13 +273,53 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
     public Task<ManagedCompiledKernel> CompileAsync(IKernelSource source, CompilationOptions options, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     public Task<KernelValidationResult> ValidateAsync(IKernelSource source, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-    public Task<ManagedCompiledKernel> OptimizeAsync(ManagedCompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    /// <inheritdoc/>
+    public virtual DotCompute.Abstractions.UnifiedValidationResult Validate(KernelDefinition source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        
+        // Use the existing validation logic
+        return ValidateKernelDefinition(source);
+    }
+    
+    /// <inheritdoc/>
+    public virtual async ValueTask<DotCompute.Abstractions.UnifiedValidationResult> ValidateAsync(
+        KernelDefinition source,
+        CancellationToken cancellationToken = default)
+    {
+        // For base implementation, use synchronous validation
+        // Derived classes can override for async validation
+        return await ValueTask.FromResult(Validate(source));
+    }
+    
+    /// <inheritdoc/>
+    public virtual async ValueTask<ICompiledKernel> OptimizeAsync(
+        ICompiledKernel kernel,
+        OptimizationLevel level,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(kernel);
+        
+        _logger.LogDebug("{CompilerName}: Optimizing kernel '{KernelName}' at level {Level}", 
+            CompilerName, kernel.Name, level);
+        
+        // Base implementation returns the same kernel
+        // Derived classes should override for actual optimization
+        return await OptimizeKernelCore(kernel, level, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Core optimization logic to be implemented by derived classes.
+    /// </summary>
+    protected virtual ValueTask<ICompiledKernel> OptimizeKernelCore(
+        ICompiledKernel kernel,
+        OptimizationLevel level,
+        CancellationToken cancellationToken)
+    {
+        // Default: no optimization
+        return ValueTask.FromResult(kernel);
+    }
 }
-
-/// <summary>
-/// Represents the result of kernel validation.
-/// </summary>
-public record UnifiedValidationResult(bool IsValid, string? ErrorMessage);
 
 /// <summary>
 /// Represents compilation metrics for performance analysis.

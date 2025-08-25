@@ -60,7 +60,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IUnifiedMemoryBuffer<T>
     /// <summary>
     /// Gets the memory options for this buffer.
     /// </summary>
-    public DotCompute.Abstractions.MemoryOptions Options => DotCompute.Abstractions.MemoryOptions.None;
+    public DotCompute.Abstractions.Memory.MemoryOptions Options => DotCompute.Abstractions.Memory.MemoryOptions.None;
 
     /// <summary>
     /// Gets the buffer state for tracking transfers.
@@ -1156,7 +1156,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
     public IAccelerator Accelerator => _parent.Accelerator;
     public int Length => _length;
     public long SizeInBytes => _length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-    public DotCompute.Abstractions.MemoryOptions Options => _parent.Options;
+    public DotCompute.Abstractions.Memory.MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
 
     public ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged
@@ -1298,7 +1298,7 @@ where TNew : unmanaged
     public IAccelerator Accelerator => _parent.Accelerator;
     public int Length => _length;
     public long SizeInBytes => _length * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
-    public DotCompute.Abstractions.MemoryOptions Options => _parent.Options;
+    public DotCompute.Abstractions.Memory.MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
 
     public ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged

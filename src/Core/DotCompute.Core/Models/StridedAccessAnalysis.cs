@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DotCompute.Backends.CUDA.Analysis.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents the analysis results for strided memory access patterns.

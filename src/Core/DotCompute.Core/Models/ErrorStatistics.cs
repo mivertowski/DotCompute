@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using DotCompute.Backends.CUDA.ErrorHandling.Types;
 
-namespace DotCompute.Backends.CUDA.ErrorHandling.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Statistics about errors and recovery attempts.

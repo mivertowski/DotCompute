@@ -329,7 +329,7 @@ public static class CodeFormatter
         {
             sb.Append(indent);
             sb.AppendLine("/// <remarks>");
-            foreach (var line in remarks.Split('\n'))
+            foreach (var line in remarks!.Split('\n'))
             {
                 sb.Append(indent);
                 sb.Append("/// ");

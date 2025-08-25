@@ -1,6 +1,6 @@
 using System;
 
-namespace DotCompute.Backends.CUDA.Compilation.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents a compiled CUDA kernel.

@@ -507,9 +507,9 @@ public static class MatrixMath
         var sizeB = bData.Length * sizeof(float);
         var sizeResult = resultData.Length * sizeof(float);
 
-        var bufferA = await accelerator.Memory.AllocateAsync(sizeA, DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-        var bufferB = await accelerator.Memory.AllocateAsync(sizeB, DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-        var bufferC = await accelerator.Memory.AllocateAsync(sizeResult, DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+        var bufferA = await accelerator.Memory.AllocateAsync(sizeA, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+        var bufferB = await accelerator.Memory.AllocateAsync(sizeB, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+        var bufferC = await accelerator.Memory.AllocateAsync(sizeResult, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -606,9 +606,9 @@ public static class MatrixMath
         var resultData = new float[aData.Length];
 
         var size = aData.Length * sizeof(float);
-        var bufferA = await accelerator.Memory.AllocateAsync(size, DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-        var bufferB = await accelerator.Memory.AllocateAsync(size, DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-        var bufferResult = await accelerator.Memory.AllocateAsync(size, DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+        var bufferA = await accelerator.Memory.AllocateAsync(size, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+        var bufferB = await accelerator.Memory.AllocateAsync(size, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+        var bufferResult = await accelerator.Memory.AllocateAsync(size, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -1430,11 +1430,11 @@ public static class MatrixMath
                     cancellationToken).ConfigureAwait(false);
 
                 var columnBuffer = await accelerator.Memory.AllocateAsync(columnData.Length * sizeof(float), 
-                    DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+                    DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
                 var householderBuffer = await accelerator.Memory.AllocateAsync(columnData.Length * sizeof(float), 
-                    DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+                    DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
                 var normBuffer = await accelerator.Memory.AllocateAsync(sizeof(float), 
-                    DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+                    DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
                 try
                 {
@@ -1484,7 +1484,7 @@ public static class MatrixMath
 
                     var matrixData = a.ToArray();
                     var matrixBuffer = await accelerator.Memory.AllocateAsync(matrixData.Length * sizeof(float), 
-                        DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+                        DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
                     await matrixBuffer.WriteAsync(matrixData, 0, cancellationToken).ConfigureAwait(false);
 
@@ -1603,13 +1603,13 @@ public static class MatrixMath
             var vData = v.ToArray();
             
             var aBuffer = await accelerator.Memory.AllocateAsync(aData.Length * sizeof(float), 
-                DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+                DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
             var uBuffer = await accelerator.Memory.AllocateAsync(uData.Length * sizeof(float), 
-                DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+                DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
             var vBuffer = await accelerator.Memory.AllocateAsync(vData.Length * sizeof(float), 
-                DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+                DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
             var convergenceBuffer = await accelerator.Memory.AllocateAsync(sizeof(float), 
-                DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+                DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
             try
             {
@@ -1695,7 +1695,7 @@ public static class MatrixMath
 
                 var sData = new float[Math.Min(m, n) * Math.Min(m, n)];
                 var sBuffer = await accelerator.Memory.AllocateAsync(sData.Length * sizeof(float), 
-                    DotCompute.Abstractions.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+                    DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
                 var svdArgs = new[]
                 {

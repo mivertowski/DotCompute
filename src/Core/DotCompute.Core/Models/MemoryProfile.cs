@@ -1,7 +1,7 @@
 using System;
 using DotCompute.Backends.CUDA.Profiling.Types;
 
-namespace DotCompute.Backends.CUDA.Profiling.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents performance profiling data for memory operations.

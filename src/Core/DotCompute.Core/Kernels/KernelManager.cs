@@ -6,7 +6,6 @@ using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Kernels.Compilation;
-using DotCompute.Core.Kernels.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Types;
 

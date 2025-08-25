@@ -13,9 +13,9 @@ namespace DotCompute.Core.Memory
     /// P2P-optimized buffer that supports direct GPU-to-GPU transfers and host-mediated fallbacks.
     /// Implements type-aware transfer pipelines with proper error handling and synchronization.
     /// </summary>
-    public sealed class P2PBuffer<T> : IUnifiedMemoryBuffer<T>, IAsyncDisposable where T : unmanaged
+    public sealed partial class P2PBuffer<T> : IUnifiedMemoryBuffer<T>, IAsyncDisposable where T : unmanaged
     {
-        private readonly IMemoryBuffer _underlyingBuffer;
+        private readonly IUnifiedMemoryBuffer _underlyingBuffer;
         private readonly IAccelerator _accelerator;
         private readonly bool _supportsDirectP2P;
         private readonly ILogger _logger;
@@ -32,7 +32,7 @@ namespace DotCompute.Core.Memory
         /// <param name="logger">The logger for monitoring transfer operations.</param>
         /// <exception cref="ArgumentNullException">Thrown when any required parameter is null.</exception>
         public P2PBuffer(
-            IMemoryBuffer underlyingBuffer,
+            IUnifiedMemoryBuffer underlyingBuffer,
             IAccelerator accelerator,
             int length,
             bool supportsDirectP2P,
@@ -79,7 +79,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Gets the underlying memory buffer for advanced operations.
         /// </summary>
-        public IMemoryBuffer UnderlyingBuffer => _underlyingBuffer;
+        public IUnifiedMemoryBuffer UnderlyingBuffer => _underlyingBuffer;
 
         /// <summary>
         /// Copies data from host array to this P2P buffer with optimizations.
@@ -204,7 +204,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Copies from another memory buffer to this P2P buffer.
         /// </summary>
-        public async Task CopyFromAsync(IMemoryBuffer source, CancellationToken cancellationToken = default)
+        public async Task CopyFromAsync(IUnifiedMemoryBuffer source, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(source);
@@ -225,7 +225,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Copies to another memory buffer from this P2P buffer.
         /// </summary>
-        public async Task CopyToAsync(IMemoryBuffer destination, CancellationToken cancellationToken = default)
+        public async Task CopyToAsync(IUnifiedMemoryBuffer destination, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(destination);

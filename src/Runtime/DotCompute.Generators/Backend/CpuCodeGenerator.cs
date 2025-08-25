@@ -190,7 +190,7 @@ public class CpuCodeGenerator
         var methodBody = MethodBodyExtractor.ExtractMethodBody(_methodSyntax);
         if (!string.IsNullOrEmpty(methodBody))
         {
-            GenerateTransformedScalarLoop(sb, methodBody);
+            GenerateTransformedScalarLoop(sb, methodBody!);
         }
         else
         {

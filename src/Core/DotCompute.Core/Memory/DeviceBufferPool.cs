@@ -4,8 +4,8 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Memory
 {
@@ -125,7 +125,7 @@ namespace DotCompute.Core.Memory
             ThrowIfDisposed();
 
             // Use pinned memory for better streaming performance
-            var options = DotCompute.Abstractions.MemoryOptions.HostVisible;
+            var options = DotCompute.Abstractions.Memory.MemoryOptions.HostVisible;
 
             try
             {
@@ -168,7 +168,7 @@ namespace DotCompute.Core.Memory
             ThrowIfDisposed();
 
             // For very large allocations, use memory mapping strategy
-            var options = DotCompute.Abstractions.MemoryOptions.HostVisible | DotCompute.Abstractions.MemoryOptions.Cached;
+            var options = DotCompute.Abstractions.Memory.MemoryOptions.HostVisible | DotCompute.Abstractions.Memory.MemoryOptions.Cached;
 
             try
             {
@@ -352,9 +352,9 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Determines optimal memory options based on buffer size and device capabilities.
         /// </summary>
-        private DotCompute.Abstractions.MemoryOptions DetermineOptimalMemoryOptions(long sizeInBytes)
+        private DotCompute.Abstractions.Memory.MemoryOptions DetermineOptimalMemoryOptions(long sizeInBytes)
         {
-            var options = DotCompute.Abstractions.MemoryOptions.None;
+            var options = DotCompute.Abstractions.Memory.MemoryOptions.None;
 
             // For P2P-capable devices, prefer device-only memory for large buffers
             if (_deviceCapabilities.SupportsP2P && sizeInBytes > 1024 * 1024) // > 1MB
@@ -366,13 +366,13 @@ namespace DotCompute.Core.Memory
             // For smaller buffers or non-P2P devices, use host-visible memory
             if (sizeInBytes <= 64 * 1024 || !_deviceCapabilities.SupportsP2P) // <= 64KB
             {
-                options |= DotCompute.Abstractions.MemoryOptions.HostVisible;
+                options |= DotCompute.Abstractions.Memory.MemoryOptions.HostVisible;
             }
 
             // Enable caching for frequently accessed data
             if (sizeInBytes <= 16 * 1024 * 1024) // <= 16MB
             {
-                options |= DotCompute.Abstractions.MemoryOptions.Cached;
+                options |= DotCompute.Abstractions.Memory.MemoryOptions.Cached;
             }
 
             return options;
@@ -520,8 +520,13 @@ namespace DotCompute.Core.Memory
         }
 
         public long SizeInBytes => _underlyingBuffer.SizeInBytes;
-        public DotCompute.Abstractions.MemoryOptions Options => _underlyingBuffer.Options;
+        public DotCompute.Abstractions.Memory.MemoryOptions Options => _underlyingBuffer.Options;
         public bool IsDisposed => _disposed;
+        public BufferState State 
+        { 
+            get => _underlyingBuffer.State;
+            set => _underlyingBuffer.State = value;
+        }
 
         public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
         {

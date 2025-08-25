@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using DotCompute.Core.Logging;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -20,7 +21,7 @@ public interface ITelemetryService
     /// Records a memory operation with transfer metrics.
     /// </summary>
     public void RecordMemoryOperation(string operationType, string deviceId, long bytes, TimeSpan duration,
-        Types.MemoryAccessMetrics metrics, string? correlationId = null, Exception? exception = null);
+        DotCompute.Abstractions.Types.MemoryAccessMetrics metrics, string? correlationId = null, Exception? exception = null);
 
 
     /// <summary>
@@ -276,7 +277,7 @@ internal sealed class TelemetryService : ITelemetryService, IDisposable
     }
 
     public void RecordMemoryOperation(string operationType, string deviceId, long bytes, TimeSpan duration,
-        Types.MemoryAccessMetrics metrics, string? correlationId = null, Exception? exception = null)
+        DotCompute.Abstractions.Types.MemoryAccessMetrics metrics, string? correlationId = null, Exception? exception = null)
     {
         ThrowIfDisposed();
 

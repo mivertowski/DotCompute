@@ -1,7 +1,7 @@
 using System;
 using DotCompute.Backends.CUDA.Execution.Types;
 
-namespace DotCompute.Backends.CUDA.Execution.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Information about a CUDA stream.

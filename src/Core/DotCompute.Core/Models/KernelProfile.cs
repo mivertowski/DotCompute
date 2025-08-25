@@ -1,6 +1,6 @@
 using System;
 
-namespace DotCompute.Backends.CUDA.Profiling.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents performance profiling data for a CUDA kernel.

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using DotCompute.Backends.CUDA.Analysis.Types;
 
-namespace DotCompute.Backends.CUDA.Analysis.Models
+namespace DotCompute.Core.Models
 {
     /// <summary>
     /// Represents the results of a memory coalescing analysis for a CUDA kernel.

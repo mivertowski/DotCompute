@@ -22,6 +22,21 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     private long _peakAllocatedBytes;
     private int _allocationCount;
     private volatile bool _disposed;
+    
+    /// <inheritdoc/>
+    public abstract IAccelerator Accelerator { get; }
+    
+    /// <inheritdoc/>
+    public abstract DotCompute.Abstractions.MemoryStatistics Statistics { get; }
+    
+    /// <inheritdoc/>
+    public abstract long MaxAllocationSize { get; }
+    
+    /// <inheritdoc/>
+    public abstract long TotalAvailableMemory { get; }
+    
+    /// <inheritdoc/>
+    public abstract long CurrentAllocatedMemory { get; }
 
     protected BaseMemoryManager(ILogger logger)
     {
@@ -44,6 +59,80 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     /// </summary>
     public int AllocationCount => _allocationCount;
 
+    /// <inheritdoc/>
+    public virtual async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
+        int count,
+        MemoryOptions options = MemoryOptions.None,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        var sizeInBytes = count * Unsafe.SizeOf<T>();
+        var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
+        return new TypedMemoryBufferWrapper<T>(buffer, count);
+    }
+    
+    /// <inheritdoc/>
+    public virtual async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
+        ReadOnlyMemory<T> source,
+        MemoryOptions options = MemoryOptions.None,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        var buffer = await AllocateAsync<T>(source.Length, options, cancellationToken).ConfigureAwait(false);
+        await buffer.CopyFromAsync(source, cancellationToken).ConfigureAwait(false);
+        return buffer;
+    }
+    
+    /// <inheritdoc/>
+    public virtual async ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
+        long sizeInBytes,
+        MemoryOptions options = MemoryOptions.None,
+        CancellationToken cancellationToken = default)
+    {
+        return await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
+    }
+    
+    /// <inheritdoc/>
+    public abstract IUnifiedMemoryBuffer<T> CreateView<T>(
+        IUnifiedMemoryBuffer<T> buffer,
+        int offset,
+        int length) where T : unmanaged;
+    
+    /// <inheritdoc/>
+    public abstract ValueTask CopyAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        IUnifiedMemoryBuffer<T> destination,
+        CancellationToken cancellationToken = default) where T : unmanaged;
+    
+    /// <inheritdoc/>
+    public abstract ValueTask CopyAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        int sourceOffset,
+        IUnifiedMemoryBuffer<T> destination,
+        int destinationOffset,
+        int length,
+        CancellationToken cancellationToken = default) where T : unmanaged;
+    
+    /// <inheritdoc/>
+    public abstract ValueTask CopyToDeviceAsync<T>(
+        ReadOnlyMemory<T> source,
+        IUnifiedMemoryBuffer<T> destination,
+        CancellationToken cancellationToken = default) where T : unmanaged;
+    
+    /// <inheritdoc/>
+    public abstract ValueTask CopyFromDeviceAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        Memory<T> destination,
+        CancellationToken cancellationToken = default) where T : unmanaged;
+    
+    /// <inheritdoc/>
+    public abstract ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract ValueTask OptimizeAsync(CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract void Clear();
+    
     /// <inheritdoc/>
     public virtual async ValueTask<IUnifiedMemoryBuffer> AllocateAsync(
         long sizeInBytes,
@@ -72,28 +161,13 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         }
     }
 
-    /// <inheritdoc/>
-    public virtual async ValueTask<IUnifiedMemoryBuffer> AllocateAndCopyAsync<T>(
-        ReadOnlyMemory<T> source,
-        MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        ThrowIfDisposed();
-        
-        var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
-        var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
-        
-        try
-        {
-            await buffer.CopyFromHostAsync(source, 0, cancellationToken).ConfigureAwait(false);
-            return buffer;
-        }
-        catch
-        {
-            await buffer.DisposeAsync().ConfigureAwait(false);
-            throw;
-        }
-    }
+    /// <summary>
+    /// Allocates memory using backend-specific implementation.
+    /// </summary>
+    protected abstract ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(
+        long sizeInBytes,
+        MemoryOptions options,
+        CancellationToken cancellationToken);
 
     /// <inheritdoc/>
     public virtual IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
@@ -169,10 +243,13 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     /// <summary>
     /// Backend-specific buffer allocation implementation.
     /// </summary>
-    protected abstract ValueTask<IUnifiedMemoryBuffer> AllocateBufferCoreAsync(
+    protected virtual ValueTask<IUnifiedMemoryBuffer> AllocateBufferCoreAsync(
         long sizeInBytes,
         MemoryOptions options,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        return AllocateInternalAsync(sizeInBytes, options, cancellationToken);
+    }
 
     /// <summary>
     /// Backend-specific view creation implementation.
@@ -227,16 +304,22 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     /// <summary>
     /// Gets memory statistics for this manager.
     /// </summary>
-    public virtual MemoryStatistics GetStatistics()
+    public virtual DotCompute.Abstractions.MemoryStatistics GetStatistics()
     {
         CleanupUnusedBuffers();
         
-        return new MemoryStatistics
+        return new DotCompute.Abstractions.MemoryStatistics
         {
-            TotalAllocatedBytes = TotalAllocatedBytes,
-            PeakAllocatedBytes = PeakAllocatedBytes,
+            TotalAllocated = TotalAllocatedBytes,
+            CurrentUsed = TotalAllocatedBytes,
+            PeakUsage = PeakAllocatedBytes,
+            AvailableCapacity = MaxAllocationSize - TotalAllocatedBytes,
+            FragmentationRatio = 0.0,
             AllocationCount = AllocationCount,
-            ActiveBufferCount = _activeBuffers.Count
+            DeallocationCount = 0,
+            LastGarbageCollection = DateTime.UtcNow,
+            PooledBuffers = 0,
+            CacheHitRate = 0.0
         };
     }
 
@@ -318,28 +401,3 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     }
 }
 
-/// <summary>
-/// Memory usage statistics.
-/// </summary>
-public sealed class MemoryStatistics
-{
-    /// <summary>
-    /// Gets or sets the total allocated bytes.
-    /// </summary>
-    public long TotalAllocatedBytes { get; init; }
-    
-    /// <summary>
-    /// Gets or sets the peak allocated bytes.
-    /// </summary>
-    public long PeakAllocatedBytes { get; init; }
-    
-    /// <summary>
-    /// Gets or sets the total allocation count.
-    /// </summary>
-    public int AllocationCount { get; init; }
-    
-    /// <summary>
-    /// Gets or sets the number of active buffers.
-    /// </summary>
-    public int ActiveBufferCount { get; init; }
-}

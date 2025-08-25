@@ -811,3 +811,7 @@ fix_duplicates.sh
 add_using_statements.sh
 fix_interfaces.sh
 fix_generators_netstandard.sh
+fix_memory_namespaces.sh
+fix_namespaces.sh
+fix_validation_types.sh
+reorganize_files.sh
