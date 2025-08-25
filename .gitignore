@@ -802,3 +802,8 @@ docs/test-cleanup-and-strategy.md
 docs/production-requirements-and-gaps.md
 docs/test-cleanup-complete.md
 docs/memory-manager-consolidation-complete.md
+docs/multi-type-cs-files-report.md
+docs/production-implementation-progress.md
+docs/type-extraction-complete-summary.md
+docs/type-extraction-summary.md
+src/Backends/DotCompute.Backends.CUDA/cs_files.txt
