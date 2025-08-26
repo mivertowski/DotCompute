@@ -148,6 +148,37 @@ namespace DotCompute.Core.Compute.Memory
         }
 
         /// <summary>
+        /// Gets a span view of the buffer.
+        /// </summary>
+        public Span<T> GetSpan<T>() where T : unmanaged
+        {
+            unsafe
+            {
+                return new Span<T>((void*)_alignedPtr, (int)(_sizeInBytes / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>()));
+            }
+        }
+        
+        /// <summary>
+        /// Copies data from host memory to this buffer.
+        /// </summary>
+        public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            var span = GetSpan<T>();
+            source.Span.CopyTo(span.Slice((int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>())));
+            return ValueTask.CompletedTask;
+        }
+        
+        /// <summary>
+        /// Copies data from this buffer to host memory.
+        /// </summary>
+        public ValueTask CopyToAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            var span = GetSpan<T>();
+            span.Slice((int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>()), destination.Length).CopyTo(destination.Span);
+            return ValueTask.CompletedTask;
+        }
+        
+        /// <summary>
         /// Asynchronously disposes the buffer.
         /// </summary>
         /// <returns>Completed task when disposal finishes.</returns>

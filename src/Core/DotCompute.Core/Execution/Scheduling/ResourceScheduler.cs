@@ -423,7 +423,7 @@ namespace DotCompute.Core.Execution.Scheduling
                 {
                     Device = d,
                     MemoryCapacity = d.Info.AvailableMemory,
-                    ComputeCapability = await DevicePerformanceEstimator.EstimateComputeCapabilityAsync(d, cancellationToken)
+                    ComputeCapability = await _performanceEstimator.EstimateComputeCapabilityAsync(d, cancellationToken)
                 }));
 
             // Sort devices by capability

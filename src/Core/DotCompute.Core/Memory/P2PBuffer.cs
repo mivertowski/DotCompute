@@ -215,7 +215,7 @@ namespace DotCompute.Core.Memory
 
             try
             {
-                await _underlyingBuffer.CopyFromAsync<byte>(new ReadOnlyMemory<byte>(), 0, cancellationToken);
+                await _underlyingBuffer.CopyFromAsync(new ReadOnlyMemory<byte>(), cancellationToken);
                 _logger.LogTrace("Memory buffer to P2P buffer copy completed: {Bytes} bytes to {Device}",
                     source.SizeInBytes, _accelerator.Info.Name);
             }
@@ -238,8 +238,8 @@ namespace DotCompute.Core.Memory
             {
                 // Direct copy between memory buffers
                 var tempData = new byte[SizeInBytes];
-                await _underlyingBuffer.CopyToAsync<byte>(tempData, 0, cancellationToken);
-                await destination.CopyFromAsync<byte>(tempData, 0, cancellationToken);
+                await _underlyingBuffer.CopyToAsync(tempData.AsMemory(), cancellationToken);
+                await destination.CopyFromAsync(tempData.AsMemory(), cancellationToken);
 
                 _logger.LogTrace("P2P buffer to memory buffer copy completed: {Bytes} bytes from {Device}",
                     SizeInBytes, _accelerator.Info.Name);
@@ -415,9 +415,8 @@ namespace DotCompute.Core.Memory
         public MappedMemory<T> Map(MapMode mode)
         {
             ThrowIfDisposed();
-            // P2P buffers typically don't support direct mapping
-            // Return default mapped memory structure
-            return default;
+            // P2P buffers don't support direct mapping
+            throw new NotSupportedException("P2P buffers do not support direct memory mapping. Use CopyToHostAsync to transfer data.");
         }
 
         /// <summary>
@@ -434,8 +433,8 @@ namespace DotCompute.Core.Memory
                 throw new ArgumentOutOfRangeException(nameof(count), "Map range exceeds buffer bounds");
             }
 
-            // P2P buffers typically don't support direct mapping
-            return default;
+            // P2P buffers don't support direct mapping
+            throw new NotSupportedException("P2P buffers do not support direct memory mapping. Use CopyToHostAsync to transfer data.");
         }
 
         /// <summary>
@@ -445,7 +444,8 @@ namespace DotCompute.Core.Memory
         {
             ThrowIfDisposed();
             await Task.CompletedTask;
-            return default;
+            // P2P buffers don't support direct mapping
+            throw new NotSupportedException("P2P buffers do not support direct memory mapping. Use CopyToHostAsync to transfer data.");
         }
 
         #region Private Implementation Methods
@@ -481,7 +481,7 @@ namespace DotCompute.Core.Memory
         {
             var hostData = new T[Length];
             await CopyToHostAsync(hostData, 0, cancellationToken);
-            await destination.CopyFromAsync<T>(hostData.AsMemory(), 0, cancellationToken);
+            await destination.CopyFromAsync(hostData.AsMemory(), cancellationToken);
         }
 
         /// <summary>
@@ -521,7 +521,8 @@ namespace DotCompute.Core.Memory
             Array.Copy(fullData, sourceOffset, hostData, 0, count);
 
             // Copy from host to destination
-            await destination.CopyFromAsync<T>(hostData.AsMemory(), destinationOffset, cancellationToken);
+            // TODO: Handle offset properly
+            await destination.CopyFromAsync(hostData.AsMemory(), cancellationToken);
         }
 
         /// <summary>
@@ -574,7 +575,7 @@ namespace DotCompute.Core.Memory
         {
             var hostData = new T[Length];
             await CopyToHostAsync(hostData, 0, cancellationToken);
-            await destination.CopyFromAsync<T>(hostData.AsMemory(), 0, cancellationToken);
+            await destination.CopyFromAsync(hostData.AsMemory(), cancellationToken);
         }
 
         /// <summary>

@@ -309,12 +309,9 @@ public class CpuMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
     
     public Memory<T> AsMemory()
     {
-        if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
-        {
-            var data = cpuBuffer.GetData();
-            return MemoryMarshal.Cast<byte, T>(data);
-        }
-        throw new NotSupportedException();
+        // For CPU buffers, we need to create a properly typed memory
+        // This is a temporary implementation - proper buffer management needed
+        throw new NotSupportedException("Direct Memory<T> access not yet implemented for CpuMemoryBuffer<T>");
     }
     
     public ReadOnlyMemory<T> AsReadOnlyMemory() => AsMemory();
@@ -471,11 +468,7 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
     public long SizeInBytes => _length * Unsafe.SizeOf<T>();
     public IAccelerator Accelerator => _parent.Accelerator;
     public MemoryOptions Options => _parent.Options;
-    public BufferState State
-    {
-        get => _parent.State;
-        set => _parent.State = value;
-    }
+    public BufferState State => _parent.State;
     public bool IsDisposed => _parent.IsDisposed;
     public bool IsOnHost => true;
     public bool IsOnDevice => false;

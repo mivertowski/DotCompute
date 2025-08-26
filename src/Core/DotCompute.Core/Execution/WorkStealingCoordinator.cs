@@ -417,7 +417,7 @@ namespace DotCompute.Core.Execution
                         Value = buffer,
                         Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
                         IsDeviceMemory = true,
-                        MemoryBuffer = buffer as AbstractionsMemory.IMemoryBuffer
+                        MemoryBuffer = buffer as IUnifiedMemoryBuffer
                     })
                     .ToArray();
 

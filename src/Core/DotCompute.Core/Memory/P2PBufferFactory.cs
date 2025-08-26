@@ -226,19 +226,21 @@ namespace DotCompute.Core.Memory
             var targetPool = await GetOrCreateDevicePoolAsync(targetDevice, cancellationToken);
             var sizeInBytes = length * Unsafe.SizeOf<T>();
 
-            IMemoryBuffer memoryBuffer;
+            IUnifiedMemoryBuffer<byte> memoryBuffer;
 
             switch (strategy.Type)
             {
                 case TransferType.DirectP2P:
                     // Ensure P2P connection is established
                     _ = await EstablishP2PConnectionAsync(sourceDevice, targetDevice, cancellationToken);
-                    memoryBuffer = await targetPool.AllocateAsync(sizeInBytes, cancellationToken);
+                    var buffer = await targetPool.AllocateAsync(sizeInBytes, cancellationToken);
+                    memoryBuffer = buffer as IUnifiedMemoryBuffer<byte> ?? throw new InvalidOperationException("Pool returned non-byte buffer");
                     break;
 
                 case TransferType.HostMediated:
                     // Use standard allocation for host-mediated transfers
-                    memoryBuffer = await targetPool.AllocateAsync(sizeInBytes, cancellationToken);
+                    var buffer = await targetPool.AllocateAsync(sizeInBytes, cancellationToken);
+                    memoryBuffer = buffer as IUnifiedMemoryBuffer<byte> ?? throw new InvalidOperationException("Pool returned non-byte buffer");
                     break;
 
                 case TransferType.Streaming:
@@ -252,7 +254,8 @@ namespace DotCompute.Core.Memory
                     break;
 
                 default:
-                    memoryBuffer = await targetPool.AllocateAsync(sizeInBytes, cancellationToken);
+                    var buffer = await targetPool.AllocateAsync(sizeInBytes, cancellationToken);
+                    memoryBuffer = buffer as IUnifiedMemoryBuffer<byte> ?? throw new InvalidOperationException("Pool returned non-byte buffer");
                     break;
             }
 
@@ -352,10 +355,10 @@ namespace DotCompute.Core.Memory
             var hostData = new T[BufferHelpers.GetElementCount(source)];
 
             // Copy from source to host  
-            await source.CopyToAsync<T>(hostData, 0, cancellationToken);
+            await source.CopyToAsync(hostData.AsMemory(), cancellationToken);
 
             // Copy from host to target
-            await target.CopyFromAsync<T>(hostData, 0, cancellationToken);
+            await target.CopyFromAsync(hostData.AsMemory(), cancellationToken);
         }
 
         /// <summary>
@@ -421,13 +424,13 @@ namespace DotCompute.Core.Memory
             {
                 // Copy source to memory-mapped file
                 var hostData = new T[BufferHelpers.GetElementCount(source)];
-                await source.CopyToAsync<T>(hostData, 0, cancellationToken);
+                await source.CopyToAsync(hostData.AsMemory(), cancellationToken);
                 await File.WriteAllBytesAsync(tempFile, global::System.Runtime.InteropServices.MemoryMarshal.AsBytes(hostData.AsSpan()).ToArray(), cancellationToken);
 
                 // Copy from memory-mapped file to target
                 var fileData = await File.ReadAllBytesAsync(tempFile, cancellationToken);
                 var targetData = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(fileData);
-                await target.CopyFromAsync<T>(targetData.ToArray(), 0, cancellationToken);
+                await target.CopyFromAsync(targetData.ToArray().AsMemory(), cancellationToken);
             }
             finally
             {

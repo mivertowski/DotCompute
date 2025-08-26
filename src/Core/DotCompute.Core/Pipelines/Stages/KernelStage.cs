@@ -149,7 +149,7 @@ namespace DotCompute.Core.Pipelines.Stages
                 // Create execution context
                 var kernelContext = new KernelExecutionContext
                 {
-                    Name = _kernel.Name,
+                    KernelName = _kernel.Name,
                     WorkDimensions = _globalWorkSize ?? [1L],
                     LocalWorkSize = _localWorkSize != null ? _localWorkSize : null,
                     Arguments = [.. arguments],

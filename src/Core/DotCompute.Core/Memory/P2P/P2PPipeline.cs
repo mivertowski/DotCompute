@@ -205,7 +205,7 @@ namespace DotCompute.Core.Memory.P2P
 
                 // Copy to host staging buffer
 
-                await sourceSlice.CopyToAsync(stage.StagingBuffer.AsMemory(0, elementCount), 0, cancellationToken);
+                await sourceSlice.CopyToAsync(stage.StagingBuffer.AsMemory(0, elementCount), cancellationToken);
 
 
                 stage.StagingCompleted = DateTimeOffset.UtcNow;
@@ -233,7 +233,7 @@ namespace DotCompute.Core.Memory.P2P
 
                 // Copy from host staging buffer to destination
 
-                await destinationSlice.CopyFromAsync<T>(stage.StagingBuffer.AsMemory(0, elementCount), 0, cancellationToken);
+                await destinationSlice.CopyFromAsync(stage.StagingBuffer.AsMemory(0, elementCount), cancellationToken);
 
 
                 stage.TransferCompleted = DateTimeOffset.UtcNow;

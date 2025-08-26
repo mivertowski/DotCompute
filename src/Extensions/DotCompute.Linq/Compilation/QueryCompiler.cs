@@ -92,7 +92,7 @@ public class QueryCompiler : IQueryCompiler
         catch (Exception ex)
         {
             _logger.LogError(ex, "Expression validation failed with exception");
-            errors.Add(new ValidationIssue("VALIDATION_ERROR", ex.Message, expression));
+            errors.Add(new ValidationIssue(ValidationSeverity.Error, ex.Message, "VALIDATION_ERROR", expression?.ToString()));
         }
 
         if (errors.Count > 0)
@@ -421,7 +421,7 @@ public class QueryCompiler : IQueryCompiler
             // Check for unsupported method calls
             if (node.Method.DeclaringType?.Namespace?.StartsWith("System.IO") == true)
             {
-                _errors.Add(new ValidationIssue("UNSUPPORTED_IO", "I/O operations are not supported in GPU queries", node));
+                _errors.Add(new ValidationIssue(ValidationSeverity.Error, "I/O operations are not supported in GPU queries", "UNSUPPORTED_IO", node?.ToString()));
             }
 
             if (node.Method.DeclaringType?.Namespace?.StartsWith("System.Net") == true)

@@ -580,7 +580,7 @@ public sealed partial class KernelManager : IDisposable
         return new ManagedCompiledKernel
         {
             Name = generatedKernel.Name,
-            Binary = System.Text.Encoding.UTF8.GetBytes(generatedKernel.Source), // Fallback to source
+            Binary = global::System.Text.Encoding.UTF8.GetBytes(generatedKernel.Source), // Fallback to source
             Parameters = generatedKernel.Parameters,
             RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize,
             SharedMemorySize = generatedKernel.SharedMemorySize

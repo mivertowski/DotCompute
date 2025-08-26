@@ -82,7 +82,8 @@ namespace DotCompute.Core.Memory
             try
             {
                 var options = DetermineOptimalMemoryOptions(sizeInBytes);
-                var buffer = await _device.Memory.AllocateAsync(sizeInBytes, options, cancellationToken);
+                var typedBuffer = await _device.Memory.AllocateAsync<byte>((int)sizeInBytes, options, cancellationToken);
+                var buffer = typedBuffer as IUnifiedMemoryBuffer ?? throw new InvalidOperationException($"Failed to allocate buffer on device {_device.Info.Name}");
 
                 lock (_statisticsLock)
                 {
@@ -129,7 +130,8 @@ namespace DotCompute.Core.Memory
 
             try
             {
-                var buffer = await _device.Memory.AllocateAsync(sizeInBytes, options, cancellationToken);
+                var typedBuffer = await _device.Memory.AllocateAsync<byte>((int)sizeInBytes, options, cancellationToken);
+                var buffer = typedBuffer as IUnifiedMemoryBuffer ?? throw new InvalidOperationException($"Failed to allocate buffer on device {_device.Info.Name}");
 
                 lock (_statisticsLock)
                 {
@@ -172,7 +174,8 @@ namespace DotCompute.Core.Memory
 
             try
             {
-                var buffer = await _device.Memory.AllocateAsync(sizeInBytes, options, cancellationToken);
+                var typedBuffer = await _device.Memory.AllocateAsync<byte>((int)sizeInBytes, options, cancellationToken);
+                var buffer = typedBuffer as IUnifiedMemoryBuffer ?? throw new InvalidOperationException($"Failed to allocate buffer on device {_device.Info.Name}");
 
                 lock (_statisticsLock)
                 {

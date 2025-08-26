@@ -62,7 +62,13 @@ namespace DotCompute.Core.Execution.Memory
                 if (buffer.SizeInBytes >= sizeInBytes && buffer.Options == options)
                 {
                     _ = Interlocked.Add(ref _totalAvailable, -buffer.SizeInBytes);
-                    return buffer;
+                    // Cast to the generic interface - buffers in pool should be byte buffers
+                    if (buffer is IUnifiedMemoryBuffer<byte> typedBuffer)
+                    {
+                        return typedBuffer;
+                    }
+                    // If not the right type, continue searching
+                    continue;
                 }
 
                 // Buffer doesn't match, dispose it

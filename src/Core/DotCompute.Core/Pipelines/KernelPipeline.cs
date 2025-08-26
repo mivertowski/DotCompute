@@ -2,11 +2,13 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Validation;
 using System.Diagnostics;
 using DotCompute.Core.Pipelines.Exceptions;
 using DotCompute.Core.Pipelines.Stages;
 using DotCompute.Core.Pipelines.Types;
 using DotCompute.Core.Pipelines.Models;
+using DotCompute.Core.Validation;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -261,12 +263,11 @@ namespace DotCompute.Core.Pipelines
             // Validate basic structure
             if (_stages.Count == 0)
             {
-                errors.Add(new ValidationIssue
-                {
-                    Code = "NO_STAGES",
-                    Message = "Pipeline must contain at least one stage",
-                    Path = "Stages"
-                });
+                errors.Add(new ValidationIssue(
+                    ValidationSeverity.Error,
+                    "Pipeline must contain at least one stage",
+                    "NO_STAGES",
+                    "Stages"));
             }
 
             // Validate stage dependencies
@@ -278,12 +279,11 @@ namespace DotCompute.Core.Pipelines
                 {
                     foreach (var error in stageValidation.Errors)
                     {
-                        errors.Add(new ValidationIssue
-                        {
-                            Code = $"STAGE_ERROR_{stage.Id}",
-                            Message = $"Stage '{stage.Name}': {error}",
-                            Path = $"Stages[{stage.Id}]"
-                        });
+                        errors.Add(new ValidationIssue(
+                            ValidationSeverity.Error,
+                            $"Stage '{stage.Name}': {error}",
+                            $"STAGE_ERROR_{stage.Id}",
+                            $"Stages[{stage.Id}]"));
                     }
                 }
 
@@ -305,13 +305,12 @@ namespace DotCompute.Core.Pipelines
                 {
                     if (!stageIds.Contains(dep))
                     {
-                        errors.Add(new ValidationIssue
-                        {
-                            Code = "INVALID_DEPENDENCY",
-                            Message = $"Stage '{stage.Name}' depends on non-existent stage '{dep}'",
-                            Path = $"Stages[{stage.Id}].Dependencies",
-                            InvalidValue = dep
-                        });
+                        errors.Add(new ValidationIssue(
+                            ValidationSeverity.Error,
+                            $"Stage '{stage.Name}' depends on non-existent stage '{dep}'",
+                            "INVALID_DEPENDENCY",
+                            $"Stages[{stage.Id}].Dependencies",
+                            dep));
                     }
                 }
             }
@@ -319,12 +318,11 @@ namespace DotCompute.Core.Pipelines
             // Check for circular dependencies
             if (HasCircularDependencies())
             {
-                errors.Add(new ValidationIssue
-                {
-                    Code = "CIRCULAR_DEPENDENCY",
-                    Message = "Pipeline contains circular dependencies",
-                    Path = "Stages"
-                });
+                errors.Add(new ValidationIssue(
+                    ValidationSeverity.Error,
+                    "Pipeline contains circular dependencies",
+                    "CIRCULAR_DEPENDENCY",
+                    "Stages"));
             }
 
             // Validate optimization settings

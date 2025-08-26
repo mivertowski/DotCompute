@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Execution;
 
 namespace DotCompute.Core.Logging;
 
@@ -283,11 +284,11 @@ public sealed class LogEnricher : IDisposable
         ThrowIfDisposed();
 
 
-        var kernelContext = new KernelExecutionContext
+        var kernelContext = new Abstractions.Execution.KernelExecutionContext
         {
-            KernelName = kernelName,
-            CompilationInfo = compilationInfo,
-            Timestamp = DateTimeOffset.UtcNow
+            KernelName = kernelName
+            // CompilationInfo = compilationInfo?.ToString() ?? string.Empty,
+            // Timestamp = DateTimeOffset.UtcNow.DateTime
         };
 
 

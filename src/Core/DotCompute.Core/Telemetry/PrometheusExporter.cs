@@ -1,7 +1,8 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Prometheus;
+// TODO: Add Prometheus.NET package reference
+// using Prometheus;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -13,38 +14,39 @@ public sealed class PrometheusExporter : IDisposable
 {
     private readonly ILogger<PrometheusExporter> _logger;
     private readonly PrometheusExporterOptions _options;
-    private readonly MetricServer? _metricServer;
+    // TODO: Add MetricServer when Prometheus.NET is available
+    private readonly object? _metricServer;
     private readonly Timer _collectionTimer;
     private readonly MetricsCollector _metricsCollector;
     private volatile bool _disposed;
 
     // Prometheus metrics
 
-    private Counter _kernelExecutionsTotal = null!;
-    private Counter _memoryOperationsTotal = null!;
-    private Counter _errorsTotal = null!;
-    private Histogram _kernelExecutionDuration = null!;
-    private Histogram _memoryTransferDuration = null!;
-    private Gauge _currentMemoryUsage = null!;
-    private Gauge _deviceUtilization = null!;
-    private Gauge _deviceTemperature = null!;
-    private Histogram _throughputOpsPerSecond = null!;
-    private Gauge _occupancyPercentage = null!;
-    private Gauge _cacheHitRate = null!;
-    private Gauge _memoryBandwidth = null!;
-    private Counter _profilesCreated = null!;
-    private Gauge _activeProfiles = null!;
-    private Histogram _profileDuration = null!;
+    private ICounter _kernelExecutionsTotal = null!;
+    private ICounter _memoryOperationsTotal = null!;
+    private ICounter _errorsTotal = null!;
+    private IHistogram _kernelExecutionDuration = null!;
+    private IHistogram _memoryTransferDuration = null!;
+    private IGauge _currentMemoryUsage = null!;
+    private IGauge _deviceUtilization = null!;
+    private IGauge _deviceTemperature = null!;
+    private IHistogram _throughputOpsPerSecond = null!;
+    private IGauge _occupancyPercentage = null!;
+    private IGauge _cacheHitRate = null!;
+    private IGauge _memoryBandwidth = null!;
+    private ICounter _profilesCreated = null!;
+    private IGauge _activeProfiles = null!;
+    private IHistogram _profileDuration = null!;
 
     // Advanced compute metrics
 
-    private Gauge _warpEfficiency = null!;
-    private Gauge _branchDivergence = null!;
-    private Gauge _memoryCoalescingEfficiency = null!;
-    private Gauge _instructionThroughput = null!;
-    private Gauge _powerConsumption = null!;
-    private Counter _compilationEvents = null!;
-    private Histogram _compilationDuration = null!;
+    private IGauge _warpEfficiency = null!;
+    private IGauge _branchDivergence = null!;
+    private IGauge _memoryCoalescingEfficiency = null!;
+    private IGauge _instructionThroughput = null!;
+    private IGauge _powerConsumption = null!;
+    private ICounter _compilationEvents = null!;
+    private IHistogram _compilationDuration = null!;
 
     public PrometheusExporter(ILogger<PrometheusExporter> logger, IOptions<PrometheusExporterOptions> options,
         MetricsCollector metricsCollector)
@@ -61,8 +63,10 @@ public sealed class PrometheusExporter : IDisposable
 
         if (_options.StartMetricServer)
         {
-            _metricServer = new MetricServer(hostname: _options.Hostname, port: _options.Port, url: _options.Endpoint);
-            _ = _metricServer.Start();
+            // TODO: Enable when Prometheus.NET is available
+            // _metricServer = new MetricServer(hostname: _options.Hostname, port: _options.Port, url: _options.Endpoint);
+            // _ = _metricServer.Start();
+            _metricServer = null;
             _logger.LogInformation("Started Prometheus metric server on {Hostname}:{Port}{Endpoint}",
 
                 _options.Hostname, _options.Port, _options.Endpoint);
@@ -251,9 +255,11 @@ public sealed class PrometheusExporter : IDisposable
         ThrowIfDisposed();
 
 
-        using var stream = new MemoryStream();
-        await Metrics.DefaultRegistry.CollectAndExportAsTextAsync(stream, cancellationToken);
-        return Encoding.UTF8.GetString(stream.ToArray());
+        // TODO: Prometheus metrics library integration
+        // using var stream = new MemoryStream();
+        // await Metrics.DefaultRegistry.CollectAndExportAsTextAsync(stream, cancellationToken);
+        // return Encoding.UTF8.GetString(stream.ToArray());
+        return await Task.FromResult("# Prometheus metrics export not implemented");
     }
 
     /// <summary>
@@ -297,142 +303,139 @@ public sealed class PrometheusExporter : IDisposable
 
         // Core execution metrics
 
-        _kernelExecutionsTotal = Metrics.CreateCounter(
+        _kernelExecutionsTotal = PrometheusMetricsStub.CreateCounter(
             "dotcompute_kernel_executions_total",
             "Total number of kernel executions",
-            ["kernel_name", "device_id", "success", .. commonLabels]);
+            "kernel_name", "device_id", "success");
 
 
-        _memoryOperationsTotal = Metrics.CreateCounter(
+        _memoryOperationsTotal = PrometheusMetricsStub.CreateCounter(
             "dotcompute_memory_operations_total",
             "Total number of memory operations",
-            ["operation_type", "device_id", "success", .. commonLabels]);
+            "operation_type", "device_id", "success");
 
 
-        _errorsTotal = Metrics.CreateCounter(
+        _errorsTotal = PrometheusMetricsStub.CreateCounter(
             "dotcompute_errors_total",
             "Total number of errors by type",
-            ["error_type", "device_id", .. commonLabels]);
+            "error_type", "device_id");
 
         // Timing metrics
 
-        _kernelExecutionDuration = Metrics.CreateHistogram(
+        _kernelExecutionDuration = PrometheusMetricsStub.CreateHistogram(
             "dotcompute_kernel_execution_duration_seconds",
             "Kernel execution duration in seconds",
-            ["kernel_name", "device_id", "success", .. commonLabels]);
+            null, "kernel_name", "device_id", "success");
 
 
-        _memoryTransferDuration = Metrics.CreateHistogram(
+        _memoryTransferDuration = PrometheusMetricsStub.CreateHistogram(
             "dotcompute_memory_transfer_duration_seconds",
             "Memory transfer duration in seconds",
-            ["operation_type", "device_id", "size_category", .. commonLabels]);
+            null, "operation_type", "device_id", "size_category");
 
         // Resource utilization metrics
 
-        _currentMemoryUsage = Metrics.CreateGauge(
+        _currentMemoryUsage = PrometheusMetricsStub.CreateGauge(
             "dotcompute_memory_usage_bytes",
             "Current memory usage in bytes",
-            ["device_id", .. commonLabels]);
+            "device_id");
 
 
-        _deviceUtilization = Metrics.CreateGauge(
+        _deviceUtilization = PrometheusMetricsStub.CreateGauge(
             "dotcompute_device_utilization_ratio",
             "Device utilization ratio (0.0 to 1.0)",
-            ["device_id", .. commonLabels]);
+            "device_id");
 
 
-        _deviceTemperature = Metrics.CreateGauge(
+        _deviceTemperature = PrometheusMetricsStub.CreateGauge(
             "dotcompute_device_temperature_celsius",
             "Device temperature in Celsius",
-            ["device_id", .. commonLabels]);
+            "device_id");
 
         // Performance metrics
 
-        _throughputOpsPerSecond = Metrics.CreateHistogram(
+        _throughputOpsPerSecond = PrometheusMetricsStub.CreateHistogram(
             "dotcompute_kernel_throughput_ops_per_second",
             "Kernel throughput in operations per second",
-            ["kernel_name", "device_id", .. commonLabels]);
+            null, "kernel_name", "device_id");
 
 
-        _occupancyPercentage = Metrics.CreateGauge(
+        _occupancyPercentage = PrometheusMetricsStub.CreateGauge(
             "dotcompute_kernel_occupancy_percentage",
             "Kernel occupancy percentage",
-            ["kernel_name", "device_id", .. commonLabels]);
+            "kernel_name", "device_id");
 
 
-        _cacheHitRate = Metrics.CreateGauge(
+        _cacheHitRate = PrometheusMetricsStub.CreateGauge(
             "dotcompute_cache_hit_rate",
             "Cache hit rate (0.0 to 1.0)",
-            ["kernel_name", "device_id", .. commonLabels]);
+            "kernel_name", "device_id");
 
 
-        _memoryBandwidth = Metrics.CreateGauge(
+        _memoryBandwidth = PrometheusMetricsStub.CreateGauge(
             "dotcompute_memory_bandwidth_gb_per_second",
             "Memory bandwidth in GB per second",
-            ["kernel_name", "device_id", .. commonLabels]);
+            "kernel_name", "device_id");
 
         // Advanced compute metrics
 
-        _warpEfficiency = Metrics.CreateGauge(
+        _warpEfficiency = PrometheusMetricsStub.CreateGauge(
             "dotcompute_warp_efficiency",
             "Warp execution efficiency (0.0 to 1.0)",
-            ["kernel_name", "device_id", .. commonLabels]);
+            "kernel_name", "device_id");
 
 
-        _branchDivergence = Metrics.CreateGauge(
+        _branchDivergence = PrometheusMetricsStub.CreateGauge(
             "dotcompute_branch_divergence",
             "Branch divergence ratio (0.0 to 1.0)",
-            ["kernel_name", "device_id", .. commonLabels]);
+            "kernel_name", "device_id");
 
 
-        _memoryCoalescingEfficiency = Metrics.CreateGauge(
+        _memoryCoalescingEfficiency = PrometheusMetricsStub.CreateGauge(
             "dotcompute_memory_coalescing_efficiency",
             "Memory coalescing efficiency (0.0 to 1.0)",
-            ["kernel_name", "device_id", .. commonLabels]);
+            "kernel_name", "device_id");
 
 
-        _instructionThroughput = Metrics.CreateGauge(
+        _instructionThroughput = PrometheusMetricsStub.CreateGauge(
             "dotcompute_instruction_throughput_per_second",
             "Instruction throughput per second",
-            ["kernel_name", "device_id", .. commonLabels]);
+            "kernel_name", "device_id");
 
 
-        _powerConsumption = Metrics.CreateGauge(
+        _powerConsumption = PrometheusMetricsStub.CreateGauge(
             "dotcompute_power_consumption_watts",
             "Power consumption in watts",
-            ["component", "device_id", .. commonLabels]);
+            "component", "device_id");
 
         // Profiling metrics
 
-        _profilesCreated = Metrics.CreateCounter(
+        _profilesCreated = PrometheusMetricsStub.CreateCounter(
             "dotcompute_profiles_created_total",
-            "Total number of performance profiles created",
-            commonLabels);
+            "Total number of performance profiles created");
 
 
-        _activeProfiles = Metrics.CreateGauge(
+        _activeProfiles = PrometheusMetricsStub.CreateGauge(
             "dotcompute_active_profiles",
-            "Number of active performance profiles",
-            commonLabels);
+            "Number of active performance profiles");
 
 
-        _profileDuration = Metrics.CreateHistogram(
+        _profileDuration = PrometheusMetricsStub.CreateHistogram(
             "dotcompute_profile_duration_seconds",
-            "Performance profile duration in seconds",
-            commonLabels);
+            "Performance profile duration in seconds");
 
         // Compilation metrics
 
-        _compilationEvents = Metrics.CreateCounter(
+        _compilationEvents = PrometheusMetricsStub.CreateCounter(
             "dotcompute_kernel_compilations_total",
             "Total number of kernel compilations",
-            ["kernel_name", "device_id", "success", .. commonLabels]);
+            "kernel_name", "device_id", "success");
 
 
-        _compilationDuration = Metrics.CreateHistogram(
+        _compilationDuration = PrometheusMetricsStub.CreateHistogram(
             "dotcompute_kernel_compilation_duration_seconds",
             "Kernel compilation duration in seconds",
-            ["kernel_name", "device_id", "success", .. commonLabels]);
+            null, "kernel_name", "device_id", "success");
     }
 
     private void CollectMetrics(object? state)
@@ -488,7 +491,8 @@ public sealed class PrometheusExporter : IDisposable
 
         try
         {
-            _metricServer?.Stop();
+            // TODO: Enable when Prometheus.NET is available
+            // _metricServer?.Stop();
             _collectionTimer?.Dispose();
         }
         catch (Exception ex)

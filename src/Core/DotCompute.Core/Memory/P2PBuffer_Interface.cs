@@ -14,10 +14,7 @@ namespace DotCompute.Core.Memory
         /// Gets or sets the buffer state.
         /// </summary>
         public BufferState State 
-        { 
-            get => _underlyingBuffer.State;
-            set => _underlyingBuffer.State = value;
-        }
+        => _underlyingBuffer.State;
         
         /// <summary>
         /// Gets whether the buffer is currently on host.
@@ -73,13 +70,15 @@ namespace DotCompute.Core.Memory
         public void EnsureOnHost()
         {
             ThrowIfDisposed();
-            State = BufferState.HostReady;
+            // TODO: Implement proper state transition
+            // State = BufferState.HostReady;
         }
         
         public void EnsureOnDevice()
         {
             ThrowIfDisposed();
-            State = BufferState.DeviceReady;
+            // TODO: Implement proper state transition
+            // State = BufferState.DeviceReady;
         }
         
         public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
@@ -106,18 +105,18 @@ namespace DotCompute.Core.Memory
             return ValueTask.CompletedTask;
         }
         
-        public void MarkHostDirty() => State = BufferState.HostDirty;
-        public void MarkDeviceDirty() => State = BufferState.DeviceDirty;
+        public void MarkHostDirty() { /* TODO: Implement state tracking */ }
+        public void MarkDeviceDirty() { /* TODO: Implement state tracking */ }
         
         // Copy methods
         public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
         {
-            await CopyFromHostAsync(source, cancellationToken: cancellationToken);
+            await CopyFromHostAsync(source, 0, cancellationToken);
         }
         
         public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         {
-            await CopyToHostAsync(destination, cancellationToken: cancellationToken);
+            await CopyToHostAsync(destination, 0, cancellationToken);
         }
     }
 }

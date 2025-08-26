@@ -9,7 +9,7 @@ namespace DotCompute.Abstractions;
 /// Unified memory manager interface that replaces all duplicate memory management interfaces.
 /// This is the ONLY memory manager interface in the entire solution.
 /// </summary>
-public interface IUnifiedMemoryManager : IDisposable
+public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
 {
     /// <summary>
     /// Gets the accelerator this memory manager is associated with.

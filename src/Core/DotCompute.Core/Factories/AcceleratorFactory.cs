@@ -250,6 +250,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                     }
                 }
                 
+                await Task.CompletedTask; // Ensure async method has await
                 throw new NotSupportedException($"Provider {providerType.Name} does not have a suitable creation method");
             });
         }

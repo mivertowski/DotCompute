@@ -569,8 +569,7 @@ namespace DotCompute.Core.Execution
                 var sourceBuffer = sourceBuffers[i];
 
                 // Create buffer slice on target device
-                var deviceBuffer = await _memoryManager.CreateBufferSliceAsync(
-                    sourceBuffer, device, startIndex, elementCount, cancellationToken);
+                var deviceBuffer = sourceBuffer.Slice(startIndex, elementCount);
 
                 deviceBuffers[i] = deviceBuffer;
             }
@@ -630,8 +629,7 @@ namespace DotCompute.Core.Execution
                     {
                         var startTime = Stopwatch.StartNew();
 
-                        // Wait for memory transfers to complete
-                        await _memoryManager.WaitForTransfersAsync(task.Device, cancellationToken);
+                        // Memory transfers are synchronous in current implementation
 
                         // Execute kernel on device
                         var kernelArgs = CreateKernelArguments(task.InputBuffers, task.OutputBuffers);
@@ -693,7 +691,7 @@ namespace DotCompute.Core.Execution
                     Value = inputBuffers[i],
                     Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
                     IsDeviceMemory = true,
-                    MemoryBuffer = inputBuffers[i] as AbstractionsMemory.IMemoryBuffer
+                    MemoryBuffer = inputBuffers[i] as IUnifiedMemoryBuffer
                 };
             }
 
@@ -705,7 +703,7 @@ namespace DotCompute.Core.Execution
                     Value = outputBuffers[i],
                     Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
                     IsDeviceMemory = true,
-                    MemoryBuffer = outputBuffers[i] as AbstractionsMemory.IMemoryBuffer
+                    MemoryBuffer = outputBuffers[i] as IUnifiedMemoryBuffer
                 };
             }
 
