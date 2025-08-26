@@ -5,6 +5,7 @@
 using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Configuration;
 
+using System;
 namespace DotCompute.Core.Execution.Metrics
 {
     /// <summary>
@@ -222,10 +223,10 @@ namespace DotCompute.Core.Execution.Metrics
         /// <summary>
         /// Validates the recommendation parameters.
         /// </summary>
-        /// <exception cref="System.ArgumentOutOfRangeException">
+        /// <exception cref="ArgumentOutOfRangeException">
         /// Thrown when confidence score is not between 0 and 1.
         /// </exception>
-        /// <exception cref="System.ArgumentException">
+        /// <exception cref="ArgumentException">
         /// Thrown when reasoning is null or whitespace.
         /// </exception>
         public void Validate()

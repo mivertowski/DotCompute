@@ -4,6 +4,7 @@
 using DotCompute.Core.Recovery.Types;
 using DotCompute.Abstractions;
 
+using System;
 namespace DotCompute.Core.Recovery.Compilation;
 
 /// <summary>
@@ -75,7 +76,7 @@ public class CompilationHistory : IDisposable
     /// Initializes a new instance of the <see cref="CompilationHistory"/> class.
     /// </summary>
     /// <param name="kernelName">The name of the kernel to track.</param>
-    /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="kernelName"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelName"/> is null.</exception>
     public CompilationHistory(string kernelName)
     {
         _kernelName = kernelName ?? throw new ArgumentNullException(nameof(kernelName));

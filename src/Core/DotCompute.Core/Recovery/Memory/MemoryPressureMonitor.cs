@@ -4,6 +4,7 @@
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Recovery.Types;
 
+using System;
 namespace DotCompute.Core.Recovery.Memory;
 
 /// <summary>
@@ -29,7 +30,7 @@ public sealed class MemoryPressureMonitor : IDisposable
     /// Initializes a new instance of the <see cref="MemoryPressureMonitor"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for recording monitoring events and errors.</param>
-    /// <exception cref="System.ArgumentNullException">
+    /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="logger"/> is null.
     /// </exception>
     /// <remarks>

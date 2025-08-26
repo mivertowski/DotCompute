@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System;
 namespace DotCompute.Core.Recovery.Memory;
 
 /// <summary>
@@ -90,7 +91,7 @@ public class MemoryRecoveryConfiguration
     /// proactive recovery operations. Values closer to 1.0 delay recovery
     /// but allow higher memory utilization.
     /// </remarks>
-    /// <exception cref="System.ArgumentOutOfRangeException">
+    /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when the value is not between 0.0 and 1.0.
     /// </exception>
     public double MemoryPressureThreshold { get; set; } = 0.85; // 85%

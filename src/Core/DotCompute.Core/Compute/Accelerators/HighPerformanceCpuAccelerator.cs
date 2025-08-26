@@ -9,6 +9,7 @@ using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Kernels;
 
+using System;
 namespace DotCompute.Core.Compute.Accelerators
 {
     /// <summary>
@@ -27,7 +28,7 @@ namespace DotCompute.Core.Compute.Accelerators
         /// </summary>
         /// <param name="info">Accelerator information.</param>
         /// <param name="logger">Logger instance.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when info or logger is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when info or logger is null.</exception>
         public HighPerformanceCpuAccelerator(AcceleratorInfo info, ILogger logger)
         {
             Info = info ?? throw new ArgumentNullException(nameof(info));
@@ -64,8 +65,8 @@ namespace DotCompute.Core.Compute.Accelerators
         /// <param name="options">Compilation options for optimization control.</param>
         /// <param name="cancellationToken">Cancellation token for the operation.</param>
         /// <returns>Compiled kernel ready for execution.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when definition is null.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when kernel compilation fails.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when definition is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when kernel compilation fails.</exception>
         public ValueTask<ICompiledKernel> CompileKernelAsync(
             KernelDefinition definition,
             CompilationOptions? options = null,

@@ -6,6 +6,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 
+using System;
 namespace DotCompute.Core.Execution.Kernels;
 
 /// <summary>

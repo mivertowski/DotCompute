@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Compute.Types;
 using Microsoft.Extensions.Logging;
 
+using System;
 namespace DotCompute.Core.Compute.Kernels
 {
     /// <summary>

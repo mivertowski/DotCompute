@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System;
 namespace DotCompute.Core.Execution.Metrics
 {
     /// <summary>
@@ -98,7 +99,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// Adds the results of a completed execution to these metrics.
         /// </summary>
         /// <param name="result">The parallel execution result to incorporate.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="result"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="result"/> is <c>null</c>.</exception>
         public void AddExecution(ParallelExecutionResult result)
         {
             ArgumentNullException.ThrowIfNull(result);

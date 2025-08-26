@@ -9,6 +9,7 @@ using DotCompute.Core.Compute.Interfaces;
 using DotCompute.Core.Compute.Options;
 using Microsoft.Extensions.Logging;
 
+using System;
 namespace DotCompute.Core.Compute
 {
 
@@ -54,7 +55,7 @@ namespace DotCompute.Core.Compute
         /// </summary>
         /// <param name="acceleratorManager">The accelerator manager for device discovery and selection.</param>
         /// <param name="logger">The logger instance for diagnostics and monitoring.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when acceleratorManager or logger is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when acceleratorManager or logger is null.</exception>
         public DefaultComputeEngine(
             IAcceleratorManager acceleratorManager,
             ILogger<DefaultComputeEngine> logger)
@@ -87,9 +88,9 @@ namespace DotCompute.Core.Compute
         /// <param name="options">Compilation options including optimization level and debug information.</param>
         /// <param name="cancellationToken">Cancellation token for the async operation.</param>
         /// <returns>A compiled kernel ready for execution.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when kernelSource is null, empty, or whitespace.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when no accelerators are available for compilation.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when kernel compilation fails.</exception>
+        /// <exception cref="ArgumentException">Thrown when kernelSource is null, empty, or whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no accelerators are available for compilation.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when kernel compilation fails.</exception>
         /// <example>
         /// <code>
         /// string kernelSource = @"
@@ -162,9 +163,9 @@ namespace DotCompute.Core.Compute
         /// <param name="options">Execution options including work group sizing and profiling settings.</param>
         /// <param name="cancellationToken">Cancellation token for the async operation.</param>
         /// <returns>A task representing the asynchronous execution operation.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when kernel or arguments is null.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when the specified backend is not available.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when kernel execution fails.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when kernel or arguments is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the specified backend is not available.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when kernel execution fails.</exception>
         /// <example>
         /// <code>
         /// var buffer1 = await memoryManager.AllocateAsync&lt;float&gt;(1024);

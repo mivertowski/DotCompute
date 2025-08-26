@@ -10,6 +10,7 @@ using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Metrics;
 using Microsoft.Extensions.Logging;
 
+using System;
 namespace DotCompute.Core.Execution
 {
 
@@ -37,7 +38,7 @@ namespace DotCompute.Core.Execution
         /// <param name="workload">The workload.</param>
         /// <param name="memoryManager">The memory manager.</param>
         /// <param name="logger">The logger.</param>
-        /// <exception cref="System.ArgumentNullException">
+        /// <exception cref="ArgumentNullException">
         /// devices
         /// or
         /// workload
@@ -528,7 +529,7 @@ namespace DotCompute.Core.Execution
         /// <param name="device">The device.</param>
         /// <param name="deviceIndex">Index of the device.</param>
         /// <param name="logger">The logger.</param>
-        /// <exception cref="System.ArgumentNullException">
+        /// <exception cref="ArgumentNullException">
         /// device
         /// or
         /// logger
@@ -729,7 +730,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         /// <param name="deviceCount">The device count.</param>
         /// <param name="logger">The logger.</param>
-        /// <exception cref="System.ArgumentNullException">logger</exception>
+        /// <exception cref="ArgumentNullException">logger</exception>
         public StealingCoordinator(int deviceCount, ILogger logger)
         {
             _deviceCount = deviceCount;
@@ -813,7 +814,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         /// <param name="devices">The devices.</param>
         /// <param name="logger">The logger.</param>
-        /// <exception cref="System.ArgumentNullException">
+        /// <exception cref="ArgumentNullException">
         /// devices
         /// or
         /// logger
@@ -830,8 +831,8 @@ namespace DotCompute.Core.Execution
         /// <typeparam name="T"></typeparam>
         /// <param name="workItems">The work items.</param>
         /// <param name="deviceQueues">The device queues.</param>
-        /// <exception cref="System.ArgumentNullException">workItems</exception>
-        /// <exception cref="System.ArgumentException">Device queues cannot be null or empty - deviceQueues</exception>
+        /// <exception cref="ArgumentNullException">workItems</exception>
+        /// <exception cref="ArgumentException">Device queues cannot be null or empty - deviceQueues</exception>
         public void DistributeWorkItems<T>(List<WorkItem<T>> workItems, DeviceWorkQueue<T>[] deviceQueues) where T : unmanaged
         {
             if (workItems == null)

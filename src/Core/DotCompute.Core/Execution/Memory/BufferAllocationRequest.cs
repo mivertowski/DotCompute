@@ -25,7 +25,7 @@ namespace DotCompute.Core.Execution.Memory
 
         /// <summary>
         /// Gets or sets the memory options for the buffer allocation.
-        /// Defaults to <see cref="AbstractionsMemory.MemoryOptions.None"/>.
+        /// Defaults to <see cref="MemoryOptions.None"/>.
         /// </summary>
         public MemoryOptions Options { get; init; } = MemoryOptions.None;
     }

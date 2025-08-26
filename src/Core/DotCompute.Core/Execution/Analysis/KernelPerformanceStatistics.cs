@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System;
 namespace DotCompute.Core.Execution.Analysis
 {
     /// <summary>
@@ -138,7 +139,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <param name="additionalExecutions">The number of additional executions to add.</param>
         /// <param name="additionalTimeMs">The additional execution time in milliseconds.</param>
         /// <returns>A new <see cref="KernelPerformanceStatistics"/> instance with updated data.</returns>
-        /// <exception cref="System.ArgumentOutOfRangeException">
+        /// <exception cref="ArgumentOutOfRangeException">
         /// Thrown when <paramref name="additionalExecutions"/> is negative or <paramref name="additionalTimeMs"/> is negative.
         /// </exception>
         public KernelPerformanceStatistics WithAdditionalExecution(long additionalExecutions, double additionalTimeMs)

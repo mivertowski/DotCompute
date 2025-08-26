@@ -11,6 +11,7 @@ using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Optimization;
 using Microsoft.Extensions.Logging;
 
+using System;
 namespace DotCompute.Core.Execution
 {
     /// <summary>
@@ -28,7 +29,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         /// <param name="logger">Logger for factory operations</param>
         /// <param name="performanceMonitor">Performance monitor for execution estimation</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when logger or performanceMonitor is null</exception>
+        /// <exception cref="ArgumentNullException">Thrown when logger or performanceMonitor is null</exception>
         public ExecutionPlanFactory(ILogger logger, PerformanceMonitor performanceMonitor)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -46,8 +47,8 @@ namespace DotCompute.Core.Execution
         /// <param name="constraints">Execution constraints and preferences</param>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>An optimized execution plan for the workload</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when required parameters are null</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when no suitable execution plan can be created</exception>
+        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
+        /// <exception cref="InvalidOperationException">Thrown when no suitable execution plan can be created</exception>
         public async ValueTask<ExecutionPlan<T>> CreateOptimalPlanAsync<T>(
             ExecutionWorkload<T> workload,
             IAccelerator[] availableDevices,
@@ -91,7 +92,7 @@ namespace DotCompute.Core.Execution
         /// <param name="constraints">Execution constraints and preferences</param>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>A collection of execution plan alternatives with recommendations</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when required parameters are null</exception>
+        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
         public async ValueTask<ExecutionPlanAlternatives<T>> CreatePlanAlternativesAsync<T>(
             ExecutionWorkload<T> workload,
             IAccelerator[] availableDevices,

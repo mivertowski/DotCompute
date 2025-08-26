@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
+using System;
 namespace DotCompute.Core.Compute
 {
 
@@ -22,7 +23,7 @@ namespace DotCompute.Core.Compute
         /// <summary>
         /// Gets the default accelerator instance.
         /// </summary>
-        /// <exception cref="System.InvalidOperationException">
+        /// <exception cref="InvalidOperationException">
         /// AcceleratorManager must be initialized before accessing Default
         /// or
         /// No default accelerator available
@@ -98,8 +99,8 @@ namespace DotCompute.Core.Compute
         /// <returns>
         /// The accelerator at the specified index.
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
-        /// <exception cref="System.ArgumentOutOfRangeException">index</exception>
+        /// <exception cref="InvalidOperationException">AcceleratorManager must be initialized</exception>
+        /// <exception cref="ArgumentOutOfRangeException">index</exception>
         public IAccelerator GetAccelerator(int index)
         {
             if (!_initialized)
@@ -122,7 +123,7 @@ namespace DotCompute.Core.Compute
         /// <returns>
         /// The accelerator with the specified ID, or null if not found.
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
+        /// <exception cref="InvalidOperationException">AcceleratorManager must be initialized</exception>
         public IAccelerator? GetAcceleratorById(string id)
         {
             if (!_initialized)
@@ -140,7 +141,7 @@ namespace DotCompute.Core.Compute
         /// <returns>
         /// A list of accelerators of the specified type.
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
+        /// <exception cref="InvalidOperationException">AcceleratorManager must be initialized</exception>
         public IEnumerable<IAccelerator> GetAcceleratorsByType(AcceleratorType type)
         {
             if (!_initialized)
@@ -159,7 +160,7 @@ namespace DotCompute.Core.Compute
         /// <returns>
         /// The best matching accelerator, or null if none match.
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
+        /// <exception cref="InvalidOperationException">AcceleratorManager must be initialized</exception>
         public IAccelerator? SelectBest(AcceleratorSelectionCriteria criteria)
         {
             if (!_initialized)
@@ -208,8 +209,8 @@ namespace DotCompute.Core.Compute
         /// <returns>
         /// A new accelerator context.
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
-        /// <exception cref="System.ArgumentException">Accelerator is not managed by this manager - accelerator</exception>
+        /// <exception cref="InvalidOperationException">AcceleratorManager must be initialized</exception>
+        /// <exception cref="ArgumentException">Accelerator is not managed by this manager - accelerator</exception>
         public AcceleratorContext CreateContext(IAccelerator accelerator)
         {
             if (!_initialized)
@@ -243,8 +244,8 @@ namespace DotCompute.Core.Compute
         /// Registers a custom accelerator provider.
         /// </summary>
         /// <param name="provider">The accelerator provider to register.</param>
-        /// <exception cref="System.InvalidOperationException">Cannot register providers after initialization</exception>
-        /// <exception cref="System.ArgumentNullException">provider</exception>
+        /// <exception cref="InvalidOperationException">Cannot register providers after initialization</exception>
+        /// <exception cref="ArgumentNullException">provider</exception>
         public void RegisterProvider(IAcceleratorProvider provider)
         {
             if (_initialized)
@@ -281,7 +282,7 @@ namespace DotCompute.Core.Compute
         /// <returns>
         /// A task representing the async operation that returns all available accelerators.
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
+        /// <exception cref="InvalidOperationException">AcceleratorManager must be initialized</exception>
         public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
         {
             if (!_initialized)
@@ -301,7 +302,7 @@ namespace DotCompute.Core.Compute
         /// <returns>
         /// A task representing the async operation that returns accelerators of the specified type.
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
+        /// <exception cref="InvalidOperationException">AcceleratorManager must be initialized</exception>
         public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
         {
             if (!_initialized)
@@ -321,7 +322,7 @@ namespace DotCompute.Core.Compute
         /// <returns>
         /// A task representing the async operation that returns the best matching accelerator, or null if none match.
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">AcceleratorManager must be initialized</exception>
+        /// <exception cref="InvalidOperationException">AcceleratorManager must be initialized</exception>
         public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default)
         {
             if (!_initialized)

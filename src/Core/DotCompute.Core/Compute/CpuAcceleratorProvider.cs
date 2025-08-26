@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions.Kernels;
 
+using System;
 namespace DotCompute.Core.Compute
 {
 
@@ -66,7 +67,7 @@ namespace DotCompute.Core.Compute
         /// <returns>
         /// The created accelerator instance.
         /// </returns>
-        /// <exception cref="System.ArgumentException">Can only create CPU accelerators - info</exception>
+        /// <exception cref="ArgumentException">Can only create CPU accelerators - info</exception>
         public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
         {
             if (info.DeviceType != "CPU")

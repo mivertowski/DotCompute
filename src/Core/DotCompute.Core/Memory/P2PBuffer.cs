@@ -6,6 +6,7 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
 
+using System;
 namespace DotCompute.Core.Memory
 {
 
@@ -30,7 +31,7 @@ namespace DotCompute.Core.Memory
         /// <param name="length">The number of elements in the buffer.</param>
         /// <param name="supportsDirectP2P">Whether this buffer supports direct peer-to-peer transfers.</param>
         /// <param name="logger">The logger for monitoring transfer operations.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when any required parameter is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when any required parameter is null.</exception>
         public P2PBuffer(
             IUnifiedMemoryBuffer underlyingBuffer,
             IAccelerator accelerator,
