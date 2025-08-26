@@ -5,6 +5,7 @@ using System.Buffers;
 using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Memory;
 
@@ -14,7 +15,6 @@ namespace DotCompute.Memory;
 /// </summary>
 public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
-    private volatile int _disposed;
     private readonly int _elementSize;
     
     /// <summary>
@@ -26,9 +26,9 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
         
         _elementSize = Unsafe.SizeOf<T>();
         SizeInBytes = sizeInBytes;
-        Length = sizeInBytes / _elementSize;
+        Length = (int)(sizeInBytes / _elementSize);
         
-        if (Length * _elementSize != sizeInBytes)
+        if ((long)Length * _elementSize != sizeInBytes)
         {
             throw new ArgumentException($"Size {sizeInBytes} is not evenly divisible by element size {_elementSize}", nameof(sizeInBytes));
         }
@@ -38,7 +38,7 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     public long SizeInBytes { get; }
     
     /// <inheritdoc/>
-    public long Length { get; }
+    public int Length { get; }
     
     /// <inheritdoc/>
     public abstract IntPtr DevicePointer { get; }
@@ -48,6 +48,96 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     
     /// <inheritdoc/>
     public abstract bool IsDisposed { get; }
+    
+    /// <inheritdoc/>
+    public abstract IAccelerator Accelerator { get; }
+    
+    /// <inheritdoc/>
+    public abstract BufferState State { get; }
+    
+    /// <inheritdoc/>
+    public abstract MemoryOptions Options { get; }
+    
+    /// <inheritdoc/>
+    public abstract bool IsOnHost { get; }
+    
+    /// <inheritdoc/>
+    public abstract bool IsOnDevice { get; }
+    
+    /// <inheritdoc/>
+    public abstract bool IsDirty { get; }
+    
+    /// <inheritdoc/>
+    public abstract Span<T> AsSpan();
+    
+    /// <inheritdoc/>
+    public abstract ReadOnlySpan<T> AsReadOnlySpan();
+    
+    /// <inheritdoc/>
+    public abstract Memory<T> AsMemory();
+    
+    /// <inheritdoc/>
+    public abstract ReadOnlyMemory<T> AsReadOnlyMemory();
+    
+    /// <inheritdoc/>
+    public abstract DeviceMemory GetDeviceMemory();
+    
+    /// <inheritdoc/>
+    public abstract MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite);
+    
+    /// <inheritdoc/>
+    public abstract MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite);
+    
+    /// <inheritdoc/>
+    public abstract ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract void EnsureOnHost();
+    
+    /// <inheritdoc/>
+    public abstract void EnsureOnDevice();
+    
+    /// <inheritdoc/>
+    public abstract ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract void Synchronize();
+    
+    /// <inheritdoc/>
+    public abstract ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract void MarkHostDirty();
+    
+    /// <inheritdoc/>
+    public abstract void MarkDeviceDirty();
+    
+    /// <inheritdoc/>
+    public abstract ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract ValueTask FillAsync(T value, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default);
+    
+    /// <inheritdoc/>
+    public abstract IUnifiedMemoryBuffer<T> Slice(int offset, int length);
+    
+    /// <inheritdoc/>
+    public abstract IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged;
     
     /// <inheritdoc/>
     public abstract ValueTask CopyFromAsync(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default);
@@ -161,7 +251,7 @@ public abstract class BaseUnifiedBuffer<T> : BaseMemoryBuffer<T> where T : unman
     /// <summary>
     /// Gets a span view of the unified memory for CPU access.
     /// </summary>
-    public virtual unsafe Span<T> AsSpan()
+    public override unsafe Span<T> AsSpan()
     {
         ThrowIfDisposed();
         return new Span<T>(_unifiedPointer.ToPointer(), (int)Length);

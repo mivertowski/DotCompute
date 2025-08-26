@@ -6,6 +6,7 @@ using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Loaders;
 using DotCompute.Plugins.Loaders.NuGet.Types;
 using DotCompute.Plugins.Loaders.NuGet.Configuration;
+using DotCompute.Plugins.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 

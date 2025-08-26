@@ -3,6 +3,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using DotCompute.Plugins.Security;
+
 namespace DotCompute.Plugins.Loaders.NuGet.Configuration;
 
 /// <summary>

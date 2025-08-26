@@ -236,15 +236,15 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             accessor.WriteArray(0, dataSpan.ToArray(), 0, dataSpan.Length);
 
             // Create buffer and copy from memory-mapped file
-            var buffer = await _memoryManager.AllocateAsync(sizeInBytes, options.MemoryOptions, cancellationToken).ConfigureAwait(false);
+            var buffer = await _memoryManager.AllocateAsync<byte>((int)sizeInBytes, options.MemoryOptions, cancellationToken).ConfigureAwait(false);
 
             // Read from memory-mapped file and copy to buffer
             var tempBuffer = new byte[sizeInBytes];
             _ = accessor.ReadArray(0, tempBuffer, 0, tempBuffer.Length);
-            await buffer.CopyFromAsync<byte>(tempBuffer, 0, cancellationToken).ConfigureAwait(false);
+            await buffer.CopyFromAsync(tempBuffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 
             result.UsedMemoryMapping = true;
-            return buffer;
+            return buffer as IUnifiedMemoryBuffer ?? throw new InvalidOperationException("Buffer allocation failed");
         }
         finally
         {
@@ -282,7 +282,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
         result.UsedStreaming = true;
 
         // Allocate destination buffer
-        var buffer = await _memoryManager.AllocateAsync(sizeInBytes, options.MemoryOptions, cancellationToken).ConfigureAwait(false);
+        var buffer = await _memoryManager.AllocateAsync<byte>((int)sizeInBytes, options.MemoryOptions, cancellationToken).ConfigureAwait(false);
 
         // Process chunks with optimal parallelism
         var chunkSemaphore = new SemaphoreSlim(Math.Min(Environment.ProcessorCount, chunkCount));
@@ -298,7 +298,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             }
 
             await Task.WhenAll(chunkTasks).ConfigureAwait(false);
-            return buffer;
+            return buffer as IUnifiedMemoryBuffer ?? throw new InvalidOperationException("Buffer allocation failed");
         }
         finally
         {
@@ -333,8 +333,18 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             var chunkData = new T[actualChunkSize];
             Array.Copy(data, startIndex, chunkData, 0, actualChunkSize);
 
-            var byteOffset = startIndex * elementSize;
-            await buffer.CopyFromAsync<T>(chunkData, byteOffset, cancellationToken).ConfigureAwait(false);
+            // Cast to generic buffer for type-safe operations
+            if (buffer is IUnifiedMemoryBuffer<byte> typedBuffer)
+            {
+                var byteChunkData = MemoryMarshal.Cast<T, byte>(chunkData.AsSpan()).ToArray();
+                var byteOffset = startIndex * elementSize;
+                var bufferSlice = typedBuffer.Slice(byteOffset, byteChunkData.Length);
+                await bufferSlice.CopyFromAsync(byteChunkData.AsMemory(), cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                throw new InvalidOperationException($"Buffer type mismatch: expected IUnifiedMemoryBuffer<byte>, got {buffer.GetType()}");
+            }
         }
         finally
         {
@@ -353,7 +363,16 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     {
         var sizeInBytes = originalData.Length * Unsafe.SizeOf<T>();
         var readBuffer = new byte[sizeInBytes];
-        await buffer.CopyToAsync<byte>(readBuffer, 0, cancellationToken).ConfigureAwait(false);
+        
+        // Cast to generic buffer for type-safe operations
+        if (buffer is IUnifiedMemoryBuffer<byte> typedBuffer)
+        {
+            await typedBuffer.CopyToAsync(readBuffer.AsMemory(), cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Buffer type mismatch: expected IUnifiedMemoryBuffer<byte>, got {buffer.GetType()}");
+        }
 
         var readData = MemoryMarshal.Cast<byte, T>(readBuffer);
 

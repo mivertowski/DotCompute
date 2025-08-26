@@ -10,9 +10,9 @@ namespace DotCompute.Abstractions;
 /// This is the ONLY memory buffer interface in the entire solution.
 /// </summary>
 /// <typeparam name="T">The unmanaged element type.</typeparam>
-public interface IUnifiedMemoryBuffer<T> : IAsyncDisposable, IDisposable where T : unmanaged
+public interface IUnifiedMemoryBuffer<T> : IUnifiedMemoryBuffer where T : unmanaged
 {
-    // Core Properties
+    // Core Properties (additional to base interface)
     
     /// <summary>
     /// Gets the number of elements in the buffer.
@@ -20,29 +20,9 @@ public interface IUnifiedMemoryBuffer<T> : IAsyncDisposable, IDisposable where T
     int Length { get; }
     
     /// <summary>
-    /// Gets the size of the buffer in bytes.
-    /// </summary>
-    long SizeInBytes { get; }
-    
-    /// <summary>
     /// Gets the accelerator this buffer is associated with.
     /// </summary>
     IAccelerator Accelerator { get; }
-    
-    /// <summary>
-    /// Gets the current state of the buffer (host/device/both).
-    /// </summary>
-    BufferState State { get; }
-    
-    /// <summary>
-    /// Gets the memory allocation options used for this buffer.
-    /// </summary>
-    MemoryOptions Options { get; }
-    
-    /// <summary>
-    /// Gets whether the buffer has been disposed.
-    /// </summary>
-    bool IsDisposed { get; }
 
     // State Management
     
