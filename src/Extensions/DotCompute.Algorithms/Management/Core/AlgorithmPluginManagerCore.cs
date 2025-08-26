@@ -8,6 +8,8 @@ using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Validation;
 using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Types.Models;
+using NuGetValidationResult = DotCompute.Algorithms.Types.Models.NuGetValidationResult;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Core;

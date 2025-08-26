@@ -5,12 +5,13 @@ using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.Metal.Kernels;
-using DotCompute.Backends.Metal.Memory;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DotCompute.Backends.Metal.Memory;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
@@ -266,7 +267,10 @@ public sealed class MetalAccelerator : BaseAccelerator
             throw new InvalidOperationException("Failed to create Metal device for memory manager.");
         }
 
-        return new MetalMemoryManager(device, options);
+        // MetalMemoryManager constructor only takes one parameter (logger)
+        var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => { });
+        var logger = loggerFactory.CreateLogger<MetalMemoryManager>();
+        return new MetalMemoryManager(logger);
     }
 
     private static string GetDeviceLocation(MetalDeviceInfo info)

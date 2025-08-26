@@ -111,7 +111,7 @@ public sealed partial class MetalBackend : IDisposable
     /// <summary>
     /// Allocate a buffer on the Metal device
     /// </summary>
-    public async Task<IMemoryBuffer> AllocateBufferAsync<T>(int size) where T : unmanaged
+    public async Task<IUnifiedMemoryBuffer> AllocateBufferAsync<T>(int size) where T : unmanaged
     {
         var accelerator = GetDefaultAccelerator();
         if (accelerator == null)
@@ -119,7 +119,7 @@ public sealed partial class MetalBackend : IDisposable
             throw new InvalidOperationException("No Metal accelerator available");
         }
 
-        return await accelerator.Memory.AllocateAsync(size * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>()).ConfigureAwait(false);
+        return await accelerator.Memory.AllocateAsync<T>(size, default).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -133,7 +133,7 @@ public sealed partial class MetalBackend : IDisposable
             throw new InvalidOperationException("No Metal accelerator available");
         }
 
-        return buffer.CopyFromAsync<T>(data.AsMemory()).AsTask();
+        return buffer.CopyFromAsync(data.AsMemory()).AsTask();
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public sealed partial class MetalBackend : IDisposable
             throw new InvalidOperationException("No Metal accelerator available");
         }
 
-        return buffer.CopyToAsync<T>(data.AsMemory()).AsTask();
+        return buffer.CopyToAsync(data.AsMemory()).AsTask();
     }
 
     /// <summary>
@@ -186,7 +186,7 @@ public sealed partial class MetalBackend : IDisposable
     /// <summary>
     /// Execute a compute shader asynchronously
     /// </summary>
-    public async Task ExecuteComputeShaderAsync(IntPtr function, params IMemoryBuffer[] buffers)
+    public async Task ExecuteComputeShaderAsync(IntPtr function, params IUnifiedMemoryBuffer[] buffers)
     {
         var accelerator = GetDefaultAccelerator();
         if (accelerator == null)

@@ -131,6 +131,114 @@ namespace DotCompute.Backends.CUDA.Types
     }
 
     /// <summary>
+    /// Represents cached kernel compilation data.
+    /// </summary>
+    public sealed class CachedKernel
+    {
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the compiled kernel binary.
+        /// </summary>
+        public byte[] Binary { get; set; } = Array.Empty<byte>();
+
+        /// <summary>
+        /// Gets or sets the compilation timestamp.
+        /// </summary>
+        public DateTime CompilationTime { get; set; }
+
+        /// <summary>
+        /// Gets or sets the source code hash.
+        /// </summary>
+        public string SourceHash { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the compilation options hash.
+        /// </summary>
+        public string OptionsHash { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the target architecture.
+        /// </summary>
+        public string Architecture { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Represents CUDA device information.
+    /// </summary>
+    public sealed class DeviceInfo
+    {
+        /// <summary>
+        /// Gets or sets the device index.
+        /// </summary>
+        public int DeviceIndex { get; set; }
+
+        /// <summary>
+        /// Gets or sets the device name.
+        /// </summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the compute capability (major.minor).
+        /// </summary>
+        public (int Major, int Minor) ComputeCapability { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total global memory in bytes.
+        /// </summary>
+        public long GlobalMemoryBytes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the shared memory per block in bytes.
+        /// </summary>
+        public int SharedMemoryPerBlock { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of multiprocessors.
+        /// </summary>
+        public int MultiprocessorCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum threads per block.
+        /// </summary>
+        public int MaxThreadsPerBlock { get; set; }
+
+        /// <summary>
+        /// Gets or sets the warp size.
+        /// </summary>
+        public int WarpSize { get; set; } = 32;
+
+        /// <summary>
+        /// Gets or sets whether the device supports unified memory.
+        /// </summary>
+        public bool SupportsUnifiedMemory { get; set; }
+    }
+
+    /// <summary>
+    /// CUDA memory manager for device memory allocation and management.
+    /// </summary>
+    public sealed class CudaMemoryManager
+    {
+        /// <summary>
+        /// Gets or sets the associated CUDA context.
+        /// </summary>
+        public nint Context { get; set; }
+
+        /// <summary>
+        /// Gets or sets the device index.
+        /// </summary>
+        public int DeviceIndex { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total allocated memory in bytes.
+        /// </summary>
+        public long TotalAllocatedBytes { get; set; }
+    }
+
+    /// <summary>
     /// Exception thrown during kernel compilation
     /// </summary>
     public sealed class KernelCompilationException : Exception

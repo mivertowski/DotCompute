@@ -13,7 +13,7 @@ namespace DotCompute.Algorithms.Management.Execution;
 /// <summary>
 /// Service responsible for executing plugins with monitoring and retry logic.
 /// </summary>
-public sealed class PluginExecutor : IPluginExecutor
+public sealed partial class PluginExecutor : IPluginExecutor
 {
     private readonly ILogger<PluginExecutor> _logger;
     private readonly IPluginLifecycleManager _lifecycleManager;

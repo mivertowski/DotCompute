@@ -4,6 +4,7 @@
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Management.Loading;
+using DotCompute.Algorithms.Types.Models;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Loading;
@@ -11,7 +12,7 @@ namespace DotCompute.Algorithms.Management.Loading;
 /// <summary>
 /// Service responsible for loading plugins from NuGet packages.
 /// </summary>
-public sealed class NuGetPluginService : INuGetPluginService
+public sealed partial class NuGetPluginService : INuGetPluginService
 {
     private readonly ILogger<NuGetPluginService> _logger;
     private readonly IPluginLifecycleManager _lifecycleManager;
@@ -311,7 +312,7 @@ public sealed class NuGetPluginService : INuGetPluginService
     [LoggerMessage(Level = LogLevel.Information, Message = "NuGet dependencies resolved for {PackageId}: {Dependencies}")]
     private partial void LogNuGetDependenciesResolved(string packageId, string dependencies);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "NuGet security validation for {PackageId}: {UnifiedValidationResult}")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "NuGet security validation for {PackageId}: {ValidationResult}")]
     private partial void LogNuGetSecurityValidation(string packageId, string validationResult);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "NuGet package warning for {PackageId}: {Warning}")]

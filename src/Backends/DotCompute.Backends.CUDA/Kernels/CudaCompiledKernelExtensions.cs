@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Core.Compute.Interfaces;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -24,7 +25,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             byte[] compiledCode,
             CompilationOptions? options,
             ILogger logger,
-            CompilationMetadata? metadata = null) => new CudaCompiledKernel(context, name, entryPoint, compiledCode, options, logger);
+            ICompilationMetadata? metadata = null) => new CudaCompiledKernel(context, name, entryPoint, compiledCode, options, logger);
 
         /// <summary>
         /// Gets optimal launch configuration for Ada generation and newer architectures.

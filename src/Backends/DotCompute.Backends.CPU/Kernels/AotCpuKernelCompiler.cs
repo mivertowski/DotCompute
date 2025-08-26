@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core;
 using DotCompute.Core.Compute;
+using KernelExecutionContext = DotCompute.Abstractions.Kernels.KernelExecutionContext;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements

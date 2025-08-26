@@ -6,7 +6,7 @@ using System.Linq;
 using global::System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DotCompute.Core.Abstractions;
+using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 

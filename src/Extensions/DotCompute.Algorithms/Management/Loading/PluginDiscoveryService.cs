@@ -17,7 +17,7 @@ namespace DotCompute.Algorithms.Management.Loading;
 /// <summary>
 /// Service responsible for discovering and loading plugins from assemblies and directories.
 /// </summary>
-public sealed class PluginDiscoveryService : IPluginDiscoveryService
+public sealed partial class PluginDiscoveryService : IPluginDiscoveryService
 {
     private readonly ILogger<PluginDiscoveryService> _logger;
     private readonly IPluginLifecycleManager _lifecycleManager;

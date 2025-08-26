@@ -1,6 +1,6 @@
-using DotCompute.Backends.CUDA.Optimization.Types;
+using DotCompute.Abstractions.Types;
 
-namespace DotCompute.Backends.CUDA.Optimization.Configuration
+namespace DotCompute.Backends.CUDA.Configuration
 {
     /// <summary>
     /// Represents the launch configuration for a CUDA kernel execution.

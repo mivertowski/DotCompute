@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using DotCompute.Core.Abstractions;
+using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Profiling

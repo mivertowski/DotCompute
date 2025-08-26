@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CUDA.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Types;

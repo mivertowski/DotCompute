@@ -12,7 +12,7 @@ namespace DotCompute.Algorithms.Management.Validation;
 /// <summary>
 /// Service responsible for validating assembly security policies.
 /// </summary>
-public sealed class SecurityValidator : ISecurityValidator
+public sealed partial class SecurityValidator : ISecurityValidator
 {
     private readonly ILogger<SecurityValidator> _logger;
     private readonly AlgorithmPluginManagerOptions _options;

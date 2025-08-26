@@ -10,7 +10,7 @@ namespace DotCompute.Algorithms.Management.Core;
 /// <summary>
 /// Service responsible for hot reload functionality.
 /// </summary>
-public sealed class HotReloadService : IHotReloadService, IDisposable
+public sealed partial class HotReloadService : IHotReloadService, IDisposable
 {
     private readonly ILogger<HotReloadService> _logger;
     private readonly IPluginLifecycleManager _lifecycleManager;

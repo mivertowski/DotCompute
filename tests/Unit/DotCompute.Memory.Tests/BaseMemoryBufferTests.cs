@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Memory;
 using Xunit;
 
@@ -16,7 +17,7 @@ public class BaseMemoryBufferTests
     public void BaseMemoryBuffer_CalculatesLength_Correctly()
     {
         // Arrange & Act
-        var buffer = new TestMemoryBuffer<float>(1024);
+        using var buffer = new TestMemoryBuffer<float>(1024);
         
         // Assert
         Assert.Equal(1024, buffer.SizeInBytes);
@@ -42,7 +43,7 @@ public class BaseMemoryBufferTests
     public void ValidateCopyParameters_ThrowsForInvalidOffsets()
     {
         // Arrange
-        var buffer = new TestMemoryBuffer<float>(1024);
+        using var buffer = new TestMemoryBuffer<float>(1024);
         
         // Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -55,7 +56,7 @@ public class BaseMemoryBufferTests
     public void ValidateCopyParameters_ThrowsForOverflow()
     {
         // Arrange
-        var buffer = new TestMemoryBuffer<float>(1024);
+        using var buffer = new TestMemoryBuffer<float>(1024);
         
         // Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -68,7 +69,7 @@ public class BaseMemoryBufferTests
     public void ThrowIfDisposed_ThrowsWhenDisposed()
     {
         // Arrange
-        var buffer = new TestMemoryBuffer<float>(1024);
+        using var buffer = new TestMemoryBuffer<float>(1024);
         buffer.Dispose();
         
         // Act & Assert
@@ -78,7 +79,7 @@ public class BaseMemoryBufferTests
     /// <summary>
     /// Test implementation of BaseMemoryBuffer for testing purposes.
     /// </summary>
-    private class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmanaged
+    private sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmanaged
     {
         private bool _disposed;
 
@@ -96,7 +97,7 @@ public class BaseMemoryBufferTests
         public override ValueTask CopyToAsync(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
-        public override ValueTask CopyFromAsync(IMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
+        public override ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
         public override void Dispose() => _disposed = true;
@@ -105,6 +106,38 @@ public class BaseMemoryBufferTests
             _disposed = true;
             return ValueTask.CompletedTask;
         }
+
+        // Abstract method implementations required by BaseMemoryBuffer<T>
+        public override Span<T> AsSpan() => Span<T>.Empty;
+        public override ReadOnlySpan<T> AsReadOnlySpan() => ReadOnlySpan<T>.Empty;
+        public override IUnifiedMemoryBuffer<TNew> AsType<TNew>() => throw new NotSupportedException();
+        public override IAccelerator Accelerator => throw new NotSupportedException();
+        public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
+        public override void EnsureOnHost() { }
+        public override ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override IUnifiedMemoryBuffer<T> Slice(int start, int length) => this;
+        public override void Synchronize() { }
+        public override ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override DeviceMemory GetDeviceMemory() => throw new NotSupportedException();
+        public override bool IsOnDevice => false;
+        public override bool IsOnHost => true;
+        public override void EnsureOnDevice() { }
+        public override MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException();
+        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotSupportedException();
+        public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public override void MarkDeviceDirty() { }
+        public override void MarkHostDirty() { }
+        public override bool IsDirty => false;
+        public override Memory<T> AsMemory() => Memory<T>.Empty;
+        public override ReadOnlyMemory<T> AsReadOnlyMemory() => ReadOnlyMemory<T>.Empty;
+        public override MemoryOptions Options => default;
 
         public void TestThrowIfDisposed() => ThrowIfDisposed();
         public void TestValidateCopyParameters(long sourceLength, long sourceOffset, long destinationLength, long destinationOffset, long count)
@@ -121,7 +154,7 @@ public class BaseDeviceBufferTests
     public void BaseDeviceBuffer_HasCorrectMemoryType()
     {
         // Arrange & Act
-        var buffer = new TestDeviceBuffer<float>(1024, new IntPtr(0x1000));
+        using var buffer = new TestDeviceBuffer<float>(1024, new IntPtr(0x1000));
         
         // Assert
         Assert.Equal(MemoryType.Device, buffer.MemoryType);
@@ -132,7 +165,7 @@ public class BaseDeviceBufferTests
     public void MarkDisposed_ReturnsTrue_OnFirstCall()
     {
         // Arrange
-        var buffer = new TestDeviceBuffer<float>(1024, new IntPtr(0x1000));
+        using var buffer = new TestDeviceBuffer<float>(1024, new IntPtr(0x1000));
         
         // Act
         var firstCall = buffer.TestMarkDisposed();
@@ -144,7 +177,7 @@ public class BaseDeviceBufferTests
         Assert.True(buffer.IsDisposed);
     }
 
-    private class TestDeviceBuffer<T> : BaseDeviceBuffer<T> where T : unmanaged
+    private sealed class TestDeviceBuffer<T> : BaseDeviceBuffer<T> where T : unmanaged
     {
         public TestDeviceBuffer(long sizeInBytes, IntPtr devicePointer) : base(sizeInBytes, devicePointer)
         {
@@ -156,7 +189,7 @@ public class BaseDeviceBufferTests
         public override ValueTask CopyToAsync(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
-        public override ValueTask CopyFromAsync(IMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
+        public override ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
         public override void Dispose() => MarkDisposed();
@@ -167,6 +200,38 @@ public class BaseDeviceBufferTests
         }
 
         public bool TestMarkDisposed() => MarkDisposed();
+        
+        // All required abstract method implementations
+        public override Span<T> AsSpan() => Span<T>.Empty;
+        public override ReadOnlySpan<T> AsReadOnlySpan() => ReadOnlySpan<T>.Empty;
+        public override IUnifiedMemoryBuffer<TNew> AsType<TNew>() => throw new NotSupportedException();
+        public override IAccelerator Accelerator => throw new NotSupportedException();
+        public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
+        public override void EnsureOnHost() { }
+        public override void EnsureOnDevice() { }
+        public override ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override IUnifiedMemoryBuffer<T> Slice(int start, int length) => this;
+        public override void Synchronize() { }
+        public override ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override DeviceMemory GetDeviceMemory() => throw new NotSupportedException();
+        public override bool IsOnDevice => true;
+        public override bool IsOnHost => false;
+        public override MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException();
+        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotSupportedException();
+        public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public override void MarkDeviceDirty() { }
+        public override void MarkHostDirty() { }
+        public override bool IsDirty => false;
+        public override Memory<T> AsMemory() => Memory<T>.Empty;
+        public override ReadOnlyMemory<T> AsReadOnlyMemory() => ReadOnlyMemory<T>.Empty;
+        public override MemoryOptions Options => default;
     }
 }
 
@@ -204,7 +269,7 @@ public class BaseUnifiedBufferTests
         }
     }
 
-    private unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T : unmanaged
+    private sealed unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T : unmanaged
     {
         private readonly T[]? _data;
 
@@ -223,7 +288,7 @@ public class BaseUnifiedBufferTests
         public override ValueTask CopyToAsync(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
-        public override ValueTask CopyFromAsync(IMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
+        public override ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
         public override void Dispose() => MarkDisposed();
@@ -232,6 +297,37 @@ public class BaseUnifiedBufferTests
             MarkDisposed();
             return ValueTask.CompletedTask;
         }
+
+        // Additional abstract method implementations required by BaseMemoryBuffer<T>
+        public override ReadOnlySpan<T> AsReadOnlySpan() => IsDisposed ? ReadOnlySpan<T>.Empty : ReadOnlySpan<T>.Empty;
+        public override IUnifiedMemoryBuffer<TNew> AsType<TNew>() => throw new NotSupportedException();
+        public override IAccelerator Accelerator => throw new NotSupportedException();
+        public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
+        public override void EnsureOnHost() { }
+        public override void EnsureOnDevice() { }
+        public override ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override IUnifiedMemoryBuffer<T> Slice(int start, int length) => this;
+        public override void Synchronize() { }
+        public override ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override DeviceMemory GetDeviceMemory() => throw new NotSupportedException();
+        public override bool IsOnDevice => false;
+        public override bool IsOnHost => true;
+        public override MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException();
+        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotSupportedException();
+        public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public override void MarkDeviceDirty() { }
+        public override void MarkHostDirty() { }
+        public override bool IsDirty => false;
+        public override Memory<T> AsMemory() => Memory<T>.Empty;
+        public override ReadOnlyMemory<T> AsReadOnlyMemory() => ReadOnlyMemory<T>.Empty;
+        public override MemoryOptions Options => default;
     }
 }
 
@@ -284,7 +380,7 @@ public class BasePooledBufferTests
         Assert.False(buffer.IsDisposed);
     }
 
-    private class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanaged
+    private sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanaged
     {
         private readonly Memory<T> _memory;
 
@@ -304,7 +400,39 @@ public class BasePooledBufferTests
         public override ValueTask CopyToAsync(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
-        public override ValueTask CopyFromAsync(IMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
+        public override ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
+
+        // All required abstract method implementations for BasePooledBuffer<T>
+        public override Span<T> AsSpan() => _memory.Span;
+        public override ReadOnlySpan<T> AsReadOnlySpan() => _memory.Span;
+        public override IUnifiedMemoryBuffer<TNew> AsType<TNew>() => throw new NotSupportedException();
+        public override IAccelerator Accelerator => throw new NotSupportedException();
+        public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
+        public override void EnsureOnHost() { }
+        public override void EnsureOnDevice() { }
+        public override ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override IUnifiedMemoryBuffer<T> Slice(int start, int length) => this;
+        public override void Synchronize() { }
+        public override ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override DeviceMemory GetDeviceMemory() => throw new NotSupportedException();
+        public override bool IsOnDevice => false;
+        public override bool IsOnHost => true;
+        public override MappedMemory<T> Map(MapMode mode) => new MappedMemory<T>(_memory);
+        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode) => new MappedMemory<T>(_memory.Slice(offset, length));
+        public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
+        public override void MarkDeviceDirty() { }
+        public override void MarkHostDirty() { }
+        public override bool IsDirty => false;
+        public override Memory<T> AsMemory() => _memory;
+        public override ReadOnlyMemory<T> AsReadOnlyMemory() => _memory;
+        public override MemoryOptions Options => default;
     }
 }

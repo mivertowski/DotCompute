@@ -8,6 +8,8 @@ using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Metadata;
 using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Types.Enums;
+using DotCompute.Algorithms.Types.Loading;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Core;
@@ -15,7 +17,7 @@ namespace DotCompute.Algorithms.Management.Core;
 /// <summary>
 /// Service responsible for managing plugin lifecycle operations.
 /// </summary>
-public sealed class PluginLifecycleManager : IPluginLifecycleManager
+public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
 {
     private readonly ILogger<PluginLifecycleManager> _logger;
     private readonly IAccelerator _accelerator;
@@ -26,7 +28,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycleManager
     /// <summary>
     /// Represents a loaded plugin with its context and metadata.
     /// </summary>
-    private sealed class LoadedPlugin
+    public sealed class LoadedPlugin
     {
         public required IAlgorithmPlugin Plugin { get; init; }
         public required PluginAssemblyLoadContext LoadContext { get; init; }

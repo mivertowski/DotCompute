@@ -1,62 +1,50 @@
-// <copyright file="OptimizationLevel.cs" company="DotCompute Project">
-// Copyright (c) 2025 DotCompute Project Contributors. All rights reserved.
-// Licensed under the MIT License. See LICENSE file in the project root for full license information.
-// </copyright>
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions.Types;
+namespace DotCompute.Abstractions;
 
 /// <summary>
-/// Specifies the optimization level for kernel compilation.
+/// Defines optimization levels for kernel compilation.
 /// </summary>
 public enum OptimizationLevel
 {
     /// <summary>
-    /// No optimizations. Best for debugging.
+    /// No optimization - fastest compilation.
     /// </summary>
     None = 0,
 
     /// <summary>
-    /// Minimal optimizations for faster compilation.
+    /// Minimal optimization - fastest compilation with basic optimizations.
     /// </summary>
     Minimal = 1,
 
     /// <summary>
-    /// Default optimization level. Balanced between compilation time and performance.
+    /// Default optimization - balanced compilation time and performance.
     /// </summary>
     Default = 2,
 
     /// <summary>
-    /// High optimization level. Longer compilation time but better performance.
+    /// Moderate optimization - good performance with reasonable compilation time.
     /// </summary>
-    High = 3,
+    Moderate = 3,
 
     /// <summary>
-    /// Maximum optimizations. Longest compilation time but best performance.
+    /// Aggressive optimization - maximum performance, slower compilation.
     /// </summary>
-    Maximum = 4,
+    Aggressive = 4,
 
     /// <summary>
-    /// Size optimization. Minimize code size.
+    /// Size optimization - optimize for smallest code size.
     /// </summary>
     Size = 5,
 
     /// <summary>
-    /// Aggressive optimizations that may alter floating-point behavior.
+    /// Maximum optimization - best performance, longest compilation time.
     /// </summary>
-    Aggressive = 6,
+    Maximum = 6,
 
     /// <summary>
-    /// Custom optimization level defined by backend-specific flags.
+    /// Full optimization - comprehensive optimization with all techniques.
     /// </summary>
-    Custom = 7,
-
-    /// <summary>
-    /// Debug optimization level (alias for None).
-    /// </summary>
-    Debug = None,
-
-    /// <summary>
-    /// Full optimization level (alias for Maximum).
-    /// </summary>
-    Full = Maximum
+    Full = 7
 }

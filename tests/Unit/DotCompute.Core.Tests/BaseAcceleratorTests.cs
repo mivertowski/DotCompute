@@ -16,13 +16,13 @@ namespace DotCompute.Core.Tests;
 public class BaseAcceleratorTests
 {
     private readonly Mock<ILogger> _mockLogger;
-    private readonly Mock<IMemoryManager> _mockMemory;
+    private readonly Mock<IUnifiedMemoryManager> _mockMemory;
     private readonly TestAccelerator _accelerator;
 
     public BaseAcceleratorTests()
     {
         _mockLogger = new Mock<ILogger>();
-        _mockMemory = new Mock<IMemoryManager>();
+        _mockMemory = new Mock<IUnifiedMemoryManager>();
         
         var info = new AcceleratorInfo(
             AcceleratorType.CPU,
@@ -152,7 +152,7 @@ public class BaseAcceleratorTests
         public bool SynchronizeCoreCalled { get; private set; }
         public int DisposeCallCount { get; private set; }
 
-        public TestAccelerator(AcceleratorInfo info, IMemoryManager memory, ILogger logger)
+        public TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger)
             : base(info, AcceleratorType.CPU, memory, new AcceleratorContext(IntPtr.Zero, 0), logger)
         {
         }

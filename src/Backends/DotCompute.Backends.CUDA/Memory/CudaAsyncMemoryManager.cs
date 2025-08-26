@@ -10,6 +10,7 @@ using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Backends.CUDA.Memory;
 
@@ -43,6 +44,46 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     /// Gets whether async memory operations are supported.
     /// </summary>
     public bool AsyncMemorySupported => _asyncMemorySupported;
+
+    /// <inheritdoc/>
+    public override long CurrentAllocatedMemory => _allocations.Values.Sum(a => a.Size);
+
+    /// <inheritdoc/>
+    public override IAccelerator Accelerator => throw new NotImplementedException("TODO: Implement accelerator reference");
+
+    /// <inheritdoc/>
+    public override DotCompute.Abstractions.MemoryStatistics Statistics => throw new NotImplementedException("TODO: Implement memory statistics");
+
+    /// <inheritdoc/>
+    public override async ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
+    {
+        if (buffer is CudaAsyncMemoryBuffer cudaBuffer)
+        {
+            await cudaBuffer.DisposeAsync();
+        }
+        else
+        {
+            buffer?.Dispose();
+        }
+    }
+
+    /// <inheritdoc/>
+    public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> buffer, Memory<T> destination, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException("TODO: Implement typed buffer copy from device");
+    }
+
+    /// <inheritdoc/>
+    public override ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
+    {
+        return ValueTask.CompletedTask; // TODO: Implement memory optimization
+    }
+
+    /// <inheritdoc/>
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
+    {
+        throw new NotImplementedException("TODO: Implement typed buffer view creation");
+    }
 
     /// <summary>
     /// Initializes async memory support and default memory pool.
@@ -546,6 +587,7 @@ internal sealed class CudaAsyncMemoryBuffer : IUnifiedMemoryBuffer
     public long SizeInBytes => _sizeInBytes;
     public MemoryOptions Options => _options;
     public bool IsDisposed => _disposed;
+    public BufferState State => _disposed ? BufferState.Released : BufferState.DeviceReady;
 
     public async ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,

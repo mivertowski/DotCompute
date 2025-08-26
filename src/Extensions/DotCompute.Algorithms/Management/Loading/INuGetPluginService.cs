@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Algorithms.Management.Loading;
+using DotCompute.Algorithms.Types.Models;
 
 namespace DotCompute.Algorithms.Management.Loading;
 

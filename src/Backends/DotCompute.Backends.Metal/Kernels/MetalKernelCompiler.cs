@@ -8,7 +8,8 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
-using AbstractionsValidationResult = DotCompute.Abstractions.UnifiedValidationResult;
+using DotCompute.Abstractions.Types;
+using ValidationResult = DotCompute.Abstractions.Validation.UnifiedValidationResult;
 
 using DotCompute.Abstractions.Kernels;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
@@ -34,12 +35,22 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
 
     /// <inheritdoc/>
 #pragma warning disable CA1819 // Properties should not return arrays - Required by IUnifiedKernelCompiler interface
-    public KernelSourceType[] SupportedSourceTypes { get; } =
-    [
-        KernelSourceType.Metal,
-    KernelSourceType.Binary
-    ];
+    public IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; } = new List<KernelLanguage>
+    {
+        KernelLanguage.Metal,
+        KernelLanguage.Binary
+    }.AsReadOnly();
 #pragma warning restore CA1819
+
+    /// <inheritdoc/>
+    public IReadOnlyDictionary<string, object> Capabilities { get; } = new Dictionary<string, object>
+    {
+        ["SupportsAsync"] = true,
+        ["SupportsOptimization"] = true,
+        ["SupportsCaching"] = true,
+        ["SupportsValidation"] = true,
+        ["SupportedLanguageVersions"] = new[] { "Metal 2.0", "Metal 2.1", "Metal 2.2", "Metal 2.3", "Metal 2.4" }
+    }.AsReadOnly();
 
     /// <inheritdoc/>
     public async ValueTask<ICompiledKernel> CompileAsync(
@@ -90,31 +101,31 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
     }
 
     /// <inheritdoc/>
-    public AbstractionsValidationResult Validate(KernelDefinition definition)
+    public ValidationResult Validate(KernelDefinition definition)
     {
         if (definition == null)
         {
-            return AbstractionsValidationResult.Failure("Kernel definition cannot be null");
+            return ValidationResult.Failure("Kernel definition cannot be null");
         }
 
         if (string.IsNullOrWhiteSpace(definition.Name))
         {
-            return AbstractionsValidationResult.Failure("Kernel name cannot be empty");
+            return ValidationResult.Failure("Kernel name cannot be empty");
         }
 
         if (definition.Code == null || definition.Code.Length == 0)
         {
-            return AbstractionsValidationResult.Failure("Kernel code cannot be empty");
+            return ValidationResult.Failure("Kernel code cannot be empty");
         }
 
         // Check if this looks like Metal code or binary
         var codeString = definition.Code ?? string.Empty;
         if (!codeString.Contains("kernel", StringComparison.Ordinal) && !codeString.Contains("metal", StringComparison.Ordinal) && !IsBinaryCode(Encoding.UTF8.GetBytes(codeString)))
         {
-            return AbstractionsValidationResult.Failure("Code does not appear to be valid Metal shader language or compiled binary");
+            return ValidationResult.Failure("Code does not appear to be valid Metal shader language or compiled binary");
         }
 
-        return AbstractionsValidationResult.Success();
+        return ValidationResult.Success();
     }
 
     private static string ExtractMetalCode(KernelDefinition definition)
@@ -353,5 +364,19 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
             // If we can't determine OS version, use a safe default
             return MetalLanguageVersion.Metal20;
         }
+    }
+
+
+    /// <inheritdoc/>
+    public ValueTask<ValidationResult> ValidateAsync(KernelDefinition kernel, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(Validate(kernel));
+    }
+
+    /// <inheritdoc/>
+    public ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement Metal-specific optimizations
+        return ValueTask.FromResult(kernel);
     }
 }

@@ -12,6 +12,7 @@ using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core.Compute;
+using KernelExecutionContext = DotCompute.Abstractions.Kernels.KernelExecutionContext;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Accelerators;

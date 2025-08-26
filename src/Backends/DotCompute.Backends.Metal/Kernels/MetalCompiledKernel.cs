@@ -2,13 +2,14 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Backends.Metal.Memory;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.Metal.Memory;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
 namespace DotCompute.Backends.Metal.Kernels;

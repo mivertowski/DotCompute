@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -217,6 +218,9 @@ public class BaseKernelCompilerTests
         }
 
         protected override string CompilerName => "TestCompiler";
+
+        public override IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; } = 
+            new List<KernelLanguage> { KernelLanguage.HighLevel }.AsReadOnly();
 
         protected override bool EnableCaching => _enableCaching;
 

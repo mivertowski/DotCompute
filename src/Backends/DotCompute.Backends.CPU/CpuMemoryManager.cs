@@ -7,6 +7,7 @@ using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Backends.CPU.Accelerators;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -23,7 +24,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         : base(logger)
     {
         _topology = NumaInfo.Topology;
-        _defaultPolicy = defaultPolicy ?? CreateDefaultPolicy();
+        _defaultPolicy = defaultPolicy ?? NumaMemoryPolicy.CreateDefault();
     }
 
     /// <summary>
@@ -118,6 +119,109 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         
         return 0; // Default to first node
     }
+
+    /// <inheritdoc/>
+    public override long MaxAllocationSize => long.MaxValue; // CPU has no practical allocation limit
+
+    /// <inheritdoc/>
+    public override long CurrentAllocatedMemory => _currentAllocated;
+    private long _currentAllocated = 0;
+
+    /// <inheritdoc/>
+    public override long TotalAvailableMemory => GC.GetTotalMemory(false);
+
+    /// <inheritdoc/>
+    public override IAccelerator Accelerator => _accelerator ??= new CpuAccelerator();
+    private IAccelerator? _accelerator;
+
+    /// <inheritdoc/>
+    public override MemoryStatistics Statistics => new()
+    {
+        TotalAllocated = CurrentAllocatedMemory,
+        TotalFreed = _totalFreed,
+        ActiveBuffers = _activeBuffers,
+        PeakMemoryUsage = _peakMemoryUsage
+    };
+    private long _totalFreed = 0;
+    private long _activeBuffers = 0;
+    private long _peakMemoryUsage = 0;
+
+    /// <inheritdoc/>
+    protected override ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(long sizeInBytes, MemoryOptions options, CancellationToken cancellationToken)
+    {
+        Interlocked.Add(ref _currentAllocated, sizeInBytes);
+        Interlocked.Increment(ref _activeBuffers);
+        _peakMemoryUsage = Math.Max(_peakMemoryUsage, _currentAllocated);
+        
+        var buffer = new CpuMemoryBuffer(sizeInBytes, options, this, 0, _defaultPolicy);
+        return ValueTask.FromResult<IUnifiedMemoryBuffer>(buffer);
+    }
+
+    /// <inheritdoc/>
+    public override ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken)
+    {
+        if (buffer is CpuMemoryBuffer cpuBuffer)
+        {
+            Interlocked.Add(ref _totalFreed, cpuBuffer.SizeInBytes);
+            Interlocked.Add(ref _currentAllocated, -cpuBuffer.SizeInBytes);
+            Interlocked.Decrement(ref _activeBuffers);
+        }
+        return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
+    {
+        // Simple CPU memory copy - both buffers are in CPU memory
+        return ValueTask.CompletedTask; // Implementation placeholder
+    }
+
+    /// <inheritdoc/>
+    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken)
+    {
+        // Simple CPU memory copy with offsets
+        return ValueTask.CompletedTask; // Implementation placeholder
+    }
+
+    /// <inheritdoc/>
+    public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken)
+    {
+        // Copy from CPU buffer to host memory - essentially a no-op since both are host memory
+        return ValueTask.CompletedTask; // Implementation placeholder
+    }
+
+    /// <inheritdoc/>
+    public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
+    {
+        // Copy from host memory to CPU buffer - essentially a no-op since both are host memory
+        return ValueTask.CompletedTask; // Implementation placeholder
+    }
+
+    /// <inheritdoc/>
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
+    {
+        // Create typed view of the buffer
+        throw new NotImplementedException("Typed view creation not yet implemented");
+    }
+
+    /// <inheritdoc/>
+    public override void Clear()
+    {
+        // Clear all allocated buffers
+        _currentAllocated = 0;
+        _activeBuffers = 0;
+        _totalFreed = 0;
+    }
+
+    /// <inheritdoc/>
+    public override ValueTask OptimizeAsync(CancellationToken cancellationToken)
+    {
+        // Optimize memory layout and cleanup fragmentation
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        return ValueTask.CompletedTask;
+    }
 }
 
 /// <summary>
@@ -139,6 +243,7 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
     public long SizeInBytes => _length;
     public MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
+    public BufferState State => _parent.State;
 
     public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {

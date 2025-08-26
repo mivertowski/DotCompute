@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Analysis.Enums;
 using DotCompute.Backends.CUDA.Analysis.Models;
 using DotCompute.Backends.CUDA.Analysis.Types;
-using DotCompute.Core.Abstractions;
+using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Analysis

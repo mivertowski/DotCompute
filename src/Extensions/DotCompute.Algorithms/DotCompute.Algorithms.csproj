@@ -41,7 +41,14 @@
     <Compile Remove="LinearAlgebra\GPULinearAlgebraProvider.cs" />
     <Compile Remove="Examples\SecurityValidationExample.cs" />
     <Compile Remove="Examples\ConvolutionExample.cs" />
-    <Compile Remove="Types\Security\MalwareScanningService.cs" />
+    <Compile Remove="Types\Security\SecurityValidator.cs" />
+    <Compile Remove="Security\SecurityValidator.cs" />
+    <!-- Exclude more complex security and scanning files -->
+    <Compile Remove="Security\Scanner\*.cs" />
+    <Compile Remove="Security\DigitalSigning\*.cs" />
+    <Compile Remove="Management\Validation\SecurityValidator.cs" />
+    <!-- Exclude NuGet plugin loader implementation that needs complex dependencies -->
+    <Compile Remove="Management\Loading\NuGetPluginService.cs" />
   </ItemGroup>
 
   <ItemGroup>
