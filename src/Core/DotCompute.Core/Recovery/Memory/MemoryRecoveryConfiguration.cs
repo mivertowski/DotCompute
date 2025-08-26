@@ -90,7 +90,7 @@ public class MemoryRecoveryConfiguration
     /// proactive recovery operations. Values closer to 1.0 delay recovery
     /// but allow higher memory utilization.
     /// </remarks>
-    /// <exception cref="ArgumentOutOfRangeException">
+    /// <exception cref="System.ArgumentOutOfRangeException">
     /// Thrown when the value is not between 0.0 and 1.0.
     /// </exception>
     public double MemoryPressureThreshold { get; set; } = 0.85; // 85%

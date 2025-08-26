@@ -147,17 +147,20 @@ namespace DotCompute.Core.Pipelines.Stages
                 var arguments = PrepareArguments(context);
 
                 // Create execution context
-                var kernelContext = new KernelExecutionContext
+                // TODO: KernelExecutionContext needs proper properties for kernel execution
+                // For now, create a basic context
+                var kernelContext = new DotCompute.Abstractions.Execution.KernelExecutionContext
                 {
-                    KernelName = _kernel.Name,
-                    WorkDimensions = _globalWorkSize ?? [1L],
-                    LocalWorkSize = _localWorkSize != null ? _localWorkSize : null,
-                    Arguments = [.. arguments],
-                    CancellationToken = cancellationToken
+                    KernelName = _kernel.Name
+                    // WorkDimensions = _globalWorkSize ?? [1L],
+                    // LocalWorkSize = _localWorkSize != null ? _localWorkSize : null,
+                    // Arguments = [.. arguments],
+                    // CancellationToken = cancellationToken
                 };
 
                 // Execute kernel - convert to KernelArguments
-                var kernelArgs = new KernelArguments(kernelContext.Arguments ?? []);
+                // TODO: Get arguments from context properly
+                var kernelArgs = new KernelArguments(arguments);
                 await _kernel.ExecuteAsync(kernelArgs, cancellationToken);
 
                 stopwatch.Stop();

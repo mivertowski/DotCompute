@@ -97,7 +97,7 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous execution.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the kernel has been disposed.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the kernel is not compiled.</exception>
+    /// <exception cref="System.InvalidOperationException">Thrown when the kernel is not compiled.</exception>
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();

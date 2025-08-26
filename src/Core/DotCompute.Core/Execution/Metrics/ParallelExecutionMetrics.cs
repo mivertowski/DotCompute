@@ -162,7 +162,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// Adds metrics from a completed execution.
         /// </summary>
         /// <param name="result">The parallel execution result to incorporate into the metrics.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="result"/> is <c>null</c>.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="result"/> is <c>null</c>.</exception>
         public void AddExecution(ParallelExecutionResult result)
         {
             ArgumentNullException.ThrowIfNull(result);

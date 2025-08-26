@@ -26,7 +26,7 @@ public sealed class ManagedCompiledKernel : IAsyncDisposable
     /// <param name="name">The name of the kernel.</param>
     /// <param name="device">The target accelerator device.</param>
     /// <param name="kernel">The compiled kernel instance.</param>
-    /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
+    /// <exception cref="System.ArgumentNullException">Thrown when any parameter is null.</exception>
     public ManagedCompiledKernel(string name, IAccelerator device, CompiledKernel kernel)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -97,7 +97,7 @@ public sealed class ManagedCompiledKernel : IAsyncDisposable
     /// Thread-safe method to update execution statistics.
     /// </summary>
     /// <param name="executionTimeMs">The execution time in milliseconds for this invocation.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when executionTimeMs is negative.</exception>
+    /// <exception cref="System.ArgumentOutOfRangeException">Thrown when executionTimeMs is negative.</exception>
     public void RecordExecution(double executionTimeMs)
     {
         if (executionTimeMs < 0)

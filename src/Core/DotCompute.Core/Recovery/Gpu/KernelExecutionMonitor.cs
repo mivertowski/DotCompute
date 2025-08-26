@@ -63,7 +63,7 @@ public class KernelExecutionMonitor : IKernelExecutionMonitor
     /// <param name="timeout">The timeout duration for kernel execution.</param>
     /// <param name="logger">The logger instance for diagnostic output.</param>
     /// <param name="deviceId">The identifier of the GPU device (optional, defaults to "unknown").</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelId"/> or <paramref name="logger"/> is null.</exception>
+    /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="kernelId"/> or <paramref name="logger"/> is null.</exception>
     public KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger logger, string deviceId = "unknown")
     {
         KernelId = kernelId ?? throw new ArgumentNullException(nameof(kernelId));

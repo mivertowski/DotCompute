@@ -26,7 +26,7 @@ namespace DotCompute.Core.Execution.Memory
         /// Initializes a new instance of the <see cref="DeviceBufferPool"/> class.
         /// </summary>
         /// <param name="deviceId">The unique identifier of the device this pool manages.</param>
-        /// <exception cref="ArgumentNullException">Thrown when deviceId is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when deviceId is null.</exception>
         public DeviceBufferPool(string deviceId)
         {
             _deviceId = deviceId ?? throw new ArgumentNullException(nameof(deviceId));

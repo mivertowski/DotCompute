@@ -222,10 +222,10 @@ namespace DotCompute.Core.Execution.Metrics
         /// <summary>
         /// Validates the recommendation parameters.
         /// </summary>
-        /// <exception cref="ArgumentOutOfRangeException">
+        /// <exception cref="System.ArgumentOutOfRangeException">
         /// Thrown when confidence score is not between 0 and 1.
         /// </exception>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         /// Thrown when reasoning is null or whitespace.
         /// </exception>
         public void Validate()

@@ -60,7 +60,7 @@ namespace DotCompute.Core.Device.Interfaces
         /// <param name="options">Optional compilation options.</param>
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A task representing the asynchronous compilation operation, containing the compiled kernel.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernel"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="kernel"/> is null.</exception>
         /// <exception cref="DotCompute.Abstractions.CompilationException">Thrown when kernel compilation fails.</exception>
         public ValueTask<ICompiledKernel> CompileKernelAsync(
             KernelDefinition kernel,
@@ -74,7 +74,7 @@ namespace DotCompute.Core.Device.Interfaces
         /// <param name="access">The memory access mode.</param>
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A task representing the asynchronous allocation operation, containing the allocated device memory.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="sizeInBytes"/> is negative or zero.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when <paramref name="sizeInBytes"/> is negative or zero.</exception>
         /// <exception cref="OutOfMemoryException">Thrown when there is insufficient device memory available.</exception>
         public ValueTask<IDeviceMemory> AllocateMemoryAsync(
             long sizeInBytes,
@@ -86,7 +86,7 @@ namespace DotCompute.Core.Device.Interfaces
         /// </summary>
         /// <param name="options">Optional queue creation options.</param>
         /// <returns>A new command queue associated with this device.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the device is not available for queue creation.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when the device is not available for queue creation.</exception>
         public ICommandQueue CreateCommandQueue(CommandQueueOptions? options = null);
 
         /// <summary>

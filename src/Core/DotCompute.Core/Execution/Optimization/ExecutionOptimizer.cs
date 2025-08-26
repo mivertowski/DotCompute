@@ -21,7 +21,7 @@ namespace DotCompute.Core.Execution.Optimization
         /// Initializes a new instance of the <see cref="ExecutionOptimizer"/> class.
         /// </summary>
         /// <param name="logger">The logger instance for diagnostic information.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public ExecutionOptimizer(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -34,7 +34,7 @@ namespace DotCompute.Core.Execution.Optimization
         /// <param name="plan">The data parallel execution plan to optimize.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A <see cref="ValueTask"/> representing the asynchronous optimization operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="plan"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="plan"/> is null.</exception>
         public async ValueTask OptimizeDataParallelPlanAsync<T>(
             DataParallelExecutionPlan<T> plan,
             CancellationToken cancellationToken) where T : unmanaged
@@ -63,7 +63,7 @@ namespace DotCompute.Core.Execution.Optimization
         /// <param name="plan">The model parallel execution plan to optimize.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A <see cref="ValueTask"/> representing the asynchronous optimization operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="plan"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="plan"/> is null.</exception>
         public async ValueTask OptimizeModelParallelPlanAsync<T>(
             ModelParallelExecutionPlan<T> plan,
             CancellationToken cancellationToken) where T : unmanaged
@@ -92,7 +92,7 @@ namespace DotCompute.Core.Execution.Optimization
         /// <param name="plan">The pipeline execution plan to optimize.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A <see cref="ValueTask"/> representing the asynchronous optimization operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="plan"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="plan"/> is null.</exception>
         public async ValueTask OptimizePipelinePlanAsync<T>(
             PipelineExecutionPlan<T> plan,
             CancellationToken cancellationToken) where T : unmanaged

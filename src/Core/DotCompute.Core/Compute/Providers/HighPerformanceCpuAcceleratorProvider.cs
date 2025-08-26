@@ -58,7 +58,7 @@ namespace DotCompute.Core.Compute.Providers
         /// <param name="info">Accelerator information.</param>
         /// <param name="cancellationToken">Cancellation token for the operation.</param>
         /// <returns>Created accelerator instance.</returns>
-        /// <exception cref="ArgumentException">Thrown when the device type is not CPU.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the device type is not CPU.</exception>
         public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
         {
             if (info.DeviceType != "CPU")

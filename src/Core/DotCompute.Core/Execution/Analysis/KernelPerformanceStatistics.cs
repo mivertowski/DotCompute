@@ -138,7 +138,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <param name="additionalExecutions">The number of additional executions to add.</param>
         /// <param name="additionalTimeMs">The additional execution time in milliseconds.</param>
         /// <returns>A new <see cref="KernelPerformanceStatistics"/> instance with updated data.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">
+        /// <exception cref="System.ArgumentOutOfRangeException">
         /// Thrown when <paramref name="additionalExecutions"/> is negative or <paramref name="additionalTimeMs"/> is negative.
         /// </exception>
         public KernelPerformanceStatistics WithAdditionalExecution(long additionalExecutions, double additionalTimeMs)

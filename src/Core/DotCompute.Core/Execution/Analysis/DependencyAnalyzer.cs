@@ -25,7 +25,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// Initializes a new instance of the <see cref="DependencyAnalyzer"/> class.
         /// </summary>
         /// <param name="logger">The logger instance for diagnostic information.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public DependencyAnalyzer(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -42,7 +42,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// A <see cref="ValueTask{T}"/> containing a <see cref="DependencyGraph"/> 
         /// representing the analyzed dependencies.
         /// </returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// Thrown when <paramref name="inputBuffers"/> or <paramref name="outputBuffers"/> is null.
         /// </exception>
         public async ValueTask<DependencyGraph> AnalyzeDataDependenciesAsync<T>(
@@ -93,7 +93,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// A <see cref="ValueTask{T}"/> containing a <see cref="DependencyGraph"/> 
         /// representing the layer dependencies.
         /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="layers"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="layers"/> is null.</exception>
         public async ValueTask<DependencyGraph> AnalyzeLayerDependenciesAsync<T>(
             List<ModelLayer<T>> layers,
             CancellationToken cancellationToken) where T : unmanaged
@@ -129,7 +129,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// A <see cref="ValueTask{T}"/> containing a <see cref="DependencyGraph"/> 
         /// representing the stage dependencies.
         /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="stages"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="stages"/> is null.</exception>
         public async ValueTask<DependencyGraph> AnalyzeStageDependenciesAsync(
             List<PipelineStageDefinition> stages,
             CancellationToken cancellationToken)

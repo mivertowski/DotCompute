@@ -26,7 +26,7 @@ namespace DotCompute.Core.Compute.Interfaces
         /// <param name="options">Optional compilation options that control optimization level, debugging, and other compilation behaviors.</param>
         /// <param name="cancellationToken">Token to observe for cancellation requests during compilation.</param>
         /// <returns>A ValueTask containing the compiled kernel that can be executed on compute backends.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when kernelSource is null or empty.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when kernelSource is null or empty.</exception>
         /// <exception cref="CompilationException">Thrown when the kernel source contains compilation errors.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
         ValueTask<ICompiledKernel> CompileKernelAsync(
@@ -44,9 +44,9 @@ namespace DotCompute.Core.Compute.Interfaces
         /// <param name="options">Optional execution options that control work group sizes, profiling, and execution priority.</param>
         /// <param name="cancellationToken">Token to observe for cancellation requests during execution.</param>
         /// <returns>A ValueTask representing the asynchronous execution operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when kernel or arguments are null.</exception>
-        /// <exception cref="ArgumentException">Thrown when arguments don't match kernel parameter requirements.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the specified backend is not available.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when kernel or arguments are null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when arguments don't match kernel parameter requirements.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when the specified backend is not available.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
         ValueTask ExecuteAsync(
             ICompiledKernel kernel,

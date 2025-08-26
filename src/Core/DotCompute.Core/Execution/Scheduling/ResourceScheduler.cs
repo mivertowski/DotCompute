@@ -24,11 +24,11 @@ namespace DotCompute.Core.Execution.Scheduling
         /// Initializes a new instance of the ResourceScheduler class.
         /// </summary>
         /// <param name="logger">Logger for scheduler operations</param>
-        /// <exception cref="ArgumentNullException">Thrown when logger is null</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when logger is null</exception>
         public ResourceScheduler(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _performanceEstimator = new DevicePerformanceEstimator(logger);
+            _performanceEstimator = new DevicePerformanceEstimator();
         }
 
         /// <summary>
@@ -39,8 +39,8 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <param name="options">Data parallelism options with device preferences</param>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>Array of selected optimal devices in performance order</returns>
-        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
-        /// <exception cref="InvalidOperationException">Thrown when no suitable devices are found</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when required parameters are null</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when no suitable devices are found</exception>
         public async ValueTask<IAccelerator[]> SelectOptimalDevicesAsync(
             IAccelerator[] availableDevices,
             DataParallelismOptions options,
@@ -102,8 +102,8 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <param name="strategy">Load balancing strategy to apply</param>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>Workload distribution with device assignments</returns>
-        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
-        /// <exception cref="ArgumentException">Thrown when no devices are provided</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when required parameters are null</exception>
+        /// <exception cref="System.ArgumentException">Thrown when no devices are provided</exception>
         public async ValueTask<WorkloadDistribution> DistributeWorkloadAsync<T>(
             IUnifiedMemoryBuffer<T>[] inputBuffers,
             IAccelerator[] devices,
@@ -151,8 +151,8 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <param name="options">Model parallelism options</param>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>Dictionary mapping layer IDs to assigned devices</returns>
-        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
-        /// <exception cref="ArgumentException">Thrown when no layers or devices are provided</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when required parameters are null</exception>
+        /// <exception cref="System.ArgumentException">Thrown when no layers or devices are provided</exception>
         public async ValueTask<Dictionary<int, IAccelerator>> AssignLayersToDevicesAsync<T>(
             List<ModelLayer<T>> layers,
             IAccelerator[] devices,
@@ -198,8 +198,8 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <param name="options">Pipeline parallelism options</param>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>Dictionary mapping stage names to assigned devices</returns>
-        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
-        /// <exception cref="ArgumentException">Thrown when no stages or devices are provided</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when required parameters are null</exception>
+        /// <exception cref="System.ArgumentException">Thrown when no stages or devices are provided</exception>
         public async ValueTask<Dictionary<string, IAccelerator>> AssignStagesToDevicesAsync(
             List<PipelineStageDefinition> stages,
             IAccelerator[] devices,

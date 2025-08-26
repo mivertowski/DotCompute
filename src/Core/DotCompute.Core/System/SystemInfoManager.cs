@@ -183,8 +183,9 @@ public sealed partial class SystemInfoManager
                 var wmiType = Type.GetType("System.Management.ManagementObjectSearcher, System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
                 if (wmiType != null)
                 {
-                    dynamic searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_OperatingSystem");
-                    dynamic collection = searcher.Get();
+                    dynamic? searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_OperatingSystem");
+                    dynamic? collection = searcher?.Get();
+                    if (collection == null) return info;
                     
                     foreach (dynamic mo in collection)
                     {
@@ -427,8 +428,9 @@ public sealed partial class SystemInfoManager
             var wmiType = Type.GetType("System.Management.ManagementObjectSearcher, System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
             if (wmiType != null)
             {
-                dynamic searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_Processor");
-                dynamic collection = searcher.Get();
+                dynamic? searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_Processor");
+                dynamic? collection = searcher?.Get();
+                if (collection == null) return;
                 
                 foreach (dynamic mo in collection)
                 {

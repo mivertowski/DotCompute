@@ -566,8 +566,7 @@ public sealed partial class KernelManager : IDisposable
             KernelLanguage.CUDA => AbstractionsMemory.Types.KernelLanguage.Cuda,
             KernelLanguage.Metal => AbstractionsMemory.Types.KernelLanguage.Metal,
             KernelLanguage.DirectCompute => AbstractionsMemory.Types.KernelLanguage.HLSL,
-            KernelLanguage.Vulkan => AbstractionsMemory.Types.KernelLanguage.SPIRV,
-            KernelLanguage.WebGPU => AbstractionsMemory.Types.KernelLanguage.SPIRV,
+            KernelLanguage.Vulkan or KernelLanguage.WebGPU => AbstractionsMemory.Types.KernelLanguage.SPIRV,
             _ => AbstractionsMemory.Types.KernelLanguage.CSharpIL
         };
     }

@@ -81,7 +81,7 @@ namespace DotCompute.Core.Memory
             var memoryBuffer = await devicePool.AllocateAsync(length * Unsafe.SizeOf<T>(), cancellationToken);
 
             return new P2PBuffer<T>(
-                memoryBuffer,
+                memoryBuffer as IUnifiedMemoryBuffer ?? throw new InvalidCastException("Buffer is not compatible"),
                 device,
                 length,
                 options.EnableP2POptimizations,
@@ -239,28 +239,30 @@ namespace DotCompute.Core.Memory
 
                 case TransferType.HostMediated:
                     // Use standard allocation for host-mediated transfers
-                    var buffer = await targetPool.AllocateAsync(sizeInBytes, cancellationToken);
-                    memoryBuffer = buffer as IUnifiedMemoryBuffer<byte> ?? throw new InvalidOperationException("Pool returned non-byte buffer");
+                    var hostBuffer = await targetPool.AllocateAsync(sizeInBytes, cancellationToken);
+                    memoryBuffer = hostBuffer as IUnifiedMemoryBuffer<byte> ?? throw new InvalidOperationException("Pool returned non-byte buffer");
                     break;
 
                 case TransferType.Streaming:
                     // Allocate with streaming-friendly options
-                    memoryBuffer = await targetPool.AllocateStreamingAsync(sizeInBytes, strategy.ChunkSize, cancellationToken);
+                    var streamBuffer = await targetPool.AllocateStreamingAsync(sizeInBytes, strategy.ChunkSize, cancellationToken);
+                    memoryBuffer = streamBuffer as IUnifiedMemoryBuffer<byte> ?? throw new InvalidOperationException("Pool returned non-byte buffer");
                     break;
 
                 case TransferType.MemoryMapped:
                     // Use memory-mapped allocation for very large buffers
-                    memoryBuffer = await targetPool.AllocateMemoryMappedAsync(sizeInBytes, cancellationToken);
+                    var mappedBuffer = await targetPool.AllocateMemoryMappedAsync(sizeInBytes, cancellationToken);
+                    memoryBuffer = mappedBuffer as IUnifiedMemoryBuffer<byte> ?? throw new InvalidOperationException("Pool returned non-byte buffer");
                     break;
 
                 default:
-                    var buffer = await targetPool.AllocateAsync(sizeInBytes, cancellationToken);
-                    memoryBuffer = buffer as IUnifiedMemoryBuffer<byte> ?? throw new InvalidOperationException("Pool returned non-byte buffer");
+                    var defaultBuffer = await targetPool.AllocateAsync(sizeInBytes, cancellationToken);
+                    memoryBuffer = defaultBuffer as IUnifiedMemoryBuffer<byte> ?? throw new InvalidOperationException("Pool returned non-byte buffer");
                     break;
             }
 
             return new P2PBuffer<T>(
-                memoryBuffer,
+                memoryBuffer as IUnifiedMemoryBuffer ?? throw new InvalidCastException("Buffer is not compatible"),
                 targetDevice,
                 length,
                 strategy.Type == TransferType.DirectP2P,

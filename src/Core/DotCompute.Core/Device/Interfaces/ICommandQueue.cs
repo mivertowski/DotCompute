@@ -31,8 +31,8 @@ namespace DotCompute.Core.Device.Interfaces
         /// <param name="context">The execution context containing parameters and work group configuration.</param>
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A task representing the asynchronous enqueue operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when kernel or context is null.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the queue is in an invalid state for execution.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when kernel or context is null.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when the queue is in an invalid state for execution.</exception>
         public ValueTask EnqueueKernelAsync(
             ICompiledKernel kernel,
             KernelExecutionContext context,
@@ -48,8 +48,8 @@ namespace DotCompute.Core.Device.Interfaces
         /// <param name="sizeInBytes">The number of bytes to copy, or null to copy all remaining data.</param>
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A task representing the asynchronous enqueue operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when source or destination is null.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when offsets or size are invalid.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when source or destination is null.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when offsets or size are invalid.</exception>
         public ValueTask EnqueueCopyAsync(
             IDeviceMemory source,
             IDeviceMemory destination,

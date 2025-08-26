@@ -24,7 +24,7 @@ namespace DotCompute.Core.Execution.Optimization
         /// </summary>
         /// <param name="logger">The logger instance for diagnostic information.</param>
         /// <param name="performanceMonitor">The performance monitor for gathering metrics.</param>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// Thrown when <paramref name="logger"/> or <paramref name="performanceMonitor"/> is null.
         /// </exception>
         public ExecutionPlanOptimizer(ILogger logger, PerformanceMonitor performanceMonitor)
@@ -40,7 +40,7 @@ namespace DotCompute.Core.Execution.Optimization
         /// <param name="plan">The execution plan to optimize.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="plan"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="plan"/> is null.</exception>
         public async ValueTask OptimizePlanAsync<T>(ExecutionPlan<T> plan, CancellationToken cancellationToken = default) where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(plan);

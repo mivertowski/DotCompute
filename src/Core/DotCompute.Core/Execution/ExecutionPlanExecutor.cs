@@ -31,7 +31,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         /// <param name="logger">The logger for monitoring and diagnostics.</param>
         /// <param name="performanceMonitor">The performance monitor for tracking execution metrics.</param>
-        /// <exception cref="ArgumentNullException">Thrown when logger or performanceMonitor is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when logger or performanceMonitor is null.</exception>
         public ExecutionPlanExecutor(ILogger logger, PerformanceMonitor performanceMonitor)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -48,9 +48,9 @@ namespace DotCompute.Core.Execution
         /// <param name="plan">The data parallel execution plan containing device tasks and synchronization requirements.</param>
         /// <param name="cancellationToken">Cancellation token for the async operation.</param>
         /// <returns>A parallel execution result containing performance metrics and device-specific results.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when plan is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when plan is null.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the executor has been disposed.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when execution fails on one or more devices.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when execution fails on one or more devices.</exception>
         public async ValueTask<ParallelExecutionResult> ExecuteDataParallelPlanAsync<T>(
             DataParallelExecutionPlan<T> plan,
             CancellationToken cancellationToken = default) where T : unmanaged

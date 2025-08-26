@@ -142,7 +142,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// Adds the results of a device execution to these metrics.
         /// </summary>
         /// <param name="result">The device execution result to incorporate.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="result"/> is <c>null</c>.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="result"/> is <c>null</c>.</exception>
         public void AddExecution(DeviceExecutionResult result)
         {
             ArgumentNullException.ThrowIfNull(result);
@@ -176,7 +176,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// Updates the utilization percentage based on current workload.
         /// </summary>
         /// <param name="utilizationPercentage">The current utilization percentage (0-100).</param>
-        /// <exception cref="ArgumentOutOfRangeException">
+        /// <exception cref="System.ArgumentOutOfRangeException">
         /// Thrown when <paramref name="utilizationPercentage"/> is not between 0 and 100.
         /// </exception>
         public void UpdateUtilization(double utilizationPercentage)

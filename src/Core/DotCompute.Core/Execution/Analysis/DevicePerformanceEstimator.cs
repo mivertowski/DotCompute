@@ -23,7 +23,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// Initializes a new instance of the <see cref="DevicePerformanceEstimator"/> class.
         /// </summary>
         /// <param name="logger">The logger instance for diagnostic information.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public DevicePerformanceEstimator(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -39,7 +39,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// A <see cref="ValueTask{T}"/> containing a performance score as a double value.
         /// Higher scores indicate better expected performance.
         /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="device"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="device"/> is null.</exception>
         public async ValueTask<double> CalculateDeviceScoreAsync(IAccelerator device, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(device);
@@ -74,10 +74,10 @@ namespace DotCompute.Core.Execution.Analysis
         /// <returns>
         /// A <see cref="ValueTask{T}"/> containing the estimated execution time in milliseconds.
         /// </returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// Thrown when <paramref name="device"/> or <paramref name="workloadType"/> is null.
         /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
+        /// <exception cref="System.ArgumentOutOfRangeException">
         /// Thrown when <paramref name="workloadSize"/> is less than or equal to zero.
         /// </exception>
         public async ValueTask<double> EstimateExecutionTimeAsync(

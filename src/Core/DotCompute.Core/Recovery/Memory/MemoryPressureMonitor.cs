@@ -29,7 +29,7 @@ public sealed class MemoryPressureMonitor : IDisposable
     /// Initializes a new instance of the <see cref="MemoryPressureMonitor"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for recording monitoring events and errors.</param>
-    /// <exception cref="ArgumentNullException">
+    /// <exception cref="System.ArgumentNullException">
     /// Thrown when <paramref name="logger"/> is null.
     /// </exception>
     /// <remarks>

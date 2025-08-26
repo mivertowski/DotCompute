@@ -73,7 +73,7 @@ public class DeviceRecoveryState
     /// Initializes a new instance of the <see cref="DeviceRecoveryState"/> class.
     /// </summary>
     /// <param name="deviceId">The unique identifier for the GPU device.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
+    /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
     public DeviceRecoveryState(string deviceId)
     {
         DeviceId = deviceId ?? throw new ArgumentNullException(nameof(deviceId));

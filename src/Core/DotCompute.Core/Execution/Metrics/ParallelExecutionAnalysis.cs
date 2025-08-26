@@ -155,7 +155,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// Adds a bottleneck to the analysis.
         /// </summary>
         /// <param name="bottleneck">The bottleneck analysis to add.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="bottleneck"/> is <c>null</c>.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="bottleneck"/> is <c>null</c>.</exception>
         public void AddBottleneck(Analysis.BottleneckAnalysis bottleneck)
         {
             ArgumentNullException.ThrowIfNull(bottleneck);
@@ -169,7 +169,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// Adds an optimization recommendation.
         /// </summary>
         /// <param name="recommendation">The optimization recommendation to add.</param>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="recommendation"/> is null or whitespace.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when <paramref name="recommendation"/> is null or whitespace.</exception>
         public void AddRecommendation(string recommendation)
         {
             if (string.IsNullOrWhiteSpace(recommendation))
@@ -185,8 +185,8 @@ namespace DotCompute.Core.Execution.Metrics
         /// </summary>
         /// <param name="deviceId">The device identifier.</param>
         /// <param name="utilization">The utilization percentage (0-100).</param>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="deviceId"/> is null or whitespace.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="utilization"/> is not between 0 and 100.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when <paramref name="deviceId"/> is null or whitespace.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when <paramref name="utilization"/> is not between 0 and 100.</exception>
         public void UpdateDeviceUtilization(string deviceId, double utilization)
         {
             if (string.IsNullOrWhiteSpace(deviceId))

@@ -37,8 +37,8 @@ namespace DotCompute.Core.Device.Interfaces
         /// <param name="offset">The byte offset in device memory where writing should begin.</param>
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A task representing the asynchronous write operation.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when offset is negative or would cause buffer overflow.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the memory access mode doesn't allow writing.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when offset is negative or would cause buffer overflow.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when the memory access mode doesn't allow writing.</exception>
         public ValueTask WriteAsync<T>(
             ReadOnlyMemory<T> source,
             long offset = 0,
@@ -52,8 +52,8 @@ namespace DotCompute.Core.Device.Interfaces
         /// <param name="offset">The byte offset in device memory where reading should begin.</param>
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A task representing the asynchronous read operation.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when offset is negative or would cause buffer overflow.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the memory access mode doesn't allow reading.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when offset is negative or would cause buffer overflow.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when the memory access mode doesn't allow reading.</exception>
         public ValueTask ReadAsync<T>(
             Memory<T> destination,
             long offset = 0,
@@ -68,8 +68,8 @@ namespace DotCompute.Core.Device.Interfaces
         /// <param name="count">The number of pattern instances to write, or null to fill remaining memory.</param>
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A task representing the asynchronous fill operation.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when offset or count is invalid.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the memory access mode doesn't allow writing.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when offset or count is invalid.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when the memory access mode doesn't allow writing.</exception>
         public ValueTask FillAsync<T>(
             T pattern,
             long offset = 0,
@@ -85,9 +85,9 @@ namespace DotCompute.Core.Device.Interfaces
         /// <param name="sizeInBytes">The number of bytes to copy, or null to copy all remaining data.</param>
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A task representing the asynchronous copy operation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when destination is null.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when offsets or size are invalid.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when access modes don't allow the operation.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when destination is null.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when offsets or size are invalid.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when access modes don't allow the operation.</exception>
         public ValueTask CopyToAsync(
             IDeviceMemory destination,
             long sourceOffset = 0,

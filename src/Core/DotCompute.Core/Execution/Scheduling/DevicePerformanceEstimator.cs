@@ -11,6 +11,10 @@ namespace DotCompute.Core.Execution.Scheduling;
 /// </summary>
 internal class DevicePerformanceEstimator
 {
+    public DevicePerformanceEstimator()
+    {
+        _devicePerformanceScores = new Dictionary<string, double>();
+    }
     private readonly Dictionary<string, double> _devicePerformanceScores = new();
     
     /// <summary>
@@ -31,7 +35,7 @@ internal class DevicePerformanceEstimator
     public void UpdatePerformanceMetrics(string kernelName, IAccelerator device, TimeSpan actualTime, long dataSize)
     {
         // TODO: Update performance model based on actual execution times
-        var key = $"{device.DeviceId}_{kernelName}";
+        var key = $"{device.Info.Name}_{kernelName}";
         var throughput = dataSize / actualTime.TotalSeconds;
         _devicePerformanceScores[key] = throughput;
     }
@@ -90,5 +94,14 @@ internal class DevicePerformanceEstimator
         var utilizationFactor = 1.0;
         
         return performanceFactor * memoryFactor * utilizationFactor;
+    }
+    
+    /// <summary>
+    /// Calculates a device score for scheduling decisions.
+    /// </summary>
+    public async Task<double> CalculateDeviceScoreAsync(IAccelerator device, CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask; // Ensure async
+        return GetDevicePerformanceFactor(device);
     }
 }

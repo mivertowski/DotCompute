@@ -266,7 +266,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         }
         
         // Create new definition with enriched metadata
-        return new KernelDefinition(definition.Name, definition.Code, definition.EntryPoint)
+        return new KernelDefinition(definition.Name, definition.Code ?? string.Empty, definition.EntryPoint)
         {
             Metadata = metadata
         };

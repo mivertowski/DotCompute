@@ -101,7 +101,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// A list of node identifiers in topological order, where each node appears
         /// after all nodes it depends on.
         /// </returns>
-        /// <exception cref="InvalidOperationException">
+        /// <exception cref="System.InvalidOperationException">
         /// Thrown when a circular dependency is detected in the graph.
         /// </exception>
         /// <remarks>
@@ -179,7 +179,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <param name="visited">Set of completely visited nodes.</param>
         /// <param name="visiting">Set of nodes currently being visited (for cycle detection).</param>
         /// <param name="sorted">The result list being built in reverse topological order.</param>
-        /// <exception cref="InvalidOperationException">
+        /// <exception cref="System.InvalidOperationException">
         /// Thrown when a circular dependency is detected.
         /// </exception>
         private void TopologicalSortVisit(int node, HashSet<int> visited, HashSet<int> visiting, List<int> sorted)

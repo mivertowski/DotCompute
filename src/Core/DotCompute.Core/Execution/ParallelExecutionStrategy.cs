@@ -574,6 +574,7 @@ namespace DotCompute.Core.Execution
                 deviceBuffers[i] = deviceBuffer;
             }
 
+            await ValueTask.CompletedTask; // Ensure async
             return deviceBuffers;
         }
 

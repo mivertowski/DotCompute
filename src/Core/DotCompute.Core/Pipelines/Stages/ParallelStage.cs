@@ -394,7 +394,7 @@ namespace DotCompute.Core.Pipelines.Stages
 
         private async Task ExecuteProducerConsumerPatternAsync(PipelineExecutionContext context, List<StageExecutionResult> results, CancellationToken cancellationToken)
         {
-            var channel = System.Threading.Channels.Channel.CreateUnbounded<object>();
+            var channel = global::System.Threading.Channels.Channel.CreateUnbounded<object>();
             var writer = channel.Writer;
             var reader = channel.Reader;
 
@@ -433,7 +433,7 @@ namespace DotCompute.Core.Pipelines.Stages
 
         private async Task ExecuteWorkStealingPatternAsync(PipelineExecutionContext context, List<StageExecutionResult> results, CancellationToken cancellationToken)
         {
-            var workQueue = new System.Collections.Concurrent.ConcurrentQueue<IPipelineStage>(_parallelStages);
+            var workQueue = new global::System.Collections.Concurrent.ConcurrentQueue<IPipelineStage>(_parallelStages);
             var workerCount = Math.Min(_maxDegreeOfParallelism, Environment.ProcessorCount);
             var workers = new List<Task<List<StageExecutionResult>>>();
 

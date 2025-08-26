@@ -39,7 +39,7 @@ public class KernelInterpreter : IDisposable
     /// </summary>
     /// <param name="sourceCode">The kernel source code to be interpreted.</param>
     /// <param name="logger">The logger instance for diagnostic output.</param>
-    /// <exception cref="ArgumentNullException">
+    /// <exception cref="System.ArgumentNullException">
     /// Thrown when <paramref name="sourceCode"/> or <paramref name="logger"/> is null.
     /// </exception>
     public KernelInterpreter(string sourceCode, ILogger logger)

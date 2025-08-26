@@ -35,7 +35,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         /// <param name="logger">Logger for generator operations</param>
         /// <param name="performanceMonitor">Performance monitor for execution estimation</param>
-        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when required parameters are null</exception>
         public ExecutionPlanGenerator(ILogger logger, ExecutionPerformanceMonitor performanceMonitor)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -57,8 +57,8 @@ namespace DotCompute.Core.Execution
         /// <param name="options">Data parallelism configuration options</param>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>An optimized data parallel execution plan</returns>
-        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
-        /// <exception cref="InvalidOperationException">Thrown when plan generation fails</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when required parameters are null</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when plan generation fails</exception>
         public async ValueTask<DataParallelExecutionPlan<T>> GenerateDataParallelPlanAsync<T>(
             string kernelName,
             IAccelerator[] devices,
@@ -139,8 +139,8 @@ namespace DotCompute.Core.Execution
         /// <param name="options">Model parallelism configuration options</param>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>An optimized model parallel execution plan</returns>
-        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
-        /// <exception cref="InvalidOperationException">Thrown when plan generation fails</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when required parameters are null</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when plan generation fails</exception>
         public async ValueTask<ModelParallelExecutionPlan<T>> GenerateModelParallelPlanAsync<T>(
             ModelParallelWorkload<T> workload,
             IAccelerator[] devices,
@@ -212,8 +212,8 @@ namespace DotCompute.Core.Execution
         /// <param name="options">Pipeline parallelism configuration options</param>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>An optimized pipeline execution plan</returns>
-        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
-        /// <exception cref="InvalidOperationException">Thrown when plan generation fails</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when required parameters are null</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when plan generation fails</exception>
         public async ValueTask<PipelineExecutionPlan<T>> GeneratePipelinePlanAsync<T>(
             PipelineDefinition<T> pipelineDefinition,
             IAccelerator[] devices,
