@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -46,7 +47,7 @@ public class BaseAcceleratorTests
         Assert.NotNull(_accelerator.Info);
         Assert.Equal(AcceleratorType.CPU, _accelerator.Type);
         Assert.Equal(_mockMemory.Object, _accelerator.Memory);
-        Assert.NotNull(_accelerator.Context);
+        // Context is a value type - no null check needed
         Assert.False(_accelerator.IsDisposed);
     }
 
@@ -54,18 +55,18 @@ public class BaseAcceleratorTests
     public async Task CompileKernelAsync_ValidatesDefinition_BeforeCompilation()
     {
         // Arrange
-        var invalidDefinition = new KernelDefinition("", null, null);
+        var invalidDefinition = new KernelDefinition("", null!, null!);
         
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _accelerator.CompileKernelAsync(invalidDefinition));
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => 
+            await _accelerator.CompileKernelAsync(invalidDefinition));
     }
 
     [Fact]
     public async Task CompileKernelAsync_CallsCompileKernelCoreAsync_ForValidDefinition()
     {
         // Arrange
-        var definition = new KernelDefinition("test", new byte[] { 1, 2, 3 }, "main");
+        var definition = new KernelDefinition("test", "test source", "main");
         var options = new CompilationOptions();
         
         // Act
@@ -146,7 +147,7 @@ public class BaseAcceleratorTests
     /// <summary>
     /// Test implementation of BaseAccelerator for testing purposes.
     /// </summary>
-    private class TestAccelerator : BaseAccelerator
+    private sealed class TestAccelerator : BaseAccelerator
     {
         public bool CompileKernelCoreCalled { get; private set; }
         public bool SynchronizeCoreCalled { get; private set; }
@@ -174,9 +175,10 @@ public class BaseAcceleratorTests
             return ValueTask.CompletedTask;
         }
 
-        protected override ValueTask DisposeCoreAsync()
+        protected override async ValueTask DisposeCoreAsync()
         {
             DisposeCallCount++;
+            await base.DisposeCoreAsync();
             return ValueTask.CompletedTask;
         }
 

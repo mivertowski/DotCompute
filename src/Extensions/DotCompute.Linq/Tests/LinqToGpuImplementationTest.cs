@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Execution;
 using DotCompute.Linq.Expressions;
@@ -14,7 +15,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Linq.Compilation.Plans;
 using DotCompute.Linq.Compilation.Execution;
-using DotCompute.Abstractions.Memory;
 namespace DotCompute.Linq.Tests;
 
 
@@ -44,7 +44,7 @@ public class LinqToGpuImplementationTest
             _optimizer,
             loggerFactory.CreateLogger<ExpressionToKernelCompiler>());
         _memoryManagerFactory = new DefaultMemoryManagerFactory(
-            loggerFactory.CreateLogger<UnifiedMemoryManager>());
+            loggerFactory.CreateLogger<IUnifiedMemoryManager>());
         _executor = new QueryExecutor(_memoryManagerFactory,
             loggerFactory.CreateLogger<QueryExecutor>());
     }
@@ -339,10 +339,15 @@ internal class MockMemoryManager : IUnifiedMemoryManager
 
     public ValueTask<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions options = DotCompute.Abstractions.Memory.MemoryOptions.None, CancellationToken cancellationToken = default) => ValueTask.FromResult<IUnifiedMemoryBuffer>(new MockMemoryBuffer(sizeInBytes));
 
-    public unsafe ValueTask<IUnifiedMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> data, DotCompute.Abstractions.Memory.MemoryOptions options = DotCompute.Abstractions.Memory.MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+    public unsafe ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> data, DotCompute.Abstractions.Memory.MemoryOptions options = DotCompute.Abstractions.Memory.MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        var buffer = new MockMemoryBuffer(data.Length * sizeof(T));
-        return ValueTask.FromResult<IUnifiedMemoryBuffer>(buffer);
+        var buffer = new MockMemoryBuffer<T>(data.Length);
+        return ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(buffer);
+    }
+
+    public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions options = DotCompute.Abstractions.Memory.MemoryOptions.None, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult<IUnifiedMemoryBuffer>(new MockMemoryBuffer(sizeInBytes));
     }
 
     public IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length) => new MockMemoryBuffer(length);
@@ -366,6 +371,68 @@ internal class MockMemoryManager : IUnifiedMemoryManager
     public void Free(IUnifiedMemoryBuffer buffer) => buffer?.Dispose();
 
     public void Dispose() { }
+    
+    // Additional IUnifiedMemoryManager interface members
+    public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        var sizeInBytes = count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        return ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(new MockMemoryBuffer<T>(count));
+    }
+
+    public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, DotCompute.Abstractions.Memory.MemoryOptions options, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return AllocateAsync<T>(count, cancellationToken);
+    }
+
+    public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
+    {
+        buffer?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public void Clear() { }
+
+    public IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) where T : unmanaged
+    {
+        return new MockMemoryBuffer<T>(count);
+    }
+
+    public IAccelerator Accelerator => throw new NotSupportedException();
+    public DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new DotCompute.Abstractions.Memory.MemoryStatistics();
+    public long MaxAllocationSize => long.MaxValue;
+    public long TotalAvailableMemory => TotalMemory;
+    public long CurrentAllocatedMemory => 0;
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
+    }
 }
 
 internal class MockMemoryBuffer : IUnifiedMemoryBuffer
@@ -379,6 +446,7 @@ internal class MockMemoryBuffer : IUnifiedMemoryBuffer
     public IntPtr DevicePointer => IntPtr.Zero;
     public bool IsDisposed => false;
     public DotCompute.Abstractions.Memory.MemoryOptions Options => DotCompute.Abstractions.Memory.MemoryOptions.None;
+    public DotCompute.Abstractions.Memory.BufferState State => DotCompute.Abstractions.Memory.BufferState.Allocated;
 
     public void Dispose() { }
 
@@ -387,6 +455,74 @@ internal class MockMemoryBuffer : IUnifiedMemoryBuffer
     public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
+}
+
+internal class MockMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+{
+    private readonly int _count;
+
+    public MockMemoryBuffer(int count)
+    {
+        _count = count;
+        SizeInBytes = count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+    }
+
+    public long SizeInBytes { get; }
+    public int Length => _count;
+    public IntPtr DevicePointer => IntPtr.Zero;
+    public bool IsDisposed => false;
+    public DotCompute.Abstractions.Memory.MemoryOptions Options => DotCompute.Abstractions.Memory.MemoryOptions.None;
+    DotCompute.Abstractions.Memory.BufferState IUnifiedMemoryBuffer.State => DotCompute.Abstractions.Memory.BufferState.Allocated;
+
+    // Additional properties from IUnifiedMemoryBuffer<T>
+    public IAccelerator Accelerator => null!;
+    public bool IsOnHost => true;
+    public bool IsOnDevice => false;
+    public bool IsDirty => false;
+
+    public void Dispose() { }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+    // Synchronization methods
+    public void EnsureOnHost() { }
+    public void EnsureOnDevice() { }
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public void Synchronize() { }
+    public ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public void MarkHostDirty() { }
+    public void MarkDeviceDirty() { }
+
+    // Copy operations
+    public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    
+    // Fill operations
+    public ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
+    // Type conversion
+    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged => new MockMemoryBuffer<TNew>(_count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
+
+    public IUnifiedMemoryBuffer<T> Slice(int start, int length) => new MockMemoryBuffer<T>(length);
+
+    // Memory access methods
+    public Span<T> AsSpan() => Span<T>.Empty;
+    public ReadOnlySpan<T> AsReadOnlySpan() => ReadOnlySpan<T>.Empty;
+    public Memory<T> AsMemory() => Memory<T>.Empty;
+    public ReadOnlyMemory<T> AsReadOnlyMemory() => ReadOnlyMemory<T>.Empty;
+    
+    // Device memory and mapping
+    public DotCompute.Abstractions.DeviceMemory GetDeviceMemory() => new DotCompute.Abstractions.DeviceMemory(IntPtr.Zero, SizeInBytes);
+    public DotCompute.Abstractions.Memory.MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode) => new DotCompute.Abstractions.Memory.MappedMemory<T>(Memory<T>.Empty, null);
+    public DotCompute.Abstractions.Memory.MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode) => new DotCompute.Abstractions.Memory.MappedMemory<T>(Memory<T>.Empty, null);
+    public ValueTask<DotCompute.Abstractions.Memory.MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode, CancellationToken cancellationToken = default) => ValueTask.FromResult(new DotCompute.Abstractions.Memory.MappedMemory<T>(Memory<T>.Empty, null));
+
+    public ValueTask CopyFromHostAsync<TOther>(ReadOnlyMemory<TOther> source, long offset = 0, CancellationToken cancellationToken = default) where TOther : unmanaged => ValueTask.CompletedTask;
+    public ValueTask CopyToHostAsync<TOther>(Memory<TOther> destination, long offset = 0, CancellationToken cancellationToken = default) where TOther : unmanaged => ValueTask.CompletedTask;
 }
 
 internal class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel

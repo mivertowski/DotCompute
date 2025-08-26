@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Execution;
 using DotCompute.Linq.Operators.Models;
 using DotCompute.Linq.Operators.Mocks;
@@ -79,15 +80,15 @@ internal class KernelCompilerAdapter : IUnifiedKernelCompiler
         }
     }
 
-    private static DotCompute.Abstractions.OptimizationLevel ConvertOptimizationLevel(Models.OptimizationLevel level)
+    private static DotCompute.Abstractions.Types.OptimizationLevel ConvertOptimizationLevel(Models.OptimizationLevel level)
     {
         return level switch
         {
-            Models.OptimizationLevel.Debug => DotCompute.Abstractions.OptimizationLevel.Debug,
-            Models.OptimizationLevel.Default => DotCompute.Abstractions.OptimizationLevel.Default,
-            Models.OptimizationLevel.Release => DotCompute.Abstractions.OptimizationLevel.Release,
-            Models.OptimizationLevel.Aggressive => DotCompute.Abstractions.OptimizationLevel.Aggressive,
-            _ => DotCompute.Abstractions.OptimizationLevel.Default
+            Models.OptimizationLevel.Debug => DotCompute.Abstractions.Types.OptimizationLevel.None,
+            Models.OptimizationLevel.Default => DotCompute.Abstractions.Types.OptimizationLevel.Default,
+            Models.OptimizationLevel.Release => DotCompute.Abstractions.Types.OptimizationLevel.Moderate,
+            Models.OptimizationLevel.Aggressive => DotCompute.Abstractions.Types.OptimizationLevel.Aggressive,
+            _ => DotCompute.Abstractions.Types.OptimizationLevel.Default
         };
     }
 }

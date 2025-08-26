@@ -24,22 +24,32 @@ public enum PluginState
     Initializing = 2,
 
     /// <summary>
+    /// Plugin has been successfully initialized.
+    /// </summary>
+    Initialized = 3,
+
+    /// <summary>
+    /// Plugin is currently executing.
+    /// </summary>
+    Executing = 4,
+
+    /// <summary>
     /// Plugin has been successfully initialized and is running.
     /// </summary>
-    Running = 3,
+    Running = 5,
 
     /// <summary>
     /// Plugin is currently being stopped.
     /// </summary>
-    Stopping = 4,
+    Stopping = 6,
 
     /// <summary>
     /// Plugin has been unloaded.
     /// </summary>
-    Unloaded = 5,
+    Unloaded = 7,
 
     /// <summary>
     /// Plugin has failed to load or execute properly.
     /// </summary>
-    Failed = 6
+    Failed = 8
 }

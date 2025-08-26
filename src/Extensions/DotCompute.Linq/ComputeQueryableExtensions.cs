@@ -296,7 +296,7 @@ public static class ComputeQueryableExtensions
             loggerFactory.CreateLogger<QueryCompiler>());
 
         var memoryManagerFactory = new DefaultMemoryManagerFactory(
-            loggerFactory.CreateLogger<UnifiedMemoryManager>());
+            loggerFactory.CreateLogger<IUnifiedMemoryManager>());
 
         var executor = new QueryExecutor(
             memoryManagerFactory,

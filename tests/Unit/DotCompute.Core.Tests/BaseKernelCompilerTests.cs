@@ -29,22 +29,22 @@ public class BaseKernelCompilerTests
     public async Task CompileAsync_ValidatesKernelDefinition()
     {
         // Arrange
-        var invalidDefinition = new KernelDefinition("", null, null);
+        var invalidDefinition = new KernelDefinition("", null!, null!);
         
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _compiler.CompileAsync(invalidDefinition));
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => 
+            await _compiler.CompileAsync(invalidDefinition));
     }
 
     [Fact]
     public async Task CompileAsync_ValidatesEmptyKernelName()
     {
         // Arrange
-        var invalidDefinition = new KernelDefinition("", new byte[] { 1, 2, 3 }, "main");
+        var invalidDefinition = new KernelDefinition("", "invalid source", "main");
         
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _compiler.CompileAsync(invalidDefinition));
+            async () => await _compiler.CompileAsync(invalidDefinition));
         Assert.Contains("Kernel name cannot be empty", ex.Message);
     }
 
@@ -52,11 +52,11 @@ public class BaseKernelCompilerTests
     public async Task CompileAsync_ValidatesNullKernelCode()
     {
         // Arrange
-        var invalidDefinition = new KernelDefinition("test", null, "main");
+        var invalidDefinition = new KernelDefinition("test", null!, "main");
         
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _compiler.CompileAsync(invalidDefinition));
+            async () => await _compiler.CompileAsync(invalidDefinition));
         Assert.Contains("Kernel code cannot be null or empty", ex.Message);
     }
 
@@ -64,14 +64,14 @@ public class BaseKernelCompilerTests
     public async Task CompileAsync_ValidatesWorkDimensions()
     {
         // Arrange
-        var definition = new KernelDefinition("test", new byte[] { 1, 2, 3 }, "main")
+        var definition = new KernelDefinition("test", "test source", "main")
         {
             Metadata = new Dictionary<string, object> { ["WorkDimensions"] = 4 }
         };
         
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _compiler.CompileAsync(definition));
+            async () => await _compiler.CompileAsync(definition));
         Assert.Contains("Work dimensions must be between 1 and 3", ex.Message);
     }
 
@@ -79,7 +79,7 @@ public class BaseKernelCompilerTests
     public async Task CompileAsync_CachesCompiledKernels_WhenCachingEnabled()
     {
         // Arrange
-        var definition = new KernelDefinition("test", new byte[] { 1, 2, 3 }, "main");
+        var definition = new KernelDefinition("test", "test source", "main");
         
         // Act
         var result1 = await _compiler.CompileAsync(definition);
@@ -95,7 +95,7 @@ public class BaseKernelCompilerTests
     {
         // Arrange
         _compiler.DisableCaching();
-        var definition = new KernelDefinition("test", new byte[] { 1, 2, 3 }, "main");
+        var definition = new KernelDefinition("test", "test source", "main");
         
         // Act
         var result1 = await _compiler.CompileAsync(definition);
@@ -110,7 +110,7 @@ public class BaseKernelCompilerTests
     public async Task CompileAsync_LogsCompilationMetrics()
     {
         // Arrange
-        var definition = new KernelDefinition("test", new byte[] { 1, 2, 3 }, "main");
+        var definition = new KernelDefinition("test", "test source", "main");
         
         // Act
         await _compiler.CompileAsync(definition);
@@ -130,7 +130,7 @@ public class BaseKernelCompilerTests
     public async Task CompileAsync_RecordsMetrics()
     {
         // Arrange
-        var definition = new KernelDefinition("test", new byte[] { 1, 2, 3 }, "main");
+        var definition = new KernelDefinition("test", "test source", "main");
         
         // Act
         await _compiler.CompileAsync(definition);
@@ -146,26 +146,26 @@ public class BaseKernelCompilerTests
     {
         // Arrange
         _compiler.ShouldThrowOnCompile = true;
-        var definition = new KernelDefinition("test", new byte[] { 1, 2, 3 }, "main");
+        var definition = new KernelDefinition("test", "test source", "main");
         
         // Act & Assert
         var ex = await Assert.ThrowsAsync<KernelCompilationException>(
-            () => _compiler.CompileAsync(definition));
+            async () => await _compiler.CompileAsync(definition));
         Assert.Contains("Failed to compile kernel", ex.Message);
     }
 
     [Fact]
-    public void ClearCache_RemovesAllCachedKernels()
+    public async Task ClearCache_RemovesAllCachedKernels()
     {
         // Arrange
-        var definition1 = new KernelDefinition("test1", new byte[] { 1 }, "main");
-        var definition2 = new KernelDefinition("test2", new byte[] { 2 }, "main");
+        var definition1 = new KernelDefinition("test1", "source1", "main");
+        var definition2 = new KernelDefinition("test2", "source2", "main");
         
         // Act
-        _ = _compiler.CompileAsync(definition1).Result;
-        _ = _compiler.CompileAsync(definition2).Result;
+        await _compiler.CompileAsync(definition1);
+        await _compiler.CompileAsync(definition2);
         _compiler.ClearCache();
-        _ = _compiler.CompileAsync(definition1).Result;
+        await _compiler.CompileAsync(definition1);
         
         // Assert
         Assert.Equal(3, _compiler.CompileCallCount); // Should recompile after cache clear
@@ -175,8 +175,8 @@ public class BaseKernelCompilerTests
     public void GenerateCacheKey_CreatesDifferentKeys_ForDifferentDefinitions()
     {
         // Arrange
-        var definition1 = new KernelDefinition("test1", new byte[] { 1 }, "main");
-        var definition2 = new KernelDefinition("test2", new byte[] { 2 }, "main");
+        var definition1 = new KernelDefinition("test1", "source1", "main");
+        var definition2 = new KernelDefinition("test2", "source2", "main");
         var options = new CompilationOptions();
         
         // Act
@@ -191,7 +191,7 @@ public class BaseKernelCompilerTests
     public void GenerateCacheKey_CreatesDifferentKeys_ForDifferentOptimizationLevels()
     {
         // Arrange
-        var definition = new KernelDefinition("test", new byte[] { 1 }, "main");
+        var definition = new KernelDefinition("test", "source1", "main");
         var options1 = new CompilationOptions { OptimizationLevel = OptimizationLevel.None };
         var options2 = new CompilationOptions { OptimizationLevel = OptimizationLevel.Aggressive };
         
@@ -206,7 +206,7 @@ public class BaseKernelCompilerTests
     /// <summary>
     /// Test implementation of BaseKernelCompiler for testing purposes.
     /// </summary>
-    private class TestKernelCompiler : BaseKernelCompiler
+    private sealed class TestKernelCompiler : BaseKernelCompiler
     {
         private bool _enableCaching = true;
         
@@ -220,7 +220,7 @@ public class BaseKernelCompilerTests
         protected override string CompilerName => "TestCompiler";
 
         public override IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; } = 
-            new List<KernelLanguage> { KernelLanguage.HighLevel }.AsReadOnly();
+            new List<KernelLanguage> { KernelLanguage.CSharpIL }.AsReadOnly();
 
         protected override bool EnableCaching => _enableCaching;
 

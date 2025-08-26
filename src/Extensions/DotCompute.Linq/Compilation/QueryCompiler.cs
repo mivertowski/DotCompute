@@ -78,7 +78,7 @@ public class QueryCompiler : IQueryCompiler
     }
 
     /// <inheritdoc/>
-    public DotCompute.Abstractions.UnifiedValidationResult Validate(Expression expression)
+    public DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
 
@@ -98,10 +98,10 @@ public class QueryCompiler : IQueryCompiler
         if (errors.Count > 0)
         {
             var message = $"Expression validation failed with {errors.Count} errors";
-            return DotCompute.Abstractions.UnifiedValidationResult.Failure(message);
+            return DotCompute.Abstractions.Validation.UnifiedValidationResult.Failure(message);
         }
 
-        return DotCompute.Abstractions.UnifiedValidationResult.Success();
+        return DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
     }
 
     /// <summary>

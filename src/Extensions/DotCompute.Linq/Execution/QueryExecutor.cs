@@ -101,7 +101,7 @@ public class QueryExecutor : IQueryExecutor
     }
 
     /// <inheritdoc/>
-    public DotCompute.Abstractions.UnifiedValidationResult Validate(IComputePlan plan, IAccelerator accelerator)
+    public DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(IComputePlan plan, IAccelerator accelerator)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(accelerator);
@@ -137,10 +137,10 @@ public class QueryExecutor : IQueryExecutor
 
         if (hasErrors)
         {
-            return DotCompute.Abstractions.UnifiedValidationResult.Failure(errorMessage);
+            return DotCompute.Abstractions.Validation.UnifiedValidationResult.Failure(errorMessage);
         }
 
-        return DotCompute.Abstractions.UnifiedValidationResult.Success();
+        return DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
     }
 
     private IUnifiedMemoryManager GetMemoryManager(IAccelerator accelerator)
@@ -449,17 +449,17 @@ public interface IMemoryManagerFactory
 /// </summary>
 public class DefaultMemoryManagerFactory : IMemoryManagerFactory
 {
-    private readonly ILogger<UnifiedMemoryManager> _logger;
+    private readonly ILogger<IUnifiedMemoryManager> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultMemoryManagerFactory"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    public DefaultMemoryManagerFactory(ILogger<UnifiedMemoryManager> logger)
+    public DefaultMemoryManagerFactory(ILogger<IUnifiedMemoryManager> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <inheritdoc/>
-    public IUnifiedMemoryManager CreateMemoryManager(IAccelerator accelerator) => new UnifiedMemoryManager(accelerator.Memory);
+    public IUnifiedMemoryManager CreateMemoryManager(IAccelerator accelerator) => accelerator.Memory;
 }

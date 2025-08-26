@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
-using DotCompute.Core.Kernels;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Linq.Operators.Generation;
 

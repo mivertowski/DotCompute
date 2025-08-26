@@ -27,7 +27,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     public abstract IAccelerator Accelerator { get; }
     
     /// <inheritdoc/>
-    public abstract DotCompute.Abstractions.MemoryStatistics Statistics { get; }
+    public abstract DotCompute.Abstractions.Memory.MemoryStatistics Statistics { get; }
     
     /// <inheritdoc/>
     public abstract long MaxAllocationSize { get; }
@@ -320,11 +320,11 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     /// <summary>
     /// Gets memory statistics for this manager.
     /// </summary>
-    public virtual DotCompute.Abstractions.MemoryStatistics GetStatistics()
+    public virtual DotCompute.Abstractions.Memory.MemoryStatistics GetStatistics()
     {
         CleanupUnusedBuffers();
         
-        return new DotCompute.Abstractions.MemoryStatistics
+        return new DotCompute.Abstractions.Memory.MemoryStatistics
         {
             TotalAllocated = TotalAllocatedBytes,
             CurrentUsed = TotalAllocatedBytes,

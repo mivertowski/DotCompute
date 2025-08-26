@@ -35,7 +35,7 @@ public interface IQueryExecutor
     /// <param name="plan">The compute plan to validate.</param>
     /// <param name="accelerator">The target accelerator.</param>
     /// <returns>A validation result.</returns>
-    public DotCompute.Abstractions.UnifiedValidationResult Validate(IComputePlan plan, IAccelerator accelerator);
+    public DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(IComputePlan plan, IAccelerator accelerator);
 }
 
 /// <summary>

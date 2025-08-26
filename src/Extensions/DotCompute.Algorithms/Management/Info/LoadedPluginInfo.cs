@@ -4,8 +4,8 @@
 // </copyright>
 
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Management.Types;
 using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Types.Enums;
 
 namespace DotCompute.Algorithms.Management.Info;
 

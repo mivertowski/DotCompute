@@ -244,16 +244,16 @@ public class MapKernelTemplate : IKernelTemplate
         };
     }
 
-    private static Core.Kernels.KernelLanguage ConvertLanguage(KernelLanguage language)
+    private static DotCompute.Abstractions.Types.KernelLanguage ConvertLanguage(KernelLanguage language)
     {
         return language switch
         {
-            KernelLanguage.CSharp => Core.Kernels.KernelLanguage.CSharp,
-            KernelLanguage.CUDA => Core.Kernels.KernelLanguage.CUDA,
-            KernelLanguage.OpenCL => Core.Kernels.KernelLanguage.OpenCL,
-            KernelLanguage.Metal => Core.Kernels.KernelLanguage.Metal,
-            KernelLanguage.SPIRV => Core.Kernels.KernelLanguage.OpenCL, // SPIRV not available, fallback to OpenCL
-            _ => Core.Kernels.KernelLanguage.CSharp
+            KernelLanguage.CSharp => DotCompute.Abstractions.Types.KernelLanguage.CSharp,
+            KernelLanguage.CUDA => DotCompute.Abstractions.Types.KernelLanguage.CUDA,
+            KernelLanguage.OpenCL => DotCompute.Abstractions.Types.KernelLanguage.OpenCL,
+            KernelLanguage.Metal => DotCompute.Abstractions.Types.KernelLanguage.Metal,
+            KernelLanguage.SPIRV => DotCompute.Abstractions.Types.KernelLanguage.SPIRV,
+            _ => DotCompute.Abstractions.Types.KernelLanguage.CSharp
         };
     }
 

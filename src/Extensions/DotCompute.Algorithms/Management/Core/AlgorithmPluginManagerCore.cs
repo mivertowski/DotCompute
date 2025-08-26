@@ -37,8 +37,8 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
         var pluginOptions = options ?? new AlgorithmPluginManagerOptions();
 
         // Create security validator
-        var securityValidatorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<SecurityValidator>.Instance;
-        var securityValidator = new SecurityValidator(securityValidatorLogger, pluginOptions);
+        var securityValidatorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Validation.SecurityValidator>.Instance;
+        var securityValidator = new Validation.SecurityValidator(securityValidatorLogger, pluginOptions);
 
         // Create lifecycle manager (concrete type needed for health monitor)
         var lifecycleLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<PluginLifecycleManager>.Instance;
@@ -58,8 +58,8 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
         DiscoveryService = new PluginDiscoveryService(discoveryLogger, LifecycleManager, securityValidator, pluginOptions);
 
         // Create NuGet service
-        var nugetLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginService>.Instance;
-        NuGetService = new NuGetPluginService(nugetLogger, LifecycleManager, DiscoveryService, pluginOptions);
+        var nugetLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Loading.NuGetPluginService>.Instance;
+        NuGetService = new Loading.NuGetPluginService(nugetLogger, LifecycleManager, DiscoveryService, pluginOptions);
 
         // Create executor
         var executorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<PluginExecutor>.Instance;
@@ -265,7 +265,7 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
     }
 
     /// <inheritdoc/>
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         if (!_disposed)
         {
@@ -285,5 +285,6 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
             // Note: Other services would need to implement IAsyncDisposable if they have async cleanup needs
             // For now, they don't have significant cleanup requirements
         }
+        return ValueTask.CompletedTask;
     }
 }

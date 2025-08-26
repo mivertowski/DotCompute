@@ -124,15 +124,15 @@ public class ExpressionKernelGenerator
         return generator.GenerateFromExpression(expression, _context);
     }
 
-    private Core.Kernels.KernelLanguage SelectTargetLanguage(IAccelerator accelerator)
+    private DotCompute.Abstractions.Types.KernelLanguage SelectTargetLanguage(IAccelerator accelerator)
     {
         return accelerator.Type switch
         {
-            AcceleratorType.CUDA => Core.Kernels.KernelLanguage.CUDA,
-            AcceleratorType.OpenCL => Core.Kernels.KernelLanguage.OpenCL,
-            AcceleratorType.Metal => Core.Kernels.KernelLanguage.Metal,
-            AcceleratorType.CPU => Core.Kernels.KernelLanguage.CSharp,
-            _ => Core.Kernels.KernelLanguage.CSharp
+            AcceleratorType.CUDA => DotCompute.Abstractions.Types.KernelLanguage.CUDA,
+            AcceleratorType.OpenCL => DotCompute.Abstractions.Types.KernelLanguage.OpenCL,
+            AcceleratorType.Metal => DotCompute.Abstractions.Types.KernelLanguage.Metal,
+            AcceleratorType.CPU => DotCompute.Abstractions.Types.KernelLanguage.CSharp,
+            _ => DotCompute.Abstractions.Types.KernelLanguage.CSharp
         };
     }
 

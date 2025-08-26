@@ -129,7 +129,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
             await PerformErrorRateTrackingAsync(loadedPlugin);
             await PerformResourceLeakDetectionAsync(loadedPlugin);
 
-            var newHealth = (PluginHealth)loadedPlugin.Health;
+            var newHealth = loadedPlugin.Health;
             if (oldHealth != newHealth)
             {
                 LogPluginHealthChanged(loadedPlugin.Plugin.Id, oldHealth, newHealth);
@@ -184,7 +184,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to monitor memory usage for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+            _logger.LogWarning(ex, "Failed to monitor memory usage for plugin: {PluginId}", (string)loadedPlugin.Plugin.Id);
         }
     }
 
@@ -215,7 +215,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
             }
 
             // Check for response time degradation over time
-            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousAverageResponseTime", out var prevTimeObj) &&
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousAverageResponseTime", out object? prevTimeObj) &&
                 prevTimeObj is double prevTime)
             {
                 var degradationThreshold = 1.5; // 50% increase
@@ -237,7 +237,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to analyze response times for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+            _logger.LogWarning(ex, "Failed to analyze response times for plugin: {PluginId}", (string)loadedPlugin.Plugin.Id);
         }
     }
 
@@ -256,14 +256,16 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
             // Calculate error rate based on recent errors
             var errorCount = loadedPlugin.LastError != null ? 1 : 0;
 
-            // Get historical error count if available
-            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("TotalErrorCount", out var totalErrorsObj) &&
-                totalErrorsObj is long totalErrors)
+            // Get historical error count if available  
+            var totalErrors = 0L;
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("TotalErrorCount", out object? totalErrorsObj) &&
+                totalErrorsObj is long totalErrorsValue)
             {
+                totalErrors = totalErrorsValue;
                 errorCount = (int)totalErrors;
             }
 
-            var errorRate = (double)errorCount / loadedPlugin.ExecutionCount;
+            var errorRate = (double)totalErrors / loadedPlugin.ExecutionCount;
             const double criticalErrorRate = 0.5; // 50% error rate
             const double warningErrorRate = 0.1; // 10% error rate
 
@@ -289,7 +291,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to track error rates for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+            _logger.LogWarning(ex, "Failed to track error rates for plugin: {PluginId}", (string)loadedPlugin.Plugin.Id);
         }
     }
 
@@ -304,7 +306,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
             var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
             var handleCount = currentProcess.HandleCount;
 
-            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousHandleCount", out var prevHandleObj) &&
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousHandleCount", out object? prevHandleObj) &&
                 prevHandleObj is int prevHandleCount)
             {
                 var handleIncrease = handleCount - prevHandleCount;
@@ -318,7 +320,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
                     }
 
                     _logger.LogWarning("Potential handle leak detected for plugin {PluginId}: {HandleIncrease} new handles",
-                        loadedPlugin.Plugin.Id, handleIncrease);
+                        (string)loadedPlugin.Plugin.Id, handleIncrease);
                 }
             }
 
@@ -331,7 +333,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to detect resource leaks for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+            _logger.LogWarning(ex, "Failed to detect resource leaks for plugin: {PluginId}", (string)loadedPlugin.Plugin.Id);
         }
     }
 

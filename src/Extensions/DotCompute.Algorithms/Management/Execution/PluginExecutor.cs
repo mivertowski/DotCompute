@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Execution;
@@ -91,7 +92,7 @@ public sealed partial class PluginExecutor : IPluginExecutor
         {
             try
             {
-                return await plugin.ExecuteAsync(inputs, parameters, cancellationToken).ConfigureAwait(false);
+                return await plugin.ExecuteAsync(inputs, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (attempt < maxRetries && IsTransientError(ex))
             {
@@ -101,7 +102,7 @@ public sealed partial class PluginExecutor : IPluginExecutor
         }
 
         // Final attempt without retry handling
-        return await plugin.ExecuteAsync(inputs, parameters, cancellationToken).ConfigureAwait(false);
+        return await plugin.ExecuteAsync(inputs, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -30,7 +30,7 @@ public class CpuMemoryManager : BaseMemoryManager
     public override IAccelerator Accelerator => _accelerator;
     
     /// <inheritdoc/>
-    public override DotCompute.Abstractions.MemoryStatistics Statistics => new DotCompute.Abstractions.MemoryStatistics
+    public override DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new DotCompute.Abstractions.Memory.MemoryStatistics
     {
         TotalAllocated = _currentAllocatedBytes,
         CurrentUsed = _currentAllocatedBytes,

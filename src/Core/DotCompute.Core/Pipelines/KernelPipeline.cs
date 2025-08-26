@@ -2,13 +2,14 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Validation;
 using System.Diagnostics;
 using DotCompute.Core.Pipelines.Exceptions;
 using DotCompute.Core.Pipelines.Stages;
 using DotCompute.Core.Pipelines.Types;
 using DotCompute.Core.Pipelines.Models;
 using DotCompute.Core.Validation;
+using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
+using ValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
 namespace DotCompute.Core.Pipelines
 {

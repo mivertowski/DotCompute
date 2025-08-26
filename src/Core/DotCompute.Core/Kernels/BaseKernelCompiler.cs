@@ -9,6 +9,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Kernels.Compilation;
 using DotCompute.Core.Kernels.Validation;
+using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Kernels;
@@ -48,7 +49,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     public virtual string Name => CompilerName;
 
     /// <inheritdoc/>
-    public abstract IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; }
+    public abstract IReadOnlyList<DotCompute.Abstractions.Types.KernelLanguage> SupportedSourceTypes { get; }
 
     /// <inheritdoc/>
     public virtual IReadOnlyDictionary<string, object> Capabilities { get; } = new Dictionary<string, object>

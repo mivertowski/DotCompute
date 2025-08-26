@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Execution;
 using Microsoft.Extensions.Logging;
 
@@ -36,10 +37,21 @@ internal class CpuFallbackKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
     /// <summary>
     /// Gets the supported source types.
     /// </summary>
-    public DotCompute.Abstractions.KernelSourceType[] SupportedSourceTypes => new[]
+    public IReadOnlyList<DotCompute.Abstractions.Types.KernelLanguage> SupportedSourceTypes => new[]
     {
-        DotCompute.Abstractions.KernelSourceType.ExpressionTree,
-        DotCompute.Abstractions.KernelSourceType.Binary
+        DotCompute.Abstractions.Types.KernelLanguage.CSharp,
+        DotCompute.Abstractions.Types.KernelLanguage.CSharpIL,
+        DotCompute.Abstractions.Types.KernelLanguage.Binary
+    };
+
+    /// <summary>
+    /// Gets the compiler capabilities.
+    /// </summary>
+    public IReadOnlyDictionary<string, object> Capabilities => new Dictionary<string, object>
+    {
+        ["SupportsAsync"] = true,
+        ["SupportsCaching"] = false,
+        ["SupportsOptimization"] = false
     };
 
     /// <summary>
@@ -68,18 +80,48 @@ internal class CpuFallbackKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
     /// </summary>
     /// <param name="definition">The kernel definition to validate.</param>
     /// <returns>The validation result.</returns>
-    public DotCompute.Abstractions.UnifiedValidationResult Validate(DotCompute.Abstractions.Kernels.KernelDefinition definition)
+    public DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
         if (definition == null)
         {
-            return DotCompute.Abstractions.UnifiedValidationResult.Failure("Kernel definition cannot be null");
+            return DotCompute.Abstractions.Validation.UnifiedValidationResult.Failure("Kernel definition cannot be null");
         }
 
         if (string.IsNullOrEmpty(definition.Name))
         {
-            return DotCompute.Abstractions.UnifiedValidationResult.Failure("Kernel name cannot be empty");
+            return DotCompute.Abstractions.Validation.UnifiedValidationResult.Failure("Kernel name cannot be empty");
         }
 
-        return DotCompute.Abstractions.UnifiedValidationResult.Success();
+        return DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
+    }
+
+    /// <summary>
+    /// Validates a kernel definition asynchronously.
+    /// </summary>
+    /// <param name="definition">The kernel definition to validate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the validation operation.</returns>
+    public ValueTask<DotCompute.Abstractions.Validation.UnifiedValidationResult> ValidateAsync(
+        DotCompute.Abstractions.Kernels.KernelDefinition definition,
+        CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(Validate(definition));
+    }
+
+    /// <summary>
+    /// Optimizes an already compiled kernel.
+    /// </summary>
+    /// <param name="kernel">The kernel to optimize.</param>
+    /// <param name="level">The optimization level.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the optimization operation.</returns>
+    public ValueTask<DotCompute.Abstractions.ICompiledKernel> OptimizeAsync(
+        DotCompute.Abstractions.ICompiledKernel kernel,
+        OptimizationLevel level,
+        CancellationToken cancellationToken = default)
+    {
+        // CPU fallback doesn't support optimization, return the same kernel
+        _logger.LogDebug("CPU fallback compiler does not support optimization");
+        return ValueTask.FromResult(kernel);
     }
 }

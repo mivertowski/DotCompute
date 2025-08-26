@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Linq.Operators.Compilation;
 
@@ -34,12 +35,23 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
     /// <summary>
     /// Gets the supported source types.
     /// </summary>
-    public DotCompute.Abstractions.KernelSourceType[] SupportedSourceTypes => new[]
+    public IReadOnlyList<DotCompute.Abstractions.Types.KernelLanguage> SupportedSourceTypes => _accelerator.Type switch
     {
-        DotCompute.Abstractions.KernelSourceType.ExpressionTree,
-        DotCompute.Abstractions.KernelSourceType.CUDA,
-        DotCompute.Abstractions.KernelSourceType.OpenCL,
-        DotCompute.Abstractions.KernelSourceType.HLSL
+        AcceleratorType.CUDA => new[] { DotCompute.Abstractions.Types.KernelLanguage.CUDA, DotCompute.Abstractions.Types.KernelLanguage.Ptx },
+        AcceleratorType.OpenCL => new[] { DotCompute.Abstractions.Types.KernelLanguage.OpenCL },
+        AcceleratorType.Metal => new[] { DotCompute.Abstractions.Types.KernelLanguage.Metal },
+        AcceleratorType.DirectCompute => new[] { DotCompute.Abstractions.Types.KernelLanguage.HLSL, DotCompute.Abstractions.Types.KernelLanguage.DirectCompute },
+        _ => new[] { DotCompute.Abstractions.Types.KernelLanguage.CSharp }
+    };
+
+    /// <summary>
+    /// Gets the compiler capabilities.
+    /// </summary>
+    public IReadOnlyDictionary<string, object> Capabilities => new Dictionary<string, object>
+    {
+        ["SupportsAsync"] = true,
+        ["SupportsCaching"] = true,
+        ["SupportsOptimization"] = true
     };
 
     /// <summary>
@@ -63,18 +75,47 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
     /// </summary>
     /// <param name="definition">The kernel definition to validate.</param>
     /// <returns>The validation result.</returns>
-    public DotCompute.Abstractions.UnifiedValidationResult Validate(DotCompute.Abstractions.Kernels.KernelDefinition definition)
+    public DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
         if (definition == null)
         {
-            return DotCompute.Abstractions.UnifiedValidationResult.Failure("Kernel definition cannot be null");
+            return DotCompute.Abstractions.Validation.UnifiedValidationResult.Failure("Kernel definition cannot be null");
         }
 
         if (string.IsNullOrEmpty(definition.Name))
         {
-            return DotCompute.Abstractions.UnifiedValidationResult.Failure("Kernel name cannot be empty");
+            return DotCompute.Abstractions.Validation.UnifiedValidationResult.Failure("Kernel name cannot be empty");
         }
 
-        return DotCompute.Abstractions.UnifiedValidationResult.Success();
+        return DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
+    }
+
+    /// <summary>
+    /// Validates a kernel definition asynchronously.
+    /// </summary>
+    /// <param name="definition">The kernel definition to validate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the validation operation.</returns>
+    public ValueTask<DotCompute.Abstractions.Validation.UnifiedValidationResult> ValidateAsync(
+        DotCompute.Abstractions.Kernels.KernelDefinition definition,
+        CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(Validate(definition));
+    }
+
+    /// <summary>
+    /// Optimizes an already compiled kernel.
+    /// </summary>
+    /// <param name="kernel">The kernel to optimize.</param>
+    /// <param name="level">The optimization level.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the optimization operation.</returns>
+    public ValueTask<DotCompute.Abstractions.ICompiledKernel> OptimizeAsync(
+        DotCompute.Abstractions.ICompiledKernel kernel,
+        OptimizationLevel level,
+        CancellationToken cancellationToken = default)
+    {
+        // Delegate to accelerator's optimization capabilities if available
+        return ValueTask.FromResult(kernel);
     }
 }

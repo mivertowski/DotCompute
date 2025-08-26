@@ -15,7 +15,7 @@ using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Management.Types;
+using DotCompute.Algorithms.Types.Enums;
 using DotCompute.Algorithms.Management.Validation;
 using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Types.Security;

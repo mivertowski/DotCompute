@@ -92,10 +92,10 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     /// <summary>
     /// Validates whether a compute plan can be executed on CPU.
     /// </summary>
-    public DotCompute.Abstractions.UnifiedValidationResult Validate(IComputePlan plan, IAccelerator accelerator)
+    public DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(IComputePlan plan, IAccelerator accelerator)
         // CPU fallback can always execute plans
 
-        => DotCompute.Abstractions.UnifiedValidationResult.Success();
+        => DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
 
     /// <summary>
     /// Executes a LINQ expression on CPU with SIMD optimization.

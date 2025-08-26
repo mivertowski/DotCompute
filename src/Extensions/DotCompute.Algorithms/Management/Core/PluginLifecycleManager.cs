@@ -9,7 +9,7 @@ using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Metadata;
 using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
-using DotCompute.Algorithms.Types.Loading;
+using DotCompute.Algorithms.Management.Loading;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Core;
@@ -104,7 +104,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
         {
             // Initialize plugin
             loadedPlugin.State = PluginState.Initializing;
-            await plugin.InitializeAsync(_accelerator, cancellationToken).ConfigureAwait(false);
+            await plugin.InitializeAsync(_accelerator).ConfigureAwait(false);
 
             loadedPlugin.State = PluginState.Running;
             loadedPlugin.Health = PluginHealth.Healthy;
@@ -134,7 +134,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
         {
             Id = plugin.Id,
             Name = plugin.Name,
-            Version = plugin.Version.ToString(),
+            Version = new Version(plugin.Version.ToString()),
             Description = plugin.Description,
             Author = "External",
             AssemblyPath = plugin.GetType().Assembly.Location,
@@ -254,9 +254,9 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
             Name = lp.Plugin.Name,
             Version = lp.Plugin.Version,
             Description = lp.Plugin.Description,
-            SupportedAccelerators = lp.Plugin.SupportedAccelerators,
+            SupportedAccelerators = [.. lp.Plugin.SupportedAccelerators],
             InputTypes = [.. lp.Plugin.InputTypes.Select(t => t.FullName ?? t.Name)],
-            OutputType = lp.Plugin.OutputType.FullName ?? lp.Plugin.OutputType.Name,
+            OutputType = lp.Plugin.GetType().Name, // Simplified - plugin type as output
             PerformanceProfile = lp.Plugin.GetPerformanceProfile()
         });
     }
