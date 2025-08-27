@@ -26,14 +26,11 @@ public class BaseKernelCompilerTests
     }
 
     [Fact]
-    public async Task CompileAsync_ValidatesKernelDefinition()
+    public void CompileAsync_ValidatesKernelDefinition()
     {
-        // Arrange
-        var invalidDefinition = new KernelDefinition("", null!, null!);
-        
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => 
-            await _compiler.CompileAsync(invalidDefinition));
+        // Arrange & Act & Assert
+        // KernelDefinition constructor validates and throws ArgumentNullException for null source
+        Assert.Throws<ArgumentNullException>(() => new KernelDefinition("", null!, null!));
     }
 
     [Fact]
@@ -45,19 +42,16 @@ public class BaseKernelCompilerTests
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await _compiler.CompileAsync(invalidDefinition));
-        Assert.Contains("Kernel name cannot be empty", ex.Message);
+        Assert.Contains("Kernel name cannot be empty", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task CompileAsync_ValidatesNullKernelCode()
+    public void CompileAsync_ValidatesNullKernelCode()
     {
-        // Arrange
-        var invalidDefinition = new KernelDefinition("test", null!, "main");
-        
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            async () => await _compiler.CompileAsync(invalidDefinition));
-        Assert.Contains("Kernel code cannot be null or empty", ex.Message);
+        // Arrange & Act & Assert
+        // KernelDefinition constructor validates and throws ArgumentNullException for null source
+        var ex = Assert.Throws<ArgumentNullException>(() => new KernelDefinition("test", null!, "main"));
+        Assert.Equal("source", ex.ParamName);
     }
 
     [Fact]
@@ -72,7 +66,7 @@ public class BaseKernelCompilerTests
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await _compiler.CompileAsync(definition));
-        Assert.Contains("Work dimensions must be between 1 and 3", ex.Message);
+        Assert.Contains("Work dimensions must be between 1 and 3", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -138,7 +132,7 @@ public class BaseKernelCompilerTests
         // Assert
         var metrics = _compiler.GetMetrics();
         Assert.Single(metrics);
-        Assert.Contains(definition.Name, metrics.First().Value.KernelName);
+        Assert.Contains(definition.Name, metrics.First().Value.KernelName, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -151,7 +145,7 @@ public class BaseKernelCompilerTests
         // Act & Assert
         var ex = await Assert.ThrowsAsync<KernelCompilationException>(
             async () => await _compiler.CompileAsync(definition));
-        Assert.Contains("Failed to compile kernel", ex.Message);
+        Assert.Contains("Failed to compile kernel", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]

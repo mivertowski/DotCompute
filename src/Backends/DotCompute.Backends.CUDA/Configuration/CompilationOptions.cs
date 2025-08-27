@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Backends.CUDA.Configuration
 {
@@ -70,7 +71,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public new static CudaCompilationOptions Default => new()
         {
             CudaArchitecture = "sm_60",
-            OptimizationLevel = OptimizationLevel.Default
+            OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.Default
         };
 
         /// <summary>
@@ -79,7 +80,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public static CudaCompilationOptions Performance => new()
         {
             CudaArchitecture = "sm_80",
-            OptimizationLevel = OptimizationLevel.Aggressive,
+            OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.Aggressive,
             UseFastMath = true,
             EnableDebugInfo = false,
             EnableLoopUnrolling = true,
@@ -94,7 +95,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public new static CudaCompilationOptions Debug => new()
         {
             CudaArchitecture = "sm_60",
-            OptimizationLevel = OptimizationLevel.Minimal,
+            OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.Minimal,
             UseFastMath = false,
             EnableDebugInfo = true,
             GeneratePositionIndependentCode = false
@@ -106,7 +107,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public static CudaCompilationOptions ForAda => new()
         {
             CudaArchitecture = "sm_89",
-            OptimizationLevel = OptimizationLevel.Aggressive,
+            OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.Aggressive,
             UseFastMath = true,
             EnableDebugInfo = false,
             EnableLoopUnrolling = true,

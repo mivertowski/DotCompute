@@ -3,6 +3,8 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Accelerators;
+using DotCompute.Abstractions.Factories;
+using DotCompute.Abstractions.Validation;
 using DotCompute.Runtime.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -39,10 +41,10 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         RegisterDefaultProviders();
     }
 
-    public async Task<IAccelerator> CreateAcceleratorAsync(AcceleratorInfo acceleratorInfo, IServiceProvider serviceProvider)
+    public async ValueTask<IAccelerator> CreateAsync(AcceleratorInfo acceleratorInfo, IServiceProvider? serviceProvider = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(acceleratorInfo);
-        ArgumentNullException.ThrowIfNull(serviceProvider);
+        serviceProvider ??= _serviceProvider;
 
         if (_disposed)
         {
@@ -70,7 +72,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             }
 
             // Get or create provider
-            var provider = await GetOrCreateProviderAsync(acceleratorType, serviceProvider);
+            var provider = await GetOrCreateProviderAsync(acceleratorType, serviceProvider, cancellationToken);
 
             // Create accelerator through provider
             var accelerator = await provider.CreateAsync(acceleratorInfo);
@@ -108,7 +110,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         }
     }
 
-    public async Task<TProvider> CreateProviderAsync<TProvider>(IServiceProvider serviceProvider)
+    public async ValueTask<TProvider> CreateProviderAsync<TProvider>(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         where TProvider : class, IAcceleratorProvider
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
@@ -188,6 +190,74 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         return supportedTypes;
     }
 
+    public async ValueTask<IAccelerator> CreateAsync(AcceleratorType type, AcceleratorConfiguration? configuration = null, IServiceProvider? serviceProvider = null, CancellationToken cancellationToken = default)
+    {
+        serviceProvider ??= _serviceProvider;
+        
+        // Create a mock AcceleratorInfo from the type
+        var acceleratorInfo = new AcceleratorInfo
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = $"{type} Accelerator",
+            DeviceType = type.ToString(),
+            DeviceIndex = configuration?.DeviceIndex ?? 0,
+            IsUnifiedMemory = configuration?.MemoryStrategy == MemoryAllocationStrategy.Unified
+        };
+        
+        return await CreateAsync(acceleratorInfo, serviceProvider, cancellationToken);
+    }
+
+    public async ValueTask<IAccelerator> CreateAsync(string backendName, AcceleratorConfiguration? configuration = null, IServiceProvider? serviceProvider = null, CancellationToken cancellationToken = default)
+    {
+        if (!Enum.TryParse<AcceleratorType>(backendName, true, out var type))
+        {
+            throw new ArgumentException($"Unknown backend name: {backendName}", nameof(backendName));
+        }
+        
+        return await CreateAsync(type, configuration, serviceProvider, cancellationToken);
+    }
+
+    public async ValueTask<IReadOnlyList<AcceleratorType>> GetAvailableTypesAsync(CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask;
+        return GetSupportedTypes().ToList();
+    }
+
+    public async ValueTask<IReadOnlyList<AcceleratorInfo>> GetAvailableDevicesAsync(CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask;
+        var devices = new List<AcceleratorInfo>();
+        
+        foreach (var type in GetSupportedTypes())
+        {
+            // Create a mock device info for each supported type
+            devices.Add(new AcceleratorInfo
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = $"{type} Device",
+                DeviceType = type.ToString(),
+                DeviceIndex = 0,
+                IsUnifiedMemory = false
+            });
+        }
+        
+        return devices;
+    }
+
+    public bool UnregisterProvider(Type providerType)
+    {
+        ArgumentNullException.ThrowIfNull(providerType);
+        
+        var keysToRemove = _providerTypes.Where(kvp => kvp.Value == providerType).Select(kvp => kvp.Key).ToList();
+        
+        foreach (var key in keysToRemove)
+        {
+            _ = _providerTypes.TryRemove(key, out _);
+        }
+        
+        return keysToRemove.Count > 0;
+    }
+
     public void RegisterProvider(Type providerType, params AcceleratorType[] supportedTypes)
     {
         ArgumentNullException.ThrowIfNull(providerType);
@@ -229,7 +299,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         => _logger.LogDebug("Registered default accelerator providers");
 
-    private async Task<IAcceleratorProvider> GetOrCreateProviderAsync(AcceleratorType type, IServiceProvider serviceProvider)
+    private async Task<IAcceleratorProvider> GetOrCreateProviderAsync(AcceleratorType type, IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         // First try to get from registered providers
         var existingProvider = _serviceProvider.GetServices<IAcceleratorProvider>()
@@ -243,14 +313,14 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         // Try to create from registered type
         if (_providerTypes.TryGetValue(type, out var providerType))
         {
-            var provider = await CreateProviderAsync(providerType, serviceProvider);
+            var provider = await CreateProviderAsync(providerType, serviceProvider, cancellationToken);
             return (IAcceleratorProvider)provider;
         }
 
         throw new NotSupportedException($"No provider found for accelerator type {type}");
     }
 
-    private Task<object> CreateProviderAsync(Type providerType, IServiceProvider serviceProvider)
+    private ValueTask<object> CreateProviderAsync(Type providerType, IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         var constructors = providerType.GetConstructors();
         var bestConstructor = constructors.OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();
@@ -275,7 +345,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         }
 
         var instance = Activator.CreateInstance(providerType, dependencies)!;
-        return Task.FromResult(instance);
+        return ValueTask.FromResult(instance);
     }
 
     private async Task<AcceleratorValidationResult> ValidateAcceleratorAsync(IAccelerator accelerator)
@@ -286,6 +356,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             var warnings = new List<string>();
             var performanceMetrics = new Dictionary<string, double>();
             var supportedFeatures = AcceleratorFeature.None;
+            var SupportedFeatures = new List<string>();
 
             // Basic validation
             if (accelerator.Info == null)
@@ -315,6 +386,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                 if (accelerator.Info.IsUnifiedMemory)
                 {
                     supportedFeatures |= AcceleratorFeature.UnifiedMemory;
+                    SupportedFeatures.Add("UnifiedMemory");
                 }
 
                 if (accelerator.Info.TotalMemory > 0)
@@ -324,7 +396,15 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             }
 
             return errors.Count == 0
-                ? AcceleratorValidationResult.Success(supportedFeatures, performanceMetrics)
+                ? AcceleratorValidationResult.Success(AcceleratorType.Auto, 0, SupportedFeatures.ToArray(), 
+                    new AcceleratorPerformanceMetrics
+                    {
+                        MemoryBandwidthGBps = performanceMetrics.GetValueOrDefault("MemoryBandwidth", 0.0),
+                        ComputeCapabilityScore = performanceMetrics.GetValueOrDefault("ComputeCapability", 1.0),
+                        InitializationTimeMs = performanceMetrics.GetValueOrDefault("SyncLatency", 0.0),
+                        DeviceMemoryBytes = (long)performanceMetrics.GetValueOrDefault("TotalMemoryMB", 0.0) * 1024 * 1024,
+                        SupportsUnifiedMemory = supportedFeatures.HasFlag(AcceleratorFeature.UnifiedMemory)
+                    })
                 : AcceleratorValidationResult.Failure(errors, warnings);
         }
 

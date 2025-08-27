@@ -192,6 +192,12 @@ namespace DotCompute.Backends.CUDA.Models
         public bool IsRTX => Name.Contains("RTX", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
+        /// Gets or sets whether this device is an integrated GPU.
+        /// Integrated GPUs share system memory and are typically lower performance than discrete GPUs.
+        /// </summary>
+        public bool IntegratedGpu { get; set; }
+
+        /// <summary>
         /// Gets the PCI bus information as a formatted string.
         /// </summary>
         public string PciInfo => $"{PciDomainId:X4}:{PciBusId:X2}:{PciDeviceId:X2}";

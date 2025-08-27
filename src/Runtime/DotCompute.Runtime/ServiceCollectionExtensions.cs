@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Factories;
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.DependencyInjection;
 using DotCompute.Runtime.Factories;

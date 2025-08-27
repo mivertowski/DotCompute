@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets the preferred data type for computations.
         /// </summary>
-        public DataType PreferredDataType { get; set; } = DataType.FP16;
+        public DataType PreferredDataType { get; set; } = Types.DataType.Float16;
 
         /// <summary>
         /// Gets or sets the data type string for Tensor Core operations.
@@ -63,7 +63,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public static TensorCoreConfiguration ForAI => new()
         {
             EnableAutoMixedPrecision = true,
-            PreferredDataType = Types.DataType.FP16,
+            PreferredDataType = Types.DataType.Float16,
             DataType = "FP16",
             Precision = "Fast",
             EnableSparsity = true,
@@ -76,7 +76,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public static TensorCoreConfiguration ForHPC => new()
         {
             EnableAutoMixedPrecision = false,
-            PreferredDataType = Types.DataType.FP64,
+            PreferredDataType = Types.DataType.Float64,
             DataType = "FP64",
             Precision = "High",
             EnableSparsity = false,

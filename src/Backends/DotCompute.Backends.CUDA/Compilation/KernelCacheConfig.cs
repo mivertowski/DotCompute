@@ -29,4 +29,15 @@ public sealed class KernelCacheConfig
     /// Gets or sets the cache expiry time in hours.
     /// </summary>
     public int CacheExpiryHours { get; set; } = 24;
+
+    /// <summary>
+    /// Gets or sets the disk cache path for compiled kernels.
+    /// If null, uses the default system temp directory.
+    /// </summary>
+    public string? DiskCachePath { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum memory cache size in megabytes.
+    /// </summary>
+    public int MaxMemoryCacheSizeMB { get; set; } = 256;
 }

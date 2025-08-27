@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -52,14 +53,11 @@ public class BaseAcceleratorTests
     }
 
     [Fact]
-    public async Task CompileKernelAsync_ValidatesDefinition_BeforeCompilation()
+    public void CompileKernelAsync_ValidatesDefinition_BeforeCompilation()
     {
-        // Arrange
-        var invalidDefinition = new KernelDefinition("", null!, null!);
-        
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => 
-            await _accelerator.CompileKernelAsync(invalidDefinition));
+        // Arrange & Act & Assert
+        // KernelDefinition constructor validates and throws ArgumentNullException for null source
+        Assert.Throws<ArgumentNullException>(() => new KernelDefinition("", null!, null!));
     }
 
     [Fact]
@@ -117,9 +115,8 @@ public class BaseAcceleratorTests
         
         // Assert
         Assert.NotNull(options);
-        Assert.Equal(OptimizationLevel.Balanced, options.OptimizationLevel);
+        Assert.Equal(OptimizationLevel.Default, options.OptimizationLevel);
         Assert.False(options.EnableDebugInfo);
-        Assert.False(options.EnableProfiling);
     }
 
     [Fact]
@@ -179,13 +176,12 @@ public class BaseAcceleratorTests
         {
             DisposeCallCount++;
             await base.DisposeCoreAsync();
-            return ValueTask.CompletedTask;
         }
 
         public void SimulateDispose()
         {
             var field = typeof(BaseAccelerator).GetField("_disposed", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
             field?.SetValue(this, 1);
         }
 

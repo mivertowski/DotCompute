@@ -30,6 +30,11 @@ namespace DotCompute.Backends.CUDA.Types.Native
         MemoryAllocation = 2,
 
         /// <summary>
+        /// The system is out of memory.
+        /// </summary>
+        OutOfMemory = 2,
+
+        /// <summary>
         /// The CUDA driver and runtime could not be initialized.
         /// </summary>
         InitializationError = 3,
@@ -363,6 +368,24 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// The graph execution update failed.
         /// </summary>
         GraphExecUpdateFailure = 69,
+
+        /// <summary>
+        /// An uncorrectable ECC error was detected during execution.
+        /// This indicates a hardware problem that cannot be automatically corrected.
+        /// </summary>
+        EccUncorrectable = 214,
+
+        /// <summary>
+        /// A hardware stack error occurred.
+        /// This indicates a problem with the hardware stack management system.
+        /// </summary>
+        HardwareStackError = 215,
+
+        /// <summary>
+        /// An illegal instruction was encountered during kernel execution.
+        /// This indicates a problem with the kernel code or compilation.
+        /// </summary>
+        IllegalInstruction = 216,
 
         /// <summary>
         /// An unknown error occurred.

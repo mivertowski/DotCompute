@@ -46,5 +46,10 @@ public enum OptimizationLevel
     /// <summary>
     /// Full optimization - comprehensive optimization with all techniques.
     /// </summary>
-    Full = 7
+    Full = 7,
+
+    /// <summary>
+    /// Balanced optimization - optimal balance between performance and compilation time.
+    /// </summary>
+    Balanced = 8
 }

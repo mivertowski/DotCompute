@@ -15,6 +15,11 @@ namespace DotCompute.Abstractions
         None = 0,
 
         /// <summary>
+        /// Auto-detect the best available accelerator.
+        /// </summary>
+        Auto = -1,
+
+        /// <summary>
         /// CPU-based computation.
         /// </summary>
         CPU = 1,

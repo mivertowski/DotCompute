@@ -47,4 +47,34 @@ public class KernelCacheStatistics
     /// Gets the timestamp when these statistics were collected
     /// </summary>
     public DateTime CollectedAt { get; init; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets the total number of cache hits across all kernel types
+    /// </summary>
+    public long TotalHits { get; init; }
+
+    /// <summary>
+    /// Gets the total number of cache misses across all kernel types
+    /// </summary>
+    public long TotalMisses { get; init; }
+
+    /// <summary>
+    /// Gets the current memory usage of the cache in bytes
+    /// </summary>
+    public long MemoryUsage { get; init; }
+
+    /// <summary>
+    /// Gets the number of entries in the memory cache
+    /// </summary>
+    public int MemoryCacheEntries { get; init; }
+
+    /// <summary>
+    /// Gets the number of entries in the disk cache
+    /// </summary>
+    public int DiskCacheEntries { get; init; }
+
+    /// <summary>
+    /// Gets the current memory usage in megabytes
+    /// </summary>
+    public double CurrentMemoryUsageMB => MemoryUsage / (1024.0 * 1024.0);
 }

@@ -2,9 +2,14 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Backends.CUDA.Memory.Models;
+using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DotCompute.Runtime.Services.Memory;
 
@@ -35,7 +40,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
             sizeInBytes / 1024 / 1024, string.Join(", ", acceleratorIds));
 
         // Create a unified memory buffer (mock implementation)
-        var buffer = new UnifiedMemoryBuffer(sizeInBytes);
+        var buffer = new RuntimeUnifiedMemoryBuffer(sizeInBytes);
 
         _bufferAccelerators[buffer] = new HashSet<string>(acceleratorIds);
         _coherenceStatus[buffer] = MemoryCoherenceStatus.Coherent;
@@ -82,5 +87,45 @@ public class UnifiedMemoryService : IUnifiedMemoryService
         ArgumentNullException.ThrowIfNull(buffer);
 
         return _coherenceStatus.GetValueOrDefault(buffer, MemoryCoherenceStatus.Unknown);
+    }
+}
+
+/// <summary>
+/// Mock implementation of unified memory buffer for runtime service
+/// </summary>
+internal class RuntimeUnifiedMemoryBuffer : IUnifiedMemoryBuffer
+{
+    public long SizeInBytes { get; }
+    public nint DevicePointer { get; private set; }
+    public bool IsDisposed { get; private set; }
+    public MemoryBufferState State { get; set; } = MemoryBufferState.Allocated;
+
+    public RuntimeUnifiedMemoryBuffer(long sizeInBytes)
+    {
+        SizeInBytes = sizeInBytes;
+        DevicePointer = Marshal.AllocHGlobal((int)sizeInBytes);
+    }
+
+    public Task CopyFromAsync<T>(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task CopyToAsync<T>(Memory<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        if (!IsDisposed)
+        {
+            if (DevicePointer != nint.Zero)
+            {
+                Marshal.FreeHGlobal(DevicePointer);
+                DevicePointer = nint.Zero;
+            }
+            IsDisposed = true;
+        }
     }
 }

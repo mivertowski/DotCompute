@@ -21,6 +21,11 @@ public class CompilationOptions
     /// </summary>
     public bool EnableDebugInfo { get; set; }
 
+    /// <summary>
+    /// Enable profiling support during compilation and execution
+    /// </summary>
+    public bool EnableProfiling { get; set; }
+
 
     /// <summary>
     /// Enable fast math optimizations (may reduce precision)
@@ -259,7 +264,8 @@ public class CompilationOptions
             ProfileDataPath = ProfileDataPath,
             StrictFloatingPoint = StrictFloatingPoint,
             CompilerBackend = CompilerBackend,
-            ForceInterpretedMode = ForceInterpretedMode
+            ForceInterpretedMode = ForceInterpretedMode,
+            EnableProfiling = EnableProfiling
         };
     }
 
