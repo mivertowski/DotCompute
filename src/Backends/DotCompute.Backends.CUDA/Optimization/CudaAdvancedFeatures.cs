@@ -231,7 +231,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
     /// Configures optimal memory advice for unified memory buffers
     /// </summary>
     public async Task<bool> SetOptimalMemoryAdviceAsync(
-        CudaUnifiedMemoryBuffer buffer,
+        DotCompute.Backends.CUDA.Types.CudaUnifiedMemoryBuffer buffer,
         CudaMemoryUsageHint usageHint,
         CancellationToken cancellationToken = default)
     {

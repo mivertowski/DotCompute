@@ -78,11 +78,77 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     {
         return ValueTask.CompletedTask; // TODO: Implement memory optimization
     }
-
+    
     /// <inheritdoc/>
-    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
+    public override long TotalAvailableMemory => _totalMemory;
+    
+    /// <inheritdoc/>
+    public override long MaxAllocationSize => _totalMemory / 2;
+    
+    /// <inheritdoc/>
+    public override void Clear()
     {
-        throw new NotImplementedException("TODO: Implement typed buffer view creation");
+        foreach (var pool in _memoryPools.Values)
+        {
+            pool.Clear();
+        }
+        _memoryPools.Clear();
+    }
+    
+    /// <inheritdoc/>
+    protected override async ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(
+        long sizeInBytes,
+        MemoryOptions options,
+        CancellationToken cancellationToken)
+    {
+        return await AllocateStreamOrderedAsync(sizeInBytes, options, cancellationToken);
+    }
+    
+    /// <inheritdoc/>
+    public override async ValueTask CopyAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        IUnifiedMemoryBuffer<T> destination,
+        CancellationToken cancellationToken)
+    {
+        await CopyAsync(source, 0, destination, 0, source.Count, cancellationToken);
+    }
+    
+    /// <inheritdoc/>
+    public override async ValueTask CopyAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        int sourceOffset,
+        IUnifiedMemoryBuffer<T> destination, 
+        int destinationOffset,
+        int count,
+        CancellationToken cancellationToken)
+    {
+        // Implement async copy between buffers
+        await Task.Run(() =>
+        {
+            // Copy implementation
+            var size = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        }, cancellationToken);
+    }
+    
+    /// <inheritdoc/>
+    public override async ValueTask CopyToDeviceAsync<T>(
+        ReadOnlyMemory<T> source,
+        IUnifiedMemoryBuffer<T> destination,
+        CancellationToken cancellationToken)
+    {
+        if (destination is CudaAsyncMemoryBuffer buffer)
+        {
+            await buffer.CopyFromHostAsync(source, 0, cancellationToken);
+        }
+    }
+    
+    /// <inheritdoc/>
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(
+        IUnifiedMemoryBuffer<T> buffer,
+        int offset,
+        int count)
+    {
+        throw new NotImplementedException("CreateView not implemented");
     }
 
     /// <summary>

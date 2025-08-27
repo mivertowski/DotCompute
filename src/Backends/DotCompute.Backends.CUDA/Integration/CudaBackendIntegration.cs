@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.P2P;
 using DotCompute.Backends.CUDA.Advanced;
+using DotCompute.Backends.CUDA.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -557,7 +558,7 @@ namespace DotCompute.Backends.CUDA.Integration
                 }
 
                 // Create a wrapper accelerator that uses the existing context
-                // This is a lightweight wrapper that doesn't create a new CUDA context
+                // This is a lightweight wrapper that doesn't create a new CUDA context TODO
                 var accelerator = new CudaContextAcceleratorWrapper(context);
                 _contextToAcceleratorMap[context] = accelerator;
                 return accelerator;
@@ -587,11 +588,23 @@ namespace DotCompute.Backends.CUDA.Integration
                     _asyncAdapter = new CudaAsyncMemoryManagerAdapter(_cudaMemoryManager);
                 }
 
-                public ValueTask<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+                public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
                 {
                     try
                     {
-                        return _asyncAdapter.AllocateAsync(sizeInBytes, options, cancellationToken);
+                        return _asyncAdapter.AllocateAsync<T>(count, options, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new MemoryException($"Failed to allocate {count} elements of CUDA memory", ex);
+                    }
+                }
+
+                public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+                {
+                    try
+                    {
+                        return _asyncAdapter.AllocateRawAsync(sizeInBytes, options, cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -599,7 +612,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     }
                 }
 
-                public ValueTask<IUnifiedMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+                public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
                 {
                     try
                     {
@@ -611,51 +624,63 @@ namespace DotCompute.Backends.CUDA.Integration
                     }
                 }
 
-                public IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
+                public IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) where T : unmanaged
                 {
                     try
                     {
-                        return _asyncAdapter.CreateView(buffer, offset, length);
+                        return _asyncAdapter.CreateView(buffer, offset, count);
                     }
                     catch (Exception ex)
                     {
-                        throw new MemoryException($"Failed to create memory view at offset {offset} with length {length}", ex);
+                        throw new MemoryException($"Failed to create memory view at offset {offset} with count {count}", ex);
                     }
                 }
 
-                public ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+                public ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
                 {
                     try
                     {
-                        return _asyncAdapter.Allocate<T>(count);
+                        return _asyncAdapter.CopyToDeviceAsync(source, destination, cancellationToken);
                     }
                     catch (Exception ex)
                     {
-                        throw new MemoryException($"Failed to allocate {count} elements of type {typeof(T).Name}", ex);
+                        throw new MemoryException($"Failed to copy {source.Length} elements to device memory", ex);
                     }
                 }
 
-                public void CopyToDevice<T>(IUnifiedMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+                public ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
                 {
                     try
                     {
-                        _asyncAdapter.CopyToDevice(buffer, data);
+                        return _asyncAdapter.CopyFromDeviceAsync(source, destination, cancellationToken);
                     }
                     catch (Exception ex)
                     {
-                        throw new MemoryException($"Failed to copy {data.Length} elements to device memory", ex);
+                        throw new MemoryException($"Failed to copy {destination.Length} elements from device memory", ex);
                     }
                 }
 
-                public void CopyFromDevice<T>(Span<T> data, IUnifiedMemoryBuffer buffer) where T : unmanaged
+                public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
                 {
                     try
                     {
-                        _asyncAdapter.CopyFromDevice(data, buffer);
+                        return _asyncAdapter.CopyAsync(source, destination, cancellationToken);
                     }
                     catch (Exception ex)
                     {
-                        throw new MemoryException($"Failed to copy {data.Length} elements from device memory", ex);
+                        throw new MemoryException($"Failed to copy between buffers", ex);
+                    }
+                }
+
+                public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) where T : unmanaged
+                {
+                    try
+                    {
+                        return _asyncAdapter.CopyAsync(source, sourceOffset, destination, destinationOffset, count, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new MemoryException($"Failed to copy {count} elements with offsets", ex);
                     }
                 }
 
@@ -672,17 +697,72 @@ namespace DotCompute.Backends.CUDA.Integration
                     }
                 }
 
+                public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
+                {
+                    try
+                    {
+                        return _asyncAdapter.FreeAsync(buffer, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new MemoryException($"Failed to async free memory buffer", ex);
+                    }
+                }
+
+                public void Clear()
+                {
+                    try
+                    {
+                        _asyncAdapter.Clear();
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new MemoryException($"Failed to clear memory", ex);
+                    }
+                }
+
+                public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
+                {
+                    try
+                    {
+                        return _asyncAdapter.OptimizeAsync(cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new MemoryException($"Failed to optimize memory", ex);
+                    }
+                }
+
+                // Properties
+                public long TotalAvailableMemory => _asyncAdapter.TotalAvailableMemory;
+                public long CurrentAllocatedMemory => _asyncAdapter.CurrentAllocatedMemory;
+                public long MaxAllocationSize => _asyncAdapter.MaxAllocationSize;
+                public MemoryStatistics Statistics => _asyncAdapter.Statistics;
+                public IAccelerator Accelerator => _asyncAdapter.Accelerator;
+
                 public void Dispose()
                 {
                     try
                     {
-                        // CudaAsyncMemoryManagerAdapter doesn't implement IDisposable
-                        // Only dispose the underlying sync memory manager
+                        _asyncAdapter?.Dispose();
                         _cudaMemoryManager?.Dispose();
                     }
                     catch (Exception ex)
                     {
                         System.Diagnostics.Debug.WriteLine($"Warning: Error during memory manager disposal: {ex.Message}");
+                    }
+                }
+
+                public ValueTask DisposeAsync()
+                {
+                    try
+                    {
+                        return _asyncAdapter?.DisposeAsync() ?? ValueTask.CompletedTask;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Warning: Error during async disposal: {ex.Message}");
+                        return ValueTask.CompletedTask;
                     }
                 }
             }
@@ -710,7 +790,7 @@ namespace DotCompute.Backends.CUDA.Integration
                         _logger.LogDebug("Executing kernel {Name} with {ArgumentCount} arguments", Name, arguments.Arguments.Count);
 
                         // For context wrapper, we need to simulate kernel execution
-                        // In a real implementation, this would compile and execute actual kernels
+                        // In a real implementation, this would compile and execute actual kernels TODO
                         await Task.Run(() =>
                         {
                             _context.MakeCurrent();
@@ -837,7 +917,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     if (result == CudaError.Success)
                     {
                         // Query device properties for max threads per block
-                        // This is a simplified implementation
+                        // This is a simplified implementation TODO
                         return 1024; // Common value for most CUDA devices
                     }
                 }
@@ -1059,7 +1139,7 @@ namespace DotCompute.Backends.CUDA.Integration
             try
             {
                 // Query actual performance metrics from CUDA runtime
-                // These metrics would typically come from NVML or CUPTI APIs
+                // These metrics would typically come from NVML or CUPTI APIs TODO
                 var (memUsed, memTotal) = QueryMemoryUsage();
                 var smActivity = QuerySMActivity();
                 var recentKernelStats = QueryRecentKernelStats();
@@ -1103,7 +1183,7 @@ namespace DotCompute.Backends.CUDA.Integration
             try
             {
                 // Simulated values based on typical GPU memory patterns
-                // Real implementation would query actual device
+                // Real implementation would query actual device TODO
                 var totalMemory = 24L * 1024 * 1024 * 1024; // 24GB for RTX 4090
                 var usedMemory = (long)(totalMemory * (0.3 + Random.Shared.NextDouble() * 0.5));
                 return (usedMemory, totalMemory);
@@ -1117,7 +1197,7 @@ namespace DotCompute.Backends.CUDA.Integration
         private static double QuerySMActivity()
         {
             // In a real implementation, this would use CUPTI or NVML
-            // to query streaming multiprocessor activity percentage
+            // to query streaming multiprocessor activity percentage TODO
             try
             {
                 // Simulated SM activity (0-100%)
@@ -1131,7 +1211,7 @@ namespace DotCompute.Backends.CUDA.Integration
 
         private static KernelExecutionStats QueryRecentKernelStats()
         {
-            // In a real implementation, this would track actual kernel execution statistics
+            // In a real implementation, this would track actual kernel execution statistics TODO
             return new KernelExecutionStats
             {
                 KernelCount = 100,

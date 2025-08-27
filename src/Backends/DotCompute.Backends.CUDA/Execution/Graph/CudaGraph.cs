@@ -4,7 +4,9 @@
 using System;
 using System.Collections.Generic;
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Types;
 
 namespace DotCompute.Backends.CUDA.Execution.Graph
 {
@@ -70,7 +72,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// Gets or sets the optimization options for this graph.
         /// </summary>
         /// <value>A <see cref="CudaGraphOptimizationOptions"/> instance specifying optimization behavior.</value>
-        public CudaGraphOptimizationOptions Options { get; set; } = new();
+        public DotCompute.Backends.CUDA.Types.CudaGraphOptimizationOptions Options { get; set; } = new DotCompute.Backends.CUDA.Types.CudaGraphOptimizationOptions();
 
         /// <summary>
         /// Releases the native CUDA graph resources.

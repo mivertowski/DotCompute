@@ -1,3 +1,4 @@
+using DotCompute.Backends.CUDA.Types;
 
 namespace DotCompute.Backends.CUDA.Execution.Models
 {

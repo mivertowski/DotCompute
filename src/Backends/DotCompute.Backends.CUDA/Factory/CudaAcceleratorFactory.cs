@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Advanced;
 using DotCompute.Backends.CUDA.Analysis;
 using DotCompute.Backends.CUDA.Compilation;
@@ -603,7 +604,7 @@ namespace DotCompute.Backends.CUDA.Factory
         /// <summary>
         /// Production CUDA accelerator with all advanced features.
         /// </summary>
-        public class ProductionCudaAccelerator : CudaAccelerator
+        public class ProductionCudaAccelerator : IAccelerator, IDisposable, IAsyncDisposable
         {
             public CudaStreamManagerProduction StreamManager { get; }
             public CudaAsyncMemoryManager AsyncMemoryManager { get; }
@@ -636,7 +637,6 @@ namespace DotCompute.Backends.CUDA.Factory
                 CudaMemoryCoalescingAnalyzer coalescingAnalyzer,
                 CudaDeviceManager deviceManager,
                 SystemInfoManager systemInfoManager)
-                : base(deviceId, logger)
             {
                 Configuration = config ?? throw new ArgumentNullException(nameof(config));
                 StreamManager = streamManager ?? throw new ArgumentNullException(nameof(streamManager));
@@ -651,24 +651,57 @@ namespace DotCompute.Backends.CUDA.Factory
                 CoalescingAnalyzer = coalescingAnalyzer ?? throw new ArgumentNullException(nameof(coalescingAnalyzer));
                 DeviceManager = deviceManager ?? throw new ArgumentNullException(nameof(deviceManager));
                 SystemInfoManager = systemInfoManager ?? throw new ArgumentNullException(nameof(systemInfoManager));
+                DeviceId = deviceId;
+                
+                // Create base accelerator for delegation
+                _baseAccelerator = new CudaAccelerator(deviceId, logger);
             }
 
-            protected override void Dispose(bool disposing)
+            // IAccelerator interface implementation
+            public AcceleratorType Type => AcceleratorType.CUDA;
+            public AcceleratorInfo Info => new AcceleratorInfo
             {
-                if (disposing)
-                {
-                    // Dispose managers in reverse order
-                    Profiler?.Dispose();
-                    GraphOptimizer?.Dispose();
-                    KernelCache?.Dispose();
-                    TensorCoreManager?.Dispose();
-                    UnifiedMemoryManager?.Dispose();
-                    ErrorHandler?.Dispose();
-                    AsyncMemoryManager?.Dispose();
-                    StreamManager?.Dispose();
-                }
+                Name = $"CUDA Device {DeviceId}",
+                Type = AcceleratorType.CUDA,
+                MaxComputeUnits = 108, // Default SM count
+                MaxWorkGroupSize = 1024,
+                GlobalMemorySize = (ulong)UnifiedMemoryManager.TotalAvailableMemory,
+                LocalMemorySize = 49152, // 48KB shared memory per block
+                SupportsFloat64 = true,
+                SupportsInt64 = true
+            };
+            public IUnifiedMemoryManager Memory => UnifiedMemoryManager;
+            public AcceleratorContext Context { get; private set; }
+
+            public async ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
+                => await _baseAccelerator.CompileKernelAsync(definition, options, cancellationToken);
+
+            public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+            {
+                await StreamManager.SynchronizeAllAsync(cancellationToken);
+            }
+
+            public int DeviceId { get; private set; }
+
+            public void Dispose()
+            {
+                // Dispose managers in reverse order
+                Profiler?.Dispose();
+                GraphOptimizer?.Dispose();
+                KernelCache?.Dispose();
+                TensorCoreManager?.Dispose();
+                UnifiedMemoryManager?.Dispose();
+                ErrorHandler?.Dispose();
+                AsyncMemoryManager?.Dispose();
+                StreamManager?.Dispose();
                 
-                base.Dispose(disposing);
+                // Dispose base accelerator
+                _baseAccelerator?.Dispose();
+            }
+            
+            public ValueTask DisposeAsync()
+            {
+                return _baseAccelerator?.DisposeAsync() ?? ValueTask.CompletedTask;
             }
         }
     }

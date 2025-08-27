@@ -4,6 +4,7 @@
 using global::System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Wrapper.BLAS.Enums;
 using DotCompute.Backends.CUDA.Wrapper.BLAS.Models;
 using Microsoft.Extensions.Logging;
@@ -562,7 +563,7 @@ public sealed class CuBLASWrapper : IDisposable
         var pivot = new int[n];
 
         // Perform LU decomposition using custom kernel or cuSOLVER
-        // This is a simplified implementation - real version would use cuSOLVER
+        // This is a simplified implementation - real version would use cuSOLVER //TODO
         await PerformLUDecompositionKernelAsync(work, L, U, pivot, n, cancellationToken).ConfigureAwait(false);
 
         await work.DisposeAsync().ConfigureAwait(false);
@@ -657,7 +658,7 @@ public sealed class CuBLASWrapper : IDisposable
         int[] pivot, int n, CancellationToken cancellationToken)
     {
         // This would be implemented with a custom CUDA kernel or cuSOLVER
-        // For now, using a placeholder implementation
+        // For now, using a placeholder implementation TODO
         await Task.Delay(1, cancellationToken).ConfigureAwait(false);
         _logger.LogDebug("LU decomposition kernel executed for {N}x{N} matrix", n, n);
     }
@@ -665,7 +666,7 @@ public sealed class CuBLASWrapper : IDisposable
     private async Task PerformCholeskyDecompositionKernelAsync(CudaMemoryBuffer L, int n, bool upper,
         CancellationToken cancellationToken)
     {
-        // This would be implemented with a custom CUDA kernel or cuSOLVER
+        // This would be implemented with a custom CUDA kernel or cuSOLVER TODO
         await Task.Delay(1, cancellationToken).ConfigureAwait(false);
         _logger.LogDebug("Cholesky decomposition kernel executed for {N}x{N} matrix", n, n);
     }
@@ -673,7 +674,7 @@ public sealed class CuBLASWrapper : IDisposable
     private async Task PerformQRDecompositionKernelAsync(CudaMemoryBuffer A, CudaMemoryBuffer Q, CudaMemoryBuffer R,
         int m, int n, CancellationToken cancellationToken)
     {
-        // This would be implemented with a custom CUDA kernel or cuSOLVER
+        // This would be implemented with a custom CUDA kernel or cuSOLVER TODO
         await Task.Delay(1, cancellationToken).ConfigureAwait(false);
         _logger.LogDebug("QR decomposition kernel executed for {M}x{N} matrix", m, n);
     }
@@ -703,12 +704,3 @@ public sealed class CuBLASWrapper : IDisposable
         }
     }
 }
-
-// Supporting types have been moved to separate files:
-// - Enums/CublasStatus.cs
-// - Enums/CublasOperation.cs
-// - Enums/CublasFillMode.cs
-// - Enums/CublasDiagType.cs
-// - Enums/CublasSideMode.cs
-// - Enums/CublasMath.cs
-// - Models/PerformanceMetrics.cs

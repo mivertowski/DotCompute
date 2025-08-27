@@ -72,6 +72,27 @@ namespace DotCompute.Backends.CUDA.Types
         Custom
     }
     /// <summary>
+    /// CUDA graph capture mode.
+    /// </summary>
+    public enum CudaGraphCaptureMode
+    {
+        Global,
+        ThreadLocal,
+        Relaxed
+    }
+    
+    /// <summary>
+    /// CUDA cache configuration.
+    /// </summary>
+    public enum CacheConfig
+    {
+        PreferNone,
+        PreferShared,
+        PreferL1,
+        PreferEqual
+    }
+    
+    /// <summary>
     /// Options for CUDA graph optimization.
     /// </summary>
     public sealed class CudaGraphOptimizationOptions
@@ -122,9 +143,40 @@ namespace DotCompute.Backends.CUDA.Types
     }
 
     /// <summary>
+    /// CUDA kernel fusion options.
+    /// </summary>
+    public sealed class CudaKernelFusionOptions
+    {
+        public bool EnableAutoFusion { get; set; } = true;
+        public int MaxFusedKernels { get; set; } = 4;
+        public double MinimumBenefitThreshold { get; set; } = 0.2;
+    }
+    
+    /// <summary>
+    /// CUDA graph update parameters.
+    /// </summary>
+    public sealed class CudaGraphUpdateParameters
+    {
+        public bool UpdateNodeParams { get; set; } = true;
+        public bool UpdateKernelParams { get; set; } = true;
+        public bool PreserveTopology { get; set; } = true;
+    }
+    
+    /// <summary>
+    /// CUDA graph statistics.
+    /// </summary>
+    public sealed class CudaGraphStatistics
+    {
+        public int NodeCount { get; set; }
+        public int EdgeCount { get; set; }
+        public long EstimatedMemoryUsage { get; set; }
+        public double AverageNodeExecutionTime { get; set; }
+    }
+    
+    /// <summary>
     /// CUDA unified memory buffer implementation.
     /// </summary>
-    internal sealed class CudaUnifiedMemoryBuffer
+    public sealed class CudaUnifiedMemoryBuffer
     {
         public nint DevicePointer { get; set; }
         public long SizeInBytes { get; set; }

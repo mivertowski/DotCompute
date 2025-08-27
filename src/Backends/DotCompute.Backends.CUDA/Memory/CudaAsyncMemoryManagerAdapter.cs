@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Types;
 
@@ -10,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Adapter that wraps CudaMemoryManager for async operations.
     /// Bridges the CUDA memory manager with the unified memory interface.
     /// </summary>
-    public sealed class CudaAsyncMemoryManagerAdapter : IUnifiedMemoryManager
+    public sealed class CudaAsyncMemoryManagerAdapter : Abstractions.IUnifiedMemoryManager
     {
         private readonly CudaMemoryManager _memoryManager;
         private bool _disposed;
@@ -53,7 +54,7 @@ namespace DotCompute.Backends.CUDA.Memory
             // Synchronous allocation wrapped in ValueTask
             var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             
-            // For now, return a simple stub - this would need proper implementation
+            // For now, return a simple stub - this would need proper implementation TODO
             throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.AllocateAsync not fully implemented");
         }
 
@@ -65,7 +66,7 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ValueTask<IUnifiedMemoryBuffer<T>> CreateView<T>(
+        public IUnifiedMemoryBuffer<T> CreateView<T>(
             IUnifiedMemoryBuffer<T> buffer,
             int offset,
             int count) where T : unmanaged
@@ -112,6 +113,46 @@ namespace DotCompute.Backends.CUDA.Memory
             // Optimization not implemented
             return ValueTask.CompletedTask;
         }
+        
+        /// <inheritdoc/>
+        public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
+            ReadOnlyMemory<T> data,
+            MemoryOptions options = MemoryOptions.None,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            throw new NotImplementedException("AllocateAndCopyAsync not implemented"); //TODO
+        }
+        
+        /// <inheritdoc/>
+        public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
+            long sizeInBytes,
+            MemoryOptions options = MemoryOptions.None,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException("AllocateRawAsync not implemented"); //TODO
+        }
+        
+        /// <inheritdoc/>
+        public ValueTask CopyAsync<T>(
+            IUnifiedMemoryBuffer<T> source,
+            int sourceOffset,
+            IUnifiedMemoryBuffer<T> destination,
+            int destinationOffset,
+            int count,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            throw new NotImplementedException("CopyAsync with offsets not implemented"); //TODO
+        }
+        
+        /// <inheritdoc/>
+        public void Free(IUnifiedMemoryBuffer buffer)
+        {
+            // Synchronous free
+            buffer?.Dispose();
+        }
+        
+        /// <inheritdoc/>
+        public IAccelerator Accelerator => throw new NotImplementedException("Accelerator not implemented"); //TODO
 
         /// <inheritdoc/>
         public void Dispose()

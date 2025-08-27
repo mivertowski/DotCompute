@@ -45,6 +45,9 @@ namespace DotCompute.Backends.CUDA.Memory.Models
         /// Gets whether the parent buffer has been disposed.
         /// </summary>
         public bool IsDisposed => _parent.IsDisposed;
+        
+        /// <inheritdoc/>
+        public BufferState State => _parent.State;
 
         /// <summary>
         /// Copies data from host memory to this view asynchronously.
