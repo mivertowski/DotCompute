@@ -71,5 +71,10 @@ public enum BufferState
     /// <summary>
     /// Buffer data is ready on the device.
     /// </summary>
-    DeviceReady
+    DeviceReady,
+    
+    /// <summary>
+    /// Buffer has been released and its memory is available for reuse.
+    /// </summary>
+    Released
 }

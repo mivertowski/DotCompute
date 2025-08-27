@@ -77,4 +77,24 @@ public sealed class MemoryStatistics
     /// Gets the cache hit rate for pooled allocations.
     /// </summary>
     public double PoolHitRate { get; init; }
+
+    /// <summary>
+    /// Gets the total memory bytes available in the system.
+    /// </summary>
+    public long TotalMemoryBytes { get; init; }
+
+    /// <summary>
+    /// Gets the used memory bytes in the system.
+    /// </summary>
+    public long UsedMemoryBytes { get; init; }
+
+    /// <summary>
+    /// Gets the available memory bytes for allocation.
+    /// </summary>
+    public long AvailableMemoryBytes { get; init; }
+
+    /// <summary>
+    /// Gets the peak memory usage in bytes across all allocations.
+    /// </summary>
+    public long PeakMemoryUsageBytes { get; init; }
 }

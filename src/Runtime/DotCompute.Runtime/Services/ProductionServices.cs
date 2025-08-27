@@ -355,7 +355,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
         var sizeInBytes = count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-        return await AllocateAsync(sizeInBytes);
+        return await AllocateRawAsync(sizeInBytes);
     }
 
     /// <summary>
@@ -575,7 +575,7 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
         }
     }
 
-    public async ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    public async ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (IsDisposed)
         {
@@ -616,7 +616,7 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
         }
     }
 
-    public async ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    public async ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (IsDisposed)
         {
@@ -715,7 +715,7 @@ public sealed class ProductionMemoryBufferView : IUnifiedMemoryBuffer
         _logger = logger;
     }
 
-    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (IsDisposed)
         {
@@ -725,7 +725,7 @@ public sealed class ProductionMemoryBufferView : IUnifiedMemoryBuffer
         return _parentBuffer.CopyFromAsync(source, _offset + offset, cancellationToken);
     }
 
-    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (IsDisposed)
         {
@@ -886,6 +886,11 @@ public sealed class MemoryStatistics
     private double _totalCopyTimeMs;
     
     public long CurrentlyAllocatedBytes => _totalBytesAllocated - _totalBytesFreed;
+    public long TotalAllocations => _totalAllocations;
+    public long TotalDeallocations => _totalDeallocations;
+    public long TotalBytesAllocated => _totalBytesAllocated;
+    public double AverageAllocationTime => _totalAllocations > 0 ? _totalAllocationTimeMs / _totalAllocations : 0.0;
+    public double PoolHitRate => (_poolHits + _poolMisses) > 0 ? (double)_poolHits / (_poolHits + _poolMisses) : 0.0;
 
     public void RecordAllocation(long bytes, double timeMs, bool fromPool)
     {

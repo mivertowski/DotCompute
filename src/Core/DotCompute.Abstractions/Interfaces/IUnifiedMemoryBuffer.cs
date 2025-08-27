@@ -219,4 +219,24 @@ public interface IUnifiedMemoryBuffer : IAsyncDisposable, IDisposable
     /// Gets the current state of the buffer.
     /// </summary>
     BufferState State { get; }
+    
+    /// <summary>
+    /// Copies data from a source memory into this buffer.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="source">The source memory to copy from.</param>
+    /// <param name="offset">The offset in bytes where to start copying.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the copy operation.</returns>
+    ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged;
+    
+    /// <summary>
+    /// Copies data from this buffer to a destination memory.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="destination">The destination memory to copy to.</param>
+    /// <param name="offset">The offset in bytes where to start copying from.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the copy operation.</returns>
+    ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged;
 }

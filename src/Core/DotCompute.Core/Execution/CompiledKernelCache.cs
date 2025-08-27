@@ -375,6 +375,24 @@ namespace DotCompute.Core.Execution
         /// <summary>Gets or sets the number of kernels by device type.</summary>
         public Dictionary<string, int> DeviceTypes { get; set; } = [];
 
+        /// <summary>Gets or sets the total number of cache hits.</summary>
+        public long TotalHits { get; set; }
+
+        /// <summary>Gets or sets the total number of cache misses.</summary>
+        public long TotalMisses { get; set; }
+
+        /// <summary>Gets or sets the cache hit rate as a percentage.</summary>
+        public double HitRate { get; set; }
+
+        /// <summary>Gets or sets the number of entries in the memory cache.</summary>
+        public int MemoryCacheEntries { get; set; }
+
+        /// <summary>Gets or sets the number of entries in the disk cache.</summary>
+        public int DiskCacheEntries { get; set; }
+
+        /// <summary>Gets or sets the current memory usage in megabytes.</summary>
+        public double CurrentMemoryUsageMB { get; set; }
+
         /// <summary>Gets or sets the oldest cache time.</summary>
         public DateTimeOffset OldestCacheTime { get; set; }
 

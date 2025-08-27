@@ -13,9 +13,34 @@ namespace DotCompute.Backends.CUDA.Analysis.Types;
 public sealed class CoalescingAnalysis
 {
     /// <summary>
+    /// Gets or sets the name of the kernel being analyzed.
+    /// </summary>
+    public string KernelName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the timestamp when the analysis was performed.
+    /// </summary>
+    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>
     /// Gets or sets the coalescing efficiency percentage (0-100).
     /// </summary>
     public double EfficiencyPercent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the coalescing efficiency as a ratio (0-1).
+    /// </summary>
+    public double CoalescingEfficiency { get; set; }
+
+    /// <summary>
+    /// Gets or sets the amount of wasted bandwidth in bytes.
+    /// </summary>
+    public long WastedBandwidth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the optimal access size for this memory pattern.
+    /// </summary>
+    public int OptimalAccessSize { get; set; }
 
     /// <summary>
     /// Gets or sets the number of memory transactions.
@@ -41,6 +66,11 @@ public sealed class CoalescingAnalysis
     /// Gets or sets optimization recommendations.
     /// </summary>
     public List<string> Recommendations { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets performance optimization suggestions specific to this analysis.
+    /// </summary>
+    public List<string> Optimizations { get; set; } = new();
 }
 
 /// <summary>

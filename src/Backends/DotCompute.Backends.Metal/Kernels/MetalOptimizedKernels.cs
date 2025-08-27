@@ -40,7 +40,7 @@ kernel void vectorAdd(
 
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = DotCompute.Abstractions.OptimizationLevel.Default,
+            OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
 
@@ -99,7 +99,7 @@ kernel void matrixMultiply(
 
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = DotCompute.Abstractions.OptimizationLevel.Default,
+            OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
 
@@ -174,7 +174,7 @@ kernel void reduction{operation}(
 
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = DotCompute.Abstractions.OptimizationLevel.Default,
+            OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
 
@@ -255,7 +255,7 @@ kernel void convolution2D(
 
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = DotCompute.Abstractions.OptimizationLevel.Default,
+            OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
 
@@ -313,7 +313,7 @@ kernel void activation{activation}(
 
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = DotCompute.Abstractions.OptimizationLevel.Default,
+            OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
 
@@ -359,7 +359,7 @@ kernel void {operation}(
 
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = DotCompute.Abstractions.OptimizationLevel.Default,
+            OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
 

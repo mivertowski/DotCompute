@@ -77,7 +77,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
             ThrowIfDisposed();
             
             var destPtr = _devicePtr + (nint)offset;
-            await _manager.CopyFromAsyncOnStream(source, destPtr, _stream, cancellationToken);
+            await _manager.CopyFromHostAsyncOnStream(source, destPtr, _stream, cancellationToken);
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
             ThrowIfDisposed();
             
             var srcPtr = _devicePtr + (nint)offset;
-            await _manager.CopyToAsyncOnStream(srcPtr, destination, _stream, cancellationToken);
+            await _manager.CopyToHostAsyncOnStream(srcPtr, destination, _stream, cancellationToken);
         }
 
         private void ThrowIfDisposed()

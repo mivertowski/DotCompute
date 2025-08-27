@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using System;
@@ -96,9 +97,10 @@ public class UnifiedMemoryService : IUnifiedMemoryService
 internal class RuntimeUnifiedMemoryBuffer : IUnifiedMemoryBuffer
 {
     public long SizeInBytes { get; }
+    public MemoryOptions Options { get; } = MemoryOptions.None;
     public nint DevicePointer { get; private set; }
     public bool IsDisposed { get; private set; }
-    public MemoryBufferState State { get; set; } = MemoryBufferState.Allocated;
+    public BufferState State { get; set; } = BufferState.Allocated;
 
     public RuntimeUnifiedMemoryBuffer(long sizeInBytes)
     {
@@ -106,14 +108,14 @@ internal class RuntimeUnifiedMemoryBuffer : IUnifiedMemoryBuffer
         DevicePointer = Marshal.AllocHGlobal((int)sizeInBytes);
     }
 
-    public Task CopyFromAsync<T>(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) where T : unmanaged
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public Task CopyToAsync<T>(Memory<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     public void Dispose()
@@ -126,6 +128,13 @@ internal class RuntimeUnifiedMemoryBuffer : IUnifiedMemoryBuffer
                 DevicePointer = nint.Zero;
             }
             IsDisposed = true;
+            State = BufferState.Disposed;
         }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
     }
 }

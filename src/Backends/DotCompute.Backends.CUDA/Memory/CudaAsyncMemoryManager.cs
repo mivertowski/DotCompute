@@ -341,6 +341,19 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     }
 
     /// <summary>
+    /// Performs async device-to-device memory copy on the specified stream.
+    /// </summary>
+    public async ValueTask CopyDeviceToDeviceAsyncOnStream(
+        IntPtr source,
+        IntPtr destination,
+        long sizeInBytes,
+        IntPtr stream,
+        CancellationToken cancellationToken = default)
+    {
+        await CopyAsyncOnStream(source, destination, sizeInBytes, stream, cancellationToken);
+    }
+
+    /// <summary>
     /// Performs async memory copy from host to device.
     /// </summary>
     public async ValueTask CopyFromHostAsyncOnStream<T>(
