@@ -4,13 +4,15 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Compilation.Context;
 using DotCompute.Linq.Compilation.Plans;
 using DotCompute.Linq.Compilation.Validation;
 using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
 using DotCompute.Linq.Operators.Types;
-using DotCompute.Linq.Operators.Parameters;
+using KernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
+using ParameterDirection = DotCompute.Linq.Operators.Parameters.ParameterDirection;
 using DotCompute.Linq.Compilation.Execution;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Compilation;
@@ -56,7 +58,14 @@ public class QueryCompiler : IQueryCompiler
         }
 
         // Optimize the expression tree
-        var optimizedExpression = _optimizer.Optimize(context.Expression, context.Options);
+        // Convert Abstractions.CompilationOptions to Linq.CompilationOptions
+        var linqOptions = new Compilation.CompilationOptions
+        {
+            EnableOptimizations = context.Options.OptimizationLevel != OptimizationLevel.None,
+            UseSharedMemory = true, // Default value
+            EnableCaching = true // Default value
+        };
+        var optimizedExpression = _optimizer.Optimize(context.Expression, linqOptions);
 
         // Visit the expression tree and build compute stages
         var visitor = new ComputePlanVisitor(_kernelFactory, context.Accelerator, _logger);
@@ -92,7 +101,7 @@ public class QueryCompiler : IQueryCompiler
         catch (Exception ex)
         {
             _logger.LogError(ex, "Expression validation failed with exception");
-            errors.Add(new ValidationIssue(ValidationSeverity.Error, ex.Message, "VALIDATION_ERROR", expression?.ToString()));
+            errors.Add(new ValidationIssue("VALIDATION_ERROR", ex.Message, ValidationSeverity.Error));
         }
 
         if (errors.Count > 0)
@@ -165,7 +174,7 @@ public class QueryCompiler : IQueryCompiler
                 }
             }
 
-            return base.VisitMethodCall(node);
+            return node != null ? base.VisitMethodCall(node) : node!;
         }
 
         private Expression VisitSelect(MethodCallExpression node)
@@ -191,7 +200,7 @@ public class QueryCompiler : IQueryCompiler
                 Language = KernelLanguage.CSharp
             };
 
-            var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
+            var kernel = CreateKernelFromDefinition(kernelDefinition);
 
             var stage = new ComputeStage(
                 $"stage_{_stageCounter}",
@@ -237,7 +246,7 @@ public class QueryCompiler : IQueryCompiler
                 Language = KernelLanguage.CSharp
             };
 
-            var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
+            var kernel = CreateKernelFromDefinition(kernelDefinition);
 
             var stage = new ComputeStage(
                 $"stage_{_stageCounter}",
@@ -281,7 +290,7 @@ public class QueryCompiler : IQueryCompiler
                 Language = KernelLanguage.CSharp
             };
 
-            var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
+            var kernel = CreateKernelFromDefinition(kernelDefinition);
 
             var stage = new ComputeStage(
                 $"stage_{_stageCounter}",
@@ -328,7 +337,7 @@ public class QueryCompiler : IQueryCompiler
                 Language = KernelLanguage.CSharp
             };
 
-            var kernel = _kernelFactory.CreateKernel(_accelerator, kernelDefinition);
+            var kernel = CreateKernelFromDefinition(kernelDefinition);
 
             var stage = new ComputeStage(
                 $"stage_{_stageCounter}",
@@ -401,6 +410,28 @@ public class QueryCompiler : IQueryCompiler
 
         [RequiresDynamicCode("MakeArrayType requires dynamic code generation")]
         private static Type CreateArrayType(Type elementType) => elementType.MakeArrayType();
+        
+        private Operators.Interfaces.IKernel CreateKernelFromDefinition(Operators.Types.KernelDefinition kernelDefinition)
+        {
+            // Convert LINQ KernelDefinition to Core KernelDefinition
+            var coreDefinition = Operators.Adapters.KernelDefinitionAdapter.ConvertToCoreDefinition(kernelDefinition);
+            
+            // Create a GeneratedKernel from the definition
+            var generatedKernel = new Operators.Generation.GeneratedKernel
+            {
+                Name = kernelDefinition.Name,
+                Source = kernelDefinition.Source ?? string.Empty,
+                Parameters = kernelDefinition.Parameters.Select(p => new Operators.Generation.GeneratedKernelParameter 
+                {
+                    Name = p.Name,
+                    Type = p.Type,
+                    IsInput = p.Direction != Operators.Parameters.ParameterDirection.Out,
+                    IsOutput = p.Direction != Operators.Parameters.ParameterDirection.In
+                }).ToArray()
+            };
+            
+            return new Operators.Kernels.DynamicCompiledKernel(generatedKernel, _accelerator, _logger);
+        }
     }
 
     /// <summary>
@@ -421,15 +452,15 @@ public class QueryCompiler : IQueryCompiler
             // Check for unsupported method calls
             if (node.Method.DeclaringType?.Namespace?.StartsWith("System.IO") == true)
             {
-                _errors.Add(new ValidationIssue(ValidationSeverity.Error, "I/O operations are not supported in GPU queries", "UNSUPPORTED_IO", node?.ToString()));
+                _errors.Add(new ValidationIssue("UNSUPPORTED_IO", "I/O operations are not supported in GPU queries", ValidationSeverity.Error));
             }
 
-            if (node.Method.DeclaringType?.Namespace?.StartsWith("System.Net") == true)
+            if (node?.Method.DeclaringType?.Namespace?.StartsWith("System.Net") == true)
             {
-                _errors.Add(new ValidationIssue("UNSUPPORTED_NETWORK", "Network operations are not supported in GPU queries", node));
+                _errors.Add(new ValidationIssue("UNSUPPORTED_NETWORK", "Network operations are not supported in GPU queries", ValidationSeverity.Error));
             }
 
-            return base.VisitMethodCall(node);
+            return node != null ? base.VisitMethodCall(node) : node!;
         }
 
         protected override Expression VisitNew(NewExpression node)
@@ -437,10 +468,10 @@ public class QueryCompiler : IQueryCompiler
             // Check for unsupported types
             if (!IsGpuCompatibleType(node.Type))
             {
-                _errors.Add(new ValidationIssue("UNSUPPORTED_TYPE", $"Type {node.Type} is not GPU-compatible", node));
+                _errors.Add(new ValidationIssue("UNSUPPORTED_TYPE", $"Type {node?.Type} is not GPU-compatible", ValidationSeverity.Error));
             }
 
-            return base.VisitNew(node);
+            return node != null ? base.VisitNew(node) : node!;
         }
 
         private static bool IsGpuCompatibleType(Type type)
@@ -466,6 +497,8 @@ public class QueryCompiler : IQueryCompiler
 
             return false;
         }
+
+        // Helper method moved to inner class
     }
 }
 

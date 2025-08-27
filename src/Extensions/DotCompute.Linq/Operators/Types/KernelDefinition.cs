@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using DotCompute.Linq.Operators.Parameters;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Linq.Operators.Types;
 
@@ -28,11 +29,20 @@ public class KernelDefinition
     /// Gets or sets the compiled source code (if available).
     /// </summary>
     public string? CompiledSource { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the source code (alias for CompiledSource).
+    /// </summary>
+    public string? Source 
+    { 
+        get => CompiledSource;
+        set => CompiledSource = value;
+    }
 
     /// <summary>
     /// Gets or sets the kernel language.
     /// </summary>
-    public KernelLanguage Language { get; set; } = KernelLanguage.CSharp;
+    public KernelLanguage Language { get; set; } = KernelLanguage.CSharpIL;
 
     /// <summary>
     /// Gets or sets the kernel parameters.

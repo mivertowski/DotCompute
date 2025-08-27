@@ -3,6 +3,8 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Validation;
+using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
+using ValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
 namespace DotCompute.Linq.Compilation.Validation;
 
@@ -14,12 +16,12 @@ public sealed class ValidationContext
     /// <summary>
     /// Gets the current validation errors.
     /// </summary>
-    public List<DotCompute.Abstractions.Validation.ValidationIssue> Errors { get; } = new();
+    public List<ValidationIssue> Errors { get; } = new();
 
     /// <summary>
     /// Gets the current validation warnings.
     /// </summary>
-    public List<DotCompute.Abstractions.Validation.ValidationIssue> Warnings { get; } = new();
+    public List<ValidationIssue> Warnings { get; } = new();
 
     /// <summary>
     /// Gets whether validation has passed.
@@ -31,7 +33,7 @@ public sealed class ValidationContext
     /// </summary>
     public void AddError(string code, string message)
     {
-        Errors.Add(ValidationIssue.Error(code, message));
+        Errors.Add(new ValidationIssue(ValidationSeverity.Error, message, code));
     }
 
     /// <summary>
@@ -39,7 +41,7 @@ public sealed class ValidationContext
     /// </summary>
     public void AddWarning(string code, string message)
     {
-        Warnings.Add(ValidationIssue.Warning(code, message));
+        Warnings.Add(new ValidationIssue(ValidationSeverity.Warning, message, code));
     }
 
     /// <summary>
@@ -49,14 +51,15 @@ public sealed class ValidationContext
     {
         if (!IsValid)
         {
-            return UnifiedValidationResult.Failure(Errors.ToArray());
+            return UnifiedValidationResult.Failure(Errors.First().Message, Errors.First().Code);
         }
         
-        if (Warnings.Count > 0)
+        var result = UnifiedValidationResult.Success();
+        foreach (var warning in Warnings)
         {
-            return UnifiedValidationResult.WithWarnings(Warnings.ToArray());
+            result.AddWarning(warning.Message, warning.Code);
         }
 
-        return UnifiedValidationResult.Success();
+        return result;
     }
 }

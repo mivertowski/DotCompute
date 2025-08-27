@@ -138,7 +138,7 @@ public class BufferPool
             }
         }
 
-        var buffer = await manager.AllocateAsync(size, DotCompute.Abstractions.Memory.MemoryOptions.None);
+        var buffer = await manager.AllocateAsync<byte>((int)size, DotCompute.Abstractions.Memory.MemoryOptions.None);
 
         lock (_lock)
         {
@@ -146,7 +146,7 @@ public class BufferPool
             _buffers[key] = buffer;
         }
 
-        return buffer;
+        return buffer!;
     }
 
     /// <summary>

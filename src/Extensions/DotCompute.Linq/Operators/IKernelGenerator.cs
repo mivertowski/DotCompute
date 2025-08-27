@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
 namespace DotCompute.Linq.Operators;
@@ -55,7 +56,7 @@ internal class CUDAKernelGenerator : IKernelGenerator
         {
             Name = $"cuda_kernel_{Guid.NewGuid():N}",
             Source = GenerateCudaSource(expression, context),
-            Language = Core.Kernels.KernelLanguage.CUDA,
+            Language = KernelLanguage.CUDA,
             Parameters = ExtractParameters(expression),
             OptimizationMetadata = new Dictionary<string, object>
             {
@@ -71,7 +72,7 @@ internal class CUDAKernelGenerator : IKernelGenerator
         {
             Name = $"cuda_{operationType.ToLowerInvariant()}_kernel_{Guid.NewGuid():N}",
             Source = GenerateCudaOperationSource(operationType, inputTypes, outputType, context),
-            Language = Core.Kernels.KernelLanguage.CUDA,
+            Language = KernelLanguage.CUDA,
             Parameters = GenerateParameters(inputTypes, outputType),
             OptimizationMetadata = new Dictionary<string, object>
             {
@@ -176,7 +177,7 @@ internal class OpenCLKernelGenerator : IKernelGenerator
         {
             Name = $"opencl_kernel_{Guid.NewGuid():N}",
             Source = GenerateOpenCLSource(expression, context),
-            Language = Core.Kernels.KernelLanguage.OpenCL,
+            Language = KernelLanguage.OpenCL,
             Parameters = ExtractParameters(expression),
             OptimizationMetadata = new Dictionary<string, object>
             {
@@ -192,7 +193,7 @@ internal class OpenCLKernelGenerator : IKernelGenerator
         {
             Name = $"opencl_{operationType.ToLowerInvariant()}_kernel_{Guid.NewGuid():N}",
             Source = GenerateOpenCLOperationSource(operationType, inputTypes, outputType, context),
-            Language = Core.Kernels.KernelLanguage.OpenCL,
+            Language = KernelLanguage.OpenCL,
             Parameters = GenerateParameters(inputTypes, outputType),
             OptimizationMetadata = new Dictionary<string, object>
             {

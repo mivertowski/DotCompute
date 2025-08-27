@@ -4,11 +4,14 @@
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
 using DotCompute.Linq.Operators.Kernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using ParameterDirection = DotCompute.Linq.Operators.Parameters.ParameterDirection;
+
 namespace DotCompute.Linq.Operators;
 
 
@@ -59,7 +62,7 @@ public class DefaultKernelFactory : IKernelFactory
     /// <param name="expression">The expression to compile.</param>
     /// <param name="context">The generation context.</param>
     /// <returns>A compiled kernel.</returns>
-    public IKernel CreateKernelFromExpression(IAccelerator accelerator, Expression expression, KernelGenerationContext? context = null)
+    public Operators.Interfaces.IKernel CreateKernelFromExpression(IAccelerator accelerator, Expression expression, KernelGenerationContext? context = null)
     {
         context ??= CreateDefaultContext(accelerator);
 
@@ -71,7 +74,7 @@ public class DefaultKernelFactory : IKernelFactory
                 if (!generator.CanCompile(expression))
                 {
                     _logger.LogWarning("Expression cannot be compiled for {AcceleratorType}, using fallback", accelerator.Type);
-                    return new ExpressionFallbackKernel(expression);
+                    return new ExpressionFallbackKernel(expression, _logger);
                 }
 
                 // Generate the kernel
@@ -81,13 +84,13 @@ public class DefaultKernelFactory : IKernelFactory
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to generate kernel from expression for {AcceleratorType}", accelerator.Type);
-                return new ExpressionFallbackKernel(expression);
+                return new ExpressionFallbackKernel(expression, _logger);
             }
         }
 
         // No generator available
         _logger.LogWarning("No kernel generator available for {AcceleratorType}", accelerator.Type);
-        return new ExpressionFallbackKernel(expression);
+        return new ExpressionFallbackKernel(expression, _logger);
     }
 
     private IKernel CreateDynamicKernel(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition, IKernelGenerator generator)
@@ -112,7 +115,8 @@ public class DefaultKernelFactory : IKernelFactory
                 var context = CreateGenerationContext(accelerator, definition);
 
                 var generatedKernel = generator.GenerateOperationKernel(operationType, inputTypes, outputType, context);
-                return new DynamicCompiledKernel(generatedKernel, accelerator, _logger);
+                var linqKernel = new DynamicCompiledKernel(generatedKernel, accelerator, _logger);
+                return new Adapters.CoreKernelAdapter(linqKernel);
             }
 
             // Fallback to placeholder
@@ -147,7 +151,8 @@ public class DefaultKernelFactory : IKernelFactory
         context.Metadata["EstimatedSpeedup"] = fusionMetadata.GetValueOrDefault("EstimatedSpeedup", 1.2);
 
         var generatedKernel = generator.GenerateOperationKernel(fusedOperationType, inputTypes, outputType, context);
-        return new DynamicCompiledKernel(generatedKernel, accelerator, _logger);
+        var linqKernel = new DynamicCompiledKernel(generatedKernel, accelerator, _logger);
+        return new Adapters.CoreKernelAdapter(linqKernel);
     }
 
     /// <summary>
@@ -207,16 +212,24 @@ public class DefaultKernelFactory : IKernelFactory
 
     private static Type[] ExtractInputTypes(DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
-        return [.. definition.Parameters
-        .Where(p => p.Direction is ParameterDirection.In or ParameterDirection.InOut)
-        .Select(p => p.Type)];
+        if (definition.Metadata.TryGetValue("Parameters", out var paramsObj) && paramsObj is Parameters.KernelParameter[] parameters)
+        {
+            return [.. parameters
+                .Where(p => p.Direction is ParameterDirection.In or ParameterDirection.InOut)
+                .Select(p => p.Type)];
+        }
+        return Array.Empty<Type>();
     }
 
     private static Type ExtractOutputType(DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {
-        var outputParam = definition.Parameters
-            .FirstOrDefault(p => p.Direction is ParameterDirection.Out or ParameterDirection.InOut);
-        return outputParam?.Type ?? typeof(object);
+        if (definition.Metadata.TryGetValue("Parameters", out var paramsObj) && paramsObj is Parameters.KernelParameter[] parameters)
+        {
+            var outputParam = parameters
+                .FirstOrDefault(p => p.Direction is ParameterDirection.Out or ParameterDirection.InOut);
+            return outputParam?.Type ?? typeof(object);
+        }
+        return typeof(object);
     }
 
     private static KernelGenerationContext CreateGenerationContext(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition)
@@ -226,7 +239,7 @@ public class DefaultKernelFactory : IKernelFactory
             DeviceInfo = accelerator.Info,
             UseSharedMemory = definition.Metadata.GetValueOrDefault("UseSharedMemory", true) is bool useShared && useShared,
             UseVectorTypes = definition.Metadata.GetValueOrDefault("UseVectorTypes", true) is bool useVector && useVector,
-            Precision = definition.Metadata.GetValueOrDefault("Precision") is PrecisionMode precision ? precision : PrecisionMode.Single,
+            Precision = definition.Metadata.GetValueOrDefault("Precision") is PrecisionMode precision ? precision.ToString() : PrecisionMode.Single.ToString(),
             Metadata = new Dictionary<string, object>(definition.Metadata)
         };
     }
@@ -238,7 +251,7 @@ public class DefaultKernelFactory : IKernelFactory
             DeviceInfo = accelerator.Info,
             UseSharedMemory = true,
             UseVectorTypes = true,
-            Precision = PrecisionMode.Single
+            Precision = PrecisionMode.Single.ToString()
         };
     }
 

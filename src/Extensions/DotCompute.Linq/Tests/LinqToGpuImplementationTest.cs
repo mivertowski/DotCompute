@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Linq.Compilation.Plans;
 using DotCompute.Linq.Compilation.Execution;
+using DotCompute.Linq.Operators.Interfaces;
 namespace DotCompute.Linq.Tests;
 
 
@@ -241,7 +242,7 @@ public class LinqToGpuImplementationTest
                 new MockComputeStage
             {
                 Id = "stage_1",
-                Kernel = new Operators.ExpressionFallbackKernel(expression),
+                Kernel = new Operators.ExpressionFallbackKernel(expression, _logger),
                 InputBuffers = ["input_data"],
                 OutputBuffer = "output_data",
                 Configuration = new ExecutionConfiguration
@@ -556,7 +557,7 @@ internal class MockComputePlan : IComputePlan
 internal class MockComputeStage : IComputeStage
 {
     public string Id { get; init; } = string.Empty;
-    public IKernel Kernel { get; init; } = null!;
+    public DotCompute.Linq.Operators.Interfaces.IKernel Kernel { get; init; } = null!;
     public IReadOnlyList<string> InputBuffers { get; init; } = [];
     public string OutputBuffer { get; init; } = string.Empty;
     public ExecutionConfiguration Configuration { get; init; } = new();

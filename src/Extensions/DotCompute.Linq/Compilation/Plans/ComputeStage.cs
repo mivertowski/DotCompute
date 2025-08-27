@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation.Execution;
+using DotCompute.Linq.Operators.Interfaces;
 using DotCompute.Linq.Operators.Execution;
 
 namespace DotCompute.Linq.Compilation.Plans;
@@ -32,7 +33,7 @@ internal class ComputeStage : IComputeStage
     /// </exception>
     public ComputeStage(
         string id,
-        IKernel kernel,
+        DotCompute.Linq.Operators.Interfaces.IKernel kernel,
         IReadOnlyList<string> inputBuffers,
         string outputBuffer,
         ExecutionConfiguration configuration)
@@ -48,7 +49,7 @@ internal class ComputeStage : IComputeStage
     public string Id { get; }
 
     /// <inheritdoc />
-    public IKernel Kernel { get; }
+    public DotCompute.Linq.Operators.Interfaces.IKernel Kernel { get; }
 
     /// <inheritdoc />
     public IReadOnlyList<string> InputBuffers { get; }

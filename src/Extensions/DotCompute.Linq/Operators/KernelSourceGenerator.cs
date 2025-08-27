@@ -261,9 +261,15 @@ public class KernelSourceGenerator
 
     private static void GenerateParameters(StringBuilder sourceBuilder, CoreKernelDefinition definition, string qualifier)
     {
-        for (var i = 0; i < definition.Parameters.Count; i++)
+        // Extract parameters from metadata
+        if (!definition.Metadata.TryGetValue("Parameters", out var paramsObj) || paramsObj is not Parameters.KernelParameter[] parameters)
         {
-            var param = definition.Parameters[i];
+            return;
+        }
+
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            var param = parameters[i];
             var typeStr = GetTypeString(param.Type);
 
             _ = sourceBuilder.Append("    ");
@@ -275,7 +281,7 @@ public class KernelSourceGenerator
             _ = sourceBuilder.Append("* ");
             _ = sourceBuilder.Append(param.Name);
 
-            if (i < definition.Parameters.Count - 1)
+            if (i < parameters.Length - 1)
             {
                 _ = sourceBuilder.Append(",");
             }

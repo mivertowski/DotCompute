@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
 using DotCompute.Linq.Operators.Parameters;
@@ -98,7 +99,7 @@ public class MapKernelTemplate : IKernelTemplate
         }
 
         // Use adapter to safely extract LINQ-specific data
-        var language = ConvertLanguage(KernelDefinitionAdapter.ExtractLanguage(definition, KernelLanguage.OpenCL));
+        var language = ConvertLanguage(KernelDefinitionAdapter.ExtractLanguage(definition));
         var parameters = KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter).ToArray();
 
         return new GeneratedKernel
@@ -118,14 +119,14 @@ public class MapKernelTemplate : IKernelTemplate
 
         // Generate parameters
         var parameters = KernelDefinitionAdapter.ExtractParameters(definition);
-        for (var i = 0; i < parameters.Count; i++)
+        for (var i = 0; i < parameters.Length; i++)
         {
             var param = parameters[i];
             _ = source.Append("    ");
             _ = source.Append(GetCudaType(param.Type));
             _ = source.Append("* ");
             _ = source.Append(param.Name);
-            if (i < parameters.Count - 1)
+            if (i < parameters.Length - 1)
             {
                 _ = source.Append(",");
             }
@@ -150,14 +151,14 @@ public class MapKernelTemplate : IKernelTemplate
 
         // Generate parameters
         var parameters = KernelDefinitionAdapter.ExtractParameters(definition);
-        for (var i = 0; i < parameters.Count; i++)
+        for (var i = 0; i < parameters.Length; i++)
         {
             var param = parameters[i];
             _ = source.Append("    __global ");
             _ = source.Append(GetOpenCLType(param.Type));
             _ = source.Append("* ");
             _ = source.Append(param.Name);
-            if (i < parameters.Count - 1)
+            if (i < parameters.Length - 1)
             {
                 _ = source.Append(",");
             }
@@ -183,14 +184,14 @@ public class MapKernelTemplate : IKernelTemplate
 
         // Generate parameters
         var parameters = KernelDefinitionAdapter.ExtractParameters(definition);
-        for (var i = 0; i < parameters.Count; i++)
+        for (var i = 0; i < parameters.Length; i++)
         {
             var param = parameters[i];
             _ = source.Append("    ");
             _ = source.Append(GetCSharpType(param.Type));
             _ = source.Append(" ");
             _ = source.Append(param.Name);
-            if (i < parameters.Count - 1)
+            if (i < parameters.Length - 1)
             {
                 _ = source.Append(",");
             }
@@ -287,7 +288,7 @@ public class FilterKernelTemplate : IKernelTemplate
         {
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
-            Language = Core.Kernels.KernelLanguage.CSharp,
+            Language = KernelLanguage.CSharp,
             Parameters = [.. KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter)],
             OptimizationMetadata = definition.Metadata
         };
@@ -323,7 +324,7 @@ public class ReduceKernelTemplate : IKernelTemplate
         {
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
-            Language = Core.Kernels.KernelLanguage.CSharp,
+            Language = KernelLanguage.CSharp,
             Parameters = [.. KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter)],
             OptimizationMetadata = definition.Metadata
         };
@@ -359,7 +360,7 @@ public class SortKernelTemplate : IKernelTemplate
         {
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
-            Language = Core.Kernels.KernelLanguage.CSharp,
+            Language = KernelLanguage.CSharp,
             Parameters = [.. KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter)],
             OptimizationMetadata = definition.Metadata
         };

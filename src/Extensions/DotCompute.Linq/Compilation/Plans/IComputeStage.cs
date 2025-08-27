@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation.Execution;
 using DotCompute.Linq.Operators.Execution;
+using DotCompute.Linq.Operators.Interfaces;
 
 namespace DotCompute.Linq.Compilation.Plans;
 
@@ -35,7 +36,7 @@ public interface IComputeStage
     /// This kernel must implement ExecuteAsync functionality, typically through
     /// implementations like DynamicCompiledKernel that wrap ICompiledKernel.
     /// </remarks>
-    IKernel Kernel { get; }
+    DotCompute.Linq.Operators.Interfaces.IKernel Kernel { get; }
 
     /// <summary>
     /// Gets the input buffers for this stage.

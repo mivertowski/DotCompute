@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Linq.Operators.Generation;
@@ -47,4 +48,19 @@ public class GeneratedKernel
     /// Gets or sets optimization metadata from expression analysis.
     /// </summary>
     public Dictionary<string, object>? OptimizationMetadata { get; set; }
+
+    /// <summary>
+    /// Gets or sets the source expression this kernel was generated from.
+    /// </summary>
+    public Expression? SourceExpression { get; set; }
+
+    /// <summary>
+    /// Gets or sets the kernel entry point function name.
+    /// </summary>
+    public string EntryPoint { get; set; } = "main";
+
+    /// <summary>
+    /// Gets or sets the required shared memory size in bytes.
+    /// </summary>
+    public int RequiredSharedMemory { get; set; } = 0;
 }

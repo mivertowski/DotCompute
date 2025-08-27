@@ -306,7 +306,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
         var elementSize = GetElementSize(outputType);
         var totalSize = size * elementSize;
 
-        return await _accelerator.Memory.AllocateAsync(totalSize, MemoryOptions.None, cancellationToken)
+        return await _accelerator.Memory.AllocateAsync<byte>((int)totalSize, MemoryOptions.None, cancellationToken)
             .ConfigureAwait(false);
     }
 

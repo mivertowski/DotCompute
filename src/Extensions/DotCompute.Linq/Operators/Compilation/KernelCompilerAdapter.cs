@@ -11,7 +11,6 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Execution;
 using DotCompute.Linq.Operators.Models;
 using DotCompute.Linq.Operators.Mocks;
-using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Linq.Operators.Compilation;
@@ -50,7 +49,7 @@ internal class KernelCompilerAdapter : IUnifiedKernelCompiler
             {
                 Name = request.Name,
                 Code = request.Source,
-                Language = KernelLanguage.CSharpIL,
+                Language = DotCompute.Abstractions.Types.KernelLanguage.CSharpIL,
                 EntryPoint = request.Name
             };
 
@@ -59,7 +58,10 @@ internal class KernelCompilerAdapter : IUnifiedKernelCompiler
                 OptimizationLevel = ConvertOptimizationLevel(request.OptimizationLevel)
             };
 
-            var kernelDefinition = new DotCompute.Abstractions.Kernels.KernelDefinition(request.Name, kernelSource.Code);
+            var kernelDefinition = new DotCompute.Abstractions.Kernels.KernelDefinition(request.Name, kernelSource.Code) 
+            {
+                Name = request.Name
+            };
 
             var compiledKernel = await _coreCompiler.CompileAsync(kernelDefinition, options, cancellationToken);
 

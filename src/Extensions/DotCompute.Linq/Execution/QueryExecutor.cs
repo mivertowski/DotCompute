@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Compilation.Plans;
+using DotCompute.Linq.Operators.Interfaces;
 using DotCompute.Linq.Operators.Types;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
@@ -186,7 +187,7 @@ public class QueryExecutor : IQueryExecutor
 
         // Execute the kernel
         var workItems = CalculateWorkItems(stage, context);
-        await stage.Kernel.ExecuteAsync(workItems, parameters);
+        await stage.Kernel.ExecuteAsync(workItems, parameters, CancellationToken.None);
 
         // Read back the result
         var resultType = context.Plan.OutputType;

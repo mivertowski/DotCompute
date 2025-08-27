@@ -37,7 +37,7 @@ internal class CompiledKernelAdapter : ICompiledKernel
     public async Task ExecuteAsync(KernelExecutionParameters parameters, CancellationToken cancellationToken = default)
     {
         // Convert LINQ kernel execution parameters to Core kernel arguments
-        var kernelArgs = new DotCompute.Abstractions.KernelArguments(parameters.Arguments?.Count ?? 0);
+        var kernelArgs = new DotCompute.Abstractions.Kernels.KernelArguments(parameters.Arguments?.Count ?? 0);
 
         if (parameters.Arguments != null)
         {

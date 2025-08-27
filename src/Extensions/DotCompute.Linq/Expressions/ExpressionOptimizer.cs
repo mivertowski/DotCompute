@@ -28,7 +28,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
     }
 
     /// <inheritdoc/>
-    public Expression Optimize(Expression expression, CompilationOptions options)
+    public Expression Optimize(Expression expression, DotCompute.Linq.Compilation.CompilationOptions options)
     {
         ArgumentNullException.ThrowIfNull(expression);
         ArgumentNullException.ThrowIfNull(options);

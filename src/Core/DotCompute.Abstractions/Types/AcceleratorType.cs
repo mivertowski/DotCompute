@@ -50,19 +50,24 @@ namespace DotCompute.Abstractions
         DirectML = 7,
 
         /// <summary>
+        /// DirectCompute-compatible device.
+        /// </summary>
+        DirectCompute = 8,
+
+        /// <summary>
         /// Generic GPU device.
         /// </summary>
-        GPU = 8,
+        GPU = 9,
 
         /// <summary>
         /// Field-Programmable Gate Array.
         /// </summary>
-        FPGA = 9,
+        FPGA = 10,
 
         /// <summary>
         /// Tensor Processing Unit.
         /// </summary>
-        TPU = 10,
+        TPU = 11,
 
         /// <summary>
         /// Custom or unknown accelerator type.

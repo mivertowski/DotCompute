@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Types;
 
 namespace DotCompute.Linq.Operators.Models;
@@ -27,7 +28,7 @@ public class KernelCompilationRequest
     /// <summary>
     /// Gets or sets the kernel language.
     /// </summary>
-    public KernelLanguage Language { get; set; }
+    public KernelLanguage Language { get; set; } = KernelLanguage.CSharpIL;
 
     /// <summary>
     /// Gets or sets the target accelerator for compilation.

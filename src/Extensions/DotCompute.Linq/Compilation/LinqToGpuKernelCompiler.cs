@@ -446,9 +446,9 @@ public sealed class StringKernelSource : IKernelSource
     }
 
     public string Name => "LinqGeneratedKernel";
-    public KernelSourceType Type => KernelSourceType.CUDA;
+    public KernelSourceType Type => KernelSourceType.Cuda;
     public string Code => _source;
-    public KernelLanguage Language => KernelLanguage.Cuda;
+    public KernelLanguage Language => KernelLanguage.CUDA;
     public string EntryPoint => "LinqGeneratedKernel";
     public string[] Dependencies => Array.Empty<string>();
 

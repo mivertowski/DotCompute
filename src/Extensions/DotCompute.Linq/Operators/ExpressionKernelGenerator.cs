@@ -4,6 +4,7 @@
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
@@ -128,11 +129,11 @@ public class ExpressionKernelGenerator
     {
         return accelerator.Type switch
         {
-            AcceleratorType.CUDA => DotCompute.Abstractions.Types.KernelLanguage.CUDA,
-            AcceleratorType.OpenCL => DotCompute.Abstractions.Types.KernelLanguage.OpenCL,
-            AcceleratorType.Metal => DotCompute.Abstractions.Types.KernelLanguage.Metal,
-            AcceleratorType.CPU => DotCompute.Abstractions.Types.KernelLanguage.CSharp,
-            _ => DotCompute.Abstractions.Types.KernelLanguage.CSharp
+            AcceleratorType.CUDA => KernelLanguage.CUDA,
+            AcceleratorType.OpenCL => KernelLanguage.OpenCL,
+            AcceleratorType.Metal => KernelLanguage.Metal,
+            AcceleratorType.CPU => KernelLanguage.CSharpIL,
+            _ => KernelLanguage.CSharpIL
         };
     }
 

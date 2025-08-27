@@ -37,4 +37,34 @@ public class KernelGenerationContext
     /// Gets or sets custom optimization hints.
     /// </summary>
     public Dictionary<string, object> OptimizationHints { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the work group dimensions for kernel execution.
+    /// </summary>
+    public int[] WorkGroupDimensions { get; set; } = new[] { 256, 1, 1 };
+
+    /// <summary>
+    /// Gets or sets metadata for kernel generation.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets device information for the target accelerator.
+    /// </summary>
+    public object? DeviceInfo { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to use shared memory.
+    /// </summary>
+    public bool UseSharedMemory { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets whether to use vector types.
+    /// </summary>
+    public bool UseVectorTypes { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the precision level for floating-point operations.
+    /// </summary>
+    public string Precision { get; set; } = "Default";
 }

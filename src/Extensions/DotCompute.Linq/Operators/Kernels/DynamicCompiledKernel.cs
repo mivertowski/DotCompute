@@ -14,6 +14,7 @@ using DotCompute.Linq.Operators.Caching;
 using DotCompute.Linq.Operators.Compilation;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Models;
+using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
 
@@ -22,7 +23,7 @@ namespace DotCompute.Linq.Operators.Kernels;
 /// <summary>
 /// A kernel compiled dynamically from generated source code.
 /// </summary>
-internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
+internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDisposable
 {
     private readonly GeneratedKernel _generatedKernel;
     private readonly IAccelerator _accelerator;
@@ -181,11 +182,14 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
     /// Gets information about the kernel parameters.
     /// </summary>
     /// <returns>A read-only list of kernel parameters.</returns>
-    public IReadOnlyList<KernelParameter> GetParameterInfo()
+    public IReadOnlyList<Parameters.KernelParameter> GetParameterInfo()
     {
-        return _generatedKernel.Parameters.Select(p => new KernelParameter(p.Name, p.Type,
+        return _generatedKernel.Parameters.Select(p => new Parameters.KernelParameter(
+            p.Name, 
+            p.Type, 
             p.IsInput && p.IsOutput ? ParameterDirection.InOut :
-            p.IsOutput ? ParameterDirection.Out : ParameterDirection.In)).ToArray();
+                       p.IsOutput ? ParameterDirection.Out : ParameterDirection.In
+        )).ToArray();
     }
 
     /// <summary>

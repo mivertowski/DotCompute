@@ -19,7 +19,7 @@ public interface IExpressionOptimizer
     /// <param name="expression">The expression to optimize.</param>
     /// <param name="options">The compilation options.</param>
     /// <returns>The optimized expression.</returns>
-    public Expression Optimize(Expression expression, CompilationOptions options);
+    public Expression Optimize(Expression expression, DotCompute.Linq.Compilation.CompilationOptions options);
 
     /// <summary>
     /// Analyzes an expression tree and returns optimization suggestions.
