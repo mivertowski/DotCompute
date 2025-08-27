@@ -134,7 +134,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
         {
             Id = plugin.Id,
             Name = plugin.Name,
-            Version = new Version(plugin.Version.ToString()),
+            Version = plugin.Version.ToString(),
             Description = plugin.Description,
             Author = "External",
             AssemblyPath = plugin.GetType().Assembly.Location,
@@ -252,7 +252,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
         {
             Id = lp.Plugin.Id,
             Name = lp.Plugin.Name,
-            Version = lp.Plugin.Version,
+            Version = new Version(lp.Plugin.Version.ToString()),
             Description = lp.Plugin.Description,
             SupportedAccelerators = [.. lp.Plugin.SupportedAccelerators],
             InputTypes = [.. lp.Plugin.InputTypes.Select(t => t.FullName ?? t.Name)],

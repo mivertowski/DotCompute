@@ -1,4 +1,5 @@
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Types;
 
 namespace DotCompute.Backends.CUDA.Configuration
 {

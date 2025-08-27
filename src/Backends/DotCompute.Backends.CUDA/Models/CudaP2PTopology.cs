@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Generic;
+using DotCompute.Backends.CUDA.Models;
 
 namespace DotCompute.Backends.CUDA.P2P.Models
 {

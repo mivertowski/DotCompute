@@ -10,6 +10,7 @@ using DotCompute.Backends.CUDA.ErrorHandling;
 using DotCompute.Backends.CUDA.Execution;
 using DotCompute.Backends.CUDA.Graphs;
 using DotCompute.Backends.CUDA.Memory;
+using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Optimization;
 using DotCompute.Backends.CUDA.Profiling;

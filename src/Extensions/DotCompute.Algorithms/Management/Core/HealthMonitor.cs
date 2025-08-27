@@ -215,15 +215,17 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
             }
 
             // Check for response time degradation over time
-            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousAverageResponseTime", out object? prevTimeObj) &&
-                prevTimeObj is double prevTime)
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousAverageResponseTime", out object? prevTimeObj))
             {
-                var degradationThreshold = 1.5; // 50% increase
-                if (averageResponseTime > prevTime * degradationThreshold)
+                if (prevTimeObj is double prevTime)
                 {
-                    if (loadedPlugin.Health == PluginHealth.Healthy)
+                    var degradationThreshold = 1.5; // 50% increase
+                    if (averageResponseTime > prevTime * degradationThreshold)
                     {
-                        loadedPlugin.Health = PluginHealth.Degraded;
+                        if (loadedPlugin.Health == PluginHealth.Healthy)
+                        {
+                            loadedPlugin.Health = PluginHealth.Degraded;
+                        }
                     }
                 }
             }
@@ -258,11 +260,13 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
 
             // Get historical error count if available  
             var totalErrors = 0L;
-            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("TotalErrorCount", out object? totalErrorsObj) &&
-                totalErrorsObj is long totalErrorsValue)
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("TotalErrorCount", out object? totalErrorsObj))
             {
-                totalErrors = totalErrorsValue;
-                errorCount = (int)totalErrors;
+                if (totalErrorsObj is long totalErrorsValue)
+                {
+                    totalErrors = totalErrorsValue;
+                    errorCount = (int)totalErrors;
+                }
             }
 
             var errorRate = (double)totalErrors / loadedPlugin.ExecutionCount;
@@ -306,21 +310,23 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
             var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
             var handleCount = currentProcess.HandleCount;
 
-            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousHandleCount", out object? prevHandleObj) &&
-                prevHandleObj is int prevHandleCount)
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousHandleCount", out object? prevHandleObj))
             {
-                var handleIncrease = handleCount - prevHandleCount;
-                const int handleLeakThreshold = 100; // Arbitrary threshold
-
-                if (handleIncrease > handleLeakThreshold)
+                if (prevHandleObj is int prevHandleCount)
                 {
-                    if (loadedPlugin.Health == PluginHealth.Healthy)
-                    {
-                        loadedPlugin.Health = PluginHealth.Degraded;
-                    }
+                    var handleIncrease = handleCount - prevHandleCount;
+                    const int handleLeakThreshold = 100; // Arbitrary threshold
 
-                    _logger.LogWarning("Potential handle leak detected for plugin {PluginId}: {HandleIncrease} new handles",
-                        (string)loadedPlugin.Plugin.Id, handleIncrease);
+                    if (handleIncrease > handleLeakThreshold)
+                    {
+                        if (loadedPlugin.Health == PluginHealth.Healthy)
+                        {
+                            loadedPlugin.Health = PluginHealth.Degraded;
+                        }
+
+                        _logger.LogWarning("Potential handle leak detected for plugin {PluginId}: {HandleIncrease} new handles",
+                            (string)loadedPlugin.Plugin.Id, handleIncrease);
+                    }
                 }
             }
 

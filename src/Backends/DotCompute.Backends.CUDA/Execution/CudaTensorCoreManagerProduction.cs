@@ -8,6 +8,7 @@ using global::System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Backends.CUDA.DeviceManagement;
 using DotCompute.Backends.CUDA.Execution;
+using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Types;
 using Microsoft.Extensions.Logging;

@@ -2,15 +2,47 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Backends.CUDA.Types
 {
+    /// <summary>
+    /// Data type enumeration for CUDA operations.
+    /// </summary>
+    public enum DataType
+    {
+        Float32,
+        Float64,
+        Float16,
+        Int32,
+        Int64,
+        Int16,
+        Int8,
+        UInt32,
+        UInt64,
+        UInt16,
+        UInt8,
+        Boolean,
+        Complex64,
+        Complex128,
+        BFloat16
+    }
+
 
     /// <summary>
     /// Extended memory statistics for CUDA memory management
     /// </summary>
-    public sealed class CudaMemoryStatisticsExtended : MemoryStatistics
+    public sealed class CudaMemoryStatisticsExtended
     {
+        // Base statistics (from MemoryStatistics equivalent)
+        public long TotalMemoryBytes { get; set; }
+        public long UsedMemoryBytes { get; set; }
+        public long AvailableMemoryBytes { get; set; }
+        public int AllocationCount { get; set; }
+        public int DeallocationCount { get; set; }
+        public long PeakMemoryUsageBytes { get; set; }
+        
+        // CUDA-specific extensions
         public long PinnedMemoryBytes { get; set; }
         public long UnifiedMemoryBytes { get; set; }
         public long PooledMemoryBytes { get; set; }
@@ -222,6 +254,22 @@ namespace DotCompute.Backends.CUDA.Types
     /// </summary>
     public sealed class CudaMemoryManager
     {
+        private readonly Microsoft.Extensions.Logging.ILogger _logger;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CudaMemoryManager"/> class.
+        /// </summary>
+        public CudaMemoryManager(CudaContext context, Microsoft.Extensions.Logging.ILogger logger)
+        {
+            Context = context?.Handle ?? nint.Zero;
+            DeviceIndex = context?.DeviceId ?? 0;
+            _logger = logger;
+            
+            // Initialize with reasonable defaults
+            TotalMemory = 8L * 1024 * 1024 * 1024; // 8GB default
+            MaxAllocationSize = TotalMemory / 2;
+        }
+
         /// <summary>
         /// Gets or sets the associated CUDA context.
         /// </summary>
@@ -236,6 +284,21 @@ namespace DotCompute.Backends.CUDA.Types
         /// Gets or sets the total allocated memory in bytes.
         /// </summary>
         public long TotalAllocatedBytes { get; set; }
+
+        /// <summary>
+        /// Gets the total memory available on the device.
+        /// </summary>
+        public long TotalMemory { get; set; }
+
+        /// <summary>
+        /// Gets the currently used memory.
+        /// </summary>
+        public long UsedMemory { get; set; }
+
+        /// <summary>
+        /// Gets the maximum allocation size.
+        /// </summary>
+        public long MaxAllocationSize { get; set; }
     }
 
     /// <summary>

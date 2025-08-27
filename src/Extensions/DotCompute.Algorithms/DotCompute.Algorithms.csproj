@@ -46,8 +46,8 @@
     <!-- Exclude more complex security and scanning files -->
     <Compile Remove="Security\Scanner\*.cs" />
     <Compile Remove="Security\DigitalSigning\*.cs" />
+    <!-- SecurityValidator and NuGetPluginService have complex dependencies - excluded for now -->
     <Compile Remove="Management\Validation\SecurityValidator.cs" />
-    <!-- Exclude NuGet plugin loader implementation that needs complex dependencies -->
     <Compile Remove="Management\Loading\NuGetPluginService.cs" />
   </ItemGroup>
 

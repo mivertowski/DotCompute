@@ -164,7 +164,7 @@ namespace DotCompute.Backends.CUDA.Integration
         /// </summary>
         public async Task<CudaGraphExecutionResult> ExecuteOptimizedWorkflowAsync(
             string workflowId,
-            IEnumerable<CudaKernelOperation> operations,
+            IEnumerable<Execution.Graph.CudaKernelOperation> operations,
             CudaWorkflowOptions options,
             CancellationToken cancellationToken = default)
         {

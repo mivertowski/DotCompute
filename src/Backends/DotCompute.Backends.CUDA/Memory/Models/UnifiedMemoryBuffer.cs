@@ -1,6 +1,7 @@
 using System;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Models;
 
 namespace DotCompute.Backends.CUDA.Memory.Models
@@ -44,6 +45,12 @@ namespace DotCompute.Backends.CUDA.Memory.Models
         /// Gets whether the buffer has been disposed.
         /// </summary>
         public bool IsDisposed { get; private set; }
+        
+        /// <inheritdoc/>
+        public MemoryOptions Options { get; private set; } = MemoryOptions.None;
+        
+        /// <inheritdoc/>
+        public BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
 
         /// <summary>
         /// Initializes a new instance of the UnifiedMemoryBuffer class.
@@ -70,6 +77,13 @@ namespace DotCompute.Backends.CUDA.Memory.Models
                 IsDisposed = true;
                 GC.SuppressFinalize(this);
             }
+        }
+        
+        /// <inheritdoc/>
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }

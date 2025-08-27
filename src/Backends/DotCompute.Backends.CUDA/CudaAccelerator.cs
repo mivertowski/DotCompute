@@ -179,7 +179,5 @@ namespace DotCompute.Backends.CUDA
             var memoryManager = new CudaMemoryManager(context, logger);
             return new CudaAsyncMemoryManagerAdapter(memoryManager);
         }
-
-        protected override ValueTask<ICompiledKernel> CompileKernelCoreAsync(KernelDefinition definition, Abstractions.CompilationOptions options, CancellationToken cancellationToken) => throw new NotImplementedException();
     }
 }

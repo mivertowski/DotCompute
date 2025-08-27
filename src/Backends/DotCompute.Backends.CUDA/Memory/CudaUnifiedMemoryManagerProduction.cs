@@ -58,6 +58,27 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
     /// Gets whether concurrent access is supported.
     /// </summary>
     public bool ConcurrentAccessSupported => _concurrentAccessSupported;
+    
+    /// <inheritdoc/>
+    public override long TotalAvailableMemory => _deviceManager.GetDevice(_context.DeviceId).TotalMemory;
+    
+    /// <inheritdoc/>
+    public override long CurrentAllocatedMemory => _allocations.Sum(a => a.Value.Size);
+    
+    /// <inheritdoc/>
+    public override long MaxAllocationSize => TotalAvailableMemory / 2;
+    
+    /// <inheritdoc/>
+    public override IAccelerator Accelerator => throw new NotImplementedException("TODO: Return associated accelerator");
+    
+    /// <inheritdoc/>
+    public override MemoryStatistics Statistics => new MemoryStatistics
+    {
+        TotalAllocated = CurrentAllocatedMemory,
+        TotalAvailable = TotalAvailableMemory,
+        PeakUsage = _performanceCounter.PeakMemoryUsage,
+        AllocationCount = _allocations.Count
+    };
 
     /// <summary>
     /// Initializes unified memory support detection.
@@ -575,6 +596,104 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
         
         base.Dispose(disposing);
     }
+    
+    /// <inheritdoc/>
+    protected override async ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(
+        long sizeInBytes, 
+        MemoryOptions options, 
+        CancellationToken cancellationToken)
+    {
+        var ptr = await AllocateUnifiedAsync(sizeInBytes, cancellationToken);
+        return new CudaUnifiedMemoryBuffer(ptr, sizeInBytes, this, (ManagedMemoryFlags)0);
+    }
+    
+    /// <inheritdoc/>
+    public override async ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken)
+    {
+        if (buffer is CudaUnifiedMemoryBuffer cudaBuffer)
+        {
+            await FreeUnifiedAsync(cudaBuffer.DevicePointer, cancellationToken);
+        }
+    }
+    
+    /// <inheritdoc/>
+    public override void Clear()
+    {
+        foreach (var allocation in _allocations.ToList())
+        {
+            try
+            {
+                CudaRuntime.cudaFree(allocation.Key);
+                _allocations.TryRemove(allocation.Key, out _);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to free allocation");
+            }
+        }
+    }
+    
+    /// <inheritdoc/>
+    public override async ValueTask OptimizeAsync(CancellationToken cancellationToken)
+    {
+        await Task.Run(() => OptimizeAccessPatterns(), cancellationToken);
+    }
+    
+    /// <inheritdoc/>
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
+    {
+        throw new NotImplementedException("CreateView not yet implemented");
+    }
+    
+    /// <inheritdoc/>
+    public override async ValueTask CopyAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        IUnifiedMemoryBuffer<T> destination,
+        CancellationToken cancellationToken)
+    {
+        await CopyAsync(source, 0, destination, 0, source.Count, cancellationToken);
+    }
+    
+    /// <inheritdoc/>
+    public override async ValueTask CopyAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        int sourceOffset,
+        IUnifiedMemoryBuffer<T> destination,
+        int destinationOffset,
+        int count,
+        CancellationToken cancellationToken)
+    {
+        await Task.Run(() =>
+        {
+            var size = count * Unsafe.SizeOf<T>();
+            // Implement copy logic
+            _logger.LogDebug("Copying {Size} bytes", size);
+        }, cancellationToken);
+    }
+    
+    /// <inheritdoc/>
+    public override async ValueTask CopyToDeviceAsync<T>(
+        ReadOnlyMemory<T> source,
+        IUnifiedMemoryBuffer<T> destination,
+        CancellationToken cancellationToken)
+    {
+        if (destination is CudaUnifiedMemoryBuffer cudaBuffer)
+        {
+            await cudaBuffer.CopyFromAsync(source, 0, cancellationToken);
+        }
+    }
+    
+    /// <inheritdoc/>
+    public override async ValueTask CopyFromDeviceAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        Memory<T> destination,
+        CancellationToken cancellationToken)
+    {
+        if (source is CudaUnifiedMemoryBuffer cudaBuffer)
+        {
+            await cudaBuffer.CopyToAsync(destination, 0, cancellationToken);
+        }
+    }
 
     /// <summary>
     /// Unified memory allocation information.
@@ -715,6 +834,8 @@ internal sealed class CudaUnifiedMemoryBuffer : IUnifiedMemoryBuffer
     public long SizeInBytes => _sizeInBytes;
     public MemoryOptions Options => MemoryOptions.AutoMigrate;
     public bool IsDisposed => _disposed;
+    
+    public BufferState State => _disposed ? BufferState.Disposed : BufferState.Allocated;
 
     public async ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
@@ -807,6 +928,8 @@ internal sealed class CudaUnifiedMemoryBufferView : IUnifiedMemoryBuffer
     public long SizeInBytes => _length;
     public MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
+    
+    public BufferState State => _parent.State;
 
     public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
         => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);

@@ -52,7 +52,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     public override IAccelerator Accelerator => throw new NotImplementedException("TODO: Implement accelerator reference");
 
     /// <inheritdoc/>
-    public override DotCompute.Abstractions.MemoryStatistics Statistics => throw new NotImplementedException("TODO: Implement memory statistics");
+    public override DotCompute.Abstractions.Memory.MemoryStatistics Statistics => throw new NotImplementedException("TODO: Implement memory statistics");
 
     /// <inheritdoc/>
     public override async ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
@@ -654,6 +654,7 @@ internal sealed class CudaAsyncMemoryBufferView : IUnifiedMemoryBuffer
     public long SizeInBytes => _length;
     public MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
+    public BufferState State => _parent.IsDisposed ? BufferState.Disposed : BufferState.Allocated;
 
     public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
         => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);

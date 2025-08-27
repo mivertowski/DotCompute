@@ -5,6 +5,8 @@
 
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Analysis.Types;
+using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
+using DotCompute.Backends.CUDA.Advanced.Types;
 
 namespace DotCompute.Backends.CUDA.Analysis.Models;
 

@@ -59,7 +59,7 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
 
         // Create NuGet service
         var nugetLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Loading.NuGetPluginService>.Instance;
-        NuGetService = new Loading.NuGetPluginService(nugetLogger, LifecycleManager, DiscoveryService, pluginOptions);
+        NuGetService = new Loading.NuGetPluginService(nugetLogger);
 
         // Create executor
         var executorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<PluginExecutor>.Instance;
