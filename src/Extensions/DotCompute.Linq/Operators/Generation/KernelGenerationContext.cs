@@ -56,7 +56,8 @@ public class KernelGenerationContext
     /// <summary>
     /// Gets or sets whether to use shared memory.
     /// </summary>
-    public bool UseSharedMemory { get; set; } = false;
+    public bool UseSharedMemory { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to use vector types.

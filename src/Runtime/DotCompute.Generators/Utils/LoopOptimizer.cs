@@ -31,7 +31,8 @@ public static class LoopOptimizer
         public string IndexVariable { get; set; } = string.Empty;
         public string LimitVariable { get; set; } = string.Empty;
         public string Body { get; set; } = string.Empty;
-        public int StartValue { get; set; } = 0;
+        public int StartValue { get; set; }
+
         public int Increment { get; set; } = 1;
         public LoopOptimizationOptions Options { get; set; } = new();
     }

@@ -65,22 +65,14 @@ namespace DotCompute.Core.Memory
             }
             return DeviceMemory.Invalid;
         }
-        
+
         // Synchronization methods
-        public void EnsureOnHost()
-        {
-            ThrowIfDisposed();
-            // TODO: Implement proper state transition
-            // State = BufferState.HostReady;
-        }
-        
-        public void EnsureOnDevice()
-        {
-            ThrowIfDisposed();
-            // TODO: Implement proper state transition
-            // State = BufferState.DeviceReady;
-        }
-        
+
+        public void EnsureOnHost() => ThrowIfDisposed();// TODO: Implement proper state transition// State = BufferState.HostReady;
+
+        public void EnsureOnDevice() => ThrowIfDisposed();// TODO: Implement proper state transition// State = BufferState.DeviceReady;
+
+
         public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
         {
             EnsureOnHost();
@@ -92,13 +84,11 @@ namespace DotCompute.Core.Memory
             EnsureOnDevice();
             return ValueTask.CompletedTask;
         }
-        
-        public void Synchronize()
-        {
-            ThrowIfDisposed();
-            // P2P buffers handle synchronization internally
-        }
-        
+
+
+        public void Synchronize() => ThrowIfDisposed();// P2P buffers handle synchronization internally
+
+
         public ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
         {
             Synchronize();
@@ -107,16 +97,12 @@ namespace DotCompute.Core.Memory
         
         public void MarkHostDirty() { /* TODO: Implement state tracking */ }
         public void MarkDeviceDirty() { /* TODO: Implement state tracking */ }
-        
+
         // Copy methods
-        public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
-        {
-            await CopyFromHostAsync(source, 0, cancellationToken);
-        }
-        
-        public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
-        {
-            await CopyToHostAsync(destination, 0, cancellationToken);
-        }
+
+        public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => await CopyFromHostAsync(source, 0, cancellationToken);
+
+
+        public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => await CopyToHostAsync(destination, 0, cancellationToken);
     }
 }

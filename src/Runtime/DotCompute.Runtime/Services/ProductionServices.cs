@@ -305,8 +305,12 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
     
     public async ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         await _memoryPool.PerformMaintenanceAsync();
         
         // Trigger garbage collection for optimization
@@ -318,8 +322,12 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
     
     public void Clear()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         var buffersToDispose = _buffers.Values.ToList();
         _buffers.Clear();
         _bufferRegistry.Clear();
@@ -1305,38 +1313,32 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
     public MemoryOptions Options => _buffer.Options;
     public bool IsDisposed => _buffer.IsDisposed;
     public BufferState State => _buffer.State;
-    
+
     // Basic copy operations
-    public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
-    {
+
+    public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) =>
         // For production implementation, this would use proper memory copying
         await Task.CompletedTask;
-    }
-    
-    public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
-    {
+
+    public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) =>
         // For production implementation, this would use proper memory copying
         await Task.CompletedTask;
-    }
-    
-    public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
-    {
+
+    public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) =>
         // For production implementation, this would copy between buffers
         await Task.CompletedTask;
-    }
-    
+
     public async ValueTask CopyToAsync(
         int sourceOffset,
         IUnifiedMemoryBuffer<T> destination,
         int destinationOffset,
         int count,
-        CancellationToken cancellationToken = default)
-    {
+        CancellationToken cancellationToken = default) =>
         // For production implementation, this would copy with offsets
         await Task.CompletedTask;
-    }
-    
+
     // Simplified implementations for remaining methods
+
     public Span<T> AsSpan() => throw new NotSupportedException("Direct span access not supported in production wrapper");
     public ReadOnlySpan<T> AsReadOnlySpan() => throw new NotSupportedException("Direct span access not supported in production wrapper");
     public Memory<T> AsMemory() => throw new NotSupportedException("Direct memory access not supported in production wrapper");
@@ -1362,11 +1364,23 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
-        if (offset + length > _length) throw new ArgumentException("Slice extends beyond buffer");
-        
+        if (offset + length > _length)
+        {
+            throw new ArgumentException("Slice extends beyond buffer");
+        }
+
+
         return new TypedMemoryBufferView<T>(this, offset, length);
     }
-    
+
+    // Non-generic interface implementation
+
+    ValueTask IUnifiedMemoryBuffer.CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset, CancellationToken cancellationToken) => _buffer.CopyFromAsync(source, offset, cancellationToken);
+
+
+    ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken) => _buffer.CopyToAsync(destination, offset, cancellationToken);
+
+
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         var newLength = (int)(_buffer.SizeInBytes / Unsafe.SizeOf<TNew>());
@@ -1410,9 +1424,13 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
     // Delegate all operations to parent with offset adjustments
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
-        if (source.Length > _length) throw new ArgumentException("Source too large for view");
-        
+        if (source.Length > _length)
+        {
+            throw new ArgumentException("Source too large for view");
+        }
+
         // For a real implementation, this would handle the offset properly
+
         await _parent.CopyFromAsync(source, cancellationToken);
     }
     
@@ -1446,13 +1464,25 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
     
     public ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => _parent.FillAsync(value, _offset, _length, cancellationToken);
     public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => _parent.FillAsync(value, _offset + offset, count, cancellationToken);
-    
+
+    // Non-generic interface implementation
+
+    ValueTask IUnifiedMemoryBuffer.CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset, CancellationToken cancellationToken) => ((IUnifiedMemoryBuffer)_parent).CopyFromAsync(source, offset, cancellationToken);
+
+
+    ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken) => ((IUnifiedMemoryBuffer)_parent).CopyToAsync(destination, offset, cancellationToken);
+
+
     public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
-        if (offset + length > _length) throw new ArgumentException("Slice extends beyond view");
-        
+        if (offset + length > _length)
+        {
+            throw new ArgumentException("Slice extends beyond view");
+        }
+
+
         return new TypedMemoryBufferView<T>(_parent, _offset + offset, length);
     }
     

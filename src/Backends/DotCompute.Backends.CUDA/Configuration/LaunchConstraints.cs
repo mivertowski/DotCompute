@@ -30,7 +30,8 @@ namespace DotCompute.Backends.CUDA.Optimization.Configuration
         /// <summary>
         /// Gets or sets whether block size must be a power of two.
         /// </summary>
-        public bool RequirePowerOfTwo { get; set; } = false;
+        public bool RequirePowerOfTwo { get; set; }
+
 
         /// <summary>
         /// Gets or sets the optimization hint for specific workload characteristics.

@@ -76,7 +76,8 @@ public class CommentStyle
     /// complex algorithms or optimizations that may not be immediately obvious.
     /// </remarks>
     public bool IncludeInlineComments { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to include TODO comments for incomplete or future work.
     /// </summary>
@@ -101,8 +102,9 @@ public class CommentStyle
     /// may indicate incomplete implementations. They can be helpful for
     /// development tools and code analysis scenarios.
     /// </remarks>
-    public bool IncludeTodoComments { get; set; } = false;
-    
+    public bool IncludeTodoComments { get; set; }
+
+
     /// <summary>
     /// Gets or sets the level of detail for generated comments.
     /// </summary>

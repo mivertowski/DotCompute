@@ -507,9 +507,20 @@ namespace DotCompute.Backends.CUDA.Analysis
 
         private int GetOptimalAccessSize(int computeCapability)
         {
-            if (computeCapability >= 50) return 128;
-            else if (computeCapability >= 30) return 128;
-            else return 32;
+            if (computeCapability >= 50)
+            {
+                return 128;
+            }
+
+            else if (computeCapability >= 30)
+            {
+                return 128;
+            }
+            else
+            {
+                return 32;
+            }
+
         }
 
         private List<CoalescingIssue> IdentifyCoalescingIssues(
@@ -685,8 +696,12 @@ namespace DotCompute.Backends.CUDA.Analysis
         private double CalculateVariance(IEnumerable<double> values)
         {
             var list = values.ToList();
-            if (!list.Any()) return 0;
-            
+            if (!list.Any())
+            {
+                return 0;
+            }
+
+
             double mean = list.Average();
             return list.Average(v => Math.Pow(v - mean, 2));
         }

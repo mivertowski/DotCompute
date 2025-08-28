@@ -31,18 +31,12 @@ public sealed class ValidationContext
     /// <summary>
     /// Adds an error to the validation context.
     /// </summary>
-    public void AddError(string code, string message)
-    {
-        Errors.Add(new ValidationIssue(ValidationSeverity.Error, message, code));
-    }
+    public void AddError(string code, string message) => Errors.Add(new ValidationIssue(ValidationSeverity.Error, message, code));
 
     /// <summary>
     /// Adds a warning to the validation context.
     /// </summary>
-    public void AddWarning(string code, string message)
-    {
-        Warnings.Add(new ValidationIssue(ValidationSeverity.Warning, message, code));
-    }
+    public void AddWarning(string code, string message) => Warnings.Add(new ValidationIssue(ValidationSeverity.Warning, message, code));
 
     /// <summary>
     /// Creates a validation result from this context.

@@ -145,6 +145,33 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     /// <inheritdoc/>
     public abstract ValueTask CopyToAsync(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default);
     
+    // Non-generic interface implementation - delegate to generic versions
+    ValueTask IUnifiedMemoryBuffer.CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset, CancellationToken cancellationToken)
+    {
+        if (typeof(U) != typeof(T))
+        {
+
+            throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
+        }
+
+
+        var typedSource = MemoryMarshal.Cast<U, T>(source.Span);
+        return CopyFromAsync(typedSource.ToArray(), offset, cancellationToken);
+    }
+    
+    ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken)
+    {
+        if (typeof(U) != typeof(T))
+        {
+
+            throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
+        }
+
+
+        var typedDestination = MemoryMarshal.Cast<U, T>(destination.Span);
+        return CopyToAsync(typedDestination.ToArray(), offset, cancellationToken);
+    }
+    
     /// <inheritdoc/>
     public abstract ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default);
     
@@ -173,16 +200,15 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
             throw new ArgumentOutOfRangeException(nameof(count), "Destination buffer overflow");
         }
     }
-    
+
+
     /// <summary>
     /// Throws if the buffer has been disposed.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
-    }
-    
+    protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(IsDisposed, GetType());
+
+
     /// <inheritdoc/>
     public abstract void Dispose();
     
@@ -318,14 +344,12 @@ public abstract class BasePooledBuffer<T> : BaseMemoryBuffer<T>, IMemoryOwner<T>
     /// Core async disposal logic to be implemented by derived classes.
     /// </summary>
     protected virtual ValueTask DisposeCoreAsync() => ValueTask.CompletedTask;
-    
+
+
     /// <summary>
     /// Resets the buffer for reuse in the pool.
     /// </summary>
-    public virtual void Reset()
-    {
-        _disposed = 0;
-    }
+    public virtual void Reset() => _disposed = 0;
 }
 
 /// <summary>

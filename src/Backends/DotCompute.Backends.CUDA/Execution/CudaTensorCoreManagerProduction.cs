@@ -428,13 +428,11 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     /// <summary>
     /// Compiles PTX code to cubin.
     /// </summary>
-    private byte[] CompilePtxToCubin(string ptxCode)
-    {
+    private byte[] CompilePtxToCubin(string ptxCode) =>
         // TODO
         // This would use NVRTC to compile PTX to cubin
         // For now, return placeholder
-        return Encoding.UTF8.GetBytes(ptxCode);
-    }
+        Encoding.UTF8.GetBytes(ptxCode);
 
     /// <summary>
     /// Launches a tensor core kernel.
@@ -553,10 +551,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         DataType inputType,
         DataType outputType,
         MatrixLayout layoutA,
-        MatrixLayout layoutB)
-    {
-        return $"gemm_{m}x{n}x{k}_{inputType}_{outputType}_{layoutA}_{layoutB}";
-    }
+        MatrixLayout layoutB) => $"gemm_{m}x{n}x{k}_{inputType}_{outputType}_{layoutA}_{layoutB}";
 
     /// <summary>
     /// Calculates GFLOPS for the operation.
@@ -585,10 +580,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, GetType());
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
 
     public void Dispose()
     {
@@ -715,9 +707,11 @@ public sealed class ConvolutionParams
     public int FilterWidth { get; init; }
     public int StrideH { get; init; } = 1;
     public int StrideW { get; init; } = 1;
-    public int PadH { get; init; } = 0;
-    public int PadW { get; init; } = 0;
-    
+    public int PadH { get; init; }
+
+    public int PadW { get; init; }
+
+
     public int OutputHeight => (InputHeight + 2 * PadH - FilterHeight) / StrideH + 1;
     public int OutputWidth => (InputWidth + 2 * PadW - FilterWidth) / StrideW + 1;
 }
@@ -755,6 +749,10 @@ public sealed class TensorCoreException : Exception
 {
     public TensorCoreException(string message) : base(message) { }
     public TensorCoreException(string message, Exception inner) : base(message, inner) { }
+    public TensorCoreException()
+    {
+    }
+
 }
 
 /// <summary>

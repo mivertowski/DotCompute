@@ -204,7 +204,11 @@ public static class VectorizationAnalyzer
     {
         // Simple heuristic: check if loop body references previous iterations
         var body = loop.Statement;
-        if (body == null) return false;
+        if (body == null)
+        {
+            return false;
+        }
+
 
         var arrayAccesses = body.DescendantNodes().OfType<ElementAccessExpressionSyntax>();
         var loopVariable = GetLoopVariable(loop);

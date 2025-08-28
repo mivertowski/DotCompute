@@ -68,6 +68,28 @@ namespace DotCompute.Core.Compute.Memory
             => _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
 
         /// <summary>
+        /// Copies data from source memory to this view.
+        /// </summary>
+        /// <typeparam name="T">Type of elements to copy.</typeparam>
+        /// <param name="source">Source data to copy from.</param>
+        /// <param name="destinationOffset">Offset into this view in bytes.</param>
+        /// <param name="cancellationToken">Cancellation token for the operation.</param>
+        /// <returns>Completed task when copy finishes.</returns>
+        public virtual ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long destinationOffset, CancellationToken cancellationToken = default) where T : unmanaged
+            => _parent.CopyFromAsync(source, _offset + destinationOffset, cancellationToken);
+
+        /// <summary>
+        /// Copies data from this view to destination memory.
+        /// </summary>
+        /// <typeparam name="T">Type of elements to copy.</typeparam>
+        /// <param name="destination">Destination memory to copy to.</param>
+        /// <param name="sourceOffset">Offset into this view in bytes.</param>
+        /// <param name="cancellationToken">Cancellation token for the operation.</param>
+        /// <returns>Completed task when copy finishes.</returns>
+        public virtual ValueTask CopyToAsync<T>(Memory<T> destination, long sourceOffset, CancellationToken cancellationToken = default) where T : unmanaged
+            => _parent.CopyToAsync(destination, _offset + sourceOffset, cancellationToken);
+
+        /// <summary>
         /// Disposes the view. Note: This does not dispose the parent buffer.
         /// </summary>
         public void Dispose()

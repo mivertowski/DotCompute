@@ -64,11 +64,9 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
     public async ValueTask<DotCompute.Abstractions.ICompiledKernel> CompileAsync(
         DotCompute.Abstractions.Kernels.KernelDefinition definition,
         DotCompute.Abstractions.CompilationOptions? options = null,
-        CancellationToken cancellationToken = default)
-    {
+        CancellationToken cancellationToken = default) =>
         // Delegate to the accelerator's compilation capabilities
-        return await _accelerator.CompileKernelAsync(definition, options, cancellationToken).ConfigureAwait(false);
-    }
+        await _accelerator.CompileKernelAsync(definition, options, cancellationToken).ConfigureAwait(false);
 
     /// <summary>
     /// Validates a kernel definition.
@@ -98,10 +96,7 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
     /// <returns>A task representing the validation operation.</returns>
     public ValueTask<DotCompute.Abstractions.Validation.UnifiedValidationResult> ValidateAsync(
         DotCompute.Abstractions.Kernels.KernelDefinition definition,
-        CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Validate(definition));
-    }
+        CancellationToken cancellationToken = default) => ValueTask.FromResult(Validate(definition));
 
     /// <summary>
     /// Optimizes an already compiled kernel.
@@ -113,9 +108,7 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
     public ValueTask<DotCompute.Abstractions.ICompiledKernel> OptimizeAsync(
         DotCompute.Abstractions.ICompiledKernel kernel,
         OptimizationLevel level,
-        CancellationToken cancellationToken = default)
-    {
+        CancellationToken cancellationToken = default) =>
         // Delegate to accelerator's optimization capabilities if available
-        return ValueTask.FromResult(kernel);
-    }
+        ValueTask.FromResult(kernel);
 }

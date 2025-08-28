@@ -84,7 +84,8 @@ public class RecoveryCoordinatorConfiguration
     /// <summary>
     /// Gets or sets a value indicating whether to enable notifications.
     /// </summary>
-    public bool EnableNotifications { get; set; } = false;
+    public bool EnableNotifications { get; set; }
+
 
     /// <summary>
     /// Gets or sets the notification endpoints.
@@ -99,7 +100,8 @@ public class RecoveryCoordinatorConfiguration
     /// <summary>
     /// Gets or sets a value indicating whether to enable failover.
     /// </summary>
-    public bool EnableFailover { get; set; } = false;
+    public bool EnableFailover { get; set; }
+
 
     /// <summary>
     /// Gets or sets the failover configuration.

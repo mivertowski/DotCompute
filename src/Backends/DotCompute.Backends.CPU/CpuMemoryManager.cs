@@ -125,7 +125,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
 
     /// <inheritdoc/>
     public override long CurrentAllocatedMemory => _currentAllocated;
-    private long _currentAllocated = 0;
+    private long _currentAllocated;
 
     /// <inheritdoc/>
     public override long TotalAvailableMemory => GC.GetTotalMemory(false);
@@ -142,9 +142,9 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         ActiveBuffers = _activeBuffers,
         PeakMemoryUsage = _peakMemoryUsage
     };
-    private long _totalFreed = 0;
-    private long _activeBuffers = 0;
-    private long _peakMemoryUsage = 0;
+    private long _totalFreed;
+    private long _activeBuffers;
+    private long _peakMemoryUsage;
 
     /// <inheritdoc/>
     protected override ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(long sizeInBytes, MemoryOptions options, CancellationToken cancellationToken)
@@ -170,39 +170,29 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc/>
-    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
-    {
+    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken) =>
         // Simple CPU memory copy - both buffers are in CPU memory
-        return ValueTask.CompletedTask; // Implementation placeholder
-    }
+        ValueTask.CompletedTask; // Implementation placeholder
 
     /// <inheritdoc/>
-    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken)
-    {
+    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken) =>
         // Simple CPU memory copy with offsets
-        return ValueTask.CompletedTask; // Implementation placeholder
-    }
+        ValueTask.CompletedTask; // Implementation placeholder
 
     /// <inheritdoc/>
-    public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken)
-    {
+    public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken) =>
         // Copy from CPU buffer to host memory - essentially a no-op since both are host memory
-        return ValueTask.CompletedTask; // Implementation placeholder
-    }
+        ValueTask.CompletedTask; // Implementation placeholder
 
     /// <inheritdoc/>
-    public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
-    {
+    public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken) =>
         // Copy from host memory to CPU buffer - essentially a no-op since both are host memory
-        return ValueTask.CompletedTask; // Implementation placeholder
-    }
+        ValueTask.CompletedTask; // Implementation placeholder
 
     /// <inheritdoc/>
-    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
-    {
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) =>
         // Create typed view of the buffer
         throw new NotImplementedException("Typed view creation not yet implemented");
-    }
 
     /// <inheritdoc/>
     public override void Clear()
@@ -245,24 +235,25 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
     public bool IsDisposed => _parent.IsDisposed;
     public BufferState State => _parent.State;
 
+    // Interface implementations
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
+
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
+
+    // Legacy support methods
+
     public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
-    }
+        => CopyFromAsync(source, offset, cancellationToken);
 
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
-    }
+        => CopyToAsync(destination, offset, cancellationToken);
 
     public void Dispose() 
     {
         // View doesn't own the memory, parent does
     }
 
-    public ValueTask DisposeAsync()
-    {
+    public ValueTask DisposeAsync() =>
         // View doesn't own the memory, parent does
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 }

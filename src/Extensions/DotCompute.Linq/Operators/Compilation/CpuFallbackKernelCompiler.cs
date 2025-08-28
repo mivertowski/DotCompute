@@ -103,10 +103,7 @@ internal class CpuFallbackKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
     /// <returns>A task representing the validation operation.</returns>
     public ValueTask<DotCompute.Abstractions.Validation.UnifiedValidationResult> ValidateAsync(
         DotCompute.Abstractions.Kernels.KernelDefinition definition,
-        CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Validate(definition));
-    }
+        CancellationToken cancellationToken = default) => ValueTask.FromResult(Validate(definition));
 
     /// <summary>
     /// Optimizes an already compiled kernel.

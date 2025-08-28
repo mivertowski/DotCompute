@@ -85,7 +85,11 @@ internal static class Avx2OperationHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsOperationSupported(KernelOperation operation, Type elementType)
     {
-        if (!Avx2.IsSupported) return false;
+        if (!Avx2.IsSupported)
+        {
+            return false;
+        }
+
 
         return operation switch
         {
@@ -105,10 +109,7 @@ internal static class Avx2OperationHelpers
     /// <param name="c">Third vector operand.</param>
     /// <returns>The result of a * b + c.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector256<float> FusedMultiplyAdd(Vector256<float> a, Vector256<float> b, Vector256<float> c)
-    {
-        return Fma.IsSupported ? Fma.MultiplyAdd(a, b, c) : Avx.Add(Avx.Multiply(a, b), c);
-    }
+    public static Vector256<float> FusedMultiplyAdd(Vector256<float> a, Vector256<float> b, Vector256<float> c) => Fma.IsSupported ? Fma.MultiplyAdd(a, b, c) : Avx.Add(Avx.Multiply(a, b), c);
 
     /// <summary>
     /// Performs a vectorized FMA operation using FMA instructions if available for double precision.
@@ -118,8 +119,5 @@ internal static class Avx2OperationHelpers
     /// <param name="c">Third vector operand.</param>
     /// <returns>The result of a * b + c.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector256<double> FusedMultiplyAdd(Vector256<double> a, Vector256<double> b, Vector256<double> c)
-    {
-        return Fma.IsSupported ? Fma.MultiplyAdd(a, b, c) : Avx.Add(Avx.Multiply(a, b), c);
-    }
+    public static Vector256<double> FusedMultiplyAdd(Vector256<double> a, Vector256<double> b, Vector256<double> c) => Fma.IsSupported ? Fma.MultiplyAdd(a, b, c) : Avx.Add(Avx.Multiply(a, b), c);
 }

@@ -957,6 +957,48 @@ namespace DotCompute.Core.Memory
             }
         }
 
+        /// <summary>
+        /// Copies data from source memory to this P2P buffer with offset support.
+        /// </summary>
+        /// <typeparam name="TSource">Type of elements to copy.</typeparam>
+        /// <param name="source">Source data to copy from.</param>
+        /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
+        /// <param name="cancellationToken">Cancellation token for the operation.</param>
+        /// <returns>Completed task when copy finishes.</returns>
+        public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long destinationOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
+        {
+            ThrowIfDisposed();
+            if (typeof(TSource) != typeof(T))
+            {
+
+                throw new ArgumentException($"Type mismatch: {typeof(TSource)} != {typeof(T)}");
+            }
+
+
+            return CopyFromHostAsync(source, destinationOffset, cancellationToken);
+        }
+
+        /// <summary>
+        /// Copies data from this P2P buffer to destination memory with offset support.
+        /// </summary>
+        /// <typeparam name="TDest">Type of elements to copy.</typeparam>
+        /// <param name="destination">Destination memory to copy to.</param>
+        /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
+        /// <param name="cancellationToken">Cancellation token for the operation.</param>
+        /// <returns>Completed task when copy finishes.</returns>
+        public ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long sourceOffset, CancellationToken cancellationToken = default) where TDest : unmanaged
+        {
+            ThrowIfDisposed();
+            if (typeof(TDest) != typeof(T))
+            {
+
+                throw new ArgumentException($"Type mismatch: {typeof(TDest)} != {typeof(T)}");
+            }
+
+
+            return CopyToHostAsync(destination, sourceOffset, cancellationToken);
+        }
+
         public async ValueTask DisposeAsync()
         {
             if (_disposed)

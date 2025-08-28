@@ -77,7 +77,8 @@ public class FeatureFlags
     /// for smaller operations.
     /// </remarks>
     public bool EnableParallel { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to generate ARM NEON code.
     /// </summary>
@@ -91,8 +92,9 @@ public class FeatureFlags
     /// similar vectorization benefits to x86 SSE/AVX on ARM-based systems.
     /// This is particularly relevant for mobile applications and Apple Silicon Macs.
     /// </remarks>
-    public bool EnableArmNeon { get; set; } = false;
-    
+    public bool EnableArmNeon { get; set; }
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to allow unsafe code generation.
     /// </summary>

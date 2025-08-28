@@ -138,8 +138,10 @@ namespace DotCompute.Backends.CUDA.Types
         public bool ValidateMemoryAccess { get; set; } = true;
         public bool ValidateLaunchParameters { get; set; } = true;
         public bool ValidateKernelExistence { get; set; } = true;
-        public bool EnableBoundsChecking { get; set; } = false;
-        public bool EnableNanDetection { get; set; } = false;
+        public bool EnableBoundsChecking { get; set; }
+
+        public bool EnableNanDetection { get; set; }
+
     }
 
     /// <summary>

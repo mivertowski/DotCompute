@@ -58,31 +58,26 @@ public sealed class UnifiedValidationResult
     /// Gets the timestamp of validation.
     /// </summary>
     public DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
-    
+
+
     /// <summary>
     /// Adds an error to the validation result.
     /// </summary>
-    public void AddError(string message, string? code = null, string? source = null, object? data = null)
-    {
-        _errors.Add(new ValidationIssue(ValidationSeverity.Error, message, code, source, data));
-    }
-    
+    public void AddError(string message, string? code = null, string? source = null, object? data = null) => _errors.Add(new ValidationIssue(ValidationSeverity.Error, message, code, source, data));
+
+
     /// <summary>
     /// Adds a warning to the validation result.
     /// </summary>
-    public void AddWarning(string message, string? code = null, string? source = null, object? data = null)
-    {
-        _warnings.Add(new ValidationIssue(ValidationSeverity.Warning, message, code, source, data));
-    }
-    
+    public void AddWarning(string message, string? code = null, string? source = null, object? data = null) => _warnings.Add(new ValidationIssue(ValidationSeverity.Warning, message, code, source, data));
+
+
     /// <summary>
     /// Adds an informational message to the validation result.
     /// </summary>
-    public void AddInfo(string message, string? code = null, string? source = null, object? data = null)
-    {
-        _information.Add(new ValidationIssue(ValidationSeverity.Information, message, code, source, data));
-    }
-    
+    public void AddInfo(string message, string? code = null, string? source = null, object? data = null) => _information.Add(new ValidationIssue(ValidationSeverity.Information, message, code, source, data));
+
+
     /// <summary>
     /// Merges another validation result into this one.
     /// </summary>
@@ -225,8 +220,11 @@ public sealed class ValidationIssue
         var parts = new List<string>();
         
         if (!string.IsNullOrEmpty(Code))
+        {
             parts.Add($"[{Code}]");
-            
+        }
+
+
         if (!string.IsNullOrEmpty(Source))
         {
             if (LineNumber.HasValue)
@@ -295,4 +293,8 @@ public sealed class ValidationException : Exception
     {
         UnifiedValidationResult = UnifiedValidationResult.Failure(message);
     }
+    public ValidationException()
+    {
+    }
+
 }

@@ -81,8 +81,11 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
         metadata["EntryPoint"] = Parameters.Length > 0 ? Name : "main";
         metadata["SharedMemorySize"] = SharedMemorySize;
         if (RequiredWorkGroupSize != null)
+        {
             metadata["RequiredWorkGroupSize"] = RequiredWorkGroupSize;
-        
+        }
+
+
         return new CompiledKernel
         {
             Name = Name,

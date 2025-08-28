@@ -20,9 +20,11 @@ public static class MethodBodyExtractor
     public class ExtractionOptions
     {
         public bool PreserveFormatting { get; set; } = true;
-        public bool IncludeComments { get; set; } = false;
+        public bool IncludeComments { get; set; }
+
         public bool ExpandExpressionBodies { get; set; } = true;
-        public bool NormalizeWhitespace { get; set; } = false;
+        public bool NormalizeWhitespace { get; set; }
+
         public int IndentSize { get; set; } = 4;
     }
 

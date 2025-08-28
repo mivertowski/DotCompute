@@ -180,15 +180,14 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         // Additional validation can be added by derived classes
         return AdditionalValidation(definition);
     }
-    
+
+
     /// <summary>
     /// Hook for derived classes to add additional validation.
     /// </summary>
-    protected virtual DotCompute.Abstractions.Validation.UnifiedValidationResult AdditionalValidation(KernelDefinition definition)
-    {
-        return DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
-    }
-    
+    protected virtual DotCompute.Abstractions.Validation.UnifiedValidationResult AdditionalValidation(KernelDefinition definition) => DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
+
+
     /// <summary>
     /// Generates a cache key for the compilation.
     /// </summary>
@@ -225,15 +224,14 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         _metricsCache.Clear();
         _logger.LogDebug("{CompilerName}: Compilation cache cleared", CompilerName);
     }
-    
+
+
     /// <summary>
     /// Gets compilation metrics for analysis.
     /// </summary>
-    public virtual IReadOnlyDictionary<string, CompilationMetrics> GetMetrics()
-    {
-        return _metricsCache;
-    }
-    
+    public virtual IReadOnlyDictionary<string, CompilationMetrics> GetMetrics() => _metricsCache;
+
+
     /// <summary>
     /// Logs performance metrics for a compilation.
     /// </summary>
@@ -283,17 +281,17 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         // Use the existing validation logic
         return ValidateKernelDefinition(source);
     }
-    
+
+
     /// <inheritdoc/>
     public virtual async ValueTask<DotCompute.Abstractions.Validation.UnifiedValidationResult> ValidateAsync(
         KernelDefinition source,
-        CancellationToken cancellationToken = default)
-    {
+        CancellationToken cancellationToken = default) =>
         // For base implementation, use synchronous validation
         // Derived classes can override for async validation
-        return await ValueTask.FromResult(Validate(source));
-    }
-    
+        await ValueTask.FromResult(Validate(source));
+
+
     /// <inheritdoc/>
     public virtual async ValueTask<ICompiledKernel> OptimizeAsync(
         ICompiledKernel kernel,
@@ -309,18 +307,17 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         // Derived classes should override for actual optimization
         return await OptimizeKernelCore(kernel, level, cancellationToken);
     }
-    
+
+
     /// <summary>
     /// Core optimization logic to be implemented by derived classes.
     /// </summary>
     protected virtual ValueTask<ICompiledKernel> OptimizeKernelCore(
         ICompiledKernel kernel,
         OptimizationLevel level,
-        CancellationToken cancellationToken)
-    {
+        CancellationToken cancellationToken) =>
         // Default: no optimization
-        return ValueTask.FromResult(kernel);
-    }
+        ValueTask.FromResult(kernel);
 }
 
 /// <summary>
@@ -342,4 +339,8 @@ public class KernelCompilationException : Exception
 {
     public KernelCompilationException(string message) : base(message) { }
     public KernelCompilationException(string message, Exception innerException) : base(message, innerException) { }
+    public KernelCompilationException()
+    {
+    }
+
 }

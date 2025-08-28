@@ -67,7 +67,11 @@ internal static class NeonOperationHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsOperationSupported(KernelOperation operation, Type elementType)
     {
-        if (!AdvSimd.IsSupported) return false;
+        if (!AdvSimd.IsSupported)
+        {
+            return false;
+        }
+
 
         return operation switch
         {
@@ -87,12 +91,10 @@ internal static class NeonOperationHelpers
     /// <param name="c">Third vector operand (accumulator).</param>
     /// <returns>The result of a * b + c.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector128<float> FusedMultiplyAdd(Vector128<float> a, Vector128<float> b, Vector128<float> c)
-    {
+    public static Vector128<float> FusedMultiplyAdd(Vector128<float> a, Vector128<float> b, Vector128<float> c) =>
         // ARM NEON FMLA: result = a * b + c with single rounding
         // Note: ARM order is (accumulator, multiplicand, multiplier)
-        return AdvSimd.FusedMultiplyAdd(c, a, b);
-    }
+        AdvSimd.FusedMultiplyAdd(c, a, b);
 
     /// <summary>
     /// Performs a vectorized FMA operation using ARM NEON FMLA instructions for double precision.

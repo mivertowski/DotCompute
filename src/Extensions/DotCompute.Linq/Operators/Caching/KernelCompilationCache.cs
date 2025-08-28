@@ -88,10 +88,7 @@ internal static class KernelCompilationCache
     /// <summary>
     /// Clears the entire cache.
     /// </summary>
-    public static void Clear()
-    {
-        _cache.Clear();
-    }
+    public static void Clear() => _cache.Clear();
 
     /// <summary>
     /// Gets the current number of entries in the cache.

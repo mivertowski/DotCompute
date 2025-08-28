@@ -176,11 +176,9 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
         Assert.NotNull(metrics);
     }
 
-    private static byte[] GenerateTestKernelCode()
-    {
+    private static byte[] GenerateTestKernelCode() =>
         // Simulate kernel bytecode
-        return new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
-    }
+        new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
 
     /// <summary>
     /// Test accelerator using BaseAccelerator
@@ -195,10 +193,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
         }
 
         protected override ValueTask<ICompiledKernel> CompileKernelCoreAsync(
-            KernelDefinition definition, CompilationOptions options, CancellationToken cancellationToken)
-        {
-            return ValueTask.FromResult<ICompiledKernel>(new TestCompiledKernel(definition.Name));
-        }
+            KernelDefinition definition, CompilationOptions options, CancellationToken cancellationToken) => ValueTask.FromResult<ICompiledKernel>(new TestCompiledKernel(definition.Name));
 
         protected override ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken)
         {
@@ -217,10 +212,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
         protected override string CompilerName => "TestCompiler";
 
         protected override ValueTask<ICompiledKernel> CompileKernelCoreAsync(
-            KernelDefinition definition, CompilationOptions options, CancellationToken cancellationToken)
-        {
-            return ValueTask.FromResult<ICompiledKernel>(new TestCompiledKernel(definition.Name));
-        }
+            KernelDefinition definition, CompilationOptions options, CancellationToken cancellationToken) => ValueTask.FromResult<ICompiledKernel>(new TestCompiledKernel(definition.Name));
     }
 
     /// <summary>

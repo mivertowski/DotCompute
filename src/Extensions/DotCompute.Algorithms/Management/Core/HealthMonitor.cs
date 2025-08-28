@@ -61,7 +61,11 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
     /// <inheritdoc/>
     public async Task PerformHealthChecksAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -98,10 +102,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
     /// <summary>
     /// Timer callback for periodic health checks.
     /// </summary>
-    private async void OnHealthCheckTimer(object? state)
-    {
-        await PerformHealthChecksAsync().ConfigureAwait(false);
-    }
+    private async void OnHealthCheckTimer(object? state) => await PerformHealthChecksAsync().ConfigureAwait(false);
 
     /// <summary>
     /// Checks the health of a single plugin.

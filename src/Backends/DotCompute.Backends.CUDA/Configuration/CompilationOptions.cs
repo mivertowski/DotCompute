@@ -16,7 +16,8 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets whether to generate position-independent code.
         /// </summary>
-        public bool GeneratePositionIndependentCode { get; set; } = false;
+        public bool GeneratePositionIndependentCode { get; set; }
+
 
         /// <summary>
         /// Gets or sets the maximum register count per thread (CUDA-specific).
@@ -48,17 +49,20 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets whether to enable CUDA Cooperative Groups.
         /// </summary>
-        public bool EnableCooperativeGroups { get; set; } = false;
+        public bool EnableCooperativeGroups { get; set; }
+
 
         /// <summary>
         /// Gets or sets whether to enable CUDA Dynamic Parallelism.
         /// </summary>
-        public bool EnableDynamicParallelism { get; set; } = false;
+        public bool EnableDynamicParallelism { get; set; }
+
 
         /// <summary>
         /// Gets or sets whether to enable CUDA Unified Memory.
         /// </summary>
-        public bool EnableUnifiedMemory { get; set; } = false;
+        public bool EnableUnifiedMemory { get; set; }
+
 
         /// <summary>
         /// Gets or sets the CUDA compute mode.

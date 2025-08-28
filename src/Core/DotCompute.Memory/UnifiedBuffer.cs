@@ -1042,6 +1042,39 @@ public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanag
 
     #region IUnifiedMemoryBuffer Interface Implementation
 
+    // Non-generic interface implementation
+    ValueTask IUnifiedMemoryBuffer.CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset, CancellationToken cancellationToken)
+    {
+        if (typeof(U) != typeof(T))
+        {
+
+            throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
+        }
+
+
+        var typedSource = MemoryMarshal.Cast<U, T>(source.Span);
+        var elementOffset = (int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+        return WriteAsync(typedSource.ToArray().AsMemory(), elementOffset, cancellationToken);
+    }
+    
+    ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken)
+    {
+        if (typeof(U) != typeof(T))
+        {
+
+            throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
+        }
+
+
+        var elementOffset = (int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+        var typedDest = new T[destination.Length];
+        return new ValueTask(ReadAsync(elementOffset, destination.Length, cancellationToken).AsTask().ContinueWith(t => {
+            var sourceData = t.Result;
+            var typedDestination = MemoryMarshal.Cast<U, T>(destination.Span);
+            sourceData.AsSpan().CopyTo(typedDestination);
+        }, cancellationToken));
+    }
+
     /// <summary>
     /// Copies data from host memory to this buffer.
     /// </summary>

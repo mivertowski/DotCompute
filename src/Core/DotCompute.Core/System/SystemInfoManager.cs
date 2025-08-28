@@ -39,8 +39,11 @@ public sealed partial class SystemInfoManager
     public void StartMonitoring(TimeSpan interval)
     {
         if (_isMonitoring)
+        {
             return;
-        
+        }
+
+
         _isMonitoring = true;
         _monitoringTimer.Change(TimeSpan.Zero, interval);
         _logger.LogInformation("Started system monitoring with {Interval}s interval", interval.TotalSeconds);
@@ -52,8 +55,11 @@ public sealed partial class SystemInfoManager
     public void StopMonitoring()
     {
         if (!_isMonitoring)
+        {
             return;
-        
+        }
+
+
         _isMonitoring = false;
         _monitoringTimer.Change(Timeout.Infinite, Timeout.Infinite);
         _logger.LogInformation("Stopped system monitoring");
@@ -140,14 +146,33 @@ public sealed partial class SystemInfoManager
     private static PlatformType GetPlatform()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+
             return PlatformType.Windows;
+        }
+
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+
             return PlatformType.Linux;
+        }
+
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+
             return PlatformType.MacOS;
+        }
+
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+        {
+
             return PlatformType.FreeBSD;
-        
+        }
+
+
         return PlatformType.Unknown;
     }
 
@@ -185,8 +210,12 @@ public sealed partial class SystemInfoManager
                 {
                     dynamic? searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_OperatingSystem");
                     dynamic? collection = searcher?.Get();
-                    if (collection == null) return info;
-                    
+                    if (collection == null)
+                    {
+                        return info;
+                    }
+
+
                     foreach (dynamic mo in collection)
                     {
                         info.Total = Convert.ToInt64(mo["TotalVisibleMemorySize"]) * 1024;
@@ -225,8 +254,12 @@ public sealed partial class SystemInfoManager
         try
         {
             if (!File.Exists("/proc/meminfo"))
+            {
+
                 return GetFallbackMemoryInfo();
-            
+            }
+
+
             var lines = File.ReadAllLines("/proc/meminfo");
             var memValues = new Dictionary<string, long>();
             
@@ -242,8 +275,11 @@ public sealed partial class SystemInfoManager
             }
             
             if (memValues.TryGetValue("MemTotal", out var total))
+            {
                 info.Total = total;
-            
+            }
+
+
             if (memValues.TryGetValue("MemAvailable", out var available))
             {
                 info.Available = available;
@@ -299,7 +335,10 @@ public sealed partial class SystemInfoManager
                 {
                     var match = Regex.Match(line, @"(\d+) bytes");
                     if (match.Success)
+                    {
                         pageSize = long.Parse(match.Groups[1].Value);
+                    }
+
                 }
                 else if (line.Contains("Pages free:"))
                 {
@@ -420,8 +459,11 @@ public sealed partial class SystemInfoManager
     private void GetWindowsCpuInfo(CpuInfo info)
     {
         if (!OperatingSystem.IsWindows())
+        {
             return;
-        
+        }
+
+
         try
         {
             // Use dynamic loading for Windows Management Instrumentation
@@ -430,8 +472,12 @@ public sealed partial class SystemInfoManager
             {
                 dynamic? searcher = Activator.CreateInstance(wmiType, "SELECT * FROM Win32_Processor");
                 dynamic? collection = searcher?.Get();
-                if (collection == null) return;
-                
+                if (collection == null)
+                {
+                    return;
+                }
+
+
                 foreach (dynamic mo in collection)
                 {
                     info.Name = mo["Name"]?.ToString() ?? "Unknown";
@@ -463,8 +509,11 @@ public sealed partial class SystemInfoManager
         try
         {
             if (!File.Exists("/proc/cpuinfo"))
+            {
                 return;
-            
+            }
+
+
             var lines = File.ReadAllLines("/proc/cpuinfo");
             var processors = new HashSet<string>();
             var physicalIds = new HashSet<string>();
@@ -478,7 +527,10 @@ public sealed partial class SystemInfoManager
                 else if (line.StartsWith("cpu MHz"))
                 {
                     if (double.TryParse(line.Split(':', 2)[1].Trim(), out var mhz))
+                    {
                         info.FrequencyMHz = (int)mhz;
+                    }
+
                 }
                 else if (line.StartsWith("processor"))
                 {
@@ -512,15 +564,22 @@ public sealed partial class SystemInfoManager
         {
             var brand = ExecuteCommand("sysctl", "-n machdep.cpu.brand_string");
             if (!string.IsNullOrWhiteSpace(brand))
+            {
                 info.Name = brand.Trim();
-            
+            }
+
             var coreCount = ExecuteCommand("sysctl", "-n hw.physicalcpu");
             if (int.TryParse(coreCount.Trim(), out var cores))
+            {
                 info.PhysicalCores = cores;
-            
+            }
+
             var freq = ExecuteCommand("sysctl", "-n hw.cpufrequency_max");
             if (long.TryParse(freq.Trim(), out var frequency))
+            {
                 info.FrequencyMHz = (int)(frequency / 1_000_000);
+            }
+
         }
         catch (Exception ex)
         {

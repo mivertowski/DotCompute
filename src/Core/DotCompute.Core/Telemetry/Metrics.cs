@@ -10,21 +10,13 @@ namespace DotCompute.Core.Telemetry;
 internal static class PrometheusMetricsStub
 {
     public static readonly object DefaultRegistry = new();
-    
-    public static ICounter CreateCounter(string name, string help, params string[] labelNames)
-    {
-        return new StubCounter();
-    }
-    
-    public static IHistogram CreateHistogram(string name, string help, HistogramConfiguration? config = null, params string[] labelNames)
-    {
-        return new StubHistogram();
-    }
-    
-    public static IGauge CreateGauge(string name, string help, params string[] labelNames)
-    {
-        return new StubGauge();
-    }
+
+    public static ICounter CreateCounter(string name, string help, params string[] labelNames) => new StubCounter();
+
+    public static IHistogram CreateHistogram(string name, string help, HistogramConfiguration? config = null, params string[] labelNames) => new StubHistogram();
+
+
+    public static IGauge CreateGauge(string name, string help, params string[] labelNames) => new StubGauge();
 }
 
 internal interface ICounter

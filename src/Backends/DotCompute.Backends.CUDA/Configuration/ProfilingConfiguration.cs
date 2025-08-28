@@ -18,7 +18,8 @@ namespace DotCompute.Backends.CUDA.Profiling.Configuration
         /// <summary>
         /// Gets or sets whether to profile CUDA API calls.
         /// </summary>
-        public bool ProfileApi { get; set; } = false;
+        public bool ProfileApi { get; set; }
+
 
         /// <summary>
         /// Gets or sets whether to collect performance metrics.

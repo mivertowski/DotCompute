@@ -346,10 +346,7 @@ internal class MockMemoryManager : IUnifiedMemoryManager
         return ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(buffer);
     }
 
-    public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions options = DotCompute.Abstractions.Memory.MemoryOptions.None, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult<IUnifiedMemoryBuffer>(new MockMemoryBuffer(sizeInBytes));
-    }
+    public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions options = DotCompute.Abstractions.Memory.MemoryOptions.None, CancellationToken cancellationToken = default) => ValueTask.FromResult<IUnifiedMemoryBuffer>(new MockMemoryBuffer(sizeInBytes));
 
     public IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length) => new MockMemoryBuffer(length);
 
@@ -380,30 +377,15 @@ internal class MockMemoryManager : IUnifiedMemoryManager
         return ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(new MockMemoryBuffer<T>(count));
     }
 
-    public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, DotCompute.Abstractions.Memory.MemoryOptions options, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return AllocateAsync<T>(count, cancellationToken);
-    }
+    public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, DotCompute.Abstractions.Memory.MemoryOptions options, CancellationToken cancellationToken = default) where T : unmanaged => AllocateAsync<T>(count, cancellationToken);
 
-    public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
-    public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
-    public ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
-    public ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
     public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
     {
@@ -411,17 +393,11 @@ internal class MockMemoryManager : IUnifiedMemoryManager
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask OptimizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public void Clear() { }
 
-    public IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) where T : unmanaged
-    {
-        return new MockMemoryBuffer<T>(count);
-    }
+    public IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) where T : unmanaged => new MockMemoryBuffer<T>(count);
 
     public IAccelerator Accelerator => throw new NotSupportedException();
     public DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new DotCompute.Abstractions.Memory.MemoryStatistics();
@@ -453,8 +429,12 @@ internal class MockMemoryBuffer : IUnifiedMemoryBuffer
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
+    // Interface implementations
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
+    
+    // Legacy support
     public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
-
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 }
 
@@ -522,6 +502,11 @@ internal class MockMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
     public DotCompute.Abstractions.Memory.MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode) => new DotCompute.Abstractions.Memory.MappedMemory<T>(Memory<T>.Empty, null);
     public ValueTask<DotCompute.Abstractions.Memory.MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode, CancellationToken cancellationToken = default) => ValueTask.FromResult(new DotCompute.Abstractions.Memory.MappedMemory<T>(Memory<T>.Empty, null));
 
+    // Non-generic interface implementation
+    ValueTask IUnifiedMemoryBuffer.CopyFromAsync<TOther>(ReadOnlyMemory<TOther> source, long offset, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    ValueTask IUnifiedMemoryBuffer.CopyToAsync<TOther>(Memory<TOther> destination, long offset, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    
+    // Legacy support
     public ValueTask CopyFromHostAsync<TOther>(ReadOnlyMemory<TOther> source, long offset = 0, CancellationToken cancellationToken = default) where TOther : unmanaged => ValueTask.CompletedTask;
     public ValueTask CopyToHostAsync<TOther>(Memory<TOther> destination, long offset = 0, CancellationToken cancellationToken = default) where TOther : unmanaged => ValueTask.CompletedTask;
 }

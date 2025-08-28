@@ -393,6 +393,10 @@ public class CircuitOpenException : Exception
 {
     public CircuitOpenException(string message) : base(message) { }
     public CircuitOpenException(string message, Exception innerException) : base(message, innerException) { }
+    public CircuitOpenException()
+    {
+    }
+
 }
 
 /// <summary>

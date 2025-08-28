@@ -109,11 +109,33 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         registeredCount++;
 
         // Register GPU backends with platform checks
-        if (RegisterCudaBackend()) registeredCount++;
-        if (RegisterMetalBackend()) registeredCount++;
-        if (RegisterOpenClBackend()) registeredCount++;
-        if (RegisterDirectComputeBackend()) registeredCount++;
-        if (RegisterVulkanBackend()) registeredCount++;
+        if (RegisterCudaBackend())
+        {
+            registeredCount++;
+        }
+
+        if (RegisterMetalBackend())
+        {
+            registeredCount++;
+        }
+
+        if (RegisterOpenClBackend())
+        {
+            registeredCount++;
+        }
+
+
+        if (RegisterDirectComputeBackend())
+        {
+            registeredCount++;
+        }
+
+
+        if (RegisterVulkanBackend())
+        {
+            registeredCount++;
+        }
+
 
         _logger.LogInformation("Registered {Count} plugin factories", registeredCount);
     }

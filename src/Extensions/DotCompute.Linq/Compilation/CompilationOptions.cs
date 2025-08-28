@@ -21,7 +21,8 @@ public class CompilationOptions
     /// <summary>
     /// Gets or sets a value indicating whether to generate debug information.
     /// </summary>
-    public bool GenerateDebugInfo { get; set; } = false;
+    public bool GenerateDebugInfo { get; set; }
+
 
     /// <summary>
     /// Gets or sets a value indicating whether to use shared memory.

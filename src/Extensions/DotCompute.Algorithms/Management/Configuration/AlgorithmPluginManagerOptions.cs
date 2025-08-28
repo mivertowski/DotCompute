@@ -29,7 +29,8 @@ public sealed class AlgorithmPluginManagerOptions
     /// Gets or sets whether hot reload is enabled.
     /// Allows plugins to be updated without restarting the application.
     /// </summary>
-    public bool EnableHotReload { get; set; } = false;
+    public bool EnableHotReload { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether health checks are enabled.

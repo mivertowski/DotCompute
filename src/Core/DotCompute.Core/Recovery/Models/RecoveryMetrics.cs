@@ -44,7 +44,11 @@ public class RecoveryMetrics
         get
         {
             if (!_attempts.Any())
+            {
+
                 return TimeSpan.Zero;
+            }
+
 
             var averageTicks = _attempts.Average(a => a.Duration.Ticks);
             return TimeSpan.FromTicks((long)averageTicks);
@@ -59,7 +63,11 @@ public class RecoveryMetrics
         get
         {
             if (!_attempts.Any())
+            {
+
                 return TimeSpan.Zero;
+            }
+
 
             return _attempts.Min(a => a.Duration);
         }
@@ -73,7 +81,11 @@ public class RecoveryMetrics
         get
         {
             if (!_attempts.Any())
+            {
+
                 return TimeSpan.Zero;
+            }
+
 
             return _attempts.Max(a => a.Duration);
         }
@@ -87,7 +99,11 @@ public class RecoveryMetrics
         get
         {
             if (!_attempts.Any())
+            {
+
                 return null;
+            }
+
 
             return _attempts.Max(a => a.Timestamp);
         }

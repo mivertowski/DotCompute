@@ -166,7 +166,10 @@ namespace DotCompute.Backends.CUDA.Optimization
             for (int blockSize = minBlockSize; blockSize <= maxBlockSize; blockSize += 32)
             {
                 if (blockSize > deviceProps.MaxThreadsPerBlock)
+                {
                     break;
+                }
+
 
                 try
                 {
@@ -296,7 +299,10 @@ namespace DotCompute.Backends.CUDA.Optimization
                 int blockSize = blockDim.X * blockDim.Y;
                 
                 if (blockSize > deviceProps.MaxThreadsPerBlock)
+                {
                     continue;
+                }
+
 
                 try
                 {
@@ -528,15 +534,26 @@ namespace DotCompute.Backends.CUDA.Optimization
             
             // Determine limiting factor
             if (result.ActiveBlocks == blocksPerSmWarps)
+            {
                 result.LimitingFactor = "Warps";
+            }
+
             else if (result.ActiveBlocks == blocksPerSmRegisters)
+            {
                 result.LimitingFactor = "Registers";
+            }
+
             else if (result.ActiveBlocks == blocksPerSmSharedMem)
+            {
                 result.LimitingFactor = "Shared Memory";
+            }
             else
+            {
                 result.LimitingFactor = "Blocks";
-            
+            }
+
             // Calculate active warps and occupancy
+
             result.ActiveWarps = result.ActiveBlocks * warpsPerBlock;
             result.Percentage = (double)result.ActiveWarps / deviceProps.MaxWarpsPerMultiprocessor;
             
@@ -683,7 +700,8 @@ namespace DotCompute.Backends.CUDA.Optimization
             public int? MaxBlockSize { get; set; }
             public int? ProblemSize { get; set; }
             public bool RequireWarpMultiple { get; set; } = true;
-            public bool RequirePowerOfTwo { get; set; } = false;
+            public bool RequirePowerOfTwo { get; set; }
+
             public OptimizationHint OptimizationHint { get; set; } = OptimizationHint.Balanced;
             
             public static LaunchConstraints Default => new();
@@ -839,6 +857,12 @@ namespace DotCompute.Backends.CUDA.Optimization
         private class OccupancyException : Exception
         {
             public OccupancyException(string message) : base(message) { }
+            public OccupancyException()
+            {
+            }
+            public OccupancyException(string message, Exception innerException) : base(message, innerException)
+            {
+            }
         }
     }
 }

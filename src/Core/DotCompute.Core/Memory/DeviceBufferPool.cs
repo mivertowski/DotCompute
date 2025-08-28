@@ -557,6 +557,36 @@ namespace DotCompute.Core.Memory
             _pool.ReturnBuffer(_underlyingBuffer, _originalSize);
         }
 
+        /// <summary>
+        /// Copies data from source memory to this pooled buffer with offset support.
+        /// </summary>
+        /// <typeparam name="T">Type of elements to copy.</typeparam>
+        /// <param name="source">Source data to copy from.</param>
+        /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
+        /// <param name="cancellationToken">Cancellation token for the operation.</param>
+        /// <returns>Completed task when copy finishes.</returns>
+        public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long destinationOffset, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            ThrowIfDisposed();
+            // Call the new interface method we just added
+            return _underlyingBuffer.CopyFromAsync(source, destinationOffset, cancellationToken);
+        }
+
+        /// <summary>
+        /// Copies data from this pooled buffer to destination memory with offset support.
+        /// </summary>
+        /// <typeparam name="T">Type of elements to copy.</typeparam>
+        /// <param name="destination">Destination memory to copy to.</param>
+        /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
+        /// <param name="cancellationToken">Cancellation token for the operation.</param>
+        /// <returns>Completed task when copy finishes.</returns>
+        public ValueTask CopyToAsync<T>(Memory<T> destination, long sourceOffset, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            ThrowIfDisposed();
+            // Call the new interface method we just added
+            return _underlyingBuffer.CopyToAsync(destination, sourceOffset, cancellationToken);
+        }
+
         public async ValueTask DisposeAsync()
         {
             if (_disposed)

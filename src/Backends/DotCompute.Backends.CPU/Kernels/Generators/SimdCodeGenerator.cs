@@ -68,8 +68,5 @@ internal sealed class SimdCodeGenerator(SimdSummary simdCapabilities)
     /// <summary>
     /// Clears the executor cache to free memory.
     /// </summary>
-    public void ClearCache()
-    {
-        _executorCache.Clear();
-    }
+    public void ClearCache() => _executorCache.Clear();
 }

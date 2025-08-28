@@ -14,11 +14,9 @@ internal static class BufferHelpers
     /// Calculates aligned size for memory allocation.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long AlignSize(long size, int alignment = 256)
-    {
-        return (size + alignment - 1) & ~(alignment - 1);
-    }
-    
+    public static long AlignSize(long size, int alignment = 256) => (size + alignment - 1) & ~(alignment - 1);
+
+
     /// <summary>
     /// Validates buffer parameters.
     /// </summary>
@@ -36,36 +34,32 @@ internal static class BufferHelpers
                 $"Buffer size ({totalSize} bytes) exceeds maximum allowed size.");
         }
     }
-    
+
+
     /// <summary>
     /// Checks if a type is blittable.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsBlittable<T>() where T : unmanaged
-    {
-        return true; // unmanaged constraint ensures blittability
-    }
-    
+    public static bool IsBlittable<T>() where T : unmanaged => true; // unmanaged constraint ensures blittability
+
+
     /// <summary>
     /// Gets the size of an element type.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetElementSize<T>() where T : unmanaged
-    {
-        return Unsafe.SizeOf<T>();
-    }
-    
+    public static int GetElementSize<T>() where T : unmanaged => Unsafe.SizeOf<T>();
+
+
     /// <summary>
     /// Gets the element count from a buffer.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetElementCount<T>(DotCompute.Abstractions.IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
-    {
+    public static int GetElementCount<T>(DotCompute.Abstractions.IUnifiedMemoryBuffer<T> buffer) where T : unmanaged =>
         // TODO: Implement proper element count retrieval from buffer
         // For now, assume buffer.SizeInBytes / sizeof(T)
-        return (int)(buffer.SizeInBytes / GetElementSize<T>());
-    }
-    
+        (int)(buffer.SizeInBytes / GetElementSize<T>());
+
+
     /// <summary>
     /// Validates transfer parameters.
     /// </summary>

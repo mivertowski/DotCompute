@@ -62,9 +62,18 @@ public readonly unsafe struct DeviceMemory<T> where T : unmanaged
     public DeviceMemory<T> Slice(int start, int length)
     {
         if (start < 0 || start >= _length)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(start));
+        }
+
+
         if (length < 0 || start + length > _length)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(length));
+        }
+
 
         return new DeviceMemory<T>(_pointer + start, length);
     }

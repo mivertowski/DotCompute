@@ -125,16 +125,14 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
         }
 
-        private static bool AnalyzeForDynamicParallelism(CudaCompiledKernel kernel, KernelArgument[] arguments)
-        {
+        private static bool AnalyzeForDynamicParallelism(CudaCompiledKernel kernel, KernelArgument[] arguments) =>
             // TODO: Production - Implement proper dynamic parallelism analysis
             // Missing: Kernel code analysis for nested parallelism patterns
             // Missing: Detection of recursive algorithms (tree traversal, graph algorithms)
             // Missing: Analysis of workload imbalance patterns
             // Missing: Support for device-side kernel launches
             // Simple heuristic: large problem sizes with irregular patterns benefit from dynamic parallelism
-            return arguments.Any(arg => arg.Value is int size && size > 100000);
-        }
+            arguments.Any(arg => arg.Value is int size && size > 100000);
 
         public void Dispose()
         {

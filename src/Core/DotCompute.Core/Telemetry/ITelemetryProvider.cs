@@ -263,14 +263,12 @@ public static class Telemetry
             }
         }
     }
-    
+
+
     /// <summary>
     /// Initializes the telemetry system with the specified configuration.
     /// </summary>
-    public static void Initialize(TelemetryConfiguration configuration)
-    {
-        Provider = new UnifiedTelemetryProvider(configuration);
-    }
+    public static void Initialize(TelemetryConfiguration configuration) => Provider = new UnifiedTelemetryProvider(configuration);
 }
 
 /// <summary>

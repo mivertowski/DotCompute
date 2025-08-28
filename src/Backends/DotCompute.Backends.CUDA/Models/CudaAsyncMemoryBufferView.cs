@@ -50,16 +50,28 @@ namespace DotCompute.Backends.CUDA.Memory.Models
         public BufferState State => _parent.State;
 
         /// <summary>
-        /// Copies data from host memory to this view asynchronously.
+        /// Copies data from host memory to this view asynchronously (interface implementation).
         /// </summary>
-        public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-            => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
+        public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+            => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
 
         /// <summary>
-        /// Copies data from this view to host memory asynchronously.
+        /// Copies data from this view to host memory asynchronously (interface implementation).
+        /// </summary>
+        public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+            => _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
+            
+        /// <summary>
+        /// Copies data from host memory to this view asynchronously (legacy support).
+        /// </summary>
+        public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+            => CopyFromAsync(source, offset, cancellationToken);
+
+        /// <summary>
+        /// Copies data from this view to host memory asynchronously (legacy support).
         /// </summary>
         public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-            => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+            => CopyToAsync(destination, offset, cancellationToken);
 
         /// <summary>
         /// Disposes the view. Note: The view doesn't own memory, so this is a no-op.

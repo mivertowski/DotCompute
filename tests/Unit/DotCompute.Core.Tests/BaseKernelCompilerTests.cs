@@ -26,12 +26,10 @@ public class BaseKernelCompilerTests
     }
 
     [Fact]
-    public void CompileAsync_ValidatesKernelDefinition()
-    {
+    public void CompileAsync_ValidatesKernelDefinition() =>
         // Arrange & Act & Assert
         // KernelDefinition constructor validates and throws ArgumentNullException for null source
         Assert.Throws<ArgumentNullException>(() => new KernelDefinition("", null!, null!));
-    }
 
     [Fact]
     public async Task CompileAsync_ValidatesEmptyKernelName()

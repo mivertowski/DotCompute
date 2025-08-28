@@ -505,18 +505,12 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Processes driver API events.
         /// </summary>
-        private void ProcessDriverEvent(ProfilingEvent evt)
-        {
-            _logger.LogDebug("Driver event captured: {CallbackId}", evt.CallbackId);
-        }
+        private void ProcessDriverEvent(ProfilingEvent evt) => _logger.LogDebug("Driver event captured: {CallbackId}", evt.CallbackId);
 
         /// <summary>
         /// Processes resource events.
         /// </summary>
-        private void ProcessResourceEvent(ProfilingEvent evt)
-        {
-            _logger.LogDebug("Resource event captured: {CallbackId}", evt.CallbackId);
-        }
+        private void ProcessResourceEvent(ProfilingEvent evt) => _logger.LogDebug("Resource event captured: {CallbackId}", evt.CallbackId);
 
         /// <summary>
         /// Collects periodic metrics.
@@ -524,7 +518,10 @@ namespace DotCompute.Backends.CUDA.Profiling
         private async void CollectMetrics(object? state)
         {
             if (!_isProfilingActive)
+            {
                 return;
+            }
+
 
             try
             {
@@ -614,7 +611,10 @@ namespace DotCompute.Backends.CUDA.Profiling
         private double CalculateAverageBandwidth(List<MemoryProfile> transfers)
         {
             if (!transfers.Any())
+            {
                 return 0;
+            }
+
 
             var totalBytes = transfers.Sum(t => t.BytesTransferred);
             var totalSeconds = transfers.Sum(t => t.TransferTime.TotalSeconds);
@@ -678,7 +678,11 @@ namespace DotCompute.Backends.CUDA.Profiling
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             _metricsTimer?.Dispose();
             _profilingLock?.Dispose();
@@ -707,7 +711,8 @@ namespace DotCompute.Backends.CUDA.Profiling
         {
             public bool ProfileKernels { get; set; } = true;
             public bool ProfileMemory { get; set; } = true;
-            public bool ProfileApi { get; set; } = false;
+            public bool ProfileApi { get; set; }
+
             public bool CollectMetrics { get; set; } = true;
             
             public static ProfilingConfiguration Default => new();
@@ -878,6 +883,12 @@ namespace DotCompute.Backends.CUDA.Profiling
         private class ProfilingException : Exception
         {
             public ProfilingException(string message) : base(message) { }
+            public ProfilingException()
+            {
+            }
+            public ProfilingException(string message, Exception innerException) : base(message, innerException)
+            {
+            }
         }
     }
 }

@@ -202,13 +202,19 @@ public sealed class CudaStreamManagerProduction : IDisposable
         ThrowIfDisposed();
         
         if (stream == IntPtr.Zero)
+        {
             return;
+        }
 
         // Don't pool named streams
+
         if (_namedStreams.Values.Any(s => s.Stream == stream))
+        {
             return;
+        }
 
         // Clean up callbacks
+
         _streamCallbacks.TryRemove(stream, out _);
 
         // Return to pool if not full
@@ -284,7 +290,10 @@ public sealed class CudaStreamManagerProduction : IDisposable
     private static void StreamCallbackThunk(IntPtr stream, CudaError status, IntPtr userData)
     {
         if (userData == IntPtr.Zero)
+        {
             return;
+        }
+
 
         var handle = GCHandle.FromIntPtr(userData);
         try
@@ -316,7 +325,11 @@ public sealed class CudaStreamManagerProduction : IDisposable
         ThrowIfDisposed();
         
         if (_isCapturing)
+        {
+
             throw new InvalidOperationException("Graph capture already in progress");
+        }
+
 
         var result = CudaRuntime.cudaStreamBeginCapture(stream, (uint)mode);
         CudaRuntime.CheckError(result, "beginning graph capture");
@@ -335,7 +348,11 @@ public sealed class CudaStreamManagerProduction : IDisposable
         ThrowIfDisposed();
         
         if (!_isCapturing)
+        {
+
             throw new InvalidOperationException("No graph capture in progress");
+        }
+
 
         var result = CudaRuntime.cudaStreamEndCapture(_captureStream, out IntPtr graph);
         CudaRuntime.CheckError(result, "ending graph capture");
@@ -410,11 +427,17 @@ public sealed class CudaStreamManagerProduction : IDisposable
         var result = CudaRuntime.cudaStreamQuery(stream);
         
         if (result == CudaError.Success)
+        {
             return true;
-        
+        }
+
+
         if (result == CudaError.NotReady)
+        {
             return false;
-            
+        }
+
+
         CudaRuntime.CheckError(result, "querying stream status");
         return false;
     }
@@ -441,7 +464,10 @@ public sealed class CudaStreamManagerProduction : IDisposable
     private void DestroyStream(IntPtr stream)
     {
         if (stream == IntPtr.Zero)
+        {
             return;
+        }
+
 
         try
         {
@@ -481,10 +507,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, GetType());
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
 
     public void Dispose()
     {

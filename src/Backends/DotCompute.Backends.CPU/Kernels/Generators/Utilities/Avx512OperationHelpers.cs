@@ -85,7 +85,11 @@ internal static class Avx512OperationHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsOperationSupported(KernelOperation operation, Type elementType)
     {
-        if (!Avx512F.IsSupported) return false;
+        if (!Avx512F.IsSupported)
+        {
+            return false;
+        }
+
 
         return operation switch
         {
@@ -105,10 +109,7 @@ internal static class Avx512OperationHelpers
     /// <param name="c">Third vector operand.</param>
     /// <returns>The result of a * b + c.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector512<float> FusedMultiplyAdd(Vector512<float> a, Vector512<float> b, Vector512<float> c)
-    {
-        return Avx512F.FusedMultiplyAdd(a, b, c);
-    }
+    public static Vector512<float> FusedMultiplyAdd(Vector512<float> a, Vector512<float> b, Vector512<float> c) => Avx512F.FusedMultiplyAdd(a, b, c);
 
     /// <summary>
     /// Performs a vectorized FMA operation using AVX-512 instructions for double precision.
@@ -118,8 +119,5 @@ internal static class Avx512OperationHelpers
     /// <param name="c">Third vector operand.</param>
     /// <returns>The result of a * b + c.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector512<double> FusedMultiplyAdd(Vector512<double> a, Vector512<double> b, Vector512<double> c)
-    {
-        return Avx512F.FusedMultiplyAdd(a, b, c);
-    }
+    public static Vector512<double> FusedMultiplyAdd(Vector512<double> a, Vector512<double> b, Vector512<double> c) => Avx512F.FusedMultiplyAdd(a, b, c);
 }

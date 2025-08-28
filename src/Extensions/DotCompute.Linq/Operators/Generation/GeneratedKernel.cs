@@ -62,5 +62,6 @@ public class GeneratedKernel
     /// <summary>
     /// Gets or sets the required shared memory size in bytes.
     /// </summary>
-    public int RequiredSharedMemory { get; set; } = 0;
+    public int RequiredSharedMemory { get; set; }
+
 }

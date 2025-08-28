@@ -35,7 +35,8 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets whether to enable sparsity acceleration.
         /// </summary>
-        public bool EnableSparsity { get; set; } = false;
+        public bool EnableSparsity { get; set; }
+
 
         /// <summary>
         /// Gets or sets the minimum matrix size to use tensor cores.
@@ -50,7 +51,8 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets whether to enable performance profiling.
         /// </summary>
-        public bool EnableProfiling { get; set; } = false;
+        public bool EnableProfiling { get; set; }
+
 
         /// <summary>
         /// Gets a default configuration optimized for general use.

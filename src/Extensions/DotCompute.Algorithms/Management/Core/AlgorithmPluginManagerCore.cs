@@ -277,13 +277,20 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
 
             // Dispose services that implement IDisposable
             if (HealthMonitor is IDisposable healthDisposable)
+            {
                 healthDisposable.Dispose();
+            }
+
 
             if (HotReloadService is IDisposable hotReloadDisposable)
+            {
+
                 hotReloadDisposable.Dispose();
+            }
 
             // Note: Other services would need to implement IAsyncDisposable if they have async cleanup needs
             // For now, they don't have significant cleanup requirements
+
         }
         return ValueTask.CompletedTask;
     }

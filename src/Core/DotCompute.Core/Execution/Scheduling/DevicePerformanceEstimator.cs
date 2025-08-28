@@ -39,28 +39,27 @@ internal class DevicePerformanceEstimator
         var throughput = dataSize / actualTime.TotalSeconds;
         _devicePerformanceScores[key] = throughput;
     }
-    
+
+
     /// <summary>
     /// Gets the relative performance factor for a device.
     /// </summary>
-    public double GetDevicePerformanceFactor(IAccelerator device)
-    {
+    public double GetDevicePerformanceFactor(IAccelerator device) =>
         // TODO: Calculate based on device capabilities and historical performance
         // TODO: Use device.Type to determine performance factor
         // For now, return a default value
-        return 1.0;
-    }
-    
+        1.0;
+
+
     /// <summary>
     /// Predicts memory requirements for kernel execution.
     /// </summary>
-    public long PredictMemoryRequirement(string kernelName, long inputDataSize)
-    {
+    public long PredictMemoryRequirement(string kernelName, long inputDataSize) =>
         // TODO: Implement based on kernel analysis and historical data
         // For now, estimate 2x input size for working memory
-        return inputDataSize * 2;
-    }
-    
+        inputDataSize * 2;
+
+
     /// <summary>
     /// Calculates device weight asynchronously.
     /// </summary>

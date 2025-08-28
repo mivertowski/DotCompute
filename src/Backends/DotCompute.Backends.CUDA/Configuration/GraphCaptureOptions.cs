@@ -13,7 +13,8 @@ namespace DotCompute.Backends.CUDA.Graphs.Configuration
         /// <summary>
         /// Gets or sets whether to export debug visualization.
         /// </summary>
-        public bool ExportDebugVisualization { get; set; } = false;
+        public bool ExportDebugVisualization { get; set; }
+
 
         /// <summary>
         /// Gets or sets the maximum number of nodes in the graph.

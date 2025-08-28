@@ -27,5 +27,9 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             : base(message, innerException) 
         { 
         }
+        public OccupancyException()
+        {
+        }
+
     }
 }

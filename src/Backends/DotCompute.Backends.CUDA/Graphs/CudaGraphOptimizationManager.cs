@@ -231,9 +231,16 @@ namespace DotCompute.Backends.CUDA.Graphs
             stats.LastUsedAt = DateTimeOffset.UtcNow;
             
             if (launchElapsed < stats.MinLaunchTime || stats.MinLaunchTime == TimeSpan.Zero)
+            {
                 stats.MinLaunchTime = launchElapsed;
+            }
+
+
             if (launchElapsed > stats.MaxLaunchTime)
+            {
                 stats.MaxLaunchTime = launchElapsed;
+            }
+
 
             _logger.LogDebug(
                 "Launched graph {GraphName} in {LaunchTime:F3}ms (avg: {AvgTime:F3}ms)",
@@ -556,18 +563,12 @@ namespace DotCompute.Backends.CUDA.Graphs
         /// <summary>
         /// Gets performance statistics for a graph.
         /// </summary>
-        public GraphStatistics? GetStatistics(string graphName)
-        {
-            return _statistics.TryGetValue(graphName, out var stats) ? stats : null;
-        }
+        public GraphStatistics? GetStatistics(string graphName) => _statistics.TryGetValue(graphName, out var stats) ? stats : null;
 
         /// <summary>
         /// Gets all graph statistics.
         /// </summary>
-        public IReadOnlyDictionary<string, GraphStatistics> GetAllStatistics()
-        {
-            return _statistics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-        }
+        public IReadOnlyDictionary<string, GraphStatistics> GetAllStatistics() => _statistics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
         /// <summary>
         /// Removes a graph from the manager.
@@ -589,7 +590,11 @@ namespace DotCompute.Backends.CUDA.Graphs
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             _optimizationTimer?.Dispose();
             _graphCreationLock?.Dispose();
@@ -659,7 +664,8 @@ namespace DotCompute.Backends.CUDA.Graphs
         public class GraphCaptureOptions
         {
             public bool AllowInvalidation { get; set; } = true;
-            public bool ExportDebugVisualization { get; set; } = false;
+            public bool ExportDebugVisualization { get; set; }
+
             public int MaxNodeCount { get; set; } = 10000;
             
             public static GraphCaptureOptions Default => new();
@@ -702,6 +708,12 @@ namespace DotCompute.Backends.CUDA.Graphs
         private class CudaException : Exception
         {
             public CudaException(string message) : base(message) { }
+            public CudaException()
+            {
+            }
+            public CudaException(string message, Exception innerException) : base(message, innerException)
+            {
+            }
         }
     }
 }

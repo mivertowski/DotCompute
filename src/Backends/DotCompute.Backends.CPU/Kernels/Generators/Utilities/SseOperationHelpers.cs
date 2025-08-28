@@ -85,7 +85,11 @@ internal static class SseOperationHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsOperationSupported(KernelOperation operation, Type elementType)
     {
-        if (!Sse.IsSupported && !Sse2.IsSupported) return false;
+        if (!Sse.IsSupported && !Sse2.IsSupported)
+        {
+            return false;
+        }
+
 
         return operation switch
         {
@@ -108,10 +112,7 @@ internal static class SseOperationHelpers
     /// <param name="c">Third vector operand.</param>
     /// <returns>The result of a * b + c.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector128<float> FusedMultiplyAdd(Vector128<float> a, Vector128<float> b, Vector128<float> c)
-    {
-        return Sse.Add(Sse.Multiply(a, b), c);
-    }
+    public static Vector128<float> FusedMultiplyAdd(Vector128<float> a, Vector128<float> b, Vector128<float> c) => Sse.Add(Sse.Multiply(a, b), c);
 
     /// <summary>
     /// Performs a simulated FMA operation using separate multiply and add for SSE2 double precision.
@@ -121,8 +122,5 @@ internal static class SseOperationHelpers
     /// <param name="c">Third vector operand.</param>
     /// <returns>The result of a * b + c.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector128<double> FusedMultiplyAdd(Vector128<double> a, Vector128<double> b, Vector128<double> c)
-    {
-        return Sse2.Add(Sse2.Multiply(a, b), c);
-    }
+    public static Vector128<double> FusedMultiplyAdd(Vector128<double> a, Vector128<double> b, Vector128<double> c) => Sse2.Add(Sse2.Multiply(a, b), c);
 }

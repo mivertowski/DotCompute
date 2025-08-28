@@ -108,8 +108,11 @@ public sealed class CudaKernelCache : IDisposable
         var metadataFile = Path.Combine(_diskCachePath, "cache_metadata.json");
         
         if (!File.Exists(metadataFile))
+        {
             return;
-        
+        }
+
+
         try
         {
             var json = File.ReadAllText(metadataFile);
@@ -441,8 +444,12 @@ public sealed class CudaKernelCache : IDisposable
         CancellationToken cancellationToken)
     {
         if (!_metadataCache.TryGetValue(cacheKey, out var metadata))
+        {
+
             return false;
-        
+        }
+
+
         try
         {
             // Load from disk
@@ -518,7 +525,10 @@ public sealed class CudaKernelCache : IDisposable
                _config.MaxMemoryCacheSizeMB * 1024 * 1024)
         {
             if (!EvictLeastRecentlyUsed())
+            {
                 break;
+            }
+
         }
         
         var cached = new CachedKernel
@@ -624,8 +634,11 @@ public sealed class CudaKernelCache : IDisposable
         lock (_lruLock)
         {
             if (_lruList.Count == 0)
+            {
                 return false;
-            
+            }
+
+
             var lruKey = _lruList.Last?.Value;
             if (lruKey != null)
             {
@@ -651,14 +664,21 @@ public sealed class CudaKernelCache : IDisposable
         long size = 0;
         
         if (!string.IsNullOrEmpty(kernel.Ptx))
+        {
             size += kernel.Ptx.Length * 2; // Unicode chars
-        
+        }
+
         if (kernel.Cubin != null)
+        {
             size += kernel.Cubin.Length;
-        
+        }
+
         if (kernel.Binary != null)
+        {
             size += kernel.Binary.Length;
-        
+        }
+
+
         return size;
     }
 
@@ -704,11 +724,16 @@ public sealed class CudaKernelCache : IDisposable
                 try
                 {
                     if (File.Exists(metadata.DiskPath))
+                    {
                         File.Delete(metadata.DiskPath);
-                    
+                    }
+
                     var cubinPath = Path.ChangeExtension(metadata.DiskPath, ".cubin");
                     if (File.Exists(cubinPath))
+                    {
                         File.Delete(cubinPath);
+                    }
+
                 }
                 catch { /* Best effort */ }
             }
@@ -729,18 +754,12 @@ public sealed class CudaKernelCache : IDisposable
     /// <summary>
     /// Records a cache hit.
     /// </summary>
-    private void RecordCacheHit()
-    {
-        Interlocked.Increment(ref _totalCacheHits);
-    }
+    private void RecordCacheHit() => Interlocked.Increment(ref _totalCacheHits);
 
     /// <summary>
     /// Records a cache miss.
     /// </summary>
-    private void RecordCacheMiss()
-    {
-        Interlocked.Increment(ref _totalCacheMisses);
-    }
+    private void RecordCacheMiss() => Interlocked.Increment(ref _totalCacheMisses);
 
     /// <summary>
     /// Calculates cache hit rate.
@@ -772,10 +791,7 @@ public sealed class CudaKernelCache : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, GetType());
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
 
     public void Dispose()
     {

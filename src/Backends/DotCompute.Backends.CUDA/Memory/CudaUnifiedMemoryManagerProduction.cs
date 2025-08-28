@@ -254,10 +254,16 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
         ThrowIfDisposed();
         
         if (!_unifiedMemorySupported)
+        {
             return;
+        }
+
 
         if (targetDevice < 0)
+        {
             targetDevice = _context.DeviceId;
+        }
+
 
         var result = CudaRuntime.cudaMemAdvise(
             devicePtr,
@@ -324,7 +330,10 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
         CancellationToken cancellationToken = default)
     {
         if (!_unifiedMemorySupported || _allocations.IsEmpty)
+        {
             return;
+        }
+
 
         _logger.LogInformation("Optimizing unified memory placement based on access patterns");
         
@@ -378,8 +387,11 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
         ThrowIfDisposed();
         
         if (fromDevice == toDevice)
+        {
             return;
-        
+        }
+
+
         _logger.LogDebug("Migrating {Size} bytes from device {From} to device {To}",
             sizeInBytes, fromDevice, toDevice);
         
@@ -530,7 +542,10 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
         ThrowIfDisposed();
         
         if (devicePtr == IntPtr.Zero)
+        {
             return;
+        }
+
 
         try
         {
@@ -632,28 +647,22 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
             }
         }
     }
-    
+
+
     /// <inheritdoc/>
-    public override async ValueTask OptimizeAsync(CancellationToken cancellationToken)
-    {
-        await Task.Run(() => OptimizeAccessPatterns(), cancellationToken);
-    }
-    
+    public override async ValueTask OptimizeAsync(CancellationToken cancellationToken) => await Task.Run(() => OptimizeAccessPatterns(), cancellationToken);
+
+
     /// <inheritdoc/>
-    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
-    {
-        throw new NotImplementedException("CreateView not yet implemented");
-    }
-    
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) => throw new NotImplementedException("CreateView not yet implemented");
+
     /// <inheritdoc/>
     public override async ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         IUnifiedMemoryBuffer<T> destination,
-        CancellationToken cancellationToken)
-    {
-        await CopyAsync(source, 0, destination, 0, source.Count, cancellationToken);
-    }
-    
+        CancellationToken cancellationToken) => await CopyAsync(source, 0, destination, 0, source.Count, cancellationToken);
+
+
     /// <inheritdoc/>
     public override async ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
@@ -836,6 +845,77 @@ internal sealed class CudaUnifiedMemoryBuffer : IUnifiedMemoryBuffer
     public bool IsDisposed => _disposed;
     
     public BufferState State => _disposed ? BufferState.Disposed : BufferState.Allocated;
+    
+    /// <summary>
+    /// Asynchronously copies data from host memory to this buffer.
+    /// </summary>
+    public async ValueTask CopyFromAsync<T>(
+        ReadOnlyMemory<T> source,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        
+        await Task.Run(() =>
+        {
+            var sourceSpan = source.Span;
+            var bytesToCopy = sourceSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            
+            if (offset + bytesToCopy > SizeInBytes)
+            {
+
+                throw new ArgumentException("Source data exceeds buffer capacity.");
+            }
+
+
+            unsafe
+            {
+                fixed (T* ptr = sourceSpan)
+                {
+                    var destPtr = _devicePtr + (nint)offset;
+                    // For unified memory, we can use direct memory copy
+                    Buffer.MemoryCopy(ptr, destPtr.ToPointer(), SizeInBytes - offset, bytesToCopy);
+                }
+            }
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Asynchronously copies data from this buffer to host memory.
+    /// </summary>
+    public async ValueTask CopyToAsync<T>(
+        Memory<T> destination,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        
+        await Task.Run(() =>
+        {
+            var destinationSpan = destination.Span;
+            var bytesToCopy = destinationSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            
+            if (offset + bytesToCopy > SizeInBytes)
+            {
+
+                throw new ArgumentException("Destination exceeds buffer capacity.");
+            }
+
+
+            unsafe
+            {
+                fixed (T* ptr = destinationSpan)
+                {
+                    var srcPtr = _devicePtr + (nint)offset;
+                    // For unified memory, we can use direct memory copy
+                    Buffer.MemoryCopy(srcPtr.ToPointer(), ptr, destinationSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), bytesToCopy);
+                }
+            }
+        }, cancellationToken);
+    }
+
+
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
 
     public async ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
@@ -885,11 +965,6 @@ internal sealed class CudaUnifiedMemoryBuffer : IUnifiedMemoryBuffer
         await Task.CompletedTask;
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, GetType());
-    }
-
     public void Dispose()
     {
         if (!_disposed)
@@ -931,11 +1006,19 @@ internal sealed class CudaUnifiedMemoryBufferView : IUnifiedMemoryBuffer
     
     public BufferState State => _parent.State;
 
-    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    // Interface implementations
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
         => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
 
-    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
         => _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
+        
+    // Legacy support methods
+    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+        => CopyFromAsync(source, offset, cancellationToken);
+
+    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+        => CopyToAsync(destination, offset, cancellationToken);
 
     public void Dispose() { /* View doesn't own memory */ }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;

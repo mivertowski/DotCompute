@@ -43,10 +43,7 @@ public class MemoryPressureMonitor : IDisposable
     /// Gets the current memory pressure information.
     /// </summary>
     /// <returns>The current memory pressure information.</returns>
-    public MemoryPressureInfo GetCurrentPressure()
-    {
-        return _currentPressure;
-    }
+    public MemoryPressureInfo GetCurrentPressure() => _currentPressure;
 
     /// <summary>
     /// Forces an immediate update of memory pressure information.
@@ -61,7 +58,10 @@ public class MemoryPressureMonitor : IDisposable
     private void UpdateMemoryPressure(object? state)
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         try
         {
@@ -140,8 +140,11 @@ public class MemoryPressureMonitor : IDisposable
     private MemoryPressureTrend CalculatePressureTrend(long currentTotal, long currentAvailable)
     {
         if (_lastTotalMemory == 0 || _lastAvailableMemory == 0)
+        {
             return MemoryPressureTrend.Stable;
-        
+        }
+
+
         var previousUsed = _lastTotalMemory - _lastAvailableMemory;
         var currentUsed = currentTotal - currentAvailable;
         var usedDelta = currentUsed - previousUsed;
@@ -150,8 +153,12 @@ public class MemoryPressureMonitor : IDisposable
         var threshold = _lastTotalMemory * 0.05;
         
         if (Math.Abs(usedDelta) < threshold)
+        {
+
             return MemoryPressureTrend.Stable;
-        
+        }
+
+
         return usedDelta > 0 ? MemoryPressureTrend.Increasing : MemoryPressureTrend.Decreasing;
     }
 

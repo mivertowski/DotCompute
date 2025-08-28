@@ -95,17 +95,17 @@ public abstract class BaseAccelerator : IAccelerator
             SynchronizeCoreAsync,
             cancellationToken);
     }
-    
+
+
     /// <summary>
     /// Core initialization logic to be implemented by derived classes.
     /// </summary>
     /// <returns>Initialization result (typically null or status object)</returns>
-    protected virtual object? InitializeCore()
-    {
+    protected virtual object? InitializeCore() =>
         // Default implementation - derived classes can override
-        return null;
-    }
-    
+        null;
+
+
     /// <summary>
     /// Core kernel compilation logic to be implemented by derived classes.
     /// </summary>
@@ -156,16 +156,15 @@ public abstract class BaseAccelerator : IAccelerator
             compilationTime.TotalMilliseconds,
             byteCodeSize?.ToString() ?? "N/A");
     }
-    
+
+
     /// <summary>
     /// Throws if the accelerator has been disposed.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
-    }
-    
+    protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(IsDisposed, GetType());
+
+
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
@@ -183,15 +182,14 @@ public abstract class BaseAccelerator : IAccelerator
             GC.SuppressFinalize(this);
         }
     }
-    
+
+
     /// <summary>
     /// Core disposal logic to be implemented by derived classes.
     /// </summary>
-    protected virtual ValueTask DisposeCoreAsync()
-    {
+    protected virtual ValueTask DisposeCoreAsync() =>
         // Default implementation - derived classes can override
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 }
 
 /// <summary>
@@ -268,16 +266,15 @@ public abstract class BaseCompiledKernel : ICompiledKernel
         
         // Additional validation can be added by derived classes
     }
-    
+
+
     /// <summary>
     /// Throws if the kernel has been disposed.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
-    }
-    
+    protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(IsDisposed, GetType());
+
+
     /// <inheritdoc/>
     public void Dispose()
     {

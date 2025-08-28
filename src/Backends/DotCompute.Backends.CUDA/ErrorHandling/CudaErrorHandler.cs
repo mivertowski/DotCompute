@@ -3,13 +3,11 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.CircuitBreaker;
 
 namespace DotCompute.Backends.CUDA.ErrorHandling;
 
@@ -91,7 +89,7 @@ public sealed class CudaErrorHandler
                         retryCount);
                     
                     // Trigger memory cleanup
-                    await TriggerMemoryCleanup();
+                    await TriggerMemoryCleanupAsync();
                 });
     }
 
@@ -139,8 +137,12 @@ public sealed class CudaErrorHandler
                 {
                     // Quick GPU health check
                     if (!_gpuAvailable)
+                    {
+
                         return false;
-                    
+                    }
+
+
                     var result = CudaRuntime.cudaGetLastError();
                     return result == CudaError.Success;
                 });
@@ -167,7 +169,7 @@ public sealed class CudaErrorHandler
         }
         catch (CudaException cudaEx)
         {
-            return await HandleCudaException<T>(cudaEx, operation, operationName, cancellationToken);
+            return await HandleCudaExceptionAsync<T>(cudaEx, operation, operationName, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -179,7 +181,7 @@ public sealed class CudaErrorHandler
     /// <summary>
     /// Handles CUDA-specific exceptions with recovery strategies.
     /// </summary>
-    private async Task<T> HandleCudaException<T>(
+    private async Task<T> HandleCudaExceptionAsync<T>(
         CudaException cudaEx,
         Func<Task<T>> operation,
         string operationName,
@@ -191,17 +193,17 @@ public sealed class CudaErrorHandler
         // Try recovery strategies based on error type
         if (IsMemoryError(cudaEx.ErrorCode))
         {
-            return await HandleMemoryError(operation, operationName, cancellationToken);
+            return await HandleMemoryErrorAsync(operation, operationName, cancellationToken);
         }
         
         if (IsDeviceError(cudaEx.ErrorCode))
         {
-            return await HandleDeviceError(operation, operationName, cancellationToken);
+            return await HandleDeviceErrorAsync(operation, operationName, cancellationToken);
         }
         
         if (_options.EnableCpuFallback && CanFallbackToCpu(operationName))
         {
-            return await FallbackToCpu<T>(operationName);
+            return await FallbackToCpuAsync<T>(operationName);
         }
 
         throw new CudaOperationException(
@@ -211,7 +213,7 @@ public sealed class CudaErrorHandler
     /// <summary>
     /// Handles memory-related errors with cleanup and retry.
     /// </summary>
-    private async Task<T> HandleMemoryError<T>(
+    private async Task<T> HandleMemoryErrorAsync<T>(
         Func<Task<T>> operation,
         string operationName,
         CancellationToken cancellationToken)
@@ -238,7 +240,7 @@ public sealed class CudaErrorHandler
             
             if (_options.EnableCpuFallback)
             {
-                return await FallbackToCpu<T>(operationName);
+                return await FallbackToCpuAsync<T>(operationName);
             }
             
             throw;
@@ -248,7 +250,7 @@ public sealed class CudaErrorHandler
     /// <summary>
     /// Handles device-related errors with reset and retry.
     /// </summary>
-    private async Task<T> HandleDeviceError<T>(
+    private async Task<T> HandleDeviceErrorAsync<T>(
         Func<Task<T>> operation,
         string operationName,
         CancellationToken cancellationToken)
@@ -260,7 +262,7 @@ public sealed class CudaErrorHandler
             // Reset device if allowed
             if (_options.AllowDeviceReset)
             {
-                await ResetDevice();
+                await ResetDeviceAsync();
                 
                 // Retry operation after reset
                 return await operation();
@@ -273,7 +275,7 @@ public sealed class CudaErrorHandler
 
         if (_options.EnableCpuFallback)
         {
-            return await FallbackToCpu<T>(operationName);
+            return await FallbackToCpuAsync<T>(operationName);
         }
 
         throw new CudaDeviceException($"Device error in operation '{operationName}'");
@@ -282,7 +284,7 @@ public sealed class CudaErrorHandler
     /// <summary>
     /// Falls back to CPU execution when GPU fails.
     /// </summary>
-    private async Task<T> FallbackToCpu<T>(string operationName)
+    private async Task<T> FallbackToCpuAsync<T>(string operationName)
     {
         _logger.LogInformation("Falling back to CPU for {Operation}", operationName);
         
@@ -295,7 +297,7 @@ public sealed class CudaErrorHandler
     /// <summary>
     /// Triggers memory cleanup on device.
     /// </summary>
-    private async Task TriggerMemoryCleanup()
+    private async Task TriggerMemoryCleanupAsync()
     {
         await Task.Run(() =>
         {
@@ -327,7 +329,7 @@ public sealed class CudaErrorHandler
     /// <summary>
     /// Resets the CUDA device.
     /// </summary>
-    private async Task ResetDevice()
+    private async Task ResetDeviceAsync()
     {
         await Task.Run(() =>
         {
@@ -466,10 +468,7 @@ public sealed class CudaErrorHandler
     /// <summary>
     /// Gets error statistics.
     /// </summary>
-    public IReadOnlyDictionary<CudaError, ErrorStatistics> GetErrorStatistics()
-    {
-        return _errorStats.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-    }
+    public IReadOnlyDictionary<CudaError, ErrorStatistics> GetErrorStatistics() => _errorStats.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// <summary>
     /// Clears error statistics.
@@ -502,7 +501,8 @@ public sealed class ErrorRecoveryOptions
     public int CircuitBreakerThreshold { get; init; } = 5;
     public int CircuitBreakerDurationSeconds { get; init; } = 30;
     public bool EnableCpuFallback { get; init; } = true;
-    public bool AllowDeviceReset { get; init; } = false;
+    public bool AllowDeviceReset { get; init; }
+
     public bool EnableDiagnosticLogging { get; init; } = true;
 }
 
@@ -513,6 +513,9 @@ public sealed class CudaUnavailableException : Exception
 {
     public CudaUnavailableException(string message) : base(message) { }
     public CudaUnavailableException(string message, Exception inner) : base(message, inner) { }
+    public CudaUnavailableException()
+    {
+    }
 }
 
 /// <summary>
@@ -522,6 +525,9 @@ public sealed class CudaOperationException : Exception
 {
     public CudaOperationException(string message) : base(message) { }
     public CudaOperationException(string message, Exception inner) : base(message, inner) { }
+    public CudaOperationException()
+    {
+    }
 }
 
 /// <summary>
@@ -531,6 +537,9 @@ public sealed class CudaDeviceException : Exception
 {
     public CudaDeviceException(string message) : base(message) { }
     public CudaDeviceException(string message, Exception inner) : base(message, inner) { }
+    public CudaDeviceException()
+    {
+    }
 }
 
 /// <summary>
@@ -539,4 +548,10 @@ public sealed class CudaDeviceException : Exception
 public sealed class CpuFallbackRequiredException : Exception
 {
     public CpuFallbackRequiredException(string message) : base(message) { }
+    public CpuFallbackRequiredException()
+    {
+    }
+    public CpuFallbackRequiredException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
 }

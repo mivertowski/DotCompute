@@ -41,16 +41,23 @@ public sealed class MetalMemoryBufferView : IUnifiedMemoryBuffer
     public BufferState State => _parent.State;
 
     /// <inheritdoc/>
-    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
-    }
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
 
     /// <inheritdoc/>
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
+
+
+    /// <summary>
+    /// Legacy support method (calls CopyFromAsync).
+    /// </summary>
+    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+        => CopyFromAsync(source, offset, cancellationToken);
+
+    /// <summary>
+    /// Legacy support method (calls CopyToAsync).
+    /// </summary>
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
-    }
+        => CopyToAsync(destination, offset, cancellationToken);
 
     /// <inheritdoc/>
     public void Dispose()
@@ -59,9 +66,7 @@ public sealed class MetalMemoryBufferView : IUnifiedMemoryBuffer
     }
 
     /// <inheritdoc/>
-    public ValueTask DisposeAsync()
-    {
+    public ValueTask DisposeAsync() =>
         // Views don't dispose the parent buffer
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 }

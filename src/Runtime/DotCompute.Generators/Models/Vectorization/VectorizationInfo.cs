@@ -180,9 +180,13 @@ public class VectorizationInfo
     {
         get
         {
-            if (!IsVectorizable) return 1.0;
-            
+            if (!IsVectorizable)
+            {
+                return 1.0;
+            }
+
             // Simple heuristic based on pattern recognition
+
             double speedup = 1.0;
             
             if (VectorizableLoops > 0)

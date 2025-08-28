@@ -18,7 +18,8 @@ public static class SimdTypeMapper
     public class SimdConfiguration
     {
         public bool PreferAvx2 { get; set; } = true;
-        public bool PreferAvx512 { get; set; } = false;
+        public bool PreferAvx512 { get; set; }
+
         public bool FallbackToSse { get; set; } = true;
         public int DefaultVectorBitWidth { get; set; } = 256; // AVX2 default
     }
@@ -160,10 +161,7 @@ public static class SimdTypeMapper
     /// </summary>
     /// <param name="elementType">The element type to check.</param>
     /// <returns>True if SIMD is supported, false otherwise.</returns>
-    public static bool IsSupportedSimdType(string elementType)
-    {
-        return ElementTypeToNetType.ContainsKey(elementType);
-    }
+    public static bool IsSupportedSimdType(string elementType) => ElementTypeToNetType.ContainsKey(elementType);
 
     /// <summary>
     /// Gets the size of an element type in bytes.
@@ -188,10 +186,7 @@ public static class SimdTypeMapper
     /// </summary>
     /// <param name="elementType">The element type.</param>
     /// <returns>Size in bits.</returns>
-    public static int GetElementSizeInBits(string elementType)
-    {
-        return GetElementSizeInBytes(elementType) * 8;
-    }
+    public static int GetElementSizeInBits(string elementType) => GetElementSizeInBytes(elementType) * 8;
 
     /// <summary>
     /// Gets the number of elements that fit in a vector of the given size.
@@ -323,38 +318,38 @@ public static class SimdTypeMapper
     /// <summary>
     /// Checks if AVX2 is supported on the current hardware.
     /// </summary>
-    private static bool IsAvx2Supported()
-    {
+    private static bool IsAvx2Supported() =>
 #if NET7_0_OR_GREATER
         return global::System.Runtime.Intrinsics.X86.Avx2.IsSupported;
 #else
-        return false;
+        false;
 #endif
-    }
+
+
 
     /// <summary>
     /// Checks if AVX-512 is supported on the current hardware.
     /// </summary>
-    private static bool IsAvx512Supported()
-    {
+    private static bool IsAvx512Supported() =>
 #if NET8_0_OR_GREATER
         return global::System.Runtime.Intrinsics.X86.Avx512F.IsSupported;
 #else
-        return false;
+        false;
 #endif
-    }
+
+
 
     /// <summary>
     /// Checks if SSE is supported on the current hardware.
     /// </summary>
-    private static bool IsSseSupported()
-    {
+    private static bool IsSseSupported() =>
 #if NET7_0_OR_GREATER
         return global::System.Runtime.Intrinsics.X86.Sse.IsSupported;
 #else
-        return false;
+        false;
 #endif
-    }
+
+
 
     /// <summary>
     /// Generates a vectorized loop template.

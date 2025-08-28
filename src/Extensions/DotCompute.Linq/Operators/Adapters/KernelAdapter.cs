@@ -31,23 +31,17 @@ internal class KernelAdapter : IKernel
     
     public KernelProperties Properties { get; }
 
-    public Task CompileAsync(CancellationToken cancellationToken = default)
-    {
+    public Task CompileAsync(CancellationToken cancellationToken = default) =>
         // Assume already compiled
-        return Task.CompletedTask;
-    }
+        Task.CompletedTask;
 
-    public Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
-    {
+    public Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default) =>
         // Core kernel doesn't have execution - this is handled by accelerator
         throw new NotSupportedException("Execution is handled by the accelerator, not the kernel directly.");
-    }
 
-    public IReadOnlyList<KernelParameter> GetParameterInfo()
-    {
+    public IReadOnlyList<KernelParameter> GetParameterInfo() =>
         // Return empty for now - would need to adapt core kernel parameters
-        return Array.Empty<KernelParameter>();
-    }
+        Array.Empty<KernelParameter>();
 
     public void Dispose()
     {

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 
@@ -18,8 +19,12 @@ internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
     public MemoryBuffer(long sizeInBytes, MemoryOptions options)
     {
         if (sizeInBytes > int.MaxValue)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size exceeds maximum array size");
-            
+        }
+
+
         _data = new byte[sizeInBytes];
         SizeInBytes = sizeInBytes;
         Options = options;
@@ -77,10 +82,7 @@ internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<byte> destination, CancellationToken cancellationToken = default)
-    {
-        return destination.CopyFromAsync(_data, cancellationToken);
-    }
+    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<byte> destination, CancellationToken cancellationToken = default) => destination.CopyFromAsync(_data, cancellationToken);
 
     public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<byte> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
     {
@@ -106,9 +108,52 @@ internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
         => throw new NotSupportedException("Type conversion not supported");
 
-    public void Dispose()
+    public void Dispose() => _disposed = true;
+
+    /// <summary>
+    /// Copies data from source memory to this buffer with offset support.
+    /// </summary>
+    /// <typeparam name="T">Type of elements to copy.</typeparam>
+    /// <param name="source">Source data to copy from.</param>
+    /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Completed task when copy finishes.</returns>
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long destinationOffset, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        _disposed = true;
+        if (typeof(T) == typeof(byte))
+        {
+            var sourceBytes = MemoryMarshal.AsBytes(source.Span);
+            sourceBytes.CopyTo(_data.AsSpan((int)destinationOffset));
+        }
+        else
+        {
+            var sourceBytes = MemoryMarshal.AsBytes(source.Span);
+            sourceBytes.CopyTo(_data.AsSpan((int)destinationOffset));
+        }
+        return ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Copies data from this buffer to destination memory with offset support.
+    /// </summary>
+    /// <typeparam name="T">Type of elements to copy.</typeparam>
+    /// <param name="destination">Destination memory to copy to.</param>
+    /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Completed task when copy finishes.</returns>
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long sourceOffset, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        if (typeof(T) == typeof(byte))
+        {
+            var destBytes = MemoryMarshal.AsBytes(destination.Span);
+            _data.AsSpan((int)sourceOffset, destBytes.Length).CopyTo(destBytes);
+        }
+        else
+        {
+            var destBytes = MemoryMarshal.AsBytes(destination.Span);
+            _data.AsSpan((int)sourceOffset, destBytes.Length).CopyTo(destBytes);
+        }
+        return ValueTask.CompletedTask;
     }
 
     public ValueTask DisposeAsync()

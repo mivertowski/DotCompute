@@ -74,4 +74,8 @@ public class MemoryAllocationException : Exception
     /// </code>
     /// </example>
     public MemoryAllocationException(string message, Exception innerException) : base(message, innerException) { }
+    public MemoryAllocationException()
+    {
+    }
+
 }

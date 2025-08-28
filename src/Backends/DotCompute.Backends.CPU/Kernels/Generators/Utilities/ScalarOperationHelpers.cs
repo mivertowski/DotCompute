@@ -80,10 +80,7 @@ internal static class ScalarOperationHelpers
     /// <param name="c">Third operand.</param>
     /// <returns>The result of a * b + c.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float ScalarFMAFloat32(float a, float b, float c)
-    {
-        return MathF.FusedMultiplyAdd(a, b, c);
-    }
+    public static float ScalarFMAFloat32(float a, float b, float c) => MathF.FusedMultiplyAdd(a, b, c);
 
     /// <summary>
     /// Performs a three-operand FMA operation using scalar arithmetic for double precision.
@@ -93,8 +90,5 @@ internal static class ScalarOperationHelpers
     /// <param name="c">Third operand.</param>
     /// <returns>The result of a * b + c.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double ScalarFMAFloat64(double a, double b, double c)
-    {
-        return Math.FusedMultiplyAdd(a, b, c);
-    }
+    public static double ScalarFMAFloat64(double a, double b, double c) => Math.FusedMultiplyAdd(a, b, c);
 }

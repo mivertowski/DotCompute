@@ -39,13 +39,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Prefetches memory to the specified device for optimal performance.
         /// </summary>
-        public void PrefetchAsync(nint ptr, long sizeInBytes, int deviceId)
-        {
-            _logger.LogDebug("Prefetching {Size} bytes to device {Device}", sizeInBytes, deviceId);
-            
-            // In a real implementation, this would use cudaMemPrefetchAsync
-            // For now, this is a stub
-        }
+        public void PrefetchAsync(nint ptr, long sizeInBytes, int deviceId) => _logger.LogDebug("Prefetching {Size} bytes to device {Device}", sizeInBytes, deviceId);// In a real implementation, this would use cudaMemPrefetchAsync// For now, this is a stub
 
         /// <summary>
         /// Advises the runtime about memory usage patterns.

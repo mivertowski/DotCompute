@@ -47,7 +47,8 @@ public class ValidationSettings
     /// are guaranteed to be valid, these checks can be disabled for better performance.
     /// </remarks>
     public bool GenerateBoundsChecks { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to validate memory alignment for SIMD operations.
     /// </summary>
@@ -62,8 +63,9 @@ public class ValidationSettings
     /// on some processors. However, alignment checks add overhead and are often
     /// unnecessary when data alignment is guaranteed by the application design.
     /// </remarks>
-    public bool ValidateAlignment { get; set; } = false;
-    
+    public bool ValidateAlignment { get; set; }
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to check for NaN (Not a Number) and Infinity values.
     /// </summary>

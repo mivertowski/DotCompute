@@ -84,18 +84,12 @@ public sealed class CpuAccelerator : BaseAccelerator
     }
 
     /// <inheritdoc/>
-    protected override ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken)
-    {
+    protected override ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken) =>
         // CPU operations are synchronous by default
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 
     /// <inheritdoc/>
-    protected override async ValueTask DisposeCoreAsync()
-    {
-        await _threadPool.DisposeAsync().ConfigureAwait(false);
-        // Memory manager disposal is handled by base class
-    }
+    protected override async ValueTask DisposeCoreAsync() => await _threadPool.DisposeAsync().ConfigureAwait(false);// Memory manager disposal is handled by base class
 
     /// <summary>
     /// Attempts to create an optimized kernel for known patterns.

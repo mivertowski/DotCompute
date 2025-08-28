@@ -202,7 +202,11 @@ public sealed class CudaDeviceManager : IDisposable
         {
             foreach (var device2 in _devices.Keys)
             {
-                if (device1 == device2) continue;
+                if (device1 == device2)
+                {
+                    continue;
+                }
+
 
                 try
                 {
@@ -244,7 +248,10 @@ public sealed class CudaDeviceManager : IDisposable
         lock (_deviceLock)
         {
             if (_currentDevice == deviceId)
+            {
                 return;
+            }
+
 
             var result = CudaRuntime.cudaSetDevice(deviceId);
             CudaRuntime.CheckError(result, $"setting device to {deviceId}");
@@ -277,8 +284,12 @@ public sealed class CudaDeviceManager : IDisposable
         ThrowIfDisposed();
         
         if (fromDevice == toDevice)
+        {
+
             return true;
-            
+        }
+
+
         return _p2pCapabilities.TryGetValue((fromDevice, toDevice), out bool canAccess) && canAccess;
     }
 
@@ -290,8 +301,11 @@ public sealed class CudaDeviceManager : IDisposable
         ThrowIfDisposed();
         
         if (fromDevice == toDevice)
+        {
             return;
-            
+        }
+
+
         if (!CanAccessPeer(fromDevice, toDevice))
         {
             throw new InvalidOperationException(
@@ -319,7 +333,10 @@ public sealed class CudaDeviceManager : IDisposable
         {
             // Restore device
             if (savedDevice >= 0)
+            {
                 SetDevice(savedDevice);
+            }
+
         }
     }
 
@@ -331,7 +348,10 @@ public sealed class CudaDeviceManager : IDisposable
         ThrowIfDisposed();
         
         if (fromDevice == toDevice)
+        {
             return;
+        }
+
 
         var savedDevice = _currentDevice;
         
@@ -349,7 +369,10 @@ public sealed class CudaDeviceManager : IDisposable
         finally
         {
             if (savedDevice >= 0)
+            {
                 SetDevice(savedDevice);
+            }
+
         }
     }
 
@@ -374,7 +397,10 @@ public sealed class CudaDeviceManager : IDisposable
         finally
         {
             if (savedDevice >= 0)
+            {
                 SetDevice(savedDevice);
+            }
+
         }
     }
 
@@ -413,7 +439,11 @@ public sealed class CudaDeviceManager : IDisposable
         ThrowIfDisposed();
         
         if (_devices.IsEmpty)
+        {
+
             throw new InvalidOperationException("No CUDA devices available");
+        }
+
 
         var scoredDevices = _devices.Values
             .Select(d => new { Device = d, Score = CalculateDeviceScore(d, criteria) })
@@ -452,26 +482,32 @@ public sealed class CudaDeviceManager : IDisposable
 
         // Feature scores
         if (criteria.RequireTensorCores && device.ComputeCapabilityMajor >= 7)
+        {
             score += 20;
-        
+        }
+
         if (criteria.RequireUnifiedMemory && device.ManagedMemory)
+        {
             score += 10;
-        
+        }
+
         if (criteria.RequireP2P && device.UnifiedAddressing)
+        {
             score += 10;
+        }
 
         // Penalty for integrated GPUs if discrete preferred
         if (criteria.PreferDiscrete && device.IntegratedGpu)
+        {
             score *= 0.5;
+        }
+
 
         return score;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, GetType());
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
 
     public void Dispose()
     {

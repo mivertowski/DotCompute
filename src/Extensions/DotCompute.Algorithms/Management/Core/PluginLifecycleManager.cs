@@ -216,10 +216,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
     }
 
     /// <inheritdoc/>
-    public IAlgorithmPlugin? GetPlugin(string pluginId)
-    {
-        return _plugins.TryGetValue(pluginId, out var loadedPlugin) ? loadedPlugin.Plugin : null;
-    }
+    public IAlgorithmPlugin? GetPlugin(string pluginId) => _plugins.TryGetValue(pluginId, out var loadedPlugin) ? loadedPlugin.Plugin : null;
 
     /// <inheritdoc/>
     public LoadedPluginInfo? GetLoadedPluginInfo(string pluginId)
@@ -328,10 +325,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
     /// Gets all loaded plugins for health monitoring.
     /// </summary>
     /// <returns>Collection of loaded plugins.</returns>
-    internal IReadOnlyCollection<LoadedPlugin> GetAllLoadedPlugins()
-    {
-        return _plugins.Values.ToList().AsReadOnly();
-    }
+    internal IReadOnlyCollection<LoadedPlugin> GetAllLoadedPlugins() => _plugins.Values.ToList().AsReadOnly();
 
     #region Logger Messages
 

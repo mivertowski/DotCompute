@@ -1069,6 +1069,28 @@ namespace DotCompute.Core.Memory.P2P
         public ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default)
             => ValueTask.FromResult(MappedMemory<T>.Invalid);
 
+        /// <summary>
+        /// Copies data from source memory to this mock buffer with offset support.
+        /// </summary>
+        /// <typeparam name="TSource">Type of elements to copy.</typeparam>
+        /// <param name="source">Source data to copy from.</param>
+        /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
+        /// <param name="cancellationToken">Cancellation token for the operation.</param>
+        /// <returns>Completed task when copy finishes.</returns>
+        public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long destinationOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
+            => ValueTask.CompletedTask;
+
+        /// <summary>
+        /// Copies data from this mock buffer to destination memory with offset support.
+        /// </summary>
+        /// <typeparam name="TDest">Type of elements to copy.</typeparam>
+        /// <param name="destination">Destination memory to copy to.</param>
+        /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
+        /// <param name="cancellationToken">Cancellation token for the operation.</param>
+        /// <returns>Completed task when copy finishes.</returns>
+        public ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long sourceOffset, CancellationToken cancellationToken = default) where TDest : unmanaged
+            => ValueTask.CompletedTask;
+
         public void Dispose() { }
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }

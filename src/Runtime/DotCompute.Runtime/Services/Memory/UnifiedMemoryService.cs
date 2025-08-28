@@ -108,15 +108,9 @@ internal class RuntimeUnifiedMemoryBuffer : IUnifiedMemoryBuffer
         DevicePointer = Marshal.AllocHGlobal((int)sizeInBytes);
     }
 
-    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
-    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 
     public void Dispose()
     {

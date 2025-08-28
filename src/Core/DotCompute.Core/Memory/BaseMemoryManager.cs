@@ -81,16 +81,15 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         await buffer.CopyFromAsync(source, cancellationToken).ConfigureAwait(false);
         return buffer;
     }
-    
+
+
     /// <inheritdoc/>
     public virtual async ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
         long sizeInBytes,
         MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default)
-    {
-        return await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
-    }
-    
+        CancellationToken cancellationToken = default) => await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
+
+
     /// <inheritdoc/>
     public abstract IUnifiedMemoryBuffer<T> CreateView<T>(
         IUnifiedMemoryBuffer<T> buffer,
@@ -262,10 +261,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     protected virtual ValueTask<IUnifiedMemoryBuffer> AllocateBufferCoreAsync(
         long sizeInBytes,
         MemoryOptions options,
-        CancellationToken cancellationToken)
-    {
-        return AllocateInternalAsync(sizeInBytes, options, cancellationToken);
-    }
+        CancellationToken cancellationToken) => AllocateInternalAsync(sizeInBytes, options, cancellationToken);
 
     /// <summary>
     /// Backend-specific view creation implementation.
@@ -287,7 +283,11 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         do
         {
             currentPeak = _peakAllocatedBytes;
-            if (newTotal <= currentPeak) break;
+            if (newTotal <= currentPeak)
+            {
+                break;
+            }
+
         } while (Interlocked.CompareExchange(ref _peakAllocatedBytes, newTotal, currentPeak) != currentPeak);
     }
 
@@ -338,10 +338,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, GetType());
-    }
+    protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
 
     protected virtual void Dispose(bool disposing)
     {

@@ -54,38 +54,27 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc/>
-    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
-    {
+    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken) =>
         // Implementation placeholder
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 
     /// <inheritdoc/>
-    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken)
-    {
+    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken) =>
         // Implementation placeholder
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 
     /// <inheritdoc/>
-    public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken)
-    {
+    public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken) =>
         // Implementation placeholder
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 
     /// <inheritdoc/>
-    public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
-    {
+    public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken) =>
         // Implementation placeholder
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 
     /// <inheritdoc/>
-    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
-    {
-        throw new NotImplementedException();
-    }
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) => throw new NotImplementedException();
 
     /// <inheritdoc/>
     public override void Clear()
@@ -94,10 +83,7 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc/>
-    public override ValueTask OptimizeAsync(CancellationToken cancellationToken)
-    {
-        return ValueTask.CompletedTask;
-    }
+    public override ValueTask OptimizeAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
     /// <inheritdoc/>
     protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)

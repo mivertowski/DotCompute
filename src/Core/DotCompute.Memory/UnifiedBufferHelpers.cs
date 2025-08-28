@@ -39,25 +39,13 @@ internal sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T>, IDisposab
 
     #region Host Memory Access
 
-    public Span<T> AsSpan()
-    {
-        return _parent.AsSpan().Slice(_offset, _length);
-    }
+    public Span<T> AsSpan() => _parent.AsSpan().Slice(_offset, _length);
 
-    public ReadOnlySpan<T> AsReadOnlySpan()
-    {
-        return _parent.AsReadOnlySpan().Slice(_offset, _length);
-    }
+    public ReadOnlySpan<T> AsReadOnlySpan() => _parent.AsReadOnlySpan().Slice(_offset, _length);
 
-    public Memory<T> AsMemory()
-    {
-        return _parent.AsMemory().Slice(_offset, _length);
-    }
+    public Memory<T> AsMemory() => _parent.AsMemory().Slice(_offset, _length);
 
-    public ReadOnlyMemory<T> AsReadOnlyMemory()
-    {
-        return _parent.AsReadOnlyMemory().Slice(_offset, _length);
-    }
+    public ReadOnlyMemory<T> AsReadOnlyMemory() => _parent.AsReadOnlyMemory().Slice(_offset, _length);
 
     #endregion
 
@@ -122,8 +110,12 @@ internal sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T>, IDisposab
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
         if (source.Length > _length)
+        {
+
             throw new ArgumentException($"Source length {source.Length} exceeds slice length {_length}");
-        
+        }
+
+
         await _parent.WriteAsync(source, _offset, cancellationToken).ConfigureAwait(false);
     }
 
@@ -198,7 +190,19 @@ internal sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T>, IDisposab
 
     #endregion
 
+    #region Non-generic interface implementation
+
+    // Non-generic interface implementation
+
+    ValueTask IUnifiedMemoryBuffer.CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset, CancellationToken cancellationToken) => ((IUnifiedMemoryBuffer)_parent).CopyFromAsync(source, offset, cancellationToken);
+
+
+    ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken) => ((IUnifiedMemoryBuffer)_parent).CopyToAsync(destination, offset, cancellationToken);
+
+    #endregion
+
     #region Disposal
+
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
@@ -248,7 +252,11 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
     {
         var parentSpan = _parent.AsSpan();
         if (_offset > 0)
+        {
             parentSpan = parentSpan.Slice(_offset);
+        }
+
+
         return MemoryMarshal.Cast<TOriginal, TNew>(parentSpan).Slice(0, _length);
     }
 
@@ -256,7 +264,11 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
     {
         var parentSpan = _parent.AsReadOnlySpan();
         if (_offset > 0)
+        {
             parentSpan = parentSpan.Slice(_offset);
+        }
+
+
         return MemoryMarshal.Cast<TOriginal, TNew>(parentSpan).Slice(0, _length);
     }
 
@@ -296,7 +308,11 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
         var parentMapped = _parent.Map(mode);
         var parentMemory = parentMapped.Memory;
         if (_offset > 0)
+        {
             parentMemory = parentMemory.Slice(_offset);
+        }
+
+
         var viewSpan = MemoryMarshal.Cast<TOriginal, TNew>(parentMemory.Span).Slice(0, _length);
         return new MappedMemory<TNew>(viewSpan.ToArray().AsMemory());
     }
@@ -310,7 +326,11 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
         var parentMapped = _parent.Map(mode);
         var parentMemory = parentMapped.Memory;
         if (_offset > 0)
+        {
             parentMemory = parentMemory.Slice(_offset);
+        }
+
+
         var viewSpan = MemoryMarshal.Cast<TOriginal, TNew>(parentMemory.Span);
         var rangeSpan = viewSpan.Slice(offset, length);
         return new MappedMemory<TNew>(rangeSpan.ToArray().AsMemory());
@@ -321,7 +341,12 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
         var parentMapped = await _parent.MapAsync(mode, cancellationToken).ConfigureAwait(false);
         var parentMemory = parentMapped.Memory;
         if (_offset > 0)
+        {
+
             parentMemory = parentMemory.Slice(_offset);
+        }
+
+
         var viewSpan = MemoryMarshal.Cast<TOriginal, TNew>(parentMemory.Span).Slice(0, _length);
         return new MappedMemory<TNew>(viewSpan.ToArray().AsMemory());
     }
@@ -349,9 +374,13 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
     public async ValueTask CopyFromAsync(ReadOnlyMemory<TNew> source, CancellationToken cancellationToken = default)
     {
         if (source.Length > _length)
+        {
+
             throw new ArgumentException($"Source length {source.Length} exceeds view length {_length}");
-        
+        }
+
         // Convert from TNew to TOriginal
+
         var tempArray = new TOriginal[(_length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>() + global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>() - 1) / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>()];
         var destSpan = MemoryMarshal.Cast<TOriginal, TNew>(tempArray.AsSpan()).Slice(0, source.Length);
         source.Span.CopyTo(destSpan);
@@ -452,7 +481,19 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
 
     #endregion
 
+    #region Non-generic interface implementation
+
+    // Non-generic interface implementation
+
+    ValueTask IUnifiedMemoryBuffer.CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset, CancellationToken cancellationToken) => ((IUnifiedMemoryBuffer)_parent).CopyFromAsync(source, offset, cancellationToken);
+
+
+    ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken) => ((IUnifiedMemoryBuffer)_parent).CopyToAsync(destination, offset, cancellationToken);
+
+    #endregion
+
     #region Disposal
+
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 

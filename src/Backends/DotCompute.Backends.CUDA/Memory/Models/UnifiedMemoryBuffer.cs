@@ -79,6 +79,70 @@ namespace DotCompute.Backends.CUDA.Memory.Models
             }
         }
         
+        /// <summary>
+        /// Asynchronously copies data from host memory to this buffer.
+        /// </summary>
+        public async ValueTask CopyFromAsync<T>(
+            ReadOnlyMemory<T> source,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            await Task.Run(() =>
+            {
+                var sourceSpan = source.Span;
+                var bytesToCopy = sourceSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                
+                if (offset + bytesToCopy > SizeInBytes)
+                {
+
+                    throw new ArgumentException("Source data exceeds buffer capacity.");
+                }
+
+
+                unsafe
+                {
+                    fixed (T* srcPtr = sourceSpan)
+                    {
+                        var destPtr = Pointer + (nint)offset;
+                        // For unified memory, we can use direct memory copy
+                        Buffer.MemoryCopy(srcPtr, destPtr.ToPointer(), SizeInBytes - offset, bytesToCopy);
+                    }
+                }
+            }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Asynchronously copies data from this buffer to host memory.
+        /// </summary>
+        public async ValueTask CopyToAsync<T>(
+            Memory<T> destination,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            await Task.Run(() =>
+            {
+                var destinationSpan = destination.Span;
+                var bytesToCopy = destinationSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                
+                if (offset + bytesToCopy > SizeInBytes)
+                {
+
+                    throw new ArgumentException("Destination exceeds buffer capacity.");
+                }
+
+
+                unsafe
+                {
+                    fixed (T* destPtr = destinationSpan)
+                    {
+                        var srcPtr = Pointer + (nint)offset;
+                        // For unified memory, we can use direct memory copy
+                        Buffer.MemoryCopy(srcPtr.ToPointer(), destPtr, destinationSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), bytesToCopy);
+                    }
+                }
+            }, cancellationToken);
+        }
+
         /// <inheritdoc/>
         public ValueTask DisposeAsync()
         {

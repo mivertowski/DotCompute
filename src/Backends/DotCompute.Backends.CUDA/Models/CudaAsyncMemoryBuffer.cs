@@ -67,9 +67,9 @@ namespace DotCompute.Backends.CUDA.Memory.Models
         public BufferState State => _disposed ? BufferState.Disposed : BufferState.Allocated;
 
         /// <summary>
-        /// Copies data from host memory to this buffer asynchronously.
+        /// Copies data from host memory to this buffer asynchronously (interface implementation).
         /// </summary>
-        public async ValueTask CopyFromHostAsync<T>(
+        public async ValueTask CopyFromAsync<T>(
             ReadOnlyMemory<T> source,
             long offset = 0,
             CancellationToken cancellationToken = default) where T : unmanaged
@@ -81,9 +81,9 @@ namespace DotCompute.Backends.CUDA.Memory.Models
         }
 
         /// <summary>
-        /// Copies data from this buffer to host memory asynchronously.
+        /// Copies data from this buffer to host memory asynchronously (interface implementation).
         /// </summary>
-        public async ValueTask CopyToHostAsync<T>(
+        public async ValueTask CopyToAsync<T>(
             Memory<T> destination,
             long offset = 0,
             CancellationToken cancellationToken = default) where T : unmanaged
@@ -93,11 +93,26 @@ namespace DotCompute.Backends.CUDA.Memory.Models
             var srcPtr = _devicePtr + (nint)offset;
             await _manager.CopyToHostAsyncOnStream(srcPtr, destination, _stream, cancellationToken);
         }
+        
+        /// <summary>
+        /// Copies data from host memory to this buffer asynchronously (legacy support).
+        /// </summary>
+        public async ValueTask CopyFromHostAsync<T>(
+            ReadOnlyMemory<T> source,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+            => await CopyFromAsync(source, offset, cancellationToken);
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, GetType());
-        }
+        /// <summary>
+        /// Copies data from this buffer to host memory asynchronously (legacy support).
+        /// </summary>
+        public async ValueTask CopyToHostAsync<T>(
+            Memory<T> destination,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+            => await CopyToAsync(destination, offset, cancellationToken);
+
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
 
         /// <summary>
         /// Disposes the buffer and frees the allocated memory.

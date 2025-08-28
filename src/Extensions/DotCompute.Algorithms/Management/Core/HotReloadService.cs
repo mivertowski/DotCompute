@@ -45,7 +45,11 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
         try
         {
             var directory = Path.GetDirectoryName(assemblyPath);
-            if (directory == null) return;
+            if (directory == null)
+            {
+                return;
+            }
+
 
             var fileName = Path.GetFileName(assemblyPath);
 

@@ -21,7 +21,8 @@ public sealed class NumaMemoryPolicy
     /// <summary>
     /// Gets or sets whether to bind memory to specific nodes.
     /// </summary>
-    public bool BindToNodes { get; set; } = false;
+    public bool BindToNodes { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to prefer local node allocation.
@@ -36,7 +37,8 @@ public sealed class NumaMemoryPolicy
     /// <summary>
     /// Gets or sets whether interleaving is enabled.
     /// </summary>
-    public bool InterleavingEnabled { get; set; } = false;
+    public bool InterleavingEnabled { get; set; }
+
 
     /// <summary>
     /// Creates a default NUMA memory policy.

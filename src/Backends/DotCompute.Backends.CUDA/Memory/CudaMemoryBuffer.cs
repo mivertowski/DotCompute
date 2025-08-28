@@ -56,12 +56,20 @@ namespace DotCompute.Backends.CUDA.Memory
         public unsafe void CopyTo(CudaMemoryBuffer destination)
         {
             if (destination == null)
+            {
+
                 throw new ArgumentNullException(nameof(destination));
-            
+            }
+
+
             if (destination.SizeInBytes < SizeInBytes)
+            {
+
                 throw new ArgumentException("Destination buffer is too small.", nameof(destination));
+            }
 
             // Use CUDA runtime to copy
+
             CudaRuntime.cudaMemcpy(destination.DevicePointer, DevicePointer, 
                 (nuint)SizeInBytes, CudaMemcpyKind.DeviceToDevice);
         }
@@ -73,7 +81,11 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             var bytesToCopy = source.Length * sizeof(T);
             if (bytesToCopy > SizeInBytes)
+            {
+
                 throw new ArgumentException("Source data exceeds buffer size.", nameof(source));
+            }
+
 
             fixed (T* ptr = source)
             {
@@ -89,7 +101,11 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             var bytesToCopy = destination.Length * sizeof(T);
             if (bytesToCopy > SizeInBytes)
+            {
+
                 throw new ArgumentException("Destination span is larger than buffer.", nameof(destination));
+            }
+
 
             fixed (T* ptr = destination)
             {
@@ -105,6 +121,68 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             var ptr = CudaRuntime.cudaMalloc((nuint)sizeInBytes);
             return new CudaMemoryBuffer(device, ptr, sizeInBytes, options);
+        }
+
+        /// <summary>
+        /// Asynchronously copies data from host memory to this buffer.
+        /// </summary>
+        public async ValueTask CopyFromAsync<T>(
+            ReadOnlyMemory<T> source,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            await Task.Run(() =>
+            {
+                var sourceSpan = source.Span;
+                var bytesToCopy = sourceSpan.Length * Unsafe.SizeOf<T>();
+                
+                if (offset + bytesToCopy > SizeInBytes)
+                {
+
+                    throw new ArgumentException("Source data exceeds buffer capacity.");
+                }
+
+
+                unsafe
+                {
+                    fixed (T* ptr = sourceSpan)
+                    {
+                        CudaRuntime.cudaMemcpy(_devicePointer + (nint)offset, (nint)ptr, 
+                            (nuint)bytesToCopy, CudaMemcpyKind.HostToDevice);
+                    }
+                }
+            }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Asynchronously copies data from this buffer to host memory.
+        /// </summary>
+        public async ValueTask CopyToAsync<T>(
+            Memory<T> destination,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            await Task.Run(() =>
+            {
+                var destinationSpan = destination.Span;
+                var bytesToCopy = destinationSpan.Length * Unsafe.SizeOf<T>();
+                
+                if (offset + bytesToCopy > SizeInBytes)
+                {
+
+                    throw new ArgumentException("Destination exceeds buffer capacity.");
+                }
+
+
+                unsafe
+                {
+                    fixed (T* ptr = destinationSpan)
+                    {
+                        CudaRuntime.cudaMemcpy((nint)ptr, _devicePointer + (nint)offset, 
+                            (nuint)bytesToCopy, CudaMemcpyKind.DeviceToHost);
+                    }
+                }
+            }, cancellationToken);
         }
 
         /// <inheritdoc/>

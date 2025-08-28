@@ -445,8 +445,12 @@ namespace DotCompute.Backends.CUDA.Factory
         {
             try
             {
-                if (!IsAvailable()) return false;
-                
+                if (!IsAvailable())
+                {
+                    return false;
+                }
+
+
                 var devices = _deviceManager.EnumerateDevices();
                 return devices.Any(d => d.Major >= 3); // Kepler or newer
             }
@@ -514,7 +518,11 @@ namespace DotCompute.Backends.CUDA.Factory
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             _logger.LogInformation("Disposing Production CUDA Factory");
 
@@ -552,8 +560,10 @@ namespace DotCompute.Backends.CUDA.Factory
             public bool EnableTensorCores { get; set; } = true;
             public bool EnableGraphOptimization { get; set; } = true;
             public bool EnableKernelCaching { get; set; } = true;
-            public bool EnableP2P { get; set; } = false;
-            public bool EnableProfiling { get; set; } = false;
+            public bool EnableP2P { get; set; }
+
+            public bool EnableProfiling { get; set; }
+
             public bool EnableErrorRecovery { get; set; } = true;
             
             public int StreamPoolSize { get; set; } = 4;
@@ -676,10 +686,7 @@ namespace DotCompute.Backends.CUDA.Factory
             public async ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
                 => await _baseAccelerator.CompileKernelAsync(definition, options, cancellationToken);
 
-            public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-            {
-                await StreamManager.SynchronizeAllAsync(cancellationToken);
-            }
+            public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await StreamManager.SynchronizeAllAsync(cancellationToken);
 
             public int DeviceId { get; private set; }
 
@@ -698,11 +705,9 @@ namespace DotCompute.Backends.CUDA.Factory
                 // Dispose base accelerator
                 _baseAccelerator?.Dispose();
             }
-            
-            public ValueTask DisposeAsync()
-            {
-                return _baseAccelerator?.DisposeAsync() ?? ValueTask.CompletedTask;
-            }
+
+
+            public ValueTask DisposeAsync() => _baseAccelerator?.DisposeAsync() ?? ValueTask.CompletedTask;
         }
     }
 }

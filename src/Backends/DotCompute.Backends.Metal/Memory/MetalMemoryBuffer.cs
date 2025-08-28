@@ -42,18 +42,27 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     }
 
     /// <inheritdoc/>
-    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        // Implementation placeholder
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged =>
+        // TODO: Implement actual Metal buffer copy from host
+        ValueTask.CompletedTask;
 
     /// <inheritdoc/>
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged =>
+        // TODO: Implement actual Metal buffer copy to host
+        ValueTask.CompletedTask;
+
+
+    /// <summary>
+    /// Legacy support method (calls CopyFromAsync).
+    /// </summary>
+    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+        => CopyFromAsync(source, offset, cancellationToken);
+
+    /// <summary>
+    /// Legacy support method (calls CopyToAsync).
+    /// </summary>
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        // Implementation placeholder
-        return ValueTask.CompletedTask;
-    }
+        => CopyToAsync(destination, offset, cancellationToken);
 
     /// <inheritdoc/>
     public void Dispose()

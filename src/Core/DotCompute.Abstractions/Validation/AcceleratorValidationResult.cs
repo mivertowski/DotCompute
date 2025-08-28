@@ -145,12 +145,18 @@ public sealed class AcceleratorValidationResult
         var result = new UnifiedValidationResult();
         
         foreach (var error in errors)
+        {
             result.AddError(error, "ACCELERATOR_VALIDATION", "AcceleratorFactory");
-            
+        }
+
+
         if (warnings != null)
         {
             foreach (var warning in warnings)
+            {
                 result.AddWarning(warning, "ACCELERATOR_VALIDATION", "AcceleratorFactory");
+            }
+
         }
 
         return new AcceleratorValidationResult(result, acceleratorType, deviceIndex);
@@ -166,10 +172,7 @@ public sealed class AcceleratorValidationResult
     public static AcceleratorValidationResult Failure(
         string errorMessage,
         AcceleratorType acceleratorType = AcceleratorType.Auto,
-        int deviceIndex = 0)
-    {
-        return Failure(new[] { errorMessage }, null, acceleratorType, deviceIndex);
-    }
+        int deviceIndex = 0) => Failure(new[] { errorMessage }, null, acceleratorType, deviceIndex);
 
     /// <summary>
     /// Creates a validation result from an exception.
@@ -215,16 +218,26 @@ public sealed class AcceleratorValidationResult
         var details = new List<string>();
 
         if (!string.IsNullOrEmpty(summary))
+        {
             details.Add(summary);
+        }
+
 
         details.Add($"Accelerator Type: {AcceleratorType}");
         details.Add($"Device Index: {DeviceIndex}");
 
         if (SupportedFeatures.Any())
+        {
             details.Add($"Supported Features: {string.Join(", ", SupportedFeatures)}");
+        }
+
 
         if (PerformanceMetrics != null)
+        {
+
             details.Add($"Performance Metrics: {PerformanceMetrics}");
+        }
+
 
         return string.Join(Environment.NewLine, details);
     }
@@ -338,4 +351,8 @@ public sealed class AcceleratorValidationException : Exception
     {
         ValidationResult = AcceleratorValidationResult.Failure(message);
     }
+    public AcceleratorValidationException()
+    {
+    }
+
 }

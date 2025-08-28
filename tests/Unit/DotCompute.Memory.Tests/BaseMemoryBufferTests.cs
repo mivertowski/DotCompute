@@ -33,11 +33,9 @@ public class BaseMemoryBufferTests
     }
 
     [Fact]
-    public void BaseMemoryBuffer_ThrowsForNonAlignedSize()
-    {
+    public void BaseMemoryBuffer_ThrowsForNonAlignedSize() =>
         // Act & Assert
         Assert.Throws<ArgumentException>(() => new TestMemoryBuffer<float>(1023)); // Not divisible by 4
-    }
 
     [Fact]
     public void ValidateCopyParameters_ThrowsForInvalidOffsets()

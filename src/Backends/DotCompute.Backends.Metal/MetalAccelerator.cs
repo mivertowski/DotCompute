@@ -276,11 +276,26 @@ public sealed class MetalAccelerator : BaseAccelerator
     private static string GetDeviceLocation(MetalDeviceInfo info)
     {
         if (info.Location == MetalDeviceLocation.BuiltIn)
+        {
+
             return "Built-in";
+        }
+
+
         if (info.Location == MetalDeviceLocation.Slot)
+        {
+
             return $"Slot {info.LocationNumber}";
+        }
+
+
         if (info.Location == MetalDeviceLocation.External)
+        {
+
             return "External";
+        }
+
+
         return "Unknown";
     }
 
@@ -288,27 +303,82 @@ public sealed class MetalAccelerator : BaseAccelerator
     {
         // Map Metal GPU families to compute capability versions
         if (families.Contains("Apple8", StringComparison.Ordinal))
+        {
+
             return new Version(8, 0); // M2 family
+        }
+
+
         if (families.Contains("Apple7", StringComparison.Ordinal))
+        {
+
             return new Version(7, 0); // M1 family
+        }
+
+
         if (families.Contains("Apple6", StringComparison.Ordinal))
+        {
+
             return new Version(6, 0); // A14 family
+        }
+
+
         if (families.Contains("Apple5", StringComparison.Ordinal))
+        {
+
             return new Version(5, 0); // A13 family
+        }
+
+
         if (families.Contains("Apple4", StringComparison.Ordinal))
+        {
+
             return new Version(4, 0); // A12 family
+        }
+
+
         if (families.Contains("Apple", StringComparison.Ordinal))
+        {
+
             return new Version(3, 0); // Generic Apple Silicon
+        }
+
+
         if (families.Contains("Mac2", StringComparison.Ordinal))
+        {
+
             return new Version(2, 0); // Modern Intel Mac GPUs
+        }
+
+
         if (families.Contains("Mac1", StringComparison.Ordinal))
+        {
+
             return new Version(1, 1); // Older Intel Mac GPUs
+        }
+
+
         if (families.Contains("Common3", StringComparison.Ordinal))
+        {
+
             return new Version(3, 0);
+        }
+
+
         if (families.Contains("Common2", StringComparison.Ordinal))
+        {
+
             return new Version(2, 0);
+        }
+
+
         if (families.Contains("Common1", StringComparison.Ordinal))
+        {
+
             return new Version(1, 0);
+        }
+
+
         return new Version(1, 0); // Default/unknown
     }
 
@@ -320,23 +390,48 @@ public sealed class MetalAccelerator : BaseAccelerator
         if (families.Contains("Apple", StringComparison.Ordinal))
         {
             if (families.Contains("Apple8", StringComparison.Ordinal))
+            {
                 return 20; // M2 Max/Ultra
+            }
+
+
             if (families.Contains("Apple7", StringComparison.Ordinal))
+            {
                 return 16; // M1 Max/Ultra
+            }
+
+
             if (families.Contains("Apple6", StringComparison.Ordinal))
+            {
                 return 8;  // M1 Pro
+            }
+
+
             if (families.Contains("Apple5", StringComparison.Ordinal))
+            {
                 return 8;  // M1
+            }
+
+
             if (families.Contains("Apple4", StringComparison.Ordinal))
+            {
+
                 return 6;  // A12/A13
+            }
+
+
             return 4; // Older Apple Silicon
         }
 
         // Intel Mac GPUs
         if (families.Contains("Mac", StringComparison.Ordinal))
+        {
+
             return Math.Max(4, maxThreads / 256);
+        }
 
         // Estimate based on max threads per threadgroup
+
         return Math.Max(1, maxThreads / 64);
     }
 
@@ -346,9 +441,16 @@ public sealed class MetalAccelerator : BaseAccelerator
 
         // Apple Silicon typically has more shared memory per threadgroup
         if (info.HasUnifiedMemory)
+        {
+
             return Math.Min(32 * 1024, maxThreads * 32); // 32KB shared memory
+        }
         else
+        {
+
             return Math.Min(16 * 1024, maxThreads * 16); // 16KB shared memory
+        }
+
     }
 }
 

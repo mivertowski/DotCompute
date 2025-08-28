@@ -51,7 +51,8 @@ namespace DotCompute.Core.Execution.Analysis
         /// A long value representing the total number of executions that have contributed
         /// to the performance statistics. Default is 0.
         /// </value>
-        public long TotalExecutions { get; set; } = 0;
+        public long TotalExecutions { get; set; }
+
 
         /// <summary>
         /// Gets or sets the average execution time in milliseconds.
@@ -60,7 +61,8 @@ namespace DotCompute.Core.Execution.Analysis
         /// A double value representing the mean execution time across all recorded executions.
         /// Default is 0.0.
         /// </value>
-        public double AverageExecutionTime { get; set; } = 0.0;
+        public double AverageExecutionTime { get; set; }
+
 
         /// <summary>
         /// Gets or sets the total execution time in milliseconds across all recorded executions.
@@ -68,7 +70,8 @@ namespace DotCompute.Core.Execution.Analysis
         /// <value>
         /// A double value representing the cumulative execution time. Default is 0.0.
         /// </value>
-        public double TotalExecutionTime { get; set; } = 0.0;
+        public double TotalExecutionTime { get; set; }
+
 
         /// <summary>
         /// Gets a value indicating whether this cache contains recent performance data.

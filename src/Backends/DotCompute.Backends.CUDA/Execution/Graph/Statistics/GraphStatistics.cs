@@ -64,12 +64,18 @@ public sealed class GraphStatistics
         ExecutionCount++;
         
         if (executionTimeMs < MinExecutionTimeMs)
+        {
             MinExecutionTimeMs = executionTimeMs;
-            
+        }
+
+
         if (executionTimeMs > MaxExecutionTimeMs)
+        {
             MaxExecutionTimeMs = executionTimeMs;
-            
+        }
+
         // Calculate running average
+
         AverageExecutionTimeMs = ((AverageExecutionTimeMs * (ExecutionCount - 1)) + executionTimeMs) / ExecutionCount;
     }
 }

@@ -83,16 +83,15 @@ public class CpuMemoryManager : BaseMemoryManager
         await buffer.CopyFromAsync(source, cancellationToken);
         return buffer;
     }
-    
+
+
     /// <inheritdoc/>
     public override ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
         long sizeInBytes,
         MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default)
-    {
-        return AllocateAsync(sizeInBytes, options, cancellationToken);
-    }
-    
+        CancellationToken cancellationToken = default) => AllocateAsync(sizeInBytes, options, cancellationToken);
+
+
     /// <inheritdoc/>
     public override IUnifiedMemoryBuffer<T> CreateView<T>(
         IUnifiedMemoryBuffer<T> buffer,
@@ -144,25 +143,22 @@ public class CpuMemoryManager : BaseMemoryManager
         await sourceView.CopyToAsync(temp, cancellationToken);
         await destView.CopyFromAsync(temp, cancellationToken);
     }
-    
+
+
     /// <inheritdoc/>
     public override async ValueTask CopyToDeviceAsync<T>(
         ReadOnlyMemory<T> source,
         IUnifiedMemoryBuffer<T> destination,
-        CancellationToken cancellationToken = default)
-    {
-        await destination.CopyFromAsync(source, cancellationToken);
-    }
-    
+        CancellationToken cancellationToken = default) => await destination.CopyFromAsync(source, cancellationToken);
+
+
     /// <inheritdoc/>
     public override async ValueTask CopyFromDeviceAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         Memory<T> destination,
-        CancellationToken cancellationToken = default)
-    {
-        await source.CopyToAsync(destination, cancellationToken);
-    }
-    
+        CancellationToken cancellationToken = default) => await source.CopyToAsync(destination, cancellationToken);
+
+
     /// <inheritdoc/>
     public override ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
     {
@@ -194,17 +190,16 @@ public class CpuMemoryManager : BaseMemoryManager
         _currentAllocatedBytes = 0;
         _peakAllocatedBytes = 0;
     }
-    
+
+
     /// <inheritdoc/>
     protected override IUnifiedMemoryBuffer CreateViewCore(
         IUnifiedMemoryBuffer sourceBuffer,
         long offsetInBytes,
-        long sizeInBytes)
-    {
+        long sizeInBytes) =>
         // CPU memory doesn't support views in this implementation
         // Would need to implement a view wrapper for CPU buffers
         throw new NotSupportedException("CPU memory views are not yet implemented");
-    }
 }
 
 /// <summary>
@@ -259,6 +254,39 @@ public class CpuMemoryBuffer : IUnifiedMemoryBuffer
         GC.SuppressFinalize(this);
     }
     
+    /// <summary>
+    /// Copies data from source memory to this CPU buffer with offset support.
+    /// </summary>
+    /// <typeparam name="T">Type of elements to copy.</typeparam>
+    /// <param name="source">Source data to copy from.</param>
+    /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Completed task when copy finishes.</returns>
+    public virtual ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long destinationOffset, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        var sourceBytes = MemoryMarshal.AsBytes(source.Span);
+        sourceBytes.CopyTo(_data.AsSpan((int)destinationOffset));
+        State = BufferState.HostReady;
+        return ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Copies data from this CPU buffer to destination memory with offset support.
+    /// </summary>
+    /// <typeparam name="T">Type of elements to copy.</typeparam>
+    /// <param name="destination">Destination memory to copy to.</param>
+    /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Completed task when copy finishes.</returns>
+    public virtual ValueTask CopyToAsync<T>(Memory<T> destination, long sourceOffset, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        var destBytes = MemoryMarshal.AsBytes(destination.Span);
+        _data.AsSpan((int)sourceOffset, destBytes.Length).CopyTo(destBytes);
+        return ValueTask.CompletedTask;
+    }
+
     public ValueTask DisposeAsync()
     {
         Dispose();
@@ -266,11 +294,9 @@ public class CpuMemoryBuffer : IUnifiedMemoryBuffer
     }
     
     internal byte[] GetData() => _data;
-    
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+
+
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 }
 
 /// <summary>
@@ -306,40 +332,32 @@ public class CpuMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
     }
     
     public ReadOnlySpan<T> AsReadOnlySpan() => AsSpan();
-    
-    public Memory<T> AsMemory()
-    {
+
+
+    public Memory<T> AsMemory() =>
         // For CPU buffers, we need to create a properly typed memory
         // This is a temporary implementation - proper buffer management needed
         throw new NotSupportedException("Direct Memory<T> access not yet implemented for CpuMemoryBuffer<T>");
-    }
-    
+
+
     public ReadOnlyMemory<T> AsReadOnlyMemory() => AsMemory();
     
     public DeviceMemory GetDeviceMemory() => DeviceMemory.Invalid;
     
     public bool IsDirty => State == BufferState.HostDirty || State == BufferState.DeviceDirty;
-    
-    public MappedMemory<T> Map(MapMode mode)
-    {
-        throw new NotSupportedException("CPU buffers do not require mapping");
-    }
-    
-    public MappedMemory<T> MapRange(int offset, int length, MapMode mode)
-    {
-        throw new NotSupportedException("CPU buffers do not require mapping");
-    }
-    
-    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("CPU buffers do not require mapping");
-    }
-    
-    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
-    {
-        return destination.CopyFromAsync(AsMemory(), cancellationToken);
-    }
-    
+
+
+    public MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException("CPU buffers do not require mapping");
+
+
+    public MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotSupportedException("CPU buffers do not require mapping");
+
+
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException("CPU buffers do not require mapping");
+
+    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => destination.CopyFromAsync(AsMemory(), cancellationToken);
+
+
     public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
     {
         var slice = AsMemory().Slice(sourceOffset, length);
@@ -357,17 +375,14 @@ public class CpuMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
         AsSpan().Slice(offset, length).Fill(value);
         return ValueTask.CompletedTask;
     }
-    
-    public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
-    {
-        return new CpuMemoryBufferView<T>(this, offset, length);
-    }
-    
-    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
-    {
-        throw new NotSupportedException("Type conversion not supported for CPU buffers");
-    }
-    
+
+
+    public IUnifiedMemoryBuffer<T> Slice(int offset, int length) => new CpuMemoryBufferView<T>(this, offset, length);
+
+
+    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged => throw new NotSupportedException("Type conversion not supported for CPU buffers");
+
+
     public void EnsureOnHost() { /* Already on host */ }
     public void EnsureOnDevice() { /* CPU is both host and device */ }
     
@@ -439,6 +454,43 @@ public class CpuMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
         return ValueTask.CompletedTask;
     }
     
+    /// <summary>
+    /// Copies data from source memory to this typed CPU buffer with offset support.
+    /// </summary>
+    /// <typeparam name="TSource">Type of elements to copy.</typeparam>
+    /// <param name="source">Source data to copy from.</param>
+    /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Completed task when copy finishes.</returns>
+    public virtual ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long destinationOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
+    {
+        if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
+        {
+            var span = cpuBuffer.GetData().AsSpan()[(int)destinationOffset..];
+            MemoryMarshal.AsBytes(source.Span).CopyTo(span);
+        }
+        return ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Copies data from this typed CPU buffer to destination memory with offset support.
+    /// </summary>
+    /// <typeparam name="TDest">Type of elements to copy.</typeparam>
+    /// <param name="destination">Destination memory to copy to.</param>
+    /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Completed task when copy finishes.</returns>
+    public virtual ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long sourceOffset, CancellationToken cancellationToken = default) where TDest : unmanaged
+    {
+        if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
+        {
+            var span = cpuBuffer.GetData().AsSpan()[(int)sourceOffset..];
+            var destBytes = MemoryMarshal.AsBytes(destination.Span);
+            span.Slice(0, Math.Min(span.Length, destBytes.Length)).CopyTo(destBytes);
+        }
+        return ValueTask.CompletedTask;
+    }
+
     public void Dispose() => _underlyingBuffer.Dispose();
     public ValueTask DisposeAsync() => _underlyingBuffer.DisposeAsync();
 }
@@ -459,9 +511,18 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
         _length = length;
         
         if (offset < 0 || offset >= parent.Length)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(offset));
+        }
+
+
         if (length < 0 || offset + length > parent.Length)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(length));
+        }
+
     }
     
     public int Length => _length;
@@ -481,27 +542,19 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
     public DeviceMemory GetDeviceMemory() => DeviceMemory.Invalid;
     
     public bool IsDirty => _parent.IsDirty;
-    
-    public MappedMemory<T> Map(MapMode mode)
-    {
-        throw new NotSupportedException("CPU buffers do not require mapping");
-    }
-    
-    public MappedMemory<T> MapRange(int offset, int length, MapMode mode)
-    {
-        throw new NotSupportedException("CPU buffers do not require mapping");
-    }
-    
-    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("CPU buffers do not require mapping");
-    }
-    
-    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
-    {
-        return destination.CopyFromAsync(AsMemory(), cancellationToken);
-    }
-    
+
+
+    public MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException("CPU buffers do not require mapping");
+
+
+    public MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotSupportedException("CPU buffers do not require mapping");
+
+
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException("CPU buffers do not require mapping");
+
+    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => destination.CopyFromAsync(AsMemory(), cancellationToken);
+
+
     public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
     {
         var slice = AsMemory().Slice(sourceOffset, length);
@@ -519,17 +572,14 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
         AsSpan().Slice(offset, length).Fill(value);
         return ValueTask.CompletedTask;
     }
-    
-    public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
-    {
-        return new CpuMemoryBufferView<T>(_parent, _offset + offset, length);
-    }
-    
-    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
-    {
-        throw new NotSupportedException("Type conversion not supported for CPU buffer views");
-    }
-    
+
+
+    public IUnifiedMemoryBuffer<T> Slice(int offset, int length) => new CpuMemoryBufferView<T>(_parent, _offset + offset, length);
+
+
+    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged => throw new NotSupportedException("Type conversion not supported for CPU buffer views");
+
+
     public void EnsureOnHost() { }
     public void EnsureOnDevice() { }
     
@@ -563,8 +613,12 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
         CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         if (typeof(TSource) != typeof(T))
+        {
+
             throw new ArgumentException($"Type mismatch: {typeof(TSource)} != {typeof(T)}");
-            
+        }
+
+
         var typedSource = MemoryMarshal.Cast<TSource, T>(source.Span);
         typedSource.CopyTo(AsSpan().Slice((int)offset));
         return ValueTask.CompletedTask;
@@ -574,13 +628,63 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
         CancellationToken cancellationToken = default) where TDest : unmanaged
     {
         if (typeof(TDest) != typeof(T))
+        {
+
             throw new ArgumentException($"Type mismatch: {typeof(TDest)} != {typeof(T)}");
-            
+        }
+
+
         var typedDest = MemoryMarshal.Cast<TDest, T>(destination.Span);
         AsSpan().Slice((int)offset, typedDest.Length).CopyTo(typedDest);
         return ValueTask.CompletedTask;
     }
     
+    /// <summary>
+    /// Copies data from source memory to this CPU buffer view with offset support.
+    /// </summary>
+    /// <typeparam name="TSource">Type of elements to copy.</typeparam>
+    /// <param name="source">Source data to copy from.</param>
+    /// <param name="destinationOffset">Offset into this view in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Completed task when copy finishes.</returns>
+    public virtual ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long destinationOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
+    {
+        if (typeof(TSource) != typeof(T))
+        {
+
+            throw new ArgumentException($"Type mismatch: {typeof(TSource)} != {typeof(T)}");
+        }
+
+
+        var typedSource = MemoryMarshal.Cast<TSource, T>(source.Span);
+        var targetOffset = _offset + (int)(destinationOffset / Unsafe.SizeOf<T>());
+        typedSource.CopyTo(_parent.AsSpan().Slice(targetOffset));
+        return ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Copies data from this CPU buffer view to destination memory with offset support.
+    /// </summary>
+    /// <typeparam name="TDest">Type of elements to copy.</typeparam>
+    /// <param name="destination">Destination memory to copy to.</param>
+    /// <param name="sourceOffset">Offset into this view in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>Completed task when copy finishes.</returns>
+    public virtual ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long sourceOffset, CancellationToken cancellationToken = default) where TDest : unmanaged
+    {
+        if (typeof(TDest) != typeof(T))
+        {
+
+            throw new ArgumentException($"Type mismatch: {typeof(TDest)} != {typeof(T)}");
+        }
+
+
+        var typedDest = MemoryMarshal.Cast<TDest, T>(destination.Span);
+        var sourceOffsetElements = _offset + (int)(sourceOffset / Unsafe.SizeOf<T>());
+        _parent.AsSpan().Slice(sourceOffsetElements, typedDest.Length).CopyTo(typedDest);
+        return ValueTask.CompletedTask;
+    }
+
     public void Dispose() { /* Views don't own memory */ }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

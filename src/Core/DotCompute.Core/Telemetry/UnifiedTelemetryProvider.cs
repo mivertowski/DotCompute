@@ -36,24 +36,24 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
     {
         // TODO: Implement histogram recording
     }
-    
-    public Activity? StartActivity(string name, ActivityKind kind = ActivityKind.Internal)
-    {
+
+
+    public Activity? StartActivity(string name, ActivityKind kind = ActivityKind.Internal) =>
         // TODO: Implement activity tracking
-        return null;
-    }
-    
+        null;
+
+
     public void RecordEvent(string name, IDictionary<string, object?>? attributes = null)
     {
         // TODO: Implement event recording
     }
-    
-    public IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null)
-    {
+
+
+    public IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null) =>
         // TODO: Implement timer
-        return new OperationTimer(operationName, tags);
-    }
-    
+        new OperationTimer(operationName, tags);
+
+
     public void RecordMemoryAllocation(long bytes, string? allocationType = null)
     {
         // TODO: Implement memory allocation tracking
@@ -78,12 +78,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
     {
         // TODO: Implement memory transfer tracking
     }
-    
-    public Meter GetMeter(string name, string? version = null)
-    {
-        return new Meter(name, version);
-    }
-    
+
+
+    public Meter GetMeter(string name, string? version = null) => new Meter(name, version);
+
+
     public void Dispose()
     {
         if (!_disposed)
@@ -111,19 +110,15 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             _tags?.Add(key, value);
             return this;
         }
-        
-        public IOperationTimer MarkFailed(Exception? exception = null)
-        {
+
+
+        public IOperationTimer MarkFailed(Exception? exception = null) =>
             // TODO: Mark operation as failed
-            return this;
-        }
-        
-        public void Stop()
-        {
-            _stopwatch.Stop();
-            // TODO: Record the duration
-        }
-        
+            this;
+
+        public void Stop() => _stopwatch.Stop();// TODO: Record the duration
+
+
         public void Dispose()
         {
             if (_stopwatch.IsRunning)

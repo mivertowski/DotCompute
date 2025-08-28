@@ -18,16 +18,15 @@ namespace DotCompute.Generators.Utils;
 public static class CodeFormatter
 {
     private static CodeStyle _defaultStyle = new();
-    
+
+
     /// <summary>
     /// Sets the default code style for formatting operations.
     /// </summary>
     /// <param name="style">The code style to use as default.</param>
-    public static void SetDefaultStyle(CodeStyle style)
-    {
-        _defaultStyle = style ?? throw new ArgumentNullException(nameof(style));
-    }
-    
+    public static void SetDefaultStyle(CodeStyle style) => _defaultStyle = style ?? throw new ArgumentNullException(nameof(style));
+
+
     /// <summary>
     /// Formats a block of code with proper indentation.
     /// </summary>
@@ -70,8 +69,12 @@ public static class CodeFormatter
         style ??= _defaultStyle;
         
         if (level <= 0)
+        {
+
             return string.Empty;
-        
+        }
+
+
         var singleIndent = style.IndentationStyle == IndentationStyle.Tabs
             ? "\t"
             : new string(' ', style.IndentSize);
@@ -103,8 +106,10 @@ public static class CodeFormatter
         sb.Append(accessModifier);
         
         if (isStatic)
+        {
             sb.Append(" static");
-        
+        }
+
         sb.Append(' ');
         sb.Append(returnType);
         sb.Append(' ');
@@ -121,7 +126,10 @@ public static class CodeFormatter
                 sb.Append(GetIndentation(1, style));
                 sb.Append(paramArray[i].Trim());
                 if (i < paramArray.Length - 1)
+                {
                     sb.Append(',');
+                }
+
                 sb.AppendLine();
             }
         }
@@ -198,8 +206,12 @@ public static class CodeFormatter
         style ??= _defaultStyle;
         
         if (line.Length <= style.MaxLineLength)
+        {
+
             return line;
-        
+        }
+
+
         var sb = new StringBuilder();
         var currentLine = new StringBuilder();
         var indent = GetIndentation(indentLevel, style);
@@ -216,14 +228,20 @@ public static class CodeFormatter
             }
             
             if (currentLine.Length > 0 && !currentLine.ToString().EndsWith(" "))
+            {
                 currentLine.Append(' ');
-            
+            }
+
+
             currentLine.Append(word);
         }
         
         if (currentLine.Length > 0)
+        {
             sb.Append(currentLine);
-        
+        }
+
+
         return sb.ToString();
     }
     
@@ -240,11 +258,18 @@ public static class CodeFormatter
         style ??= _defaultStyle;
         
         if (!style.Comments.IncludeMethodComments && isXmlDoc)
+        {
             return string.Empty;
-        
+        }
+
+
         if (!style.Comments.IncludeInlineComments && !isXmlDoc)
+        {
+
             return string.Empty;
-        
+        }
+
+
         var indent = GetIndentation(indentLevel, style);
         var prefix = isXmlDoc ? "/// " : "// ";
         var lines = comment.Split('\n');
@@ -290,8 +315,12 @@ public static class CodeFormatter
         style ??= _defaultStyle;
         
         if (!style.Comments.IncludeMethodComments)
+        {
+
             return string.Empty;
-        
+        }
+
+
         var sb = new StringBuilder();
         var indent = GetIndentation(indentLevel, style);
         
@@ -408,8 +437,5 @@ public static class CodeFormatter
     /// <param name="code">The code to indent.</param>
     /// <param name="level">The indentation level.</param>
     /// <returns>The indented code.</returns>
-    public static string Indent(string code, int level)
-    {
-        return FormatBlock(code, level);
-    }
+    public static string Indent(string code, int level) => FormatBlock(code, level);
 }

@@ -59,47 +59,33 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
-        {
+        public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default) =>
             // Synchronous free wrapped in ValueTask
-            return ValueTask.CompletedTask;
-        }
+            ValueTask.CompletedTask;
 
         /// <inheritdoc/>
         public IUnifiedMemoryBuffer<T> CreateView<T>(
             IUnifiedMemoryBuffer<T> buffer,
             int offset,
-            int count) where T : unmanaged
-        {
-            throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CreateView not implemented");
-        }
+            int count) where T : unmanaged => throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CreateView not implemented");
 
         /// <inheritdoc/>
         public ValueTask CopyAsync<T>(
             IUnifiedMemoryBuffer<T> source,
             IUnifiedMemoryBuffer<T> destination,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CopyAsync not implemented");
-        }
+            CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CopyAsync not implemented");
 
         /// <inheritdoc/>
         public ValueTask CopyToDeviceAsync<T>(
             ReadOnlyMemory<T> source,
             IUnifiedMemoryBuffer<T> destination,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CopyToDeviceAsync not implemented");
-        }
+            CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CopyToDeviceAsync not implemented");
 
         /// <inheritdoc/>
         public ValueTask CopyFromDeviceAsync<T>(
             IUnifiedMemoryBuffer<T> source,
             Memory<T> destination,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CopyFromDeviceAsync not implemented");
-        }
+            CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CopyFromDeviceAsync not implemented");
 
         /// <inheritdoc/>
         public void Clear()
@@ -108,30 +94,25 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
-        {
+        public ValueTask OptimizeAsync(CancellationToken cancellationToken = default) =>
             // Optimization not implemented
-            return ValueTask.CompletedTask;
-        }
-        
+            ValueTask.CompletedTask;
+
+
         /// <inheritdoc/>
         public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
             ReadOnlyMemory<T> data,
             MemoryOptions options = MemoryOptions.None,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            throw new NotImplementedException("AllocateAndCopyAsync not implemented"); //TODO
-        }
-        
+            CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("AllocateAndCopyAsync not implemented"); //TODO
+
+
         /// <inheritdoc/>
         public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
             long sizeInBytes,
             MemoryOptions options = MemoryOptions.None,
-            CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException("AllocateRawAsync not implemented"); //TODO
-        }
-        
+            CancellationToken cancellationToken = default) => throw new NotImplementedException("AllocateRawAsync not implemented"); //TODO
+
+
         /// <inheritdoc/>
         public ValueTask CopyAsync<T>(
             IUnifiedMemoryBuffer<T> source,
@@ -139,18 +120,15 @@ namespace DotCompute.Backends.CUDA.Memory
             IUnifiedMemoryBuffer<T> destination,
             int destinationOffset,
             int count,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            throw new NotImplementedException("CopyAsync with offsets not implemented"); //TODO
-        }
-        
+            CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("CopyAsync with offsets not implemented"); //TODO
+
+
         /// <inheritdoc/>
-        public void Free(IUnifiedMemoryBuffer buffer)
-        {
+        public void Free(IUnifiedMemoryBuffer buffer) =>
             // Synchronous free
             buffer?.Dispose();
-        }
-        
+
+
         /// <inheritdoc/>
         public IAccelerator Accelerator => throw new NotImplementedException("Accelerator not implemented"); //TODO
 

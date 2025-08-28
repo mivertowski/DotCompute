@@ -49,10 +49,7 @@ namespace DotCompute.Abstractions.Memory
         /// <summary>
         /// Unmaps the memory and releases resources.
         /// </summary>
-        public void Unmap()
-        {
-            Dispose();
-        }
+        public void Unmap() => Dispose();
 
         /// <inheritdoc/>
         public void Dispose()

@@ -18,12 +18,10 @@ namespace DotCompute.Core.Extensions
             this IUnifiedMemoryBuffer<T> buffer,
             T[] data,
             long offset,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
+            CancellationToken cancellationToken = default) where T : unmanaged =>
             // For now, just copy to the buffer 
             // TODO: handle offset properly
-            return buffer.CopyFromAsync(data.AsMemory(), cancellationToken);
-        }
+            buffer.CopyFromAsync(data.AsMemory(), cancellationToken);
 
         /// <summary>
         /// Writes data to the memory buffer from a host memory.
@@ -32,12 +30,10 @@ namespace DotCompute.Core.Extensions
             this IUnifiedMemoryBuffer<T> buffer,
             ReadOnlyMemory<T> data,
             long offset,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
+            CancellationToken cancellationToken = default) where T : unmanaged =>
             // For now, just copy to the buffer 
             // TODO: handle offset properly
-            return buffer.CopyFromAsync(data, cancellationToken);
-        }
+            buffer.CopyFromAsync(data, cancellationToken);
 
         /// <summary>
         /// Reads data from the memory buffer to a host array.
@@ -46,12 +42,10 @@ namespace DotCompute.Core.Extensions
             this IUnifiedMemoryBuffer<T> buffer,
             T[] data,
             long offset,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
+            CancellationToken cancellationToken = default) where T : unmanaged =>
             // For now, just copy from the buffer 
             // TODO: handle offset properly
-            return buffer.CopyToAsync(data.AsMemory(), cancellationToken);
-        }
+            buffer.CopyToAsync(data.AsMemory(), cancellationToken);
 
         /// <summary>
         /// Reads data from the memory buffer to a host memory.
@@ -60,11 +54,9 @@ namespace DotCompute.Core.Extensions
             this IUnifiedMemoryBuffer<T> buffer,
             Memory<T> data,
             long offset,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
+            CancellationToken cancellationToken = default) where T : unmanaged =>
             // For now, just copy from the buffer 
             // TODO: handle offset properly
-            return buffer.CopyToAsync(data, cancellationToken);
-        }
+            buffer.CopyToAsync(data, cancellationToken);
     }
 }
