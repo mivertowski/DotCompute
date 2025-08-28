@@ -67,6 +67,27 @@ namespace DotCompute.Abstractions.Memory
         /// <summary>
         /// Memory should be visible to host.
         /// </summary>
-        HostVisible = 1 << 10
+        HostVisible = 1 << 10,
+
+        /// <summary>
+        /// Memory should be initialized to zero on allocation.
+        /// </summary>
+        InitializeToZero = 1 << 11
+    }
+
+    /// <summary>
+    /// Extension methods for MemoryOptions.
+    /// </summary>
+    public static class MemoryOptionsExtensions
+    {
+        /// <summary>
+        /// Gets a value indicating whether the memory should be initialized to zero.
+        /// </summary>
+        /// <param name="options">The memory options.</param>
+        /// <returns>True if memory should be zero-initialized.</returns>
+        public static bool InitializeToZero(this MemoryOptions options)
+        {
+            return options.HasFlag(MemoryOptions.InitializeToZero) || options.HasFlag(MemoryOptions.ZeroInitialized);
+        }
     }
 }

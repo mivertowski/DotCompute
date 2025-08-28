@@ -8,11 +8,13 @@ using global::System.Runtime.InteropServices;
 using global::System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
+using DotCompute.Backends.CPU.Kernels.Generators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core.Compute;
-using KernelExecutionContext = DotCompute.Abstractions.Kernels.KernelExecutionContext;
+using KernelExecutionContext = DotCompute.Abstractions.Execution.KernelExecutionContext;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Accelerators;
@@ -96,10 +98,18 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         // Convert KernelArguments to KernelExecutionContext for internal processing
         var context = new KernelExecutionContext
         {
-            Name = _definition.Name,
-            WorkDimensions = [1024L], // Default work size - should be configurable
-            Arguments = arguments.Arguments?.ToArray()!
+            KernelName = _definition.Name,
+            WorkDimensions = new Dim3(1024, 1, 1) // Default work size - should be configurable
         };
+        
+        // Map arguments to context parameters
+        if (arguments.Arguments != null)
+        {
+            for (int i = 0; i < arguments.Arguments.Count; i++)
+            {
+                context.SetParameter(i, arguments.Arguments[i]!);
+            }
+        }
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -120,24 +130,15 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
             throw new ArgumentException("Global work size cannot exceed 3 dimensions", nameof(arguments));
         }
 
-        if (context.WorkDimensions.Any(dim => dim <= 0))
+        if (context.WorkDimensions.X <= 0 || context.WorkDimensions.Y <= 0 || context.WorkDimensions.Z <= 0)
         {
             throw new ArgumentException("All work dimensions must be positive", nameof(arguments));
         }
 
-        // Validate arguments
-        if (context.Arguments == null || context.Arguments.Length == 0)
+        // Validate parameters
+        if (context.Buffers.Count == 0 && context.Scalars.Count == 0)
         {
-            throw new ArgumentException("Kernel requires at least one argument", nameof(arguments));
-        }
-
-        // Validate argument types are supported
-        foreach (var arg in context.Arguments)
-        {
-            if (arg != null && !IsSupportedArgumentType(arg.GetType()))
-            {
-                throw new ArgumentException($"Unsupported argument type: {arg.GetType().Name}", nameof(arguments));
-            }
+            throw new ArgumentException("Kernel requires at least one parameter", nameof(arguments));
         }
 
         // Calculate total work items
@@ -256,7 +257,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     {
         for (var i = startIndex; i < endIndex && !context.CancellationToken.IsCancellationRequested; i++)
         {
-            var workItemId = GetWorkItemId(i, context.KernelContext.WorkDimensions ?? []);
+            var workItemId = GetWorkItemId(i, context.KernelContext.WorkDimensions);
             ExecuteSingleWorkItem(context.KernelContext, workItemId);
         }
     }
@@ -278,9 +279,9 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
             for (var v = 0; v < vectorFactor; v++)
             {
                 var actualIndex = baseIndex + v;
-                if (actualIndex < GetTotalWorkItems(context.KernelContext.WorkDimensions ?? []))
+                if (actualIndex < GetTotalWorkItems(context.KernelContext.WorkDimensions))
                 {
-                    workItemIds[v] = GetWorkItemId(actualIndex, context.KernelContext.WorkDimensions ?? []);
+                    workItemIds[v] = GetWorkItemId(actualIndex, context.KernelContext.WorkDimensions);
                 }
             }
 
@@ -549,43 +550,41 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         }
     }
 
-    private static long[] GetWorkItemId(long linearIndex, IReadOnlyList<long> globalWorkSize)
+    private static long[] GetWorkItemId(long linearIndex, Dim3 globalWorkSize)
     {
-        var dimensions = globalWorkSize.Count;
-        var workItemId = new long[dimensions];
+        var workItemId = new long[3];
+        var workSizes = new[] { globalWorkSize.X, globalWorkSize.Y, globalWorkSize.Z };
 
-        for (var i = dimensions - 1; i >= 0; i--)
+        for (var i = 2; i >= 0; i--)
         {
-            workItemId[i] = linearIndex % globalWorkSize[i];
-            linearIndex /= globalWorkSize[i];
+            workItemId[i] = linearIndex % workSizes[i];
+            linearIndex /= workSizes[i];
         }
 
         return workItemId;
     }
 
-    private static long GetTotalWorkItems(IReadOnlyList<long> globalWorkSize)
+    private static long GetTotalWorkItems(Dim3 globalWorkSize)
     {
-        long total = 1;
-        foreach (var size in globalWorkSize)
-        {
-            total *= size;
-        }
-        return total;
+        return globalWorkSize.X * globalWorkSize.Y * globalWorkSize.Z;
     }
 
     private void ExecuteSingleWorkItem(KernelExecutionContext context, long[] workItemId)
     {
+        // Create args array from context for compatibility
+        var args = BuildArgumentsArray(context);
+        
         // If we have a compiled delegate, use it
         if (_compiledDelegate != null)
         {
             try
             {
-                // Prepare arguments for the delegate
-                var argCount = context.Arguments?.Length ?? 0;
+                // Prepare arguments for the delegate from parameters
+                var argCount = args?.Length ?? 0;
                 var delegateArgs = new object[argCount + 1];
-                if (context.Arguments != null)
+                if (args != null)
                 {
-                    Array.Copy(context.Arguments, delegateArgs, argCount);
+                    Array.Copy(args, delegateArgs, argCount);
                 }
                 delegateArgs[^1] = workItemId;
 
@@ -605,11 +604,24 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
 
     private void ExecuteSingleWorkItemDefault(KernelExecutionContext context, long[] workItemId)
     {
-        // Extract arguments based on their types
-        var args = context.Arguments;
-        if (args == null || args.Length == 0)
+        // Create args array from context parameters for compatibility
+        var maxIndex = Math.Max(
+            context.Buffers.Keys.DefaultIfEmpty(-1).Max(),
+            context.Scalars.Keys.DefaultIfEmpty(-1).Max());
+        
+        if (maxIndex < 0)
         {
-            return; // No arguments to process
+            return; // No parameters to process
+        }
+        
+        var args = new object[maxIndex + 1];
+        foreach (var (index, buffer) in context.Buffers)
+        {
+            if (index >= 0 && index < args.Length) args[index] = buffer;
+        }
+        foreach (var (index, scalar) in context.Scalars)
+        {
+            if (index >= 0 && index < args.Length) args[index] = scalar;
         }
 
         // This is the fallback execution path when we don't have a compiled delegate
@@ -627,7 +639,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         try
         {
             // Calculate linear index from work item ID for data access
-            var linearIndex = CalculateLinearIndex(workItemId, context.WorkDimensions?.ToArray());
+            var linearIndex = CalculateLinearIndex(workItemId, context.WorkDimensions);
 
             // Execute based on kernel metadata or inferred operation type
             var operationType = InferOperationType(definition, args);
@@ -675,7 +687,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         }
     }
 
-    private static long CalculateLinearIndex(long[] workItemId, long[]? workDimensions)
+    private static long CalculateLinearIndex(long[] workItemId, Dim3 workDimensions)
     {
         if (workItemId.Length == 0)
         {
@@ -683,12 +695,13 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         }
 
         var linearIndex = workItemId[0];
-        if (workDimensions != null && workDimensions.Length > 1)
+        if (workItemId.Length > 1)
         {
-            for (var i = 1; i < Math.Min(workItemId.Length, workDimensions.Length); i++)
-            {
-                linearIndex = linearIndex * workDimensions[i] + workItemId[i];
-            }
+            linearIndex = linearIndex * workDimensions.Y + (workItemId.Length > 1 ? workItemId[1] : 0);
+        }
+        if (workItemId.Length > 2)
+        {
+            linearIndex = linearIndex * workDimensions.Z + workItemId[2];
         }
         return linearIndex;
     }
@@ -1181,15 +1194,15 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         input2 = null;
         output = null;
 
-        if (context.Arguments == null || context.Arguments.Length < 3)
+        if (context.Buffers.Count < 3)
         {
             return false;
         }
 
         // Try to extract buffer arguments (assuming simple vector operation kernel)
-        if (context.Arguments[0] is IUnifiedMemoryBuffer buf1 &&
-            context.Arguments[1] is IUnifiedMemoryBuffer buf2 &&
-            context.Arguments[2] is IUnifiedMemoryBuffer buf3)
+        if (context.Buffers.TryGetValue(0, out var buf1) &&
+            context.Buffers.TryGetValue(1, out var buf2) &&
+            context.Buffers.TryGetValue(2, out var buf3))
         {
             input1 = buf1;
             input2 = buf2;
@@ -1223,33 +1236,59 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     /// </summary>
     public KernelPerformanceMetrics GetPerformanceMetrics()
     {
-        var execCount = Interlocked.Read(ref _executionCount);
-        var totalTime = _totalExecutionTimeMs;
-
-        return new KernelPerformanceMetrics
-        {
-            KernelName = _definition.Name,
-            ExecutionCount = execCount,
-            TotalExecutionTimeMs = totalTime,
-            AverageExecutionTimeMs = execCount > 0 ? totalTime / execCount : 0,
-            VectorizationEnabled = _executionPlan.UseVectorization,
-            VectorWidth = _executionPlan.VectorWidth,
-            InstructionSets = _executionPlan.InstructionSets
-        };
+        // KernelPerformanceMetrics doesn't have these properties anymore
+        // Return a basic instance for now
+        return new KernelPerformanceMetrics();
     }
 
+    private static object[] BuildArgumentsArray(KernelExecutionContext context)
+    {
+        // Convert KernelExecutionContext parameters to args array
+        var maxIndex = Math.Max(
+            context.Buffers.Keys.DefaultIfEmpty(-1).Max(),
+            context.Scalars.Keys.DefaultIfEmpty(-1).Max());
+        
+        if (maxIndex < 0)
+        {
+            return Array.Empty<object>();
+        }
+        
+        var args = new object[maxIndex + 1];
+        foreach (var (index, buffer) in context.Buffers)
+        {
+            if (index >= 0 && index < args.Length) args[index] = buffer;
+        }
+        foreach (var (index, scalar) in context.Scalars)
+        {
+            if (index >= 0 && index < args.Length) args[index] = scalar;
+        }
+        
+        return args;
+    }
+    
     private static KernelArguments ConvertContextToArguments(KernelExecutionContext context)
     {
-        // Convert KernelExecutionContext arguments to KernelArguments
-        // The KernelArguments expects an array of objects
-        if (context.Arguments != null && context.Arguments.Length > 0)
+        // Convert KernelExecutionContext parameters to KernelArguments
+        var maxIndex = Math.Max(
+            context.Buffers.Keys.DefaultIfEmpty(-1).Max(),
+            context.Scalars.Keys.DefaultIfEmpty(-1).Max());
+        
+        if (maxIndex < 0)
         {
-            // Arguments is already an object[]
-            return new KernelArguments(context.Arguments);
+            return [];
         }
-
-        // Return empty arguments if none provided
-        return [];
+        
+        var args = new object[maxIndex + 1];
+        foreach (var (index, buffer) in context.Buffers)
+        {
+            if (index >= 0 && index < args.Length) args[index] = buffer;
+        }
+        foreach (var (index, scalar) in context.Scalars)
+        {
+            if (index >= 0 && index < args.Length) args[index] = scalar;
+        }
+        
+        return new KernelArguments(args);
     }
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed != 0, this);

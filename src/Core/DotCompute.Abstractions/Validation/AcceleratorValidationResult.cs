@@ -353,6 +353,7 @@ public sealed class AcceleratorValidationException : Exception
     }
     public AcceleratorValidationException()
     {
+        ValidationResult = AcceleratorValidationResult.Failure("Unknown accelerator validation error");
     }
 
 }

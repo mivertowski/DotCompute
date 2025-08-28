@@ -116,7 +116,7 @@ internal sealed class Avx2KernelExecutor(KernelDefinition definition, KernelExec
         }
 
         // Process remaining elements with optimized fallback to smaller SIMD operations
-        ProcessRemainder(input1Ref, input2Ref, outputRef, (int)(vectorCount * vectorSize), remainder, operation);
+        ProcessRemainder(ref input1Ref, ref input2Ref, ref outputRef, (int)(vectorCount * vectorSize), remainder, operation);
     }
 
     /// <summary>

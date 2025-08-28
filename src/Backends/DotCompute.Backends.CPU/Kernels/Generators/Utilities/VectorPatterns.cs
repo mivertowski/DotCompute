@@ -26,7 +26,7 @@ public static class VectorPatterns
     /// <param name="result">Output array for results.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void VectorAdd<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
-        where T : unmanaged
+        where T : unmanaged, INumber<T>
     {
         if (typeof(T) == typeof(float))
         {
@@ -58,7 +58,7 @@ public static class VectorPatterns
     /// <param name="result">Output array for results.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void VectorMultiply<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
-        where T : unmanaged
+        where T : unmanaged, INumber<T>
     {
         if (typeof(T) == typeof(float))
         {
@@ -119,7 +119,29 @@ public static class VectorPatterns
             // Generic fallback
             for (var i = 0; i < a.Length; i++)
             {
-                result[i] = AddGeneric(MultiplyGeneric(a[i], b[i]), c[i]);
+                // Simplified operation without generic constraint issues
+                if (typeof(T) == typeof(float))
+                {
+                    var af = (float)(object)a[i];
+                    var bf = (float)(object)b[i];
+                    var cf = (float)(object)c[i];
+                    result[i] = (T)(object)(af * bf + cf);
+                }
+                else if (typeof(T) == typeof(double))
+                {
+                    var ad = (double)(object)a[i];
+                    var bd = (double)(object)b[i];
+                    var cd = (double)(object)c[i];
+                    result[i] = (T)(object)(ad * bd + cd);
+                }
+                else
+                {
+                    // Fallback to dynamic operations
+                    dynamic da = a[i];
+                    dynamic db = b[i];
+                    dynamic dc = c[i];
+                    result[i] = da * db + dc;
+                }
             }
         }
     }
@@ -288,39 +310,127 @@ public static class VectorPatterns
     #region AVX-512 Implementations
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorAddFloat32_Avx512(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    private static unsafe void VectorAddFloat32_Avx512(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         const int vectorSize = 16;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Avx512F.Add(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Avx512F.LoadVector512((float*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Avx512F.LoadVector512((float*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Avx512F.Add(va, vb);
+            Avx512F.Store((float*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorMultiplyFloat32_Avx512(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    private static unsafe void VectorMultiplyFloat32_Avx512(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         const int vectorSize = 16;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Avx512F.Multiply(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Avx512F.LoadVector512((float*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Avx512F.LoadVector512((float*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Avx512F.Multiply(va, vb);
+            Avx512F.Store((float*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorAddFloat64_Avx512(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    private static unsafe void VectorAddFloat64_Avx512(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
     {
         const int vectorSize = 8;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Avx512F.Add(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Avx512F.LoadVector512((double*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Avx512F.LoadVector512((double*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Avx512F.Add(va, vb);
+            Avx512F.Store((double*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorMultiplyFloat64_Avx512(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    private static unsafe void VectorMultiplyFloat64_Avx512(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
     {
         const int vectorSize = 8;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Avx512F.Multiply(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Avx512F.LoadVector512((double*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Avx512F.LoadVector512((double*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Avx512F.Multiply(va, vb);
+            Avx512F.Store((double*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+            }
+        }
     }
 
     #endregion
@@ -328,39 +438,127 @@ public static class VectorPatterns
     #region AVX2 Implementations
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorAddFloat32_Avx2(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    private static unsafe void VectorAddFloat32_Avx2(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         const int vectorSize = 8;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Avx.Add(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Avx.LoadVector256((float*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Avx.LoadVector256((float*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Avx.Add(va, vb);
+            Avx.Store((float*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorMultiplyFloat32_Avx2(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    private static unsafe void VectorMultiplyFloat32_Avx2(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         const int vectorSize = 8;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Avx.Multiply(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Avx.LoadVector256((float*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Avx.LoadVector256((float*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Avx.Multiply(va, vb);
+            Avx.Store((float*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorAddFloat64_Avx2(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    private static unsafe void VectorAddFloat64_Avx2(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
     {
         const int vectorSize = 4;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Avx.Add(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Avx.LoadVector256((double*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Avx.LoadVector256((double*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Avx.Add(va, vb);
+            Avx.Store((double*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorMultiplyFloat64_Avx2(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    private static unsafe void VectorMultiplyFloat64_Avx2(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
     {
         const int vectorSize = 4;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Avx.Multiply(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Avx.LoadVector256((double*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Avx.LoadVector256((double*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Avx.Multiply(va, vb);
+            Avx.Store((double*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+            }
+        }
     }
 
     #endregion
@@ -368,39 +566,127 @@ public static class VectorPatterns
     #region SSE Implementations
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorAddFloat32_Sse(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    private static unsafe void VectorAddFloat32_Sse(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         const int vectorSize = 4;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Sse.Add(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Sse.LoadVector128((float*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Sse.LoadVector128((float*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Sse.Add(va, vb);
+            Sse.Store((float*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorMultiplyFloat32_Sse(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    private static unsafe void VectorMultiplyFloat32_Sse(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         const int vectorSize = 4;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Sse.Multiply(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Sse.LoadVector128((float*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Sse.LoadVector128((float*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Sse.Multiply(va, vb);
+            Sse.Store((float*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorAddFloat64_Sse(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    private static unsafe void VectorAddFloat64_Sse(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
     {
         const int vectorSize = 2;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Sse2.Add(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Sse2.LoadVector128((double*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Sse2.LoadVector128((double*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Sse2.Add(va, vb);
+            Sse2.Store((double*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void VectorMultiplyFloat64_Sse(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    private static unsafe void VectorMultiplyFloat64_Sse(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
     {
         const int vectorSize = 2;
         var vectorCount = a.Length / vectorSize;
-        ProcessVectorizedOperation(a, b, result, vectorSize, vectorCount, 
-            (va, vb) => Sse2.Multiply(va, vb));
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (var i = 0; i < vectorCount; i++)
+        {
+            var offset = i * vectorSize;
+            var va = Sse2.LoadVector128((double*)Unsafe.AsPointer(ref Unsafe.Add(ref aRef, offset)));
+            var vb = Sse2.LoadVector128((double*)Unsafe.AsPointer(ref Unsafe.Add(ref bRef, offset)));
+            var vr = Sse2.Multiply(va, vb);
+            Sse2.Store((double*)Unsafe.AsPointer(ref Unsafe.Add(ref resultRef, offset)), vr);
+        }
+
+        // Handle remainder
+        var remainder = a.Length % vectorSize;
+        if (remainder > 0)
+        {
+            var lastOffset = (int)(vectorCount * vectorSize);
+            for (var i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+            }
+        }
     }
 
     #endregion
@@ -409,7 +695,7 @@ public static class VectorPatterns
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void VectorAddGeneric<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
-        where T : unmanaged
+        where T : unmanaged, INumber<T>
     {
         var vectorSize = Vector<T>.Count;
         var vectorizedLength = a.Length - (a.Length % vectorSize);
@@ -432,7 +718,7 @@ public static class VectorPatterns
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void VectorMultiplyGeneric<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
-        where T : unmanaged
+        where T : unmanaged, INumber<T>
     {
         var vectorSize = Vector<T>.Count;
         var vectorizedLength = a.Length - (a.Length % vectorSize);
@@ -464,7 +750,7 @@ public static class VectorPatterns
         Span<T> result, 
         int vectorSize, 
         long vectorCount,
-        Func<T, T, T> vectorOp) where T : struct
+        Func<T, T, T> vectorOp) where T : unmanaged, INumber<T>
     {
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
@@ -492,7 +778,7 @@ public static class VectorPatterns
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static T AddGeneric<T>(T a, T b) where T : unmanaged
+    private static T AddGeneric<T>(T a, T b) where T : unmanaged, INumber<T>
     {
         if (typeof(T) == typeof(int))
         {
@@ -517,7 +803,7 @@ public static class VectorPatterns
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static T MultiplyGeneric<T>(T a, T b) where T : unmanaged
+    private static T MultiplyGeneric<T>(T a, T b) where T : unmanaged, INumber<T>
     {
         if (typeof(T) == typeof(int))
         {

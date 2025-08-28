@@ -70,6 +70,89 @@ public class KernelExecutionContext
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
     /// <summary>
+    /// Gets or sets the work dimensions for kernel execution.
+    /// </summary>
+    public Dim3 WorkDimensions { get; set; } = new(1, 1, 1);
+
+    /// <summary>
+    /// Gets or sets the local work size for kernel execution.
+    /// </summary>
+    public Dim3 LocalWorkSize { get; set; } = new(1, 1, 1);
+
+    /// <summary>
+    /// Gets or sets the kernel name (alias for KernelName).
+    /// </summary>
+    public string? Name 
+    {
+        get => KernelName;
+        set => KernelName = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the memory buffers for this execution context.
+    /// </summary>
+    public Dictionary<int, IUnifiedMemoryBuffer<byte>> Buffers { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the scalar parameters for this execution context.
+    /// </summary>
+    public Dictionary<int, object> Scalars { get; set; } = new();
+
+    /// <summary>
+    /// Sets a parameter value for the kernel execution.
+    /// </summary>
+    /// <param name="index">The parameter index.</param>
+    /// <param name="value">The parameter value.</param>
+    public void SetParameter(int index, object value)
+    {
+        Parameters[index.ToString()] = value;
+        if (value is IUnifiedMemoryBuffer<byte> buffer)
+        {
+            Buffers[index] = buffer;
+        }
+        else
+        {
+            Scalars[index] = value;
+        }
+    }
+
+    /// <summary>
+    /// Gets a buffer parameter by index.
+    /// </summary>
+    /// <param name="index">The buffer index.</param>
+    /// <returns>The memory buffer.</returns>
+    public IUnifiedMemoryBuffer<byte>? GetBuffer(int index)
+    {
+        return Buffers.TryGetValue(index, out var buffer) ? buffer : null;
+    }
+
+    /// <summary>
+    /// Gets a buffer parameter by index (static access).
+    /// </summary>
+    /// <param name="context">The execution context.</param>
+    /// <param name="index">The buffer index.</param>
+    /// <returns>The memory buffer.</returns>
+    public static IUnifiedMemoryBuffer<byte>? GetBuffer(KernelExecutionContext context, int index)
+    {
+        return context.GetBuffer(index);
+    }
+
+    /// <summary>
+    /// Gets a scalar parameter by index.
+    /// </summary>
+    /// <typeparam name="T">The scalar type.</typeparam>
+    /// <param name="index">The parameter index.</param>
+    /// <returns>The scalar value.</returns>
+    public T? GetScalar<T>(int index)
+    {
+        if (Scalars.TryGetValue(index, out var value) && value is T scalar)
+        {
+            return scalar;
+        }
+        return default;
+    }
+
+    /// <summary>
     /// Creates a default execution context.
     /// </summary>
     /// <returns>A new instance of <see cref="KernelExecutionContext"/> with default settings.</returns>

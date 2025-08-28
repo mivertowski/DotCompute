@@ -97,4 +97,19 @@ public sealed class MemoryStatistics
     /// Gets the peak memory usage in bytes across all allocations.
     /// </summary>
     public long PeakMemoryUsageBytes { get; init; }
+    
+    /// <summary>
+    /// Gets the total amount of memory freed in bytes.
+    /// </summary>
+    public long TotalFreed { get; init; }
+    
+    /// <summary>
+    /// Gets the current number of active buffers.
+    /// </summary>
+    public long ActiveBuffers { get; init; }
+    
+    /// <summary>
+    /// Gets the peak memory usage in bytes.
+    /// </summary>
+    public long PeakMemoryUsage { get; init; }
 }

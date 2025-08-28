@@ -295,6 +295,7 @@ public sealed class ValidationException : Exception
     }
     public ValidationException()
     {
+        UnifiedValidationResult = UnifiedValidationResult.Failure("Unknown validation error");
     }
 
 }

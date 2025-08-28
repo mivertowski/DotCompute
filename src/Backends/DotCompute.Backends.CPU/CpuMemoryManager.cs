@@ -131,8 +131,21 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     public override long TotalAvailableMemory => GC.GetTotalMemory(false);
 
     /// <inheritdoc/>
-    public override IAccelerator Accelerator => _accelerator ??= new CpuAccelerator();
+    public override IAccelerator Accelerator => _accelerator ??= CreateDefaultAccelerator();
     private IAccelerator? _accelerator;
+
+    private IAccelerator CreateDefaultAccelerator()
+    {
+        // Create default options
+        var acceleratorOptions = Microsoft.Extensions.Options.Options.Create(new CpuAcceleratorOptions());
+        var threadPoolOptions = Microsoft.Extensions.Options.Options.Create(new Threading.CpuThreadPoolOptions());
+        
+        // Use the same logger but cast to required type - create compatible logger
+        var loggerFactory = Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
+        var acceleratorLogger = loggerFactory.CreateLogger<CpuAccelerator>();
+        
+        return new CpuAccelerator(acceleratorOptions, threadPoolOptions, acceleratorLogger);
+    }
 
     /// <inheritdoc/>
     public override MemoryStatistics Statistics => new()
@@ -172,26 +185,26 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     /// <inheritdoc/>
     public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken) =>
         // Simple CPU memory copy - both buffers are in CPU memory
-        ValueTask.CompletedTask; // Implementation placeholder
+        ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken) =>
         // Simple CPU memory copy with offsets
-        ValueTask.CompletedTask; // Implementation placeholder
+        ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken) =>
         // Copy from CPU buffer to host memory - essentially a no-op since both are host memory
-        ValueTask.CompletedTask; // Implementation placeholder
+        ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken) =>
         // Copy from host memory to CPU buffer - essentially a no-op since both are host memory
-        ValueTask.CompletedTask; // Implementation placeholder
+        ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) =>
-        // Create typed view of the buffer
+        // Create typed view of the buffer TODO
         throw new NotImplementedException("Typed view creation not yet implemented");
 
     /// <inheritdoc/>
@@ -236,9 +249,21 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
     public BufferState State => _parent.State;
 
     // Interface implementations
-    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        // Convert to byte memory and call parent
+        var byteSource = System.Runtime.InteropServices.MemoryMarshal.AsBytes(source.Span).ToArray();
+        return _parent.CopyFromAsync(byteSource.AsMemory(), cancellationToken);
+    }
 
-    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        // Create a temporary byte buffer and copy
+        var byteDestination = new byte[destination.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()];
+        var task = _parent.CopyToAsync(byteDestination.AsMemory(), cancellationToken);
+        System.Runtime.InteropServices.MemoryMarshal.AsBytes(destination.Span).CopyTo(byteDestination);
+        return task;
+    }
 
     // Legacy support methods
 

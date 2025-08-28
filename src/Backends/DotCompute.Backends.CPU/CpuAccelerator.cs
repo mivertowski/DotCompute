@@ -11,6 +11,8 @@ using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Optimized = DotCompute.Backends.CPU.Kernels.Optimized;
+using LocalKernelType = DotCompute.Backends.CPU.Kernels.Types.KernelType;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
 
@@ -33,13 +35,21 @@ public sealed class CpuAccelerator : BaseAccelerator
         : base(
             BuildAcceleratorInfo(),
             AcceleratorType.CPU,
-            new CpuMemoryManager(),
+            CreateCpuMemoryManager(logger),
             new AcceleratorContext(IntPtr.Zero, 0),
             logger)
     {
         _options = options.Value;
         _logger = logger;
         _threadPool = new CpuThreadPool(threadPoolOptions);
+    }
+
+    private static CpuMemoryManager CreateCpuMemoryManager(ILogger logger)
+    {
+        // Create a simple logger factory and get appropriate logger
+        var loggerFactory = new LoggerFactory();
+        var memoryLogger = loggerFactory.CreateLogger<CpuMemoryManager>();
+        return new CpuMemoryManager(memoryLogger);
     }
 
     /// <inheritdoc/>
@@ -104,14 +114,15 @@ public sealed class CpuAccelerator : BaseAccelerator
             var kernelInfo = kernelParser.ParseKernel(sourceCode, definition.EntryPoint ?? "main");
 
             // Create optimized kernel based on type
-            return kernelInfo.Type switch
+            var localType = (LocalKernelType)kernelInfo.Type;
+            return localType switch
             {
-                KernelType.VectorAdd => new Optimized.OptimizedVectorAddKernel(kernelInfo.Name, options, _logger),
-                KernelType.VectorScale => new Optimized.OptimizedVectorScaleKernel(kernelInfo.Name, options, _logger),
-                KernelType.MatrixMultiply => new Optimized.OptimizedMatrixMultiplyKernel(kernelInfo.Name, options, _logger),
-                KernelType.Reduction => new Optimized.OptimizedReductionKernel(kernelInfo.Name, options, _logger),
-                KernelType.MemoryIntensive => new Optimized.OptimizedMemoryKernel(kernelInfo.Name, options, _logger),
-                KernelType.ComputeIntensive => new Optimized.OptimizedComputeKernel(kernelInfo.Name, options, _logger),
+                LocalKernelType.VectorAdd => new Optimized.OptimizedVectorAddKernel(kernelInfo.Name, options, _logger),
+                LocalKernelType.VectorScale => new Optimized.OptimizedVectorScaleKernel(kernelInfo.Name, options, _logger),
+                LocalKernelType.MatrixMultiply => new Optimized.OptimizedMatrixMultiplyKernel(kernelInfo.Name, options, _logger),
+                LocalKernelType.Reduction => new Optimized.OptimizedReductionKernel(kernelInfo.Name, options, _logger),
+                LocalKernelType.MemoryIntensive => new Optimized.OptimizedMemoryKernel(kernelInfo.Name, options, _logger),
+                LocalKernelType.ComputeIntensive => new Optimized.OptimizedComputeKernel(kernelInfo.Name, options, _logger),
                 _ => new Optimized.GenericOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger)
             };
         }
