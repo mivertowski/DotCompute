@@ -15,7 +15,7 @@ namespace DotCompute.Backends.CUDA.Native
     /// <summary>
     /// P/Invoke wrapper for CUDA runtime API
     /// </summary>
-    public static class CudaRuntime
+    public static partial class CudaRuntime
     {
         private const string CUDA_LIBRARY = "cudart";
         private const string CUDA_DRIVER_LIBRARY = "cuda";
@@ -33,9 +33,9 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static partial CudaError cudaGetDevice(out int device);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaGetDeviceProperties(ref CudaDeviceProperties prop, int device);
+        internal static extern CudaError cudaGetDeviceProperties(ref CudaDeviceProperties prop, int device);
 
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]

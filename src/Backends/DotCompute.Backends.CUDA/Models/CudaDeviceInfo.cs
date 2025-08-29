@@ -43,6 +43,8 @@ namespace DotCompute.Backends.CUDA.Models
             PciDomainId = device.PciDomainId;
             PciBusId = device.PciBusId;
             PciDeviceId = device.PciDeviceId;
+            SupportsManagedMemory = device.SupportsManagedMemory;
+            MultiProcessorCount = device.StreamingMultiprocessorCount;
         }
 
         /// <summary>
@@ -220,6 +222,16 @@ namespace DotCompute.Backends.CUDA.Models
         /// Gets or sets whether the device supports pageable memory access.
         /// </summary>
         public bool PageableMemoryAccess { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the device supports managed memory (alias for compatibility).
+        /// </summary>
+        public bool SupportsManagedMemory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of multiprocessors (alternative naming for compatibility).
+        /// </summary>
+        public int MultiProcessorCount { get; set; }
 
         /// <summary>
         /// Gets the PCI bus information as a formatted string.

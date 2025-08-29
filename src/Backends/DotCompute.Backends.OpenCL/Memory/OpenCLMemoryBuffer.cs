@@ -120,11 +120,11 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
     {
         var hostData = new T[Length];
-        if (mode == MapMode.ReadWrite || mode == MapMode.ReadOnly)
+        if (mode == MapMode.ReadWrite || mode == MapMode.Read)
         {
             CopyToHost(hostData);
         }
-        return new MappedMemory<T>(hostData, mode);
+        return new MappedMemory<T>(hostData);
     }
     
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
@@ -134,7 +134,7 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
             
         var hostData = new T[length];
         CopyToHost(hostData, (nuint)offset, (nuint)length);
-        return new MappedMemory<T>(hostData, mode);
+        return new MappedMemory<T>(hostData);
     }
     
     public async ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
@@ -185,12 +185,14 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
                 _context, 
                 (nuint)newCount, 
                 MemoryFlags.ReadWrite,
-                _logger.CreateLogger<OpenCLMemoryBuffer<TNew>>());
+                LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(_logger))).CreateLogger<OpenCLMemoryBuffer<TNew>>());
                 
             // Copy raw bytes
             var sourceBytes = new byte[SizeInBytes];
-            CopyToHost(System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(sourceBytes));
-            newBuffer.CopyFromHost(System.Runtime.InteropServices.MemoryMarshal.Cast<byte, TNew>(sourceBytes));
+            var sourceTSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(sourceBytes.AsSpan());
+            CopyToHost(sourceTSpan);
+            var sourceNewSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, TNew>(sourceBytes.AsSpan());
+            newBuffer.CopyFromHost(sourceNewSpan);
             
             return newBuffer;
         }
@@ -246,8 +248,11 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         if (typeof(TElement) != typeof(T))
             throw new InvalidOperationException("Element type mismatch");
         
-        var typedSource = System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(source.Span);
-        CopyFromHost(typedSource, (nuint)(offset / sizeof(T)));
+        unsafe
+        {
+            var typedSource = System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(source.Span);
+            CopyFromHost(typedSource, (nuint)(offset / sizeof(T)));
+        }
         return ValueTask.CompletedTask;
     }
     
@@ -256,8 +261,11 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         if (typeof(TElement) != typeof(T))
             throw new InvalidOperationException("Element type mismatch");
         
-        var typedDestination = System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(destination.Span);
-        CopyToHost(typedDestination, (nuint)(offset / sizeof(T)));
+        unsafe
+        {
+            var typedDestination = System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(destination.Span);
+            CopyToHost(typedDestination, (nuint)(offset / sizeof(T)));
+        }
         return ValueTask.CompletedTask;
     }
 
@@ -442,12 +450,6 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     {
         ThrowIfDisposed();
 
-        if (sourceBuffer is OpenCLMemoryBuffer<T> openclBuffer)
-        {
-            // Direct OpenCL buffer to buffer copy could be implemented here
-            // For now, use host memory as intermediate
-        }
-
         // Fallback: copy through host memory
         var copyCount = count ?? ((nuint)sourceBuffer.Length - sourceOffset);
         if (destinationOffset + copyCount > _elementCount)
@@ -456,9 +458,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         var tempArray = new T[copyCount];
         
         // Use the proper interface methods for copying
-        if (sourceBuffer is OpenCLMemoryBuffer<T> openclBuffer)
+        if (sourceBuffer is OpenCLMemoryBuffer<T> sourceOpenCLBuffer)
         {
-            openclBuffer.CopyToHost(tempArray, sourceOffset, copyCount);
+            sourceOpenCLBuffer.CopyToHost(tempArray, sourceOffset, copyCount);
         }
         else
         {

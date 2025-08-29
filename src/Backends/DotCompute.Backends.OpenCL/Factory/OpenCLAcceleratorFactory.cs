@@ -16,7 +16,19 @@ namespace DotCompute.Backends.OpenCL.Factory;
 public sealed class OpenCLAcceleratorFactory
 {
     private readonly ILogger<OpenCLAcceleratorFactory> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly OpenCLDeviceManager _deviceManager;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpenCLAcceleratorFactory"/> class.
+    /// </summary>
+    /// <param name="loggerFactory">Logger factory for creating loggers.</param>
+    public OpenCLAcceleratorFactory(ILoggerFactory loggerFactory)
+    {
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _logger = _loggerFactory.CreateLogger<OpenCLAcceleratorFactory>();
+        _deviceManager = new OpenCLDeviceManager(_loggerFactory.CreateLogger<OpenCLDeviceManager>());
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenCLAcceleratorFactory"/> class.
@@ -25,7 +37,9 @@ public sealed class OpenCLAcceleratorFactory
     public OpenCLAcceleratorFactory(ILogger<OpenCLAcceleratorFactory> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _deviceManager = new OpenCLDeviceManager(logger.CreateLogger<OpenCLDeviceManager>());
+        // Create a simple logger factory from the provided logger using extension method
+        _loggerFactory = CreateLoggerFactory(logger);
+        _deviceManager = new OpenCLDeviceManager(_loggerFactory.CreateLogger<OpenCLDeviceManager>());
     }
 
     /// <summary>
@@ -46,7 +60,7 @@ public sealed class OpenCLAcceleratorFactory
         _logger.LogInformation("Creating OpenCL accelerator for device: {DeviceName} ({DeviceType})",
             bestDevice.Name, bestDevice.Type);
 
-        return new OpenCLAccelerator(bestDevice, _logger.CreateLogger<OpenCLAccelerator>());
+        return new OpenCLAccelerator(bestDevice, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
 
     /// <summary>
@@ -77,7 +91,7 @@ public sealed class OpenCLAcceleratorFactory
         _logger.LogInformation("Creating OpenCL accelerator for device: {DeviceName} ({DeviceType})",
             selectedDevice.Name, selectedDevice.Type);
 
-        return new OpenCLAccelerator(selectedDevice, _logger.CreateLogger<OpenCLAccelerator>());
+        return new OpenCLAccelerator(selectedDevice, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
 
     /// <summary>
@@ -111,7 +125,7 @@ public sealed class OpenCLAcceleratorFactory
         _logger.LogInformation("Creating OpenCL accelerator for device: {DeviceName} ({Vendor})",
             selectedDevice.Name, selectedDevice.Vendor);
 
-        return new OpenCLAccelerator(selectedDevice, _logger.CreateLogger<OpenCLAccelerator>());
+        return new OpenCLAccelerator(selectedDevice, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
 
     /// <summary>
@@ -133,7 +147,7 @@ public sealed class OpenCLAcceleratorFactory
         _logger.LogInformation("Creating OpenCL accelerator for device: {DeviceName} ({DeviceType})",
             device.Name, device.Type);
 
-        return new OpenCLAccelerator(device, _logger.CreateLogger<OpenCLAccelerator>());
+        return new OpenCLAccelerator(device, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
 
     /// <summary>
@@ -211,5 +225,15 @@ public sealed class OpenCLAcceleratorFactory
             DeviceType.Accelerator, // Dedicated compute accelerators
             DeviceType.CPU         // CPUs as fallback
         ];
+    }
+
+    /// <summary>
+    /// Creates a logger factory from a single logger instance.
+    /// </summary>
+    /// <param name="logger">The logger to wrap in a factory.</param>
+    /// <returns>A logger factory that returns the provided logger.</returns>
+    private static ILoggerFactory CreateLoggerFactory(ILogger logger)
+    {
+        return LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(logger)));
     }
 }

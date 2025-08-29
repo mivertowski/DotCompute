@@ -147,7 +147,10 @@ namespace DotCompute.Backends.CUDA
                 SupportsManagedMemory = _device.SupportsManagedMemory,
                 SupportsConcurrentKernels = _device.SupportsConcurrentKernels,
                 IsECCEnabled = _device.IsECCEnabled,
-                MultiprocessorCount = _device.StreamingMultiprocessorCount
+                MultiprocessorCount = _device.StreamingMultiprocessorCount,
+                SupportsUnifiedMemory = _device.SupportsManagedMemory,
+                TotalMemory = (long)totalMemory,
+                AvailableMemory = (long)freeMemory
             };
         }
 

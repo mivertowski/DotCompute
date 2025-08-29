@@ -128,7 +128,7 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
         uint argIndex = 0;
         foreach (var argument in arguments.Arguments)
         {
-            await SetKernelArgumentAsync(argIndex++, argument, cancellationToken);
+            await SetKernelArgumentAsync(argIndex++, argument!, cancellationToken);
         }
     }
 
@@ -149,7 +149,7 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
         }
 
         // Handle scalar arguments
-        await Task.Run(() => SetScalarArgument(index, argument), cancellationToken);
+        await Task.Run(() => SetScalarArgument(index, argument!), cancellationToken);
     }
 
     /// <summary>
@@ -267,28 +267,17 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
         nuint[] globalWorkSize;
         nuint[]? localWorkSize = null;
 
-        // Check if specific work sizes are provided in execution options
-        if (arguments.ExecutionOptions?.GlobalWorkSize != null && arguments.ExecutionOptions.GlobalWorkSize.Length > 0)
-        {
-            workDimensions = (uint)arguments.ExecutionOptions.GlobalWorkSize.Length;
-            globalWorkSize = arguments.ExecutionOptions.GlobalWorkSize.Select(s => (nuint)s).ToArray();
-            
-            if (arguments.ExecutionOptions.LocalWorkSize != null && arguments.ExecutionOptions.LocalWorkSize.Length > 0)
-            {
-                localWorkSize = arguments.ExecutionOptions.LocalWorkSize.Select(s => (nuint)s).ToArray();
-            }
-        }
-        else
-        {
-            // Estimate work size based on buffer sizes
-            var maxElements = EstimateWorkSizeFromBuffers(arguments);
-            globalWorkSize = [maxElements];
-            
-            // Use a reasonable local work size
-            var maxWorkGroupSize = _context.DeviceInfo.MaxWorkGroupSize;
-            var localSize = Math.Min(maxWorkGroupSize, 256); // Common local work size
-            localWorkSize = [localSize];
-        }
+        // Use default execution configuration since KernelArguments doesn't contain execution options
+        // In a full implementation, execution options would be passed separately
+        
+        // Estimate work size based on buffer sizes
+        var maxElements = EstimateWorkSizeFromBuffers(arguments);
+        globalWorkSize = [maxElements];
+        
+        // Use a reasonable local work size
+        var maxWorkGroupSize = _context.DeviceInfo.MaxWorkGroupSize;
+        var localSize = Math.Min(maxWorkGroupSize, 256); // Common local work size
+        localWorkSize = [localSize];
 
         _logger.LogTrace("Work group config: dimensions={Dimensions}, global=[{Global}], local=[{Local}]",
             workDimensions,

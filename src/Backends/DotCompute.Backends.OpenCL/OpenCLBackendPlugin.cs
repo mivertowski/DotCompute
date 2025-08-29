@@ -251,7 +251,8 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
             }
 
             // Try to enumerate devices
-            var deviceManager = new OpenCLDeviceManager(_logger.CreateLogger<OpenCLDeviceManager>());
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(_logger)));
+            var deviceManager = new OpenCLDeviceManager(loggerFactory.CreateLogger<OpenCLDeviceManager>());
             var hasDevices = deviceManager.IsOpenCLAvailable;
             
             if (!hasDevices)
@@ -360,22 +361,21 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
             if (_health == PluginHealth.Healthy)
             {
                 // Add OpenCL-specific metrics
-                metrics.CustomMetrics["opencl_devices_available"] = 
-                    new OpenCLDeviceManager(_logger.CreateLogger<OpenCLDeviceManager>()).AllDevices.Count();
+                var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(_logger)));
+                var deviceManager = new OpenCLDeviceManager(loggerFactory.CreateLogger<OpenCLDeviceManager>());
                 
-                metrics.CustomMetrics["opencl_platforms_available"] = 
-                    new OpenCLDeviceManager(_logger.CreateLogger<OpenCLDeviceManager>()).Platforms.Count;
-                
-                metrics.Status = "Healthy";
+                metrics.CustomMetrics["opencl_devices_available"] = deviceManager.AllDevices.Count();
+                metrics.CustomMetrics["opencl_platforms_available"] = deviceManager.Platforms.Count;
+                metrics.CustomMetrics["status"] = "Healthy";
             }
             else
             {
-                metrics.Status = $"Unhealthy - {_health}";
+                metrics.CustomMetrics["status"] = $"Unhealthy - {_health}";
             }
         }
         catch (Exception ex)
         {
-            metrics.Status = $"Error - {ex.Message}";
+            metrics.CustomMetrics["status"] = $"Error - {ex.Message}";
             _logger.LogWarning(ex, "Failed to collect OpenCL backend metrics");
         }
 

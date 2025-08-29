@@ -272,6 +272,56 @@ namespace DotCompute.Backends.CUDA.Types
         /// Gets or sets whether the device supports unified memory.
         /// </summary>
         public bool SupportsUnifiedMemory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the memory bandwidth in GB/s.
+        /// </summary>
+        public double MemoryBandwidthGBps { get; set; }
+
+        /// <summary>
+        /// Gets or sets the L2 cache size in bytes.
+        /// </summary>
+        public int L2CacheSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the GPU core clock rate in kHz.
+        /// </summary>
+        public int ClockRate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the memory clock rate in kHz.
+        /// </summary>
+        public int MemoryClockRate { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the device supports unified addressing.
+        /// </summary>
+        public bool SupportsUnifiedAddressing { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the device supports managed memory.
+        /// </summary>
+        public bool SupportsManagedMemory { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the device supports concurrent kernel execution.
+        /// </summary>
+        public bool SupportsConcurrentKernels { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether ECC (Error-Correcting Code) memory is enabled on the device.
+        /// </summary>
+        public bool IsECCEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total memory available on the device in bytes.
+        /// </summary>
+        public long TotalMemory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the currently available memory on the device in bytes.
+        /// </summary>
+        public long AvailableMemory { get; set; }
     }
 
     /// <summary>
