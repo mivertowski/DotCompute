@@ -22,6 +22,11 @@ internal class CpuFallbackCompiledKernel : DotCompute.Abstractions.ICompiledKern
     private bool _disposed;
 
     /// <summary>
+    /// Gets the kernel unique identifier.
+    /// </summary>
+    public Guid Id { get; } = Guid.NewGuid();
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CpuFallbackCompiledKernel"/> class.
     /// </summary>
     /// <param name="definition">The kernel definition.</param>

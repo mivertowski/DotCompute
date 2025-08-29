@@ -75,7 +75,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
 
     public string Name => _definition.Name;
 
-    public string Id => $"{_definition.Name}_{_definition.GetHashCode():X8}";
+    public Guid Id { get; } = Guid.NewGuid();
 
     public string Source => _definition.Code != null ? "[Bytecode]" : "[Unknown]";
 

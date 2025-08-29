@@ -14,6 +14,11 @@ namespace DotCompute.Backends.CUDA.Types.Native
     public enum CudaMemoryAdvise
     {
         /// <summary>
+        /// Remove all memory advice for the memory region.
+        /// </summary>
+        Unset = 0,
+
+        /// <summary>
         /// Advise that the memory region will be read frequently and should be kept close to the processor.
         /// This can help reduce page faults and improve read performance.
         /// </summary>

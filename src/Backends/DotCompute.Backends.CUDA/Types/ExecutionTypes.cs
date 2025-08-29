@@ -4,6 +4,32 @@
 namespace DotCompute.Backends.CUDA.Types
 {
     /// <summary>
+    /// CUDA architecture enumeration.
+    /// </summary>
+    public enum CudaArchitecture
+    {
+        Kepler,
+        Maxwell,
+        Pascal,
+        Volta,
+        Turing,
+        Ampere,
+        Ada,
+        Hopper
+    }
+
+    /// <summary>
+    /// CUDA graph optimization level.
+    /// </summary>
+    public enum CudaGraphOptimizationLevel
+    {
+        None,
+        Basic,
+        Balanced,
+        Aggressive
+    }
+
+    /// <summary>
     /// Warp scheduling mode for CUDA execution.
     /// </summary>
     public enum WarpSchedulingMode
@@ -23,6 +49,8 @@ namespace DotCompute.Backends.CUDA.Types
         public DataType InputType { get; set; }
         public DataType OutputType { get; set; }
         public int TileSize { get; set; } = 16;
+        public string DataType { get; set; } = "TF32";
+        public string Precision { get; set; } = "High";
     }
 
     /// <summary>
@@ -102,6 +130,10 @@ namespace DotCompute.Backends.CUDA.Types
         public bool EnablePipelining { get; set; } = true;
         public int MaxNodesPerGraph { get; set; } = 1000;
         public bool UseInstantiatedGraphs { get; set; } = true;
+        public bool EnableOptimization { get; set; } = true;
+        public CudaArchitecture TargetArchitecture { get; set; } = CudaArchitecture.Ada;
+        public bool EnableKernelFusion { get; set; } = true;
+        public CudaGraphOptimizationLevel OptimizationLevel { get; set; } = CudaGraphOptimizationLevel.Balanced;
     }
 
 
@@ -114,6 +146,11 @@ namespace DotCompute.Backends.CUDA.Types
         public string? ErrorMessage { get; set; }
         public long ExecutionTimeMs { get; set; }
         public int NodesExecuted { get; set; }
+        public string InstanceId { get; set; } = string.Empty;
+        public string GraphId { get; set; } = string.Empty;
+        public TimeSpan ExecutionTime { get; set; }
+        public double GpuTimeMs { get; set; }
+        public int ExecutionCount { get; set; }
     }
 
     /// <summary>
@@ -162,6 +199,7 @@ namespace DotCompute.Backends.CUDA.Types
         public bool UpdateNodeParams { get; set; } = true;
         public bool UpdateKernelParams { get; set; } = true;
         public bool PreserveTopology { get; set; } = true;
+        public IntPtr SourceGraph { get; set; }
     }
     
     /// <summary>
@@ -173,6 +211,13 @@ namespace DotCompute.Backends.CUDA.Types
         public int EdgeCount { get; set; }
         public long EstimatedMemoryUsage { get; set; }
         public double AverageNodeExecutionTime { get; set; }
+        public string GraphId { get; set; } = string.Empty;
+        public int InstanceCount { get; set; }
+        public int TotalExecutions { get; set; }
+        public double TotalGpuTimeMs { get; set; }
+        public double AverageExecutionTimeMs { get; set; }
+        public DateTimeOffset? LastExecutedAt { get; set; }
+        public bool IsOptimized { get; set; }
     }
     
     /// <summary>
@@ -185,4 +230,5 @@ namespace DotCompute.Backends.CUDA.Types
         public bool IsManaged { get; set; }
         public int DeviceId { get; set; }
     }
+
 }

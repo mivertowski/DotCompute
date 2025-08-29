@@ -333,6 +333,8 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphInstantiate(ref IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, ulong bufferSize);
 
+        public static CudaError cudaGraphInstantiate(ref IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, ulong bufferSize) => cuGraphInstantiate(ref phGraphExec, hGraph, phErrorNode, logBuffer, bufferSize);
+
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphExecDestroy(IntPtr hGraphExec);
@@ -341,9 +343,14 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphDestroy(IntPtr hGraph);
 
+        // Add alias for cudaGraphDestroy used in other parts of the codebase
+        public static CudaError cudaGraphDestroy(IntPtr hGraph) => cuGraphDestroy(hGraph);
+
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphLaunch(IntPtr hGraphExec, IntPtr hStream);
+
+        public static CudaError cudaGraphLaunch(IntPtr hGraphExec, IntPtr hStream) => cuGraphLaunch(hGraphExec, hStream);
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -369,9 +376,14 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuStreamBeginCapture(IntPtr hStream, uint mode);
 
+        // Add missing aliases for stream capture methods
+        public static CudaError cudaStreamBeginCapture(IntPtr hStream, uint mode) => cuStreamBeginCapture(hStream, mode);
+
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuStreamEndCapture(IntPtr hStream, ref IntPtr phGraph);
+
+        public static CudaError cudaStreamEndCapture(IntPtr hStream, ref IntPtr phGraph) => cuStreamEndCapture(hStream, ref phGraph);
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]

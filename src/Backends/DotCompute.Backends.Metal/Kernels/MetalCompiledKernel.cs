@@ -39,6 +39,9 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     private int _disposed;
 
     /// <inheritdoc/>
+    public Guid Id { get; } = Guid.NewGuid();
+
+    /// <inheritdoc/>
     public string Name => _definition.Name;
 
     /// <inheritdoc/>

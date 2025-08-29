@@ -520,6 +520,7 @@ internal class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
         _name = name;
     }
 
+    public Guid Id { get; } = Guid.NewGuid();
     public string Name => _name;
 
     public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;

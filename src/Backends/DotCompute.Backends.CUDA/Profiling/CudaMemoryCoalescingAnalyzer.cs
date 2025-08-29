@@ -83,7 +83,7 @@ namespace DotCompute.Backends.CUDA.Analysis
 
             // Calculate efficiency metrics
             analysis.CoalescingEfficiency = CalculateCoalescingEfficiency(accessInfo, computeCapability);
-            analysis.WastedBandwidth = CalculateWastedBandwidth(accessInfo);
+            analysis.WastedBandwidth = (long)CalculateWastedBandwidth(accessInfo);
             analysis.OptimalAccessSize = GetOptimalAccessSize(computeCapability);
             
             // Identify specific issues
@@ -179,7 +179,7 @@ namespace DotCompute.Backends.CUDA.Analysis
         public async Task<Matrix2DAccessAnalysis> Analyze2DAccessPatternAsync(
             int rows,
             int cols,
-            AccessOrder accessOrder,
+            DotCompute.Backends.CUDA.Analysis.Types.AccessOrder accessOrder,
             int elementSize,
             int blockDimX,
             int blockDimY,
@@ -199,7 +199,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             int cacheLine = computeCapability >= 20 ? 128 : 32;
             
             // Analyze based on access order
-            if (accessOrder == AccessOrder.RowMajor)
+            if (accessOrder == DotCompute.Backends.CUDA.Analysis.Types.AccessOrder.RowMajor)
             {
                 // Row-major access with row-major storage is optimal
                 analysis.IsOptimal = true;

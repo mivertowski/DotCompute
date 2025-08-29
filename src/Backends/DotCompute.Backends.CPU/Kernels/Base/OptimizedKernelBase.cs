@@ -49,6 +49,11 @@ internal abstract class OptimizedKernelBase : ICompiledKernel
     }
 
     /// <summary>
+    /// Gets the unique identifier for this kernel.
+    /// </summary>
+    public Guid Id { get; } = Guid.NewGuid();
+
+    /// <summary>
     /// Gets the name of the kernel.
     /// </summary>
     public string Name { get; }

@@ -316,6 +316,11 @@ namespace DotCompute.Core.Compute
     {
         private readonly KernelDefinition _definition = definition;
         private bool _disposed;
+        
+        /// <summary>
+        /// Gets the kernel unique identifier.
+        /// </summary>
+        public Guid Id { get; } = Guid.NewGuid();
 
         public string Name { get; } = name;
 

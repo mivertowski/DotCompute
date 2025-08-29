@@ -18,6 +18,11 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
     private bool _disposed;
 
     /// <summary>
+    /// Gets the kernel unique identifier.
+    /// </summary>
+    public Guid Id { get; } = Guid.NewGuid();
+
+    /// <summary>
     /// Gets the kernel name.
     /// Used for identification and logging purposes.
     /// </summary>

@@ -56,7 +56,7 @@ public static class DICompilationTest
 
         // Test that core services can be resolved
         var runtime = serviceProvider.GetService<AcceleratorRuntime>();
-        var factory = serviceProvider.GetService<IUnifiedAcceleratorFactory>();
+        var factory = serviceProvider.GetService<Runtime.Interfaces.IUnifiedAcceleratorFactory>();
         var memoryService = serviceProvider.GetService<IMemoryPoolService>();
         var kernelService = serviceProvider.GetService<IKernelCompilerService>();
 

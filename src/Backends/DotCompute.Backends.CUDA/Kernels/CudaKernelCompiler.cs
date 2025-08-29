@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
@@ -50,7 +51,7 @@ namespace DotCompute.Backends.CUDA.Compilation
     /// <summary>
     /// CUDA kernel compiler implementation using NVRTC
     /// </summary>
-    public sealed partial class CudaKernelCompiler : IDisposable
+    public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -1145,6 +1146,25 @@ namespace DotCompute.Backends.CUDA.Compilation
             catch (Exception ex)
             {
                 LogDisposalError(_logger, ex);
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (!_disposed)
+            {
+                try
+                {
+                    // Save cache asynchronously before disposing
+                    await SavePersistentCacheAsync().ConfigureAwait(false);
+                    
+                    // Dispose synchronously
+                    Dispose();
+                }
+                catch (Exception ex)
+                {
+                    LogDisposalError(_logger, ex);
+                }
             }
         }
     }

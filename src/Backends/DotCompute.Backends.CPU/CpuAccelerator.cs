@@ -264,6 +264,7 @@ internal sealed class CompiledKernelAdapter(ICompiledKernel coreKernel) : ICompi
 {
     private readonly ICompiledKernel _coreKernel = coreKernel ?? throw new ArgumentNullException(nameof(coreKernel));
 
+    public Guid Id => _coreKernel.Id;
     public string Name => _coreKernel.Name;
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) 

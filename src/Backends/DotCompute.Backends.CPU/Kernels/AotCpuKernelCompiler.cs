@@ -325,6 +325,7 @@ ILogger logger) : ICompiledKernel
 #pragma warning restore CA1823, CA2213
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
+    public Guid Id { get; } = Guid.NewGuid();
     public string Name => _definition.Name;
     public KernelDefinition Definition => _definition;
 

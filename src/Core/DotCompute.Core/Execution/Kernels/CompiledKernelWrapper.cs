@@ -19,6 +19,11 @@ internal sealed class CompiledKernelWrapper : ICompiledKernel
     private bool _disposed;
 
     /// <summary>
+    /// Gets the kernel unique identifier.
+    /// </summary>
+    public Guid Id { get; } = Guid.NewGuid();
+
+    /// <summary>
     /// Initializes a new instance of the CompiledKernelWrapper class.
     /// </summary>
     /// <param name="kernel">The compiled kernel to wrap.</param>

@@ -90,8 +90,8 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                 validationResult = await ValidateAcceleratorAsync(accelerator);
                 if (!validationResult.IsValid)
                 {
-                    warnings.AddRange(validationResult.Errors);
-                    warnings.AddRange(validationResult.Warnings);
+                    warnings.AddRange(validationResult.Errors.Select(e => e.Message));
+                    warnings.AddRange(validationResult.Warnings.Select(w => w.Message));
                 }
             }
 

@@ -977,7 +977,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
     
     public IReadOnlyDictionary<string, object> Capabilities => new Dictionary<string, object>
     {
-        { "SupportedOptimizationLevels", new[] { OptimizationLevel.None, OptimizationLevel.Basic, OptimizationLevel.Aggressive } },
+        { "SupportedOptimizationLevels", new[] { OptimizationLevel.None, OptimizationLevel.Minimal, OptimizationLevel.Aggressive } },
         { "MaxKernelSize", 1024 * 1024 }, // 1MB
         { "SupportsAsync", true },
         { "SupportsDebugging", false },
@@ -1303,7 +1303,7 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
     
     // Properties from IUnifiedMemoryBuffer<T>
     public int Length => _length;
-    public IAccelerator Accelerator => null; // TODO: Pass from wrapper
+    public IAccelerator Accelerator => throw new NotSupportedException("Accelerator not available in production wrapper");
     public bool IsOnHost => true; // Simplified for production wrapper
     public bool IsOnDevice => false;
     public bool IsDirty => false;

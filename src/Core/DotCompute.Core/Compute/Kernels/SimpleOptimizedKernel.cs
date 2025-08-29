@@ -21,6 +21,11 @@ namespace DotCompute.Core.Compute.Kernels
         private bool _disposed;
 
         /// <summary>
+        /// Gets the kernel unique identifier.
+        /// </summary>
+        public Guid Id { get; } = Guid.NewGuid();
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="SimpleOptimizedKernel"/> class.
         /// </summary>
         /// <param name="name">Name of the kernel.</param>

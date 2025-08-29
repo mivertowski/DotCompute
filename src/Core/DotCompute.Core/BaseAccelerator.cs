@@ -200,6 +200,11 @@ public abstract class BaseCompiledKernel : ICompiledKernel
     private volatile int _disposed;
     
     /// <summary>
+    /// Gets the kernel unique identifier.
+    /// </summary>
+    public Guid Id { get; protected init; } = Guid.NewGuid();
+    
+    /// <summary>
     /// Initializes a new instance of the <see cref="BaseCompiledKernel"/> class.
     /// </summary>
     protected BaseCompiledKernel(

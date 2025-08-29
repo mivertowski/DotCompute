@@ -29,6 +29,11 @@ namespace DotCompute.Backends.CUDA.Compilation
         public string Name { get; }
 
         /// <summary>
+        /// Gets the unique identifier for this compiled kernel
+        /// </summary>
+        public Guid Id { get; }
+
+        /// <summary>
         /// Gets the CUDA function handle for this kernel
         /// </summary>
         public IntPtr FunctionHandle => _function;
@@ -50,6 +55,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             _ptxData = ptxData ?? throw new ArgumentNullException(nameof(ptxData));
 
             Name = name ?? throw new ArgumentNullException(nameof(name));
+            Id = Guid.NewGuid();
             _entryPoint = entryPoint ?? throw new ArgumentNullException(nameof(entryPoint));
             _launcher = new CudaKernelLauncher(_context, _logger);
 

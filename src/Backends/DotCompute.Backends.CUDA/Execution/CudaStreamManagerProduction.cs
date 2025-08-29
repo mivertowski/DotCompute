@@ -531,7 +531,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
             }
             finally
             {
-                _lock?.Dispose();
+                _streamLock?.Dispose();
             }
         }
     }

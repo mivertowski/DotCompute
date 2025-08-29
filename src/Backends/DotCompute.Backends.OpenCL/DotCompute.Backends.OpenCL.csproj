@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDependencyFile>true</GenerateDependencyFile>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <PackageId>DotCompute.Backends.OpenCL</PackageId>
+    <Authors>DotCompute Contributors</Authors>
+    <Description>OpenCL backend for DotCompute - Cross-platform GPU acceleration support</Description>
+    <PackageTags>DotCompute;OpenCL;GPU;Compute;Backend;CrossPlatform</PackageTags>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>DotCompute.Hardware.OpenCL.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\DotCompute.Core\DotCompute.Core.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Runtime\DotCompute.Plugins\DotCompute.Plugins.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
+    <PackageReference Include="Polly" Version="8.4.2" />
+    <PackageReference Include="Polly.Extensions" Version="8.4.2" />
+  </ItemGroup>
+
+  <!-- Copy native OpenCL libraries to output -->
+  <ItemGroup>
+    <Content Include="runtimes\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackagePath>runtimes\</PackagePath>
+    </Content>
+  </ItemGroup>
+
+</Project>

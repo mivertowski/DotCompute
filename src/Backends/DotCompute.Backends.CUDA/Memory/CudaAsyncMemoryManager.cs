@@ -26,6 +26,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     private readonly ILogger<CudaAsyncMemoryManager> _logger;
     private IntPtr _defaultMemPool = IntPtr.Zero;
     private bool _asyncMemorySupported;
+    private long _totalMemory;
 
     public CudaAsyncMemoryManager(
         CudaContext context,
@@ -147,6 +148,14 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     {
         try
         {
+            // Get total device memory
+            var memResult = CudaRuntime.cudaMemGetInfo(out var free, out var total);
+            if (memResult == CudaError.Success)
+            {
+                _totalMemory = (long)total;
+                _logger.LogInformation("Total device memory: {TotalMemory:F2} GB", _totalMemory / 1e9);
+            }
+
             // Check if device supports memory pools (CUDA 11.2+)
             var deviceProps = new CudaDeviceProperties();
             var result = CudaRuntime.cudaGetDeviceProperties(ref deviceProps, _context.DeviceId);

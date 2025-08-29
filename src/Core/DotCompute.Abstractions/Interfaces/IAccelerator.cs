@@ -191,6 +191,9 @@ namespace DotCompute.Abstractions
         /// <summary>Gets or sets the maximum threads per block.</summary>
         public int MaxThreadsPerBlock { get; init; }
 
+        /// <summary>Gets or sets the device index (for multi-device systems).</summary>
+        public int DeviceIndex { get; init; }
+
         /// <summary>Gets or sets device-specific capabilities.</summary>
         public Dictionary<string, object>? Capabilities { get; init; }
 
@@ -233,6 +236,9 @@ namespace DotCompute.Abstractions
     /// </summary>
     public interface ICompiledKernel : IAsyncDisposable
     {
+        /// <summary>Gets the kernel unique identifier.</summary>
+        public Guid Id { get; }
+
         /// <summary>Gets the kernel name.</summary>
         public string Name { get; }
 

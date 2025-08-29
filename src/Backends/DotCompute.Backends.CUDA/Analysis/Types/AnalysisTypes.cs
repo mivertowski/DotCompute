@@ -4,6 +4,7 @@
 // </copyright>
 
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Backends.CUDA.Analysis.Types;
 
@@ -84,6 +85,41 @@ public sealed class StridedAccessAnalysis
     public int Stride { get; set; }
 
     /// <summary>
+    /// Gets or sets the element size in bytes.
+    /// </summary>
+    public int ElementSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of threads accessing memory.
+    /// </summary>
+    public int ThreadCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of memory transactions per warp.
+    /// </summary>
+    public int TransactionsPerWarp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the memory access efficiency (0-1).
+    /// </summary>
+    public double Efficiency { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the access pattern is coalesced.
+    /// </summary>
+    public bool IsCoalesced { get; set; }
+
+    /// <summary>
+    /// Gets or sets the bandwidth utilization percentage.
+    /// </summary>
+    public double BandwidthUtilization { get; set; }
+
+    /// <summary>
+    /// Gets or sets optimization recommendations.
+    /// </summary>
+    public List<string> Recommendations { get; set; } = new();
+
+    /// <summary>
     /// Gets or sets the access regularity score (0-1).
     /// </summary>
     public double RegularityScore { get; set; }
@@ -109,6 +145,66 @@ public sealed class StridedAccessAnalysis
 /// </summary>
 public sealed class Matrix2DAccessAnalysis
 {
+    /// <summary>
+    /// Gets or sets the number of rows in the matrix.
+    /// </summary>
+    public int Rows { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of columns in the matrix.
+    /// </summary>
+    public int Columns { get; set; }
+
+    /// <summary>
+    /// Gets or sets the memory access order.
+    /// </summary>
+    public AccessOrder AccessOrder { get; set; }
+
+    /// <summary>
+    /// Gets or sets the element size in bytes.
+    /// </summary>
+    public int ElementSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the block dimension X.
+    /// </summary>
+    public int BlockDimX { get; set; }
+
+    /// <summary>
+    /// Gets or sets the block dimension Y.
+    /// </summary>
+    public int BlockDimY { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the access pattern is optimal.
+    /// </summary>
+    public bool IsOptimal { get; set; }
+
+    /// <summary>
+    /// Gets or sets the coalescing factor for the access pattern.
+    /// </summary>
+    public double CoalescingFactor { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of memory transactions per block.
+    /// </summary>
+    public int TransactionsPerBlock { get; set; }
+
+    /// <summary>
+    /// Gets or sets the bandwidth efficiency percentage.
+    /// </summary>
+    public double BandwidthEfficiency { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tile analysis results.
+    /// </summary>
+    public TileAnalysis TileAnalysis { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets optimization recommendations.
+    /// </summary>
+    public List<string> Optimizations { get; set; } = new();
+
     /// <summary>
     /// Gets or sets the access pattern type (row-major, column-major, tiled).
     /// </summary>
@@ -191,3 +287,25 @@ public sealed class CoalescingComparison
     /// </summary>
     public string Summary { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// Represents memory access order enumeration.
+/// </summary>
+public enum AccessOrder
+{
+    /// <summary>
+    /// Row-major access pattern.
+    /// </summary>
+    RowMajor,
+
+    /// <summary>
+    /// Column-major access pattern.
+    /// </summary>
+    ColumnMajor,
+
+    /// <summary>
+    /// Tiled access pattern.
+    /// </summary>
+    Tiled
+}
+

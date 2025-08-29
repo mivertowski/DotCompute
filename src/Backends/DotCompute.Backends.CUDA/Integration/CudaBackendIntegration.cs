@@ -774,12 +774,14 @@ namespace DotCompute.Backends.CUDA.Integration
                 private readonly Dictionary<string, CudaCompiledKernel> _kernelCache;
 
                 public string Name { get; }
+                public Guid Id { get; }
 
                 public CudaContextCompiledKernel(CudaContext context, ILogger logger, string name = "ContextKernel")
                 {
                     _context = context ?? throw new ArgumentNullException(nameof(context));
                     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
                     Name = name;
+                    Id = Guid.NewGuid();
                     _kernelCache = [];
                 }
 
