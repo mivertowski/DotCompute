@@ -209,6 +209,11 @@ namespace DotCompute.Backends.CUDA.Types
         public int DeviceIndex { get; set; }
 
         /// <summary>
+        /// Gets or sets the device ID.
+        /// </summary>
+        public int DeviceId { get; set; }
+
+        /// <summary>
         /// Gets or sets the device name.
         /// </summary>
         public string Name { get; set; } = string.Empty;
@@ -217,6 +222,16 @@ namespace DotCompute.Backends.CUDA.Types
         /// Gets or sets the compute capability (major.minor).
         /// </summary>
         public (int Major, int Minor) ComputeCapability { get; set; }
+
+        /// <summary>
+        /// Gets or sets the architecture generation name (e.g., "Ada Lovelace", "Ampere", "Turing").
+        /// </summary>
+        public string ArchitectureGeneration { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets whether this device is an RTX 2000 Ada generation GPU.
+        /// </summary>
+        public bool IsRTX2000Ada { get; set; }
 
         /// <summary>
         /// Gets or sets the total global memory in bytes.
@@ -232,6 +247,16 @@ namespace DotCompute.Backends.CUDA.Types
         /// Gets or sets the number of multiprocessors.
         /// </summary>
         public int MultiprocessorCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of streaming multiprocessors.
+        /// </summary>
+        public int StreamingMultiprocessors { get; set; }
+
+        /// <summary>
+        /// Gets or sets the estimated number of CUDA cores based on the architecture and SM count.
+        /// </summary>
+        public int EstimatedCudaCores { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum threads per block.
@@ -252,9 +277,11 @@ namespace DotCompute.Backends.CUDA.Types
     /// <summary>
     /// CUDA memory manager for device memory allocation and management.
     /// </summary>
-    public sealed class CudaMemoryManager
+    public sealed class CudaMemoryManager : IAsyncDisposable, IDisposable
     {
         private readonly Microsoft.Extensions.Logging.ILogger _logger;
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<nint, MemoryAllocationInfo> _allocations;
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaMemoryManager"/> class.
@@ -264,6 +291,7 @@ namespace DotCompute.Backends.CUDA.Types
             Context = context?.Handle ?? nint.Zero;
             DeviceIndex = context?.DeviceId ?? 0;
             _logger = logger;
+            _allocations = new System.Collections.Concurrent.ConcurrentDictionary<nint, MemoryAllocationInfo>();
             
             // Initialize with reasonable defaults
             TotalMemory = 8L * 1024 * 1024 * 1024; // 8GB default
@@ -299,6 +327,154 @@ namespace DotCompute.Backends.CUDA.Types
         /// Gets the maximum allocation size.
         /// </summary>
         public long MaxAllocationSize { get; set; }
+
+        /// <summary>
+        /// Resets the memory manager and clears all memory pools.
+        /// </summary>
+        public void Reset()
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(CudaMemoryManager));
+            }
+
+            try
+            {
+                _logger?.LogDebug("Resetting CUDA memory manager for device {DeviceIndex}", DeviceIndex);
+
+                // Free all tracked allocations
+                var allocationCount = 0;
+                foreach (var kvp in _allocations)
+                {
+                    try
+                    {
+                        if (kvp.Key != nint.Zero)
+                        {
+                            // Free device memory
+                            var result = Native.CudaRuntime.cudaFree(kvp.Key);
+                            if (result != Native.CudaError.Success)
+                            {
+                                _logger?.LogWarning("Failed to free CUDA memory during reset: {Error}", result);
+                            }
+                            allocationCount++;
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        _logger?.LogError(ex, "Error freeing allocation during reset");
+                    }
+                }
+
+                // Clear the allocations dictionary
+                _allocations.Clear();
+
+                // Reset counters
+                TotalAllocatedBytes = 0;
+                UsedMemory = 0;
+
+                _logger?.LogInformation("Reset complete. Freed {AllocationCount} allocations for device {DeviceIndex}", 
+                    allocationCount, DeviceIndex);
+            }
+            catch (System.Exception ex)
+            {
+                _logger?.LogError(ex, "Error during CUDA memory manager reset for device {DeviceIndex}", DeviceIndex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously disposes the memory manager and all allocated resources.
+        /// </summary>
+        public async ValueTask DisposeAsync()
+        {
+            if (!_disposed)
+            {
+                try
+                {
+                    _logger?.LogDebug("Starting async disposal of CUDA memory manager for device {DeviceIndex}", DeviceIndex);
+
+                    // Perform cleanup operations asynchronously
+                    await Task.Run(() =>
+                    {
+                        // Reset and free all memory
+                        Reset();
+                    }).ConfigureAwait(false);
+
+                    _disposed = true;
+                    _logger?.LogDebug("Async disposal completed for CUDA memory manager device {DeviceIndex}", DeviceIndex);
+                }
+                catch (System.Exception ex)
+                {
+                    _logger?.LogError(ex, "Error during async disposal of CUDA memory manager device {DeviceIndex}", DeviceIndex);
+                    // Still mark as disposed to prevent further operations
+                    _disposed = true;
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Synchronously disposes the memory manager and all allocated resources.
+        /// </summary>
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                try
+                {
+                    Reset();
+                    _disposed = true;
+                }
+                catch (System.Exception ex)
+                {
+                    _logger?.LogError(ex, "Error during disposal of CUDA memory manager device {DeviceIndex}", DeviceIndex);
+                    _disposed = true;
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tracks a memory allocation.
+        /// </summary>
+        internal void TrackAllocation(nint devicePtr, long sizeInBytes)
+        {
+            if (devicePtr != nint.Zero)
+            {
+                var info = new MemoryAllocationInfo
+                {
+                    DevicePointer = devicePtr,
+                    SizeInBytes = sizeInBytes,
+                    AllocatedAt = DateTime.UtcNow
+                };
+                
+                _allocations.TryAdd(devicePtr, info);
+                TotalAllocatedBytes += sizeInBytes;
+                UsedMemory += sizeInBytes;
+            }
+        }
+
+        /// <summary>
+        /// Removes tracking for a memory allocation.
+        /// </summary>
+        internal void UntrackAllocation(nint devicePtr)
+        {
+            if (_allocations.TryRemove(devicePtr, out var info))
+            {
+                TotalAllocatedBytes -= info.SizeInBytes;
+                UsedMemory -= info.SizeInBytes;
+            }
+        }
+
+        /// <summary>
+        /// Information about a memory allocation.
+        /// </summary>
+        private sealed class MemoryAllocationInfo
+        {
+            public nint DevicePointer { get; init; }
+            public long SizeInBytes { get; init; }
+            public DateTime AllocatedAt { get; init; }
+        }
     }
 
     /// <summary>

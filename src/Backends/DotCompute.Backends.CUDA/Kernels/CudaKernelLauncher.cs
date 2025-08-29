@@ -279,15 +279,31 @@ namespace DotCompute.Backends.CUDA.Compilation
         private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles)
         {
             // Check if it's a memory buffer type first
-            if (argValue is ISyncMemoryBuffer memoryBuffer)
+            if (argValue is ISyncMemoryBuffer)
             {
-                // For memory buffers, we need the device pointer
-                if (memoryBuffer is Memory.CudaMemoryBuffer cudaBuffer)
+                // For CUDA memory buffers, we need the device pointer
+                if (argValue is DotCompute.Backends.CUDA.Memory.CudaMemoryBuffer cudaBuffer)
                 {
                     var devicePtr = cudaBuffer.DevicePointer;
                     var handle = GCHandle.Alloc(devicePtr, GCHandleType.Pinned);
                     handles.Add(handle);
                     return handle.AddrOfPinnedObject();
+                }
+                
+                // Handle other types of unified memory buffers
+                if (argValue is IUnifiedMemoryBuffer unifiedBuffer)
+                {
+                    // For other unified memory buffer types, we might need different handling
+                    // For now, try to get the device pointer if available through dynamic access
+                    var bufferType = unifiedBuffer.GetType();
+                    var devicePtrProperty = bufferType.GetProperty("DevicePointer");
+                    
+                    if (devicePtrProperty != null && devicePtrProperty.GetValue(unifiedBuffer) is IntPtr devicePtr)
+                    {
+                        var handle = GCHandle.Alloc(devicePtr, GCHandleType.Pinned);
+                        handles.Add(handle);
+                        return handle.AddrOfPinnedObject();
+                    }
                 }
             }
 

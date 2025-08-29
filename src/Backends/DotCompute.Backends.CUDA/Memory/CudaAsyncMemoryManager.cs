@@ -92,6 +92,61 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     }
 
 
+    /// <summary>
+    /// Allocates memory with stream-ordered allocation for optimal performance.
+    /// </summary>
+    public async ValueTask<IUnifiedMemoryBuffer> AllocateStreamOrderedAsync(
+        long sizeInBytes,
+        MemoryOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        if (!_asyncMemorySupported)
+        {
+            // Fall back to synchronous allocation
+            return await AllocateBufferCoreAsync(sizeInBytes, options, cancellationToken);
+        }
+
+        try
+        {
+            // Use the current stream or default stream for allocation
+            var stream = _context.Stream;
+            
+            // Allocate memory asynchronously on the specified stream
+            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (ulong)sizeInBytes, stream);
+            CudaRuntime.CheckError(result, $"stream-ordered allocating {sizeInBytes} bytes");
+
+            // Track allocation
+            var allocationInfo = new AsyncAllocationInfo
+            {
+                Pointer = devicePtr,
+                Size = sizeInBytes,
+                Stream = stream,
+                Pool = _defaultMemPool,
+                AllocatedAt = DateTimeOffset.UtcNow
+            };
+            
+            _allocations.TryAdd(devicePtr, allocationInfo);
+
+            // Create buffer wrapper
+            var buffer = new CudaAsyncMemoryBuffer(
+                devicePtr, sizeInBytes, stream, this, options);
+
+            TrackBuffer(buffer, sizeInBytes);
+            
+            _logger.LogDebug("Allocated {Size} bytes with stream-ordered allocation", sizeInBytes);
+            
+            return buffer;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to allocate {Size} bytes with stream-ordered allocation", sizeInBytes);
+            throw new InvalidOperationException($"Stream-ordered allocation failed for {sizeInBytes} bytes", ex);
+        }
+    }
+
     /// <inheritdoc/>
     protected override async ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(
         long sizeInBytes,
@@ -248,7 +303,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         try
         {
             // Allocate memory on stream
-            var result = CudaRuntime.cudaMallocAsync(out IntPtr devicePtr, (ulong)sizeInBytes, stream);
+            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (ulong)sizeInBytes, stream);
             CudaRuntime.CheckError(result, $"async allocating {sizeInBytes} bytes");
 
             // Track allocation
@@ -569,7 +624,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         // Default stream allocation if async not supported
         if (!_asyncMemorySupported)
         {
-            var result = CudaRuntime.cudaMalloc(out IntPtr devicePtr, (ulong)sizeInBytes);
+            var result = CudaRuntime.TryAllocateMemory(out IntPtr devicePtr, (ulong)sizeInBytes);
             CudaRuntime.CheckError(result, $"allocating {sizeInBytes} bytes");
             
             return new CudaAsyncMemoryBuffer(
@@ -644,6 +699,57 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         public bool IsDefault { get; init; }
         public ulong ReleaseThreshold { get; init; }
         public DateTimeOffset CreatedAt { get; init; }
+
+        /// <summary>
+        /// Clears the memory pool and releases all allocated resources.
+        /// </summary>
+        public void Clear()
+        {
+            if (Pool == IntPtr.Zero)
+            {
+                return;
+            }
+
+            try
+            {
+                // For default pools, we can't destroy them, but we can trim them
+                if (IsDefault)
+                {
+                    // Trim the pool to release unused memory back to the system
+                    var result = CudaRuntime.cudaMemPoolTrimTo(Pool, 0);
+                    if (result != CudaError.Success && result != CudaError.NotSupported)
+                    {
+                        // Log warning but don't throw - this is a cleanup operation
+                        System.Diagnostics.Debug.WriteLine($"Warning: Failed to trim memory pool: {result}");
+                    }
+                }
+                else
+                {
+                    // For custom pools, we can perform more aggressive cleanup
+                    // Note: Destroying a pool will invalidate all allocations from it
+                    // This should only be called when we know all allocations are freed
+                    
+                    // First trim the pool
+                    _ = CudaRuntime.cudaMemPoolTrimTo(Pool, 0);
+                    
+                    // Reset pool attributes if supported
+                    try
+                    {
+                        ulong zero = 0;
+                        _ = CudaRuntime.cudaMemPoolSetAttribute(
+                            Pool, CudaMemPoolAttribute.Used, ref zero);
+                    }
+                    catch
+                    {
+                        // Ignore errors during cleanup
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Ignore all errors during pool clearing - this is best-effort cleanup
+            }
+        }
     }
 }
 

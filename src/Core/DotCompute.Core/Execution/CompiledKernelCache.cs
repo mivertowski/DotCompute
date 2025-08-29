@@ -359,6 +359,9 @@ namespace DotCompute.Core.Execution
 
         /// <summary>Gets or sets when the kernel was last accessed.</summary>
         public DateTimeOffset LastAccessed { get; set; }
+        
+        /// <summary>Gets or sets the disk path for cached kernel storage.</summary>
+        public string DiskPath { get; set; } = string.Empty;
     }
 
     /// <summary>

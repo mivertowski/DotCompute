@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.OpenCL.DeviceManagement;
 using DotCompute.Backends.OpenCL.Kernels;
 using DotCompute.Backends.OpenCL.Memory;
@@ -21,11 +21,13 @@ namespace DotCompute.Backends.OpenCL;
 public sealed class OpenCLAccelerator : IAccelerator
 {
     private readonly ILogger<OpenCLAccelerator> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly OpenCLDeviceManager _deviceManager;
     private readonly object _lock = new();
 
     private OpenCLContext? _context;
     private OpenCLDeviceInfo? _selectedDevice;
+    private OpenCLMemoryManager? _memoryManager;
     private bool _disposed;
 
     /// <summary>
@@ -59,13 +61,79 @@ public sealed class OpenCLAccelerator : IAccelerator
     public bool IsDisposed => _disposed;
 
     /// <summary>
+    /// Gets the accelerator information.
+    /// </summary>
+    public AcceleratorInfo Info => new AcceleratorInfo
+    {
+        Id = Id.ToString(),
+        Name = Name,
+        DeviceType = Type.ToString(),
+        Vendor = _selectedDevice?.Vendor ?? "Unknown",
+        DriverVersion = _selectedDevice?.DriverVersion ?? "Unknown",
+        TotalMemory = (long)(_selectedDevice?.GlobalMemorySize ?? 0),
+        AvailableMemory = (long)(_selectedDevice?.GlobalMemorySize ?? 0),
+        MaxMemoryAllocationSize = (long)(_selectedDevice?.MaxMemoryAllocationSize ?? 0),
+        LocalMemorySize = (long)(_selectedDevice?.LocalMemorySize ?? 0),
+        MaxThreadsPerBlock = (int)(_selectedDevice?.MaxWorkGroupSize ?? 0),
+        IsUnifiedMemory = false
+    };
+
+    /// <summary>
+    /// Gets the memory manager for this accelerator.
+    /// </summary>
+    public IUnifiedMemoryManager Memory
+    {
+        get
+        {
+            ThrowIfDisposed();
+            if (_memoryManager == null)
+                throw new InvalidOperationException("Accelerator not initialized. Call InitializeAsync first.");
+            return _memoryManager;
+        }
+    }
+
+    /// <summary>
+    /// Gets the accelerator context.
+    /// </summary>
+    public AcceleratorContext Context => new AcceleratorContext();
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpenCLAccelerator"/> class.
+    /// </summary>
+    /// <param name="loggerFactory">Logger factory for creating loggers.</param>
+    public OpenCLAccelerator(ILoggerFactory loggerFactory)
+    {
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _logger = _loggerFactory.CreateLogger<OpenCLAccelerator>();
+        _deviceManager = new OpenCLDeviceManager(_loggerFactory.CreateLogger<OpenCLDeviceManager>());
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="OpenCLAccelerator"/> class.
     /// </summary>
     /// <param name="logger">Logger for diagnostic information.</param>
     public OpenCLAccelerator(ILogger<OpenCLAccelerator> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _deviceManager = new OpenCLDeviceManager(logger.CreateLogger<OpenCLDeviceManager>());
+        
+        // Create a simple logger factory from the provided logger
+        var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+        serviceCollection.AddLogging(builder => builder.AddProvider(new SingleLoggerProvider(logger)));
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        _loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        
+        _deviceManager = new OpenCLDeviceManager(_loggerFactory.CreateLogger<OpenCLDeviceManager>());
+    }
+
+    /// <summary>
+    /// Initializes a new instance with a specific device.
+    /// </summary>
+    /// <param name="device">The OpenCL device to use.</param>
+    /// <param name="loggerFactory">Logger factory for creating loggers.</param>
+    public OpenCLAccelerator(OpenCLDeviceInfo device, ILoggerFactory loggerFactory)
+        : this(loggerFactory)
+    {
+        _selectedDevice = device ?? throw new ArgumentNullException(nameof(device));
     }
 
     /// <summary>
@@ -115,7 +183,11 @@ public sealed class OpenCLAccelerator : IAccelerator
                 // Create OpenCL context
                 try
                 {
-                    _context = new OpenCLContext(_selectedDevice, _logger.CreateLogger<OpenCLContext>());
+                    _context = new OpenCLContext(_selectedDevice, _loggerFactory.CreateLogger<OpenCLContext>());
+                    
+                    // Create memory manager
+                    _memoryManager = new OpenCLMemoryManager(this, _context, _loggerFactory.CreateLogger<OpenCLMemoryManager>());
+                    
                     _logger.LogInformation("OpenCL accelerator initialized successfully with device: {DeviceName}",
                         _selectedDevice.Name);
                 }
@@ -137,9 +209,9 @@ public sealed class OpenCLAccelerator : IAccelerator
     /// <param name="options">Memory allocation options.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A new memory buffer.</returns>
-    public async Task<IMemoryBuffer<T>> AllocateAsync<T>(
+    public async Task<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
         nuint elementCount,
-        MemoryAllocationOptions? options = null,
+        MemoryOptions? options = null,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
@@ -148,15 +220,12 @@ public sealed class OpenCLAccelerator : IAccelerator
         _logger.LogDebug("Allocating OpenCL buffer: type={Type}, elements={Count}",
             typeof(T).Name, elementCount);
 
-        return await Task.Run(() =>
-        {
-            var flags = DetermineMemoryFlags(options);
-            return new OpenCLMemoryBuffer<T>(
-                _context!,
-                elementCount,
-                flags,
-                _logger.CreateLogger<OpenCLMemoryBuffer<T>>());
-        }, cancellationToken);
+        // Convert nuint to int for the memory manager
+        var count = (int)elementCount;
+        if (count <= 0)
+            throw new ArgumentException("Element count must be positive", nameof(elementCount));
+
+        return await Memory.AllocateAsync<T>(count, options ?? MemoryOptions.None, cancellationToken);
     }
 
     /// <summary>
@@ -167,30 +236,29 @@ public sealed class OpenCLAccelerator : IAccelerator
     /// <param name="options">Compilation options.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A compiled kernel ready for execution.</returns>
-    public async Task<IAccelerator.ICompiledKernel> CompileKernelAsync(
-        string source,
-        string entryPoint,
+    public async ValueTask<ICompiledKernel> CompileKernelAsync(
+        KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         await EnsureInitializedAsync(cancellationToken);
 
-        if (string.IsNullOrWhiteSpace(source))
-            throw new ArgumentException("Kernel source cannot be null or empty", nameof(source));
+        if (definition?.Source == null || string.IsNullOrWhiteSpace(definition.Source.Source))
+            throw new ArgumentException("Kernel source cannot be null or empty", nameof(definition));
 
-        if (string.IsNullOrWhiteSpace(entryPoint))
-            throw new ArgumentException("Entry point cannot be null or empty", nameof(entryPoint));
+        if (string.IsNullOrWhiteSpace(definition.EntryPoint))
+            throw new ArgumentException("Entry point cannot be null or empty", nameof(definition));
 
         _logger.LogDebug("Compiling OpenCL kernel: {EntryPoint} ({SourceLength} chars)",
-            entryPoint, source.Length);
+            definition.EntryPoint, definition.Source.Source.Length);
 
         return await Task.Run(() =>
         {
             var buildOptions = DetermineBuildOptions(options);
             
             // Create program from source
-            var program = _context!.CreateProgramFromSource(source);
+            var program = _context!.CreateProgramFromSource(definition.Source.Source);
 
             try
             {
@@ -198,14 +266,14 @@ public sealed class OpenCLAccelerator : IAccelerator
                 _context.BuildProgram(program, buildOptions);
 
                 // Create kernel
-                var kernel = _context.CreateKernel(program, entryPoint);
+                var kernel = _context.CreateKernel(program, definition.EntryPoint);
 
                 return new OpenCLCompiledKernel(
                     _context,
                     program,
                     kernel,
-                    entryPoint,
-                    _logger.CreateLogger<OpenCLCompiledKernel>());
+                    definition.EntryPoint,
+                    _loggerFactory.CreateLogger<OpenCLCompiledKernel>());
             }
             catch
             {
@@ -220,7 +288,7 @@ public sealed class OpenCLAccelerator : IAccelerator
     /// Synchronizes all operations on the accelerator.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    public async Task SynchronizeAsync(CancellationToken cancellationToken = default)
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         
@@ -230,44 +298,18 @@ public sealed class OpenCLAccelerator : IAccelerator
             return;
         }
 
-        await Task.Run(() =>
+        return new ValueTask(Task.Run(() =>
         {
             _context.Finish(); // Synchronous wait for all operations
             _logger.LogTrace("OpenCL accelerator synchronized");
-        }, cancellationToken);
+        }, cancellationToken));
     }
 
-    /// <summary>
-    /// Gets accelerator capabilities and properties.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>Accelerator capabilities information.</returns>
-    public async Task<AcceleratorCapabilities> GetCapabilitiesAsync(CancellationToken cancellationToken = default)
-    {
-        ThrowIfDisposed();
-        await EnsureInitializedAsync(cancellationToken);
-
-        return await Task.FromResult(new AcceleratorCapabilities
-        {
-            Name = Name,
-            Type = Type,
-            MaxMemoryAllocation = _selectedDevice!.MaxMemoryAllocationSize,
-            GlobalMemorySize = _selectedDevice.GlobalMemorySize,
-            LocalMemorySize = _selectedDevice.LocalMemorySize,
-            MaxWorkGroupSize = (uint)_selectedDevice.MaxWorkGroupSize,
-            MaxComputeUnits = _selectedDevice.MaxComputeUnits,
-            SupportsDoublePrecision = _selectedDevice.SupportsDoublePrecision,
-            SupportsImages = _selectedDevice.ImageSupport,
-            Extensions = _selectedDevice.Extensions.Split(' ', StringSplitOptions.RemoveEmptyEntries),
-            DriverVersion = _selectedDevice.DriverVersion,
-            OpenCLVersion = _selectedDevice.OpenCLVersion
-        });
-    }
 
     /// <summary>
     /// Determines memory flags based on allocation options.
     /// </summary>
-    private static MemoryFlags DetermineMemoryFlags(MemoryAllocationOptions? options)
+    private static MemoryFlags DetermineMemoryFlags(MemoryOptions? options)
     {
         if (options == null)
             return MemoryFlags.ReadWrite;
@@ -373,11 +415,12 @@ public sealed class OpenCLAccelerator : IAccelerator
 
             try
             {
+                _memoryManager?.Dispose();
                 _context?.Dispose();
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error occurred while disposing OpenCL context");
+                _logger.LogWarning(ex, "Error occurred while disposing OpenCL resources");
             }
 
             _disposed = true;

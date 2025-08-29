@@ -72,7 +72,12 @@ namespace DotCompute.Abstractions.Memory
         /// <summary>
         /// Memory should be initialized to zero on allocation.
         /// </summary>
-        InitializeToZero = 1 << 11
+        InitializeToZero = 1 << 11,
+
+        /// <summary>
+        /// Memory should automatically migrate between devices as needed.
+        /// </summary>
+        AutoMigrate = 1 << 12
     }
 
     /// <summary>
@@ -88,6 +93,16 @@ namespace DotCompute.Abstractions.Memory
         public static bool InitializeToZero(this MemoryOptions options)
         {
             return options.HasFlag(MemoryOptions.InitializeToZero) || options.HasFlag(MemoryOptions.ZeroInitialized);
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the memory should automatically migrate between devices.
+        /// </summary>
+        /// <param name="options">The memory options.</param>
+        /// <returns>True if memory should auto-migrate.</returns>
+        public static bool ShouldAutoMigrate(this MemoryOptions options)
+        {
+            return options.HasFlag(MemoryOptions.AutoMigrate);
         }
     }
 }

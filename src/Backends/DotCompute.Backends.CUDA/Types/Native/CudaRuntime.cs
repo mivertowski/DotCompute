@@ -1,15 +1,16 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
 using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Native.Exceptions;
-using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Native
 {
+    using DotCompute.Backends.CUDA.Types.Native;
 
     /// <summary>
     /// P/Invoke wrapper for CUDA runtime API
@@ -19,30 +20,30 @@ namespace DotCompute.Backends.CUDA.Native
         private const string CUDA_LIBRARY = "cudart";
         private const string CUDA_DRIVER_LIBRARY = "cuda";
 
-        // Device Management
-        [DllImport(CUDA_LIBRARY)]
+        // Device Management - Using LibraryImport for better AOT compatibility
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaGetDeviceCount(out int count);
+        internal static partial CudaError cudaGetDeviceCount(out int count);
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaSetDevice(int device);
+        internal static partial CudaError cudaSetDevice(int device);
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaGetDevice(out int device);
+        internal static partial CudaError cudaGetDevice(out int device);
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaGetDeviceProperties(ref CudaDeviceProperties prop, int device);
+        internal static partial CudaError cudaGetDeviceProperties(ref CudaDeviceProperties prop, int device);
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaDeviceSynchronize();
+        internal static partial CudaError cudaDeviceSynchronize();
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaDeviceReset();
+        internal static partial CudaError cudaDeviceReset();
 
         // Driver API Initialization
         [DllImport(CUDA_DRIVER_LIBRARY)]
@@ -100,34 +101,34 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGetErrorName(CudaError error, out IntPtr pStr);
 
-        // Memory Management
-        [DllImport(CUDA_LIBRARY)]
+        // Memory Management - Using nint/nuint for better AOT compatibility
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMalloc(ref IntPtr devPtr, ulong size);
+        internal static partial CudaError cudaMalloc(ref nint devPtr, nuint size);
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaFree(IntPtr devPtr);
+        internal static partial CudaError cudaFree(nint devPtr);
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemcpy(IntPtr dst, IntPtr src, ulong count, CudaMemcpyKind kind);
+        internal static partial CudaError cudaMemcpy(nint dst, nint src, nuint count, CudaMemcpyKind kind);
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemcpyAsync(IntPtr dst, IntPtr src, ulong count, CudaMemcpyKind kind, IntPtr stream);
+        internal static partial CudaError cudaMemcpyAsync(nint dst, nint src, nuint count, CudaMemcpyKind kind, nint stream);
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemset(IntPtr devPtr, int value, ulong count);
+        internal static partial CudaError cudaMemset(nint devPtr, int value, nuint count);
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemsetAsync(IntPtr devPtr, int value, ulong count, IntPtr stream);
+        internal static partial CudaError cudaMemsetAsync(nint devPtr, int value, nuint count, nint stream);
 
-        [DllImport(CUDA_LIBRARY)]
+        [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaMemGetInfo(out ulong free, out ulong total);
+        internal static partial CudaError cudaMemGetInfo(out nuint free, out nuint total);
 
         // Unified Memory Management
         [DllImport(CUDA_LIBRARY)]
@@ -308,10 +309,36 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaFreeAsync(IntPtr devPtr, IntPtr stream);
+        
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMallocAsync(ref IntPtr ptr, ulong size, IntPtr stream);
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaDeviceGetDefaultMemPool(ref IntPtr memPool, int device);
+
+        // Memory Pool Management (CUDA 11.2+)
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaDeviceSetMemPool(int device, IntPtr memPool);
+
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemRangeGetAttribute(
+            out int value,
+            CudaMemRangeAttribute attribute,
+            IntPtr devPtr,
+            ulong count);
+
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemRangeGetAttributes(
+            IntPtr[] values,
+            CudaMemRangeAttribute[] attributes,
+            ulong numAttributes,
+            IntPtr devPtr,
+            ulong count);
 
         // Occupancy Calculator
         [DllImport(CUDA_LIBRARY)]
@@ -416,6 +443,35 @@ namespace DotCompute.Backends.CUDA.Native
         {
             var ptr = cudaGetErrorString(error);
             return Marshal.PtrToStringAnsi(ptr) ?? error.ToString();
+        }
+
+        /// <summary>
+        /// Allocates device memory and returns the pointer.
+        /// </summary>
+        public static nint cudaMalloc(nuint size)
+        {
+            var ptr = IntPtr.Zero;
+            var result = cudaMalloc(ref ptr, (ulong)size);
+            CheckError(result, "allocating device memory");
+            return ptr;
+        }
+
+        /// <summary>
+        /// Allocates device memory using out parameter.
+        /// </summary>
+        public static CudaError TryAllocateMemory(out IntPtr devicePtr, ulong sizeInBytes)
+        {
+            devicePtr = IntPtr.Zero;
+            return cudaMalloc(ref devicePtr, sizeInBytes);
+        }
+
+        /// <summary>
+        /// Allocates async device memory using out parameter.
+        /// </summary>
+        public static CudaError TryAllocateMemoryAsync(out IntPtr devicePtr, ulong sizeInBytes, IntPtr stream)
+        {
+            devicePtr = IntPtr.Zero;
+            return cudaMallocAsync(ref devicePtr, sizeInBytes, stream);
         }
 
         public static void CheckError(CudaError error, string operation = "")

@@ -3,8 +3,11 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Memory;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core;
 using DotCompute.Core.Kernels;
+using DotCompute.Core.Memory;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -41,7 +44,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
         
         _accelerator = new TestAccelerator(info, _logger);
         _compiler = new TestKernelCompiler(_logger);
-        _buffer = new TestMemoryBuffer<float>(1024 * sizeof(float));
+        _buffer = new TestMemoryBuffer<float>(1024 * sizeof(float), _accelerator);
         
         await Task.CompletedTask;
     }
@@ -61,7 +64,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     {
         // Arrange
         var kernelCode = GenerateTestKernelCode();
-        var definition = new KernelDefinition("vector_add", kernelCode, "main");
+        var definition = new KernelDefinition("vector_add", Convert.ToBase64String(kernelCode), "main");
         
         // Act - Compile using accelerator (which uses BaseAccelerator)
         var compiledKernel = await _accelerator!.CompileKernelAsync(definition);
@@ -75,7 +78,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     public async Task ConsolidatedCompiler_WithCaching_ReusesSameInstance()
     {
         // Arrange
-        var definition = new KernelDefinition("cached_kernel", GenerateTestKernelCode(), "main");
+        var definition = new KernelDefinition("cached_kernel", Convert.ToBase64String(GenerateTestKernelCode()), "main");
         
         // Act - Compile twice
         var kernel1 = await _compiler!.CompileAsync(definition);
@@ -93,8 +96,8 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
         var destinationData = new float[4];
         
         // Act
-        await _buffer!.CopyFromAsync(sourceData.AsMemory());
-        await _buffer.CopyToAsync(destinationData.AsMemory());
+        await _buffer!.CopyFromAsync(sourceData.AsMemory(), CancellationToken.None);
+        await _buffer.CopyToAsync(destinationData.AsMemory(), CancellationToken.None);
         
         // Assert
         Assert.Equal(sourceData, destinationData);
@@ -114,7 +117,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     public void BaseMemoryBuffer_Validation_PreventsInvalidOperations()
     {
         // Arrange
-        var buffer = new TestMemoryBuffer<float>(100 * sizeof(float));
+        var buffer = new TestMemoryBuffer<float>(100 * sizeof(float), _accelerator);
         
         // Act & Assert - Should throw for invalid copy parameters
         Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -127,27 +130,25 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
         // This test simulates a complete workflow using all consolidated components
         
         // Step 1: Create kernel definition
-        var kernelDef = new KernelDefinition("workflow_kernel", GenerateTestKernelCode(), "main");
+        var kernelDef = new KernelDefinition("workflow_kernel", Convert.ToBase64String(GenerateTestKernelCode()), "main");
         
         // Step 2: Compile kernel using accelerator
         var kernel = await _accelerator!.CompileKernelAsync(kernelDef);
         Assert.NotNull(kernel);
         
         // Step 3: Allocate memory buffers
-        var inputBuffer = new TestMemoryBuffer<float>(256 * sizeof(float));
-        var outputBuffer = new TestMemoryBuffer<float>(256 * sizeof(float));
+        var inputBuffer = new TestMemoryBuffer<float>(256 * sizeof(float), _accelerator);
+        var outputBuffer = new TestMemoryBuffer<float>(256 * sizeof(float), _accelerator);
         
         // Step 4: Copy data to buffers
         var inputData = Enumerable.Range(0, 256).Select(i => (float)i).ToArray();
-        await inputBuffer.CopyFromAsync(inputData.AsMemory());
+        await inputBuffer.CopyFromAsync(inputData.AsMemory(), CancellationToken.None);
         
         // Step 5: Execute kernel (simulated)
-        var arguments = new KernelArguments
-        {
-            ["input"] = inputBuffer,
-            ["output"] = outputBuffer,
-            ["size"] = 256
-        };
+        var arguments = new KernelArguments();
+        arguments.Add(inputBuffer);
+        arguments.Add(outputBuffer);
+        arguments.Add(256);
         await kernel.ExecuteAsync(arguments);
         
         // Step 6: Synchronize
@@ -155,7 +156,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
         
         // Step 7: Copy results back
         var outputData = new float[256];
-        await outputBuffer.CopyToAsync(outputData.AsMemory());
+        await outputBuffer.CopyToAsync(outputData.AsMemory(), CancellationToken.None);
         
         // Assert - Verify workflow completed
         Assert.NotNull(outputData);
@@ -176,9 +177,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
         Assert.NotNull(metrics);
     }
 
-    private static byte[] GenerateTestKernelCode() =>
-        // Simulate kernel bytecode
-        new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
+    private static byte[] GenerateTestKernelCode() => new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
 
     /// <summary>
     /// Test accelerator using BaseAccelerator
@@ -188,9 +187,11 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
         public bool SynchronizeCalled { get; private set; }
 
         public TestAccelerator(AcceleratorInfo info, ILogger logger)
-            : base(info, AcceleratorType.CPU, new TestMemoryManager(), new AcceleratorContext(IntPtr.Zero, 0), logger)
+            : base(info, AcceleratorType.CPU, CreateMemoryManager(), new AcceleratorContext(IntPtr.Zero, 0), logger)
         {
         }
+        
+        private static TestMemoryManager CreateMemoryManager() => new TestMemoryManager();
 
         protected override ValueTask<ICompiledKernel> CompileKernelCoreAsync(
             KernelDefinition definition, CompilationOptions options, CancellationToken cancellationToken) => ValueTask.FromResult<ICompiledKernel>(new TestCompiledKernel(definition.Name));
@@ -210,6 +211,8 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
         public TestKernelCompiler(ILogger logger) : base(logger) { }
 
         protected override string CompilerName => "TestCompiler";
+        
+        public override IReadOnlyList<KernelLanguage> SupportedSourceTypes => new[] { KernelLanguage.OpenCL, KernelLanguage.CUDA };
 
         protected override ValueTask<ICompiledKernel> CompileKernelCoreAsync(
             KernelDefinition definition, CompilationOptions options, CancellationToken cancellationToken) => ValueTask.FromResult<ICompiledKernel>(new TestCompiledKernel(definition.Name));
@@ -222,15 +225,59 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     {
         private readonly T[] _data;
         private bool _disposed;
+        private readonly TestAccelerator _accelerator;
 
-        public TestMemoryBuffer(long sizeInBytes) : base(sizeInBytes)
+        public TestMemoryBuffer(long sizeInBytes, TestAccelerator? accelerator = null) : base(sizeInBytes)
         {
             _data = new T[sizeInBytes / System.Runtime.CompilerServices.Unsafe.SizeOf<T>()];
+            _accelerator = accelerator ?? new TestAccelerator(new AcceleratorInfo(), LoggerFactory.Create(b => b.AddConsole()).CreateLogger<TestAccelerator>());
         }
 
         public override IntPtr DevicePointer => IntPtr.Zero;
         public override MemoryType MemoryType => MemoryType.Host;
         public override bool IsDisposed => _disposed;
+        public override IAccelerator Accelerator => _accelerator;
+        public override BufferState State => BufferState.HostDirty;
+        public override MemoryOptions Options => MemoryOptions.None;
+        public override bool IsOnHost => true;
+        public override bool IsOnDevice => false;
+        public override bool IsDirty => false;
+
+        public override Span<T> AsSpan() => _data.AsSpan();
+        public override ReadOnlySpan<T> AsReadOnlySpan() => _data.AsSpan();
+        public override Memory<T> AsMemory() => _data.AsMemory();
+        public override ReadOnlyMemory<T> AsReadOnlyMemory() => _data.AsMemory();
+        public override DeviceMemory GetDeviceMemory() => new DeviceMemory(IntPtr.Zero, SizeInBytes);
+        public override MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => throw new NotImplementedException();
+        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => throw new NotImplementedException();
+        public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
+        public override void EnsureOnHost() { }
+        public override void EnsureOnDevice() { }
+        public override ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override void Synchronize() { }
+        public override ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override void MarkHostDirty() { }
+        public override void MarkDeviceDirty() { }
+
+        public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
+        {
+            source.CopyTo(_data.AsMemory());
+            return ValueTask.CompletedTask;
+        }
+
+        public override ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
+        {
+            _data.AsMemory(0, destination.Length).CopyTo(destination);
+            return ValueTask.CompletedTask;
+        }
+
+        public override ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override IUnifiedMemoryBuffer<T> Slice(int offset, int length) => new TestMemoryBuffer<T>(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), _accelerator);
+        public override IUnifiedMemoryBuffer<TNew> AsType<TNew>() => (IUnifiedMemoryBuffer<TNew>)new TestMemoryBuffer<TNew>(SizeInBytes, _accelerator);
 
         public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default)
         {
@@ -244,7 +291,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
             return ValueTask.CompletedTask;
         }
 
-        public override ValueTask CopyFromAsync(IMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
+        public override ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
 
         public override void Dispose() => _disposed = true;
@@ -259,18 +306,89 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Test memory manager
+    /// Test memory manager using BaseMemoryManager
     /// </summary>
-    private class TestMemoryManager : IMemoryManager
+    private class TestMemoryManager : BaseMemoryManager
     {
-        public ValueTask<IMemoryBuffer<T>> AllocateAsync<T>(long count, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
-            => ValueTask.FromResult<IMemoryBuffer<T>>(new TestMemoryBuffer<T>(count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()));
+        private IAccelerator? _accelerator;
 
-        public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
+        public TestMemoryManager() : base(LoggerFactory.Create(b => b.AddConsole()).CreateLogger<TestMemoryManager>())
+        {
+        }
+
+        public override IAccelerator Accelerator => _accelerator ?? throw new InvalidOperationException("Accelerator not set");
+        
+        public void SetAccelerator(IAccelerator accelerator) => _accelerator = accelerator;
+        
+        public override MemoryStatistics Statistics => new MemoryStatistics
+        {
+            TotalAllocated = 0,
+            CurrentUsed = 0,
+            PeakUsage = 0,
+            ActiveAllocations = 0,
+            TotalAllocationCount = 0,
+            TotalDeallocationCount = 0,
+            PoolHitRate = 1.0,
+            FragmentationPercentage = 0.0
+        };
+        
+        public override long MaxAllocationSize => 1024 * 1024 * 1024;
+        public override long TotalAvailableMemory => 1024 * 1024 * 1024;
+        public override long CurrentAllocatedMemory => 0;
+
+        public override ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+            => ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(new TestMemoryBuffer<T>(count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()));
+
+        public override ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+        {
+            var buffer = new TestMemoryBuffer<T>(source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+            buffer.CopyFromAsync(source, cancellationToken).AsTask().Wait();
+            return ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(buffer);
+        }
+
+        protected override ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(long sizeInBytes, MemoryOptions options, CancellationToken cancellationToken)
+            => ValueTask.FromResult<IUnifiedMemoryBuffer>(new TestUnifiedMemoryBuffer(sizeInBytes));
+
+        protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)
+            => new TestUnifiedMemoryBuffer(length);
+
+        public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int length)
+            => new TestMemoryBuffer<T>(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+
+        public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask OptimizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override void Clear() { }
+    }
+
+    /// <summary>
+    /// Test non-generic unified memory buffer
+    /// </summary>
+    private class TestUnifiedMemoryBuffer : IUnifiedMemoryBuffer
+    {
+        public long SizeInBytes { get; }
+        public IntPtr DevicePointer => IntPtr.Zero;
+        public MemoryType MemoryType => MemoryType.Host;
+        public bool IsDisposed => false;
+        public MemoryOptions Options => MemoryOptions.None;
+        public BufferState State => BufferState.HostDirty;
+
+        public TestUnifiedMemoryBuffer(long sizeInBytes)
+        {
+            SizeInBytes = sizeInBytes;
+        }
 
         public void Dispose() { }
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+        public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+            => ValueTask.CompletedTask;
+
+        public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+            => ValueTask.CompletedTask;
     }
 
     /// <summary>
@@ -278,6 +396,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     /// </summary>
     private class TestCompiledKernel : ICompiledKernel
     {
+        public Guid Id { get; } = Guid.NewGuid();
         public string Name { get; }
 
         public TestCompiledKernel(string name)

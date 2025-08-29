@@ -225,8 +225,8 @@ public sealed class CudaKernelCache : IDisposable
                 Cubin = cubin,
                 Binary = binary,
                 ComputeCapability = options.ComputeCapability,
-                CompilationTime = compilationTime,
-                CompiledAt = endTime
+                CompilationTime = TimeSpan.FromMilliseconds(compilationTime),
+                CompiledAt = endTime.DateTime
             };
         }
         catch (Exception ex)
@@ -477,8 +477,8 @@ public sealed class CudaKernelCache : IDisposable
                 Cubin = cubin,
                 Binary = cubin ?? Encoding.UTF8.GetBytes(ptx),
                 ComputeCapability = metadata.ComputeCapability,
-                CompilationTime = metadata.CompilationTime,
-                CompiledAt = metadata.CompiledAt
+                CompilationTime = TimeSpan.FromMilliseconds(metadata.CompilationTime),
+                CompiledAt = metadata.CompiledAt.DateTime
             };
             
             // Add to memory cache

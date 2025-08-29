@@ -1,10 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.OpenCL.Types.Native;
 using Microsoft.Extensions.Logging;
+using static DotCompute.Backends.OpenCL.Types.Native.OpenCLTypes;
 
 namespace DotCompute.Backends.OpenCL.Kernels;
 
@@ -12,7 +14,7 @@ namespace DotCompute.Backends.OpenCL.Kernels;
 /// OpenCL implementation of a compiled kernel.
 /// Manages kernel execution with proper argument binding and work group configuration.
 /// </summary>
-internal sealed class OpenCLCompiledKernel : IAccelerator.ICompiledKernel
+internal sealed class OpenCLCompiledKernel : ICompiledKernel
 {
     private readonly OpenCLContext _context;
     private readonly ILogger<OpenCLCompiledKernel> _logger;
@@ -140,7 +142,7 @@ internal sealed class OpenCLCompiledKernel : IAccelerator.ICompiledKernel
         _logger.LogTrace("Setting kernel argument {Index}: {Type}", index, argument?.GetType().Name ?? "null");
 
         // Handle buffer arguments
-        if (argument is IMemoryBuffer memoryBuffer)
+        if (argument is IUnifiedMemoryBuffer memoryBuffer)
         {
             await SetBufferArgumentAsync(index, memoryBuffer, cancellationToken);
             return;
@@ -153,7 +155,7 @@ internal sealed class OpenCLCompiledKernel : IAccelerator.ICompiledKernel
     /// <summary>
     /// Sets a buffer argument.
     /// </summary>
-    private async Task SetBufferArgumentAsync(uint index, IMemoryBuffer buffer, CancellationToken cancellationToken)
+    private async Task SetBufferArgumentAsync(uint index, IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -265,15 +267,15 @@ internal sealed class OpenCLCompiledKernel : IAccelerator.ICompiledKernel
         nuint[] globalWorkSize;
         nuint[]? localWorkSize = null;
 
-        // Check if specific work sizes are provided
-        if (arguments.GlobalWorkSize != null && arguments.GlobalWorkSize.Length > 0)
+        // Check if specific work sizes are provided in execution options
+        if (arguments.ExecutionOptions?.GlobalWorkSize != null && arguments.ExecutionOptions.GlobalWorkSize.Length > 0)
         {
-            workDimensions = (uint)arguments.GlobalWorkSize.Length;
-            globalWorkSize = arguments.GlobalWorkSize.Select(s => (nuint)s).ToArray();
+            workDimensions = (uint)arguments.ExecutionOptions.GlobalWorkSize.Length;
+            globalWorkSize = arguments.ExecutionOptions.GlobalWorkSize.Select(s => (nuint)s).ToArray();
             
-            if (arguments.LocalWorkSize != null && arguments.LocalWorkSize.Length > 0)
+            if (arguments.ExecutionOptions.LocalWorkSize != null && arguments.ExecutionOptions.LocalWorkSize.Length > 0)
             {
-                localWorkSize = arguments.LocalWorkSize.Select(s => (nuint)s).ToArray();
+                localWorkSize = arguments.ExecutionOptions.LocalWorkSize.Select(s => (nuint)s).ToArray();
             }
         }
         else
@@ -311,9 +313,9 @@ internal sealed class OpenCLCompiledKernel : IAccelerator.ICompiledKernel
         nuint maxElements = 1;
         foreach (var arg in arguments.Arguments)
         {
-            if (arg is IMemoryBuffer buffer)
+            if (arg is IUnifiedMemoryBuffer buffer)
             {
-                maxElements = Math.Max(maxElements, buffer.ElementCount);
+                maxElements = Math.Max(maxElements, (nuint)Math.Abs(buffer.SizeInBytes / 4)); // Estimate assuming 4-byte elements
             }
         }
 

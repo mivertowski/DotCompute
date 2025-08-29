@@ -18,9 +18,24 @@ namespace DotCompute.Core.Models
         public string? PtxCode { get; set; }
 
         /// <summary>
+        /// Gets or sets the PTX intermediate representation.
+        /// </summary>
+        public string Ptx { get; set; } = "";
+
+        /// <summary>
         /// Gets or sets the binary code (cubin).
         /// </summary>
         public byte[]? BinaryCode { get; set; }
+
+        /// <summary>
+        /// Gets or sets the CUBIN binary data.
+        /// </summary>
+        public byte[] Cubin { get; set; } = Array.Empty<byte>();
+
+        /// <summary>
+        /// Gets or sets the compiled binary data.
+        /// </summary>
+        public byte[] Binary { get; set; } = Array.Empty<byte>();
 
         /// <summary>
         /// Gets or sets the CUDA module handle.
@@ -36,6 +51,16 @@ namespace DotCompute.Core.Models
         /// Gets or sets the compilation timestamp.
         /// </summary>
         public DateTimeOffset CompiledAt { get; set; }
+
+        /// <summary>
+        /// Gets or sets the compute capability version used for compilation.
+        /// </summary>
+        public Version ComputeCapability { get; set; } = new Version(0, 0);
+
+        /// <summary>
+        /// Gets or sets the time spent during compilation.
+        /// </summary>
+        public TimeSpan CompilationTime { get; set; }
 
         /// <summary>
         /// Gets or sets whether this kernel was loaded from cache.

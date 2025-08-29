@@ -61,7 +61,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
             SizeInBytes = sizeInBytes;
             DeviceId = deviceId;
             Flags = flags;
-            CurrentResidence = flags.HasFlag(ManagedMemoryFlags.PreferDevice) 
+            CurrentResidence = flags.HasFlag(ManagedMemoryFlags.PreferDeviceNative) 
                 ? MemoryResidence.Device 
                 : MemoryResidence.Host;
         }

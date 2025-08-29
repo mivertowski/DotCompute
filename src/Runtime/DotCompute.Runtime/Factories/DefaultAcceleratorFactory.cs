@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Runtime.Factories;
 
@@ -132,33 +133,23 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                 return provider;
             }
 
-            // Create manually with DI
-            var constructors = typeof(TProvider).GetConstructors();
-            var bestConstructor = constructors.OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();
-
-            if (bestConstructor == null)
+            // For AOT compatibility, try to use ActivatorUtilities for DI-based creation
+            try
             {
-                throw new InvalidOperationException($"No suitable constructor found for {typeof(TProvider).Name}");
+                var instance = ActivatorUtilities.CreateInstance<TProvider>(serviceProvider);
+                return instance;
             }
-
-            var parameters = bestConstructor.GetParameters();
-            var dependencies = new object[parameters.Length];
-
-            for (var i = 0; i < parameters.Length; i++)
+            catch (InvalidOperationException)
             {
-                var dependency = serviceProvider.GetService(parameters[i].ParameterType);
-                if (dependency == null && !IsOptionalParameter(parameters[i]))
+                // Fall back to parameterless constructor if available
+                if (TryCreateInstanceWithParameterlessConstructor<TProvider>(out var fallbackInstance))
                 {
-                    throw new InvalidOperationException(
-                        $"Required dependency {parameters[i].ParameterType.Name} could not be resolved for {typeof(TProvider).Name}");
+                    return fallbackInstance;
                 }
-                dependencies[i] = dependency!;
+                throw new InvalidOperationException(
+                    $"Cannot create instance of {typeof(TProvider).Name}. " +
+                    "Ensure it has a parameterless constructor or all dependencies are registered.");
             }
-
-            var instance = (TProvider)Activator.CreateInstance(typeof(TProvider), dependencies)!;
-
-            _logger.LogDebug("Created accelerator provider {ProviderType}", typeof(TProvider).Name);
-            return instance;
         }
         catch (Exception ex)
         {
@@ -320,32 +311,29 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         throw new NotSupportedException($"No provider found for accelerator type {type}");
     }
 
+    [RequiresUnreferencedCode("Creating provider instances requires runtime type information")]
     private ValueTask<object> CreateProviderAsync(Type providerType, IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
-        var constructors = providerType.GetConstructors();
-        var bestConstructor = constructors.OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();
-
-        if (bestConstructor == null)
+        // For AOT compatibility, try using ActivatorUtilities first
+        try
         {
-            throw new InvalidOperationException($"No suitable constructor found for {providerType.Name}");
+            var instance = ActivatorUtilities.CreateInstance(serviceProvider, providerType);
+            return ValueTask.FromResult(instance);
         }
-
-        var parameters = bestConstructor.GetParameters();
-        var dependencies = new object[parameters.Length];
-
-        for (var i = 0; i < parameters.Length; i++)
+        catch (InvalidOperationException)
         {
-            var dependency = serviceProvider.GetService(parameters[i].ParameterType);
-            if (dependency == null && !IsOptionalParameter(parameters[i]))
+            // Fall back to parameterless constructor if available
+            var constructor = providerType.GetConstructor(Type.EmptyTypes);
+            if (constructor != null)
             {
-                throw new InvalidOperationException(
-                    $"Required dependency {parameters[i].ParameterType.Name} could not be resolved for {providerType.Name}");
+                var instance = constructor.Invoke(null);
+                return ValueTask.FromResult(instance);
             }
-            dependencies[i] = dependency!;
+            
+            throw new InvalidOperationException(
+                $"Cannot create instance of {providerType.Name}. " +
+                "Ensure it has a parameterless constructor or all dependencies are registered.");
         }
-
-        var instance = Activator.CreateInstance(providerType, dependencies)!;
-        return ValueTask.FromResult(instance);
     }
 
     private async Task<AcceleratorValidationResult> ValidateAcceleratorAsync(IAccelerator accelerator)
@@ -415,11 +403,28 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         }
     }
 
-    private static bool IsOptionalParameter(System.Reflection.ParameterInfo parameter)
+    /// <summary>
+    /// AOT-safe method to create instances with parameterless constructors
+    /// </summary>
+    private static bool TryCreateInstanceWithParameterlessConstructor<T>([NotNullWhen(true)] out T? instance)
+        where T : class
     {
-        return parameter.HasDefaultValue ||
-               // parameter.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.OptionalAttribute), false).Any() ||
-               Nullable.GetUnderlyingType(parameter.ParameterType) != null;
+        try
+        {
+            var constructor = typeof(T).GetConstructor(Type.EmptyTypes);
+            if (constructor != null)
+            {
+                instance = (T)constructor.Invoke(null);
+                return true;
+            }
+        }
+        catch
+        {
+            // Ignore exceptions during fallback creation
+        }
+        
+        instance = null;
+        return false;
     }
 
     public void Dispose()

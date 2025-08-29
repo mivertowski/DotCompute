@@ -5,6 +5,7 @@ using global::System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Wrapper.BLAS.Enums;
 using DotCompute.Backends.CUDA.Wrapper.BLAS.Models;
 using Microsoft.Extensions.Logging;

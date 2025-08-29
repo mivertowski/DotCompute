@@ -89,7 +89,7 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
         {
             var device = _deviceManager.GetDevice(_context.DeviceId);
             
-            _unifiedMemorySupported = device.ManagedMemory;
+            _unifiedMemorySupported = device.SupportsManagedMemory;
             _concurrentAccessSupported = device.ConcurrentManagedAccess;
             _pageFaultHandlingSupported = device.PageableMemoryAccess;
             
@@ -116,15 +116,29 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
     {
         try
         {
-            // Set managed memory preferred location if supported
+                // Set managed memory preferred location if supported
             if (_concurrentAccessSupported && _config.PreferredLocation != null)
             {
-                var result = CudaRuntime.cudaDeviceSetMemPool(
-                    _config.PreferredLocation.Value);
-                
-                if (result != CudaError.Success)
+                        // Get default memory pool first
+                IntPtr memPool = IntPtr.Zero;
+                var result = CudaRuntime.cudaDeviceGetDefaultMemPool(ref memPool, _context.DeviceId);
+                if (result == CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to set preferred memory location: {Error}", result);
+                    var setResult = CudaRuntime.cudaDeviceSetMemPool(
+                        _config.PreferredLocation.Value, memPool);
+                    
+                    if (setResult != CudaError.Success)
+                    {
+                        _logger.LogWarning("Failed to set preferred memory location: {Error}", setResult);
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Successfully set preferred memory location to device {Device}", _config.PreferredLocation.Value);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to get default memory pool: {Error}", result);
                 }
             }
         }
@@ -153,8 +167,9 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
         try
         {
             // Allocate managed memory
+            IntPtr devicePtr = IntPtr.Zero;
             var result = CudaRuntime.cudaMallocManaged(
-                out IntPtr devicePtr,
+                ref devicePtr,
                 (ulong)sizeInBytes,
                 (uint)flags);
             
@@ -649,6 +664,128 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
     }
 
 
+    /// <summary>
+    /// Allocates unified memory asynchronously.
+    /// </summary>
+    public async ValueTask<IntPtr> AllocateUnifiedAsync(long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+        
+        if (!_unifiedMemorySupported)
+        {
+            throw new NotSupportedException("Unified memory is not supported on this device");
+        }
+
+        return await Task.Run(() =>
+        {
+            IntPtr devicePtr = IntPtr.Zero;
+            var result = CudaRuntime.cudaMallocManaged(
+                ref devicePtr,
+                (ulong)sizeInBytes,
+                1); // AttachGlobal flag
+            
+            CudaRuntime.CheckError(result, $"allocating {sizeInBytes} bytes of unified memory");
+            
+            // Track allocation
+            var allocationInfo = new UnifiedMemoryInfo
+            {
+                Pointer = devicePtr,
+                Size = sizeInBytes,
+                Flags = ManagedMemoryFlags.AttachGlobal,
+                AllocatedAt = DateTimeOffset.UtcNow,
+                LastAccessedDevice = _context.DeviceId
+            };
+            
+            _allocations.TryAdd(devicePtr, allocationInfo);
+            
+            _logger.LogDebug("Allocated {Size} bytes of unified memory at {Ptr}", sizeInBytes, devicePtr);
+            
+            return devicePtr;
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Frees unified memory asynchronously.
+    /// </summary>
+    public async ValueTask FreeUnifiedAsync(IntPtr devicePtr, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        
+        if (devicePtr == IntPtr.Zero)
+        {
+            return;
+        }
+
+        await Task.Run(() =>
+        {
+            try
+            {
+                var result = CudaRuntime.cudaFree(devicePtr);
+                
+                if (result != CudaError.Success)
+                {
+                    _logger.LogWarning("Failed to free unified memory: {Error}", result);
+                }
+                
+                _allocations.TryRemove(devicePtr, out _);
+                _accessPatterns.TryRemove(devicePtr, out _);
+                
+                _logger.LogDebug("Freed unified memory at {Ptr}", devicePtr);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error freeing unified memory at {Ptr}", devicePtr);
+                throw;
+            }
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Optimizes access patterns for better performance.
+    /// </summary>
+    public void OptimizeAccessPatterns()
+    {
+        if (!_unifiedMemorySupported || _allocations.IsEmpty)
+        {
+            return;
+        }
+
+        _logger.LogInformation("Optimizing access patterns for {Count} allocations", _allocations.Count);
+
+        foreach (var (ptr, info) in _allocations)
+        {
+            if (_accessPatterns.TryGetValue(ptr, out var pattern))
+            {
+                try
+                {
+                    // Apply optimization based on access pattern
+                    if (pattern.AccessFrequency == AccessFrequency.VeryHigh)
+                    {
+                        // Keep on preferred device for high frequency access
+                        SetPreferredLocation(ptr, info.Size, pattern.LastDevice);
+                    }
+                    else if (pattern.IsReadMostly)
+                    {
+                        // Apply read-mostly advice for read-heavy patterns
+                        ApplyMemoryAdvice(ptr, info.Size, CudaMemoryAdvise.SetReadMostly);
+                    }
+                    else if (pattern.DeviceSwitchCount > 5)
+                    {
+                        // For frequently switching patterns, don't set preferred location
+                        ApplyMemoryAdvice(ptr, info.Size, CudaMemoryAdvise.UnsetPreferredLocation);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to optimize access pattern for allocation {Ptr}", ptr);
+                }
+            }
+        }
+
+        _logger.LogInformation("Completed access pattern optimization");
+    }
+
     /// <inheritdoc/>
     public override async ValueTask OptimizeAsync(CancellationToken cancellationToken) => await Task.Run(() => OptimizeAccessPatterns(), cancellationToken);
 
@@ -740,9 +877,15 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
     {
         private long _totalAccesses;
         private double _totalLatency;
+        private long _peakMemoryUsage;
         
         public long TotalAccesses => _totalAccesses;
         public double AverageLatency => _totalAccesses > 0 ? _totalLatency / _totalAccesses : 0;
+        
+        /// <summary>
+        /// Gets the peak memory usage in bytes tracked by this counter.
+        /// </summary>
+        public long PeakMemoryUsage => _peakMemoryUsage;
         
         public void RecordAccess(int device, double latency = 0)
         {
@@ -750,6 +893,21 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
             if (latency > 0)
             {
                 Interlocked.Exchange(ref _totalLatency, _totalLatency + latency);
+            }
+        }
+
+        /// <summary>
+        /// Records memory usage and updates peak if necessary.
+        /// </summary>
+        public void RecordMemoryUsage(long memoryUsage)
+        {
+            long currentPeak = _peakMemoryUsage;
+            while (memoryUsage > currentPeak)
+            {
+                long result = Interlocked.CompareExchange(ref _peakMemoryUsage, memoryUsage, currentPeak);
+                if (result == currentPeak)
+                    break;
+                currentPeak = result;
             }
         }
     }
@@ -776,7 +934,9 @@ public enum ManagedMemoryFlags : uint
     AttachGlobal = 0x01,
     AttachHost = 0x02,
     AttachSingle = 0x04,
-    AttachMempool = 0x08
+    AttachMempool = 0x08,
+    PreferDevice = 0x01,
+    PreferDeviceNative = 0x10
 }
 
 /// <summary>

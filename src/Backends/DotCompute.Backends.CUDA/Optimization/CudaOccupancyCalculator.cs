@@ -158,7 +158,7 @@ namespace DotCompute.Backends.CUDA.Optimization
             
             var curve = new OccupancyCurve
             {
-                KernelName = kernelAttrs.Name ?? "Unknown",
+                KernelName = kernelAttrs.KernelName,
                 DeviceId = deviceId
             };
 
@@ -852,6 +852,24 @@ namespace DotCompute.Backends.CUDA.Optimization
             public int MaxDynamicSharedSizeBytes;
             public int PreferredShmemCarveout;
             public IntPtr Name;
+
+            /// <summary>
+            /// Gets the kernel name as a string from the IntPtr.
+            /// </summary>
+            public readonly string KernelName
+            {
+                get
+                {
+                    try
+                    {
+                        return Name != IntPtr.Zero ? Marshal.PtrToStringAnsi(Name) ?? "Unknown" : "Unknown";
+                    }
+                    catch
+                    {
+                        return "Unknown";
+                    }
+                }
+            }
         }
 
         private class OccupancyException : Exception

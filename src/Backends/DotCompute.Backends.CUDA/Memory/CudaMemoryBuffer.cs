@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Memory
 {

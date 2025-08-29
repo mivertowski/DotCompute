@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 using System.Text;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -47,7 +48,11 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
 
     /// <summary>
     /// Compiles an expression tree into a GPU kernel.
+    /// Note: Expression compilation requires runtime code generation and is not fully AOT-compatible.
+    /// Use pre-compiled kernels or source generators for AOT scenarios.
     /// </summary>
+    [RequiresUnreferencedCode("Expression compilation requires runtime code generation and reflection")]
+    [RequiresDynamicCode("Expression compilation generates code at runtime and is not AOT-compatible")]
     public async Task<Operators.Interfaces.IKernel> CompileExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
@@ -55,6 +60,14 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         CancellationToken cancellationToken = default)
     {
         options ??= new CompilationOptions();
+
+        // Check if we're running in AOT context
+        if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+        {
+            throw new NotSupportedException(
+                "Expression compilation is not supported in AOT scenarios. " +
+                "Use pre-compiled kernels or source generators instead.");
+        }
 
         _logger.LogDebug("Compiling expression {ExpressionType} for {AcceleratorType}",
             expression.NodeType, accelerator.Type);
@@ -82,9 +95,16 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
 
     /// <summary>
     /// Validates whether an expression can be compiled to a kernel.
+    /// Note: Always returns false in AOT scenarios.
     /// </summary>
     public bool CanCompileExpression(Expression expression)
     {
+        // Expression compilation is not supported in AOT
+        if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+        {
+            return false;
+        }
+
         try
         {
             var analysis = AnalyzeExpression(expression);

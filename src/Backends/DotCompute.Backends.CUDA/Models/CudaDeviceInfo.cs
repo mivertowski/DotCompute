@@ -21,14 +21,18 @@ namespace DotCompute.Backends.CUDA.Models
             ComputeCapability = $"{device.ComputeCapabilityMajor}.{device.ComputeCapabilityMinor}";
             ComputeCapabilityMajor = device.ComputeCapabilityMajor;
             ComputeCapabilityMinor = device.ComputeCapabilityMinor;
-            TotalMemory = device.GlobalMemorySize;
-            TotalMemoryBytes = device.GlobalMemorySize;
+            TotalMemory = (long)device.GlobalMemorySize;
+            TotalMemoryBytes = (long)device.GlobalMemorySize;
+            ManagedMemory = device.SupportsManagedMemory;
+            ConcurrentManagedAccess = device.SupportsConcurrentKernels; // Approximation based on available property
+            PageableMemoryAccess = device.SupportsManagedMemory; // Approximation based on available property
             StreamingMultiprocessorCount = device.StreamingMultiprocessorCount;
             MultiprocessorCount = device.StreamingMultiprocessorCount;
             MaxThreadsPerBlock = device.MaxThreadsPerBlock;
             MaxThreadsPerMultiprocessor = device.MaxThreadsPerMultiprocessor;
             WarpSize = device.WarpSize;
             MemoryClockRate = device.MemoryClockRate;
+            ClockRate = device.ClockRate;
             MemoryBusWidth = device.MemoryBusWidth;
             L2CacheSize = device.L2CacheSize;
             UnifiedAddressing = device.UnifiedAddressing;
@@ -77,12 +81,12 @@ namespace DotCompute.Backends.CUDA.Models
         /// <summary>
         /// Gets or sets the total memory in bytes.
         /// </summary>
-        public ulong TotalMemory { get; set; }
+        public long TotalMemory { get; set; }
 
         /// <summary>
         /// Gets or sets the total memory in bytes (alias for compatibility).
         /// </summary>
-        public ulong TotalMemoryBytes { get; set; }
+        public long TotalMemoryBytes { get; set; }
 
         /// <summary>
         /// Gets or sets the number of streaming multiprocessors.
@@ -113,6 +117,11 @@ namespace DotCompute.Backends.CUDA.Models
         /// Gets or sets the memory clock rate in kHz.
         /// </summary>
         public int MemoryClockRate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the GPU core clock rate in kHz.
+        /// </summary>
+        public int ClockRate { get; set; }
 
         /// <summary>
         /// Gets or sets the memory bus width in bits.
@@ -196,6 +205,21 @@ namespace DotCompute.Backends.CUDA.Models
         /// Integrated GPUs share system memory and are typically lower performance than discrete GPUs.
         /// </summary>
         public bool IntegratedGpu { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the device supports managed memory.
+        /// </summary>
+        public bool ManagedMemory { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the device supports concurrent managed access.
+        /// </summary>
+        public bool ConcurrentManagedAccess { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the device supports pageable memory access.
+        /// </summary>
+        public bool PageableMemoryAccess { get; set; }
 
         /// <summary>
         /// Gets the PCI bus information as a formatted string.

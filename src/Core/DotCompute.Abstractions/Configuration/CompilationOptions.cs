@@ -196,6 +196,16 @@ public class CompilationOptions
     /// </summary>
     public bool ForceInterpretedMode { get; set; }
 
+    /// <summary>
+    /// Whether to compile to CUBIN format instead of PTX
+    /// </summary>
+    public bool CompileToCubin { get; set; }
+
+    /// <summary>
+    /// Target compute capability version for compilation
+    /// </summary>
+    public Version ComputeCapability { get; set; } = new Version(0, 0);
+
 
     /// <summary>
     /// Default compilation options
@@ -265,7 +275,9 @@ public class CompilationOptions
             StrictFloatingPoint = StrictFloatingPoint,
             CompilerBackend = CompilerBackend,
             ForceInterpretedMode = ForceInterpretedMode,
-            EnableProfiling = EnableProfiling
+            EnableProfiling = EnableProfiling,
+            CompileToCubin = CompileToCubin,
+            ComputeCapability = new Version(ComputeCapability.Major, ComputeCapability.Minor)
         };
     }
 

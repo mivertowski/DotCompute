@@ -211,7 +211,12 @@ public enum PluginCapabilities
     /// <summary>
     /// The transactional
     /// </summary>
-    Transactional = 1 << 15
+    Transactional = 1 << 15,
+
+    /// <summary>
+    /// Cross-platform support
+    /// </summary>
+    CrossPlatform = 1 << 16
 }
 
 /// <summary>

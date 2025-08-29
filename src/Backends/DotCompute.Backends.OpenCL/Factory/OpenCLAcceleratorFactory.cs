@@ -5,6 +5,7 @@ using DotCompute.Backends.OpenCL.DeviceManagement;
 using DotCompute.Backends.OpenCL.Models;
 using DotCompute.Backends.OpenCL.Types.Native;
 using Microsoft.Extensions.Logging;
+using static DotCompute.Backends.OpenCL.Types.Native.OpenCLTypes;
 
 namespace DotCompute.Backends.OpenCL.Factory;
 

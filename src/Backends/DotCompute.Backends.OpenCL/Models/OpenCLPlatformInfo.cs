@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.OpenCL.Types.Native;
+using static DotCompute.Backends.OpenCL.Types.Native.OpenCLTypes;
 
 namespace DotCompute.Backends.OpenCL.Models;
 

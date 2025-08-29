@@ -72,6 +72,7 @@ public sealed class CoalescingAnalysis
     /// Gets or sets performance optimization suggestions specific to this analysis.
     /// </summary>
     public List<string> Optimizations { get; set; } = new();
+
 }
 
 /// <summary>
@@ -308,4 +309,5 @@ public enum AccessOrder
     /// </summary>
     Tiled
 }
+
 

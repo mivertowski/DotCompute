@@ -48,6 +48,60 @@ public class CompiledKernel : IDisposable
     /// <value>True if the kernel has been disposed; otherwise, false.</value>
     public bool IsDisposed { get; private set; }
 
+    /// <summary>
+    /// Gets or sets the PTX intermediate representation code.
+    /// </summary>
+    public string Ptx 
+    { 
+        get => Metadata.TryGetValue(nameof(Ptx), out var value) ? value as string ?? "" : "";
+        set => Metadata[nameof(Ptx)] = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets the CUBIN binary data.
+    /// </summary>
+    public byte[] Cubin 
+    { 
+        get => Metadata.TryGetValue(nameof(Cubin), out var value) ? value as byte[] ?? Array.Empty<byte>() : Array.Empty<byte>();
+        set => Metadata[nameof(Cubin)] = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets the compiled binary data.
+    /// </summary>
+    public byte[] Binary 
+    { 
+        get => Metadata.TryGetValue(nameof(Binary), out var value) ? value as byte[] ?? Array.Empty<byte>() : Array.Empty<byte>();
+        set => Metadata[nameof(Binary)] = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets the compute capability version used for compilation.
+    /// </summary>
+    public Version ComputeCapability 
+    { 
+        get => Metadata.TryGetValue(nameof(ComputeCapability), out var value) ? value as Version ?? new Version(0, 0) : new Version(0, 0);
+        set => Metadata[nameof(ComputeCapability)] = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets the time spent during compilation.
+    /// </summary>
+    public TimeSpan CompilationTime 
+    { 
+        get => Metadata.TryGetValue(nameof(CompilationTime), out var value) ? (TimeSpan)(value ?? TimeSpan.Zero) : TimeSpan.Zero;
+        set => Metadata[nameof(CompilationTime)] = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets the timestamp when this kernel was compiled.
+    /// </summary>
+    public DateTime CompiledAt 
+    { 
+        get => Metadata.TryGetValue(nameof(CompiledAt), out var value) ? (DateTime)(value ?? DateTime.MinValue) : DateTime.MinValue;
+        set => Metadata[nameof(CompiledAt)] = value; 
+    }
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CompiledKernel"/> class.

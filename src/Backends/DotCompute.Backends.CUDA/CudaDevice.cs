@@ -121,6 +121,16 @@ namespace DotCompute.Backends.CUDA
         public bool SupportsConcurrentKernels => _deviceProperties.ConcurrentKernels > 0;
 
         /// <summary>
+        /// Gets whether the device supports concurrent managed access.
+        /// </summary>
+        public bool ConcurrentManagedAccess => _deviceProperties.ConcurrentManagedAccess > 0;
+
+        /// <summary>
+        /// Gets whether the device supports pageable memory access.
+        /// </summary>
+        public bool PageableMemoryAccess => _deviceProperties.PageableMemoryAccess > 0;
+
+        /// <summary>
         /// Gets whether ECC (Error-Correcting Code) is enabled.
         /// </summary>
         public bool IsECCEnabled => _deviceProperties.ECCEnabled > 0;

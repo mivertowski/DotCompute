@@ -55,6 +55,6 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets when statistics collection started.
         /// </summary>
-        public DateTimeOffset CollectionStarted { get; set; }
+        public DateTimeOffset CollectionStarted { get; set; } = DateTimeOffset.UtcNow;
     }
 }

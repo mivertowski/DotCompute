@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
@@ -128,24 +129,25 @@ namespace DotCompute.Backends.CUDA
             {
                 Name = _device.Name,
                 DeviceId = _device.DeviceId,
-                ComputeCapability = _device.ComputeCapability,
+                DeviceIndex = _device.DeviceId,
+                ComputeCapability = (_device.ComputeCapabilityMajor, _device.ComputeCapabilityMinor),
                 ArchitectureGeneration = _device.ArchitectureGeneration,
                 IsRTX2000Ada = _device.IsRTX2000Ada,
                 StreamingMultiprocessors = _device.StreamingMultiprocessorCount,
                 EstimatedCudaCores = _device.GetEstimatedCudaCores(),
-                TotalMemory = totalMemory,
-                AvailableMemory = freeMemory,
+                GlobalMemoryBytes = (long)totalMemory,
                 MemoryBandwidthGBps = _device.MemoryBandwidthGBps,
                 MaxThreadsPerBlock = _device.MaxThreadsPerBlock,
                 WarpSize = _device.WarpSize,
-                SharedMemoryPerBlock = _device.SharedMemoryPerBlock,
+                SharedMemoryPerBlock = (int)_device.SharedMemoryPerBlock,
                 L2CacheSize = _device.L2CacheSize,
                 ClockRate = _device.ClockRate,
                 MemoryClockRate = _device.MemoryClockRate,
                 SupportsUnifiedAddressing = _device.SupportsUnifiedAddressing,
                 SupportsManagedMemory = _device.SupportsManagedMemory,
                 SupportsConcurrentKernels = _device.SupportsConcurrentKernels,
-                IsECCEnabled = _device.IsECCEnabled
+                IsECCEnabled = _device.IsECCEnabled,
+                MultiprocessorCount = _device.StreamingMultiprocessorCount
             };
         }
 

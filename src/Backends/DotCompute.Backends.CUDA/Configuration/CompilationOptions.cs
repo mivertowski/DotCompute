@@ -70,6 +70,20 @@ namespace DotCompute.Backends.CUDA.Configuration
         public string ComputeMode { get; set; } = "Default";
 
         /// <summary>
+        /// Gets or sets whether to compile to CUBIN format instead of PTX.
+        /// </summary>
+        public new bool CompileToCubin { get; set; }
+
+        /// <summary>
+        /// Gets or sets the target compute capability version for compilation.
+        /// </summary>
+        public new Version ComputeCapability 
+        { 
+            get => base.ComputeCapability; 
+            set => base.ComputeCapability = value; 
+        }
+
+        /// <summary>
         /// Gets a default set of CUDA compilation options.
         /// </summary>
         public new static CudaCompilationOptions Default => new()

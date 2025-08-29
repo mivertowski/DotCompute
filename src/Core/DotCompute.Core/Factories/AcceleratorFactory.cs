@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Accelerators;
@@ -316,20 +317,11 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         {
             await Task.Yield(); // Ensure async context
             
-            // Dynamic loading to avoid compile-time dependency
-            var cpuType = Type.GetType("DotCompute.Backends.CPU.Accelerators.CpuAccelerator, DotCompute.Backends.CPU");
-            if (cpuType == null)
-            {
-                throw new InvalidOperationException("CPU backend assembly not found");
-            }
-            
-            var logger = loggerFactory.CreateLogger(cpuType);
-            var memoryManager = CreateMemoryManager(config, loggerFactory);
-            var context = new AcceleratorContext();
-            var info = new AcceleratorInfo(AcceleratorType.CPU, "CPU", "1.0", GetSystemMemory());
-            
-            var instance = Activator.CreateInstance(cpuType, info, memoryManager, context, logger) as IAccelerator;
-            return instance ?? throw new InvalidOperationException("Failed to create CPU accelerator");
+            // For AOT compatibility, use factory method instead of dynamic type loading
+            // This should be replaced with proper DI registration in production
+            throw new NotSupportedException(
+                "Dynamic backend loading is not supported in AOT scenarios. " +
+                "Use static backend registration via dependency injection instead.");
         });
         
         // Register CUDA backend (conditional)
@@ -337,11 +329,10 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         {
             await Task.Yield(); // Ensure async context
             
-            var cudaType = Type.GetType("DotCompute.Backends.CUDA.CudaAccelerator, DotCompute.Backends.CUDA");
-            if (cudaType == null)
-            {
-                throw new InvalidOperationException("CUDA backend assembly not found");
-            }
+            // For AOT compatibility, backends should be registered statically
+            throw new NotSupportedException(
+                "Dynamic backend loading is not supported in AOT scenarios. " +
+                "Use static backend registration via dependency injection instead.");
             
             // TODO: Production - Implement proper CUDA backend initialization
             // Missing: Device enumeration, capability detection, context creation
@@ -382,17 +373,14 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         // Missing: cudaMallocManaged, prefetching, migration hints
         CreateDirectMemoryManager(config, loggerFactory); // Placeholder
 
+    [RequiresUnreferencedCode("Memory manager creation uses dynamic type loading")]
     private IUnifiedMemoryManager CreateDirectMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
     {
-        // Direct memory manager without pooling
-        var type = Type.GetType("DotCompute.Memory.Internal.SimpleInMemoryManager, DotCompute.Memory");
-        if (type == null)
-        {
-            throw new InvalidOperationException("Memory manager type not found");
-        }
-        
-        var instance = Activator.CreateInstance(type) as IUnifiedMemoryManager;
-        return instance ?? throw new InvalidOperationException("Failed to create memory manager");
+        // For AOT compatibility, use factory method instead of dynamic type loading
+        // This should be replaced with proper DI registration in production
+        throw new NotSupportedException(
+            "Dynamic memory manager creation is not supported in AOT scenarios. " +
+            "Use dependency injection to register memory managers statically.");
     }
 
     private static AcceleratorConfiguration GetDefaultConfiguration(string backendName)

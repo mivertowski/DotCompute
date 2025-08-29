@@ -18,6 +18,18 @@
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <TrimMode>full</TrimMode>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
+    <OptimizationPreference>Size</OptimizationPreference>
+    <IlcOptimizationPreference>Size</IlcOptimizationPreference>
+    <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
+    <EventSourceSupport>false</EventSourceSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
   </PropertyGroup>
 
   <!-- Package Information -->

@@ -8,6 +8,7 @@ using DotCompute.Plugins.Exceptions.Loading;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Runtime.CompilerServices;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - plugin loading has dynamic logging requirements
 
@@ -166,10 +167,22 @@ public class PluginSystem : IDisposable
 
     /// <summary>
     /// Loads a plugin from assembly path.
+    /// Note: This method is not AOT-compatible and will only work when dynamic code compilation is available.
+    /// For AOT scenarios, use direct plugin registration or pre-compiled plugin factories.
     /// </summary>
+    [RequiresUnreferencedCode("Plugin loading from assembly path requires runtime type loading and is not AOT-compatible")]
+    [RequiresDynamicCode("Plugin loading requires dynamic assembly loading and is not AOT-compatible")]
     public Task<IBackendPlugin?> LoadPluginAsync(string assemblyPath, string pluginTypeName, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Check if dynamic code compilation is available
+        if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+        {
+            _logger.LogWarning("Plugin loading from assembly path is not supported in AOT scenarios. " +
+                             "Assembly: {Path}, Type: {Type}", assemblyPath, pluginTypeName);
+            return Task.FromResult<IBackendPlugin?>(null);
+        }
 
         try
         {
@@ -179,14 +192,10 @@ public class PluginSystem : IDisposable
             var context = new PluginAssemblyLoadContext(assemblyPath);
 
             // Load the assembly
-#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic assembly loading
             var assembly = context.LoadFromAssemblyPath(assemblyPath);
-#pragma warning restore IL2026
 
             // Find the plugin type
-#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic type loading
             var pluginType = assembly.GetType(pluginTypeName);
-#pragma warning restore IL2026
             if (pluginType == null)
             {
                 _logger.LogError("Plugin type {Type} not found in assembly", pluginTypeName);
@@ -201,9 +210,7 @@ public class PluginSystem : IDisposable
             }
 
             // Create instance - use factory method for AOT compatibility
-#pragma warning disable IL2072 // DynamicallyAccessedMembers - Plugin instantiation requires dynamic type handling
             var instance = CreatePluginInstance(pluginType);
-#pragma warning restore IL2072
             if (instance == null)
             {
                 _logger.LogError("Failed to create instance of {Type}", pluginTypeName);
@@ -355,12 +362,17 @@ public class PluginSystem : IDisposable
 
     /// <summary>
     /// Discovers plugin types in an assembly.
+    /// Note: This method is not AOT-compatible and requires dynamic code compilation.
     /// </summary>
+    [RequiresUnreferencedCode("Plugin type discovery requires runtime type enumeration and is not AOT-compatible")]
     public static IEnumerable<Type> DiscoverPluginTypes(Assembly assembly)
     {
-#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin discovery requires type enumeration
+        if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+        {
+            return Enumerable.Empty<Type>();
+        }
+
         return assembly.GetTypes()
-#pragma warning restore IL2026
             .Where(t => !t.IsAbstract &&
                        !t.IsInterface &&
                        typeof(IBackendPlugin).IsAssignableFrom(t));
@@ -368,16 +380,22 @@ public class PluginSystem : IDisposable
 
     /// <summary>
     /// Discovers the first plugin type in an assembly.
+    /// Note: This method is not AOT-compatible.
     /// </summary>
+    [RequiresUnreferencedCode("Plugin type discovery requires runtime type information and is not AOT-compatible")]
     private Task<string?> DiscoverPluginTypeAsync(string assemblyPath)
     {
+        if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+        {
+            _logger?.LogWarning("Plugin type discovery is not supported in AOT scenarios for assembly {Path}", assemblyPath);
+            return Task.FromResult<string?>(null);
+        }
+
         try
         {
             // Create temporary load context
             var context = new PluginAssemblyLoadContext(assemblyPath);
-#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic assembly loading
             var assembly = context.LoadFromAssemblyPath(assemblyPath);
-#pragma warning restore IL2026
 
             var pluginTypes = DiscoverPluginTypes(assembly);
             var firstType = pluginTypes.FirstOrDefault();
