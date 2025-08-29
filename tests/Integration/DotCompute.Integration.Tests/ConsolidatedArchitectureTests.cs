@@ -182,7 +182,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     /// <summary>
     /// Test accelerator using BaseAccelerator
     /// </summary>
-    private class TestAccelerator : BaseAccelerator
+    private sealed class TestAccelerator : BaseAccelerator
     {
         public bool SynchronizeCalled { get; private set; }
 
@@ -206,7 +206,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     /// <summary>
     /// Test compiler using BaseKernelCompiler
     /// </summary>
-    private class TestKernelCompiler : BaseKernelCompiler
+    private sealed class TestKernelCompiler : BaseKernelCompiler
     {
         public TestKernelCompiler(ILogger logger) : base(logger) { }
 
@@ -221,7 +221,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     /// <summary>
     /// Test memory buffer using BaseMemoryBuffer
     /// </summary>
-    private class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmanaged
+    private sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmanaged
     {
         private readonly T[] _data;
         private bool _disposed;
@@ -308,7 +308,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     /// <summary>
     /// Test memory manager using BaseMemoryManager
     /// </summary>
-    private class TestMemoryManager : BaseMemoryManager
+    private sealed class TestMemoryManager : BaseMemoryManager
     {
         private IAccelerator? _accelerator;
 
@@ -367,7 +367,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     /// <summary>
     /// Test non-generic unified memory buffer
     /// </summary>
-    private class TestUnifiedMemoryBuffer : IUnifiedMemoryBuffer
+    private sealed class TestUnifiedMemoryBuffer : IUnifiedMemoryBuffer
     {
         public long SizeInBytes { get; }
         public IntPtr DevicePointer => IntPtr.Zero;
@@ -394,7 +394,7 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
     /// <summary>
     /// Test compiled kernel
     /// </summary>
-    private class TestCompiledKernel : ICompiledKernel
+    private sealed class TestCompiledKernel : ICompiledKernel
     {
         public Guid Id { get; } = Guid.NewGuid();
         public string Name { get; }

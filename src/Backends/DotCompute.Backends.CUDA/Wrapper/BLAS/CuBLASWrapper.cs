@@ -444,14 +444,14 @@ public sealed class CuBLASWrapper : IDisposable
         try
         {
             // Allocate device arrays for pointers
-            var devA = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(batchCount * nint.Size)).ConfigureAwait(false);
-            var devB = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(batchCount * nint.Size)).ConfigureAwait(false);
-            var devC = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(batchCount * nint.Size)).ConfigureAwait(false);
+            var devA = (CudaMemoryBuffer)await _device.AllocateAsync((nuint)(batchCount * IntPtr.Size)).ConfigureAwait(false);
+            var devB = (CudaMemoryBuffer)await _device.AllocateAsync((nuint)(batchCount * IntPtr.Size)).ConfigureAwait(false);
+            var devC = (CudaMemoryBuffer)await _device.AllocateAsync((nuint)(batchCount * IntPtr.Size)).ConfigureAwait(false);
 
             // Copy pointer arrays to device
-            await CudaDevice.CopyToDeviceAsync(aHandle.AddrOfPinnedObject(), devA, (ulong)(batchCount * nint.Size), cancellationToken).ConfigureAwait(false);
-            await CudaDevice.CopyToDeviceAsync(bHandle.AddrOfPinnedObject(), devB, (ulong)(batchCount * nint.Size), cancellationToken).ConfigureAwait(false);
-            await CudaDevice.CopyToDeviceAsync(cHandle.AddrOfPinnedObject(), devC, (ulong)(batchCount * nint.Size), cancellationToken).ConfigureAwait(false);
+            await CudaDevice.CopyToDeviceAsync(aHandle.AddrOfPinnedObject(), devA, (nuint)(batchCount * IntPtr.Size), cancellationToken).ConfigureAwait(false);
+            await CudaDevice.CopyToDeviceAsync(bHandle.AddrOfPinnedObject(), devB, (nuint)(batchCount * IntPtr.Size), cancellationToken).ConfigureAwait(false);
+            await CudaDevice.CopyToDeviceAsync(cHandle.AddrOfPinnedObject(), devC, (nuint)(batchCount * IntPtr.Size), cancellationToken).ConfigureAwait(false);
 
             var status = cublasSgemmBatched(_cublasHandle, transa, transb, m, n, k,
                 ref alpha, devA.DevicePointer, lda, devB.DevicePointer, ldb,
@@ -549,13 +549,13 @@ public sealed class CuBLASWrapper : IDisposable
         using var _ = _device.CreateContext();
 
         // Allocate buffers for L and U
-        var L = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
-        var U = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
+        var L = (CudaMemoryBuffer)await _device.AllocateAsync((nuint)(n * n * sizeof(float))).ConfigureAwait(false);
+        var U = (CudaMemoryBuffer)await _device.AllocateAsync((nuint)(n * n * sizeof(float))).ConfigureAwait(false);
 
         // Copy A to working buffer
-        var work = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
+        var work = (CudaMemoryBuffer)await _device.AllocateAsync((nuint)(n * n * sizeof(float))).ConfigureAwait(false);
         // Copy A to working buffer using memory copy
-        var result = CudaRuntime.cudaMemcpy(work.DevicePointer, A.DevicePointer, (ulong)(n * n * sizeof(float)), CudaMemcpyKind.DeviceToDevice);
+        var result = CudaRuntime.cudaMemcpy(work.DevicePointer, A.DevicePointer, (nuint)(n * n * sizeof(float)), CudaMemcpyKind.DeviceToDevice);
         if (result != CudaError.Success)
         {
             throw new InvalidOperationException($"Failed to copy matrix data: {CudaRuntime.GetErrorString(result)}");
@@ -582,10 +582,10 @@ public sealed class CuBLASWrapper : IDisposable
     {
         using var _ = _device.CreateContext();
 
-        var L = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
+        var L = (CudaMemoryBuffer)await _device.AllocateAsync((nuint)(n * n * sizeof(float))).ConfigureAwait(false);
 
         // Copy A to L using memory copy
-        var copyResult = CudaRuntime.cudaMemcpy(L.DevicePointer, A.DevicePointer, (ulong)(n * n * sizeof(float)), CudaMemcpyKind.DeviceToDevice);
+        var copyResult = CudaRuntime.cudaMemcpy(L.DevicePointer, A.DevicePointer, (nuint)(n * n * sizeof(float)), CudaMemcpyKind.DeviceToDevice);
         if (copyResult != CudaError.Success)
         {
             throw new InvalidOperationException($"Failed to copy matrix data: {CudaRuntime.GetErrorString(copyResult)}");
@@ -606,8 +606,8 @@ public sealed class CuBLASWrapper : IDisposable
     {
         using var _ = _device.CreateContext();
 
-        var Q = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(m * m * sizeof(float))).ConfigureAwait(false);
-        var R = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(m * n * sizeof(float))).ConfigureAwait(false);
+        var Q = (CudaMemoryBuffer)await _device.AllocateAsync((nuint)(m * m * sizeof(float))).ConfigureAwait(false);
+        var R = (CudaMemoryBuffer)await _device.AllocateAsync((nuint)(m * n * sizeof(float))).ConfigureAwait(false);
 
         // Perform QR decomposition using custom kernel
         await PerformQRDecompositionKernelAsync(A, Q, R, m, n, cancellationToken).ConfigureAwait(false);

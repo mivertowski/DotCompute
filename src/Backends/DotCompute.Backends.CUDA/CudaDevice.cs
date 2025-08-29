@@ -184,7 +184,7 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Gets the memory manager for this device.
         /// </summary>
-        public CudaMemoryManager Memory { get; private set; } = null!;
+        public Memory.CudaMemoryManager Memory { get; private set; } = null!;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaDevice"/> class.
@@ -218,7 +218,7 @@ namespace DotCompute.Backends.CUDA
 
             // Initialize memory manager with context
             var context = new CudaContext(_deviceId);
-            Memory = new CudaMemoryManager(context, _logger);
+            Memory = new Memory.CudaMemoryManager(context, _logger);
 
             _logger.LogInformation("Initialized CUDA device {DeviceId}: {DeviceName} (CC {Major}.{Minor})",
                 _deviceId, Name, ComputeCapabilityMajor, ComputeCapabilityMinor);
@@ -497,7 +497,7 @@ namespace DotCompute.Backends.CUDA
             {
                 await Task.Run(() =>
                 {
-                    var result = CudaRuntime.cudaMemcpy(cudaBuffer.DevicePointer, hostPtr, sizeInBytes, CudaMemcpyKind.HostToDevice);
+                    var result = CudaRuntime.cudaMemcpy(cudaBuffer.DevicePointer, hostPtr, (nuint)sizeInBytes, CudaMemcpyKind.HostToDevice);
                     if (result != CudaError.Success)
                     {
                         throw new InvalidOperationException($"CUDA memory copy failed: {CudaRuntime.GetErrorString(result)}");

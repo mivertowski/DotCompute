@@ -24,14 +24,14 @@ namespace DotCompute.Backends.CUDA.Optimization
             out int numBlocks,
             IntPtr func,
             int blockSize,
-            ulong dynamicSMemSize);
+            nuint dynamicSMemSize);
 
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaOccupancyMaxPotentialBlockSize(
             out int minGridSize,
             out int blockSize,
             IntPtr func,
-            ulong dynamicSMemSize,
+            nuint dynamicSMemSize,
             int blockSizeLimit);
 
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
@@ -54,7 +54,7 @@ namespace DotCompute.Backends.CUDA.Optimization
             int device);
 
         // Delegate for variable shared memory calculation
-        private delegate ulong BlockSizeToSMemFunc(int blockSize);
+        private delegate nuint BlockSizeToSMemFunc(int blockSize);
 
         public CudaOccupancyCalculator(ILogger<CudaOccupancyCalculator> logger)
         {
@@ -70,7 +70,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         public async Task<LaunchConfiguration> CalculateOptimalLaunchConfigAsync(
             IntPtr kernelFunc,
             int deviceId,
-            ulong dynamicSharedMemory = 0,
+            nuint dynamicSharedMemory = 0,
             LaunchConstraints? constraints = null)
         {
             constraints ??= LaunchConstraints.Default;
@@ -120,7 +120,7 @@ namespace DotCompute.Backends.CUDA.Optimization
             {
                 BlockSize = new Dim3(blockSize, 1, 1),
                 GridSize = new Dim3(gridSize, 1, 1),
-                SharedMemoryBytes = dynamicSharedMemory + (ulong)kernelAttrs.SharedSizeBytes,
+                SharedMemoryBytes = dynamicSharedMemory + (nuint)kernelAttrs.SharedSizeBytes,
                 TheoreticalOccupancy = occupancy.Percentage,
                 ActiveWarps = occupancy.ActiveWarps,
                 ActiveBlocks = occupancy.ActiveBlocks,
@@ -149,7 +149,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         public async Task<OccupancyCurve> CalculateOccupancyCurveAsync(
             IntPtr kernelFunc,
             int deviceId,
-            ulong dynamicSharedMemory = 0,
+            nuint dynamicSharedMemory = 0,
             int minBlockSize = 32,
             int maxBlockSize = 1024)
         {
@@ -277,7 +277,7 @@ namespace DotCompute.Backends.CUDA.Optimization
             IntPtr kernelFunc,
             int deviceId,
             Dim2 problemSize,
-            ulong dynamicSharedMemory = 0)
+            nuint dynamicSharedMemory = 0)
         {
             var deviceProps = await GetDevicePropertiesAsync(deviceId);
             
@@ -327,7 +327,7 @@ namespace DotCompute.Backends.CUDA.Optimization
                         {
                             BlockSize = new Dim3(blockDim.X, blockDim.Y, 1),
                             GridSize = new Dim3(gridX, gridY, 1),
-                            SharedMemoryBytes = dynamicSharedMemory + (ulong)kernelAttrs.SharedSizeBytes,
+                            SharedMemoryBytes = dynamicSharedMemory + (nuint)kernelAttrs.SharedSizeBytes,
                             TheoreticalOccupancy = occupancy.Percentage,
                             ActiveWarps = occupancy.ActiveWarps,
                             ActiveBlocks = occupancy.ActiveBlocks,
@@ -450,10 +450,10 @@ namespace DotCompute.Backends.CUDA.Optimization
             props.RegistersPerMultiprocessor = value;
 
             cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxSharedMemoryPerBlock, deviceId);
-            props.SharedMemoryPerBlock = value;
+            props.SharedMemoryPerBlock = (nuint)value;
 
             cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxSharedMemoryPerMultiprocessor, deviceId);
-            props.SharedMemoryPerMultiprocessor = value;
+            props.SharedMemoryPerMultiprocessor = (nuint)value;
 
             cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MultiprocessorCount, deviceId);
             props.MultiprocessorCount = value;
@@ -500,7 +500,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         private async Task<OccupancyResult> CalculateOccupancyAsync(
             IntPtr kernelFunc,
             int blockSize,
-            ulong dynamicSharedMemory,
+            nuint dynamicSharedMemory,
             CudaFuncAttributes kernelAttrs,
             DeviceProperties deviceProps)
         {
@@ -519,7 +519,7 @@ namespace DotCompute.Backends.CUDA.Optimization
                 : int.MaxValue;
             
             // Shared memory limit
-            ulong sharedMemPerBlock = dynamicSharedMemory + (ulong)kernelAttrs.SharedSizeBytes;
+            nuint sharedMemPerBlock = dynamicSharedMemory + (nuint)kernelAttrs.SharedSizeBytes;
             int blocksPerSmSharedMem = sharedMemPerBlock > 0
                 ? (int)(deviceProps.SharedMemoryPerMultiprocessor / sharedMemPerBlock)
                 : int.MaxValue;
@@ -686,7 +686,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         {
             public Dim3 BlockSize { get; set; }
             public Dim3 GridSize { get; set; }
-            public ulong SharedMemoryBytes { get; set; }
+            public nuint SharedMemoryBytes { get; set; }
             public double TheoreticalOccupancy { get; set; }
             public int ActiveWarps { get; set; }
             public int ActiveBlocks { get; set; }
@@ -757,8 +757,8 @@ namespace DotCompute.Backends.CUDA.Optimization
             public int WarpSize { get; set; }
             public int RegistersPerBlock { get; set; }
             public int RegistersPerMultiprocessor { get; set; }
-            public int SharedMemoryPerBlock { get; set; }
-            public int SharedMemoryPerMultiprocessor { get; set; }
+            public nuint SharedMemoryPerBlock { get; set; }
+            public nuint SharedMemoryPerMultiprocessor { get; set; }
             public int MultiprocessorCount { get; set; }
             public int MaxBlocksPerMultiprocessor { get; set; }
             public int MaxWarpsPerMultiprocessor { get; set; }
@@ -841,9 +841,9 @@ namespace DotCompute.Backends.CUDA.Optimization
         [StructLayout(LayoutKind.Sequential)]
         private struct CudaFuncAttributes
         {
-            public ulong SharedSizeBytes;
-            public ulong ConstSizeBytes;
-            public ulong LocalSizeBytes;
+            public nuint SharedSizeBytes;
+            public nuint ConstSizeBytes;
+            public nuint LocalSizeBytes;
             public int MaxThreadsPerBlock;
             public int NumRegs;
             public int PtxVersion;

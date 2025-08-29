@@ -126,7 +126,7 @@ public sealed class CudaDeviceManager : IDisposable
             Name = GetDeviceName(props),
             ComputeCapabilityMajor = props.Major,
             ComputeCapabilityMinor = props.Minor,
-            TotalMemory = props.TotalGlobalMem,
+            TotalMemory = (long)props.TotalGlobalMem,
             SharedMemoryPerBlock = props.SharedMemPerBlock,
             RegistersPerBlock = props.RegsPerBlock,
             WarpSize = props.WarpSize,

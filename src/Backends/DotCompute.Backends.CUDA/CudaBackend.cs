@@ -237,9 +237,14 @@ namespace DotCompute.Backends.CUDA
                 return;
             }
 
+            // BaseAccelerator implements IAsyncDisposable, so we need to dispose asynchronously
+            // For synchronous disposal, we'll block on the async operation
             foreach (var accelerator in _accelerators)
             {
-                accelerator?.Dispose();
+                if (accelerator != null)
+                {
+                    accelerator.DisposeAsync().AsTask().Wait();
+                }
             }
 
             _accelerators.Clear();

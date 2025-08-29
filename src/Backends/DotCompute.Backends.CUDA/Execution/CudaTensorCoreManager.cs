@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Execution.Metrics;
 using DotCompute.Backends.CUDA.Types.Native;
 namespace DotCompute.Backends.CUDA.Advanced
 {

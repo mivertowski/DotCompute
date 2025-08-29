@@ -11,6 +11,7 @@ using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Memory.Models;
 
 namespace DotCompute.Backends.CUDA.Memory;
 
@@ -115,7 +116,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
             var stream = _context.Stream;
             
             // Allocate memory asynchronously on the specified stream
-            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (ulong)sizeInBytes, stream);
+            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (nuint)sizeInBytes, stream);
             CudaRuntime.CheckError(result, $"stream-ordered allocating {sizeInBytes} bytes");
 
             // Track allocation
@@ -157,7 +158,10 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     public override async ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         IUnifiedMemoryBuffer<T> destination,
-        CancellationToken cancellationToken) => await CopyAsync(source, 0, destination, 0, source.Count, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        await CopyAsync(source, 0, destination, 0, source.Length, cancellationToken);
+    }
 
 
     /// <inheritdoc/>
@@ -218,7 +222,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
             if (result == CudaError.Success && deviceProps.Major >= 6)
             {
                 // Create default memory pool
-                result = CudaRuntime.cudaDeviceGetDefaultMemPool(out _defaultMemPool, _context.DeviceId);
+                result = CudaRuntime.cudaDeviceGetDefaultMemPool(ref _defaultMemPool, _context.DeviceId);
                 
                 if (result == CudaError.Success && _defaultMemPool != IntPtr.Zero)
                 {
@@ -303,7 +307,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         try
         {
             // Allocate memory on stream
-            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (ulong)sizeInBytes, stream);
+            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (nuint)sizeInBytes, stream);
             CudaRuntime.CheckError(result, $"async allocating {sizeInBytes} bytes");
 
             // Track allocation
@@ -381,7 +385,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
         var result = CudaRuntime.cudaMemcpyAsync(
-            destination, source, (ulong)sizeInBytes,
+            destination, source, (nuint)sizeInBytes,
             CudaMemcpyKind.DeviceToDevice, stream);
         
         CudaRuntime.CheckError(result, $"async copying {sizeInBytes} bytes");
@@ -426,7 +430,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         unsafe
         {
             var result = CudaRuntime.cudaMemcpyAsync(
-                devicePtr, (IntPtr)pinned.Pointer, (ulong)sizeInBytes,
+                devicePtr, (IntPtr)pinned.Pointer, (nuint)sizeInBytes,
                 CudaMemcpyKind.HostToDevice, stream);
             
             CudaRuntime.CheckError(result, $"async copying {sizeInBytes} bytes from host");
@@ -462,7 +466,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         unsafe
         {
             var result = CudaRuntime.cudaMemcpyAsync(
-                (IntPtr)pinned.Pointer, devicePtr, (ulong)sizeInBytes,
+                (IntPtr)pinned.Pointer, devicePtr, (nuint)sizeInBytes,
                 CudaMemcpyKind.DeviceToHost, stream);
             
             CudaRuntime.CheckError(result, $"async copying {sizeInBytes} bytes to host");
@@ -492,7 +496,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
 
 
         var result = CudaRuntime.cudaMemPrefetchAsync(
-            devicePtr, (ulong)sizeInBytes, targetDevice, stream);
+            devicePtr, (nuint)sizeInBytes, targetDevice, stream);
         
         if (result == CudaError.Success)
         {
@@ -518,7 +522,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
 
 
         var result = CudaRuntime.cudaMemAdvise(
-            devicePtr, (ulong)sizeInBytes, advice, targetDevice);
+            devicePtr, (nuint)sizeInBytes, advice, targetDevice);
         
         if (result == CudaError.Success)
         {
@@ -624,7 +628,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         // Default stream allocation if async not supported
         if (!_asyncMemorySupported)
         {
-            var result = CudaRuntime.TryAllocateMemory(out IntPtr devicePtr, (ulong)sizeInBytes);
+            var result = CudaRuntime.TryAllocateMemory(out IntPtr devicePtr, (nuint)sizeInBytes);
             CudaRuntime.CheckError(result, $"allocating {sizeInBytes} bytes");
             
             return new CudaAsyncMemoryBuffer(
@@ -753,135 +757,6 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     }
 }
 
-/// <summary>
-/// CUDA async memory buffer implementation.
-/// </summary>
-internal sealed class CudaAsyncMemoryBuffer : IUnifiedMemoryBuffer
-{
-    private readonly IntPtr _devicePtr;
-    private readonly long _sizeInBytes;
-    private readonly IntPtr _stream;
-    private readonly CudaAsyncMemoryManager _manager;
-    private readonly MemoryOptions _options;
-    private bool _disposed;
-
-    public CudaAsyncMemoryBuffer(
-        IntPtr devicePtr,
-        long sizeInBytes,
-        IntPtr stream,
-        CudaAsyncMemoryManager manager,
-        MemoryOptions options)
-    {
-        _devicePtr = devicePtr;
-        _sizeInBytes = sizeInBytes;
-        _stream = stream;
-        _manager = manager;
-        _options = options;
-    }
-
-    public IntPtr DevicePointer => _devicePtr;
-    public long SizeInBytes => _sizeInBytes;
-    public MemoryOptions Options => _options;
-    public bool IsDisposed => _disposed;
-    public BufferState State => _disposed ? BufferState.Released : BufferState.DeviceReady;
-
-    // Interface implementations
-    public async ValueTask CopyFromAsync<T>(
-        ReadOnlyMemory<T> source,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        ThrowIfDisposed();
-        
-        var destPtr = _devicePtr + (nint)offset;
-        // TODO: Implement actual CUDA memory copy from host to device
-        await Task.CompletedTask;
-    }
-
-    public async ValueTask CopyToAsync<T>(
-        Memory<T> destination,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        ThrowIfDisposed();
-        
-        var srcPtr = _devicePtr + (nint)offset;
-        // TODO: Implement actual CUDA memory copy from device to host
-        await Task.CompletedTask;
-    }
-    
-    // Legacy support methods
-    public async ValueTask CopyFromHostAsync<T>(
-        ReadOnlyMemory<T> source,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-        => await CopyFromAsync(source, offset, cancellationToken);
-
-    public async ValueTask CopyToHostAsync<T>(
-        Memory<T> destination,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-        => await CopyToAsync(destination, offset, cancellationToken);
-
-    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
-
-    public void Dispose()
-    {
-        if (!_disposed)
-        {
-            _disposed = true;
-            _manager.FreeAsyncOnStream(_devicePtr, _stream);
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (!_disposed)
-        {
-            _disposed = true;
-            await Task.Run(() => _manager.FreeAsyncOnStream(_devicePtr, _stream));
-        }
-    }
-}
-
-/// <summary>
-/// View over a CUDA async memory buffer.
-/// </summary>
-internal sealed class CudaAsyncMemoryBufferView : IUnifiedMemoryBuffer
-{
-    private readonly CudaAsyncMemoryBuffer _parent;
-    private readonly long _offset;
-    private readonly long _length;
-
-    public CudaAsyncMemoryBufferView(CudaAsyncMemoryBuffer parent, long offset, long length)
-    {
-        _parent = parent;
-        _offset = offset;
-        _length = length;
-    }
-
-    public long SizeInBytes => _length;
-    public MemoryOptions Options => _parent.Options;
-    public bool IsDisposed => _parent.IsDisposed;
-    public BufferState State => _parent.IsDisposed ? BufferState.Disposed : BufferState.Allocated;
-
-    // Interface implementations
-    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
-
-    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        => _parent.CopyToAsync(destination, _offset + offset, cancellationToken);
-        
-    // Legacy support methods
-    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        => CopyFromAsync(source, offset, cancellationToken);
-
-    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        => CopyToAsync(destination, offset, cancellationToken);
-
-    public void Dispose() { /* View doesn't own memory */ }
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-}
 
 /// <summary>
 /// Memory pool properties.

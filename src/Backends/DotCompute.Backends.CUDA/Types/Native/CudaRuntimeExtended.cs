@@ -87,27 +87,27 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         #region IPC (Inter-Process Communication)
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaIpcGetEventHandle(
+        internal static extern CudaError cudaIpcGetEventHandle(
             out CudaIpcEventHandle handle,
             nint eventHandle);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaIpcOpenEventHandle(
+        internal static extern CudaError cudaIpcOpenEventHandle(
             out nint eventHandle,
             CudaIpcEventHandle handle);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaIpcGetMemHandle(
+        internal static extern CudaError cudaIpcGetMemHandle(
             out CudaIpcMemHandle handle,
             nint devPtr);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaIpcOpenMemHandle(
+        internal static extern CudaError cudaIpcOpenMemHandle(
             out nint devPtr,
             CudaIpcMemHandle handle,
             uint flags);
@@ -120,9 +120,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         #region Memory Pools (CUDA 11.2+)
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaMemPoolCreate(
+        internal static extern CudaError cudaMemPoolCreate(
             out nint memPool,
             ref CudaMemPoolProps poolProps);
 
@@ -136,6 +136,14 @@ namespace DotCompute.Backends.CUDA.Types.Native
             nint memPool,
             CudaMemPoolAttribute attr,
             nint value);
+
+        // Add overload for ReleaseThreshold
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemPoolSetAttribute(
+            nint memPool,
+            CudaMemPoolAttribute attr,
+            ref ulong value);
 
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -229,9 +237,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         #region Graph Memory Nodes (CUDA 11.4+)
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaGraphAddMemAllocNode(
+        internal static extern CudaError cudaGraphAddMemAllocNode(
             out nint pGraphNode,
             nint graph,
             nint pDependencies,
@@ -247,9 +255,9 @@ namespace DotCompute.Backends.CUDA.Types.Native
             nuint numDependencies,
             nint ptr);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaGraphMemAllocNodeGetParams(
+        internal static extern CudaError cudaGraphMemAllocNodeGetParams(
             nint node,
             out CudaMemAllocNodeParams pNodeParams);
 
@@ -297,17 +305,17 @@ namespace DotCompute.Backends.CUDA.Types.Native
             out nint extSem,
             ref CudaExternalSemaphoreHandleDesc semHandleDesc);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaSignalExternalSemaphoresAsync(
+        internal static extern CudaError cudaSignalExternalSemaphoresAsync(
             nint extSemArray,
             ref CudaExternalSemaphoreSignalParams paramsArray,
             uint numExtSems,
             nint stream);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaWaitExternalSemaphoresAsync(
+        internal static extern CudaError cudaWaitExternalSemaphoresAsync(
             nint extSemArray,
             ref CudaExternalSemaphoreWaitParams paramsArray,
             uint numExtSems,
@@ -367,24 +375,24 @@ namespace DotCompute.Backends.CUDA.Types.Native
             CudaHostFn fn,
             nint userData);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaGraphAddHostNode(
+        internal static extern CudaError cudaGraphAddHostNode(
             out nint pGraphNode,
             nint graph,
             nint pDependencies,
             nuint numDependencies,
             ref CudaHostNodeParams pNodeParams);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaGraphHostNodeGetParams(
+        internal static extern CudaError cudaGraphHostNodeGetParams(
             nint node,
             out CudaHostNodeParams pNodeParams);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaGraphHostNodeSetParams(
+        internal static extern CudaError cudaGraphHostNodeSetParams(
             nint node,
             ref CudaHostNodeParams pNodeParams);
 
@@ -435,21 +443,21 @@ namespace DotCompute.Backends.CUDA.Types.Native
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static partial CudaError cudaLaunchKernelExC(
-            ref CudaLaunchConfig config,
+            ref CudaNativeLaunchConfig config,
             CudaKernelFunc kernel_func,
             nint kernel_args);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaOccupancyMaxPotentialClusterSize(
+        internal static extern CudaError cudaOccupancyMaxPotentialClusterSize(
             out int clusterSize,
             CudaKernelFunc func,
             ref CudaLaunchAttribute launchAttr,
             int numAttributes);
 
-        [LibraryImport(CUDA_LIBRARY)]
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaOccupancyMaxActiveClusters(
+        internal static extern CudaError cudaOccupancyMaxActiveClusters(
             out int numClusters,
             CudaKernelFunc func,
             ref CudaLaunchAttribute launchAttr,
@@ -737,7 +745,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct CudaLaunchConfig
+    public struct CudaNativeLaunchConfig
     {
         public CudaDim3 gridDim;
         public CudaDim3 blockDim;
@@ -928,6 +936,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         ReuseFollowEventDependencies = 1,
         ReuseAllowOpportunistic = 2,
         ReuseAllowInternalDependencies = 3,
+        ReleaseThreshold = 4,
         AttrReleaseThreshold = 4,
         AttrReservedMemCurrent = 5,
         AttrReservedMemHigh = 6,

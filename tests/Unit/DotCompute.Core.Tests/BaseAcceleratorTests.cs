@@ -53,10 +53,12 @@ public class BaseAcceleratorTests
     }
 
     [Fact]
-    public void CompileKernelAsync_ValidatesDefinition_BeforeCompilation() =>
+    public void CompileKernelAsync_ValidatesDefinition_BeforeCompilation()
+    {
         // Arrange & Act & Assert
         // KernelDefinition constructor validates and throws ArgumentNullException for null source
         Assert.Throws<ArgumentNullException>(() => new KernelDefinition("", null!, null!));
+    }
 
     [Fact]
     public async Task CompileKernelAsync_CallsCompileKernelCoreAsync_ForValidDefinition()

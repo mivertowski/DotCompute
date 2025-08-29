@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA.Execution.Graph.Enums;
 using DotCompute.Backends.CUDA.Execution.Graph.Nodes;
 using DotCompute.Backends.CUDA.Execution.Graph.Results;
 using DotCompute.Backends.CUDA.Execution.Graph.Types;
+using DotCompute.Backends.CUDA.Graphs.Models;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -24,7 +25,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         private readonly CudaContext _context;
         private readonly ConcurrentDictionary<string, CudaGraph> _graphs;
         private readonly ConcurrentDictionary<string, CudaGraphExecutable> _executables;
-        private readonly ConcurrentDictionary<string, GraphStatistics> _statistics;
+        private readonly ConcurrentDictionary<string, Types.GraphStatistics> _statistics;
         private readonly object _captureLock = new();
         private bool _disposed;
 
@@ -34,7 +35,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _graphs = new ConcurrentDictionary<string, CudaGraph>();
             _executables = new ConcurrentDictionary<string, CudaGraphExecutable>();
-            _statistics = new ConcurrentDictionary<string, GraphStatistics>();
+            _statistics = new ConcurrentDictionary<string, Types.GraphStatistics>();
         }
 
         /// <summary>
@@ -58,7 +59,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
             graph.Handle = graphHandle;
             _graphs[name] = graph;
-            _statistics[name] = new GraphStatistics { Name = name, CreatedAt = DateTime.UtcNow };
+            _statistics[name] = new Types.GraphStatistics { Name = name, CreatedAt = DateTime.UtcNow };
 
             _logger.LogInformation("Created CUDA graph '{GraphName}'", name);
             return graph;
@@ -101,7 +102,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 };
 
                 _graphs[graphName] = graph;
-                _statistics[graphName] = new GraphStatistics 
+                _statistics[graphName] = new Types.GraphStatistics 
                 { 
                     Name = graphName, 
                     CreatedAt = DateTime.UtcNow,
@@ -627,7 +628,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
             // Note: Node handles are not directly copyable, but the graph structure is cloned
             _graphs[newName] = clonedGraph;
-            _statistics[newName] = new GraphStatistics
+            _statistics[newName] = new Types.GraphStatistics
             {
                 Name = newName,
                 CreatedAt = DateTime.UtcNow,
@@ -675,11 +676,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// <summary>
         /// Get graph statistics
         /// </summary>
-        public GraphStatistics GetStatistics(string graphName)
+        public Types.GraphStatistics GetStatistics(string graphName)
         {
             return _statistics.TryGetValue(graphName, out var stats)
                 ? stats
-                : new GraphStatistics { Name = graphName };
+                : new Types.GraphStatistics { Name = graphName };
         }
 
         /// <summary>
@@ -880,12 +881,12 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             analysis.OptimizationsApplied++;
         }
 
-        private void UpdateStatistics(string graphName, Action<GraphStatistics> update)
+        private void UpdateStatistics(string graphName, Action<Types.GraphStatistics> update)
         {
             _statistics.AddOrUpdate(graphName,
                 _ =>
                 {
-                    var stats = new GraphStatistics { Name = graphName };
+                    var stats = new Types.GraphStatistics { Name = graphName };
                     update(stats);
                     return stats;
                 },

@@ -253,8 +253,8 @@ public sealed class CudaKernelCache : IDisposable
                 sourceCode,
                 kernelName,
                 0,
-                IntPtr.Zero,
-                IntPtr.Zero);
+                null,
+                null);
             
             if (result != NvrtcResult.Success)
             {
@@ -275,19 +275,14 @@ public sealed class CudaKernelCache : IDisposable
                 if (result != NvrtcResult.Success)
                 {
                     // Get compilation log
-                    NvrtcInterop.nvrtcGetProgramLogSize(prog, out ulong logSize);
-                    var log = new byte[logSize];
-                    NvrtcInterop.nvrtcGetProgramLog(prog, log);
-                    var logString = Encoding.UTF8.GetString(log);
+                    var logString = NvrtcInterop.GetCompilationLog(prog);
                     
                     throw new KernelCompilationException(
                         $"NVRTC compilation failed: {result}\nLog: {logString}");
                 }
                 
                 // Get PTX
-                NvrtcInterop.nvrtcGetPTXSize(prog, out ulong ptxSize);
-                var ptxBytes = new byte[ptxSize];
-                NvrtcInterop.nvrtcGetPTX(prog, ptxBytes);
+                var ptxBytes = NvrtcInterop.GetPtxCode(prog);
                 
                 return Encoding.UTF8.GetString(ptxBytes);
             }

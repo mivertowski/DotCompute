@@ -17,6 +17,8 @@
     <IsTrimmable>false</IsTrimmable>
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
     <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
+    <PublishTrimmed>false</PublishTrimmed>
+    <TrimMode>none</TrimMode>
   </PropertyGroup>
 
   <ItemGroup>

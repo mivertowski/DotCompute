@@ -150,7 +150,7 @@ namespace DotCompute.Backends.CUDA.Factory
                 yield break;
             }
 
-            var devices = _deviceManager.EnumerateDevices().ToList();
+            var devices = _deviceManager.Devices;
             _logger.LogInformation("Creating accelerators for {DeviceCount} CUDA devices", devices.Count);
 
             foreach (var device in devices)

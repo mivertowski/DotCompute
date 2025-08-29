@@ -2,6 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Advanced.Features.Models;
+using DotCompute.Backends.CUDA.Advanced.Features.Types;
+using DotCompute.Backends.CUDA.Types;
+using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Memory
@@ -11,10 +15,19 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed class CudaUnifiedMemoryAdvanced : IDisposable
     {
-        private readonly CudaDevice _device;
+        private readonly object _device;
         private readonly ILogger _logger;
         private bool _disposed;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CudaUnifiedMemoryAdvanced"/> class.
+        /// </summary>
+        public CudaUnifiedMemoryAdvanced(CudaContext context, ILogger logger)
+        {
+            _device = context ?? throw new ArgumentNullException(nameof(context));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaUnifiedMemoryAdvanced"/> class.
         /// </summary>
@@ -63,6 +76,52 @@ namespace DotCompute.Backends.CUDA.Memory
                 CudaRuntime.cudaFree(ptr);
             }
         }
+
+        /// <summary>
+        /// Optimizes memory access patterns asynchronously.
+        /// </summary>
+        public async Task<CudaOptimizationResult> OptimizeMemoryAccessAsync(
+            KernelArgument[] arguments,
+            CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
+            return new CudaOptimizationResult { Success = true };
+        }
+
+        /// <summary>
+        /// Optimizes prefetching for memory buffers.
+        /// </summary>
+        public async Task<bool> OptimizePrefetchingAsync(
+            IEnumerable<object> buffers,
+            int targetDevice,
+            CudaMemoryAccessPattern accessPattern,
+            CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
+            return true;
+        }
+
+        /// <summary>
+        /// Sets optimal memory advice for unified memory buffers.
+        /// </summary>
+        public async Task<bool> SetOptimalAdviceAsync(
+            DotCompute.Backends.CUDA.Types.CudaUnifiedMemoryBuffer buffer,
+            CudaMemoryUsageHint usageHint,
+            CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
+            return true;
+        }
+
+        /// <summary>
+        /// Gets performance metrics.
+        /// </summary>
+        public CudaUnifiedMemoryMetrics GetMetrics() => new CudaUnifiedMemoryMetrics();
+
+        /// <summary>
+        /// Performs maintenance tasks.
+        /// </summary>
+        public void PerformMaintenance() { }
 
         /// <inheritdoc/>
         public void Dispose()

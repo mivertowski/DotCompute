@@ -5,6 +5,7 @@ using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Execution.Metrics;
 
 namespace DotCompute.Backends.CUDA.Advanced
 {
@@ -17,7 +18,14 @@ namespace DotCompute.Backends.CUDA.Advanced
         private readonly CudaContext _context;
         private readonly CudaDeviceProperties _deviceProperties;
         private readonly ILogger _logger;
-        private readonly CudaDynamicParallelismMetrics _metrics;
+        
+        // Internal mutable metrics tracking
+        private long _childKernelLaunches;
+        private double _efficiencyScore;
+        private double _launchOverheadMs;
+        private long _operationCount;
+        private double _totalExecutionTimeMs;
+        
         private bool _disposed;
 
         public CudaDynamicParallelismManager(
@@ -28,7 +36,13 @@ namespace DotCompute.Backends.CUDA.Advanced
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _deviceProperties = deviceProperties;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _metrics = new CudaDynamicParallelismMetrics();
+            
+            // Initialize internal metrics tracking
+            _childKernelLaunches = 0;
+            _efficiencyScore = 0.0;
+            _launchOverheadMs = 0.0;
+            _operationCount = 0;
+            _totalExecutionTimeMs = 0.0;
 
             _logger.LogDebug("Dynamic Parallelism Manager initialized");
         }
@@ -63,7 +77,8 @@ namespace DotCompute.Backends.CUDA.Advanced
 
                 if (canBenefit)
                 {
-                    _metrics.ChildKernelLaunches++;
+                    _childKernelLaunches++;
+                    _operationCount++;
 
                     return Task.FromResult(new CudaOptimizationResult
                     {
@@ -97,9 +112,17 @@ namespace DotCompute.Backends.CUDA.Advanced
         {
             return new CudaDynamicParallelismMetrics
             {
-                EfficiencyScore = _metrics.EfficiencyScore,
-                ChildKernelLaunches = _metrics.ChildKernelLaunches,
-                LaunchOverhead = _metrics.LaunchOverhead
+                ChildKernelLaunches = _childKernelLaunches,
+                EfficiencyScore = _efficiencyScore,
+                LaunchOverheadMs = _launchOverheadMs,
+                OperationCount = _operationCount,
+                TotalExecutionTimeMs = _totalExecutionTimeMs,
+                DeviceKernelLaunches = _childKernelLaunches, // Same as child kernel launches
+                MaxNestingDepth = 1, // Default for simple implementation
+                AverageNestingDepth = 1.0,
+                DeviceRuntimeCalls = _childKernelLaunches,
+                MemoryAllocationOverhead = 0,
+                SynchronizationOverheadMs = 0.0
             };
         }
 
@@ -116,8 +139,8 @@ namespace DotCompute.Backends.CUDA.Advanced
             try
             {
                 // Update efficiency metrics
-                _metrics.EfficiencyScore = Math.Min(1.0, _metrics.ChildKernelLaunches * 0.01);
-                _metrics.LaunchOverhead = 0.15; // 15% overhead estimate
+                _efficiencyScore = Math.Min(1.0, _childKernelLaunches * 0.01);
+                _launchOverheadMs = 0.15; // 15% overhead estimate in milliseconds
             }
             catch (Exception ex)
             {

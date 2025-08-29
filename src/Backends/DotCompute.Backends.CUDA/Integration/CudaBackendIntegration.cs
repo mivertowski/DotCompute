@@ -579,12 +579,12 @@ namespace DotCompute.Backends.CUDA.Integration
             private sealed class CudaContextMemoryManager : IUnifiedMemoryManager, IDisposable
 
             {
-                private readonly CudaMemoryManager _cudaMemoryManager;
+                private readonly Memory.CudaMemoryManager _cudaMemoryManager;
                 private readonly CudaAsyncMemoryManagerAdapter _asyncAdapter;
 
                 public CudaContextMemoryManager(CudaContext context, ILogger logger)
                 {
-                    _cudaMemoryManager = new CudaMemoryManager(context, logger);
+                    _cudaMemoryManager = new Memory.CudaMemoryManager(context, logger);
                     _asyncAdapter = new CudaAsyncMemoryManagerAdapter(_cudaMemoryManager);
                 }
 

@@ -437,7 +437,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             // Analyze node types if we have nodes
             if (nodeCount > 0)
             {
-                var nodes = Marshal.AllocHGlobal((int)(nodeCount * IntPtr.Size));
+                var nodes = Marshal.AllocHGlobal((int)nodeCount * IntPtr.Size);
                 try
                 {
                     error = cudaGraphGetNodes(graph, nodes, out nodeCount);

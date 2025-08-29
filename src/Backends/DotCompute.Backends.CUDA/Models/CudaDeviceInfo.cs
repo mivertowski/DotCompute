@@ -35,8 +35,8 @@ namespace DotCompute.Backends.CUDA.Models
             ClockRate = device.ClockRate;
             MemoryBusWidth = device.MemoryBusWidth;
             L2CacheSize = device.L2CacheSize;
-            UnifiedAddressing = device.UnifiedAddressing;
-            CanMapHostMemory = device.CanMapHostMemory;
+            UnifiedAddressing = device.SupportsManagedMemory; // Use available property
+            CanMapHostMemory = device.SupportsManagedMemory; // Use available property
             ConcurrentKernels = device.ConcurrentManagedAccess;
             MemoryBandwidth = device.MemoryBandwidthGBps;
             Architecture = device.ArchitectureGeneration;
@@ -45,6 +45,11 @@ namespace DotCompute.Backends.CUDA.Models
             PciDeviceId = device.PciDeviceId;
             SupportsManagedMemory = device.SupportsManagedMemory;
             MultiProcessorCount = device.StreamingMultiprocessorCount;
+            SharedMemoryPerBlock = (int)device.SharedMemoryPerBlock;
+            RegistersPerBlock = 32768; // Default for modern GPUs
+            MaxBlockDimX = 1024; // Standard max block dimension
+            MaxBlockDimY = 1024; // Standard max block dimension
+            MaxBlockDimZ = 64;   // Standard max block dimension
         }
 
         /// <summary>
@@ -232,6 +237,31 @@ namespace DotCompute.Backends.CUDA.Models
         /// Gets or sets the number of multiprocessors (alternative naming for compatibility).
         /// </summary>
         public int MultiProcessorCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the shared memory per block in bytes.
+        /// </summary>
+        public int SharedMemoryPerBlock { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of registers per block.
+        /// </summary>
+        public int RegistersPerBlock { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum X dimension of a block.
+        /// </summary>
+        public int MaxBlockDimX { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum Y dimension of a block.
+        /// </summary>
+        public int MaxBlockDimY { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum Z dimension of a block.
+        /// </summary>
+        public int MaxBlockDimZ { get; set; }
 
         /// <summary>
         /// Gets the PCI bus information as a formatted string.

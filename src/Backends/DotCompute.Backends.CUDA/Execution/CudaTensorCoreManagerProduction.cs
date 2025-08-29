@@ -137,8 +137,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         };
         
         // Base CUDA core TFLOPS (rough estimate)
-        var cudaCoreFlops = device.MultiProcessorCount * 
-                           device.MaxThreadsPerMultiProcessor * 
+        var cudaCoreFlops = device.MultiprocessorCount * 
+                           device.MaxThreadsPerMultiprocessor * 
                            device.ClockRate * 2.0 / 1e9; // 2 ops per cycle
         
         return cudaCoreFlops * tensorcoreMultiplier;

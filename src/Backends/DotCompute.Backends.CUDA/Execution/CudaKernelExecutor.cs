@@ -406,7 +406,7 @@ namespace DotCompute.Backends.CUDA.Execution
             };
         }
 
-        private CudaLaunchConfig GetOptimalLaunchConfig(CompiledKernel kernel, KernelExecutionConfig executionConfig)
+        private Compilation.CudaLaunchConfig GetOptimalLaunchConfig(CompiledKernel kernel, KernelExecutionConfig executionConfig)
         {
             var globalSize = executionConfig.GlobalWorkSize;
             var localSize = executionConfig.LocalWorkSize;
@@ -420,9 +420,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
             return globalSize.Length switch
             {
-                1 => CudaLaunchConfig.Create1D(globalSize[0], localSize[0]),
-                2 => CudaLaunchConfig.Create2D(globalSize[0], globalSize[1], localSize[0], localSize[1]),
-                3 => CudaLaunchConfig.Create3D(globalSize[0], globalSize[1], globalSize[2],
+                1 => Compilation.CudaLaunchConfig.Create1D(globalSize[0], localSize[0]),
+                2 => Compilation.CudaLaunchConfig.Create2D(globalSize[0], globalSize[1], localSize[0], localSize[1]),
+                3 => Compilation.CudaLaunchConfig.Create3D(globalSize[0], globalSize[1], globalSize[2],
                                         localSize[0], localSize[1], localSize[2]),
                 _ => throw new NotSupportedException($"Dimensions > 3 not supported: {globalSize.Length}"),
             };
@@ -473,7 +473,7 @@ namespace DotCompute.Backends.CUDA.Execution
         private async Task LaunchKernelAsync(
         CompiledKernel kernel,
         KernelArguments arguments,
-        CudaLaunchConfig launchConfig,
+        Compilation.CudaLaunchConfig launchConfig,
         IntPtr stream,
         CancellationToken cancellationToken = default)
         {

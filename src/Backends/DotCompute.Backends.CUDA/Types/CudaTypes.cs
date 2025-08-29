@@ -327,16 +327,16 @@ namespace DotCompute.Backends.CUDA.Types
     /// <summary>
     /// CUDA memory manager for device memory allocation and management.
     /// </summary>
-    public sealed class CudaMemoryManager : IAsyncDisposable, IDisposable
+    public sealed class CudaMemoryTracker : IAsyncDisposable, IDisposable
     {
         private readonly Microsoft.Extensions.Logging.ILogger _logger;
         private readonly System.Collections.Concurrent.ConcurrentDictionary<nint, MemoryAllocationInfo> _allocations;
         private bool _disposed;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CudaMemoryManager"/> class.
+        /// Initializes a new instance of the <see cref="CudaMemoryTracker"/> class.
         /// </summary>
-        public CudaMemoryManager(CudaContext context, Microsoft.Extensions.Logging.ILogger logger)
+        public CudaMemoryTracker(CudaContext context, Microsoft.Extensions.Logging.ILogger logger)
         {
             Context = context?.Handle ?? nint.Zero;
             DeviceIndex = context?.DeviceId ?? 0;
@@ -385,7 +385,7 @@ namespace DotCompute.Backends.CUDA.Types
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(CudaMemoryManager));
+                throw new ObjectDisposedException(nameof(CudaMemoryTracker));
             }
 
             try

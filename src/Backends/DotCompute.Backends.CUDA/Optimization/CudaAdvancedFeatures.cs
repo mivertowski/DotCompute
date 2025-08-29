@@ -4,6 +4,9 @@
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Advanced.Features.Types;
+using DotCompute.Backends.CUDA.Advanced.Features.Models;
+using DotCompute.Backends.CUDA.Execution;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
@@ -46,7 +49,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
         // Initialize feature managers
         _cooperativeGroups = new CudaCooperativeGroupsManager(context, _deviceProperties, logger);
         _dynamicParallelism = new CudaDynamicParallelismManager(context, _deviceProperties, logger);
-        _unifiedMemory = new CudaUnifiedMemoryAdvanced(context, _deviceProperties, logger);
+        _unifiedMemory = new CudaUnifiedMemoryAdvanced(_context, logger);
         _tensorCores = new CudaTensorCoreManager(context, _deviceProperties, logger);
 
         // Set up periodic optimization
@@ -393,6 +396,37 @@ public sealed class CudaAdvancedFeatures : IDisposable
 }
 
 /// <summary>
+/// Comprehensive metrics for advanced features
+/// </summary>
+public sealed class CudaAdvancedFeatureMetrics
+{
+    /// <summary>
+    /// Cooperative Groups metrics.
+    /// </summary>
+    public CudaCooperativeGroupsMetrics CooperativeGroupsMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Dynamic Parallelism metrics.
+    /// </summary>
+    public CudaDynamicParallelismMetrics DynamicParallelismMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Unified Memory metrics.
+    /// </summary>
+    public CudaUnifiedMemoryMetrics UnifiedMemoryMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Tensor Core metrics.
+    /// </summary>
+    public CudaTensorCoreMetrics TensorCoreMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Overall efficiency score.
+    /// </summary>
+    public double OverallEfficiency { get; set; }
+}
+
+/// <summary>
 /// Feature support information for CUDA device
 /// </summary>
 public sealed class CudaFeatureSupport
@@ -618,187 +652,4 @@ public sealed class CudaOptimizationResult
     public string? ErrorMessage { get; set; }
 }
 
-/// <summary>
-/// Memory access patterns for optimization
-/// </summary>
-public enum CudaMemoryAccessPattern
-{
-    /// <summary>
-    /// 
-    /// </summary>
-    Sequential,     // Sequential access
 
-    /// <summary>
-    /// 
-    /// </summary>
-    Random,         // Random access
-
-    /// <summary>
-    /// 
-    /// </summary>
-    Streaming,      // One-time streaming access
-
-    /// <summary>
-    /// 
-    /// </summary>
-    Temporal,       // Repeated access to same data
-
-    /// <summary>
-    /// 
-    /// </summary>
-    Spatial         // Access to nearby memory locations
-}
-
-/// <summary>
-/// Memory usage hints for optimization
-/// </summary>
-public enum CudaMemoryUsageHint
-{
-    /// <summary>
-    /// 
-    /// </summary>
-    ReadMostly,     // Data is mostly read
-
-    /// <summary>
-    /// 
-    /// </summary>
-    WriteMostly,    // Data is mostly written
-
-    /// <summary>
-    /// 
-    /// </summary>
-    ReadWrite,      // Equal read/write access
-
-    /// <summary>
-    /// 
-    /// </summary>
-    Temporary,      // Short-lived data
-
-    /// <summary>
-    /// 
-    /// </summary>
-    Persistent,     // Long-lived data
-
-    /// <summary>
-    /// 
-    /// </summary>
-    Shared          // Shared between devices
-}
-
-/// <summary>
-/// Comprehensive metrics for advanced features
-/// </summary>
-public sealed class CudaAdvancedFeatureMetrics
-{
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public CudaCooperativeGroupsMetrics CooperativeGroupsMetrics { get; set; } = new();
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public CudaDynamicParallelismMetrics DynamicParallelismMetrics { get; set; } = new();
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public CudaUnifiedMemoryMetrics UnifiedMemoryMetrics { get; set; } = new();
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public CudaTensorCoreMetrics TensorCoreMetrics { get; set; } = new();
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public double OverallEfficiency { get; set; }
-}
-
-// Placeholder metrics classes that would be implemented by the respective managers
-
-/// <summary>
-/// 
-/// </summary>
-public sealed class CudaCooperativeGroupsMetrics
-{
-    /// <summary>
-    /// 
-    /// </summary>
-    public double EfficiencyScore { get; set; }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public int ActiveGroups { get; set; }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public double SynchronizationOverhead { get; set; }
-}
-
-/// <summary>
-/// 
-/// </summary>
-public sealed class CudaDynamicParallelismMetrics
-{
-    /// <summary>
-    /// 
-    /// </summary>
-    public double EfficiencyScore { get; set; }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public int ChildKernelLaunches { get; set; }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public double LaunchOverhead { get; set; }
-}
-
-/// <summary>
-/// 
-/// </summary>
-public sealed class CudaUnifiedMemoryMetrics
-{
-    /// <summary>
-    /// 
-    /// </summary>
-    public double EfficiencyScore { get; set; }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public ulong PageFaults { get; set; }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public double MigrationOverhead { get; set; }
-}
-
-/// <summary>
-/// 
-/// </summary>
-public sealed class CudaTensorCoreMetrics
-{
-    /// <summary>
-    /// 
-    /// </summary>
-    public double EfficiencyScore { get; set; }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public double Utilization { get; set; }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public double ThroughputTFLOPS { get; set; }
-}

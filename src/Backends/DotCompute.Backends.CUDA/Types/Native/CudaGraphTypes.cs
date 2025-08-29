@@ -169,6 +169,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
     /// </summary>
     public enum CudaMemoryAdvise : uint
     {
+        Unset = 0,
         SetReadMostly = 1,
         UnsetReadMostly = 2,
         SetPreferredLocation = 3,

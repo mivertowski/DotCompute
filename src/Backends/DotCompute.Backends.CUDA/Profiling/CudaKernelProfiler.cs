@@ -43,7 +43,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             string kernelName,
             IntPtr functionHandle,
             KernelArguments arguments,
-            CudaLaunchConfig launchConfig,
+            Compilation.CudaLaunchConfig launchConfig,
             int iterations = 100,
             CancellationToken cancellationToken = default)
         {
@@ -133,7 +133,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         private async Task<double> ExecuteKernelOnceAsync(
             IntPtr functionHandle,
             KernelArguments arguments,
-            CudaLaunchConfig launchConfig,
+            Compilation.CudaLaunchConfig launchConfig,
             IntPtr startEvent,
             IntPtr endEvent,
             CancellationToken cancellationToken)
@@ -215,7 +215,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Calculates occupancy metrics for the launch configuration
         /// </summary>
-        private OccupancyMetrics CalculateOccupancy(CudaLaunchConfig launchConfig)
+        private OccupancyMetrics CalculateOccupancy(Compilation.CudaLaunchConfig launchConfig)
         {
             var blockSize = (int)(launchConfig.BlockX * launchConfig.BlockY * launchConfig.BlockZ);
             var maxThreadsPerSM = _deviceProps.MaxThreadsPerMultiProcessor;
@@ -424,7 +424,7 @@ namespace DotCompute.Backends.CUDA.Advanced
     internal sealed class KernelProfileData
     {
         public string KernelName { get; set; } = string.Empty;
-        public CudaLaunchConfig LaunchConfig { get; set; }
+        public Compilation.CudaLaunchConfig LaunchConfig { get; set; }
         public List<double> Timings { get; set; } = [];
         public ProfilingStatistics Statistics { get; set; } = new();
         public OccupancyMetrics Occupancy { get; set; } = new();

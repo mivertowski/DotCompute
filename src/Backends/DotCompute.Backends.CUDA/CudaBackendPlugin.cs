@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Configuration;

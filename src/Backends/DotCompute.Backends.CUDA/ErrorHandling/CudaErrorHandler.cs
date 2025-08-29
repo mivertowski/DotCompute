@@ -312,7 +312,7 @@ public sealed class CudaErrorHandler
                 if (result == CudaError.Success)
                 {
                     // Trigger memory compaction if available
-                    _ = CudaRuntime.cudaMemGetInfo(out ulong free, out ulong total);
+                    _ = CudaRuntime.cudaMemGetInfo(out nuint free, out nuint total);
                     
                     _logger.LogInformation(
                         "Memory cleanup completed. Free: {Free:N0} MB, Total: {Total:N0} MB",

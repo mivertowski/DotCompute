@@ -104,7 +104,7 @@ namespace DotCompute.Backends.CUDA.Native
         // Memory Management - Using nint/nuint for better AOT compatibility
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cudaMalloc(ref nint devPtr, nuint size);
+        internal static partial CudaError cudaMalloc(ref nint devPtr, ulong size);
 
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]

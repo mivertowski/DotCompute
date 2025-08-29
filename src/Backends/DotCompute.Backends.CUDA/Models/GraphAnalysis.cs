@@ -47,5 +47,25 @@ namespace DotCompute.Backends.CUDA.Graphs.Models
         /// Gets the list of optimization opportunities identified.
         /// </summary>
         public List<string> OptimizationOpportunities { get; } = new();
+
+        /// <summary>
+        /// Gets or sets the number of parallelization opportunities.
+        /// </summary>
+        public int ParallelizationOpportunities { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of kernel fusion opportunities.
+        /// </summary>
+        public int FusionOpportunities { get; set; }
+
+        /// <summary>
+        /// Gets or sets the estimated memory footprint in bytes.
+        /// </summary>
+        public long MemoryFootprint { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of optimizations applied.
+        /// </summary>
+        public int OptimizationsApplied { get; set; }
     }
 }

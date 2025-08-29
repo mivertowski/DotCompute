@@ -257,7 +257,7 @@ namespace DotCompute.Backends.CUDA.P2P
                     result = CudaRuntime.cudaMemcpy(
                         destinationBuffer.DevicePointer,
                         sourceBuffer.DevicePointer,
-                        sizeBytes,
+                        (nuint)sizeBytes,
                         CudaMemcpyKind.DeviceToDevice);
                     CudaRuntime.CheckError(result, "P2P memory transfer");
                 }
@@ -267,7 +267,7 @@ namespace DotCompute.Backends.CUDA.P2P
                     result = CudaRuntime.cudaMemcpyAsync(
                         destinationBuffer.DevicePointer,
                         sourceBuffer.DevicePointer,
-                        sizeBytes,
+                        (nuint)sizeBytes,
                         CudaMemcpyKind.DeviceToDevice,
                         stream);
                     CudaRuntime.CheckError(result, "async P2P memory transfer");
