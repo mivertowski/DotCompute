@@ -7,8 +7,10 @@ namespace DotCompute.Backends.CUDA.Native.Types
 {
 
     /// <summary>
-    /// P/Invoke structures for CUDA API
+    /// DEPRECATED: Use DotCompute.Backends.CUDA.Types.Native.CudaKernelNodeParams from CudaGraphTypes.cs instead.
+    /// This struct is kept for backward compatibility during migration.
     /// </summary>
+    [System.Obsolete("Use DotCompute.Backends.CUDA.Types.Native.CudaKernelNodeParams from CudaGraphTypes.cs instead.", false)]
     [StructLayout(LayoutKind.Sequential)]
     public struct CudaKernelNodeParams
     {

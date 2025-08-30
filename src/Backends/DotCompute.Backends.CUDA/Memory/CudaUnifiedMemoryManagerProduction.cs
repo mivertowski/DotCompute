@@ -540,10 +540,14 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
             SupportsPageFaults = _pageFaultHandlingSupported
         };
         
+        // Note: Performance counter statistics can be added to UnifiedMemoryStatistics
+        // if needed. For now, we return the basic memory statistics.
+        // Example extension: Add TotalAccessCount and AverageAccessLatency properties to UnifiedMemoryStatistics
         if (_performanceCounter != null)
         {
-            stats.TotalAccessCount = _performanceCounter.TotalAccesses;
-            stats.AverageAccessLatency = _performanceCounter.AverageLatency;
+            // TODO: Add performance counter properties to UnifiedMemoryStatistics if needed
+            _logger.LogDebug("Performance counter data available: TotalAccesses={TotalAccesses}, AverageLatency={AverageLatency}",
+                _performanceCounter.TotalAccesses, _performanceCounter.AverageLatency);
         }
         
         return stats;
@@ -797,7 +801,7 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
     public override async ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         IUnifiedMemoryBuffer<T> destination,
-        CancellationToken cancellationToken) => await CopyAsync(source, 0, destination, 0, source.Count, cancellationToken);
+        CancellationToken cancellationToken) => await CopyAsync(source, 0, destination, 0, source.Length, cancellationToken);
 
 
     /// <inheritdoc/>

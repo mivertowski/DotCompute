@@ -1196,13 +1196,13 @@ public sealed class CachedPackageInfo
 /// </summary>
 public sealed class NuGetLogger : LoggerBase
 {
-    private readonly Microsoft.Extensions.Logging.ILogger _logger;
+    private readonly ILogger _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NuGetLogger"/> class.
     /// </summary>
     /// <param name="logger">The underlying logger.</param>
-    public NuGetLogger(Microsoft.Extensions.Logging.ILogger logger)
+    public NuGetLogger(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }

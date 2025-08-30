@@ -12,7 +12,7 @@ namespace DotCompute.Core.System;
 /// Production-grade system information manager with platform-specific
 /// memory detection, CPU information, and resource monitoring.
 /// </summary>
-public sealed partial class SystemInfoManager
+public sealed partial class SystemInfoManager : IDisposable
 {
     private readonly ILogger<SystemInfoManager> _logger;
     private readonly Timer _monitoringTimer;
@@ -756,6 +756,15 @@ public sealed partial class SystemInfoManager
 
     [GeneratedRegex(@"^(\w+):\s+(\d+)")]
     private static partial Regex MemInfoRegex();
+
+    /// <summary>
+    /// Disposes the SystemInfoManager and stops monitoring.
+    /// </summary>
+    public void Dispose()
+    {
+        StopMonitoring();
+        _monitoringTimer?.Dispose();
+    }
 
     /// <summary>
     /// Memory information.

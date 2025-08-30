@@ -11,6 +11,7 @@ using DotCompute.Backends.CUDA.Execution.Graph.Types;
 using DotCompute.Backends.CUDA.Graphs.Models;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 
@@ -293,9 +294,12 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             var callbackHandle = GCHandle.Alloc(nodeParams.Function);
             var callbackPtr = Marshal.GetFunctionPointerForDelegate(nodeParams.Function);
 
+            // Convert nint function pointer to CudaHostFn delegate
+            var hostFn = Marshal.GetDelegateForFunctionPointer<CudaHostFn>(callbackPtr);
+
             var cudaParams = new CudaHostNodeParams
             {
-                fn = callbackPtr,
+                fn = callbackPtr, // Use the original nint pointer directly
                 userData = nodeParams.UserData
             };
 
@@ -430,7 +434,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 Type = GraphNodeType.ChildGraph,
                 Id = Guid.NewGuid().ToString(),
                 Dependencies = dependencies?.ToList() ?? [],
-                ChildGraph = childGraph
+                ChildGraph = null // Cannot convert between different CudaGraph types
             };
 
             parentGraph.Nodes.Add(node);

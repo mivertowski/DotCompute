@@ -4,6 +4,9 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Types.Native;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Types
 {
@@ -380,14 +383,14 @@ namespace DotCompute.Backends.CUDA.Types
     /// </summary>
     public sealed class CudaMemoryTracker : IAsyncDisposable, IDisposable
     {
-        private readonly Microsoft.Extensions.Logging.ILogger _logger;
+        private readonly ILogger _logger;
         private readonly System.Collections.Concurrent.ConcurrentDictionary<nint, MemoryAllocationInfo> _allocations;
         private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaMemoryTracker"/> class.
         /// </summary>
-        public CudaMemoryTracker(CudaContext context, Microsoft.Extensions.Logging.ILogger logger)
+        public CudaMemoryTracker(CudaContext context, ILogger logger)
         {
             Context = context?.Handle ?? nint.Zero;
             DeviceIndex = context?.DeviceId ?? 0;
@@ -452,7 +455,7 @@ namespace DotCompute.Backends.CUDA.Types
                         if (kvp.Key != nint.Zero)
                         {
                             // Free device memory
-                            var result = Native.CudaRuntime.cudaFree(kvp.Key);
+                            var result = DotCompute.Backends.CUDA.Native.CudaRuntime.cudaFree(kvp.Key);
                             if (result != CudaError.Success)
                             {
                                 _logger?.LogWarning("Failed to free CUDA memory during reset: {Error}", result);

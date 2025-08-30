@@ -436,7 +436,7 @@ namespace DotCompute.Backends.CUDA.P2P
             return new CudaDeviceInfo
             {
                 DeviceId = deviceId,
-                Name = props.Name,
+                Name = props.DeviceName,
                 ComputeCapability = $"{props.Major}.{props.Minor}",
                 TotalMemoryBytes = (long)props.TotalGlobalMem,
                 MultiprocessorCount = props.MultiProcessorCount,

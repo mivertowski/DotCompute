@@ -386,7 +386,6 @@ public sealed class CudaErrorHandler : IDisposable
         return error switch
         {
             CudaError.MemoryAllocation => true,
-            CudaError.OutOfMemory => true,
             CudaError.InsufficientDriver => true,
             CudaError.SharedObjectInitFailed => true,
             _ => false
@@ -403,9 +402,6 @@ public sealed class CudaErrorHandler : IDisposable
             CudaError.NoDevice => true,
             CudaError.InvalidDevice => true,
             CudaError.DeviceAlreadyInUse => true,
-            CudaError.EccUncorrectable => true,
-            CudaError.HardwareStackError => true,
-            CudaError.IllegalInstruction => true,
             CudaError.IllegalAddress => true,
             _ => false
         };

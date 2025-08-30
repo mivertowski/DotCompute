@@ -123,9 +123,9 @@ public class BaseAcceleratorTests
     public void LogCompilationMetrics_LogsDebugMessage()
     {
         // Arrange
-        var kernelName = "test_kernel";
+        const string kernelName = "test_kernel";
         var compilationTime = TimeSpan.FromMilliseconds(100);
-        var byteCodeSize = 1024L;
+        const long byteCodeSize = 1024L;
         
         // Act
         _accelerator.TestLogCompilationMetrics(kernelName, compilationTime, byteCodeSize);
@@ -187,7 +187,7 @@ public class BaseAcceleratorTests
 
         public void TestThrowIfDisposed() => ThrowIfDisposed();
         
-        public CompilationOptions TestGetEffectiveOptions(CompilationOptions? options) 
+        public CompilationOptions TestGetEffectiveOptions(CompilationOptions? options)
             => GetEffectiveOptions(options);
         
         public void TestLogCompilationMetrics(string kernelName, TimeSpan compilationTime, long? byteCodeSize)

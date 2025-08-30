@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.Win32.SafeHandles;
 using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Native.Exceptions;
+using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Native
 {
@@ -323,6 +324,13 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaDeviceSetMemPool(int device, IntPtr memPool);
 
+        // Add missing cudaMemPoolCreate method from CudaRuntimeExtended
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemPoolCreate(
+            out nint memPool,
+            ref CudaMemPoolProps poolProps);
+
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaMemRangeGetAttribute(
@@ -368,6 +376,15 @@ namespace DotCompute.Backends.CUDA.Native
             IntPtr memPool,
             CudaMemPoolAttribute attr,
             out IntPtr value);
+
+        // Add missing methods for memory pool management
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemPoolDestroy(IntPtr memPool);
+
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemPoolTrimTo(IntPtr memPool, ulong minBytesToKeep);
 
         // Occupancy Calculator
         [DllImport(CUDA_LIBRARY)]

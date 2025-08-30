@@ -262,7 +262,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
         return new CudaAdvancedFeatureMetrics
         {
             CooperativeGroupsMetrics = _cooperativeGroups.GetMetrics(),
-            DynamicParallelismMetrics = _dynamicParallelism.GetMetrics(),
+            DynamicParallelismMetrics = ConvertDynamicParallelismMetrics(_dynamicParallelism.GetMetrics()),
             UnifiedMemoryMetrics = _unifiedMemory.GetMetrics(),
             TensorCoreMetrics = _tensorCores.GetMetrics(),
             OverallEfficiency = CalculateOverallEfficiency()
@@ -328,6 +328,15 @@ public sealed class CudaAdvancedFeatures : IDisposable
         }
 
         return recommendations;
+    }
+
+    /// <summary>
+    /// Converts from the execution metrics type to the feature metrics type.
+    /// </summary>
+    private DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics ConvertDynamicParallelismMetrics(
+        DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics source)
+    {
+        return source; // Direct assignment - they're the same type now
     }
 
     private double CalculateOverallEfficiency()
@@ -408,7 +417,7 @@ public sealed class CudaAdvancedFeatureMetrics
     /// <summary>
     /// Dynamic Parallelism metrics.
     /// </summary>
-    public CudaDynamicParallelismMetrics DynamicParallelismMetrics { get; set; } = new();
+    public DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics DynamicParallelismMetrics { get; set; } = new();
 
     /// <summary>
     /// Unified Memory metrics.

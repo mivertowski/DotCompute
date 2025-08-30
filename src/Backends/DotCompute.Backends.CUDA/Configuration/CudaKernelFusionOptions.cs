@@ -33,7 +33,7 @@ public sealed class CudaKernelFusionOptions
     /// <param name="kernel">The kernel to get launch configuration for.</param>
     /// <returns>The launch configuration or default if not configured.</returns>
     public CudaLaunchConfig GetLaunchConfigForKernel(CudaCompiledKernel kernel) 
-        => _configs.TryGetValue(kernel, out var config) ? config : new CudaLaunchConfig(1, 1, 1, 256, 1, 1);
+        => _configs.TryGetValue(kernel, out var config) ? config : new CudaLaunchConfig(1, 1, 1, 256, 1, 1, 0);
 
     /// <summary>
     /// Sets the kernel arguments for a specific kernel.

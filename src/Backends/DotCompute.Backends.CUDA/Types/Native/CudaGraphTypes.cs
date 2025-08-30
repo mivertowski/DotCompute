@@ -65,6 +65,15 @@ namespace DotCompute.Backends.CUDA.Types.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static partial CudaError cuGraphClone(ref nint phGraphClone, nint originalGraph);
 
+        [DllImport(CUDA_DRIVER_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaGraphAddHostNode(
+            out nint phGraphNode,
+            nint hGraph,
+            nint dependencies,
+            nuint numDependencies,
+            ref CudaHostNodeParams nodeParams);
+
         #endregion
     }
 
@@ -183,4 +192,14 @@ namespace DotCompute.Backends.CUDA.Types.Native
     /// </summary>
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void CudaHostFn(nint userData);
+
+    /// <summary>
+    /// Host node parameters for graph API
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CudaHostNodeParams
+    {
+        public nint fn;
+        public nint userData;
+    }
 }

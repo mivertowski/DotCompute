@@ -616,21 +616,30 @@ namespace DotCompute.Backends.CUDA.Types.Native
     [StructLayout(LayoutKind.Sequential)]
     public struct CudaMemPoolProps
     {
-        public CudaMemAllocationType allocType;
-        public CudaMemAllocationHandleType handleTypes;
-        public CudaMemLocation location;
+        public CudaMemAllocationType AllocType;
+        public CudaMemAllocationHandleType HandleTypes;
+        public CudaMemLocation Location;
         public nint win32SecurityAttributes;
         public nuint maxSize;
         public ushort usage;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 56)]
         public byte[] reserved;
+
+        // Legacy properties for backward compatibility
+        public CudaMemAllocationType allocType { get => AllocType; set => AllocType = value; }
+        public CudaMemAllocationHandleType handleTypes { get => HandleTypes; set => HandleTypes = value; }
+        public CudaMemLocation location { get => Location; set => Location = value; }
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct CudaMemLocation
     {
-        public CudaMemLocationType type;
-        public int id;
+        public CudaMemLocationType Type;
+        public int Id;
+
+        // Legacy properties for backward compatibility
+        public CudaMemLocationType type { get => Type; set => Type = value; }
+        public int id { get => Id; set => Id = value; }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -743,13 +752,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
         public uint count;
         public nint paramArray;
         public uint flags;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct CudaHostNodeParams
-    {
-        public CudaHostFn fn;
-        public nint userData;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -949,7 +951,10 @@ namespace DotCompute.Backends.CUDA.Types.Native
         AttrReservedMemCurrent = 5,
         AttrReservedMemHigh = 6,
         AttrUsedMemCurrent = 7,
-        AttrUsedMemHigh = 8
+        AttrUsedMemHigh = 8,
+        // Additional commonly used attributes
+        Used = AttrUsedMemCurrent,
+        Reserved = AttrReservedMemCurrent
     }
 
     public enum CudaMemAccessFlags : uint

@@ -33,7 +33,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     public class CudaGraphExecutable
     {
         public IntPtr Handle { get; set; }
-        public CudaGraph Graph { get; set; } = null!;
+        public DotCompute.Backends.CUDA.Execution.Graph.CudaGraph Graph { get; set; } = null!;
         public DateTime InstantiatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

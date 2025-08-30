@@ -9,6 +9,7 @@ using global::System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Execution.Graph;
 using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
 using DotCompute.Backends.CUDA.Execution.Graph.Enums;
@@ -377,11 +378,17 @@ namespace DotCompute.Backends.CUDA.Execution
                         Options = new DotCompute.Backends.CUDA.Types.CudaGraphOptimizationOptions { EnableOptimization = true }
                     };
 
-                    // Get node count
+                    // Verify node count - NodeCount is computed from the nodes collection
                     var nodeCount = graph.NodeCount;
                     result = CudaRuntime.cuGraphGetNodes(capturedGraph, IntPtr.Zero, ref nodeCount);
-                    graph.NodeCount = nodeCount;
                     CudaRuntime.CheckError(result, "getting graph node count");
+                    
+                    // Log verification of node count consistency
+                    if (nodeCount != graph.NodeCount)
+                    {
+                        _logger.LogWarning("Node count mismatch: Graph reports {GraphNodeCount}, CUDA reports {CudaNodeCount}",
+                            graph.NodeCount, nodeCount);
+                    }
 
                     _graphTemplates[graphId] = graph;
 
@@ -427,7 +434,7 @@ namespace DotCompute.Backends.CUDA.Execution
         public async Task<string> FuseKernelsAsync(
             string graphId,
             IEnumerable<CudaCompiledKernel> kernels,
-            DotCompute.Backends.CUDA.Types.CudaKernelFusionOptions fusionOptions,
+            CudaKernelFusionOptions fusionOptions,
             CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -455,7 +462,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// Gets performance statistics for a graph.
         /// </summary>
         /// <param name="graphId">The identifier of the graph for which to retrieve statistics.</param>
-        /// <returns>A <see cref="CudaGraphStatistics"/> object containing performance metrics.</returns>
+        /// <returns>A CudaGraphStatistics object containing performance metrics.</returns>
         /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
         public DotCompute.Backends.CUDA.Types.CudaGraphStatistics GetGraphStatistics(string graphId)
         {
@@ -537,8 +544,14 @@ namespace DotCompute.Backends.CUDA.Execution
                     nodeHandles.Add(nodeHandle);
                 }
 
-                graph.NodeCount = nodeHandles.Count;
                 graph.IsBuilt = true;
+                
+                // Verify node count matches handles created
+                if (graph.NodeCount != nodeHandles.Count)
+                {
+                    _logger.LogWarning("Node count mismatch after building: Graph has {GraphNodeCount} nodes, created {HandleCount} handles",
+                        graph.NodeCount, nodeHandles.Count);
+                }
 
                 _logger.LogDebug("Built graph {GraphId} with {NodeCount} kernel nodes",
                     graph.Id, graph.NodeCount);
@@ -568,21 +581,21 @@ namespace DotCompute.Backends.CUDA.Execution
         {
             await Task.Delay(1, cancellationToken).ConfigureAwait(false);
 
-            var nodeParams = new CudaKernelNodeParams
+            var nodeParams = new DotCompute.Backends.CUDA.Types.Native.CudaKernelNodeParams
             {
-                Function = operation.Kernel.FunctionHandle,
-                GridDimX = operation.LaunchConfig.GridX,
-                GridDimY = operation.LaunchConfig.GridY,
-                GridDimZ = operation.LaunchConfig.GridZ,
-                BlockDimX = operation.LaunchConfig.BlockX,
-                BlockDimY = operation.LaunchConfig.BlockY,
-                BlockDimZ = operation.LaunchConfig.BlockZ,
-                SharedMemBytes = operation.LaunchConfig.SharedMemoryBytes
+                func = operation.Kernel.FunctionHandle,
+                gridDimX = operation.LaunchConfig.GridX,
+                gridDimY = operation.LaunchConfig.GridY,
+                gridDimZ = operation.LaunchConfig.GridZ,
+                blockDimX = operation.LaunchConfig.BlockX,
+                blockDimY = operation.LaunchConfig.BlockY,
+                blockDimZ = operation.LaunchConfig.BlockZ,
+                sharedMemBytes = operation.LaunchConfig.SharedMemoryBytes
             };
 
             // Prepare kernel arguments
             var argPointers = PrepareCudaKernelArguments(operation.Arguments);
-            nodeParams.KernelParams = argPointers;
+            nodeParams.kernelParams = argPointers;
 
             var nodeHandle = IntPtr.Zero;
             var result = CudaRuntime.cuGraphAddKernelNode(
@@ -758,7 +771,7 @@ namespace DotCompute.Backends.CUDA.Execution
             // This would use CUDA's tensor core APIs for Ada architecture
             await Task.Delay(1, cancellationToken).ConfigureAwait(false);
 
-            foreach (var op in graph.Operations.Where(o => o.Type == CudaKernelType.MatrixMultiply))
+            foreach (var op in graph.Operations.Where(o => o.Type == DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.MatrixMultiply))
             {
                 // Configure for tensor core usage
                 op.UseTensorCores = true;
@@ -845,7 +858,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 var fusedKernel = new CudaKernelOperation
                 {
                     Name = $"{candidate.FirstKernel.Name}_fused_{candidate.SecondKernel.Name}",
-                    Type = (CudaKernelType)DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.Fused,
+                    Type = DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.Fused,
                     IsFused = true,
                     OriginalOperations = new[] { candidate.FirstKernel, candidate.SecondKernel }
                 };

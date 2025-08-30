@@ -3,6 +3,7 @@
 
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Execution.Types;
 
 namespace DotCompute.Backends.CUDA.Execution.Graph
 {
@@ -43,8 +44,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// <summary>
         /// Gets or sets the type classification of this kernel operation.
         /// </summary>
-        /// <value>A <see cref="CudaKernelType"/> value indicating the operation category.</value>
-        public CudaKernelType Type { get; set; } = CudaKernelType.Custom;
+        /// <value>A CudaKernelType value indicating the operation category.</value>
+        public DotCompute.Backends.CUDA.Execution.Types.CudaKernelType Type { get; set; } = DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.Custom;
 
         /// <summary>
         /// Gets or sets a value indicating whether this operation should utilize tensor cores.
@@ -68,13 +69,13 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// Gets or sets the cache configuration preference for this operation.
         /// </summary>
         /// <value>A <see cref="CacheConfig"/> value specifying cache utilization preferences.</value>
-        public CacheConfig CacheConfig { get; set; } = CacheConfig.PreferNone;
+        public DotCompute.Backends.CUDA.Types.CacheConfig CacheConfig { get; set; } = DotCompute.Backends.CUDA.Types.CacheConfig.PreferNone;
 
         /// <summary>
         /// Gets or sets the warp scheduling mode for this operation.
         /// </summary>
         /// <value>A <see cref="WarpSchedulingMode"/> value indicating the scheduling strategy.</value>
-        public WarpSchedulingMode WarpScheduling { get; set; } = WarpSchedulingMode.Default;
+        public DotCompute.Backends.CUDA.Types.WarpSchedulingMode WarpScheduling { get; set; } = DotCompute.Backends.CUDA.Types.WarpSchedulingMode.Default;
 
         /// <summary>
         /// Gets or sets a string representation of the output data dimensions.

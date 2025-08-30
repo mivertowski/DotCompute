@@ -565,9 +565,10 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         // Configure pool
         if (properties.ReleaseThreshold > 0)
         {
+            var threshold = (ulong)properties.ReleaseThreshold;
             CudaRuntime.cudaMemPoolSetAttribute(
                 pool, CudaMemPoolAttribute.ReleaseThreshold,
-                ref properties.ReleaseThreshold);
+                ref threshold);
         }
 
         _memoryPools.TryAdd(pool, new MemoryPoolInfo
@@ -599,11 +600,13 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         {
             CudaRuntime.cudaMemPoolGetAttribute(
                 targetPool, CudaMemPoolAttribute.Used,
-                out ulong usedMemory);
+                out IntPtr usedMemoryPtr);
+            var usedMemory = (ulong)usedMemoryPtr;
             
             CudaRuntime.cudaMemPoolGetAttribute(
                 targetPool, CudaMemPoolAttribute.Reserved,
-                out ulong reservedMemory);
+                out IntPtr reservedMemoryPtr);
+            var reservedMemory = (ulong)reservedMemoryPtr;
 
             return new MemoryPoolStatistics
             {

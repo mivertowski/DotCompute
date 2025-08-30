@@ -52,7 +52,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
             Initialize();
 
-            _streamPool = new CudaStreamPool(context, logger, _leastPriority, _greatestPriority);
+            // Create a logger for the stream pool
+        var poolLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<CudaStreamPool>.Instance;
+        _streamPool = new CudaStreamPool(context, poolLogger, _leastPriority, _greatestPriority);
 
             // Setup maintenance timer for cleanup and optimization
             _maintenanceTimer = new Timer(PerformMaintenance, null,

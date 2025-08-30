@@ -688,15 +688,19 @@ namespace DotCompute.Backends.CUDA.Factory
                 DeviceId = deviceId;
                 
                 // Create base accelerator for delegation
-                _baseAccelerator = new CudaAccelerator(deviceId, logger);
+                // Use NullLogger to avoid type conversion issues
+                _baseAccelerator = new CudaAccelerator(deviceId, NullLogger<CudaAccelerator>.Instance);
             }
 
             // IAccelerator interface implementation
             public AcceleratorType Type => AcceleratorType.CUDA;
             public AcceleratorInfo Info => new AcceleratorInfo
             {
+                Id = $"cuda_{DeviceId}",
                 Name = $"CUDA Device {DeviceId}",
-                Type = AcceleratorType.CUDA,
+                DeviceType = AcceleratorType.CUDA.ToString(),
+                Vendor = "NVIDIA",
+                DriverVersion = "12.0", // Default version
                 MaxComputeUnits = 108, // Default SM count
                 MaxWorkGroupSize = 1024,
                 GlobalMemorySize = (long)UnifiedMemoryManager.TotalAvailableMemory,
@@ -726,12 +730,43 @@ namespace DotCompute.Backends.CUDA.Factory
                 AsyncMemoryManager?.Dispose();
                 StreamManager?.Dispose();
                 
-                // Dispose base accelerator
-                _baseAccelerator?.Dispose();
+                // Dispose base accelerator asynchronously
+                if (_baseAccelerator != null)
+                {
+                    _baseAccelerator.DisposeAsync().AsTask().Wait();
+                }
             }
 
-
-            public ValueTask DisposeAsync() => _baseAccelerator?.DisposeAsync() ?? ValueTask.CompletedTask;
+            public async ValueTask DisposeAsync()
+            {
+                // Dispose async-capable managers first
+                if (_baseAccelerator != null)
+                {
+                    await _baseAccelerator.DisposeAsync().ConfigureAwait(false);
+                }
+                
+                // Dispose remaining managers that only support sync disposal
+                Profiler?.Dispose();
+                GraphOptimizer?.Dispose();
+                KernelCache?.Dispose();
+                TensorCoreManager?.Dispose();
+                UnifiedMemoryManager?.Dispose();
+                ErrorHandler?.Dispose();
+                
+                // Handle async disposal for memory and stream managers if they support it
+                if (AsyncMemoryManager is IAsyncDisposable asyncMemoryManager)
+                {
+                    await asyncMemoryManager.DisposeAsync().ConfigureAwait(false);
+                }
+                else
+                {
+                    AsyncMemoryManager?.Dispose();
+                }
+                
+                StreamManager?.Dispose();
+                
+                GC.SuppressFinalize(this);
+            }
         }
     }
 }

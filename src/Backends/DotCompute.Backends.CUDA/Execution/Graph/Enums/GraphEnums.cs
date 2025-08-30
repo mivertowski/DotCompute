@@ -42,7 +42,15 @@ public enum GraphNodeType
     /// <summary>Empty node for synchronization.</summary>
     Empty = 5,
     /// <summary>Memory copy node.</summary>
-    Memcpy = 6
+    Memcpy = 6,
+    /// <summary>Memory set node (alias for MemorySet).</summary>
+    Memset = MemorySet,
+    /// <summary>Event record node.</summary>
+    EventRecord = 7,
+    /// <summary>Event wait node.</summary>
+    EventWait = 8,
+    /// <summary>Child graph node (alias for Graph).</summary>
+    ChildGraph = Graph
 }
 
 /// <summary>

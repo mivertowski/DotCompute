@@ -803,7 +803,7 @@ public sealed class CudaKernelCache : IDisposable
             _memoryCache.Clear();
             _metadataCache.Clear();
             _lruList.Clear();
-            // _lruLock?.Dispose(); // Lock doesn't implement IDisposable in .NET 9
+            // Note: Lock (_lruLock) does not require disposal in .NET 9
         }
     }
 

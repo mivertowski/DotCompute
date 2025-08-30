@@ -548,10 +548,10 @@ public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanag
 
             _hostArray = null;
             _state = BufferState.Uninitialized;
-
-            // Dispose async lock
-            _asyncLock.Dispose();
         }
+        
+        // Dispose async lock outside of the lock to avoid deadlocks
+        _asyncLock.Dispose();
     }
 
     #region Private Methods
@@ -1170,6 +1170,7 @@ public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanag
         finally
         {
             _asyncLock.Dispose();
+            GC.SuppressFinalize(this); // Suppress finalization since we've properly disposed
         }
     }
 

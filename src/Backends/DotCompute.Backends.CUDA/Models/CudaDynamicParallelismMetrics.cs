@@ -1,11 +1,17 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+// This file is DEPRECATED - CudaDynamicParallelismMetrics is now defined in
+// /src/Backends/DotCompute.Backends.CUDA/Execution/Metrics/CudaExecutionMetrics.cs
+// This file is kept for compatibility during migration and will be removed.
+
 namespace DotCompute.Backends.CUDA.Advanced.Features.Models
 {
     /// <summary>
-    /// Metrics for dynamic parallelism functionality.
+    /// DEPRECATED: Use DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics instead.
+    /// This class is kept for backward compatibility during migration.
     /// </summary>
+    [System.Obsolete("Use DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics instead.", false)]
     public sealed class CudaDynamicParallelismMetrics
     {
         /// <summary>

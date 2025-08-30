@@ -16,7 +16,7 @@ namespace DotCompute.Backends.CUDA.Advanced.Features.Models
         /// <summary>
         /// Gets or sets the dynamic parallelism metrics.
         /// </summary>
-        public CudaDynamicParallelismMetrics DynamicParallelismMetrics { get; set; } = new();
+        public DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics DynamicParallelismMetrics { get; set; } = new();
 
         /// <summary>
         /// Gets or sets the unified memory metrics.

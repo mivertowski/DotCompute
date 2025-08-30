@@ -36,6 +36,36 @@ public sealed class GraphExecutionResult
     /// Gets a value indicating whether the execution was successful.
     /// </summary>
     public bool IsSuccess => State == GraphExecutionState.Completed && Error == null;
+
+    /// <summary>
+    /// Gets or sets the unique execution identifier.
+    /// </summary>
+    public string ExecutionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the graph name.
+    /// </summary>
+    public string GraphName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the execution was successful.
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message if execution failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the execution start time.
+    /// </summary>
+    public DateTime StartTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the execution end time.
+    /// </summary>
+    public DateTime EndTime { get; set; }
 }
 
 /// <summary>
