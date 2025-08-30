@@ -77,7 +77,9 @@ public class MemoryBenchmarks
             var ptr = handle.AddrOfPinnedObject();
             // Use the pointer to prevent optimization
             if (ptr == IntPtr.Zero)
+            {
                 throw new InvalidOperationException();
+            }
         }
         finally
         {

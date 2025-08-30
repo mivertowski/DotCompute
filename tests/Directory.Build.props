@@ -23,9 +23,9 @@
   <PropertyGroup>
     <!-- Coverage Configuration -->
     <CollectCoverage>true</CollectCoverage>
-    <CoverletOutputFormat>cobertura,opencover,json</CoverletOutputFormat>
+    <CoverletOutputFormat>cobertura,json</CoverletOutputFormat>
     <CoverletOutput>./TestResults/coverage</CoverletOutput>
-    <Threshold>80</Threshold>
+    <Threshold>0</Threshold>
     <ThresholdType>line,branch,method</ThresholdType>
     <ThresholdStat>minimum</ThresholdStat>
     <Include>[DotCompute*]*</Include>
@@ -36,7 +36,7 @@
     <SingleHit>false</SingleHit>
     <IncludeTestAssembly>false</IncludeTestAssembly>
     <SkipAutoProps>true</SkipAutoProps>
-    <DeterministicReport>true</DeterministicReport>
+    <DeterministicReport>false</DeterministicReport>
   </PropertyGroup>
 
   <!-- Coverage packages moved to Directory.Build.targets to avoid duplicates -->

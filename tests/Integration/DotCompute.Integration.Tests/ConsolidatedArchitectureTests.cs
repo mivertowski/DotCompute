@@ -220,6 +220,15 @@ public class ConsolidatedArchitectureTests : IAsyncLifetime
                 await _memoryManager.DisposeAsync();
             await base.DisposeCoreAsync();
         }
+
+        public override ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+        {
+            // Don't call synchronization if already disposed
+            if (IsDisposed)
+                return ValueTask.CompletedTask;
+            
+            return base.SynchronizeAsync(cancellationToken);
+        }
     }
 
     /// <summary>

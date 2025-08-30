@@ -9,6 +9,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CA1515;CA5394;CA1814;CA1307;CA1308;CA1822;CA1052;CA1859</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

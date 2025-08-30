@@ -17,15 +17,15 @@ namespace DotCompute.Benchmarks;
 /// Production-quality BenchmarkDotNet runner for DotCompute performance benchmarks.
 /// Provides comprehensive benchmarking capabilities with multiple configuration profiles.
 /// </summary>
-public class Program
+internal static class Program
 {
     private static readonly Dictionary<string, Type> BenchmarkSuites = new()
     {
-        ["memory"] = typeof(MemoryBenchmarks),
-        ["cuda"] = typeof(CudaBenchmarks),
-        ["cpu"] = typeof(CpuBenchmarks),
-        ["algorithms"] = typeof(AlgorithmBenchmarks),
-        ["all"] = typeof(AllBenchmarks)
+        ["MEMORY"] = typeof(MemoryBenchmarks),
+        ["CUDA"] = typeof(CudaBenchmarks),
+        ["CPU"] = typeof(CpuBenchmarks),
+        ["ALGORITHMS"] = typeof(AlgorithmBenchmarks),
+        ["ALL"] = typeof(AllBenchmarks)
     };
 
     public static int Main(string[] args)
@@ -52,17 +52,17 @@ public class Program
     private static int RunInteractiveMode()
     {
         Console.WriteLine("Available benchmark suites:");
-        foreach (var suite in BenchmarkSuites.Keys.Where(k => k != "all"))
+        foreach (var suite in BenchmarkSuites.Keys.Where(k => k != "ALL"))
         {
-            Console.WriteLine($"  • {suite}");
+            Console.WriteLine($"  • {suite.ToUpperInvariant()}");
         }
         Console.WriteLine("  • all (runs all suites)");
         Console.WriteLine();
 
         Console.Write("Select benchmark suite (or 'q' to quit): ");
-        var input = Console.ReadLine()?.Trim().ToLowerInvariant();
+        var input = Console.ReadLine()?.Trim().ToUpperInvariant();
         
-        if (string.IsNullOrEmpty(input) || input == "q")
+        if (string.IsNullOrEmpty(input) || input == "Q")
         {
             return 0;
         }
@@ -78,8 +78,8 @@ public class Program
 
     private static int RunCommandLineMode(string[] args)
     {
-        var suite = args[0].ToLowerInvariant();
-        var profile = args.Length > 1 ? args[1].ToLowerInvariant() : "default";
+        var suite = args[0].ToUpperInvariant();
+        var profile = args.Length > 1 ? args[1].ToUpperInvariant() : "DEFAULT";
         
         if (!BenchmarkSuites.TryGetValue(suite, out var benchmarkType))
         {
@@ -122,7 +122,7 @@ public class Program
     {
         var allResults = new List<bool>();
         
-        foreach (var suite in BenchmarkSuites.Where(kv => kv.Key != "all"))
+        foreach (var suite in BenchmarkSuites.Where(kv => kv.Key != "ALL"))
         {
             Console.WriteLine($"\n🏃 Running {suite.Key} benchmarks...");
             try
@@ -145,9 +145,9 @@ public class Program
         return allResults.All(r => r) ? 0 : 1;
     }
 
-    private static IConfig GetDefaultConfig()
+    private static ManualConfig GetDefaultConfig()
     {
-        return DefaultConfig.Instance
+        return ManualConfig.Create(DefaultConfig.Instance)
             .AddDiagnoser(MemoryDiagnoser.Default)
             .AddDiagnoser(ThreadingDiagnoser.Default)
             .AddExporter(MarkdownExporter.GitHub)
@@ -158,14 +158,14 @@ public class Program
 
     private static IConfig GetConfigurationProfile(string profile) => profile switch
     {
-        "fast" => GetFastConfig(),
-        "detailed" => GetDetailedConfig(),
-        "production" => GetProductionConfig(),
-        "ci" => GetContinuousIntegrationConfig(),
+        "FAST" => GetFastConfig(),
+        "DETAILED" => GetDetailedConfig(),
+        "PRODUCTION" => GetProductionConfig(),
+        "CI" => GetContinuousIntegrationConfig(),
         _ => GetDefaultConfig()
     };
 
-    private static IConfig GetFastConfig()
+    private static ManualConfig GetFastConfig()
     {
         return ManualConfig.Create(DefaultConfig.Instance)
             .AddJob(Job.Default.WithStrategy(RunStrategy.ColdStart).WithLaunchCount(1).WithIterationCount(3))
@@ -175,7 +175,7 @@ public class Program
             .WithOptions(ConfigOptions.DisableOptimizationsValidator);
     }
 
-    private static IConfig GetDetailedConfig()
+    private static ManualConfig GetDetailedConfig()
     {
         return ManualConfig.Create(DefaultConfig.Instance)
             .AddJob(Job.Default.WithRuntime(CoreRuntime.Core90))
@@ -190,7 +190,7 @@ public class Program
             .WithOptions(ConfigOptions.DisableOptimizationsValidator);
     }
 
-    private static IConfig GetProductionConfig()
+    private static ManualConfig GetProductionConfig()
     {
         return ManualConfig.Create(DefaultConfig.Instance)
             .AddJob(Job.Default
@@ -207,7 +207,7 @@ public class Program
             .WithOptions(ConfigOptions.DisableOptimizationsValidator);
     }
 
-    private static IConfig GetContinuousIntegrationConfig()
+    private static ManualConfig GetContinuousIntegrationConfig()
     {
         return ManualConfig.Create(DefaultConfig.Instance)
             .AddJob(Job.Default.WithStrategy(RunStrategy.ColdStart).WithLaunchCount(1))

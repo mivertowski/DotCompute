@@ -87,7 +87,9 @@ public class AlgorithmBenchmarks
         for (int i = 1; i < DataSize; i++)
         {
             if (_inputData[i] > max)
+            {
                 max = _inputData[i];
+            }
         }
         
         // Compute exponentials and sum

@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
+using System.Globalization;
 
 namespace DotCompute.Benchmarks;
 
@@ -76,17 +77,25 @@ public class CudaBenchmarks
             size = 32; // Fallback to small matrix
         }
         
-        var matrixA = new float[size, size];
-        var matrixB = new float[size, size];
-        var result = new float[size, size];
+        var matrixA = new float[size][];
+        var matrixB = new float[size][];
+        var result = new float[size][];
+        
+        // Initialize jagged arrays
+        for (int i = 0; i < size; i++)
+        {
+            matrixA[i] = new float[size];
+            matrixB[i] = new float[size];
+            result[i] = new float[size];
+        }
         
         // Initialize matrices
         for (int i = 0; i < size; i++)
         {
             for (int j = 0; j < size; j++)
             {
-                matrixA[i, j] = i + j;
-                matrixB[i, j] = i * j + 1;
+                matrixA[i][j] = i + j;
+                matrixB[i][j] = i * j + 1;
             }
         }
         
@@ -98,9 +107,9 @@ public class CudaBenchmarks
                 float sum = 0;
                 for (int k = 0; k < size; k++)
                 {
-                    sum += matrixA[i, k] * matrixB[k, j];
+                    sum += matrixA[i][k] * matrixB[k][j];
                 }
-                result[i, j] = sum;
+                result[i][j] = sum;
             }
         }
     }
@@ -117,17 +126,25 @@ public class CudaBenchmarks
         // Simulate GPU memory allocation overhead
         Task.Delay(2).GetAwaiter().GetResult();
         
-        var matrixA = new float[size, size];
-        var matrixB = new float[size, size];
-        var result = new float[size, size];
+        var matrixA = new float[size][];
+        var matrixB = new float[size][];
+        var result = new float[size][];
+        
+        // Initialize jagged arrays
+        for (int i = 0; i < size; i++)
+        {
+            matrixA[i] = new float[size];
+            matrixB[i] = new float[size];
+            result[i] = new float[size];
+        }
         
         // Initialize matrices (simulate host-to-device transfer)
         for (int i = 0; i < size; i++)
         {
             for (int j = 0; j < size; j++)
             {
-                matrixA[i, j] = i + j;
-                matrixB[i, j] = i * j + 1;
+                matrixA[i][j] = i + j;
+                matrixB[i][j] = i * j + 1;
             }
         }
         
@@ -139,9 +156,9 @@ public class CudaBenchmarks
                 float sum = 0;
                 for (int k = 0; k < size; k++)
                 {
-                    sum += matrixA[i, k] * matrixB[k, j];
+                    sum += matrixA[i][k] * matrixB[k][j];
                 }
-                result[i, j] = sum;
+                result[i][j] = sum;
             }
         });
         
@@ -222,8 +239,10 @@ public class CudaBenchmarks
         Task.Delay(10).GetAwaiter().GetResult();
         
         // Simulate JIT overhead
-        var hash = kernelSource.GetHashCode();
+        var hash = kernelSource.GetHashCode(StringComparison.Ordinal);
         if (hash == 0)
+        {
             throw new InvalidOperationException();
+        }
     }
 }
