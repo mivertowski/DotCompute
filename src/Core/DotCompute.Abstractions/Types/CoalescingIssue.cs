@@ -1,6 +1,4 @@
-using DotCompute.Backends.CUDA.Analysis.Enums;
-
-namespace DotCompute.Backends.CUDA.Analysis.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Represents a specific memory coalescing issue identified during analysis.

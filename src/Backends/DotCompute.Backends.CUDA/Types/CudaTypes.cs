@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Backends.CUDA.Types
@@ -196,6 +197,56 @@ namespace DotCompute.Backends.CUDA.Types
         /// Gets or sets the target architecture.
         /// </summary>
         public string Architecture { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the compiled kernel instance.
+        /// </summary>
+        public CompiledKernel? Kernel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the last time this cached kernel was accessed.
+        /// </summary>
+        /// <remarks>
+        /// This property is used for cache eviction policies such as Least Recently Used (LRU).
+        /// It's updated automatically when the kernel is retrieved from the cache.
+        /// </remarks>
+        public DateTime LastAccessTime { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// Gets or sets the number of times this cached kernel has been accessed.
+        /// </summary>
+        /// <remarks>
+        /// This property tracks usage frequency and can be used for cache statistics
+        /// and eviction policies that favor frequently used kernels.
+        /// </remarks>
+        public int AccessCount { get; set; } = 0;
+
+        /// <summary>
+        /// Gets or sets the unique cache key for this kernel.
+        /// </summary>
+        /// <remarks>
+        /// The cache key is typically generated from the kernel source code hash,
+        /// compilation options hash, and target architecture to ensure uniqueness.
+        /// </remarks>
+        public string CacheKey { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the size of the cached kernel data in bytes.
+        /// </summary>
+        /// <remarks>
+        /// This includes the size of the compiled binary and any associated metadata.
+        /// Used for memory management and cache size tracking.
+        /// </remarks>
+        public long Size { get; set; } = 0;
+
+        /// <summary>
+        /// Gets or sets the timestamp when this kernel cache entry was created.
+        /// </summary>
+        /// <remarks>
+        /// This timestamp is set when the kernel is first added to the cache
+        /// and is used for cache aging and statistics.
+        /// </remarks>
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -402,7 +453,7 @@ namespace DotCompute.Backends.CUDA.Types
                         {
                             // Free device memory
                             var result = Native.CudaRuntime.cudaFree(kvp.Key);
-                            if (result != Native.CudaError.Success)
+                            if (result != CudaError.Success)
                             {
                                 _logger?.LogWarning("Failed to free CUDA memory during reset: {Error}", result);
                             }

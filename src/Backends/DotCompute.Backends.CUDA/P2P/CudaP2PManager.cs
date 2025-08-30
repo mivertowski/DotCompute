@@ -438,7 +438,7 @@ namespace DotCompute.Backends.CUDA.P2P
                 DeviceId = deviceId,
                 Name = props.Name,
                 ComputeCapability = $"{props.Major}.{props.Minor}",
-                TotalMemoryBytes = props.TotalGlobalMem,
+                TotalMemoryBytes = (long)props.TotalGlobalMem,
                 MultiprocessorCount = props.MultiProcessorCount,
                 MaxThreadsPerBlock = props.MaxThreadsPerBlock,
                 MaxThreadsPerMultiprocessor = props.MaxThreadsPerMultiProcessor,
@@ -504,12 +504,12 @@ namespace DotCompute.Backends.CUDA.P2P
                     try
                     {
                         // Warm up
-                        result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, testSize, CudaMemcpyKind.DeviceToDevice);
+                        result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (nuint)testSize, CudaMemcpyKind.DeviceToDevice);
                         CudaRuntime.CheckError(result, "warmup transfer");
 
                         // Measure bandwidth
                         var startTime = DateTimeOffset.UtcNow;
-                        result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, testSize, CudaMemcpyKind.DeviceToDevice);
+                        result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (nuint)testSize, CudaMemcpyKind.DeviceToDevice);
                         CudaRuntime.CheckError(result, "bandwidth test transfer");
                         var endTime = DateTimeOffset.UtcNow;
 

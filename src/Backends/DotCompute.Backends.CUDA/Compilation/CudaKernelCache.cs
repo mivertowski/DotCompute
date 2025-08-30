@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using global::System.Runtime.CompilerServices;
 using global::System.Security.Cryptography;
 using System.Text;
@@ -222,7 +223,7 @@ public sealed class CudaKernelCache : IDisposable
             {
                 Name = kernelName,
                 Ptx = ptx,
-                Cubin = cubin,
+                Cubin = cubin ?? Array.Empty<byte>(),
                 Binary = binary,
                 ComputeCapability = options.ComputeCapability,
                 CompilationTime = TimeSpan.FromMilliseconds(compilationTime),
@@ -413,21 +414,21 @@ public sealed class CudaKernelCache : IDisposable
     /// <summary>
     /// Tries to get kernel from memory cache.
     /// </summary>
-    private bool TryGetFromMemoryCache(string cacheKey, out CompiledKernel kernel)
+    private bool TryGetFromMemoryCache(string cacheKey, [NotNullWhen(true)] out CompiledKernel? kernel)
     {
-        if (_memoryCache.TryGetValue(cacheKey, out var cached))
+        if (_memoryCache.TryGetValue(cacheKey, out var cached) && cached.Kernel != null)
         {
             // Update LRU
             UpdateLru(cacheKey);
             
-            kernel = cached.Kernel;
-            cached.LastAccessTime = DateTimeOffset.UtcNow;
+            kernel = cached.Kernel; // Ensure kernel is assigned before returning true
+            cached.LastAccessTime = DateTimeOffset.UtcNow.DateTime;
             cached.AccessCount++;
             
             return true;
         }
         
-        kernel = null!;
+        kernel = null;
         return false;
     }
 
@@ -469,7 +470,7 @@ public sealed class CudaKernelCache : IDisposable
             {
                 Name = metadata.KernelName,
                 Ptx = ptx,
-                Cubin = cubin,
+                Cubin = cubin ?? Array.Empty<byte>(),
                 Binary = cubin ?? Encoding.UTF8.GetBytes(ptx),
                 ComputeCapability = metadata.ComputeCapability,
                 CompilationTime = TimeSpan.FromMilliseconds(metadata.CompilationTime),
@@ -531,8 +532,8 @@ public sealed class CudaKernelCache : IDisposable
             Kernel = kernel,
             CacheKey = cacheKey,
             Size = kernelSize,
-            CreatedAt = DateTimeOffset.UtcNow,
-            LastAccessTime = DateTimeOffset.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow.DateTime,
+            LastAccessTime = DateTimeOffset.UtcNow.DateTime,
             AccessCount = 1
         };
         
@@ -571,8 +572,8 @@ public sealed class CudaKernelCache : IDisposable
                 KernelName = kernel.Name,
                 DiskPath = ptxPath,
                 ComputeCapability = kernel.ComputeCapability,
-                CompilationTime = kernel.CompilationTime,
-                CompiledAt = kernel.CompiledAt,
+                CompilationTime = kernel.CompilationTime.TotalMilliseconds,
+                CompiledAt = new DateTimeOffset(kernel.CompiledAt),
                 FileSize = new FileInfo(ptxPath).Length
             };
             
@@ -685,7 +686,7 @@ public sealed class CudaKernelCache : IDisposable
         try
         {
             // Clean up old disk cache entries
-            if (_config.EnableDiskCache && _config.DiskCacheExpirationDays > 0)
+            if (_config.EnableDiskCache && (_config.MaxDiskCacheSizeMB > 0 || true))
             {
                 CleanupOldDiskCacheEntries();
             }
@@ -707,7 +708,7 @@ public sealed class CudaKernelCache : IDisposable
     /// </summary>
     private void CleanupOldDiskCacheEntries()
     {
-        var cutoffDate = DateTimeOffset.UtcNow.AddDays(-_config.DiskCacheExpirationDays);
+        var cutoffDate = DateTimeOffset.UtcNow.AddDays(-30); // Default 30 days expiration
         var keysToRemove = new List<string>();
         
         foreach (var (key, metadata) in _metadataCache)
@@ -797,12 +798,12 @@ public sealed class CudaKernelCache : IDisposable
             _cleanupTimer?.Dispose();
             
             // Save metadata before disposal
-            _ = SaveCacheMetadataAsync(CancellationToken.None).GetAwaiter().GetResult();
+            SaveCacheMetadataAsync(CancellationToken.None).GetAwaiter().GetResult();
             
             _memoryCache.Clear();
             _metadataCache.Clear();
             _lruList.Clear();
-            _lruLock?.Dispose();
+            // _lruLock?.Dispose(); // Lock doesn't implement IDisposable in .NET 9
         }
     }
 

@@ -25,6 +25,11 @@ public sealed class GraphConfiguration
     /// Gets or sets the optimization timeout in milliseconds.
     /// </summary>
     public int OptimizationTimeoutMs { get; set; } = 5000;
+
+    /// <summary>
+    /// Gets the default graph configuration.
+    /// </summary>
+    public static GraphConfiguration Default { get; } = new();
 }
 
 /// <summary>

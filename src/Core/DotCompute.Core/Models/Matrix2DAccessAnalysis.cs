@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using DotCompute.Backends.CUDA.Analysis.Enums;
-using DotCompute.Backends.CUDA.Analysis.Types;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Models
 {

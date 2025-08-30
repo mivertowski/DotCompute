@@ -33,7 +33,7 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Gets the device name.
         /// </summary>
-        public string Name => _deviceProperties.Name ?? $"CUDA Device {_deviceId}";
+        public string Name => _deviceProperties.DeviceName ?? $"CUDA Device {_deviceId}";
 
         /// <summary>
         /// Gets the compute capability major version.

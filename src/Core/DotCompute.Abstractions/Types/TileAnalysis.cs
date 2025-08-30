@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Analysis.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Represents the analysis of tile efficiency for shared memory optimization.

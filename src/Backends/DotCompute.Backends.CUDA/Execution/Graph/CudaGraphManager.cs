@@ -51,7 +51,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 throw new InvalidOperationException($"Graph '{name}' already exists");
             }
 
-            var graph = new CudaGraph(name, config ?? GraphConfiguration.Default);
+            var graph = new CudaGraph
+            {
+                Id = name,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
             var graphHandle = IntPtr.Zero;
             
             var result = CudaRuntime.cuGraphCreate(ref graphHandle, 0);
@@ -95,8 +99,10 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 var result = CudaRuntime.cudaStreamEndCapture(stream, ref graphHandle);
                 CudaRuntime.CheckError(result, "ending stream capture");
 
-                var graph = new CudaGraph(graphName, GraphConfiguration.Default)
+                var graph = new CudaGraph
                 {
+                    Id = graphName,
+                    CreatedAt = DateTimeOffset.UtcNow,
                     Handle = graphHandle,
                     IsCaptured = true
                 };
@@ -197,7 +203,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 ref nodeHandle,
                 graph.Handle,
                 depHandles,
-                (ulong)depHandles.Length,
+                (nuint)depHandles.Length,
                 ref cudaParams,
                 IntPtr.Zero);
 
@@ -247,7 +253,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 ref nodeHandle,
                 graph.Handle,
                 depHandles,
-                (ulong)depHandles.Length,
+                (nuint)depHandles.Length,
                 ref cudaParams,
                 IntPtr.Zero);
 
@@ -336,7 +342,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 ref nodeHandle,
                 graph.Handle,
                 depHandles,
-                (ulong)depHandles.Length,
+                (nuint)depHandles.Length,
                 eventHandle);
 
             CudaRuntime.CheckError(result, "adding event record node to graph");
@@ -374,7 +380,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 ref nodeHandle,
                 graph.Handle,
                 depHandles,
-                (ulong)depHandles.Length,
+                (nuint)depHandles.Length,
                 eventHandle);
 
             CudaRuntime.CheckError(result, "adding event wait node to graph");
@@ -413,7 +419,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 ref nodeHandle,
                 parentGraph.Handle,
                 depHandles,
-                (ulong)depHandles.Length,
+                (nuint)depHandles.Length,
                 childGraph.Handle);
 
             CudaRuntime.CheckError(result, "adding child graph node");
@@ -620,10 +626,12 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             var result = CudaGraphExtensions.cuGraphClone(ref cloneHandle, sourceGraph.Handle);
             CudaRuntime.CheckError(result, "cloning graph");
 
-            var clonedGraph = new CudaGraph(newName, sourceGraph.Configuration)
+            var clonedGraph = new CudaGraph
             {
-                Handle = cloneHandle,
-                Nodes = new List<GraphNode>(sourceGraph.Nodes.Count)
+                Id = newName,
+                CreatedAt = DateTimeOffset.UtcNow,
+                Options = sourceGraph.Options,
+                Handle = cloneHandle
             };
 
             // Note: Node handles are not directly copyable, but the graph structure is cloned

@@ -15,7 +15,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling;
 /// Production-grade CUDA error handler with retry logic, graceful degradation,
 /// and comprehensive error recovery strategies.
 /// </summary>
-public sealed class CudaErrorHandler
+public sealed class CudaErrorHandler : IDisposable
 {
     private readonly ILogger<CudaErrorHandler> _logger;
     private readonly ConcurrentDictionary<CudaError, ErrorStatistics> _errorStats;
@@ -60,9 +60,9 @@ public sealed class CudaErrorHandler
                 _options.MaxRetryAttempts,
                 retryAttempt => TimeSpan.FromMilliseconds(
                     Math.Min(100 * Math.Pow(2, retryAttempt), _options.MaxRetryDelayMs)),
-                onRetry: (outcome, timespan, retryCount, context) =>
+                onRetry: (exception, timespan, retryCount, context) =>
                 {
-                    var ex = outcome.Exception as CudaException;
+                    var ex = exception as CudaException;
                     _logger.LogWarning(
                         "Retry {RetryCount}/{MaxRetries} after {Delay}ms for error: {Error}",
                         retryCount, _options.MaxRetryAttempts, timespan.TotalMilliseconds,
@@ -82,7 +82,7 @@ public sealed class CudaErrorHandler
             .WaitAndRetryAsync(
                 _options.MemoryRetryAttempts,
                 retryAttempt => TimeSpan.FromSeconds(retryAttempt),
-                onRetry: async (outcome, timespan, retryCount, context) =>
+                onRetry: async (exception, timespan, retryCount, context) =>
                 {
                     _logger.LogWarning(
                         "Memory allocation retry {RetryCount}, attempting cleanup...",
@@ -132,6 +132,7 @@ public sealed class CudaErrorHandler
         try
         {
             // Check circuit breaker
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
             var canExecute = await _circuitBreakerPolicy.ExecuteAsync(
                 async () => 
                 {
@@ -146,6 +147,7 @@ public sealed class CudaErrorHandler
                     var result = CudaRuntime.cudaGetLastError();
                     return result == CudaError.Success;
                 });
+#pragma warning restore CS1998
 
             if (!canExecute)
             {
@@ -284,6 +286,7 @@ public sealed class CudaErrorHandler
     /// <summary>
     /// Falls back to CPU execution when GPU fails.
     /// </summary>
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     private async Task<T> FallbackToCpuAsync<T>(string operationName)
     {
         _logger.LogInformation("Falling back to CPU for {Operation}", operationName);
@@ -293,6 +296,7 @@ public sealed class CudaErrorHandler
         throw new CpuFallbackRequiredException(
             $"Operation '{operationName}' requires CPU fallback");
     }
+#pragma warning restore CS1998
 
     /// <summary>
     /// Triggers memory cleanup on device.
@@ -477,6 +481,16 @@ public sealed class CudaErrorHandler
     {
         _errorStats.Clear();
         _lastSuccessfulOperation = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// Disposes the error handler resources.
+    /// </summary>
+    public void Dispose()
+    {
+        // CudaErrorHandler doesn't hold disposable resources directly,
+        // but we clear statistics as cleanup
+        ClearStatistics();
     }
 
     /// <summary>

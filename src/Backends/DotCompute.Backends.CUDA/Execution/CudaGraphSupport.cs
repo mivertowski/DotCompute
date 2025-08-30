@@ -845,7 +845,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 var fusedKernel = new CudaKernelOperation
                 {
                     Name = $"{candidate.FirstKernel.Name}_fused_{candidate.SecondKernel.Name}",
-                    Type = DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.Fused,
+                    Type = (CudaKernelType)DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.Fused,
                     IsFused = true,
                     OriginalOperations = new[] { candidate.FirstKernel, candidate.SecondKernel }
                 };

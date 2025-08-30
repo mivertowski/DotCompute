@@ -5,6 +5,9 @@ using global::System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.DeviceManagement;
 using DotCompute.Backends.CUDA.Execution.Models;
+using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Optimization
@@ -118,8 +121,8 @@ namespace DotCompute.Backends.CUDA.Optimization
             // Create launch configuration
             var config = new LaunchConfiguration
             {
-                BlockSize = new Dim3(blockSize, 1, 1),
-                GridSize = new Dim3(gridSize, 1, 1),
+                BlockSize = new DotCompute.Abstractions.Types.Dim3(blockSize, 1, 1),
+                GridSize = new DotCompute.Abstractions.Types.Dim3(gridSize, 1, 1),
                 SharedMemoryBytes = dynamicSharedMemory + (nuint)kernelAttrs.SharedSizeBytes,
                 TheoreticalOccupancy = occupancy.Percentage,
                 ActiveWarps = occupancy.ActiveWarps,
@@ -325,8 +328,8 @@ namespace DotCompute.Backends.CUDA.Optimization
                         
                         bestConfig = new LaunchConfiguration
                         {
-                            BlockSize = new Dim3(blockDim.X, blockDim.Y, 1),
-                            GridSize = new Dim3(gridX, gridY, 1),
+                            BlockSize = new DotCompute.Abstractions.Types.Dim3(blockDim.X, blockDim.Y, 1),
+                            GridSize = new DotCompute.Abstractions.Types.Dim3(gridX, gridY, 1),
                             SharedMemoryBytes = dynamicSharedMemory + (nuint)kernelAttrs.SharedSizeBytes,
                             TheoreticalOccupancy = occupancy.Percentage,
                             ActiveWarps = occupancy.ActiveWarps,
@@ -627,8 +630,8 @@ namespace DotCompute.Backends.CUDA.Optimization
                         int newSize = ((optimized.BlockSize.X / 128) + 1) * 128;
                         if (newSize <= deviceProps.MaxThreadsPerBlock)
                         {
-                            optimized.BlockSize = new Dim3(newSize, 1, 1);
-                            optimized.GridSize = new Dim3(
+                            optimized.BlockSize = new DotCompute.Abstractions.Types.Dim3(newSize, 1, 1);
+                            optimized.GridSize = new DotCompute.Abstractions.Types.Dim3(
                                 (optimized.GridSize.X * baseConfig.BlockSize.X + newSize - 1) / newSize,
                                 1, 1);
                         }
@@ -649,8 +652,8 @@ namespace DotCompute.Backends.CUDA.Optimization
                     
                     if (largerBlock > optimized.BlockSize.X)
                     {
-                        optimized.BlockSize = new Dim3(largerBlock, 1, 1);
-                        optimized.GridSize = new Dim3(
+                        optimized.BlockSize = new DotCompute.Abstractions.Types.Dim3(largerBlock, 1, 1);
+                        optimized.GridSize = new DotCompute.Abstractions.Types.Dim3(
                             (optimized.GridSize.X * baseConfig.BlockSize.X + largerBlock - 1) / largerBlock,
                             1, 1);
                     }
@@ -681,18 +684,6 @@ namespace DotCompute.Backends.CUDA.Optimization
             return value;
         }
 
-        // Supporting classes
-        public class LaunchConfiguration
-        {
-            public Dim3 BlockSize { get; set; }
-            public Dim3 GridSize { get; set; }
-            public nuint SharedMemoryBytes { get; set; }
-            public double TheoreticalOccupancy { get; set; }
-            public int ActiveWarps { get; set; }
-            public int ActiveBlocks { get; set; }
-            public int RegistersPerThread { get; set; }
-            public int DeviceId { get; set; }
-        }
 
         public class LaunchConstraints
         {
@@ -805,12 +796,6 @@ namespace DotCompute.Backends.CUDA.Optimization
             Latency
         }
 
-        // CUDA enums
-        private enum CudaError
-        {
-            Success = 0,
-            // Add other error codes as needed
-        }
 
         private enum CudaDeviceAttribute
         {

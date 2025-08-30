@@ -3,31 +3,7 @@
 
 namespace DotCompute.Backends.CUDA.Types
 {
-    /// <summary>
-    /// CUDA architecture enumeration.
-    /// </summary>
-    public enum CudaArchitecture
-    {
-        Kepler,
-        Maxwell,
-        Pascal,
-        Volta,
-        Turing,
-        Ampere,
-        Ada,
-        Hopper
-    }
 
-    /// <summary>
-    /// CUDA graph optimization level.
-    /// </summary>
-    public enum CudaGraphOptimizationLevel
-    {
-        None,
-        Basic,
-        Balanced,
-        Aggressive
-    }
 
     /// <summary>
     /// Warp scheduling mode for CUDA execution.
@@ -65,16 +41,6 @@ namespace DotCompute.Backends.CUDA.Types
         Broadcast
     }
 
-    /// <summary>
-    /// Kernel launch configuration.
-    /// </summary>
-    public sealed class LaunchConfiguration
-    {
-        public (int x, int y, int z) GridDimensions { get; set; }
-        public (int x, int y, int z) BlockDimensions { get; set; }
-        public int SharedMemoryBytes { get; set; }
-        public nint Stream { get; set; }
-    }
 
     /// <summary>
     /// Kernel fusion candidate.
@@ -131,9 +97,9 @@ namespace DotCompute.Backends.CUDA.Types
         public int MaxNodesPerGraph { get; set; } = 1000;
         public bool UseInstantiatedGraphs { get; set; } = true;
         public bool EnableOptimization { get; set; } = true;
-        public CudaArchitecture TargetArchitecture { get; set; } = CudaArchitecture.Ada;
+        public DotCompute.Backends.CUDA.Execution.Types.CudaArchitecture TargetArchitecture { get; set; } = DotCompute.Backends.CUDA.Execution.Types.CudaArchitecture.Ada;
         public bool EnableKernelFusion { get; set; } = true;
-        public CudaGraphOptimizationLevel OptimizationLevel { get; set; } = CudaGraphOptimizationLevel.Balanced;
+        public DotCompute.Backends.CUDA.Execution.Types.CudaGraphOptimizationLevel OptimizationLevel { get; set; } = DotCompute.Backends.CUDA.Execution.Types.CudaGraphOptimizationLevel.Balanced;
     }
 
 
@@ -165,6 +131,17 @@ namespace DotCompute.Backends.CUDA.Types
         public double ComputeUtilization { get; set; }
         public double MemoryUtilization { get; set; }
         public long OperationsPerSecond { get; set; }
+        public string Operation { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Total floating point operations performed.
+        /// </summary>
+        public long TotalFlops { get; set; }
+        
+        /// <summary>
+        /// Number of times this operation was called.
+        /// </summary>
+        public int CallCount { get; set; }
     }
 
     /// <summary>

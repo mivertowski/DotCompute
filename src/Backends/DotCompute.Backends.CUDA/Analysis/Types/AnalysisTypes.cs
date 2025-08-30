@@ -3,6 +3,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions;
 
@@ -61,7 +63,7 @@ public sealed class CoalescingAnalysis
     /// <summary>
     /// Gets or sets identified coalescing issues.
     /// </summary>
-    public List<CoalescingIssue> Issues { get; set; } = new();
+    public List<DotCompute.Abstractions.Types.CoalescingIssue> Issues { get; set; } = new();
 
     /// <summary>
     /// Gets or sets optimization recommendations.
@@ -72,6 +74,21 @@ public sealed class CoalescingAnalysis
     /// Gets or sets performance optimization suggestions specific to this analysis.
     /// </summary>
     public List<string> Optimizations { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the actual bytes transferred during memory operations.
+    /// </summary>
+    public long ActualBytesTransferred { get; set; }
+
+    /// <summary>
+    /// Gets or sets the useful bytes transferred (without wasted bandwidth).
+    /// </summary>
+    public long UsefulBytesTransferred { get; set; }
+
+    /// <summary>
+    /// Gets or sets architecture-specific notes and observations.
+    /// </summary>
+    public List<string> ArchitectureNotes { get; set; } = new();
 
 }
 
@@ -199,7 +216,7 @@ public sealed class Matrix2DAccessAnalysis
     /// <summary>
     /// Gets or sets the tile analysis results.
     /// </summary>
-    public TileAnalysis TileAnalysis { get; set; } = new();
+    public DotCompute.Abstractions.Types.TileAnalysis TileAnalysis { get; set; } = new();
 
     /// <summary>
     /// Gets or sets optimization recommendations.
@@ -243,9 +260,39 @@ public sealed class RuntimeCoalescingProfile
     public string? KernelName { get; set; }
 
     /// <summary>
+    /// Gets or sets the profile start time.
+    /// </summary>
+    public DateTimeOffset ProfileStartTime { get; set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>
     /// Gets or sets the execution time in milliseconds.
     /// </summary>
     public double ExecutionTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average execution time.
+    /// </summary>
+    public TimeSpan AverageExecutionTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum execution time.
+    /// </summary>
+    public TimeSpan MinExecutionTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum execution time.
+    /// </summary>
+    public TimeSpan MaxExecutionTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the estimated bandwidth in bytes per second.
+    /// </summary>
+    public double EstimatedBandwidth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the estimated coalescing efficiency (0-1).
+    /// </summary>
+    public double EstimatedCoalescingEfficiency { get; set; }
 
     /// <summary>
     /// Gets or sets the memory throughput in GB/s.
@@ -258,9 +305,29 @@ public sealed class RuntimeCoalescingProfile
     public CoalescingAnalysis? CoalescingResults { get; set; }
 
     /// <summary>
-    /// Gets or sets performance counters.
+    /// Gets or sets performance counters for detailed profiling metrics.
     /// </summary>
     public Dictionary<string, long> PerformanceCounters { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the number of profiling runs executed.
+    /// </summary>
+    public int ProfileRuns { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the total bytes transferred during profiling.
+    /// </summary>
+    public long TotalBytesTransferred { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the coalescing efficiency variance across runs.
+    /// </summary>
+    public double CoalescingVariance { get; set; }
+    
+    /// <summary>
+    /// Gets or sets additional profiling metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
 /// <summary>
@@ -287,6 +354,41 @@ public sealed class CoalescingComparison
     /// Gets or sets the comparison summary.
     /// </summary>
     public string Summary { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets the dictionary of analyses indexed by pattern name.
+    /// </summary>
+    public Dictionary<string, CoalescingAnalysis> Analyses { get; } = new();
+
+    /// <summary>
+    /// Gets or sets the name of the pattern with the best efficiency.
+    /// </summary>
+    public string? BestPattern { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the pattern with the worst efficiency.
+    /// </summary>
+    public string? WorstPattern { get; set; }
+
+    /// <summary>
+    /// Gets or sets the best efficiency value observed.
+    /// </summary>
+    public double BestEfficiency { get; set; }
+
+    /// <summary>
+    /// Gets or sets the worst efficiency value observed.
+    /// </summary>
+    public double WorstEfficiency { get; set; }
+
+    /// <summary>
+    /// Gets or sets the potential performance improvement if worst pattern is optimized to match best.
+    /// </summary>
+    public double ImprovementPotential { get; set; }
+
+    /// <summary>
+    /// Gets or sets the list of recommendations based on the comparison.
+    /// </summary>
+    public List<string> Recommendations { get; set; } = new();
 }
 
 /// <summary>
@@ -310,4 +412,44 @@ public enum AccessOrder
     Tiled
 }
 
+
+
+
+
+
+/// <summary>
+/// Enumeration of memory access patterns.
+/// </summary>
+public enum MemoryAccessPattern
+{
+    /// <summary>
+    /// Sequential access pattern.
+    /// </summary>
+    Sequential,
+
+    /// <summary>
+    /// Strided access pattern.
+    /// </summary>
+    Strided,
+
+    /// <summary>
+    /// Random access pattern.
+    /// </summary>
+    Random,
+
+    /// <summary>
+    /// Broadcast access pattern.
+    /// </summary>
+    Broadcast,
+
+    /// <summary>
+    /// Scattered access pattern.
+    /// </summary>
+    Scattered,
+
+    /// <summary>
+    /// Unknown access pattern.
+    /// </summary>
+    Unknown
+}
 

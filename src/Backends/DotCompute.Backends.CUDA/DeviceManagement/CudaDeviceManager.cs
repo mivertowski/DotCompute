@@ -127,26 +127,26 @@ public sealed class CudaDeviceManager : IDisposable
             ComputeCapabilityMajor = props.Major,
             ComputeCapabilityMinor = props.Minor,
             TotalMemory = (long)props.TotalGlobalMem,
-            SharedMemoryPerBlock = props.SharedMemPerBlock,
+            SharedMemoryPerBlock = (int)props.SharedMemPerBlock,
             RegistersPerBlock = props.RegsPerBlock,
             WarpSize = props.WarpSize,
             MaxThreadsPerBlock = props.MaxThreadsPerBlock,
-            MaxBlockDimX = props.MaxThreadsDim[0],
-            MaxBlockDimY = props.MaxThreadsDim[1],
-            MaxBlockDimZ = props.MaxThreadsDim[2],
-            MaxGridDimX = props.MaxGridSize[0],
-            MaxGridDimY = props.MaxGridSize[1],
-            MaxGridDimZ = props.MaxGridSize[2],
+            MaxBlockDimX = props.MaxThreadsDimX,
+            MaxBlockDimY = props.MaxThreadsDimY,
+            MaxBlockDimZ = props.MaxThreadsDimZ,
+            MaxGridDimX = props.MaxGridSizeX,
+            MaxGridDimY = props.MaxGridSizeY,
+            MaxGridDimZ = props.MaxGridSizeZ,
             ClockRate = props.ClockRate,
             MemoryClockRate = props.MemClockRate,
             MemoryBusWidth = props.MemBusWidth,
             L2CacheSize = props.L2CacheSize,
             MaxTexture1DSize = props.MaxTexture1D,
-            MaxTexture2DWidth = props.MaxTexture2D[0],
-            MaxTexture2DHeight = props.MaxTexture2D[1],
-            MaxTexture3DWidth = props.MaxTexture3D[0],
-            MaxTexture3DHeight = props.MaxTexture3D[1],
-            MaxTexture3DDepth = props.MaxTexture3D[2],
+            MaxTexture2DWidth = props.MaxTexture2DWidth,
+            MaxTexture2DHeight = props.MaxTexture2DHeight,
+            MaxTexture3DWidth = props.MaxTexture3DWidth,
+            MaxTexture3DHeight = props.MaxTexture3DHeight,
+            MaxTexture3DDepth = props.MaxTexture3DDepth,
             MultiProcessorCount = props.MultiProcessorCount,
             KernelExecutionTimeout = props.KernelExecTimeoutEnabled != 0,
             IntegratedGpu = props.Integrated != 0,
@@ -174,7 +174,7 @@ public sealed class CudaDeviceManager : IDisposable
             CanUseHostPointerForRegisteredMem = props.CanUseHostPointerForRegisteredMem != 0,
             CooperativeLaunch = props.CooperativeLaunch != 0,
             CooperativeMultiDeviceLaunch = props.CooperativeMultiDeviceLaunch != 0,
-            MaxSharedMemoryPerMultiprocessor = props.SharedMemPerMultiprocessor,
+            MaxSharedMemoryPerMultiprocessor = (int)props.SharedMemPerMultiprocessor,
             PageableMemoryAccessUsesHostPageTables = props.PageableMemoryAccessUsesHostPageTables != 0,
             DirectManagedMemAccessFromHost = props.DirectManagedMemAccessFromHost != 0
         };
@@ -183,12 +183,9 @@ public sealed class CudaDeviceManager : IDisposable
     /// <summary>
     /// Extracts device name from properties.
     /// </summary>
-    private static unsafe string GetDeviceName(CudaDeviceProperties props)
+    private static string GetDeviceName(CudaDeviceProperties props)
     {
-        fixed (sbyte* namePtr = props.Name)
-        {
-            return Marshal.PtrToStringAnsi((IntPtr)namePtr) ?? "Unknown Device";
-        }
+        return props.DeviceName;
     }
 
     /// <summary>
@@ -210,7 +207,8 @@ public sealed class CudaDeviceManager : IDisposable
 
                 try
                 {
-                    var result = CudaRuntime.cudaDeviceCanAccessPeer(out int canAccess, device1, device2);
+                    int canAccess = 0;
+                    var result = CudaRuntime.cudaDeviceCanAccessPeer(ref canAccess, device1, device2);
                     if (result == CudaError.Success)
                     {
                         bool canAccessP2P = canAccess != 0;
@@ -485,6 +483,25 @@ public sealed class CudaDeviceManager : IDisposable
         {
             score += 20;
         }
+        
+        // Additional tensor core preference (softer requirement)
+        if (criteria.PreferTensorCores && device.ComputeCapabilityMajor >= 7)
+        {
+            score += 10;
+        }
+        
+        // Check minimum compute capability
+        double deviceComputeCapability = device.ComputeCapabilityMajor + (device.ComputeCapabilityMinor / 10.0);
+        if (deviceComputeCapability < criteria.MinComputeCapability)
+        {
+            score *= 0.1; // Heavy penalty for not meeting minimum requirement
+        }
+        
+        // Prefer largest memory if requested
+        if (criteria.PreferLargestMemory)
+        {
+            score += (device.TotalMemory / (64.0 * 1024 * 1024 * 1024)) * 25; // Normalize to 64GB
+        }
 
         if (criteria.RequireUnifiedMemory && device.ManagedMemory)
         {
@@ -534,7 +551,7 @@ public sealed class CudaDeviceManager : IDisposable
             finally
             {
                 _disposed = true;
-                _lock?.Dispose();
+                // Note: Lock doesn't implement IDisposable in .NET 9
             }
         }
     }
@@ -553,4 +570,20 @@ public sealed class DeviceSelectionCriteria
     public int MinComputeCapabilityMajor { get; init; } = 3;
     public int MinComputeCapabilityMinor { get; init; } = 5;
     public long MinMemoryBytes { get; init; }
+    
+    /// <summary>
+    /// Gets or sets whether to prefer devices with Tensor Cores.
+    /// </summary>
+    public bool PreferTensorCores { get; init; }
+    
+    /// <summary>
+    /// Gets or sets the minimum compute capability (major.minor) as a decimal.
+    /// For example, 7.5 for compute capability 7.5.
+    /// </summary>
+    public double MinComputeCapability { get; init; } = 3.5;
+    
+    /// <summary>
+    /// Gets or sets whether to prefer the device with the largest memory.
+    /// </summary>
+    public bool PreferLargestMemory { get; init; } = true;
 }

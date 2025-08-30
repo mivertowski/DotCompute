@@ -116,7 +116,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
             var stream = _context.Stream;
             
             // Allocate memory asynchronously on the specified stream
-            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (nuint)sizeInBytes, stream);
+            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (ulong)sizeInBytes, stream);
             CudaRuntime.CheckError(result, $"stream-ordered allocating {sizeInBytes} bytes");
 
             // Track allocation
@@ -307,7 +307,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         try
         {
             // Allocate memory on stream
-            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (nuint)sizeInBytes, stream);
+            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (ulong)sizeInBytes, stream);
             CudaRuntime.CheckError(result, $"async allocating {sizeInBytes} bytes");
 
             // Track allocation
@@ -628,7 +628,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         // Default stream allocation if async not supported
         if (!_asyncMemorySupported)
         {
-            var result = CudaRuntime.TryAllocateMemory(out IntPtr devicePtr, (nuint)sizeInBytes);
+            var result = CudaRuntime.TryAllocateMemory(out IntPtr devicePtr, (ulong)sizeInBytes);
             CudaRuntime.CheckError(result, $"allocating {sizeInBytes} bytes");
             
             return new CudaAsyncMemoryBuffer(

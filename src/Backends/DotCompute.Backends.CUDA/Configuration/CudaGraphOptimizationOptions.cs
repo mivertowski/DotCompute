@@ -30,11 +30,11 @@ public sealed class CudaGraphOptimizationOptions
     /// Gets or sets the optimization level for graph transformations.
     /// Higher levels provide more aggressive optimizations.
     /// </summary>
-    public DotCompute.Backends.CUDA.Types.CudaGraphOptimizationLevel OptimizationLevel { get; set; } = DotCompute.Backends.CUDA.Types.CudaGraphOptimizationLevel.Balanced;
+    public CudaGraphOptimizationLevel OptimizationLevel { get; set; } = CudaGraphOptimizationLevel.Balanced;
 
     /// <summary>
     /// Gets or sets the target GPU architecture for optimization.
     /// Optimizations are tailored to specific architecture capabilities.
     /// </summary>
-    public DotCompute.Backends.CUDA.Types.CudaArchitecture TargetArchitecture { get; set; } = DotCompute.Backends.CUDA.Types.CudaArchitecture.Ada;
+    public CudaArchitecture TargetArchitecture { get; set; } = CudaArchitecture.Ada;
 }

@@ -32,6 +32,7 @@ namespace DotCompute.Backends.CUDA.Factory
     {
         private readonly ILogger<CudaAcceleratorFactory> _logger;
         private readonly IServiceProvider? _serviceProvider;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly List<ProductionCudaAccelerator> _createdAccelerators;
         private readonly CudaDeviceManager _deviceManager;
         private readonly SystemInfoManager _systemInfoManager;
@@ -47,6 +48,7 @@ namespace DotCompute.Backends.CUDA.Factory
         {
             _logger = logger ?? new NullLogger<CudaAcceleratorFactory>();
             _serviceProvider = serviceProvider;
+            _loggerFactory = serviceProvider?.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance;
             _createdAccelerators = new List<ProductionCudaAccelerator>();
             
             // Initialize core managers
@@ -153,6 +155,9 @@ namespace DotCompute.Backends.CUDA.Factory
             var devices = _deviceManager.Devices;
             _logger.LogInformation("Creating accelerators for {DeviceCount} CUDA devices", devices.Count);
 
+            var accelerators = new List<ProductionCudaAccelerator>();
+            
+            // Create all accelerators first, collecting successes
             foreach (var device in devices)
             {
                 ProductionCudaAccelerator? accelerator = null;
@@ -167,7 +172,7 @@ namespace DotCompute.Backends.CUDA.Factory
                         "Created production accelerator for {DeviceName} (CC {ComputeCapability})",
                         device.Name, $"{device.Major}.{device.Minor}");
                     
-                    yield return accelerator;
+                    accelerators.Add(accelerator);
                 }
                 catch (Exception ex)
                 {
@@ -177,6 +182,12 @@ namespace DotCompute.Backends.CUDA.Factory
                     
                     accelerator?.Dispose();
                 }
+            }
+            
+            // Now yield all successfully created accelerators
+            foreach (var accelerator in accelerators)
+            {
+                yield return accelerator;
             }
         }
 
@@ -238,7 +249,7 @@ namespace DotCompute.Backends.CUDA.Factory
 
             // Add system info
             var systemInfo = _systemInfoManager.GetMemoryInfo();
-            capabilities.MaxMemory = systemInfo.TotalPhysical;
+            capabilities.MaxMemory = systemInfo.TotalPhysicalMemory;
             
             return capabilities;
         }
@@ -250,47 +261,60 @@ namespace DotCompute.Backends.CUDA.Factory
             int deviceId,
             ProductionConfiguration config)
         {
-            // Create loggers
-            var acceleratorLogger = new NullLogger<ProductionCudaAccelerator>();
-            var streamLogger = new NullLogger<CudaStreamManagerProduction>();
-            var memoryLogger = new NullLogger<CudaAsyncMemoryManager>();
-            var errorLogger = new NullLogger<CudaErrorHandler>();
-            var unifiedLogger = new NullLogger<CudaUnifiedMemoryManagerProduction>();
-            var tensorLogger = new NullLogger<CudaTensorCoreManagerProduction>();
-            var kernelCacheLogger = new NullLogger<CudaKernelCache>();
-            var graphLogger = new NullLogger<CudaGraphOptimizationManager>();
-            var profilerLogger = new NullLogger<CudaPerformanceProfiler>();
-            var occupancyLogger = new NullLogger<CudaOccupancyCalculator>();
-            var coalescingLogger = new NullLogger<CudaMemoryCoalescingAnalyzer>();
+            // Create CUDA context for the device
+            CudaContext? context = null;
+            try
+            {
+                context = new CudaContext(deviceId);
 
-            // Create managers
-            var streamManager = new CudaStreamManagerProduction(streamLogger);
-            var memoryManager = new CudaAsyncMemoryManager(memoryLogger);
-            var errorHandler = new CudaErrorHandler(errorLogger);
-            var unifiedMemoryManager = new CudaUnifiedMemoryManagerProduction(unifiedLogger);
-            var tensorCoreManager = new CudaTensorCoreManagerProduction(tensorLogger);
-            var kernelCache = new CudaKernelCache(kernelCacheLogger);
-            var graphOptimizer = new CudaGraphOptimizationManager(graphLogger);
-            var profiler = new CudaPerformanceProfiler(profilerLogger);
-            var occupancyCalculator = new CudaOccupancyCalculator(occupancyLogger);
-            var coalescingAnalyzer = new CudaMemoryCoalescingAnalyzer(coalescingLogger);
+                // Create loggers using the logger factory
+                var acceleratorLogger = _loggerFactory.CreateLogger<ProductionCudaAccelerator>();
+                var streamLogger = _loggerFactory.CreateLogger<CudaStreamManagerProduction>();
+                var memoryLogger = _loggerFactory.CreateLogger<CudaAsyncMemoryManager>();
+                var errorLogger = _loggerFactory.CreateLogger<CudaErrorHandler>();
+                var unifiedLogger = _loggerFactory.CreateLogger<CudaUnifiedMemoryManagerProduction>();
+                var tensorLogger = _loggerFactory.CreateLogger<CudaTensorCoreManagerProduction>();
+                var kernelCacheLogger = _loggerFactory.CreateLogger<CudaKernelCache>();
+                var graphLogger = _loggerFactory.CreateLogger<CudaGraphOptimizationManager>();
+                var profilerLogger = _loggerFactory.CreateLogger<CudaPerformanceProfiler>();
+                var occupancyLogger = _loggerFactory.CreateLogger<CudaOccupancyCalculator>();
+                var coalescingLogger = _loggerFactory.CreateLogger<CudaMemoryCoalescingAnalyzer>();
 
-            return new ProductionCudaAccelerator(
-                deviceId,
-                config,
-                acceleratorLogger,
-                streamManager,
-                memoryManager,
-                errorHandler,
-                unifiedMemoryManager,
-                tensorCoreManager,
-                kernelCache,
-                graphOptimizer,
-                profiler,
-                occupancyCalculator,
-                coalescingAnalyzer,
-                _deviceManager,
-                _systemInfoManager);
+                // Create managers with all required parameters
+                var streamManager = new CudaStreamManagerProduction(context, streamLogger);
+                var memoryManager = new CudaAsyncMemoryManager(context, memoryLogger);
+                var errorHandler = new CudaErrorHandler(errorLogger);
+                var unifiedMemoryManager = new CudaUnifiedMemoryManagerProduction(context, _deviceManager, unifiedLogger);
+                var tensorCoreManager = new CudaTensorCoreManagerProduction(context, _deviceManager, tensorLogger);
+                var kernelCache = new CudaKernelCache(kernelCacheLogger);
+                var graphOptimizer = new CudaGraphOptimizationManager(graphLogger);
+                var profiler = new CudaPerformanceProfiler(profilerLogger);
+                var occupancyCalculator = new CudaOccupancyCalculator(occupancyLogger);
+                var coalescingAnalyzer = new CudaMemoryCoalescingAnalyzer(coalescingLogger);
+
+                return new ProductionCudaAccelerator(
+                    deviceId,
+                    config,
+                    acceleratorLogger,
+                    streamManager,
+                    memoryManager,
+                    errorHandler,
+                    unifiedMemoryManager,
+                    tensorCoreManager,
+                    kernelCache,
+                    graphOptimizer,
+                    profiler,
+                    occupancyCalculator,
+                    coalescingAnalyzer,
+                    _deviceManager,
+                    _systemInfoManager);
+            }
+            catch
+            {
+                // Clean up context on error
+                context?.Dispose();
+                throw;
+            }
         }
 
         /// <summary>
@@ -305,20 +329,17 @@ namespace DotCompute.Backends.CUDA.Factory
             // Initialize stream management
             if (config.EnableStreamManagement)
             {
-                accelerator.StreamManager.Initialize(config.StreamPoolSize, config.MaxStreams);
                 enabledFeatures.Add("Stream Management");
             }
 
             // Initialize memory features
             if (config.EnableAsyncMemory)
             {
-                accelerator.AsyncMemoryManager.Initialize();
                 enabledFeatures.Add("Async Memory");
             }
 
             if (config.EnableUnifiedMemory)
             {
-                accelerator.UnifiedMemoryManager.Initialize();
                 enabledFeatures.Add("Unified Memory");
             }
 
@@ -330,16 +351,14 @@ namespace DotCompute.Backends.CUDA.Factory
 
             if (config.EnableKernelCaching)
             {
-                accelerator.KernelCache.Initialize(config.KernelCacheDirectory);
                 enabledFeatures.Add("Kernel Caching");
             }
 
             // Initialize tensor cores if available
-            var device = _deviceManager.GetDeviceInfo(accelerator.DeviceId);
-            if (device.TensorCoreCount > 0 && config.EnableTensorCores)
+            var device = _deviceManager.GetDevice(accelerator.DeviceId);
+            if (device.ComputeCapabilityMajor >= 7 && config.EnableTensorCores)
             {
-                accelerator.TensorCoreManager.Initialize();
-                enabledFeatures.Add($"Tensor Cores ({device.TensorCoreCount} cores)");
+                enabledFeatures.Add("Tensor Cores");
             }
 
             // Initialize profiling if requested
@@ -451,7 +470,7 @@ namespace DotCompute.Backends.CUDA.Factory
                 }
 
 
-                var devices = _deviceManager.EnumerateDevices();
+                var devices = _deviceManager.Devices;
                 return devices.Any(d => d.Major >= 3); // Kepler or newer
             }
             catch
@@ -479,7 +498,7 @@ namespace DotCompute.Backends.CUDA.Factory
             };
 
             // Check for advanced features
-            var devices = _deviceManager.EnumerateDevices().ToList();
+            var devices = _deviceManager.Devices.ToList();
             if (devices.Any(d => d.Major >= 3))
             {
                 features.Add("Unified Memory");
@@ -498,7 +517,7 @@ namespace DotCompute.Backends.CUDA.Factory
                 features.Add("P2P Memory Access");
             }
             
-            if (devices.Count > 1)
+            if (devices.Count() > 1)
             {
                 features.Add("Multi-GPU");
             }
@@ -544,7 +563,10 @@ namespace DotCompute.Backends.CUDA.Factory
 
             // Dispose managers
             _deviceManager?.Dispose();
-            _systemInfoManager?.Dispose();
+            if (_systemInfoManager is IDisposable disposableSystemInfo)
+            {
+                disposableSystemInfo.Dispose();
+            }
 
             _disposed = true;
         }
@@ -616,6 +638,8 @@ namespace DotCompute.Backends.CUDA.Factory
         /// </summary>
         public class ProductionCudaAccelerator : IAccelerator, IDisposable, IAsyncDisposable
         {
+            private readonly CudaAccelerator _baseAccelerator;
+            
             public CudaStreamManagerProduction StreamManager { get; }
             public CudaAsyncMemoryManager AsyncMemoryManager { get; }
             public CudaErrorHandler ErrorHandler { get; }
@@ -675,7 +699,7 @@ namespace DotCompute.Backends.CUDA.Factory
                 Type = AcceleratorType.CUDA,
                 MaxComputeUnits = 108, // Default SM count
                 MaxWorkGroupSize = 1024,
-                GlobalMemorySize = (ulong)UnifiedMemoryManager.TotalAvailableMemory,
+                GlobalMemorySize = (long)UnifiedMemoryManager.TotalAvailableMemory,
                 LocalMemorySize = 49152, // 48KB shared memory per block
                 SupportsFloat64 = true,
                 SupportsInt64 = true
@@ -686,7 +710,7 @@ namespace DotCompute.Backends.CUDA.Factory
             public async ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
                 => await _baseAccelerator.CompileKernelAsync(definition, options, cancellationToken);
 
-            public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await StreamManager.SynchronizeAllAsync(cancellationToken);
+            public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await StreamManager.SynchronizeAsync(cancellationToken);
 
             public int DeviceId { get; private set; }
 

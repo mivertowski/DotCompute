@@ -108,6 +108,18 @@ namespace DotCompute.Plugins.Interfaces
         public int MaxDevices { get; set; }
 
         /// <summary>
+        /// Maximum memory available across all devices in bytes.
+        /// </summary>
+        /// <remarks>
+        /// This property represents the total memory capacity that can be utilized
+        /// by this backend across all available devices. For backends that support
+        /// multiple devices, this might be the sum of all device memories or the
+        /// largest single device memory, depending on the backend's memory model.
+        /// A value of 0 indicates that the memory limit is unknown or unlimited.
+        /// </remarks>
+        public long MaxMemory { get; set; } = 0;
+
+        /// <summary>
         /// List of supported features specific to this backend.
         /// </summary>
         public IReadOnlyList<string> SupportedFeatures { get; set; } = Array.Empty<string>();

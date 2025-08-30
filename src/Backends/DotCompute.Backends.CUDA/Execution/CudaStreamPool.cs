@@ -14,7 +14,7 @@ namespace DotCompute.Backends.CUDA.Execution
     internal sealed class CudaStreamPool : IDisposable
     {
         private readonly CudaContext _context;
-        private readonly ILogger _logger;
+        private readonly ILogger<CudaStreamPool> _logger;
         private readonly int _leastPriority;
         private readonly int _greatestPriority;
 
@@ -38,7 +38,7 @@ namespace DotCompute.Backends.CUDA.Execution
         private long _totalAcquired;
         private long _totalReturned;
 
-        public CudaStreamPool(CudaContext context, ILogger logger, int leastPriority, int greatestPriority)
+        public CudaStreamPool(CudaContext context, ILogger<CudaStreamPool> logger, int leastPriority, int greatestPriority)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));

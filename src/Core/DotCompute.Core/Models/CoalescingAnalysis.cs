@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using DotCompute.Backends.CUDA.Analysis.Types;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Models
 {
@@ -44,12 +44,12 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets the actual number of bytes transferred including overhead.
         /// </summary>
-        public int ActualBytesTransferred { get; set; }
+        public long ActualBytesTransferred { get; set; }
 
         /// <summary>
         /// Gets or sets the useful bytes transferred (excluding overhead).
         /// </summary>
-        public int UsefulBytesTransferred { get; set; }
+        public long UsefulBytesTransferred { get; set; }
 
         /// <summary>
         /// Gets or sets the list of coalescing issues identified.

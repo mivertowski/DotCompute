@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using global::System.Runtime.InteropServices;
+using global::System.Runtime.CompilerServices;
 
 namespace DotCompute.Backends.CUDA.Types.Native
 {
@@ -23,8 +24,21 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// ASCII string identifying the device (up to 256 characters).
         /// </summary>
         [FieldOffset(0)]
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-        public string Name;
+        public unsafe fixed sbyte Name[256];
+        
+        /// <summary>
+        /// Gets the device name as a managed string.
+        /// </summary>
+        public unsafe string DeviceName
+        {
+            get
+            {
+                fixed (sbyte* namePtr = Name)
+                {
+                    return Marshal.PtrToStringAnsi((IntPtr)namePtr) ?? "Unknown Device";
+                }
+            }
+        }
 
         /// <summary>
         /// Lower 8 bytes of the device UUID.
@@ -95,6 +109,23 @@ namespace DotCompute.Backends.CUDA.Types.Native
         public int MaxThreadsDimZ;
 
         /// <summary>
+        /// Maximum dimensions of a thread block [x, y, z].
+        /// </summary>
+        public unsafe int* MaxThreadsDimPtr => (int*)Unsafe.AsPointer(ref MaxThreadsDimX);
+
+        /// <summary>
+        /// Maximum dimensions of a thread block as an array [x, y, z].
+        /// </summary>
+        public unsafe int[] MaxThreadsDim
+        {
+            get
+            {
+                var ptr = MaxThreadsDimPtr;
+                return new int[] { ptr[0], ptr[1], ptr[2] };
+            }
+        }
+
+        /// <summary>
         /// Maximum x-dimension of a grid of thread blocks.
         /// </summary>
         [FieldOffset(320)]
@@ -111,6 +142,23 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// </summary>
         [FieldOffset(328)]
         public int MaxGridSizeZ;
+
+        /// <summary>
+        /// Maximum dimensions of a grid of thread blocks [x, y, z].
+        /// </summary>
+        public unsafe int* MaxGridSizePtr => (int*)Unsafe.AsPointer(ref MaxGridSizeX);
+
+        /// <summary>
+        /// Maximum dimensions of a grid of thread blocks as an array [x, y, z].
+        /// </summary>
+        public unsafe int[] MaxGridSize
+        {
+            get
+            {
+                var ptr = MaxGridSizePtr;
+                return new int[] { ptr[0], ptr[1], ptr[2] };
+            }
+        }
 
         /// <summary>
         /// Clock frequency of the device in kilohertz.
@@ -200,19 +248,34 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// PCI bus identifier of the device.
         /// </summary>
         [FieldOffset(584)]
-        public int PciBusId;
+        public int PciBusID;
+
+        /// <summary>
+        /// Alias for PciBusID for compatibility.
+        /// </summary>
+        public int PciBusId => PciBusID;
 
         /// <summary>
         /// PCI device identifier of the device.
         /// </summary>
         [FieldOffset(588)]
-        public int PciDeviceId;
+        public int PciDeviceID;
+
+        /// <summary>
+        /// Alias for PciDeviceID for compatibility.
+        /// </summary>
+        public int PciDeviceId => PciDeviceID;
 
         /// <summary>
         /// PCI domain identifier of the device.
         /// </summary>
         [FieldOffset(592)]
-        public int PciDomainId;
+        public int PciDomainID;
+
+        /// <summary>
+        /// Alias for PciDomainID for compatibility.
+        /// </summary>
+        public int PciDomainId => PciDomainID;
 
         /// <summary>
         /// Number of asynchronous engines supported by the device.
@@ -230,13 +293,23 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// Peak memory clock frequency in kilohertz.
         /// </summary>
         [FieldOffset(608)]
-        public int MemoryClockRate;
+        public int MemClockRate;
+
+        /// <summary>
+        /// Alias for MemClockRate for compatibility.
+        /// </summary>
+        public int MemoryClockRate => MemClockRate;
 
         /// <summary>
         /// Global memory bus width in bits.
         /// </summary>
         [FieldOffset(612)]
-        public int MemoryBusWidth;
+        public int MemBusWidth;
+
+        /// <summary>
+        /// Alias for MemBusWidth for compatibility.
+        /// </summary>
+        public int MemoryBusWidth => MemBusWidth;
 
         /// <summary>
         /// Size of L2 cache in bytes.
@@ -363,5 +436,71 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// </summary>
         [FieldOffset(708)]
         public int DirectManagedMemAccessFromHost;
+
+        // Additional missing fields for texture limits
+        
+        /// <summary>
+        /// Maximum 1D texture size.
+        /// </summary>
+        [FieldOffset(408)]
+        public int MaxTexture1D;
+        
+        /// <summary>
+        /// Maximum 2D texture dimensions [width, height].
+        /// </summary>
+        [FieldOffset(412)]
+        public int MaxTexture2DWidth;
+        
+        /// <summary>
+        /// Maximum 2D texture height.
+        /// </summary>
+        [FieldOffset(416)]
+        public int MaxTexture2DHeight;
+        
+        /// <summary>
+        /// Maximum 2D texture dimensions as array.
+        /// </summary>
+        public unsafe int[] MaxTexture2D
+        {
+            get => new int[] { MaxTexture2DWidth, MaxTexture2DHeight };
+        }
+        
+        /// <summary>
+        /// Maximum 3D texture width.
+        /// </summary>
+        [FieldOffset(420)]
+        public int MaxTexture3DWidth;
+        
+        /// <summary>
+        /// Maximum 3D texture height.
+        /// </summary>
+        [FieldOffset(424)]
+        public int MaxTexture3DHeight;
+        
+        /// <summary>
+        /// Maximum 3D texture depth.
+        /// </summary>
+        [FieldOffset(428)]
+        public int MaxTexture3DDepth;
+        
+        /// <summary>
+        /// Maximum 3D texture dimensions as array.
+        /// </summary>
+        public unsafe int[] MaxTexture3D
+        {
+            get => new int[] { MaxTexture3DWidth, MaxTexture3DHeight, MaxTexture3DDepth };
+        }
+        
+        /// <summary>
+        /// 1 if there is a TCC driver model, 0 otherwise.
+        /// </summary>
+        [FieldOffset(596)]
+        public int TccDriver;
+        
+        /// <summary>
+        /// 1 if device supports host-native atomic operations, 0 otherwise.
+        /// </summary>
+        [FieldOffset(664)]
+        public int HostNativeAtomicSupported;
     }
 }

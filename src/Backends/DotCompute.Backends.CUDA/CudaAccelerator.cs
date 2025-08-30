@@ -51,7 +51,7 @@ namespace DotCompute.Backends.CUDA
             // Initialize CUDA-specific components
             _device = new CudaDevice(deviceId, actualLogger);
             _context = new CudaContext(deviceId);
-            _memoryManager = new CudaMemoryManager(_context, actualLogger);
+            _memoryManager = new CudaMemoryManager(_context, _device, actualLogger);
             _memoryAdapter = new CudaAsyncMemoryManagerAdapter(_memoryManager);
             
 #pragma warning disable IL2026, IL3050 // CudaKernelCompiler uses runtime code generation which is not trimming/AOT compatible

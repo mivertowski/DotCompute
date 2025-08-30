@@ -301,38 +301,3 @@ public readonly struct MemoryAccessMetrics
         $"Efficiency: {EfficiencyScore:P1} ({(IsHighPerformance ? "High" : "Standard")})";
 }
 
-/// <summary>
-/// Memory access pattern types
-/// </summary>
-public enum MemoryAccessPattern
-{
-    /// <summary>
-    /// Sequential memory access
-    /// </summary>
-    Sequential,
-
-    /// <summary>
-    /// Strided memory access with regular intervals
-    /// </summary>
-    Strided,
-
-    /// <summary>
-    /// Random memory access
-    /// </summary>
-    Random,
-
-    /// <summary>
-    /// Mixed access patterns
-    /// </summary>
-    Mixed,
-
-    /// <summary>
-    /// Scatter-gather operations
-    /// </summary>
-    ScatterGather,
-
-    /// <summary>
-    /// Broadcast operations
-    /// </summary>
-    Broadcast
-}

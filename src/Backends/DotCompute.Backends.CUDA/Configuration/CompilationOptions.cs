@@ -22,7 +22,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets the maximum register count per thread (CUDA-specific).
         /// </summary>
-        public int? MaxRegistersPerThread 
+        public new int? MaxRegistersPerThread 
         { 
             get => MaxRegisters;
             set => MaxRegisters = value;
@@ -40,7 +40,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets whether to use CUDA fast math operations.
         /// </summary>
-        public bool UseFastMath
+        public new bool UseFastMath
         {
             get => EnableFastMath;
             set => EnableFastMath = value;

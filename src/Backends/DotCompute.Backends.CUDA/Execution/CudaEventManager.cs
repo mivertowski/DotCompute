@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Execution
 {

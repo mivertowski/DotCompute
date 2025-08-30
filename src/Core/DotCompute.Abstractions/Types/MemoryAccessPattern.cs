@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace DotCompute.Backends.CUDA.Execution.Types;
+namespace DotCompute.Abstractions.Types;
 
 /// <summary>
 /// Defines memory access patterns for kernel optimization.
@@ -38,5 +38,23 @@ public enum MemoryAccessPattern
     /// Worst case for cache utilization and memory coalescing.
     /// May benefit from texture memory or cache hints.
     /// </summary>
-    Random
+    Random,
+
+    /// <summary>
+    /// Mixed access patterns.
+    /// Combination of different access patterns.
+    /// </summary>
+    Mixed,
+
+    /// <summary>
+    /// Scatter-gather operations.
+    /// Threads gather data from scattered memory locations or scatter data.
+    /// </summary>
+    ScatterGather,
+
+    /// <summary>
+    /// Broadcast operations.
+    /// Single value broadcast to multiple threads.
+    /// </summary>
+    Broadcast
 }

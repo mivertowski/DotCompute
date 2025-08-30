@@ -5,6 +5,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Runtime.InteropServices;
 
 namespace DotCompute.Backends.CUDA
 {
@@ -176,7 +177,7 @@ namespace DotCompute.Backends.CUDA
                 // Check compute capability (require 5.0+)
                 if (deviceProps.Major < 5)
                 {
-                    LogSkippingDeviceLowComputeCapability(_logger, deviceId, deviceProps.Name, deviceProps.Major, deviceProps.Minor);
+                    LogSkippingDeviceLowComputeCapability(_logger, deviceId, deviceProps.DeviceName, deviceProps.Major, deviceProps.Minor);
                     return null;
                 }
 

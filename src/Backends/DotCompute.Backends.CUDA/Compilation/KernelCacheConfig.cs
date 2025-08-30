@@ -40,4 +40,9 @@ public sealed class KernelCacheConfig
     /// Gets or sets the maximum memory cache size in megabytes.
     /// </summary>
     public int MaxMemoryCacheSizeMB { get; set; } = 256;
+
+    /// <summary>
+    /// Gets or sets the maximum disk cache size in megabytes.
+    /// </summary>
+    public int MaxDiskCacheSizeMB { get; set; } = 1024;
 }

@@ -57,7 +57,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
             TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
 
         _logger.LogInformation("CUDA Advanced Features initialized for {DeviceName} (SM {Major}.{Minor})",
-            _deviceProperties.Name, _deviceProperties.Major, _deviceProperties.Minor);
+            _deviceProperties.DeviceName, _deviceProperties.Major, _deviceProperties.Minor);
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
 
         return new CudaFeatureSupport
         {
-            DeviceName = _deviceProperties.Name,
+            DeviceName = _deviceProperties.DeviceName,
             ComputeCapability = $"{_deviceProperties.Major}.{_deviceProperties.Minor}",
 
             // Cooperative Groups

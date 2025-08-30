@@ -20,6 +20,15 @@ public class CompilationOptions
     /// Enable debug information generation
     /// </summary>
     public bool EnableDebugInfo { get; set; }
+    
+    /// <summary>
+    /// Generate debug information (alias for EnableDebugInfo)
+    /// </summary>
+    public bool GenerateDebugInfo 
+    {
+        get => EnableDebugInfo;
+        set => EnableDebugInfo = value;
+    }
 
     /// <summary>
     /// Enable profiling support during compilation and execution
@@ -38,11 +47,17 @@ public class CompilationOptions
     /// </summary>
     public bool FastMath
     {
-
         get => EnableFastMath;
-
         set => EnableFastMath = value;
-
+    }
+    
+    /// <summary>
+    /// Use fast math optimizations (alias for EnableFastMath)
+    /// </summary>
+    public bool UseFastMath
+    {
+        get => EnableFastMath;
+        set => EnableFastMath = value;
     }
 
     /// <summary>
@@ -131,6 +146,18 @@ public class CompilationOptions
     public int? MaxRegisters { get; set; }
 
     /// <summary>
+    /// Maximum registers per thread for GPU kernel execution (CUDA-specific)
+    /// </summary>
+    /// <remarks>
+    /// Controls the maximum number of registers that each thread can use.
+    /// Setting this to 0 allows the compiler to use any number of registers.
+    /// Lower values can increase occupancy but may reduce performance.
+    /// Typical values range from 32 to 255 registers per thread.
+    /// </remarks>
+    [Range(0, 255)]
+    public int MaxRegistersPerThread { get; set; } = 0;
+
+    /// <summary>
     /// Shared memory usage limit for GPU kernels (in bytes)
     /// </summary>
     [Range(0, int.MaxValue)]
@@ -200,6 +227,16 @@ public class CompilationOptions
     /// Whether to compile to CUBIN format instead of PTX
     /// </summary>
     public bool CompileToCubin { get; set; }
+    
+    /// <summary>
+    /// Enable fused multiply-add operations
+    /// </summary>
+    public bool FusedMultiplyAdd { get; set; } = true;
+    
+    /// <summary>
+    /// Generate relocatable device code
+    /// </summary>
+    public bool RelocatableDeviceCode { get; set; }
 
     /// <summary>
     /// Target compute capability version for compilation
@@ -263,6 +300,7 @@ public class CompilationOptions
             EnableVectorization = EnableVectorization,
             EnableInlining = EnableInlining,
             MaxRegisters = MaxRegisters,
+            MaxRegistersPerThread = MaxRegistersPerThread,
             SharedMemoryLimit = SharedMemoryLimit,
             ThreadBlockSize = ThreadBlockSize,
             PreferredBlockSize = PreferredBlockSize,
@@ -277,7 +315,9 @@ public class CompilationOptions
             ForceInterpretedMode = ForceInterpretedMode,
             EnableProfiling = EnableProfiling,
             CompileToCubin = CompileToCubin,
-            ComputeCapability = new Version(ComputeCapability.Major, ComputeCapability.Minor)
+            ComputeCapability = new Version(ComputeCapability.Major, ComputeCapability.Minor),
+            FusedMultiplyAdd = FusedMultiplyAdd,
+            RelocatableDeviceCode = RelocatableDeviceCode
         };
     }
 

@@ -362,6 +362,30 @@ namespace DotCompute.Core.Execution
         
         /// <summary>Gets or sets the disk path for cached kernel storage.</summary>
         public string DiskPath { get; set; } = string.Empty;
+
+        /// <summary>Gets or sets the compute capability version used for kernel compilation.</summary>
+        /// <remarks>
+        /// This property stores the target compute capability (e.g., "7.5", "8.6") 
+        /// that was used when compiling the kernel. This information is important for
+        /// ensuring compatibility and optimizing kernel selection for different GPU architectures.
+        /// </remarks>
+        public string ComputeCapability { get; set; } = string.Empty;
+
+        /// <summary>Gets or sets the time spent compiling this kernel.</summary>
+        /// <remarks>
+        /// This property tracks the compilation duration, which can be useful for
+        /// performance monitoring, caching decisions, and development optimization.
+        /// The time represents the total compilation time including all phases.
+        /// </remarks>
+        public TimeSpan CompilationTime { get; set; } = TimeSpan.Zero;
+
+        /// <summary>Gets or sets the timestamp when this kernel was compiled.</summary>
+        /// <remarks>
+        /// This timestamp indicates when the kernel compilation was completed.
+        /// It differs from CachedAt in that it represents the actual compilation time,
+        /// while CachedAt represents when it was added to the cache (which might be later).
+        /// </remarks>
+        public DateTime CompiledAt { get; set; } = DateTime.UtcNow;
     }
 
     /// <summary>

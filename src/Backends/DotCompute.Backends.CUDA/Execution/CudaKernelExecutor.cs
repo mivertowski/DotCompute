@@ -51,7 +51,7 @@ namespace DotCompute.Backends.CUDA.Execution
             CudaRuntime.CheckError(result, "getting device properties");
 
             _logger.LogInformation("CUDA Kernel Executor initialized for device {DeviceId} ({DeviceName})",
-                context.DeviceId, _deviceProperties.Name);
+                context.DeviceId, _deviceProperties.DeviceName);
         }
 
         public IAccelerator Accelerator => _accelerator;

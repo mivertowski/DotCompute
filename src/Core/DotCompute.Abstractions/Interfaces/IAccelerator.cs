@@ -74,6 +74,17 @@ namespace DotCompute.Abstractions
             LocalMemorySize = memorySize / 8;
             IsUnifiedMemory = type == AcceleratorType.CPU;
             MaxThreadsPerBlock = 1024; // Default value for legacy compatibility
+            
+            // Initialize new properties based on accelerator type
+            MaxComputeUnits = type switch
+            {
+                AcceleratorType.CPU => Environment.ProcessorCount,
+                AcceleratorType.GPU => 16, // Reasonable default for GPU
+                _ => 8
+            };
+            GlobalMemorySize = memorySize;
+            SupportsFloat64 = type == AcceleratorType.CPU; // CPUs typically have full double precision
+            SupportsInt64 = true; // Most modern accelerators support 64-bit integers
         }
 
         /// <summary>
@@ -132,6 +143,12 @@ namespace DotCompute.Abstractions
             IsUnifiedMemory = type == AcceleratorType.CPU;
             MaxThreadsPerBlock = maxThreadsPerBlock;
             ComputeCapability = new Version((int)computeCapability, (int)((computeCapability % 1) * 10));
+            
+            // Initialize new properties with sensible defaults
+            MaxComputeUnits = 16; // Reasonable default
+            GlobalMemorySize = totalMemory;
+            SupportsFloat64 = true; // Assume support for modern devices
+            SupportsInt64 = true;
         }
 
         /// <summary>
@@ -156,6 +173,12 @@ namespace DotCompute.Abstractions
             ComputeUnits = computeUnits;
             MaxClockFrequency = maxClockFrequency;
             ComputeCapability = computeCapability;
+            
+            // Initialize new properties with sensible defaults
+            MaxComputeUnits = computeUnits;
+            GlobalMemorySize = memorySize;
+            SupportsFloat64 = true; // Assume support unless specified otherwise
+            SupportsInt64 = true;
         }
 
         /// <summary>Gets or sets the compute capability or version.</summary>
@@ -219,6 +242,12 @@ namespace DotCompute.Abstractions
             MaxClockFrequency = 1500;
             MaxThreadsPerBlock = 1024;
             ComputeCapability = new Version(7, 5);
+            
+            // Initialize new properties with sensible defaults
+            MaxComputeUnits = ComputeUnits; // Use existing ComputeUnits as default
+            GlobalMemorySize = TotalMemory; // Use existing TotalMemory as default
+            SupportsFloat64 = true;         // Most modern accelerators support double precision
+            SupportsInt64 = true;           // Most modern accelerators support 64-bit integers
         }
 
         /// <summary>
@@ -229,6 +258,31 @@ namespace DotCompute.Abstractions
             get => MaxThreadsPerBlock;
             init => MaxThreadsPerBlock = value;
         }
+
+        /// <summary>
+        /// Gets or sets the maximum number of compute units available on this accelerator.
+        /// For GPUs, this typically represents streaming multiprocessors or compute units.
+        /// For CPUs, this represents the number of CPU cores or logical processors.
+        /// </summary>
+        public int MaxComputeUnits { get; init; }
+
+        /// <summary>
+        /// Gets or sets the total global memory size in bytes.
+        /// This represents the total amount of memory accessible by compute kernels.
+        /// </summary>
+        public long GlobalMemorySize { get; init; }
+
+        /// <summary>
+        /// Gets or sets whether this accelerator supports double-precision (64-bit) floating-point operations.
+        /// This is important for scientific computing applications requiring high precision.
+        /// </summary>
+        public bool SupportsFloat64 { get; init; }
+
+        /// <summary>
+        /// Gets or sets whether this accelerator supports 64-bit integer operations.
+        /// This affects the availability of long and ulong data types in compute kernels.
+        /// </summary>
+        public bool SupportsInt64 { get; init; }
     }
 
     /// <summary>

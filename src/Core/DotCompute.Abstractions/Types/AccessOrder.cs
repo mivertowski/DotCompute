@@ -1,4 +1,7 @@
-namespace DotCompute.Backends.CUDA.Analysis.Enums
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Defines the memory access order patterns for 2D data structures.
@@ -15,6 +18,12 @@ namespace DotCompute.Backends.CUDA.Analysis.Enums
         /// Column-major order where consecutive elements in a column are stored contiguously.
         /// Optimal for accessing data column by column.
         /// </summary>
-        ColumnMajor
+        ColumnMajor,
+
+        /// <summary>
+        /// Tiled access pattern where data is accessed in tile blocks.
+        /// Can optimize cache locality for 2D operations.
+        /// </summary>
+        Tiled
     }
 }

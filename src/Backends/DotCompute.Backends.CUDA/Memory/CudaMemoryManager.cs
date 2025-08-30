@@ -16,6 +16,7 @@ namespace DotCompute.Backends.CUDA.Memory
     public sealed class CudaMemoryManager : IDisposable
     {
         private readonly CudaContext _context;
+        private readonly CudaDevice _device;
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<IntPtr, long> _allocations;
         private long _totalAllocated;
@@ -24,8 +25,14 @@ namespace DotCompute.Backends.CUDA.Memory
         private bool _disposed;
 
         public CudaMemoryManager(CudaContext context, ILogger logger)
+            : this(context, null, logger)
+        {
+        }
+
+        public CudaMemoryManager(CudaContext context, CudaDevice? device, ILogger logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _device = device ?? new CudaDevice(context.DeviceId, logger);
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _allocations = new ConcurrentDictionary<IntPtr, long>();
             
@@ -62,7 +69,7 @@ namespace DotCompute.Backends.CUDA.Memory
             var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             var devicePtr = IntPtr.Zero;
             
-            var result = CudaRuntime.cudaMalloc(ref devicePtr, (nuint)sizeInBytes);
+            var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)sizeInBytes);
             CudaRuntime.CheckError(result, "allocating device memory");
 
             _allocations[devicePtr] = sizeInBytes;
@@ -84,7 +91,7 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 var devicePtr = IntPtr.Zero;
                 
-                var result = CudaRuntime.cudaMalloc(ref devicePtr, (nuint)sizeInBytes);
+                var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)sizeInBytes);
                 CudaRuntime.CheckError(result, "allocating device memory");
 
                 _allocations[devicePtr] = sizeInBytes;
@@ -92,8 +99,8 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 _logger.LogDebug("Allocated {Size} bytes at {Address:X}", sizeInBytes, devicePtr);
 
-                // For now, return a simple device buffer instead of unified memory
-                throw new NotImplementedException("Non-generic buffer allocation not yet implemented. Use generic Allocate<T> instead.");
+                // Return a non-generic buffer that implements IUnifiedMemoryBuffer
+                return new CudaMemoryBuffer(_device, devicePtr, sizeInBytes);
             }, cancellationToken);
         }
 
@@ -110,7 +117,7 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 var devicePtr = IntPtr.Zero;
                 
-                var result = CudaRuntime.cudaMalloc(ref devicePtr, (nuint)sizeInBytes);
+                var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)sizeInBytes);
                 CudaRuntime.CheckError(result, "allocating device memory");
 
                 _allocations[devicePtr] = sizeInBytes;

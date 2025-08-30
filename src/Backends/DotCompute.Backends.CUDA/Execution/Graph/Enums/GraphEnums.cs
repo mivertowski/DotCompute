@@ -40,7 +40,9 @@ public enum GraphNodeType
     /// <summary>Graph execution node.</summary>
     Graph = 4,
     /// <summary>Empty node for synchronization.</summary>
-    Empty = 5
+    Empty = 5,
+    /// <summary>Memory copy node.</summary>
+    Memcpy = 6
 }
 
 /// <summary>

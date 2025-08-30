@@ -9,6 +9,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.P2P;
 using DotCompute.Backends.CUDA.Advanced;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;

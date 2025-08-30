@@ -145,6 +145,14 @@ namespace DotCompute.Backends.CUDA.Types.Native
             CudaMemPoolAttribute attr,
             ref ulong value);
 
+        // Add overload for integer attributes (like ReuseAllowOpportunistic)
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemPoolSetAttribute(
+            nint memPool,
+            CudaMemPoolAttribute attr,
+            ref int value);
+
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static partial CudaError cudaMemPoolGetAttribute(

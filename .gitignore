@@ -815,3 +815,4 @@ fix_memory_namespaces.sh
 fix_namespaces.sh
 fix_validation_types.sh
 reorganize_files.sh
+test_new_properties.cs

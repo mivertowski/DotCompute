@@ -1,6 +1,6 @@
 using System;
 
-namespace DotCompute.Backends.CUDA.Analysis.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Represents information about a memory access pattern in CUDA kernels.
@@ -50,5 +50,10 @@ namespace DotCompute.Backends.CUDA.Analysis.Types
         /// Used for bandwidth calculations.
         /// </summary>
         public TimeSpan? ExecutionTime { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the memory access pattern type.
+        /// </summary>
+        public MemoryAccessPattern AccessPattern { get; set; }
     }
 }

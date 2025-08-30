@@ -2,9 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Threading;
 using global::System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Execution.Metrics;
+using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
@@ -24,7 +26,11 @@ namespace DotCompute.Backends.CUDA.Advanced
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, CudaCooperativeKernel> _cooperativeKernels;
         private readonly Timer _metricsTimer;
-        private readonly CudaCooperativeGroupsMetrics _metrics;
+        private readonly object _metricsLock = new object();
+        private double _efficiencyScore = 0.5;
+        private double _synchronizationOverhead = 0.0;
+        private long _totalCooperativeLaunches = 0;
+        private long _totalSynchronizationPoints = 0;
         private bool _disposed;
 
         public CudaCooperativeGroupsManager(
@@ -36,7 +42,6 @@ namespace DotCompute.Backends.CUDA.Advanced
             _deviceProperties = deviceProperties;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _cooperativeKernels = new ConcurrentDictionary<string, CudaCooperativeKernel>();
-            _metrics = new CudaCooperativeGroupsMetrics();
 
             _metricsTimer = new Timer(UpdateMetrics, null,
                 TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
@@ -91,7 +96,6 @@ namespace DotCompute.Backends.CUDA.Advanced
                         .ConfigureAwait(false);
 
                     _cooperativeKernels[cooperativeKernel.Id] = cooperativeKernel;
-                    _metrics.ActiveGroups++;
 
                     return new CudaOptimizationResult
                     {
@@ -167,6 +171,13 @@ namespace DotCompute.Backends.CUDA.Advanced
                 var endTime = DateTimeOffset.UtcNow;
                 cooperativeKernel.LaunchCount++;
                 cooperativeKernel.TotalExecutionTime += (endTime - startTime);
+                
+                // Update metrics tracking
+                lock (_metricsLock)
+                {
+                    _totalCooperativeLaunches++;
+                    _totalSynchronizationPoints++;
+                }
 
                 return new CudaCooperativeLaunchResult
                 {
@@ -193,12 +204,19 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// </summary>
         public CudaCooperativeGroupsMetrics GetMetrics()
         {
-            return new CudaCooperativeGroupsMetrics
+            var totalLaunches = _cooperativeKernels.Values.Sum(k => k.LaunchCount);
+            var totalTime = _cooperativeKernels.Values.Sum(k => k.TotalExecutionTime.TotalMilliseconds);
+            var totalThreads = _cooperativeKernels.Values.Sum(k => CalculateThreadCount(k));
+
+            lock (_metricsLock)
             {
-                EfficiencyScore = _metrics.EfficiencyScore,
-                ActiveGroups = _cooperativeKernels.Count,
-                SynchronizationOverhead = _metrics.SynchronizationOverhead
-            };
+                return new CudaCooperativeGroupsMetrics
+                {
+                    EfficiencyScore = _efficiencyScore,
+                    SynchronizationOverhead = _synchronizationOverhead,
+                    ActiveGroups = _cooperativeKernels.Count
+                };
+            }
         }
 
         /// <summary>
@@ -330,8 +348,22 @@ namespace DotCompute.Backends.CUDA.Advanced
                 var totalLaunches = _cooperativeKernels.Values.Sum(k => k.LaunchCount);
                 var totalTime = _cooperativeKernels.Values.Sum(k => k.TotalExecutionTime.TotalMilliseconds);
 
-                _metrics.EfficiencyScore = totalLaunches > 0 ? Math.Min(1.0, totalLaunches / (totalTime * 0.001)) : 0.5;
-                _metrics.SynchronizationOverhead = CalculateSynchronizationOverhead();
+                // Calculate efficiency score based on launch frequency and execution time
+                var newEfficiencyScore = totalLaunches > 0 && totalTime > 0 
+                    ? Math.Min(1.0, Math.Max(0.0, totalLaunches / (totalTime * 0.001))) 
+                    : 0.5;
+
+                var newSynchronizationOverhead = CalculateSynchronizationOverhead();
+
+                // Thread-safe updates
+                lock (_metricsLock)
+                {
+                    _efficiencyScore = newEfficiencyScore;
+                    _synchronizationOverhead = newSynchronizationOverhead;
+                }
+                
+                _logger.LogTrace("Updated cooperative groups metrics: Efficiency={EfficiencyScore:F3}, Overhead={SynchronizationOverhead:F2}ms", 
+                    _efficiencyScore, _synchronizationOverhead);
             }
             catch (Exception ex)
             {
@@ -340,8 +372,69 @@ namespace DotCompute.Backends.CUDA.Advanced
         }
 
         private double CalculateSynchronizationOverhead()
+        {
             // Estimate synchronization overhead for cooperative groups
-            => _cooperativeKernels.Count > 0 ? 0.05 : 0.0; // 5% overhead estimate
+            if (_cooperativeKernels.Count == 0)
+                return 0.0;
+
+            // Base overhead increases with number of active groups
+            var baseOverhead = _cooperativeKernels.Count * 0.01; // 1% per group
+            
+            double avgSyncPoints;
+            lock (_metricsLock)
+            {
+                // Additional overhead based on synchronization frequency
+                avgSyncPoints = _totalSynchronizationPoints > 0 && _totalCooperativeLaunches > 0
+                    ? (double)_totalSynchronizationPoints / _totalCooperativeLaunches
+                    : 1.0;
+            }
+            
+            var syncOverhead = avgSyncPoints * 0.02; // 2% per sync point on average
+            
+            return Math.Min(0.2, baseOverhead + syncOverhead); // Cap at 20% overhead
+        }
+
+        private long CalculateThreadCount(CudaCooperativeKernel kernel)
+        {
+            // Estimate thread count based on kernel analysis
+            // In production, this would be based on actual launch configurations
+            var baseThreads = kernel.Analysis?.RecommendedBlockSize ?? 256;
+            var gridSize = kernel.Analysis?.RecommendedGridSize ?? 1;
+            return baseThreads * gridSize;
+        }
+
+        private double CalculateMemoryBandwidthUtilization()
+        {
+            // Estimate memory bandwidth utilization
+            // This is a simplified calculation - production would use hardware counters
+            if (_cooperativeKernels.Count == 0)
+                return 0.0;
+
+            // Assume cooperative groups achieve better memory utilization
+            var baseUtilization = 0.6; // 60% base utilization
+            var cooperativeBonus = Math.Min(0.3, _cooperativeKernels.Count * 0.05); // Up to 30% bonus
+            
+            return Math.Min(1.0, baseUtilization + cooperativeBonus);
+        }
+
+        private double CalculateComputeUtilization()
+        {
+            // Estimate compute utilization
+            // This is a simplified calculation - production would use hardware counters
+            if (_cooperativeKernels.Count == 0)
+                return 0.0;
+
+            // Base compute utilization with cooperative groups benefits
+            var totalKernels = _cooperativeKernels.Count;
+            var avgLaunchCount = totalKernels > 0 
+                ? _cooperativeKernels.Values.Average(k => k.LaunchCount) 
+                : 0;
+
+            // Higher launch counts indicate better utilization
+            var utilizationFactor = Math.Min(1.0, avgLaunchCount / 10.0);
+            
+            return Math.Max(0.4, utilizationFactor); // Minimum 40% utilization
+        }
 
         private void ThrowIfDisposed()
         {

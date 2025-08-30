@@ -9,19 +9,34 @@ namespace DotCompute.Abstractions.Types;
 public enum OptimizationLevel
 {
     /// <summary>
-    /// No optimization - fastest compilation.
+    /// No optimization - fastest compilation (equivalent to -O0).
     /// </summary>
     None = 0,
+    
+    /// <summary>
+    /// No optimization - fastest compilation (equivalent to -O0).
+    /// </summary>
+    O0 = 0,
 
     /// <summary>
-    /// Minimal optimization - fastest compilation with basic optimizations.
+    /// Minimal optimization - fastest compilation with basic optimizations (equivalent to -O1).
     /// </summary>
     Minimal = 1,
+    
+    /// <summary>
+    /// Basic optimization - minimal performance improvements (equivalent to -O1).
+    /// </summary>
+    O1 = 1,
 
     /// <summary>
-    /// Default optimization - balanced compilation time and performance.
+    /// Default optimization - balanced compilation time and performance (equivalent to -O2).
     /// </summary>
     Default = 2,
+    
+    /// <summary>
+    /// Standard optimization - good performance with reasonable compilation time (equivalent to -O2).
+    /// </summary>
+    O2 = 2,
 
     /// <summary>
     /// Moderate optimization - good performance with reasonable compilation time.
@@ -29,9 +44,14 @@ public enum OptimizationLevel
     Moderate = 3,
 
     /// <summary>
-    /// Aggressive optimization - maximum performance, slower compilation.
+    /// Aggressive optimization - maximum performance, slower compilation (equivalent to -O3).
     /// </summary>
     Aggressive = 4,
+    
+    /// <summary>
+    /// Maximum optimization - best performance, longest compilation time (equivalent to -O3).
+    /// </summary>
+    O3 = 4,
 
     /// <summary>
     /// Size optimization - optimize for smallest code size.

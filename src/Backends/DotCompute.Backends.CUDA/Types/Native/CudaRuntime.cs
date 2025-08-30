@@ -340,6 +340,35 @@ namespace DotCompute.Backends.CUDA.Native
             IntPtr devPtr,
             ulong count);
 
+        // Memory Pool Attribute Management (CUDA 11.2+)
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemPoolSetAttribute(
+            IntPtr memPool,
+            CudaMemPoolAttribute attr,
+            IntPtr value);
+
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemPoolSetAttribute(
+            IntPtr memPool,
+            CudaMemPoolAttribute attr,
+            ref ulong value);
+
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemPoolSetAttribute(
+            IntPtr memPool,
+            CudaMemPoolAttribute attr,
+            ref int value);
+
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaMemPoolGetAttribute(
+            IntPtr memPool,
+            CudaMemPoolAttribute attr,
+            out IntPtr value);
+
         // Occupancy Calculator
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]

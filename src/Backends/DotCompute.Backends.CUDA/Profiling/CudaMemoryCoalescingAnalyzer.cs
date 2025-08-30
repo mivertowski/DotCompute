@@ -4,11 +4,25 @@ using System.Diagnostics;
 using System.Linq;
 using global::System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using DotCompute.Backends.CUDA.Analysis.Enums;
+// using DotCompute.Backends.CUDA.Analysis.Enums; // Not needed for core functionality
 using DotCompute.Backends.CUDA.Analysis.Models;
 using DotCompute.Backends.CUDA.Analysis.Types;
+// using DotCompute.Core.Models; // Commented out to avoid conflicts
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+
+// Use Analysis types directly as this is part of the CUDA backend
+using CoalescingComparison = DotCompute.Backends.CUDA.Analysis.Types.CoalescingComparison;
+using CoalescingAnalysis = DotCompute.Backends.CUDA.Analysis.Types.CoalescingAnalysis;
+using StridedAccessAnalysis = DotCompute.Backends.CUDA.Analysis.Types.StridedAccessAnalysis;
+using Matrix2DAccessAnalysis = DotCompute.Backends.CUDA.Analysis.Types.Matrix2DAccessAnalysis;
+using RuntimeCoalescingProfile = DotCompute.Backends.CUDA.Analysis.Types.RuntimeCoalescingProfile;
+// Use types from Abstractions for consistency
+using MemoryAccessInfo = DotCompute.Abstractions.Types.MemoryAccessInfo;
+using CoalescingIssue = DotCompute.Abstractions.Types.CoalescingIssue;
+using TileAnalysis = DotCompute.Abstractions.Types.TileAnalysis;
+using IssueType = DotCompute.Abstractions.Types.IssueType;
+using IssueSeverity = DotCompute.Abstractions.Types.IssueSeverity;
 
 namespace DotCompute.Backends.CUDA.Analysis
 {

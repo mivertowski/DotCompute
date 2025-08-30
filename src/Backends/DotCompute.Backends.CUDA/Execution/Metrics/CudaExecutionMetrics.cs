@@ -41,46 +41,6 @@ namespace DotCompute.Backends.CUDA.Execution.Metrics
         public double SuccessRate => OperationCount > 0 ? ((double)(OperationCount - ErrorCount) / OperationCount) * 100 : 100;
     }
 
-    /// <summary>
-    /// Performance metrics for CUDA cooperative groups operations.
-    /// </summary>
-    public sealed class CudaCooperativeGroupsMetrics : CudaExecutionMetrics
-    {
-        /// <summary>
-        /// Gets the number of cooperative launches executed.
-        /// </summary>
-        public long CooperativeLaunches { get; init; }
-
-        /// <summary>
-        /// Gets the total number of threads in cooperative groups.
-        /// </summary>
-        public long TotalThreads { get; init; }
-
-        /// <summary>
-        /// Gets the average group size.
-        /// </summary>
-        public double AverageGroupSize => CooperativeLaunches > 0 ? (double)TotalThreads / CooperativeLaunches : 0;
-
-        /// <summary>
-        /// Gets the number of synchronization points hit.
-        /// </summary>
-        public long SynchronizationPoints { get; init; }
-
-        /// <summary>
-        /// Gets the memory bandwidth utilization percentage.
-        /// </summary>
-        public double MemoryBandwidthUtilization { get; init; }
-
-        /// <summary>
-        /// Gets the compute utilization percentage.
-        /// </summary>
-        public double ComputeUtilization { get; init; }
-
-        /// <summary>
-        /// Gets or sets the number of active groups currently executing.
-        /// </summary>
-        public long ActiveGroups { get; set; }
-    }
 
     /// <summary>
     /// Performance metrics for CUDA dynamic parallelism operations.
@@ -133,54 +93,4 @@ namespace DotCompute.Backends.CUDA.Execution.Metrics
         public double EfficiencyScore { get; init; }
     }
 
-    /// <summary>
-    /// Performance metrics for CUDA Tensor Core operations.
-    /// </summary>
-    public sealed class CudaTensorCoreMetrics : CudaExecutionMetrics
-    {
-        /// <summary>
-        /// Gets the number of Tensor Core operations executed.
-        /// </summary>
-        public long TensorCoreOps { get; init; }
-
-        /// <summary>
-        /// Gets the achieved throughput in TOPS (Tera Operations Per Second).
-        /// </summary>
-        public double ThroughputTOPS { get; init; }
-
-        /// <summary>
-        /// Gets the utilization percentage of Tensor Cores.
-        /// </summary>
-        public double TensorCoreUtilization { get; init; }
-
-        /// <summary>
-        /// Gets the mixed precision operation count.
-        /// </summary>
-        public long MixedPrecisionOps { get; init; }
-
-        /// <summary>
-        /// Gets the FP16 operation count.
-        /// </summary>
-        public long Fp16Ops { get; init; }
-
-        /// <summary>
-        /// Gets the INT8 operation count.
-        /// </summary>
-        public long Int8Ops { get; init; }
-
-        /// <summary>
-        /// Gets the BF16 operation count.
-        /// </summary>
-        public long Bf16Ops { get; init; }
-
-        /// <summary>
-        /// Gets the sparsity utilization percentage.
-        /// </summary>
-        public double SparsityUtilization { get; init; }
-
-        /// <summary>
-        /// Gets the memory bandwidth utilization for Tensor operations.
-        /// </summary>
-        public double MemoryBandwidthUtilization { get; init; }
-    }
 }

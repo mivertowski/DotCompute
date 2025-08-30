@@ -73,7 +73,7 @@ public sealed partial class SystemInfoManager
         try
         {
             // Get all information first
-            var memInfo = GetMemoryInfo();
+            var memInfo = GetPhysicalMemoryInfo();
             var virtMemInfo = GetVirtualMemoryInfo();
             var cpuInfo = GetCpuInfo();
             var diskInfo = GetDiskInfo();
@@ -177,9 +177,50 @@ public sealed partial class SystemInfoManager
     }
 
     /// <summary>
-    /// Gets memory information based on platform.
+    /// Gets detailed memory information for the current system.
     /// </summary>
-    private MemoryInfo GetMemoryInfo()
+    /// <returns>A <see cref="SystemMemoryInfo"/> object containing detailed memory statistics.</returns>
+    /// <remarks>
+    /// This method provides comprehensive memory information including physical memory,
+    /// virtual memory, and memory usage statistics. The information is gathered
+    /// using platform-specific methods for accuracy.
+    /// </remarks>
+    public SystemMemoryInfo GetMemoryInfo()
+    {
+        var physicalMemory = GetPhysicalMemoryInfo();
+        var virtualMemory = GetVirtualMemoryInfo();
+        
+        return new SystemMemoryInfo
+        {
+            // Physical memory
+            TotalPhysicalMemory = physicalMemory.Total,
+            AvailablePhysicalMemory = physicalMemory.Available,
+            UsedPhysicalMemory = physicalMemory.Used,
+            PhysicalMemoryUsagePercentage = physicalMemory.UsagePercentage,
+            
+            // Virtual memory
+            TotalVirtualMemory = virtualMemory.Total,
+            AvailableVirtualMemory = virtualMemory.Available,
+            
+            // Process memory
+            ProcessMemoryUsage = Process.GetCurrentProcess().WorkingSet64,
+            ProcessVirtualMemoryUsage = Process.GetCurrentProcess().VirtualMemorySize64,
+            
+            // GC information
+            GCTotalMemory = GC.GetTotalMemory(false),
+            GCGen0Collections = GC.CollectionCount(0),
+            GCGen1Collections = GC.CollectionCount(1),
+            GCGen2Collections = GC.CollectionCount(2),
+            
+            // Timestamp
+            Timestamp = DateTimeOffset.UtcNow
+        };
+    }
+
+    /// <summary>
+    /// Gets physical memory information based on platform.
+    /// </summary>
+    private MemoryInfo GetPhysicalMemoryInfo()
     {
         var platform = GetPlatform();
         
@@ -818,5 +859,50 @@ public sealed class SystemInfo
     public long DiskSpaceUsed { get; init; }
     
     // Timestamp
+    public DateTimeOffset Timestamp { get; init; }
+}
+
+/// <summary>
+/// Detailed system memory information.
+/// </summary>
+public sealed class SystemMemoryInfo
+{
+    /// <summary>Gets or sets the total physical memory in bytes.</summary>
+    public long TotalPhysicalMemory { get; init; }
+    
+    /// <summary>Gets or sets the available physical memory in bytes.</summary>
+    public long AvailablePhysicalMemory { get; init; }
+    
+    /// <summary>Gets or sets the used physical memory in bytes.</summary>
+    public long UsedPhysicalMemory { get; init; }
+    
+    /// <summary>Gets or sets the physical memory usage percentage.</summary>
+    public double PhysicalMemoryUsagePercentage { get; init; }
+    
+    /// <summary>Gets or sets the total virtual memory in bytes.</summary>
+    public long TotalVirtualMemory { get; init; }
+    
+    /// <summary>Gets or sets the available virtual memory in bytes.</summary>
+    public long AvailableVirtualMemory { get; init; }
+    
+    /// <summary>Gets or sets the current process memory usage in bytes.</summary>
+    public long ProcessMemoryUsage { get; init; }
+    
+    /// <summary>Gets or sets the current process virtual memory usage in bytes.</summary>
+    public long ProcessVirtualMemoryUsage { get; init; }
+    
+    /// <summary>Gets or sets the total memory allocated by the Garbage Collector.</summary>
+    public long GCTotalMemory { get; init; }
+    
+    /// <summary>Gets or sets the number of Generation 0 garbage collections.</summary>
+    public int GCGen0Collections { get; init; }
+    
+    /// <summary>Gets or sets the number of Generation 1 garbage collections.</summary>
+    public int GCGen1Collections { get; init; }
+    
+    /// <summary>Gets or sets the number of Generation 2 garbage collections.</summary>
+    public int GCGen2Collections { get; init; }
+    
+    /// <summary>Gets or sets the timestamp when this information was collected.</summary>
     public DateTimeOffset Timestamp { get; init; }
 }
