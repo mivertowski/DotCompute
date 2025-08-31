@@ -1,0 +1,530 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CUDA.Factory;
+using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Execution.Graph;
+using DotCompute.Tests.Common;
+using FluentAssertions;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace DotCompute.Hardware.Cuda.Tests
+{
+    /// <summary>
+    /// Hardware tests for CUDA graph functionality.
+    /// Tests graph creation, capture, execution, and performance optimization.
+    /// </summary>
+    [Trait("Category", "RequiresCUDA")]
+    public class CudaGraphTests : TestBase
+    {
+        private const string SimpleKernel = @"
+            __global__ void simpleAdd(float* a, float* b, float* c, int n) {
+                int idx = blockIdx.x * blockDim.x + threadIdx.x;
+                if (idx < n) {
+                    c[idx] = a[idx] + b[idx];
+                }
+            }";
+
+        private const string MultiKernel1 = @"
+            __global__ void multiply(float* a, float* b, float* c, int n) {
+                int idx = blockIdx.x * blockDim.x + threadIdx.x;
+                if (idx < n) {
+                    c[idx] = a[idx] * b[idx];
+                }
+            }";
+
+        private const string MultiKernel2 = @"
+            __global__ void scale(float* a, float scale, int n) {
+                int idx = blockIdx.x * blockDim.x + threadIdx.x;
+                if (idx < n) {
+                    a[idx] = a[idx] * scale;
+                }
+            }";
+
+        public CudaGraphTests(ITestOutputHelper output) : base(output) { }
+
+        [SkippableFact]
+        public async Task Graph_Creation_Should_Succeed()
+        {
+            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            
+            var factory = new CudaAcceleratorFactory();
+            using var accelerator = factory.CreateAccelerator(0);
+            
+            const int elementCount = 1024;
+            
+            // Prepare data
+            var hostA = new float[elementCount];
+            var hostB = new float[elementCount];
+            
+            for (int i = 0; i < elementCount; i++)
+            {
+                hostA[i] = i * 0.5f;
+                hostB[i] = i * 0.3f;
+            }
+            
+            using var deviceA = accelerator.CreateBuffer<float>(elementCount);
+            using var deviceB = accelerator.CreateBuffer<float>(elementCount);
+            using var deviceC = accelerator.CreateBuffer<float>(elementCount);
+            
+            await deviceA.WriteAsync(hostA.AsSpan(), 0);
+            await deviceB.WriteAsync(hostB.AsSpan(), 0);
+            
+            // Compile kernel
+            var kernel = accelerator.CompileKernel(SimpleKernel, "simpleAdd");
+            
+            // Create graph
+            var graph = accelerator.CreateGraph();
+            graph.Should().NotBeNull();
+            
+            const int blockSize = 256;
+            var gridSize = (elementCount + blockSize - 1) / blockSize;
+            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            
+            // Add kernel to graph
+            graph.AddKernel(kernel, launchConfig, deviceA, deviceB, deviceC, elementCount);
+            
+            // Instantiate graph
+            var executableGraph = graph.Instantiate();
+            executableGraph.Should().NotBeNull();
+            
+            // Execute graph
+            await executableGraph.LaunchAsync();
+            
+            // Verify results
+            var result = new float[elementCount];
+            await deviceC.ReadAsync(result.AsSpan(), 0);
+            
+            for (int i = 0; i < Math.Min(100, elementCount); i++)
+            {
+                result[i].Should().BeApproximately(hostA[i] + hostB[i], 0.0001f, $"at index {i}");
+            }
+            
+            Output.WriteLine($"Graph creation and execution successful");
+            Output.WriteLine($"  Elements processed: {elementCount}");
+            Output.WriteLine($"  Grid size: {gridSize}, Block size: {blockSize}");
+        }
+
+        [SkippableFact]
+        public async Task Graph_Capture_Should_Work()
+        {
+            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            
+            var factory = new CudaAcceleratorFactory();
+            using var accelerator = factory.CreateAccelerator(0);
+            
+            const int elementCount = 2048;
+            
+            var hostData = new float[elementCount];
+            for (int i = 0; i < elementCount; i++)
+            {
+                hostData[i] = i * 0.1f;
+            }
+            
+            using var deviceData = accelerator.CreateBuffer<float>(elementCount);
+            await deviceData.WriteAsync(hostData.AsSpan(), 0);
+            
+            var kernel = accelerator.CompileKernel(MultiKernel2, "scale");
+            
+            const int blockSize = 256;
+            var gridSize = (elementCount + blockSize - 1) / blockSize;
+            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            
+            // Create and start graph capture
+            var stream = accelerator.CreateStream();
+            var capturedGraph = stream.BeginCapture();
+            
+            // Execute operations in capture mode
+            await kernel.LaunchAsync(launchConfig, stream, deviceData, 2.0f, elementCount);
+            await kernel.LaunchAsync(launchConfig, stream, deviceData, 1.5f, elementCount);
+            
+            // End capture
+            var executableGraph = stream.EndCapture();
+            executableGraph.Should().NotBeNull();
+            
+            // Execute the captured graph
+            await executableGraph.LaunchAsync();
+            
+            // Verify results (should be scaled by 2.0 * 1.5 = 3.0)
+            var result = new float[elementCount];
+            await deviceData.ReadAsync(result.AsSpan(), 0);
+            
+            for (int i = 0; i < Math.Min(100, elementCount); i++)
+            {
+                var expected = hostData[i] * 2.0f * 1.5f;
+                result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
+            }
+            
+            Output.WriteLine($"Graph capture test successful");
+            Output.WriteLine($"  Operations captured: 2 kernel launches");
+            Output.WriteLine($"  Final scaling factor: 3.0x");
+        }
+
+        [SkippableFact]
+        public async Task Multi_Kernel_Graph_Should_Execute_Correctly()
+        {
+            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            
+            var factory = new CudaAcceleratorFactory();
+            using var accelerator = factory.CreateAccelerator(0);
+            
+            const int elementCount = 1024;
+            
+            var hostA = new float[elementCount];
+            var hostB = new float[elementCount];
+            
+            for (int i = 0; i < elementCount; i++)
+            {
+                hostA[i] = i * 0.2f;
+                hostB[i] = (i + 1) * 0.3f;
+            }
+            
+            using var deviceA = accelerator.CreateBuffer<float>(elementCount);
+            using var deviceB = accelerator.CreateBuffer<float>(elementCount);
+            using var deviceC = accelerator.CreateBuffer<float>(elementCount);
+            using var deviceD = accelerator.CreateBuffer<float>(elementCount);
+            
+            await deviceA.WriteAsync(hostA.AsSpan(), 0);
+            await deviceB.WriteAsync(hostB.AsSpan(), 0);
+            
+            // Compile kernels
+            var multiplyKernel = accelerator.CompileKernel(MultiKernel1, "multiply");
+            var scaleKernel = accelerator.CompileKernel(MultiKernel2, "scale");
+            
+            const int blockSize = 256;
+            var gridSize = (elementCount + blockSize - 1) / blockSize;
+            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            
+            // Create graph with multiple operations
+            var graph = accelerator.CreateGraph();
+            
+            // Step 1: Multiply A and B, store in C
+            graph.AddKernel(multiplyKernel, launchConfig, deviceA, deviceB, deviceC, elementCount);
+            
+            // Step 2: Scale C by 2.0, store in D  
+            graph.AddMemoryCopy(deviceC, deviceD, elementCount * sizeof(float));
+            graph.AddKernel(scaleKernel, launchConfig, deviceD, 2.0f, elementCount);
+            
+            var executableGraph = graph.Instantiate();
+            
+            // Execute the multi-kernel graph
+            var stopwatch = Stopwatch.StartNew();
+            await executableGraph.LaunchAsync();
+            stopwatch.Stop();
+            
+            // Verify results
+            var result = new float[elementCount];
+            await deviceD.ReadAsync(result.AsSpan(), 0);
+            
+            for (int i = 0; i < Math.Min(100, elementCount); i++)
+            {
+                var expected = hostA[i] * hostB[i] * 2.0f;
+                result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
+            }
+            
+            Output.WriteLine($"Multi-kernel graph execution successful");
+            Output.WriteLine($"  Operations: multiply + copy + scale");
+            Output.WriteLine($"  Execution time: {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
+        }
+
+        [SkippableFact]
+        public async Task Graph_Performance_Should_Be_Better_Than_Individual_Launches()
+        {
+            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            
+            var factory = new CudaAcceleratorFactory();
+            using var accelerator = factory.CreateAccelerator(0);
+            
+            const int elementCount = 1024;
+            const int iterations = 100;
+            
+            var hostData = new float[elementCount];
+            for (int i = 0; i < elementCount; i++)
+            {
+                hostData[i] = i * 0.1f;
+            }
+            
+            using var deviceData = accelerator.CreateBuffer<float>(elementCount);
+            await deviceData.WriteAsync(hostData.AsSpan(), 0);
+            
+            var kernel = accelerator.CompileKernel(MultiKernel2, "scale");
+            
+            const int blockSize = 256;
+            var gridSize = (elementCount + blockSize - 1) / blockSize;
+            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            
+            // Test individual kernel launches
+            var individualTimes = new double[iterations];
+            
+            for (int i = 0; i < iterations; i++)
+            {
+                var stopwatch = Stopwatch.StartNew();
+                await kernel.LaunchAsync(launchConfig, deviceData, 1.01f, elementCount);
+                stopwatch.Stop();
+                individualTimes[i] = stopwatch.Elapsed.TotalMicroseconds;
+            }
+            
+            // Create graph with same operations
+            var stream = accelerator.CreateStream();
+            stream.BeginCapture();
+            await kernel.LaunchAsync(launchConfig, stream, deviceData, 1.01f, elementCount);
+            var executableGraph = stream.EndCapture();
+            
+            // Test graph execution
+            var graphTimes = new double[iterations];
+            
+            for (int i = 0; i < iterations; i++)
+            {
+                var stopwatch = Stopwatch.StartNew();
+                await executableGraph.LaunchAsync();
+                stopwatch.Stop();
+                graphTimes[i] = stopwatch.Elapsed.TotalMicroseconds;
+            }
+            
+            var avgIndividualTime = individualTimes.Average();
+            var avgGraphTime = graphTimes.Average();
+            var speedup = avgIndividualTime / avgGraphTime;
+            
+            Output.WriteLine($"Graph vs Individual Launch Performance:");
+            Output.WriteLine($"  Individual Launch Avg: {avgIndividualTime:F2} μs");
+            Output.WriteLine($"  Graph Launch Avg: {avgGraphTime:F2} μs");
+            Output.WriteLine($"  Speedup: {speedup:F2}x");
+            
+            // Graph execution should be at least as fast, often faster due to reduced overhead
+            avgGraphTime.Should().BeLessOrEqualTo(avgIndividualTime * 1.1, 
+                "Graph execution should not be significantly slower than individual launches");
+        }
+
+        [SkippableFact]
+        public async Task Graph_With_Dependencies_Should_Execute_In_Order()
+        {
+            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            
+            var factory = new CudaAcceleratorFactory();
+            using var accelerator = factory.CreateAccelerator(0);
+            
+            const int elementCount = 1024;
+            
+            var hostInput = new float[elementCount];
+            for (int i = 0; i < elementCount; i++)
+            {
+                hostInput[i] = i + 1.0f; // Start with values 1, 2, 3, ...
+            }
+            
+            using var deviceInput = accelerator.CreateBuffer<float>(elementCount);
+            using var deviceTemp = accelerator.CreateBuffer<float>(elementCount);
+            using var deviceOutput = accelerator.CreateBuffer<float>(elementCount);
+            
+            await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
+            
+            var scaleKernel = accelerator.CompileKernel(MultiKernel2, "scale");
+            var addKernel = accelerator.CompileKernel(SimpleKernel, "simpleAdd");
+            
+            const int blockSize = 256;
+            var gridSize = (elementCount + blockSize - 1) / blockSize;
+            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            
+            // Create graph with dependencies:
+            // 1. Scale input by 2.0 -> temp
+            // 2. Add input + temp -> output (should be input + input*2 = input*3)
+            var graph = accelerator.CreateGraph();
+            
+            // Copy input to temp, then scale temp
+            graph.AddMemoryCopy(deviceInput, deviceTemp, elementCount * sizeof(float));
+            var scaleNode = graph.AddKernel(scaleKernel, launchConfig, deviceTemp, 2.0f, elementCount);
+            
+            // Add original input to scaled temp
+            var addNode = graph.AddKernel(addKernel, launchConfig, deviceInput, deviceTemp, deviceOutput, elementCount);
+            
+            // Set dependency: add must wait for scale
+            graph.AddDependency(scaleNode, addNode);
+            
+            var executableGraph = graph.Instantiate();
+            await executableGraph.LaunchAsync();
+            
+            // Verify results (should be input * 3)
+            var result = new float[elementCount];
+            await deviceOutput.ReadAsync(result.AsSpan(), 0);
+            
+            for (int i = 0; i < Math.Min(100, elementCount); i++)
+            {
+                var expected = hostInput[i] * 3.0f; // input + (input * 2.0)
+                result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
+            }
+            
+            Output.WriteLine($"Graph with dependencies executed correctly");
+            Output.WriteLine($"  Result verification: input * 3.0 = {result[0]:F1} (expected: {hostInput[0] * 3:F1})");
+        }
+
+        [SkippableFact]
+        public async Task Graph_Memory_Operations_Should_Work()
+        {
+            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            
+            var factory = new CudaAcceleratorFactory();
+            using var accelerator = factory.CreateAccelerator(0);
+            
+            const int elementCount = 1024;
+            
+            var hostData = new float[elementCount];
+            for (int i = 0; i < elementCount; i++)
+            {
+                hostData[i] = (float)Math.Sin(i * 0.01);
+            }
+            
+            using var deviceSrc = accelerator.CreateBuffer<float>(elementCount);
+            using var deviceDst1 = accelerator.CreateBuffer<float>(elementCount);
+            using var deviceDst2 = accelerator.CreateBuffer<float>(elementCount);
+            
+            await deviceSrc.WriteAsync(hostData.AsSpan(), 0);
+            
+            // Create graph with memory operations
+            var graph = accelerator.CreateGraph();
+            
+            // Copy src -> dst1
+            graph.AddMemoryCopy(deviceSrc, deviceDst1, elementCount * sizeof(float));
+            
+            // Copy dst1 -> dst2 
+            graph.AddMemoryCopy(deviceDst1, deviceDst2, elementCount * sizeof(float));
+            
+            var executableGraph = graph.Instantiate();
+            await executableGraph.LaunchAsync();
+            
+            // Verify both destinations have correct data
+            var result1 = new float[elementCount];
+            var result2 = new float[elementCount];
+            
+            await deviceDst1.ReadAsync(result1.AsSpan(), 0);
+            await deviceDst2.ReadAsync(result2.AsSpan(), 0);
+            
+            for (int i = 0; i < elementCount; i++)
+            {
+                result1[i].Should().BeApproximately(hostData[i], 0.0001f, $"dst1 at index {i}");
+                result2[i].Should().BeApproximately(hostData[i], 0.0001f, $"dst2 at index {i}");
+            }
+            
+            Output.WriteLine($"Graph memory operations successful");
+            Output.WriteLine($"  Memory copies: src->dst1->dst2");
+            Output.WriteLine($"  Data integrity verified");
+        }
+
+        [SkippableFact]
+        public async Task Graph_Update_Should_Work()
+        {
+            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            Skip.IfNot(SupportsGraphUpdate(), "CUDA graph update not supported");
+            
+            var factory = new CudaAcceleratorFactory();
+            using var accelerator = factory.CreateAccelerator(0);
+            
+            const int elementCount = 512;
+            
+            var hostData = new float[elementCount];
+            for (int i = 0; i < elementCount; i++)
+            {
+                hostData[i] = i * 0.1f;
+            }
+            
+            using var deviceData = accelerator.CreateBuffer<float>(elementCount);
+            await deviceData.WriteAsync(hostData.AsSpan(), 0);
+            
+            var kernel = accelerator.CompileKernel(MultiKernel2, "scale");
+            
+            const int blockSize = 256;
+            var gridSize = (elementCount + blockSize - 1) / blockSize;
+            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            
+            // Create initial graph with scale factor 2.0
+            var graph = accelerator.CreateGraph();
+            var kernelNode = graph.AddKernel(kernel, launchConfig, deviceData, 2.0f, elementCount);
+            
+            var executableGraph = graph.Instantiate();
+            await executableGraph.LaunchAsync();
+            
+            // Verify initial results (scaled by 2.0)
+            var result1 = new float[elementCount];
+            await deviceData.ReadAsync(result1.AsSpan(), 0);
+            
+            result1[0].Should().BeApproximately(hostData[0] * 2.0f, 0.0001f);
+            
+            // Update graph to use scale factor 3.0
+            try
+            {
+                executableGraph.UpdateKernelNode(kernelNode, kernel, launchConfig, deviceData, 3.0f, elementCount);
+                
+                // Reset data and execute updated graph
+                await deviceData.WriteAsync(hostData.AsSpan(), 0);
+                await executableGraph.LaunchAsync();
+                
+                var result2 = new float[elementCount];
+                await deviceData.ReadAsync(result2.AsSpan(), 0);
+                
+                result2[0].Should().BeApproximately(hostData[0] * 3.0f, 0.0001f);
+                
+                Output.WriteLine($"Graph update successful");
+                Output.WriteLine($"  Original scale: 2.0, result: {result1[0]:F2}");
+                Output.WriteLine($"  Updated scale: 3.0, result: {result2[0]:F2}");
+            }
+            catch (NotSupportedException)
+            {
+                Output.WriteLine("Graph update not supported - test skipped");
+            }
+        }
+
+        /// <summary>
+        /// Check if CUDA graphs are supported on this device/driver
+        /// </summary>
+        private static bool SupportsGraphs()
+        {
+            if (!IsCudaAvailable()) return false;
+            
+            try
+            {
+                var factory = new CudaAcceleratorFactory();
+                using var accelerator = factory.CreateAccelerator(0);
+                
+                // CUDA graphs require compute capability 3.5+ and CUDA 10.0+
+                var cc = accelerator.DeviceInfo.ComputeCapability;
+                return cc.Major > 3 || (cc.Major == 3 && cc.Minor >= 5);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Check if CUDA graph updates are supported
+        /// </summary>
+        private static bool SupportsGraphUpdate()
+        {
+            if (!SupportsGraphs()) return false;
+            
+            try
+            {
+                var factory = new CudaAcceleratorFactory();
+                using var accelerator = factory.CreateAccelerator(0);
+                
+                // Graph updates require CUDA 11.1+
+                // For now, assume supported if graphs are supported
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+}

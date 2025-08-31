@@ -1,0 +1,308 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      run_hardware_tests:
+        description: 'Run hardware-dependent tests'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+  DOTNET_NOLOGO: 'true'
+
+jobs:
+  # Hardware-independent tests that run on all PRs and pushes
+  unit-tests:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration ${{ matrix.configuration }}
+
+    - name: Run Unit Tests
+      run: |
+        dotnet test --no-build --configuration ${{ matrix.configuration }} \
+          --logger trx --results-directory TestResults \
+          --collect:"XPlat Code Coverage" \
+          --filter "Category!=Hardware&Category!=GPU&Category!=CUDA&Category!=OpenCL&Category!=DirectCompute&Category!=Metal" \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-unit-${{ matrix.configuration }}
+        path: TestResults/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      if: matrix.configuration == 'Debug'
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: TestResults/*/coverage.opencover.xml
+        flags: unittests
+        name: codecov-unit-tests
+
+  # Mock hardware tests (run without real hardware)
+  mock-hardware-tests:
+    name: Mock Hardware Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Debug
+
+    - name: Run Mock Hardware Tests
+      run: |
+        dotnet test --no-build --configuration Debug \
+          --logger trx --results-directory TestResults \
+          --collect:"XPlat Code Coverage" \
+          --filter "Category=Mock" \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-mock-hardware
+        path: TestResults/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: TestResults/*/coverage.opencover.xml
+        flags: mockhardware
+        name: codecov-mock-hardware
+
+  # Performance regression detection
+  performance-tests:
+    name: Performance Regression Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run Performance Tests (Baseline)
+      if: github.base_ref
+      run: |
+        git checkout ${{ github.base_ref }}
+        dotnet build --no-restore --configuration Release
+        dotnet test --no-build --configuration Release \
+          --logger trx --results-directory TestResults/Baseline \
+          --filter "Category=Performance" \
+          tests/Performance/DotCompute.Performance.Tests/
+
+    - name: Run Performance Tests (Current)
+      run: |
+        git checkout ${{ github.sha }}
+        dotnet build --no-restore --configuration Release
+        dotnet test --no-build --configuration Release \
+          --logger trx --results-directory TestResults/Current \
+          --filter "Category=Performance" \
+          tests/Performance/DotCompute.Performance.Tests/
+
+    - name: Compare Performance Results
+      run: |
+        # This would be a custom script to compare performance results
+        echo "Performance comparison would be implemented here"
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-results
+        path: TestResults/
+
+  # Hardware-dependent tests (only run when explicitly requested)
+  hardware-tests:
+    name: Hardware Tests
+    runs-on: [self-hosted, gpu]
+    if: github.event.inputs.run_hardware_tests == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    strategy:
+      matrix:
+        hardware: [CUDA, OpenCL, DirectCompute]
+        fail-fast: false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Check Hardware Availability
+      id: hardware-check
+      run: |
+        case "${{ matrix.hardware }}" in
+          "CUDA")
+            if nvidia-smi >/dev/null 2>&1; then
+              echo "available=true" >> $GITHUB_OUTPUT
+            else
+              echo "available=false" >> $GITHUB_OUTPUT
+            fi
+            ;;
+          "OpenCL")
+            if which clinfo >/dev/null 2>&1 && clinfo >/dev/null 2>&1; then
+              echo "available=true" >> $GITHUB_OUTPUT
+            else
+              echo "available=false" >> $GITHUB_OUTPUT
+            fi
+            ;;
+          "DirectCompute")
+            if [[ "$RUNNER_OS" == "Windows" ]]; then
+              echo "available=true" >> $GITHUB_OUTPUT
+            else
+              echo "available=false" >> $GITHUB_OUTPUT
+            fi
+            ;;
+        esac
+
+    - name: Run Hardware Tests
+      if: steps.hardware-check.outputs.available == 'true'
+      run: |
+        dotnet test --no-build --configuration Release \
+          --logger trx --results-directory TestResults \
+          --collect:"XPlat Code Coverage" \
+          --filter "Category=${{ matrix.hardware }}" \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+    - name: Upload hardware test results
+      uses: actions/upload-artifact@v4
+      if: always() && steps.hardware-check.outputs.available == 'true'
+      with:
+        name: test-results-${{ matrix.hardware }}
+        path: TestResults/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      if: steps.hardware-check.outputs.available == 'true'
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: TestResults/*/coverage.opencover.xml
+        flags: hardware-${{ matrix.hardware }}
+        name: codecov-${{ matrix.hardware }}
+
+  # Combine all test results and generate summary
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, mock-hardware-tests]
+    if: always()
+    
+    steps:
+    - name: Download all test results
+      uses: actions/download-artifact@v4
+      with:
+        pattern: test-results-*
+        merge-multiple: true
+
+    - name: Publish Test Results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Test Results Summary
+        path: '**/*.trx'
+        reporter: dotnet-trx
+        fail-on-error: true
+
+    - name: Check test results
+      if: always()
+      run: |
+        if [ "${{ needs.unit-tests.result }}" != "success" ]; then
+          echo "❌ Unit tests failed"
+          exit 1
+        fi
+        if [ "${{ needs.mock-hardware-tests.result }}" != "success" ]; then
+          echo "❌ Mock hardware tests failed"
+          exit 1
+        fi
+        echo "✅ All required tests passed"

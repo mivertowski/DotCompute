@@ -8,10 +8,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- Coverlet collector provided by Directory.Build.targets -->
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" />
-  </ItemGroup>
+  <!-- Test packages provided by Directory.Build.targets -->
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />

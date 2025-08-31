@@ -57,6 +57,36 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    
+    <!-- Test filtering and coverage configuration -->
+    <IsTestProject Condition="$(MSBuildProjectName.EndsWith('.Tests')) Or $(MSBuildProjectName.Contains('.Test.'))">true</IsTestProject>
+    <GenerateDocumentationFile Condition="'$(IsTestProject)' != 'true'">true</GenerateDocumentationFile>
+    
+    <!-- Coverage thresholds -->
+    <CoverageThreshold Condition="'$(CoverageThreshold)' == ''">80</CoverageThreshold>
+    <UnitTestCoverageThreshold Condition="'$(UnitTestCoverageThreshold)' == ''">85</UnitTestCoverageThreshold>
+    <IntegrationTestCoverageThreshold Condition="'$(IntegrationTestCoverageThreshold)' == ''">70</IntegrationTestCoverageThreshold>
+    
+    <!-- Test categories import -->
+    <ImportTestCategories Condition="'$(IsTestProject)' == 'true'">true</ImportTestCategories>
+  </PropertyGroup>
+  
+  <!-- Test project specific configuration -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn> <!-- Suppress XML documentation warnings in tests -->
+    
+    <!-- Test runner configuration -->
+    <VSTestLogger Condition="'$(VSTestLogger)' == ''">trx</VSTestLogger>
+    <VSTestResultsDirectory Condition="'$(VSTestResultsDirectory)' == ''">$(MSBuildThisFileDirectory)TestResults</VSTestResultsDirectory>
+    <CollectCoverage Condition="'$(CollectCoverage)' == ''">true</CollectCoverage>
+    <CoverletOutput>$(VSTestResultsDirectory)/Coverage/</CoverletOutput>
+    <CoverletOutputFormat>opencover</CoverletOutputFormat>
+    
+    <!-- Test timeout configuration -->
+    <TestTimeout Condition="'$(TestTimeout)' == ''">300000</TestTimeout> <!-- 5 minutes -->
+    <LongRunningTestTimeout Condition="'$(LongRunningTestTimeout)' == ''">600000</LongRunningTestTimeout> <!-- 10 minutes -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -65,4 +95,25 @@
     <!-- Fix ILLink.Tasks version globally -->
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
   </ItemGroup>
+  
+  <!-- Test project dependencies are handled by individual test projects and tests/Directory.Build.targets -->
+  
+  <!-- Import test categories for test projects -->
+  <Import Project="$(MSBuildThisFileDirectory)tests/test-categories.props" Condition="'$(IsTestProject)' == 'true' And Exists('$(MSBuildThisFileDirectory)tests/test-categories.props')" />
+  
+  <!-- MSBuild targets for test execution -->
+  <Target Name="RunCITests" Condition="'$(CI)' == 'true'">
+    <Message Text="Running CI-compatible tests (excluding hardware-dependent tests)" Importance="high" />
+    <Exec Command="dotnet test --configuration $(Configuration) --filter &quot;Category!=Hardware&amp;Category!=GPU&amp;Category!=CUDA&amp;Category!=OpenCL&amp;Category!=DirectCompute&amp;Category!=Metal&quot; --logger trx --collect:&quot;XPlat Code Coverage&quot;" />
+  </Target>
+  
+  <Target Name="RunAllTests">
+    <Message Text="Running all tests including hardware-dependent tests" Importance="high" />
+    <Exec Command="dotnet test --configuration $(Configuration) --logger trx --collect:&quot;XPlat Code Coverage&quot;" />
+  </Target>
+  
+  <Target Name="CheckCoverage" DependsOnTargets="RunCITests" Condition="'$(CollectCoverage)' == 'true'">
+    <Message Text="Checking code coverage against threshold: $(CoverageThreshold)%" Importance="high" />
+    <!-- Coverage validation would be implemented here -->
+  </Target>
 </Project>

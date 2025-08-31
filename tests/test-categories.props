@@ -1,0 +1,81 @@
+<Project>
+  <PropertyGroup>
+    <!-- Test Categories Configuration -->
+    <DefineConstants>$(DefineConstants);TEST_CATEGORIES</DefineConstants>
+    
+    <!-- Default test sets -->
+    <DefaultUnitTestFilter>Category!=Hardware&amp;Category!=GPU&amp;Category!=CUDA&amp;Category!=OpenCL&amp;Category!=DirectCompute&amp;Category!=Metal&amp;Category!=Performance</DefaultUnitTestFilter>
+    <DefaultIntegrationTestFilter>Category=Integration&amp;Category!=Hardware</DefaultIntegrationTestFilter>
+    <DefaultMockHardwareTestFilter>Category=Mock</DefaultMockHardwareTestFilter>
+    <DefaultPerformanceTestFilter>Category=Performance&amp;Category!=Hardware</DefaultPerformanceTestFilter>
+    
+    <!-- Hardware-specific test filters -->
+    <CudaTestFilter>Category=CUDA|Category=GPU</CudaTestFilter>
+    <OpenCLTestFilter>Category=OpenCL|Category=GPU</OpenCLTestFilter>
+    <DirectComputeTestFilter>Category=DirectCompute|Category=GPU</DirectComputeTestFilter>
+    <MetalTestFilter>Category=Metal|Category=GPU</MetalTestFilter>
+    <AllHardwareTestFilter>Category=Hardware|Category=GPU|Category=CUDA|Category=OpenCL|Category=DirectCompute|Category=Metal</AllHardwareTestFilter>
+    
+    <!-- Coverage thresholds -->
+    <UnitTestCoverageThreshold>85</UnitTestCoverageThreshold>
+    <IntegrationTestCoverageThreshold>70</IntegrationTestCoverageThreshold>
+    <OverallCoverageThreshold>80</OverallCoverageThreshold>
+    
+    <!-- Test timeouts (in milliseconds) -->
+    <UnitTestTimeout>30000</UnitTestTimeout>
+    <IntegrationTestTimeout>60000</IntegrationTestTimeout>
+    <HardwareTestTimeout>120000</HardwareTestTimeout>
+    <PerformanceTestTimeout>300000</PerformanceTestTimeout>
+    
+    <!-- Test output configuration -->
+    <TestResultsDirectory>$(MSBuildThisFileDirectory)../TestResults</TestResultsDirectory>
+    <CoverageReportsDirectory>$(TestResultsDirectory)/Coverage</CoverageReportsDirectory>
+    <TestArtifactsDirectory>$(TestResultsDirectory)/Artifacts</TestArtifactsDirectory>
+  </PropertyGroup>
+
+  <!-- Test runner configuration -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="All" />
+    <PackageReference Include="coverlet.collector" Version="6.0.2" PrivateAssets="All" />
+    <PackageReference Include="coverlet.msbuild" Version="6.0.2" PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- Category attribute definitions -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)TestCategories.cs" Link="TestCategories.cs" />
+  </ItemGroup>
+
+  <!-- MSBuild targets for running different test categories -->
+  <Target Name="RunUnitTests">
+    <Message Text="Running unit tests with filter: $(DefaultUnitTestFilter)" Importance="high" />
+    <Exec Command="dotnet test --filter &quot;$(DefaultUnitTestFilter)&quot; --logger trx --results-directory $(TestResultsDirectory) --collect:&quot;XPlat Code Coverage&quot;" />
+  </Target>
+
+  <Target Name="RunIntegrationTests">
+    <Message Text="Running integration tests with filter: $(DefaultIntegrationTestFilter)" Importance="high" />
+    <Exec Command="dotnet test --filter &quot;$(DefaultIntegrationTestFilter)&quot; --logger trx --results-directory $(TestResultsDirectory) --collect:&quot;XPlat Code Coverage&quot;" />
+  </Target>
+
+  <Target Name="RunMockHardwareTests">
+    <Message Text="Running mock hardware tests with filter: $(DefaultMockHardwareTestFilter)" Importance="high" />
+    <Exec Command="dotnet test --filter &quot;$(DefaultMockHardwareTestFilter)&quot; --logger trx --results-directory $(TestResultsDirectory) --collect:&quot;XPlat Code Coverage&quot;" />
+  </Target>
+
+  <Target Name="RunPerformanceTests">
+    <Message Text="Running performance tests with filter: $(DefaultPerformanceTestFilter)" Importance="high" />
+    <Exec Command="dotnet test --filter &quot;$(DefaultPerformanceTestFilter)&quot; --logger trx --results-directory $(TestResultsDirectory) --collect:&quot;XPlat Code Coverage&quot;" />
+  </Target>
+
+  <Target Name="RunHardwareTests">
+    <Message Text="Running all hardware tests with filter: $(AllHardwareTestFilter)" Importance="high" />
+    <Exec Command="dotnet test --filter &quot;$(AllHardwareTestFilter)&quot; --logger trx --results-directory $(TestResultsDirectory) --collect:&quot;XPlat Code Coverage&quot;" />
+  </Target>
+
+  <Target Name="RunAllTests">
+    <Message Text="Running all tests" Importance="high" />
+    <Exec Command="dotnet test --logger trx --results-directory $(TestResultsDirectory) --collect:&quot;XPlat Code Coverage&quot;" />
+  </Target>
+
+</Project>

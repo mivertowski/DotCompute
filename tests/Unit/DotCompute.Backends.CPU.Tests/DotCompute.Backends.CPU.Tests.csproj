@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -15,6 +16,7 @@
     <PackageReference Include="BenchmarkDotNet.Annotations" Version="0.15.2" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,8 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Exclude problematic test files with API mismatches -->
-    <Compile Remove="CpuAcceleratorTests.cs" /> <!-- API mismatches with old test code -->
+    <!-- Exclude old problematic test files with API mismatches -->
     <Compile Remove="CpuKernelExecutorTests.cs" /> <!-- CpuKernelExecutor is internal -->
     <Compile Remove="PerformanceTests.cs" />
     <Compile Remove="CpuAcceleratorComprehensiveTests.cs" /> <!-- API mismatches with old test code -->
@@ -45,27 +46,6 @@
     <Compile Remove="CpuAcceleratorTestsClean.cs" /> <!-- API mismatches -->
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Update="FluentAssertions" Version="8.5.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="xunit" Version="2.9.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="xunit.extensibility.core" Version="2.9.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="xunit.runner.visualstudio" Version="3.1.3">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+  <!-- Test framework packages are included from tests/Directory.Build.targets -->
 
 </Project>

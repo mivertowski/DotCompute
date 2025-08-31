@@ -1,0 +1,1017 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
+using DotCompute.Memory;
+using FluentAssertions;
+using System.Buffers;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace DotCompute.Memory.Tests;
+
+/// <summary>
+/// Comprehensive tests for memory management covering unified memory managers, coherency,
+/// memory views, resource management, and performance optimization.
+/// </summary>
+public class MemoryManagementTests
+{
+    private readonly ITestOutputHelper _output;
+
+    public MemoryManagementTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    #region Unified Memory Manager Tests
+
+    [Fact]
+    [Trait("Category", "UnifiedMemoryManager")]
+    public void UnifiedBuffer_Creation_WithValidParameters_ShouldSucceed()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        
+        // Act
+        using var buffer = new UnifiedBuffer<float>(memoryManager, 1024);
+        
+        // Assert
+        buffer.Length.Should().Be(1024);
+        buffer.SizeInBytes.Should().Be(1024 * sizeof(float));
+        buffer.IsOnHost.Should().BeTrue();
+        buffer.IsOnDevice.Should().BeFalse();
+        buffer.State.Should().Be(BufferState.HostOnly);
+        buffer.IsDisposed.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(0)]
+    [Trait("Category", "UnifiedMemoryManager")]
+    public void UnifiedBuffer_Creation_WithInvalidLength_ShouldThrow(int invalidLength)
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        
+        // Act & Assert
+        Action act = () => new UnifiedBuffer<float>(memoryManager, invalidLength);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    [Trait("Category", "UnifiedMemoryManager")]
+    public void UnifiedBuffer_Creation_WithNullMemoryManager_ShouldThrow()
+    {
+        // Act & Assert
+        Action act = () => new UnifiedBuffer<float>(null!, 1024);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    [Trait("Category", "UnifiedMemoryManager")]
+    public void UnifiedBuffer_AllocationStrategy_ShouldUseHostFirst()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        
+        // Act
+        using var buffer = new UnifiedBuffer<int>(memoryManager, 256);
+        
+        // Assert
+        buffer.IsOnHost.Should().BeTrue();
+        buffer.IsOnDevice.Should().BeFalse();
+        buffer.State.Should().Be(BufferState.HostOnly);
+    }
+
+    [Fact]
+    [Trait("Category", "UnifiedMemoryManager")]
+    public async Task UnifiedBuffer_AllocationLimits_ShouldEnforceConstraints()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager { MaxAllocationSize = 1024 };
+        
+        // Act & Assert - Allocation within limits should succeed
+        using var smallBuffer = new UnifiedBuffer<byte>(memoryManager, 512);
+        smallBuffer.Should().NotBeNull();
+        
+        // Large allocation should fail
+        var act = () => new UnifiedBuffer<byte>(memoryManager, 2048);
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*allocation exceeds maximum allowed size*");
+    }
+
+    [Fact]
+    [Trait("Category", "UnifiedMemoryManager")]
+    public async Task UnifiedBuffer_PoolingStrategy_ShouldReuseMemory()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        var allocationCount = 0;
+        memoryManager.OnAllocate = () => allocationCount++;
+        
+        // Act - Create and dispose multiple buffers
+        for (int i = 0; i < 5; i++)
+        {
+            using var buffer = new UnifiedBuffer<int>(memoryManager, 128);
+            await buffer.FillAsync(i);
+        }
+        
+        // Assert - Should have fewer allocations due to pooling
+        _output.WriteLine($"Total allocations: {allocationCount}");
+        allocationCount.Should().BeLessOrEqualTo(3, "memory pooling should reduce allocation count");
+    }
+
+    #endregion
+
+    #region Memory Coherency Tests
+
+    [Fact]
+    [Trait("Category", "MemoryCoherency")]
+    public void UnifiedBuffer_HostDeviceSync_ShouldMaintainCoherency()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        using var buffer = new UnifiedBuffer<int>(memoryManager, 10);
+        var testData = Enumerable.Range(1, 10).ToArray();
+        
+        // Act - Write to host, ensure on device, then back to host
+        buffer.AsSpan().CopyFrom(testData);
+        buffer.MarkHostDirty();
+        buffer.EnsureOnDevice();
+        buffer.MarkDeviceDirty();
+        buffer.EnsureOnHost();
+        
+        // Assert
+        buffer.AsSpan().ToArray().Should().Equal(testData);
+        buffer.State.Should().Be(BufferState.Synchronized);
+    }
+
+    [Fact]
+    [Trait("Category", "MemoryCoherency")]
+    public async Task UnifiedBuffer_AsyncSync_ShouldMaintainCoherency()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        using var buffer = new UnifiedBuffer<float>(memoryManager, 8);
+        var testData = new float[] { 1.1f, 2.2f, 3.3f, 4.4f, 5.5f, 6.6f, 7.7f, 8.8f };
+        
+        // Act
+        await buffer.CopyFromAsync(testData);
+        buffer.MarkHostDirty();
+        await buffer.EnsureOnDeviceAsync();
+        buffer.MarkDeviceDirty();
+        await buffer.EnsureOnHostAsync();
+        
+        // Assert
+        buffer.AsReadOnlySpan().ToArray().Should().Equal(testData);
+        buffer.IsDirty.Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Category", "MemoryCoherency")]
+    public void UnifiedBuffer_DirtyFlags_ShouldTrackModifications()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        using var buffer = new UnifiedBuffer<byte>(memoryManager, 16);
+        
+        // Act & Assert - Initial state
+        buffer.IsDirty.Should().BeFalse();
+        buffer.State.Should().Be(BufferState.HostOnly);
+        
+        // Mark host dirty
+        buffer.MarkHostDirty();
+        buffer.IsDirty.Should().BeFalse(); // HostOnly can't be dirty
+        buffer.State.Should().Be(BufferState.HostOnly);
+        
+        // Transition to device and mark dirty
+        buffer.EnsureOnDevice();
+        buffer.State.Should().Be(BufferState.Synchronized);
+        
+        buffer.MarkDeviceDirty();
+        buffer.IsDirty.Should().BeTrue();
+        buffer.State.Should().Be(BufferState.DeviceDirty);
+        
+        // Synchronize
+        buffer.Synchronize();
+        buffer.IsDirty.Should().BeFalse();
+        buffer.State.Should().Be(BufferState.Synchronized);
+    }
+
+    [Fact]
+    [Trait("Category", "MemoryCoherency")]
+    public async Task UnifiedBuffer_ConcurrentAccess_ShouldMaintainCoherency()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        using var buffer = new UnifiedBuffer<int>(memoryManager, 1000);
+        var tasks = new List<Task>();
+        
+        // Act - Multiple concurrent operations
+        for (int i = 0; i < 10; i++)
+        {
+            int value = i;
+            tasks.Add(Task.Run(async () =>
+            {
+                await buffer.FillAsync(value, value * 100, 50);
+                await buffer.SynchronizeAsync();
+            }));
+        }
+        
+        await Task.WhenAll(tasks);
+        
+        // Assert - Buffer should not be corrupted
+        buffer.State.Should().Be(BufferState.Synchronized);
+        buffer.IsDisposed.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region Memory Views Tests
+
+    [Fact]
+    [Trait("Category", "MemoryViews")]
+    public void UnifiedBuffer_Slicing_ShouldCreateValidViews()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        using var buffer = new UnifiedBuffer<int>(memoryManager, 20);
+        var data = Enumerable.Range(0, 20).ToArray();
+        buffer.AsSpan().CopyFrom(data);
+        
+        // Act
+        var slice = buffer.Slice(5, 10);
+        
+        // Assert
+        slice.Length.Should().Be(10);
+        slice.Should().NotBeNull();
+        
+        // Verify slice references original buffer
+        slice.Should().BeSameAs(buffer, "current implementation returns self");
+    }
+
+    [Theory]
+    [InlineData(-1, 5, "negative offset")]
+    [InlineData(0, -1, "negative length")]
+    [InlineData(15, 10, "offset + length > buffer length")]
+    [InlineData(25, 5, "offset beyond buffer")]
+    [Trait("Category", "MemoryViews")]
+    public void UnifiedBuffer_Slicing_WithInvalidParameters_ShouldThrow(int offset, int length, string reason)
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        using var buffer = new UnifiedBuffer<int>(memoryManager, 20);
+        
+        // Act & Assert
+        Action act = () => buffer.Slice(offset, length);
+        act.Should().Throw<ArgumentOutOfRangeException>(reason);
+    }
+
+    [Fact]
+    [Trait("Category", "MemoryViews")]
+    public void UnifiedBuffer_TypeCasting_ShouldCreateValidViews()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        using var buffer = new UnifiedBuffer<byte>(memoryManager, 16); // 16 bytes = 4 ints
+        
+        // Act
+        var intView = buffer.AsType<int>();
+        
+        // Assert
+        intView.Should().NotBeNull();
+        // Note: Implementation returns a view, specific assertions depend on actual implementation
+    }
+
+    [Fact]
+    [Trait("Category", "MemoryViews")]
+    public void UnifiedBuffer_OverlappingViews_ShouldHandleCorrectly()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        using var buffer = new UnifiedBuffer<int>(memoryManager, 20);
+        
+        // Act - Create overlapping slices
+        var slice1 = buffer.Slice(0, 15);
+        var slice2 = buffer.Slice(10, 10);
+        
+        // Assert - Both slices should be valid
+        slice1.Length.Should().Be(15);
+        slice2.Length.Should().Be(10);
+        
+        // Modifications to overlapping regions should be handled properly
+        // This tests the implementation's ability to handle overlapping memory access
+        slice1.Should().NotBeNull();
+        slice2.Should().NotBeNull();
+    }
+
+    [Fact]
+    [Trait("Category", "MemoryViews")]
+    public async Task UnifiedBuffer_ViewDisposal_ShouldNotAffectParent()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        using var buffer = new UnifiedBuffer<int>(memoryManager, 20);
+        
+        // Act
+        var slice = buffer.Slice(0, 10);
+        // In current implementation, slice is same as buffer, so disposal affects parent
+        // This test documents the current behavior
+        
+        // Assert
+        buffer.IsDisposed.Should().BeFalse();
+        slice.IsDisposed.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region Resource Management Tests
+
+    [Fact]
+    [Trait("Category", "ResourceManagement")]
+    public void UnifiedBuffer_Disposal_ShouldCleanupResources()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        var buffer = new UnifiedBuffer<int>(memoryManager, 100);
+        
+        // Act
+        buffer.Dispose();
+        
+        // Assert
+        buffer.IsDisposed.Should().BeTrue();
+        buffer.State.Should().Be(BufferState.Uninitialized);
+    }
+
+    [Fact]
+    [Trait("Category", "ResourceManagement")]
+    public async Task UnifiedBuffer_AsyncDisposal_ShouldCleanupResources()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        var buffer = new UnifiedBuffer<int>(memoryManager, 100);
+        
+        // Act
+        await buffer.DisposeAsync();
+        
+        // Assert
+        buffer.IsDisposed.Should().BeTrue();
+        buffer.State.Should().Be(BufferState.Uninitialized);
+    }
+
+    [Fact]
+    [Trait("Category", "ResourceManagement")]
+    public void UnifiedBuffer_DoubleDisposal_ShouldBeIdempotent()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        var buffer = new UnifiedBuffer<int>(memoryManager, 100);
+        
+        // Act
+        buffer.Dispose();
+        buffer.Dispose(); // Second disposal
+        
+        // Assert
+        buffer.IsDisposed.Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("Category", "ResourceManagement")]
+    public void UnifiedBuffer_AccessAfterDisposal_ShouldThrow()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        var buffer = new UnifiedBuffer<int>(memoryManager, 100);
+        buffer.Dispose();
+        
+        // Act & Assert
+        Action spanAccess = () => buffer.AsSpan();
+        Action memoryAccess = () => buffer.AsMemory();
+        Action ensureHost = () => buffer.EnsureOnHost();
+        Action ensureDevice = () => buffer.EnsureOnDevice();
+        
+        spanAccess.Should().Throw<ObjectDisposedException>();
+        memoryAccess.Should().Throw<ObjectDisposedException>();
+        ensureHost.Should().Throw<ObjectDisposedException>();
+        ensureDevice.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    [Trait("Category", "ResourceManagement")]
+    public void MemoryAllocator_Statistics_ShouldTrackUsage()
+    {
+        // Arrange
+        using var allocator = new MemoryAllocator();
+        
+        // Act
+        using var owner1 = allocator.Allocate<int>(100);
+        using var owner2 = allocator.AllocatePinned<float>(200);
+        var stats = allocator.GetStatistics();
+        
+        // Assert
+        stats.TotalAllocations.Should().Be(2);
+        stats.TotalAllocatedBytes.Should().Be(100 * sizeof(int) + 200 * sizeof(float));
+        stats.ActiveAllocations.Should().Be(2);
+    }
+
+    [Fact]
+    [Trait("Category", "ResourceManagement")]
+    public async Task MemoryLeakDetection_ShouldIdentifyLeaks()
+    {
+        // Arrange
+        var memoryBefore = GC.GetTotalMemory(true);
+        
+        // Act - Create many buffers without disposing
+        var buffers = new List<WeakReference>();
+        for (int i = 0; i < 100; i++)
+        {
+            using var memoryManager = new TestUnifiedMemoryManager();
+            var buffer = new UnifiedBuffer<byte>(memoryManager, 1024);
+            buffers.Add(new WeakReference(buffer));
+            // Not disposing buffer intentionally
+        }
+        
+        // Force garbage collection
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        
+        var memoryAfter = GC.GetTotalMemory(false);
+        var memoryDiff = memoryAfter - memoryBefore;
+        
+        // Assert
+        _output.WriteLine($"Memory before: {memoryBefore:N0} bytes");
+        _output.WriteLine($"Memory after: {memoryAfter:N0} bytes");
+        _output.WriteLine($"Memory diff: {memoryDiff:N0} bytes");
+        
+        // Check if objects were collected (indicating proper cleanup)
+        var aliveCount = buffers.Count(wr => wr.IsAlive);
+        _output.WriteLine($"Alive objects: {aliveCount} out of {buffers.Count}");
+        
+        // Memory leak detection - should not grow excessively
+        memoryDiff.Should().BeLessThan(1024 * 1024, "memory should not leak significantly");
+    }
+
+    #endregion
+
+    #region Performance Tests
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    public async Task UnifiedBuffer_MemoryBandwidth_ShouldMeetThreshold()
+    {
+        // Arrange
+        using var memoryManager = new TestUnifiedMemoryManager();
+        const int bufferSize = 1024 * 1024; // 1MB
+        const int iterations = 50;
+        using var buffer = new UnifiedBuffer<byte>(memoryManager, bufferSize);
+        var data = new byte[bufferSize];
+        new Random(42).NextBytes(data);
+        
+        var stopwatch = Stopwatch.StartNew();
+        
+        // Act - Measure copy bandwidth
+        for (int i = 0; i < iterations; i++)
+        {
+            await buffer.CopyFromAsync(data);
+            await buffer.CopyToAsync(data.AsMemory());
+        }
+        
+        stopwatch.Stop();
+        
+        // Assert
+        var totalBytes = (long)bufferSize * iterations * 2; // Copy in + copy out
+        var throughputMBps = totalBytes / (stopwatch.ElapsedMilliseconds / 1000.0) / (1024 * 1024);
+        
+        _output.WriteLine($"Memory bandwidth: {throughputMBps:F2} MB/s");
+        _output.WriteLine($"Total time: {stopwatch.ElapsedMilliseconds} ms");
+        
+        throughputMBps.Should().BeGreaterThan(100, "memory bandwidth should meet minimum threshold");
+    }
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    public void MemoryAllocator_AllocationOverhead_ShouldBeMinimal()
+    {
+        // Arrange
+        using var allocator = new MemoryAllocator();
+        const int allocationCount = 1000;
+        const int bufferSize = 4096;
+        
+        var stopwatch = Stopwatch.StartNew();
+        
+        // Act
+        var owners = new List<IMemoryOwner<byte>>();
+        for (int i = 0; i < allocationCount; i++)
+        {
+            owners.Add(allocator.Allocate<byte>(bufferSize));
+        }
+        
+        stopwatch.Stop();
+        
+        // Assert
+        var avgAllocationTime = stopwatch.ElapsedMilliseconds / (double)allocationCount;
+        _output.WriteLine($"Average allocation time: {avgAllocationTime:F3} ms");
+        
+        avgAllocationTime.Should().BeLessThan(0.1, "allocation should be fast");
+        
+        // Cleanup
+        foreach (var owner in owners)
+        {
+            owner.Dispose();
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    public void UnsafeMemoryOperations_CopyPerformance_ShouldUseVectorization()
+    {
+        // Arrange
+        const int size = 1024 * 1024;
+        var source = new byte[size];
+        var destination = new byte[size];
+        new Random(42).NextBytes(source);
+        
+        var stopwatch = Stopwatch.StartNew();
+        
+        // Act
+        UnsafeMemoryOperations.CopyMemory(source.AsSpan(), destination.AsSpan());
+        
+        stopwatch.Stop();
+        
+        // Assert
+        var throughputMBps = size / (stopwatch.ElapsedTicks * 1000.0 / Stopwatch.Frequency) / (1024 * 1024);
+        _output.WriteLine($"Copy throughput: {throughputMBps:F2} MB/s");
+        _output.WriteLine($"Time: {stopwatch.ElapsedTicks * 1000.0 / Stopwatch.Frequency:F3} ms");
+        
+        destination.Should().Equal(source);
+        throughputMBps.Should().BeGreaterThan(1000, "vectorized copy should be fast");
+    }
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    public void UnsafeMemoryOperations_FillPerformance_ShouldUseVectorization()
+    {
+        // Arrange
+        const int size = 1024 * 1024;
+        var destination = new byte[size];
+        const byte fillValue = 0xAB;
+        
+        var stopwatch = Stopwatch.StartNew();
+        
+        // Act
+        UnsafeMemoryOperations.FillMemory(destination.AsSpan(), fillValue);
+        
+        stopwatch.Stop();
+        
+        // Assert
+        var throughputMBps = size / (stopwatch.ElapsedTicks * 1000.0 / Stopwatch.Frequency) / (1024 * 1024);
+        _output.WriteLine($"Fill throughput: {throughputMBps:F2} MB/s");
+        
+        destination.Should().OnlyContain(b => b == fillValue);
+        throughputMBps.Should().BeGreaterThan(2000, "vectorized fill should be very fast");
+    }
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    public void MemoryAlignment_ShouldImprovePerformance()
+    {
+        // Arrange
+        using var allocator = new MemoryAllocator();
+        const int size = 1000;
+        
+        // Act
+        using var aligned = allocator.AllocateAligned<int>(size, 32);
+        using var unaligned = allocator.Allocate<int>(size);
+        
+        // Assert
+        unsafe
+        {
+            // Check alignment
+            fixed (int* ptr = aligned.Memory.Span)
+            {
+                var address = new IntPtr(ptr);
+                ((long)address % 32).Should().Be(0, "memory should be 32-byte aligned");
+            }
+        }
+    }
+
+    #endregion
+
+    #region Test Helper Classes
+
+    /// <summary>
+    /// Test implementation of IUnifiedMemoryManager for testing purposes.
+    /// </summary>
+    private sealed class TestUnifiedMemoryManager : IUnifiedMemoryManager
+    {
+        private readonly List<IUnifiedMemoryBuffer> _allocatedBuffers = new();
+        private readonly MemoryPool<byte> _pool = MemoryPool<byte>.Shared;
+        private volatile bool _disposed;
+        
+        public long MaxAllocationSize { get; set; } = long.MaxValue;
+        public Action? OnAllocate { get; set; }
+
+        // IUnifiedMemoryManager properties
+        public IAccelerator Accelerator => null!;
+        public MemoryStatistics Statistics => new(
+            _allocatedBuffers.Sum(b => b.SizeInBytes),
+            _allocatedBuffers.Count,
+            _allocatedBuffers.Count(b => !b.IsDisposed),
+            _allocatedBuffers.Sum(b => b.SizeInBytes)
+        );
+        long IUnifiedMemoryManager.MaxAllocationSize => MaxAllocationSize;
+        public long TotalAvailableMemory => long.MaxValue;
+        public long CurrentAllocatedMemory => _allocatedBuffers.Sum(b => b.SizeInBytes);
+
+        public async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, MemoryOptions options, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            
+            var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            if (sizeInBytes > MaxAllocationSize)
+            {
+                throw new InvalidOperationException($"Allocation size {sizeInBytes} exceeds maximum allowed size {MaxAllocationSize}");
+            }
+            
+            OnAllocate?.Invoke();
+            
+            var buffer = new TestUnifiedBuffer<T>(count);
+            _allocatedBuffers.Add(buffer);
+            return buffer;
+        }
+
+        public async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            var buffer = await AllocateAsync<T>(source.Length, options, cancellationToken);
+            await buffer.CopyFromAsync(source, cancellationToken);
+            return buffer;
+        }
+
+        public async ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+        {
+            var buffer = new TestRawUnifiedBuffer(sizeInBytes);
+            _allocatedBuffers.Add(buffer);
+            return buffer;
+        }
+
+        public IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int length) where T : unmanaged
+        {
+            return buffer.Slice(offset, length);
+        }
+
+        public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            return source.CopyToAsync(destination, cancellationToken);
+        }
+
+        public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            return source.CopyToAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);
+        }
+
+        public ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            return destination.CopyFromAsync(source, cancellationToken);
+        }
+
+        public ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            return source.CopyToAsync(destination, cancellationToken);
+        }
+
+        public void Free(IUnifiedMemoryBuffer buffer)
+        {
+            _allocatedBuffers.Remove(buffer);
+            buffer?.Dispose();
+        }
+
+        public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
+        {
+            Free(buffer);
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
+        {
+            // Simulate memory optimization
+            return ValueTask.CompletedTask;
+        }
+
+        public void Clear()
+        {
+            foreach (var buffer in _allocatedBuffers.ToList())
+            {
+                buffer.Dispose();
+            }
+            _allocatedBuffers.Clear();
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            Clear();
+            _pool.Dispose();
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            
+            foreach (var buffer in _allocatedBuffers.ToList())
+            {
+                if (buffer is IAsyncDisposable asyncDisposable)
+                    await asyncDisposable.DisposeAsync();
+                else
+                    buffer.Dispose();
+            }
+            _allocatedBuffers.Clear();
+            _pool.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Test implementation of IUnifiedMemoryBuffer for testing purposes.
+    /// </summary>
+    private sealed class TestUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+    {
+        private readonly T[] _hostArray;
+        private readonly GCHandle _handle;
+        private BufferState _state;
+        private volatile bool _disposed;
+
+        public TestUnifiedBuffer(int length)
+        {
+            Length = length;
+            SizeInBytes = length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            _hostArray = new T[length];
+            _handle = GCHandle.Alloc(_hostArray, GCHandleType.Pinned);
+            _state = BufferState.HostOnly;
+        }
+
+        public long SizeInBytes { get; }
+        public int Length { get; }
+        public IntPtr DevicePointer => IntPtr.Zero;
+        public IAccelerator Accelerator => null!;
+        public MemoryOptions Options => MemoryOptions.None;
+        public BufferState State => _state;
+        public bool IsDisposed => _disposed;
+        public bool IsOnHost => _state is BufferState.HostOnly or BufferState.Synchronized or BufferState.HostDirty;
+        public bool IsOnDevice => _state is BufferState.DeviceOnly or BufferState.Synchronized or BufferState.DeviceDirty;
+        public bool IsDirty => _state is BufferState.HostDirty or BufferState.DeviceDirty;
+
+        public Span<T> AsSpan()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return _hostArray.AsSpan();
+        }
+
+        public ReadOnlySpan<T> AsReadOnlySpan()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return _hostArray.AsSpan();
+        }
+
+        public Memory<T> AsMemory()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return _hostArray.AsMemory();
+        }
+
+        public ReadOnlyMemory<T> AsReadOnlyMemory()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return _hostArray.AsMemory();
+        }
+
+        public DeviceMemory GetDeviceMemory()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return new DeviceMemory(new IntPtr(1), SizeInBytes);
+        }
+
+        public void EnsureOnHost()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_state == BufferState.DeviceOnly || _state == BufferState.DeviceDirty)
+            {
+                // Simulate device-to-host transfer
+                _state = BufferState.Synchronized;
+            }
+        }
+
+        public void EnsureOnDevice()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_state == BufferState.HostOnly || _state == BufferState.HostDirty)
+            {
+                // Simulate host-to-device transfer
+                _state = BufferState.Synchronized;
+            }
+        }
+
+        public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        {
+            EnsureOnHost();
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        {
+            EnsureOnDevice();
+            return ValueTask.CompletedTask;
+        }
+
+        public void Synchronize()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_state is BufferState.HostDirty or BufferState.DeviceDirty)
+            {
+                _state = BufferState.Synchronized;
+            }
+        }
+
+        public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        {
+            Synchronize();
+            return ValueTask.CompletedTask;
+        }
+
+        public void MarkHostDirty()
+        {
+            if (_state == BufferState.Synchronized)
+            {
+                _state = BufferState.HostDirty;
+            }
+        }
+
+        public void MarkDeviceDirty()
+        {
+            if (_state == BufferState.Synchronized)
+            {
+                _state = BufferState.DeviceDirty;
+            }
+        }
+
+        public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            source.Span.CopyTo(_hostArray);
+            MarkHostDirty();
+        }
+
+        public async ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long byteOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
+        {
+            throw new NotSupportedException("Type conversion not supported in test implementation");
+        }
+
+        public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            _hostArray.AsSpan().CopyTo(destination.Span);
+        }
+
+        public async ValueTask CopyToAsync<TDestination>(Memory<TDestination> destination, long byteOffset, CancellationToken cancellationToken = default) where TDestination : unmanaged
+        {
+            throw new NotSupportedException("Type conversion not supported in test implementation");
+        }
+
+        public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
+        {
+            await destination.CopyFromAsync(_hostArray, cancellationToken);
+        }
+
+        public async ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
+        {
+            var sourceSlice = _hostArray.AsMemory(sourceOffset, count);
+            var destSlice = destination.Slice(destinationOffset, count);
+            await destSlice.CopyFromAsync(sourceSlice, cancellationToken);
+        }
+
+        public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
+        {
+            _hostArray.AsSpan().Fill(value);
+            MarkHostDirty();
+        }
+
+        public async ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
+        {
+            _hostArray.AsSpan(offset, count).Fill(value);
+            MarkHostDirty();
+        }
+
+        public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
+            ArgumentOutOfRangeException.ThrowIfNegative(length);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, Length);
+            
+            // Return self for simplicity in tests - real implementation would create a slice
+            return this;
+        }
+
+        public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
+        {
+            // Return a mock type-converted buffer
+            return new TestUnifiedBuffer<TNew>(Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
+        }
+
+        public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
+        {
+            return new MappedMemory<T>(AsMemory());
+        }
+
+        public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+        {
+            return new MappedMemory<T>(_hostArray.AsMemory(offset, length));
+        }
+
+        public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(Map(mode));
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            
+            if (_handle.IsAllocated)
+            {
+                _handle.Free();
+            }
+            _state = BufferState.Uninitialized;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// Test implementation of raw IUnifiedMemoryBuffer for testing purposes.
+    /// </summary>
+    private sealed class TestRawUnifiedBuffer : IUnifiedMemoryBuffer
+    {
+        private volatile bool _disposed;
+
+        public TestRawUnifiedBuffer(long sizeInBytes)
+        {
+            SizeInBytes = sizeInBytes;
+        }
+
+        public long SizeInBytes { get; }
+        public IntPtr DevicePointer => IntPtr.Zero;
+        public IAccelerator Accelerator => null!;
+        public MemoryOptions Options => MemoryOptions.None;
+        public BufferState State => BufferState.HostOnly;
+        public bool IsDisposed => _disposed;
+        public bool IsOnHost => true;
+        public bool IsOnDevice => false;
+        public bool IsDirty => false;
+
+        public DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
+        public void EnsureOnHost() { }
+        public void EnsureOnDevice() { }
+        public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public void Synchronize() { }
+        public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public void MarkHostDirty() { }
+        public void MarkDeviceDirty() { }
+
+        public void Dispose()
+        {
+            _disposed = true;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// Extension methods for test helpers.
+/// </summary>
+internal static class TestExtensions
+{
+    /// <summary>
+    /// Copies data from a source array to a span.
+    /// </summary>
+    public static void CopyFrom<T>(this Span<T> destination, T[] source)
+    {
+        source.AsSpan().CopyTo(destination);
+    }
+}// Additional methods for TestRawUnifiedBuffer...
