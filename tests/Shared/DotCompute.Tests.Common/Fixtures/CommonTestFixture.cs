@@ -13,7 +13,7 @@ namespace DotCompute.Tests.Common.Fixtures;
 /// </summary>
 public class CommonTestFixture : IDisposable, IAsyncDisposable
 {
-    private bool _disposed = false;
+    private bool _disposed;
     
     /// <summary>
     /// Gets the test output helper for logging test information.

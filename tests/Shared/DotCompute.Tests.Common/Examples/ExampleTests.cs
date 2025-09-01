@@ -72,7 +72,7 @@ public class ExampleTests : TestBase
     public void Example_MemoryTracking()
     {
         // Capture initial memory state
-        var initialMemory = GetMemoryUsageDelta();
+        _ = GetMemoryUsageDelta();
         
         // Act - Allocate and process data
         var largeDataSet = TestDataFixture.Large.RandomFloats;

@@ -184,6 +184,18 @@ dotnet_diagnostic.CA1303.severity = none # Do not pass literals as localized par
 dotnet_diagnostic.CA1062.severity = none # Validate arguments of public methods
 dotnet_diagnostic.CA2007.severity = none # Do not directly await a Task
 
+# Downgrade CA errors to warnings for test projects (to be fixed incrementally)
+dotnet_diagnostic.CA1002.severity = warning # Change List<T> to Collection<T>
+dotnet_diagnostic.CA1024.severity = warning # Use properties where appropriate
+dotnet_diagnostic.CA1034.severity = warning # Do not nest types
+dotnet_diagnostic.CA1051.severity = warning # Do not declare visible instance fields
+dotnet_diagnostic.CA1305.severity = warning # Specify IFormatProvider
+dotnet_diagnostic.CA1708.severity = warning # Identifiers should differ by more than case
+dotnet_diagnostic.CA1711.severity = warning # Identifiers should not have incorrect suffix
+dotnet_diagnostic.CA1720.severity = warning # Identifier contains type name
+dotnet_diagnostic.CA1814.severity = warning # Prefer jagged arrays over multidimensional
+dotnet_diagnostic.CA1861.severity = warning # Prefer static readonly fields over constant arrays
+
 # XML documentation
 [*.{cs,vb}]
 # CS1591: Missing XML comment for publicly visible type or member

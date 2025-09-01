@@ -17,7 +17,7 @@ namespace DotCompute.Tests.Common.Base;
 /// </summary>
 public abstract class TestBase : IDisposable
 {
-    private bool _disposed = false;
+    private bool _disposed;
     
     /// <summary>
     /// Gets the test output helper for logging test information.

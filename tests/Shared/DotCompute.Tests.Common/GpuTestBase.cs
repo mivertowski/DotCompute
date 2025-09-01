@@ -12,7 +12,11 @@ namespace DotCompute.Tests.Common;
 /// </summary>
 public class SkipException : Exception
 {
+    public SkipException() : base() { }
+    
     public SkipException(string message) : base(message) { }
+    
+    public SkipException(string message, Exception innerException) : base(message, innerException) { }
 }
 
 /// <summary>
