@@ -316,7 +316,7 @@ public sealed class CudaErrorHandler : IDisposable
                 if (result == CudaError.Success)
                 {
                     // Trigger memory compaction if available
-                    _ = CudaRuntime.cudaMemGetInfo(out nuint free, out nuint total);
+                    _ = CudaRuntime.cudaMemGetInfo(out var free, out var total);
                     
                     _logger.LogInformation(
                         "Memory cleanup completed. Free: {Free:N0} MB, Total: {Total:N0} MB",
@@ -483,11 +483,9 @@ public sealed class CudaErrorHandler : IDisposable
     /// Disposes the error handler resources.
     /// </summary>
     public void Dispose()
-    {
         // CudaErrorHandler doesn't hold disposable resources directly,
         // but we clear statistics as cleanup
-        ClearStatistics();
-    }
+        => ClearStatistics();
 
     /// <summary>
     /// Error statistics tracking.

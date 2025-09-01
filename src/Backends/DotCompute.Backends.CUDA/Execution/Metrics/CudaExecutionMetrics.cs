@@ -92,5 +92,4 @@ namespace DotCompute.Backends.CUDA.Execution.Metrics
         /// </summary>
         public double EfficiencyScore { get; init; }
     }
-
 }

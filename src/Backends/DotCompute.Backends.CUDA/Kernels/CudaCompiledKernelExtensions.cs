@@ -25,7 +25,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             byte[] compiledCode,
             CompilationOptions? options,
             ILogger logger,
-            ICompilationMetadata? metadata = null) => new CudaCompiledKernel(context, name, entryPoint, compiledCode, options, logger);
+            ICompilationMetadata? metadata = null) => new(context, name, entryPoint, compiledCode, options, logger);
 
         /// <summary>
         /// Gets optimal launch configuration for Ada generation and newer architectures.

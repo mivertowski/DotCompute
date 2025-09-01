@@ -59,12 +59,12 @@ public class RecoveryCoordinatorConfiguration
     /// <summary>
     /// Gets or sets the recovery strategies to use.
     /// </summary>
-    public List<RecoveryStrategyConfig> RecoveryStrategies { get; set; } = new();
+    public List<RecoveryStrategyConfig> RecoveryStrategies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the components to monitor.
     /// </summary>
-    public List<string> MonitoredComponents { get; set; } = new();
+    public List<string> MonitoredComponents { get; set; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether to enable recovery metrics.
@@ -90,12 +90,12 @@ public class RecoveryCoordinatorConfiguration
     /// <summary>
     /// Gets or sets the notification endpoints.
     /// </summary>
-    public List<string> NotificationEndpoints { get; set; } = new();
+    public List<string> NotificationEndpoints { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the recovery priority levels.
     /// </summary>
-    public Dictionary<string, int> ComponentPriorities { get; set; } = new();
+    public Dictionary<string, int> ComponentPriorities { get; set; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether to enable failover.
@@ -116,7 +116,7 @@ public class RecoveryCoordinatorConfiguration
     /// <summary>
     /// Gets or sets custom recovery parameters.
     /// </summary>
-    public Dictionary<string, object> CustomParameters { get; set; } = new();
+    public Dictionary<string, object> CustomParameters { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the GPU recovery configuration.
@@ -182,7 +182,7 @@ public class RecoveryStrategyConfig
     /// <summary>
     /// Gets or sets strategy-specific parameters.
     /// </summary>
-    public Dictionary<string, object> Parameters { get; set; } = new();
+    public Dictionary<string, object> Parameters { get; set; } = [];
 }
 
 /// <summary>
@@ -193,7 +193,7 @@ public class FailoverConfiguration
     /// <summary>
     /// Gets or sets the failover targets.
     /// </summary>
-    public List<string> FailoverTargets { get; set; } = new();
+    public List<string> FailoverTargets { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the failover timeout.

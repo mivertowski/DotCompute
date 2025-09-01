@@ -63,7 +63,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var hostA = new float[elementCount];
             var hostB = new float[elementCount];
             
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostA[i] = i * 0.5f;
                 hostB[i] = i * 0.3f;
@@ -101,7 +101,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var result = new float[elementCount];
             await deviceC.ReadAsync(result.AsSpan(), 0);
             
-            for (int i = 0; i < Math.Min(100, elementCount); i++)
+            for (var i = 0; i < Math.Min(100, elementCount); i++)
             {
                 result[i].Should().BeApproximately(hostA[i] + hostB[i], 0.0001f, $"at index {i}");
             }
@@ -123,7 +123,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int elementCount = 2048;
             
             var hostData = new float[elementCount];
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostData[i] = i * 0.1f;
             }
@@ -156,7 +156,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var result = new float[elementCount];
             await deviceData.ReadAsync(result.AsSpan(), 0);
             
-            for (int i = 0; i < Math.Min(100, elementCount); i++)
+            for (var i = 0; i < Math.Min(100, elementCount); i++)
             {
                 var expected = hostData[i] * 2.0f * 1.5f;
                 result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
@@ -181,7 +181,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var hostA = new float[elementCount];
             var hostB = new float[elementCount];
             
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostA[i] = i * 0.2f;
                 hostB[i] = (i + 1) * 0.3f;
@@ -224,7 +224,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var result = new float[elementCount];
             await deviceD.ReadAsync(result.AsSpan(), 0);
             
-            for (int i = 0; i < Math.Min(100, elementCount); i++)
+            for (var i = 0; i < Math.Min(100, elementCount); i++)
             {
                 var expected = hostA[i] * hostB[i] * 2.0f;
                 result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
@@ -248,7 +248,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int iterations = 100;
             
             var hostData = new float[elementCount];
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostData[i] = i * 0.1f;
             }
@@ -265,7 +265,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Test individual kernel launches
             var individualTimes = new double[iterations];
             
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
                 await kernel.LaunchAsync(launchConfig, deviceData, 1.01f, elementCount);
@@ -282,7 +282,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Test graph execution
             var graphTimes = new double[iterations];
             
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
                 await executableGraph.LaunchAsync();
@@ -316,7 +316,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int elementCount = 1024;
             
             var hostInput = new float[elementCount];
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostInput[i] = i + 1.0f; // Start with values 1, 2, 3, ...
             }
@@ -356,7 +356,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var result = new float[elementCount];
             await deviceOutput.ReadAsync(result.AsSpan(), 0);
             
-            for (int i = 0; i < Math.Min(100, elementCount); i++)
+            for (var i = 0; i < Math.Min(100, elementCount); i++)
             {
                 var expected = hostInput[i] * 3.0f; // input + (input * 2.0)
                 result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
@@ -378,7 +378,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int elementCount = 1024;
             
             var hostData = new float[elementCount];
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostData[i] = (float)Math.Sin(i * 0.01);
             }
@@ -408,7 +408,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceDst1.ReadAsync(result1.AsSpan(), 0);
             await deviceDst2.ReadAsync(result2.AsSpan(), 0);
             
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 result1[i].Should().BeApproximately(hostData[i], 0.0001f, $"dst1 at index {i}");
                 result2[i].Should().BeApproximately(hostData[i], 0.0001f, $"dst2 at index {i}");
@@ -432,7 +432,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int elementCount = 512;
             
             var hostData = new float[elementCount];
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostData[i] = i * 0.1f;
             }

@@ -63,7 +63,7 @@ public class MemoryPerformanceTests : GpuTestBase
         try
         {
             // Act - Measure allocation performance
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var sw = Stopwatch.StartNew();
                 var buffer = await _memoryManager.AllocateAsync(sizeBytes, _cts.Token);
@@ -126,7 +126,7 @@ public class MemoryPerformanceTests : GpuTestBase
         try
         {
             // Warmup
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 var warmupBuffer1 = await pooledManager.AllocateAsync(bufferSize, _cts.Token);
                 var warmupBuffer2 = await unpooledManager.AllocateAsync(bufferSize, _cts.Token);
@@ -137,7 +137,7 @@ public class MemoryPerformanceTests : GpuTestBase
             perfContext.Checkpoint("Warmup completed");
 
             // Test pooled allocations
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var sw = Stopwatch.StartNew();
                 var buffer = await pooledManager.AllocateAsync(bufferSize, _cts.Token);
@@ -150,7 +150,7 @@ public class MemoryPerformanceTests : GpuTestBase
             perfContext.Checkpoint("Pooled allocations completed");
 
             // Test unpooled allocations
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var sw = Stopwatch.StartNew();
                 var buffer = await unpooledManager.AllocateAsync(bufferSize, _cts.Token);
@@ -209,7 +209,7 @@ public class MemoryPerformanceTests : GpuTestBase
         using var deviceBuffer = await _memoryManager.AllocateAsync(sizeBytes, _cts.Token);
 
         // Warmup
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             await deviceBuffer.CopyFromAsync(hostData, _cts.Token);
         }
@@ -217,7 +217,7 @@ public class MemoryPerformanceTests : GpuTestBase
         perfContext.Checkpoint("Warmup completed");
 
         // Act - Measure transfer performance
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             var sw = Stopwatch.StartNew();
             await deviceBuffer.CopyFromAsync(hostData, _cts.Token);
@@ -265,7 +265,7 @@ public class MemoryPerformanceTests : GpuTestBase
         await deviceBuffer.CopyFromAsync(initData, _cts.Token);
 
         // Warmup
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             await deviceBuffer.CopyToAsync(hostData, _cts.Token);
         }
@@ -273,7 +273,7 @@ public class MemoryPerformanceTests : GpuTestBase
         perfContext.Checkpoint("Warmup completed");
 
         // Act - Measure transfer performance
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             var sw = Stopwatch.StartNew();
             await deviceBuffer.CopyToAsync(hostData, _cts.Token);
@@ -316,7 +316,7 @@ public class MemoryPerformanceTests : GpuTestBase
         await sourceBuffer.CopyFromAsync(initData, _cts.Token);
 
         // Warmup
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             await sourceBuffer.CopyToAsync(destBuffer, _cts.Token);
         }
@@ -324,7 +324,7 @@ public class MemoryPerformanceTests : GpuTestBase
         perfContext.Checkpoint("Warmup completed");
 
         // Act - Measure D2D transfer performance
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             var sw = Stopwatch.StartNew();
             await sourceBuffer.CopyToAsync(destBuffer, _cts.Token);
@@ -380,7 +380,7 @@ public class MemoryPerformanceTests : GpuTestBase
             {
                 var threadResults = new List<AllocationResult>();
                 
-                for (int i = 0; i < allocationsPerThread; i++)
+                for (var i = 0; i < allocationsPerThread; i++)
                 {
                     await semaphore.WaitAsync(_cts.Token);
                     try
@@ -483,7 +483,7 @@ public class MemoryPerformanceTests : GpuTestBase
         var buffers = new List<IMemoryBuffer>();
         var hostBuffers = new List<float[]>();
         
-        for (int i = 0; i < concurrentTransfers; i++)
+        for (var i = 0; i < concurrentTransfers; i++)
         {
             buffers.Add(await _memoryManager.AllocateAsync(bufferSize, _cts.Token));
             hostBuffers.Add(GenerateRandomFloats(bufferSize / sizeof(float)));
@@ -502,7 +502,7 @@ public class MemoryPerformanceTests : GpuTestBase
                     var deviceBuffer = buffers[threadId];
                     var hostBuffer = hostBuffers[threadId];
                     
-                    for (int i = 0; i < transfersPerThread; i++)
+                    for (var i = 0; i < transfersPerThread; i++)
                     {
                         // H2D Transfer
                         var h2dSw = Stopwatch.StartNew();
@@ -596,7 +596,7 @@ public class MemoryPerformanceTests : GpuTestBase
         yield return new object[] { 64 * 1024 * 1024, "64 MB" };
     }
 
-    private double CalculateStandardDeviation(IEnumerable<double> values)
+    private static double CalculateStandardDeviation(IEnumerable<double> values)
     {
         var valuesList = values.ToList();
         var mean = valuesList.Average();
@@ -604,8 +604,8 @@ public class MemoryPerformanceTests : GpuTestBase
         return Math.Sqrt(sumSquaredDiffs / valuesList.Count);
     }
 
-    private double GetTheoreticalBandwidth() => 16.0; // GB/s - PCIe 4.0 x16 theoretical
-    private double GetTheoreticalInternalBandwidth() => 900.0; // GB/s - High-end GPU memory bandwidth
+    private static double GetTheoreticalBandwidth() => 16.0; // GB/s - PCIe 4.0 x16 theoretical
+    private static double GetTheoreticalInternalBandwidth() => 900.0; // GB/s - High-end GPU memory bandwidth
 
     private double CalculateAverageBandwidth(List<TransferResult> results)
     {
@@ -664,7 +664,7 @@ internal class MockMemoryManager : IUnifiedMemoryManager
     public MockMemoryManager(bool usePool = true)
     {
         _usePool = usePool;
-        _pool = new Dictionary<int, Queue<MockMemoryBuffer>>();
+        _pool = [];
     }
 
     public async ValueTask<IMemoryBuffer> AllocateAsync(long sizeBytes, CancellationToken cancellationToken = default)
@@ -688,11 +688,10 @@ internal class MockMemoryManager : IUnifiedMemoryManager
     }
 
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
         // Simulate synchronization delay
-        return new ValueTask(Task.Delay(_random.Next(1, 3), cancellationToken));
-    }
-    
+        => new(Task.Delay(_random.Next(1, 3), cancellationToken));
+
+
     internal void ReturnToPool(MockMemoryBuffer buffer)
     {
         if (!_usePool) return;
@@ -709,7 +708,7 @@ internal class MockMemoryManager : IUnifiedMemoryManager
         }
     }
     
-    private int GetSizeKey(long size) => (int)(size / (1024 * 1024)); // Group by MB
+    private static int GetSizeKey(long size) => (int)(size / (1024 * 1024)); // Group by MB
 
     public ValueTask DisposeAsync()
     {

@@ -218,7 +218,7 @@ public class DefaultKernelFactory : IKernelFactory
                 .Where(p => p.Direction is ParameterDirection.In or ParameterDirection.InOut)
                 .Select(p => p.Type)];
         }
-        return Array.Empty<Type>();
+        return [];
     }
 
     private static Type ExtractOutputType(DotCompute.Abstractions.Kernels.KernelDefinition definition)
@@ -342,7 +342,7 @@ internal class PlaceholderKernel : IKernel
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the compilation operation.</returns>
-    public Task CompileAsync(CancellationToken cancellationToken = default)
+    public static Task CompileAsync(CancellationToken cancellationToken = default)
         // Placeholder compilation - just return completed task
 
         => Task.CompletedTask;
@@ -354,7 +354,7 @@ internal class PlaceholderKernel : IKernel
     /// <param name="parameters">The kernel parameters.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the execution.</returns>
-    public Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
+    public static Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
         // Placeholder execution - just return completed task
         // In a real implementation, this would execute the kernel code
 
@@ -364,7 +364,7 @@ internal class PlaceholderKernel : IKernel
     /// Gets information about the kernel parameters.
     /// </summary>
     /// <returns>The kernel parameter information.</returns>
-    public IReadOnlyList<DotCompute.Abstractions.KernelParameter> GetParameterInfo()
+    public static IReadOnlyList<DotCompute.Abstractions.KernelParameter> GetParameterInfo()
         // Return empty list as placeholder doesn't have parameters
 
         => Array.Empty<DotCompute.Abstractions.KernelParameter>();

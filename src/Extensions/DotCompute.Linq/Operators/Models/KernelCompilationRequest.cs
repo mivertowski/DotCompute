@@ -43,5 +43,5 @@ public class KernelCompilationRequest
     /// <summary>
     /// Gets or sets additional metadata for compilation.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }

@@ -129,7 +129,7 @@ internal sealed class ScalarKernelExecutor(KernelDefinition definition, KernelEx
         }
 
         // Use scalar FMA operations
-        for (int i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             result[i] = ScalarOperationHelpers.ScalarFMAFloat32(a[i], b[i], c[i]);
         }
@@ -151,7 +151,7 @@ internal sealed class ScalarKernelExecutor(KernelDefinition definition, KernelEx
         }
 
         // Use scalar FMA operations
-        for (int i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             result[i] = ScalarOperationHelpers.ScalarFMAFloat64(a[i], b[i], c[i]);
         }

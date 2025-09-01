@@ -57,8 +57,8 @@ namespace DotCompute.Backends.CUDA.Analysis
         public CudaMemoryCoalescingAnalyzer(ILogger<CudaMemoryCoalescingAnalyzer> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _accessPatterns = new List<AccessPattern>();
-            _metricsCache = new Dictionary<string, CoalescingMetrics>();
+            _accessPatterns = [];
+            _metricsCache = [];
             
             _logger.LogInformation("CUDA Memory Coalescing Analyzer initialized");
         }
@@ -142,18 +142,18 @@ namespace DotCompute.Backends.CUDA.Analysis
             var computeCapability = await GetComputeCapabilityAsync(deviceId);
             
             // Calculate number of transactions needed
-            int warpSize = 32;
-            int cacheLine = computeCapability >= 20 ? 128 : 32; // L1 cache line size
+            var warpSize = 32;
+            var cacheLine = computeCapability >= 20 ? 128 : 32; // L1 cache line size
             
             // Calculate bytes accessed per warp
-            int bytesPerWarp = warpSize * elementSize * stride;
+            var bytesPerWarp = warpSize * elementSize * stride;
             
             // Calculate transactions needed
             analysis.TransactionsPerWarp = (bytesPerWarp + cacheLine - 1) / cacheLine;
             
             // Calculate efficiency
-            int usefulBytes = warpSize * elementSize;
-            int transferredBytes = analysis.TransactionsPerWarp * cacheLine;
+            var usefulBytes = warpSize * elementSize;
+            var transferredBytes = analysis.TransactionsPerWarp * cacheLine;
             analysis.Efficiency = (double)usefulBytes / transferredBytes;
             
             // Determine if access is coalesced
@@ -210,7 +210,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             };
 
             var computeCapability = await GetComputeCapabilityAsync(deviceId);
-            int cacheLine = computeCapability >= 20 ? 128 : 32;
+            var cacheLine = computeCapability >= 20 ? 128 : 32;
             
             // Analyze based on access order
             if (accessOrder == DotCompute.Backends.CUDA.Analysis.Types.AccessOrder.RowMajor)
@@ -229,8 +229,8 @@ namespace DotCompute.Backends.CUDA.Analysis
             }
 
             // Calculate bandwidth efficiency
-            int usefulBytes = blockDimX * blockDimY * elementSize;
-            int transferredBytes = analysis.TransactionsPerBlock * cacheLine;
+            var usefulBytes = blockDimX * blockDimY * elementSize;
+            var transferredBytes = analysis.TransactionsPerBlock * cacheLine;
             analysis.BandwidthEfficiency = (double)usefulBytes / transferredBytes;
 
             // Analyze tile efficiency for shared memory optimization
@@ -275,7 +275,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             };
 
             // Warmup runs
-            for (int i = 0; i < warmupRuns; i++)
+            for (var i = 0; i < warmupRuns; i++)
             {
                 await kernelExecution();
             }
@@ -283,12 +283,12 @@ namespace DotCompute.Backends.CUDA.Analysis
             // Profile runs with metrics collection
             var metrics = new List<MemoryMetrics>();
             
-            for (int i = 0; i < profileRuns; i++)
+            for (var i = 0; i < profileRuns; i++)
             {
                 var runMetrics = new MemoryMetrics();
                 
                 // Get memory info before
-                cudaMemGetInfo(out ulong freeBefore, out ulong totalBefore);
+                cudaMemGetInfo(out var freeBefore, out var totalBefore);
                 var startTime = Stopwatch.GetTimestamp();
                 
                 // Execute kernel
@@ -296,7 +296,7 @@ namespace DotCompute.Backends.CUDA.Analysis
                 
                 // Get memory info after
                 var elapsed = Stopwatch.GetElapsedTime(startTime);
-                cudaMemGetInfo(out ulong freeAfter, out ulong totalAfter);
+                cudaMemGetInfo(out var freeAfter, out var totalAfter);
                 
                 runMetrics.ExecutionTime = elapsed;
                 runMetrics.MemoryUsed = (long)(freeBefore - freeAfter);
@@ -378,20 +378,20 @@ namespace DotCompute.Backends.CUDA.Analysis
         }
 
         // Private helper methods remain the same but reference the new types
-        private async Task<CoalescingAnalysis> AnalyzeModernArchitectureAsync(
+        private static async Task<CoalescingAnalysis> AnalyzeModernArchitectureAsync(
             MemoryAccessInfo accessInfo,
             CoalescingAnalysis analysis)
         {
             // Implementation remains the same
-            int cacheLine = 128;
-            int sectorSize = 32;
+            var cacheLine = 128;
+            var sectorSize = 32;
             
-            int sectorsNeeded = (accessInfo.AccessSize + sectorSize - 1) / sectorSize;
-            int actualTransferSize = sectorsNeeded * sectorSize;
+            var sectorsNeeded = (accessInfo.AccessSize + sectorSize - 1) / sectorSize;
+            var actualTransferSize = sectorsNeeded * sectorSize;
             
-            bool isAligned = (accessInfo.BaseAddress % cacheLine) == 0;
-            bool isSequential = accessInfo.Stride == 1;
-            bool isUniform = accessInfo.Stride == 0;
+            var isAligned = (accessInfo.BaseAddress % cacheLine) == 0;
+            var isSequential = accessInfo.Stride == 1;
+            var isUniform = accessInfo.Stride == 0;
             
             analysis.TransactionCount = isUniform ? 1 : 
                                         isSequential ? sectorsNeeded : 
@@ -413,11 +413,11 @@ namespace DotCompute.Backends.CUDA.Analysis
             return analysis;
         }
 
-        private async Task<CoalescingAnalysis> AnalyzeKeplerMaxwellAsync(
+        private static async Task<CoalescingAnalysis> AnalyzeKeplerMaxwellAsync(
             MemoryAccessInfo accessInfo,
             CoalescingAnalysis analysis)
         {
-            int cacheLine = 128;
+            var cacheLine = 128;
             
             if (accessInfo.Stride == 1)
             {
@@ -442,14 +442,14 @@ namespace DotCompute.Backends.CUDA.Analysis
             return analysis;
         }
 
-        private async Task<CoalescingAnalysis> AnalyzeLegacyArchitectureAsync(
+        private static async Task<CoalescingAnalysis> AnalyzeLegacyArchitectureAsync(
             MemoryAccessInfo accessInfo,
             CoalescingAnalysis analysis)
         {
-            int transactionSize = accessInfo.ElementSize <= 4 ? 32 : 
+            var transactionSize = accessInfo.ElementSize <= 4 ? 32 : 
                                  accessInfo.ElementSize <= 8 ? 64 : 128;
             
-            bool isPerfectlyCoalesced = 
+            var isPerfectlyCoalesced = 
                 accessInfo.Stride == 1 && 
                 (accessInfo.BaseAddress % transactionSize) == 0 &&
                 accessInfo.ElementSize >= 4;
@@ -473,12 +473,12 @@ namespace DotCompute.Backends.CUDA.Analysis
             return analysis;
         }
 
-        private double CalculateCoalescingEfficiency(MemoryAccessInfo accessInfo, int computeCapability)
+        private static double CalculateCoalescingEfficiency(MemoryAccessInfo accessInfo, int computeCapability)
         {
             if (accessInfo.Stride == 1 && accessInfo.ElementSize >= 4)
             {
-                int alignmentRequirement = computeCapability >= 20 ? 128 : 32;
-                bool isAligned = (accessInfo.BaseAddress % alignmentRequirement) == 0;
+                var alignmentRequirement = computeCapability >= 20 ? 128 : 32;
+                var isAligned = (accessInfo.BaseAddress % alignmentRequirement) == 0;
                 return isAligned ? 1.0 : 0.95;
             }
             
@@ -497,20 +497,20 @@ namespace DotCompute.Backends.CUDA.Analysis
 
         private double CalculateWastedBandwidth(MemoryAccessInfo accessInfo)
         {
-            int idealTransferSize = accessInfo.AccessSize;
-            int actualTransferSize = CalculateActualTransferSize(accessInfo);
+            var idealTransferSize = accessInfo.AccessSize;
+            var actualTransferSize = CalculateActualTransferSize(accessInfo);
             
-            int wastedBytes = actualTransferSize - idealTransferSize;
-            double transferTime = accessInfo.ExecutionTime?.TotalSeconds ?? 1.0;
+            var wastedBytes = actualTransferSize - idealTransferSize;
+            var transferTime = accessInfo.ExecutionTime?.TotalSeconds ?? 1.0;
             
             return wastedBytes / transferTime;
         }
 
-        private int CalculateActualTransferSize(MemoryAccessInfo accessInfo)
+        private static int CalculateActualTransferSize(MemoryAccessInfo accessInfo)
         {
             if (accessInfo.Stride == 1)
             {
-                int cacheLine = 128;
+                var cacheLine = 128;
                 return ((accessInfo.AccessSize + cacheLine - 1) / cacheLine) * cacheLine;
             }
             else
@@ -519,7 +519,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             }
         }
 
-        private int GetOptimalAccessSize(int computeCapability)
+        private static int GetOptimalAccessSize(int computeCapability)
         {
             if (computeCapability >= 50)
             {
@@ -534,16 +534,15 @@ namespace DotCompute.Backends.CUDA.Analysis
             {
                 return 32;
             }
-
         }
 
-        private List<CoalescingIssue> IdentifyCoalescingIssues(
+        private static List<CoalescingIssue> IdentifyCoalescingIssues(
             MemoryAccessInfo accessInfo,
             int computeCapability)
         {
             var issues = new List<CoalescingIssue>();
 
-            int alignmentReq = computeCapability >= 20 ? 128 : 32;
+            var alignmentReq = computeCapability >= 20 ? 128 : 32;
             if (accessInfo.BaseAddress % alignmentReq != 0)
             {
                 issues.Add(new CoalescingIssue
@@ -591,7 +590,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             return issues;
         }
 
-        private List<string> GenerateOptimizations(
+        private static List<string> GenerateOptimizations(
             MemoryAccessInfo accessInfo,
             List<CoalescingIssue> issues)
         {
@@ -634,7 +633,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             return optimizations.Distinct().ToList();
         }
 
-        private TileAnalysis AnalyzeTileEfficiency(
+        private static TileAnalysis AnalyzeTileEfficiency(
             int rows, int cols,
             int blockDimX, int blockDimY,
             int elementSize,
@@ -642,21 +641,21 @@ namespace DotCompute.Backends.CUDA.Analysis
         {
             var analysis = new TileAnalysis();
             
-            int maxSharedMemory = computeCapability >= 70 ? 96 * 1024 :
+            var maxSharedMemory = computeCapability >= 70 ? 96 * 1024 :
                                   computeCapability >= 50 ? 48 * 1024 :
                                   16 * 1024;
             
             int[] tileSizes = { 8, 16, 32, 64 };
             double bestEfficiency = 0;
             
-            foreach (int tileSize in tileSizes)
+            foreach (var tileSize in tileSizes)
             {
-                int sharedMemNeeded = tileSize * tileSize * elementSize;
+                var sharedMemNeeded = tileSize * tileSize * elementSize;
                 
                 if (sharedMemNeeded <= maxSharedMemory)
                 {
-                    double reuse = (double)(2 * tileSize) / (tileSize * tileSize);
-                    double efficiency = reuse * (sharedMemNeeded <= maxSharedMemory / 2 ? 1.0 : 0.8);
+                    var reuse = (double)(2 * tileSize) / (tileSize * tileSize);
+                    var efficiency = reuse * (sharedMemNeeded <= maxSharedMemory / 2 ? 1.0 : 0.8);
                     
                     if (efficiency > bestEfficiency)
                     {
@@ -672,7 +671,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             return analysis;
         }
 
-        private List<string> GenerateComparisonRecommendations(CoalescingComparison comparison)
+        private static List<string> GenerateComparisonRecommendations(CoalescingComparison comparison)
         {
             var recommendations = new List<string>();
             
@@ -698,16 +697,16 @@ namespace DotCompute.Backends.CUDA.Analysis
             return recommendations;
         }
 
-        private async Task<int> GetComputeCapabilityAsync(int deviceId)
+        private static async Task<int> GetComputeCapabilityAsync(int deviceId)
         {
-            cudaDeviceGetAttribute(out int major, CudaDeviceAttribute.ComputeCapabilityMajor, deviceId);
-            cudaDeviceGetAttribute(out int minor, CudaDeviceAttribute.ComputeCapabilityMinor, deviceId);
+            cudaDeviceGetAttribute(out var major, CudaDeviceAttribute.ComputeCapabilityMajor, deviceId);
+            cudaDeviceGetAttribute(out var minor, CudaDeviceAttribute.ComputeCapabilityMinor, deviceId);
             
             await Task.CompletedTask;
             return major * 10 + minor;
         }
 
-        private double CalculateVariance(IEnumerable<double> values)
+        private static double CalculateVariance(IEnumerable<double> values)
         {
             var list = values.ToList();
             if (!list.Any())
@@ -716,7 +715,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             }
 
 
-            double mean = list.Average();
+            var mean = list.Average();
             return list.Average(v => Math.Pow(v - mean, 2));
         }
 

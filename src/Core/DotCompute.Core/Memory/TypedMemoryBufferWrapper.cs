@@ -76,15 +76,15 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
     public void MarkDeviceDirty() { /* State management is handled internally */ }
 
 
-    public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) =>
+    public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
         // Copy from host memory to buffer
         // Since the underlying buffer doesn't have typed methods, we'll need to handle this
-        await ValueTask.CompletedTask;
+        => await ValueTask.CompletedTask;
 
-    public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) =>
+    public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         // Copy from buffer to host memory
         // Since the underlying buffer doesn't have typed methods, we'll need to handle this
-        await ValueTask.CompletedTask;
+        => await ValueTask.CompletedTask;
 
 
     public void Dispose() => _underlyingBuffer.Dispose();
@@ -94,9 +94,9 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
     public bool IsDirty => State == BufferState.HostDirty || State == BufferState.DeviceDirty;
 
 
-    public DeviceMemory GetDeviceMemory() =>
+    public DeviceMemory GetDeviceMemory()
         // Return a default device memory handle
-        new DeviceMemory(IntPtr.Zero, SizeInBytes);
+        => new(IntPtr.Zero, SizeInBytes);
 
     public MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException("Mapping not supported for generic buffer wrapper");
 
@@ -124,14 +124,14 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
     }
 
 
-    public ValueTask FillAsync(T value, CancellationToken cancellationToken = default) =>
+    public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
         // Default implementation - derived classes can override for better performance
-        ValueTask.CompletedTask;
+        => ValueTask.CompletedTask;
 
 
-    public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default) =>
+    public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
         // Default implementation - derived classes can override for better performance
-        ValueTask.CompletedTask;
+        => ValueTask.CompletedTask;
 
 
     public IUnifiedMemoryBuffer<T> Slice(int offset, int length) => throw new NotSupportedException("Slicing not supported for generic buffer wrapper");

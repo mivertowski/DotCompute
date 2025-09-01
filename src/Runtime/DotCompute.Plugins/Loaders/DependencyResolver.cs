@@ -202,7 +202,7 @@ public class DependencyResolver
     /// <summary>
     /// Finds all available versions for a dependency.
     /// </summary>
-    private async Task<List<string>> FindAvailableVersionsAsync(NuGetPackageDependency dependency, CancellationToken cancellationToken)
+    private static async Task<List<string>> FindAvailableVersionsAsync(NuGetPackageDependency dependency, CancellationToken cancellationToken)
     {
         // This would typically query NuGet repositories, local package cache, etc.
         // For now, simulate with some common versions
@@ -242,7 +242,7 @@ public class DependencyResolver
     /// <summary>
     /// Parses a NuGet version range into a constraint object.
     /// </summary>
-    private VersionConstraint ParseVersionRange(string versionRange)
+    private static VersionConstraint ParseVersionRange(string versionRange)
     {
         // Simplified version range parsing
         // In a real implementation, this would use NuGet.Versioning library
@@ -299,7 +299,7 @@ public class DependencyResolver
     /// <summary>
     /// Checks if a version is compatible with a version constraint.
     /// </summary>
-    private bool IsVersionCompatible(string version, VersionConstraint constraint)
+    private static bool IsVersionCompatible(string version, VersionConstraint constraint)
     {
         if (!Version.TryParse(version, out var v))
         {
@@ -340,7 +340,7 @@ public class DependencyResolver
     /// <summary>
     /// Loads metadata for a resolved package.
     /// </summary>
-    private async Task LoadPackageMetadataAsync(ResolvedPackage package, CancellationToken cancellationToken)
+    private static async Task LoadPackageMetadataAsync(ResolvedPackage package, CancellationToken cancellationToken)
     {
         // This would load package metadata from NuGet package or cache
         // For now, create some default metadata
@@ -368,7 +368,7 @@ public class DependencyResolver
     /// <summary>
     /// Creates a resolved dependency from a resolved package.
     /// </summary>
-    private ResolvedDependency CreateResolvedDependency(ResolvedPackage package, int level)
+    private static ResolvedDependency CreateResolvedDependency(ResolvedPackage package, int level)
     {
         return new ResolvedDependency
         {
@@ -494,7 +494,7 @@ public class DependencyResolver
     /// <summary>
     /// Checks if a dependency is compatible with the current platform.
     /// </summary>
-    private bool IsPlatformCompatible(ResolvedDependency dependency)
+    private static bool IsPlatformCompatible(ResolvedDependency dependency)
         // Simplified platform compatibility check
         // In a real implementation, this would check the package's supported frameworks
 

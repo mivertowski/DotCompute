@@ -105,7 +105,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         // Map arguments to context parameters
         if (arguments.Arguments != null)
         {
-            for (int i = 0; i < arguments.Arguments.Count; i++)
+            for (var i = 0; i < arguments.Arguments.Count; i++)
             {
                 context.SetParameter(i, arguments.Arguments[i]!);
             }
@@ -564,10 +564,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         return workItemId;
     }
 
-    private static long GetTotalWorkItems(Dim3 globalWorkSize)
-    {
-        return globalWorkSize.X * globalWorkSize.Y * globalWorkSize.Z;
-    }
+    private static long GetTotalWorkItems(Dim3 globalWorkSize) => globalWorkSize.X * globalWorkSize.Y * globalWorkSize.Z;
 
     private void ExecuteSingleWorkItem(KernelExecutionContext context, long[] workItemId)
     {
@@ -617,11 +614,17 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         var args = new object[maxIndex + 1];
         foreach (var (index, buffer) in context.Buffers)
         {
-            if (index >= 0 && index < args.Length) args[index] = buffer;
+            if (index >= 0 && index < args.Length)
+            {
+                args[index] = buffer;
+            }
         }
         foreach (var (index, scalar) in context.Scalars)
         {
-            if (index >= 0 && index < args.Length) args[index] = scalar;
+            if (index >= 0 && index < args.Length)
+            {
+                args[index] = scalar;
+            }
         }
 
         // This is the fallback execution path when we don't have a compiled delegate
@@ -1018,7 +1021,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     private void ExecuteReduction(object[] args, long linearIndex, long[] workItemId, KernelExecutionContext context)
     {
         // Reduction operations need special handling - typically done in shared memory
-        // This is a simplified implementation
+        // This is a simplified implementation TODO
         if (args.Length < 2 ||
             args[0] is not IUnifiedMemoryBuffer ||
             args[1] is not IUnifiedMemoryBuffer)
@@ -1034,7 +1037,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     private static void ExecuteMatrixMultiply(object[] args, long linearIndex, long[] workItemId, KernelExecutionContext context)
     {
         // Matrix multiplication requires understanding of matrix dimensions
-        // This is a placeholder implementation
+        // This is a placeholder implementation TODO
         if (args.Length < 3 ||
             args[0] is not IUnifiedMemoryBuffer ||
             args[1] is not IUnifiedMemoryBuffer ||
@@ -1052,7 +1055,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         KernelExecutionContext context, KernelDefinition definition)
     {
         // Custom kernel execution would parse the kernel source and interpret it
-        // For now, fall back to simple pattern matching
+        // For now, fall back to simple pattern matching TODO
         if (!TryExecuteSimplePattern(args, linearIndex))
         {
             // Log that custom kernel execution is not implemented
@@ -1183,7 +1186,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         }
 
         // Clean up any native resources
-        // In a real implementation, this might free JIT-compiled code
+        // In a real implementation, this might free JIT-compiled code TODO
 
         return ValueTask.CompletedTask;
     }
@@ -1234,12 +1237,10 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     /// <summary>
     /// Gets performance metrics for this kernel.
     /// </summary>
-    public KernelPerformanceMetrics GetPerformanceMetrics()
-    {
+    public static KernelPerformanceMetrics GetPerformanceMetrics()
         // KernelPerformanceMetrics doesn't have these properties anymore
-        // Return a basic instance for now
-        return new KernelPerformanceMetrics();
-    }
+        // Return a basic instance for now TODO
+        => new();
 
     private static object[] BuildArgumentsArray(KernelExecutionContext context)
     {
@@ -1250,17 +1251,23 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         
         if (maxIndex < 0)
         {
-            return Array.Empty<object>();
+            return [];
         }
         
         var args = new object[maxIndex + 1];
         foreach (var (index, buffer) in context.Buffers)
         {
-            if (index >= 0 && index < args.Length) args[index] = buffer;
+            if (index >= 0 && index < args.Length)
+            {
+                args[index] = buffer;
+            }
         }
         foreach (var (index, scalar) in context.Scalars)
         {
-            if (index >= 0 && index < args.Length) args[index] = scalar;
+            if (index >= 0 && index < args.Length)
+            {
+                args[index] = scalar;
+            }
         }
         
         return args;
@@ -1281,14 +1288,20 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         var args = new object[maxIndex + 1];
         foreach (var (index, buffer) in context.Buffers)
         {
-            if (index >= 0 && index < args.Length) args[index] = buffer;
+            if (index >= 0 && index < args.Length)
+            {
+                args[index] = buffer;
+            }
         }
         foreach (var (index, scalar) in context.Scalars)
         {
-            if (index >= 0 && index < args.Length) args[index] = scalar;
+            if (index >= 0 && index < args.Length)
+            {
+                args[index] = scalar;
+            }
         }
         
-        return new KernelArguments(args);
+        return [.. args];
     }
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed != 0, this);

@@ -30,7 +30,8 @@ public class CpuMemoryManager : BaseMemoryManager
     public override IAccelerator Accelerator => _accelerator;
     
     /// <inheritdoc/>
-    public override DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new DotCompute.Abstractions.Memory.MemoryStatistics
+    public override DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new()
+
     {
         TotalAllocated = _currentAllocatedBytes,
         CurrentUsed = _currentAllocatedBytes,
@@ -196,10 +197,10 @@ public class CpuMemoryManager : BaseMemoryManager
     protected override IUnifiedMemoryBuffer CreateViewCore(
         IUnifiedMemoryBuffer sourceBuffer,
         long offsetInBytes,
-        long sizeInBytes) =>
+        long sizeInBytes)
         // CPU memory doesn't support views in this implementation
         // Would need to implement a view wrapper for CPU buffers
-        throw new NotSupportedException("CPU memory views are not yet implemented");
+        => throw new NotSupportedException("CPU memory views are not yet implemented");
 }
 
 /// <summary>
@@ -334,10 +335,10 @@ public class CpuMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
     public ReadOnlySpan<T> AsReadOnlySpan() => AsSpan();
 
 
-    public Memory<T> AsMemory() =>
+    public Memory<T> AsMemory()
         // For CPU buffers, we need to create a properly typed memory
         // This is a temporary implementation - proper buffer management needed
-        throw new NotSupportedException("Direct Memory<T> access not yet implemented for CpuMemoryBuffer<T>");
+        => throw new NotSupportedException("Direct Memory<T> access not yet implemented for CpuMemoryBuffer<T>");
 
 
     public ReadOnlyMemory<T> AsReadOnlyMemory() => AsMemory();
@@ -522,7 +523,6 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
 
             throw new ArgumentOutOfRangeException(nameof(length));
         }
-
     }
     
     public int Length => _length;

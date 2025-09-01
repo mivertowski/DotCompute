@@ -27,23 +27,23 @@ public sealed class SecurityValidator : ISecurityValidator, IDisposable
     /// <summary>
     /// Validates assembly security using comprehensive security policies and scanning.
     /// </summary>
-    public Task<bool> ValidateAssemblySecurityAsync(string assemblyPath) =>
+    public Task<bool> ValidateAssemblySecurityAsync(string assemblyPath)
         // Stub implementation - always returns true
-        Task.FromResult(true);
+        => Task.FromResult(true);
 
     /// <summary>
     /// Validates strong name signature of an assembly.
     /// </summary>
-    public Task<bool> ValidateStrongNameAsync(string assemblyPath) =>
+    public Task<bool> ValidateStrongNameAsync(string assemblyPath)
         // Stub implementation - always returns true
-        Task.FromResult(true);
+        => Task.FromResult(true);
 
     /// <summary>
     /// Checks if the required framework version is compatible.
     /// </summary>
-    public bool IsVersionCompatible(string? requiredVersion) =>
+    public bool IsVersionCompatible(string? requiredVersion)
         // Stub implementation - always returns true
-        true;
+        => true;
 
     /// <summary>
     /// Disposes the validator.

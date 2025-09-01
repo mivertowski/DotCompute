@@ -56,7 +56,7 @@ public readonly struct Complex : IEquatable<Complex>
     public Complex Conjugate
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new Complex(Real, -Imaginary);
+        get => new(Real, -Imaginary);
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public readonly struct Complex : IEquatable<Complex>
     /// <param name="theta">The angle in radians.</param>
     /// <returns>The complex exponential.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Complex Exp(float theta) => new Complex(MathF.Cos(theta), MathF.Sin(theta));
+    public static Complex Exp(float theta) => new(MathF.Cos(theta), MathF.Sin(theta));
 
     /// <summary>
     /// Adds two complex numbers.

@@ -223,7 +223,7 @@ public sealed class CudaKernelCache : IDisposable
             {
                 Name = kernelName,
                 Ptx = ptx,
-                Cubin = cubin ?? Array.Empty<byte>(),
+                Cubin = cubin ?? [],
                 Binary = binary,
                 ComputeCapability = options.ComputeCapability,
                 CompilationTime = TimeSpan.FromMilliseconds(compilationTime),
@@ -250,7 +250,7 @@ public sealed class CudaKernelCache : IDisposable
         {
             // Create NVRTC program
             var result = NvrtcInterop.nvrtcCreateProgram(
-                out IntPtr prog,
+                out var prog,
                 sourceCode,
                 kernelName,
                 0,
@@ -320,22 +320,23 @@ public sealed class CudaKernelCache : IDisposable
     /// <summary>
     /// Builds NVRTC compilation options.
     /// </summary>
-    private string[] BuildNvrtcOptions(CompilationOptions options)
+    private static string[] BuildNvrtcOptions(CompilationOptions options)
     {
-        var nvrtcOptions = new List<string>();
-        
-        // Compute capability
-        nvrtcOptions.Add($"--gpu-architecture=compute_{options.ComputeCapability.Major}{options.ComputeCapability.Minor}");
-        
-        // Optimization level
-        nvrtcOptions.Add(options.OptimizationLevel switch
+        var nvrtcOptions = new List<string>
         {
-            OptimizationLevel.O0 => "-O0",
-            OptimizationLevel.O1 => "-O1",
-            OptimizationLevel.O2 => "-O2",
-            OptimizationLevel.O3 => "-O3",
-            _ => "-O2"
-        });
+            // Compute capability
+            $"--gpu-architecture=compute_{options.ComputeCapability.Major}{options.ComputeCapability.Minor}",
+
+            // Optimization level
+            options.OptimizationLevel switch
+            {
+                OptimizationLevel.O0 => "-O0",
+                OptimizationLevel.O1 => "-O1",
+                OptimizationLevel.O2 => "-O2",
+                OptimizationLevel.O3 => "-O3",
+                _ => "-O2"
+            }
+        };
         
         // Debug info
         if (options.GenerateDebugInfo)
@@ -470,7 +471,7 @@ public sealed class CudaKernelCache : IDisposable
             {
                 Name = metadata.KernelName,
                 Ptx = ptx,
-                Cubin = cubin ?? Array.Empty<byte>(),
+                Cubin = cubin ?? [],
                 Binary = cubin ?? Encoding.UTF8.GetBytes(ptx),
                 ComputeCapability = metadata.ComputeCapability,
                 CompilationTime = TimeSpan.FromMilliseconds(metadata.CompilationTime),
@@ -524,7 +525,6 @@ public sealed class CudaKernelCache : IDisposable
             {
                 break;
             }
-
         }
         
         var cached = new CachedKernel
@@ -729,7 +729,6 @@ public sealed class CudaKernelCache : IDisposable
                     {
                         File.Delete(cubinPath);
                     }
-
                 }
                 catch { /* Best effort */ }
             }
@@ -806,6 +805,5 @@ public sealed class CudaKernelCache : IDisposable
             // Note: Lock (_lruLock) does not require disposal in .NET 9
         }
     }
-
 }
 

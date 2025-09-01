@@ -135,7 +135,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                 }
 
                 // End capture and get graph
-                error = cudaStreamEndCapture(stream, out IntPtr graph);
+                error = cudaStreamEndCapture(stream, out var graph);
                 if (error != CudaError.Success)
                 {
                     throw new CudaException($"Failed to end graph capture: {error}");
@@ -148,7 +148,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                 
                 // Instantiate graph for execution
                 error = cudaGraphInstantiate(
-                    out IntPtr graphExec,
+                    out var graphExec,
                     graph,
                     IntPtr.Zero,
                     IntPtr.Zero,
@@ -278,7 +278,7 @@ namespace DotCompute.Backends.CUDA.Graphs
 
                 await newOperations();
 
-                error = cudaStreamEndCapture(stream, out IntPtr newGraph);
+                error = cudaStreamEndCapture(stream, out var newGraph);
                 if (error != CudaError.Success)
                 {
                     throw new CudaException($"Failed to end graph capture for update: {error}");
@@ -289,7 +289,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                     instance.GraphExec,
                     newGraph,
                     IntPtr.Zero,
-                    out CudaGraphExecUpdateResult updateResult);
+                    out var updateResult);
 
                 if (error == CudaError.Success && updateResult == CudaGraphExecUpdateResult.Success)
                 {
@@ -315,7 +315,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                     
                     // Create new executable
                     error = cudaGraphInstantiate(
-                        out IntPtr newGraphExec,
+                        out var newGraphExec,
                         newGraph,
                         IntPtr.Zero,
                         IntPtr.Zero,
@@ -357,14 +357,14 @@ namespace DotCompute.Backends.CUDA.Graphs
             await _graphCreationLock.WaitAsync();
             try
             {
-                var error = cudaGraphClone(out IntPtr clonedGraph, sourceInstance.Graph);
+                var error = cudaGraphClone(out var clonedGraph, sourceInstance.Graph);
                 if (error != CudaError.Success)
                 {
                     throw new CudaException($"Failed to clone graph: {error}");
                 }
 
                 error = cudaGraphInstantiate(
-                    out IntPtr clonedGraphExec,
+                    out var clonedGraphExec,
                     clonedGraph,
                     IntPtr.Zero,
                     IntPtr.Zero,
@@ -417,7 +417,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             var analysis = new GraphAnalysis();
 
             // Get node count
-            var error = cudaGraphGetNodes(graph, IntPtr.Zero, out ulong nodeCount);
+            var error = cudaGraphGetNodes(graph, IntPtr.Zero, out var nodeCount);
             if (error != CudaError.Success && error != CudaError.InvalidValue)
             {
                 _logger.LogWarning("Failed to get graph node count: {Error}", error);
@@ -426,7 +426,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             analysis.NodeCount = (int)nodeCount;
 
             // Get edge count
-            error = cudaGraphGetEdges(graph, IntPtr.Zero, IntPtr.Zero, out ulong edgeCount);
+            error = cudaGraphGetEdges(graph, IntPtr.Zero, IntPtr.Zero, out var edgeCount);
             if (error != CudaError.Success && error != CudaError.InvalidValue)
             {
                 _logger.LogWarning("Failed to get graph edge count: {Error}", error);
@@ -443,10 +443,10 @@ namespace DotCompute.Backends.CUDA.Graphs
                     error = cudaGraphGetNodes(graph, nodes, out nodeCount);
                     if (error == CudaError.Success)
                     {
-                        for (int i = 0; i < (int)nodeCount; i++)
+                        for (var i = 0; i < (int)nodeCount; i++)
                         {
                             var node = Marshal.ReadIntPtr(nodes, i * IntPtr.Size);
-                            if (cudaGraphNodeGetType(node, out CudaGraphNodeType nodeType) == CudaError.Success)
+                            if (cudaGraphNodeGetType(node, out var nodeType) == CudaError.Success)
                             {
                                 analysis.NodeTypes[nodeType] = analysis.NodeTypes.GetValueOrDefault(nodeType) + 1;
                             }
@@ -650,15 +650,15 @@ namespace DotCompute.Backends.CUDA.Graphs
             public required int NodeCount { get; init; }
             public required int EdgeCount { get; init; }
             
-            public TimeSpan AverageLaunchTime => 
-                LaunchCount > 0 ? TotalLaunchTime / LaunchCount : TimeSpan.Zero;
+            public TimeSpan AverageLaunchTime
+                => LaunchCount > 0 ? TotalLaunchTime / LaunchCount : TimeSpan.Zero;
         }
 
         private class GraphAnalysis
         {
             public int NodeCount { get; set; }
             public int EdgeCount { get; set; }
-            public Dictionary<CudaGraphNodeType, int> NodeTypes { get; } = new();
+            public Dictionary<CudaGraphNodeType, int> NodeTypes { get; } = [];
         }
 
         public class GraphCaptureOptions

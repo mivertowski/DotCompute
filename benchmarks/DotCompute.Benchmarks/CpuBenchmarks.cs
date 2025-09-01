@@ -32,7 +32,7 @@ public class CpuBenchmarks
         _result = new float[DataSize];
         
         var random = new Random(42);
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _dataA[i] = (float)random.NextDouble();
             _dataB[i] = (float)random.NextDouble();
@@ -42,7 +42,7 @@ public class CpuBenchmarks
     [Benchmark(Baseline = true)]
     public void ScalarVectorAddition()
     {
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _result[i] = _dataA[i] + _dataB[i];
         }
@@ -51,8 +51,8 @@ public class CpuBenchmarks
     [Benchmark]
     public void VectorizedAddition()
     {
-        int vectorSize = Vector<float>.Count;
-        int i = 0;
+        var vectorSize = Vector<float>.Count;
+        var i = 0;
         
         // Process vectors
         for (; i <= DataSize - vectorSize; i += vectorSize)
@@ -74,7 +74,7 @@ public class CpuBenchmarks
     public void ScalarDotProduct()
     {
         float sum = 0;
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             sum += _dataA[i] * _dataB[i];
         }
@@ -89,9 +89,9 @@ public class CpuBenchmarks
     [Benchmark]
     public void VectorizedDotProduct()
     {
-        int vectorSize = Vector<float>.Count;
+        var vectorSize = Vector<float>.Count;
         var sumVector = Vector<float>.Zero;
-        int i = 0;
+        var i = 0;
         
         // Process vectors
         for (; i <= DataSize - vectorSize; i += vectorSize)
@@ -102,7 +102,7 @@ public class CpuBenchmarks
         }
         
         // Sum the vector components
-        float sum = Vector.Dot(sumVector, Vector<float>.One);
+        var sum = Vector.Dot(sumVector, Vector<float>.One);
         
         // Process remaining elements
         for (; i < DataSize; i++)
@@ -121,7 +121,7 @@ public class CpuBenchmarks
     public void ScalarSaxpy() // y = a*x + y
     {
         const float alpha = 2.5f;
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _result[i] = alpha * _dataA[i] + _dataB[i];
         }
@@ -132,8 +132,8 @@ public class CpuBenchmarks
     {
         const float alpha = 2.5f;
         var alphaVector = new Vector<float>(alpha);
-        int vectorSize = Vector<float>.Count;
-        int i = 0;
+        var vectorSize = Vector<float>.Count;
+        var i = 0;
         
         // Process vectors
         for (; i <= DataSize - vectorSize; i += vectorSize)
@@ -163,12 +163,12 @@ public class CpuBenchmarks
     [Benchmark]
     public void ParallelVectorizedAddition()
     {
-        int vectorSize = Vector<float>.Count;
-        int numVectors = DataSize / vectorSize;
+        var vectorSize = Vector<float>.Count;
+        var numVectors = DataSize / vectorSize;
         
         Parallel.For(0, numVectors, vectorIndex =>
         {
-            int i = vectorIndex * vectorSize;
+            var i = vectorIndex * vectorSize;
             var vecA = new Vector<float>(_dataA, i);
             var vecB = new Vector<float>(_dataB, i);
             var result = vecA + vecB;
@@ -176,11 +176,11 @@ public class CpuBenchmarks
         });
         
         // Process remaining elements
-        int remaining = DataSize % vectorSize;
+        var remaining = DataSize % vectorSize;
         if (remaining > 0)
         {
-            int startIndex = DataSize - remaining;
-            for (int i = startIndex; i < DataSize; i++)
+            var startIndex = DataSize - remaining;
+            for (var i = startIndex; i < DataSize; i++)
             {
                 _result[i] = _dataA[i] + _dataB[i];
             }
@@ -190,7 +190,7 @@ public class CpuBenchmarks
     [Benchmark]
     public void LinqSum()
     {
-        float sum = _dataA.Sum();
+        var sum = _dataA.Sum();
         
         // Prevent optimization
         if (float.IsNaN(sum))
@@ -202,7 +202,7 @@ public class CpuBenchmarks
     [Benchmark]
     public void ParallelLinqSum()
     {
-        float sum = _dataA.AsParallel().Sum();
+        var sum = _dataA.AsParallel().Sum();
         
         // Prevent optimization
         if (float.IsNaN(sum))
@@ -218,7 +218,7 @@ public class CpuBenchmarks
         var spanB = _dataB.AsSpan();
         var spanResult = _result.AsSpan();
         
-        for (int i = 0; i < spanA.Length; i++)
+        for (var i = 0; i < spanA.Length; i++)
         {
             spanResult[i] = spanA[i] + spanB[i];
         }
@@ -233,7 +233,7 @@ public class CpuBenchmarks
             fixed (float* pB = _dataB)
             fixed (float* pResult = _result)
             {
-                for (int i = 0; i < DataSize; i++)
+                for (var i = 0; i < DataSize; i++)
                 {
                     pResult[i] = pA[i] + pB[i];
                 }

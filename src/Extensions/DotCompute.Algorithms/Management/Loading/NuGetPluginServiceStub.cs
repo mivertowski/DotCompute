@@ -26,12 +26,12 @@ public sealed class NuGetPluginService : INuGetPluginService, IDisposable
     /// <summary>
     /// Loads plugins from NuGet packages asynchronously.
     /// </summary>
-    public Task<IEnumerable<IAlgorithmPlugin>> LoadPluginsFromPackagesAsync(
+    public static Task<IEnumerable<IAlgorithmPlugin>> LoadPluginsFromPackagesAsync(
         IEnumerable<string> packageIds,
 
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default)
         // Stub implementation - returns empty collection
-        Task.FromResult(Enumerable.Empty<IAlgorithmPlugin>());
+        => Task.FromResult(Enumerable.Empty<IAlgorithmPlugin>());
 
     /// <summary>
     /// Loads plugins from a NuGet package.
@@ -39,9 +39,9 @@ public sealed class NuGetPluginService : INuGetPluginService, IDisposable
     public Task<int> LoadPluginsFromNuGetPackageAsync(
         string packageSource,
         string? targetFramework = null,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default)
         // Stub implementation - returns 0
-        Task.FromResult(0);
+        => Task.FromResult(0);
 
     /// <summary>
     /// Updates plugins from a NuGet package to the latest version.
@@ -49,23 +49,23 @@ public sealed class NuGetPluginService : INuGetPluginService, IDisposable
     public Task<int> UpdateNuGetPackageAsync(
         string packageId,
         string? targetFramework = null,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default)
         // Stub implementation - returns 0
-        Task.FromResult(0);
+        => Task.FromResult(0);
 
     /// <summary>
     /// Clears the NuGet package cache.
     /// </summary>
-    public Task ClearNuGetCacheAsync(TimeSpan? olderThan = null, CancellationToken cancellationToken = default) =>
+    public Task ClearNuGetCacheAsync(TimeSpan? olderThan = null, CancellationToken cancellationToken = default)
         // Stub implementation - returns completed task
-        Task.CompletedTask;
+        => Task.CompletedTask;
 
     /// <summary>
     /// Gets information about cached NuGet packages.
     /// </summary>
-    public Task<CachedPackageInfo[]> GetCachedNuGetPackagesAsync(CancellationToken cancellationToken = default) =>
+    public Task<CachedPackageInfo[]> GetCachedNuGetPackagesAsync(CancellationToken cancellationToken = default)
         // Stub implementation - returns empty array
-        Task.FromResult(Array.Empty<CachedPackageInfo>());
+        => Task.FromResult(Array.Empty<CachedPackageInfo>());
 
     /// <summary>
     /// Validates a NuGet package before loading it.

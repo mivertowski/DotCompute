@@ -31,29 +31,20 @@ public class MemoryBenchmarks
         _targetData = new float[BufferSize];
         
         // Initialize with sample data
-        for (int i = 0; i < BufferSize; i++)
+        for (var i = 0; i < BufferSize; i++)
         {
             _sourceData[i] = i * 0.5f;
         }
     }
 
     [Benchmark(Baseline = true)]
-    public void StandardArrayCopy()
-    {
-        Array.Copy(_sourceData, _targetData, BufferSize);
-    }
+    public void StandardArrayCopy() => Array.Copy(_sourceData, _targetData, BufferSize);
 
     [Benchmark]
-    public void SpanBasedCopy()
-    {
-        _sourceData.AsSpan().CopyTo(_targetData.AsSpan());
-    }
+    public void SpanBasedCopy() => _sourceData.AsSpan().CopyTo(_targetData.AsSpan());
 
     [Benchmark]
-    public void MemoryBasedCopy()
-    {
-        _sourceData.AsMemory().CopyTo(_targetData.AsMemory());
-    }
+    public void MemoryBasedCopy() => _sourceData.AsMemory().CopyTo(_targetData.AsMemory());
 
     [Benchmark]
     public void UnsafeMemoryCopy()
@@ -88,10 +79,7 @@ public class MemoryBenchmarks
     }
 
     [Benchmark]
-    public void MemoryFillSpan()
-    {
-        _targetData.AsSpan().Fill(1.0f);
-    }
+    public void MemoryFillSpan() => _targetData.AsSpan().Fill(1.0f);
 
     [Benchmark]
     public void ParallelArrayCopy()
@@ -103,16 +91,10 @@ public class MemoryBenchmarks
     }
 
     [Benchmark]
-    public void BlockCopyMemory()
-    {
-        Buffer.BlockCopy(_sourceData, 0, _targetData, 0, BufferSize * sizeof(float));
-    }
+    public void BlockCopyMemory() => Buffer.BlockCopy(_sourceData, 0, _targetData, 0, BufferSize * sizeof(float));
 
     [Benchmark]
-    public void LinqBasedCopy()
-    {
-        _targetData = _sourceData.ToArray();
-    }
+    public void LinqBasedCopy() => _targetData = _sourceData.ToArray();
 
     [Benchmark]
     public void MemoryMarshalCast()
@@ -132,12 +114,12 @@ public class MemoryBenchmarks
         
         unsafe
         {
-            float* buffer = stackalloc float[BufferSize];
-            for (int i = 0; i < BufferSize; i++)
+            var buffer = stackalloc float[BufferSize];
+            for (var i = 0; i < BufferSize; i++)
             {
                 buffer[i] = _sourceData[i];
             }
-            for (int i = 0; i < BufferSize; i++)
+            for (var i = 0; i < BufferSize; i++)
             {
                 _targetData[i] = buffer[i];
             }
@@ -175,7 +157,7 @@ public class MemoryBenchmarks
         
         // Read data back
         stream.Position = 0;
-        for (int i = 0; i < BufferSize; i++)
+        for (var i = 0; i < BufferSize; i++)
         {
             _targetData[i] = reader.ReadSingle();
         }

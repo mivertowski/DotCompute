@@ -22,7 +22,7 @@ public static class TestDataGenerator
     public static int[] GenerateIntArray(int length, int min = 0, int max = 100)
     {
         var array = new int[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             array[i] = _random.Next(min, max + 1);
         }
@@ -35,7 +35,7 @@ public static class TestDataGenerator
     public static float[] GenerateFloatArray(int length, float min = 0.0f, float max = 1.0f)
     {
         var array = new float[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             array[i] = min + (float)_random.NextDouble() * (max - min);
         }
@@ -48,21 +48,20 @@ public static class TestDataGenerator
     public static double[] GenerateDoubleArray(int length, double min = 0.0, double max = 1.0)
     {
         var array = new double[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             array[i] = min + _random.NextDouble() * (max - min);
         }
         return array;
     }
-    
+
+
     /// <summary>
     /// Generates an array of sequential integers starting from the specified value.
     /// </summary>
-    public static int[] GenerateSequentialIntArray(int length, int start = 0)
-    {
-        return Enumerable.Range(start, length).ToArray();
-    }
-    
+    public static int[] GenerateSequentialIntArray(int length, int start = 0) => Enumerable.Range(start, length).ToArray();
+
+
     /// <summary>
     /// Generates an array filled with the specified value.
     /// </summary>
@@ -83,9 +82,9 @@ public static class TestDataGenerator
     public static int[,] GenerateIntMatrix(int rows, int cols, int min = 0, int max = 100)
     {
         var matrix = new int[rows, cols];
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 matrix[i, j] = _random.Next(min, max + 1);
             }
@@ -99,9 +98,9 @@ public static class TestDataGenerator
     public static float[,] GenerateFloatMatrix(int rows, int cols, float min = 0.0f, float max = 1.0f)
     {
         var matrix = new float[rows, cols];
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 matrix[i, j] = min + (float)_random.NextDouble() * (max - min);
             }
@@ -115,7 +114,7 @@ public static class TestDataGenerator
     public static float[,] GenerateIdentityMatrix(int size)
     {
         var matrix = new float[size, size];
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             matrix[i, i] = 1.0f;
         }
@@ -128,7 +127,7 @@ public static class TestDataGenerator
     public static float[][] GenerateJaggedMatrix(int rows, int cols, float min = 0.0f, float max = 1.0f)
     {
         var matrix = new float[rows][];
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
             matrix[i] = GenerateFloatArray(cols, min, max);
         }
@@ -145,7 +144,7 @@ public static class TestDataGenerator
     public static Vector2[] GenerateVector2Array(int length, float min = -1.0f, float max = 1.0f)
     {
         var vectors = new Vector2[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             vectors[i] = new Vector2(
                 min + (float)_random.NextDouble() * (max - min),
@@ -161,7 +160,7 @@ public static class TestDataGenerator
     public static Vector3[] GenerateVector3Array(int length, float min = -1.0f, float max = 1.0f)
     {
         var vectors = new Vector3[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             vectors[i] = new Vector3(
                 min + (float)_random.NextDouble() * (max - min),
@@ -178,7 +177,7 @@ public static class TestDataGenerator
     public static Vector4[] GenerateVector4Array(int length, float min = -1.0f, float max = 1.0f)
     {
         var vectors = new Vector4[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             vectors[i] = new Vector4(
                 min + (float)_random.NextDouble() * (max - min),
@@ -225,22 +224,17 @@ public static class TestDataGenerator
         /// Common sizes for performance testing.
         /// </summary>
         public static readonly int[] CommonSizes = { 1024, 4096, 16384, 65536, 262144, 1048576 };
-        
+
         /// <summary>
         /// Generates performance test data for the specified size.
         /// </summary>
-        public static (float[] input1, float[] input2) GeneratePerformanceData(int size)
-        {
-            return (GenerateFloatArray(size, -100.0f, 100.0f), GenerateFloatArray(size, -100.0f, 100.0f));
-        }
-        
+        public static (float[] input1, float[] input2) GeneratePerformanceData(int size) => (GenerateFloatArray(size, -100.0f, 100.0f), GenerateFloatArray(size, -100.0f, 100.0f));
+
+
         /// <summary>
         /// Generates large matrix data for performance testing.
         /// </summary>
-        public static (float[,] matrix1, float[,] matrix2) GenerateLargeMatrixData(int size)
-        {
-            return (GenerateFloatMatrix(size, size, -10.0f, 10.0f), GenerateFloatMatrix(size, size, -10.0f, 10.0f));
-        }
+        public static (float[,] matrix1, float[,] matrix2) GenerateLargeMatrixData(int size) => (GenerateFloatMatrix(size, size, -10.0f, 10.0f), GenerateFloatMatrix(size, size, -10.0f, 10.0f));
     }
     
     #endregion
@@ -309,7 +303,7 @@ public static class TestDataGenerator
     public static string GenerateRandomString(int length, string charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
     {
         var result = new char[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             result[i] = charset[_random.Next(charset.Length)];
         }
@@ -322,7 +316,7 @@ public static class TestDataGenerator
     public static string[] GenerateRandomStrings(int count, int minLength = 5, int maxLength = 20)
     {
         var strings = new string[count];
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var length = _random.Next(minLength, maxLength + 1);
             strings[i] = GenerateRandomString(length);

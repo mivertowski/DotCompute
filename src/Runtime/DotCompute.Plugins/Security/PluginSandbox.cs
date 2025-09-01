@@ -290,7 +290,7 @@ public class PluginSandbox : IDisposable
     /// <summary>
     /// Analyzes a plugin type to determine required permissions.
     /// </summary>
-    private async Task<HashSet<string>> AnalyzePluginPermissionsAsync(Type pluginType, CancellationToken cancellationToken)
+    private static async Task<HashSet<string>> AnalyzePluginPermissionsAsync(Type pluginType, CancellationToken cancellationToken)
     {
         var requiredPermissions = new HashSet<string>();
 
@@ -348,7 +348,7 @@ public class PluginSandbox : IDisposable
     /// <summary>
     /// Applies security wrapper to plugin instance if needed.
     /// </summary>
-    private async Task<object> ApplySecurityWrapperAsync(
+    private static async Task<object> ApplySecurityWrapperAsync(
         object instance,
         SecurityContext securityContext,
         CancellationToken cancellationToken)
@@ -362,7 +362,7 @@ public class PluginSandbox : IDisposable
     /// <summary>
     /// Creates a security principal for the sandbox context.
     /// </summary>
-    private global::System.Security.Principal.IPrincipal CreateSecurityPrincipal(SecurityContext context)
+    private static global::System.Security.Principal.IPrincipal CreateSecurityPrincipal(SecurityContext context)
     {
         var identity = new global::System.Security.Principal.GenericIdentity("SandboxedPlugin", "Custom");
         var principal = new global::System.Security.Principal.GenericPrincipal(identity, [.. context.AllowedPermissions]);

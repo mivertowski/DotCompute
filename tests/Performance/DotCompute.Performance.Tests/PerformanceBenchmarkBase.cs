@@ -21,7 +21,7 @@ namespace DotCompute.Performance.Tests;
 [Trait("Category", "Performance")]
 public abstract class PerformanceBenchmarkBase
 {
-    protected readonly List<double> _measurements = new();
+    protected readonly List<double> _measurements = [];
     protected readonly Stopwatch _stopwatch = new();
     
     /// <summary>
@@ -88,7 +88,7 @@ public abstract class PerformanceBenchmarkBase
     /// </summary>
     protected virtual async Task WarmupAsync()
     {
-        for (int i = 0; i < WarmupIterations; i++)
+        for (var i = 0; i < WarmupIterations; i++)
         {
             await ExecuteOperationAsync();
         }
@@ -131,7 +131,7 @@ public abstract class PerformanceBenchmarkBase
         var memoryBefore = GC.GetTotalMemory(true);
         
         // Collect measurements
-        for (int i = 0; i < MeasurementIterations; i++)
+        for (var i = 0; i < MeasurementIterations; i++)
         {
             var time = await MeasureOperationAsync();
             _measurements.Add(time);
@@ -197,7 +197,7 @@ public abstract class PerformanceBenchmarkBase
     /// <summary>
     /// Asserts that performance metrics meet expected criteria
     /// </summary>
-    protected void AssertPerformanceExpectations(PerformanceMetrics metrics, 
+    protected static void AssertPerformanceExpectations(PerformanceMetrics metrics, 
         double maxAverageTimeMs = double.MaxValue,
         double minThroughputMBps = 0.0,
         double maxStandardDeviationMs = double.MaxValue)
@@ -215,7 +215,7 @@ public abstract class PerformanceBenchmarkBase
     /// <summary>
     /// Compares performance between two benchmark runs
     /// </summary>
-    protected void ComparePerformance(PerformanceMetrics baseline, PerformanceMetrics current, 
+    protected static void ComparePerformance(PerformanceMetrics baseline, PerformanceMetrics current, 
         double maxRegressionPercent = 10.0)
     {
         var regressionPercent = ((current.AverageTime - baseline.AverageTime) / baseline.AverageTime) * 100.0;

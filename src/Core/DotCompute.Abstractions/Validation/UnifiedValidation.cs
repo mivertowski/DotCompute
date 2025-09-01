@@ -9,9 +9,9 @@ namespace DotCompute.Abstractions.Validation;
 /// </summary>
 public sealed class UnifiedValidationResult
 {
-    private readonly List<ValidationIssue> _errors = new();
-    private readonly List<ValidationIssue> _warnings = new();
-    private readonly List<ValidationIssue> _information = new();
+    private readonly List<ValidationIssue> _errors = [];
+    private readonly List<ValidationIssue> _warnings = [];
+    private readonly List<ValidationIssue> _information = [];
     
     /// <summary>
     /// Gets whether the validation passed (no errors).
@@ -46,8 +46,8 @@ public sealed class UnifiedValidationResult
     /// <summary>
     /// Gets all issues (errors, warnings, and information).
     /// </summary>
-    public IEnumerable<ValidationIssue> AllIssues => 
-        _errors.Concat(_warnings).Concat(_information);
+    public IEnumerable<ValidationIssue> AllIssues
+        => _errors.Concat(_warnings).Concat(_information);
     
     /// <summary>
     /// Gets the validation context if any.
@@ -129,8 +129,8 @@ public sealed class UnifiedValidationResult
     /// <summary>
     /// Gets a summary message of all errors.
     /// </summary>
-    public string GetErrorSummary() => 
-        string.Join("; ", _errors.Select(e => e.Message));
+    public string GetErrorSummary()
+        => string.Join("; ", _errors.Select(e => e.Message));
     
     /// <summary>
     /// Gets a full summary of all issues.
@@ -297,5 +297,4 @@ public sealed class ValidationException : Exception
     {
         UnifiedValidationResult = UnifiedValidationResult.Failure("Unknown validation error");
     }
-
 }

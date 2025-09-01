@@ -447,7 +447,7 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
         return Success($"Plugin {context.PluginId} rolled back to stable version", TimeSpan.FromMilliseconds(600));
     }
 
-    private bool IsPluginRelatedError(Exception error, PluginRecoveryContext context)
+    private static bool IsPluginRelatedError(Exception error, PluginRecoveryContext context)
     {
         var message = error.Message.ToLowerInvariant();
         return message.Contains("plugin") ||
@@ -479,36 +479,36 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
         Logger.LogDebug("Plugin {PluginId} force stopped", pluginId);
     }
 
-    private async Task<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken)
+    private static async Task<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken)
     {
         // Plugin unload implementation
         await Task.Delay(100, cancellationToken);
         return true;
     }
 
-    private async Task<bool> LoadPluginAsync(string pluginId, string? pluginPath, CancellationToken cancellationToken)
+    private static async Task<bool> LoadPluginAsync(string pluginId, string? pluginPath, CancellationToken cancellationToken)
     {
         // Plugin load implementation
         await Task.Delay(300, cancellationToken);
         return true;
     }
 
-    private bool IsFrameworkCompatible(string? frameworkName)
+    private static bool IsFrameworkCompatible(string? frameworkName)
         // Framework compatibility check implementation
 
         => frameworkName?.Contains(".NETCoreApp") == true;
 
-    private List<string> CheckDependencyConflicts(Assembly assembly)
+    private static List<string> CheckDependencyConflicts(Assembly assembly)
         // Dependency conflict detection implementation
 
         => [];
 
-    private List<string> CheckSecurityIssues(Assembly assembly)
+    private static List<string> CheckSecurityIssues(Assembly assembly)
         // Security issue detection implementation
 
         => [];
 
-    private double CalculateOverallHealth(Dictionary<string, PluginHealthInfo> pluginHealth)
+    private static double CalculateOverallHealth(Dictionary<string, PluginHealthInfo> pluginHealth)
     {
         if (pluginHealth.Count == 0)
         {

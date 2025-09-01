@@ -42,7 +42,7 @@ public class KernelExecutionContext
     /// <summary>
     /// Gets or sets additional execution parameters.
     /// </summary>
-    public Dictionary<string, object> Parameters { get; set; } = new();
+    public Dictionary<string, object> Parameters { get; set; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether to enable profiling for this execution.
@@ -91,12 +91,12 @@ public class KernelExecutionContext
     /// <summary>
     /// Gets or sets the memory buffers for this execution context.
     /// </summary>
-    public Dictionary<int, IUnifiedMemoryBuffer<byte>> Buffers { get; set; } = new();
+    public Dictionary<int, IUnifiedMemoryBuffer<byte>> Buffers { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the scalar parameters for this execution context.
     /// </summary>
-    public Dictionary<int, object> Scalars { get; set; } = new();
+    public Dictionary<int, object> Scalars { get; set; } = [];
 
     /// <summary>
     /// Sets a parameter value for the kernel execution.
@@ -121,10 +121,7 @@ public class KernelExecutionContext
     /// </summary>
     /// <param name="index">The buffer index.</param>
     /// <returns>The memory buffer.</returns>
-    public IUnifiedMemoryBuffer<byte>? GetBuffer(int index)
-    {
-        return Buffers.TryGetValue(index, out var buffer) ? buffer : null;
-    }
+    public IUnifiedMemoryBuffer<byte>? GetBuffer(int index) => Buffers.TryGetValue(index, out var buffer) ? buffer : null;
 
     /// <summary>
     /// Gets a buffer parameter by index (static access).
@@ -132,10 +129,7 @@ public class KernelExecutionContext
     /// <param name="context">The execution context.</param>
     /// <param name="index">The buffer index.</param>
     /// <returns>The memory buffer.</returns>
-    public static IUnifiedMemoryBuffer<byte>? GetBuffer(KernelExecutionContext context, int index)
-    {
-        return context.GetBuffer(index);
-    }
+    public static IUnifiedMemoryBuffer<byte>? GetBuffer(KernelExecutionContext context, int index) => context.GetBuffer(index);
 
     /// <summary>
     /// Gets a scalar parameter by index.

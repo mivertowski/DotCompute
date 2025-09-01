@@ -85,7 +85,7 @@ public class ExpressionKernelGenerator
         _handlers[ExpressionType.GreaterThanOrEqual] = new ComparisonHandler();
     }
 
-    private string GenerateKernelName(Expression expression)
+    private static string GenerateKernelName(Expression expression)
     {
         var baseType = expression.NodeType.ToString().ToLowerInvariant();
         var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
@@ -93,7 +93,7 @@ public class ExpressionKernelGenerator
         return $"generated_kernel_{baseType}_{timestamp}_{hash}";
     }
 
-    private GeneratedKernelParameter[] ExtractParameters(Expression expression)
+    private static GeneratedKernelParameter[] ExtractParameters(Expression expression)
     {
         var parameters = new List<GeneratedKernelParameter>();
         var visitor = new ParameterExtractionVisitor(parameters);
@@ -125,7 +125,7 @@ public class ExpressionKernelGenerator
         return generator.GenerateFromExpression(expression, _context);
     }
 
-    private DotCompute.Abstractions.Types.KernelLanguage SelectTargetLanguage(IAccelerator accelerator)
+    private static DotCompute.Abstractions.Types.KernelLanguage SelectTargetLanguage(IAccelerator accelerator)
     {
         return accelerator.Type switch
         {

@@ -481,7 +481,7 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Creates a CUDA context for this device.
         /// </summary>
-        public CudaContext CreateContext() => new CudaContext(_deviceId);
+        public CudaContext CreateContext() => new(_deviceId);
 
         /// <summary>
         /// Synchronizes all operations on this device asynchronously.

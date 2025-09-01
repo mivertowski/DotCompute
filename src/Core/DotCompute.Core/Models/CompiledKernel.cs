@@ -30,12 +30,12 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets the CUBIN binary data.
         /// </summary>
-        public byte[] Cubin { get; set; } = Array.Empty<byte>();
+        public byte[] Cubin { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the compiled binary data.
         /// </summary>
-        public byte[] Binary { get; set; } = Array.Empty<byte>();
+        public byte[] Binary { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the CUDA module handle.

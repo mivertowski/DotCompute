@@ -10,7 +10,7 @@ namespace DotCompute.Core.Models
     public class RuntimeCoalescingProfile
     {
         private readonly object _lockObject = new();
-        private readonly List<double> _executionTimes = new();
+        private readonly List<double> _executionTimes = [];
         private double _totalMemoryTransferred;
         private int _totalMemoryTransactions;
         private int _coalescedTransactions;
@@ -169,9 +169,15 @@ namespace DotCompute.Core.Models
                 else
                 {
                     if (executionTime < MinExecutionTime)
+                    {
                         MinExecutionTime = executionTime;
+                    }
+
+
                     if (executionTime > MaxExecutionTime)
+                    {
                         MaxExecutionTime = executionTime;
+                    }
                 }
                 
                 AverageExecutionTime = TimeSpan.FromMilliseconds(_executionTimes.Average());
@@ -223,8 +229,12 @@ namespace DotCompute.Core.Models
 
         private double CalculateStandardDeviation()
         {
-            if (_executionTimes.Count <= 1) return 0.0;
-            
+            if (_executionTimes.Count <= 1)
+            {
+                return 0.0;
+            }
+
+
             var mean = _executionTimes.Average();
             var sumOfSquaredDifferences = _executionTimes.Sum(time => Math.Pow(time - mean, 2));
             return Math.Sqrt(sumOfSquaredDifferences / _executionTimes.Count);
@@ -232,8 +242,12 @@ namespace DotCompute.Core.Models
 
         private double CalculateMedian()
         {
-            if (_executionTimes.Count == 0) return 0.0;
-            
+            if (_executionTimes.Count == 0)
+            {
+                return 0.0;
+            }
+
+
             var sorted = _executionTimes.OrderBy(x => x).ToArray();
             var mid = sorted.Length / 2;
             

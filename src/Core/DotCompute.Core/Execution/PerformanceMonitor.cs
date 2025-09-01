@@ -138,7 +138,7 @@ namespace DotCompute.Core.Execution
                 };
             }
 
-            return _analyzer.AnalyzePerformance(recentExecutions, [.. _deviceProfiles.Values]);
+            return PerformanceAnalyzer.AnalyzePerformance(recentExecutions, [.. _deviceProfiles.Values]);
         }
 
         /// <summary>
@@ -152,7 +152,7 @@ namespace DotCompute.Core.Execution
             var recentExecutions = GetRecentExecutions(AnalysisWindowSize);
             var kernelProfile = _kernelProfiles.GetValueOrDefault(kernelName);
 
-            return _optimizer.RecommendStrategy(
+            return AdaptiveOptimizer.RecommendStrategy(
                 kernelName, inputSizes, availableAcceleratorTypes, recentExecutions, kernelProfile);
         }
 
@@ -330,7 +330,7 @@ namespace DotCompute.Core.Execution
                 }
 
                 // Perform background analysis
-                var analysis = _analyzer.AnalyzePerformance(recentExecutions, [.. _deviceProfiles.Values]);
+                var analysis = PerformanceAnalyzer.AnalyzePerformance(recentExecutions, [.. _deviceProfiles.Values]);
 
                 // Log findings
                 if (analysis.Bottlenecks.Count != 0)
@@ -369,7 +369,7 @@ namespace DotCompute.Core.Execution
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public ParallelExecutionAnalysis AnalyzePerformance(ExecutionRecord[] executions, DevicePerformanceProfile[] deviceProfiles)
+        public static ParallelExecutionAnalysis AnalyzePerformance(ExecutionRecord[] executions, DevicePerformanceProfile[] deviceProfiles)
         {
             var analysis = new ParallelExecutionAnalysis();
 
@@ -394,7 +394,7 @@ namespace DotCompute.Core.Execution
                     },
                     Severity = b.Severity,
                     Details = b.Details,
-                    ResourceUtilization = new Dictionary<string, double>()
+                    ResourceUtilization = []
                 });
             }
             
@@ -556,7 +556,7 @@ namespace DotCompute.Core.Execution
             );
         }
 
-        private TrendDirection CalculateTrend(double[] values)
+        private static TrendDirection CalculateTrend(double[] values)
         {
             if (values.Length < 2)
             {
@@ -601,7 +601,7 @@ namespace DotCompute.Core.Execution
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public ExecutionStrategyRecommendation RecommendStrategy(
+        public static ExecutionStrategyRecommendation RecommendStrategy(
             string kernelName,
             int[] inputSizes,
             AcceleratorType[] availableAcceleratorTypes,
@@ -710,7 +710,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Estimates execution time for data parallel kernels.
         /// </summary>
-        public double EstimateExecutionTime(string kernelName, ComputeDeviceType[] deviceTypes, int dataSize)
+        public static double EstimateExecutionTime(string kernelName, ComputeDeviceType[] deviceTypes, int dataSize)
         {
             // Simple estimation based on historical data or defaults
             const double baseTimeMs = 10.0; // Base execution time
@@ -723,7 +723,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Estimates execution time for model parallel execution.
         /// </summary>
-        public double EstimateModelParallelExecutionTime<T>(ModelParallelWorkload<T> workload, Dictionary<int, IAccelerator> layerAssignments) where T : unmanaged
+        public static double EstimateModelParallelExecutionTime<T>(ModelParallelWorkload<T> workload, Dictionary<int, IAccelerator> layerAssignments) where T : unmanaged
         {
             // Estimate based on layer count and device distribution
             const double baseLayerTimeMs = 5.0;
@@ -736,7 +736,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Estimates execution time for pipeline execution.
         /// </summary>
-        public double EstimatePipelineExecutionTime(List<PipelineStageDefinition> pipelineStages, MicrobatchConfiguration microbatchConfig)
+        public static double EstimatePipelineExecutionTime(List<PipelineStageDefinition> pipelineStages, MicrobatchConfiguration microbatchConfig)
         {
             // Estimate based on stage count and microbatch configuration
             const double baseStageTimeMs = 8.0;
@@ -749,7 +749,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Estimates processing time for a pipeline stage.
         /// </summary>
-        public double EstimateStageProcessingTime(PipelineStageDefinition stage, MicrobatchConfiguration microbatchConfig)
+        public static double EstimateStageProcessingTime(PipelineStageDefinition stage, MicrobatchConfiguration microbatchConfig)
         {
             // Estimate based on stage complexity and microbatch size
             const double baseProcessingTimeMs = 5.0;
@@ -757,7 +757,6 @@ namespace DotCompute.Core.Execution
             
             return baseProcessingTimeMs + microbatchMultiplier;
         }
-
     }
 
     // Supporting data structures

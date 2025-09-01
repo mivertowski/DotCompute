@@ -378,7 +378,7 @@ public class CpuMemoryManagerTests : IDisposable
         var buffers = new List<IUnifiedMemoryBuffer>();
         
         // Act - Allocate 100 buffers of 64KB each
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             var buffer = await _memoryManager.AllocateAsync(64 * 1024, options);
             buffers.Add(buffer);

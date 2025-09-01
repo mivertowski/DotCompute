@@ -63,17 +63,17 @@ public sealed class CoalescingAnalysis
     /// <summary>
     /// Gets or sets identified coalescing issues.
     /// </summary>
-    public List<DotCompute.Abstractions.Types.CoalescingIssue> Issues { get; set; } = new();
+    public List<DotCompute.Abstractions.Types.CoalescingIssue> Issues { get; set; } = [];
 
     /// <summary>
     /// Gets or sets optimization recommendations.
     /// </summary>
-    public List<string> Recommendations { get; set; } = new();
+    public List<string> Recommendations { get; set; } = [];
 
     /// <summary>
     /// Gets or sets performance optimization suggestions specific to this analysis.
     /// </summary>
-    public List<string> Optimizations { get; set; } = new();
+    public List<string> Optimizations { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the actual bytes transferred during memory operations.
@@ -88,7 +88,7 @@ public sealed class CoalescingAnalysis
     /// <summary>
     /// Gets or sets architecture-specific notes and observations.
     /// </summary>
-    public List<string> ArchitectureNotes { get; set; } = new();
+    public List<string> ArchitectureNotes { get; set; } = [];
 
 }
 
@@ -135,7 +135,7 @@ public sealed class StridedAccessAnalysis
     /// <summary>
     /// Gets or sets optimization recommendations.
     /// </summary>
-    public List<string> Recommendations { get; set; } = new();
+    public List<string> Recommendations { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the access regularity score (0-1).
@@ -155,7 +155,7 @@ public sealed class StridedAccessAnalysis
     /// <summary>
     /// Gets or sets suggested optimizations.
     /// </summary>
-    public List<string> OptimizationSuggestions { get; set; } = new();
+    public List<string> OptimizationSuggestions { get; set; } = [];
 }
 
 /// <summary>
@@ -221,7 +221,7 @@ public sealed class Matrix2DAccessAnalysis
     /// <summary>
     /// Gets or sets optimization recommendations.
     /// </summary>
-    public List<string> Optimizations { get; set; } = new();
+    public List<string> Optimizations { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the access pattern type (row-major, column-major, tiled).
@@ -307,7 +307,7 @@ public sealed class RuntimeCoalescingProfile
     /// <summary>
     /// Gets or sets performance counters for detailed profiling metrics.
     /// </summary>
-    public Dictionary<string, long> PerformanceCounters { get; set; } = new();
+    public Dictionary<string, long> PerformanceCounters { get; set; } = [];
     
     /// <summary>
     /// Gets or sets the number of profiling runs executed.
@@ -327,7 +327,7 @@ public sealed class RuntimeCoalescingProfile
     /// <summary>
     /// Gets or sets additional profiling metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 /// <summary>
@@ -358,7 +358,7 @@ public sealed class CoalescingComparison
     /// <summary>
     /// Gets the dictionary of analyses indexed by pattern name.
     /// </summary>
-    public Dictionary<string, CoalescingAnalysis> Analyses { get; } = new();
+    public Dictionary<string, CoalescingAnalysis> Analyses { get; } = [];
 
     /// <summary>
     /// Gets or sets the name of the pattern with the best efficiency.
@@ -388,7 +388,7 @@ public sealed class CoalescingComparison
     /// <summary>
     /// Gets or sets the list of recommendations based on the comparison.
     /// </summary>
-    public List<string> Recommendations { get; set; } = new();
+    public List<string> Recommendations { get; set; } = [];
 }
 
 /// <summary>

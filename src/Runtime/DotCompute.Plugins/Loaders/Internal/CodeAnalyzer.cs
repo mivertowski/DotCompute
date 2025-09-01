@@ -38,7 +38,7 @@ internal class CodeAnalyzer
         return result;
     }
 
-    private async Task AnalyzeFileHeuristicsAsync(string assemblyPath, CodeAnalysisResult result, CancellationToken cancellationToken)
+    private static async Task AnalyzeFileHeuristicsAsync(string assemblyPath, CodeAnalysisResult result, CancellationToken cancellationToken)
     {
         var assemblyBytes = await File.ReadAllBytesAsync(assemblyPath, cancellationToken);
         var assemblyContent = System.Text.Encoding.ASCII.GetString(assemblyBytes);

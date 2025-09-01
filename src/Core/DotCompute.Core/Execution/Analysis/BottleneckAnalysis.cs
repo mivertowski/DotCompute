@@ -64,7 +64,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <value>
         /// A dictionary mapping resource names to their utilization percentages (0-100).
         /// </value>
-        public Dictionary<string, double> ResourceUtilization { get; set; } = new();
+        public Dictionary<string, double> ResourceUtilization { get; set; } = [];
 
         /// <summary>
         /// Returns a string representation of the bottleneck analysis.

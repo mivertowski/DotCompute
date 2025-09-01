@@ -79,10 +79,10 @@ namespace DotCompute.Backends.CUDA
         }
 
         /// <inheritdoc/>
-        protected override object? InitializeCore() =>
+        protected override object? InitializeCore()
             // CUDA-specific initialization is handled in constructor
             // Return device info for logging purposes
-            new { DeviceName = _device.Name, ComputeCapability = _device.ComputeCapability };
+            => new { DeviceName = _device.Name, ComputeCapability = _device.ComputeCapability };
 
         /// <inheritdoc/>
         protected override async ValueTask DisposeCoreAsync()

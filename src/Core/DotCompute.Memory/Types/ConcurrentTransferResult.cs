@@ -87,13 +87,13 @@ public class ConcurrentTransferResult
     /// Gets or sets the list of individual transfer results.
     /// </summary>
     /// <value>A list containing the result of each individual transfer operation.</value>
-    public List<AdvancedTransferResult> IndividualResults { get; set; } = new();
+    public List<AdvancedTransferResult> IndividualResults { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the list of errors encountered during transfers.
     /// </summary>
     /// <value>A list of error messages from failed transfers.</value>
-    public List<string> Errors { get; set; } = new();
+    public List<string> Errors { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the maximum concurrency level achieved.

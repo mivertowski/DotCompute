@@ -23,7 +23,7 @@ namespace DotCompute.Core.Pipelines.Stages
         public PipelineStageType Type => PipelineStageType.Custom;
 
         /// <inheritdoc/>
-        public IReadOnlyList<string> Dependencies { get; } = new List<string>();
+        public IReadOnlyList<string> Dependencies { get; } = [];
 
         /// <inheritdoc/>
         public IReadOnlyDictionary<string, object> Metadata => _pipeline.Metadata;

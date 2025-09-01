@@ -370,7 +370,7 @@ public class CompatibilityChecker
     /// <summary>
     /// Checks if the current operating system is compatible with a platform specification.
     /// </summary>
-    private bool IsOperatingSystemCompatible(string currentOS, string platform)
+    private static bool IsOperatingSystemCompatible(string currentOS, string platform)
     {
         var platformLower = platform.ToLowerInvariant();
         var osLower = currentOS.ToLowerInvariant();
@@ -388,7 +388,7 @@ public class CompatibilityChecker
     /// <summary>
     /// Checks if the current architecture is compatible with a platform specification.
     /// </summary>
-    private bool IsArchitectureCompatible(string currentArch, string platform)
+    private static bool IsArchitectureCompatible(string currentArch, string platform)
     {
         var platformLower = platform.ToLowerInvariant();
         var archLower = currentArch.ToLowerInvariant();
@@ -420,7 +420,7 @@ public class CompatibilityChecker
     /// <summary>
     /// Checks platform-specific features.
     /// </summary>
-    private async Task CheckPlatformSpecificFeaturesAsync(NuGetPluginManifest manifest, CompatibilityCheckResult result, CancellationToken cancellationToken)
+    private static async Task CheckPlatformSpecificFeaturesAsync(NuGetPluginManifest manifest, CompatibilityCheckResult result, CancellationToken cancellationToken)
     {
         await Task.CompletedTask; // Placeholder for async signature
 
@@ -452,7 +452,7 @@ public class CompatibilityChecker
     /// <summary>
     /// Checks AOT compatibility.
     /// </summary>
-    private async Task<bool> CheckAotCompatibilityAsync(NuGetPluginManifest manifest, CancellationToken cancellationToken)
+    private static async Task<bool> CheckAotCompatibilityAsync(NuGetPluginManifest manifest, CancellationToken cancellationToken)
     {
         await Task.CompletedTask; // Placeholder for async signature
 
@@ -480,7 +480,7 @@ public class CompatibilityChecker
     /// <summary>
     /// Checks trimming compatibility.
     /// </summary>
-    private async Task<bool> CheckTrimmingCompatibilityAsync(NuGetPluginManifest manifest, CancellationToken cancellationToken)
+    private static async Task<bool> CheckTrimmingCompatibilityAsync(NuGetPluginManifest manifest, CancellationToken cancellationToken)
     {
         await Task.CompletedTask; // Placeholder for async signature
 
@@ -497,7 +497,7 @@ public class CompatibilityChecker
     /// <summary>
     /// Checks JIT compilation requirements.
     /// </summary>
-    private async Task<bool> CheckJitRequirementsAsync(NuGetPluginManifest manifest, CancellationToken cancellationToken)
+    private static async Task<bool> CheckJitRequirementsAsync(NuGetPluginManifest manifest, CancellationToken cancellationToken)
     {
         await Task.CompletedTask; // Placeholder for async signature
 
@@ -585,7 +585,7 @@ public class CompatibilityChecker
     /// <summary>
     /// Gets known compatibility issues for a dependency.
     /// </summary>
-    private List<string> GetKnownCompatibilityIssues(string dependencyId, string versionRange)
+    private static List<string> GetKnownCompatibilityIssues(string dependencyId, string versionRange)
     {
         // This would check against a database of known compatibility issues
         var issues = new List<string>();

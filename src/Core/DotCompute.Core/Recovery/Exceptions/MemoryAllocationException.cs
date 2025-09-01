@@ -77,5 +77,4 @@ public class MemoryAllocationException : Exception
     public MemoryAllocationException()
     {
     }
-
 }

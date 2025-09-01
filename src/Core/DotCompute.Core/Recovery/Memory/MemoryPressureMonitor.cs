@@ -110,7 +110,7 @@ public sealed class MemoryPressureMonitor : IDisposable
     /// The pressure level is determined by comparing the usage ratio against
     /// predefined thresholds (95% = Critical, 85% = High, 70% = Medium, &lt;70% = Low).
     /// </remarks>
-    private MemoryPressureInfo CalculateMemoryPressure()
+    private static MemoryPressureInfo CalculateMemoryPressure()
     {
         var gcMemory = GC.GetTotalMemory(false);
         var totalMemory = GC.GetTotalMemory(true); // Force GC for more accurate reading

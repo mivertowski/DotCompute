@@ -845,7 +845,7 @@ public sealed class CryptographicSecurity : IDisposable
         });
     }
 
-    private async Task<SignatureResult> PerformSigningAsync(ReadOnlyMemory<byte> data,
+    private static async Task<SignatureResult> PerformSigningAsync(ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer, string hashAlgorithm, SignatureResult result)
     {
         try
@@ -926,7 +926,7 @@ public sealed class CryptographicSecurity : IDisposable
         });
     }
 
-    private async Task<SignatureVerificationResult> PerformSignatureVerificationAsync(ReadOnlyMemory<byte> data,
+    private static async Task<SignatureVerificationResult> PerformSignatureVerificationAsync(ReadOnlyMemory<byte> data,
         ReadOnlyMemory<byte> signature, SecureKeyContainer keyContainer, string hashAlgorithm, SignatureVerificationResult result)
     {
         try

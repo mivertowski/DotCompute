@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using FluentAssertions;
-using FluentAssertions.Execution;
-using FluentAssertions.Primitives;
+using Xunit.Sdk;
+using AssertionException = Xunit.Sdk.XunitException;
 
 namespace DotCompute.Tests.Common.Assertions;
 
@@ -21,11 +21,10 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldBeApproximately(this float actual, float expected, float tolerance = 1e-6f, string because = "")
     {
-        Execute.Assertion
-            .ForCondition(Math.Abs(actual - expected) <= tolerance)
-            .BecauseOf(because)
-            .FailWith("Expected {0} to be approximately {1} ± {2}{reason}, but the difference was {3}.",
-                actual, expected, tolerance, Math.Abs(actual - expected));
+        if (Math.Abs(actual - expected) > tolerance)
+        {
+            throw new AssertionException($"Expected {actual} to be approximately {expected} ± {tolerance}{(string.IsNullOrEmpty(because) ? "" : " because " + because)}, but the difference was {Math.Abs(actual - expected)}.");
+        }
     }
     
     /// <summary>
@@ -33,11 +32,10 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldBeApproximately(this double actual, double expected, double tolerance = 1e-12, string because = "")
     {
-        Execute.Assertion
-            .ForCondition(Math.Abs(actual - expected) <= tolerance)
-            .BecauseOf(because)
-            .FailWith("Expected {0} to be approximately {1} ± {2}{reason}, but the difference was {3}.",
-                actual, expected, tolerance, Math.Abs(actual - expected));
+        if (Math.Abs(actual - expected) > tolerance)
+        {
+            throw new AssertionException($"Expected {actual} to be approximately {expected} ± {tolerance}{(string.IsNullOrEmpty(because) ? "" : " because " + because)}, but the difference was {Math.Abs(actual - expected)}.");
+        }
     }
     
     /// <summary>
@@ -46,24 +44,10 @@ public static class CustomAssertions
     public static void ShouldBeApproximatelyRelative(this float actual, float expected, float relativeTolerance = 1e-6f, string because = "")
     {
         var tolerance = Math.Abs(expected) * relativeTolerance;
-        Execute.Assertion
-            .ForCondition(Math.Abs(actual - expected) <= tolerance)
-            .BecauseOf(because)
-            .FailWith("Expected {0} to be approximately {1} within {2}% relative tolerance{reason}, but the difference was {3}.",
-                actual, expected, relativeTolerance * 100, Math.Abs(actual - expected));
-    }
-    
-    /// <summary>
-    /// Asserts that a double-precision value is within a relative tolerance of the expected value.
-    /// </summary>
-    public static void ShouldBeApproximatelyRelative(this double actual, double expected, double relativeTolerance = 1e-12, string because = "")
-    {
-        var tolerance = Math.Abs(expected) * relativeTolerance;
-        Execute.Assertion
-            .ForCondition(Math.Abs(actual - expected) <= tolerance)
-            .BecauseOf(because)
-            .FailWith("Expected {0} to be approximately {1} within {2}% relative tolerance{reason}, but the difference was {3}.",
-                actual, expected, relativeTolerance * 100, Math.Abs(actual - expected));
+        if (Math.Abs(actual - expected) > tolerance)
+        {
+            throw new AssertionException($"Expected {actual} to be within {relativeTolerance * 100}% of {expected}{(string.IsNullOrEmpty(because) ? "" : " because " + because)}, but the difference was {Math.Abs(actual - expected) / Math.Abs(expected) * 100:F2}%.");
+        }
     }
     
     #endregion
@@ -71,108 +55,70 @@ public static class CustomAssertions
     #region Array Assertions
     
     /// <summary>
-    /// Asserts that two arrays are element-wise approximately equal.
+    /// Asserts that two float arrays are approximately equal element-wise.
     /// </summary>
     public static void ShouldBeApproximatelyEqualTo(this float[] actual, float[] expected, float tolerance = 1e-6f, string because = "")
     {
-        actual.Should().NotBeNull(because);
-        expected.Should().NotBeNull(because);
-        actual.Should().HaveSameCount(expected, because);
+        actual.Should().NotBeNull();
+        expected.Should().NotBeNull();
+        actual.Should().HaveCount(expected.Length);
         
-        for (int i = 0; i < actual.Length; i++)
+        for (var i = 0; i < actual.Length; i++)
         {
-            Execute.Assertion
-                .ForCondition(Math.Abs(actual[i] - expected[i]) <= tolerance)
-                .BecauseOf(because)
-                .FailWith("Expected array element at index {0} to be approximately {1} ± {2}{reason}, but found {3} (difference: {4}).",
-                    i, expected[i], tolerance, actual[i], Math.Abs(actual[i] - expected[i]));
+            if (Math.Abs(actual[i] - expected[i]) > tolerance)
+            {
+                throw new AssertionException($"Arrays differ at index {i}: expected {expected[i]} but was {actual[i]} (tolerance: {tolerance}){(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+            }
         }
     }
     
     /// <summary>
-    /// Asserts that two arrays are element-wise approximately equal.
+    /// Asserts that two double arrays are approximately equal element-wise.
     /// </summary>
     public static void ShouldBeApproximatelyEqualTo(this double[] actual, double[] expected, double tolerance = 1e-12, string because = "")
     {
-        actual.Should().NotBeNull(because);
-        expected.Should().NotBeNull(because);
-        actual.Should().HaveSameCount(expected, because);
+        actual.Should().NotBeNull();
+        expected.Should().NotBeNull();
+        actual.Should().HaveCount(expected.Length);
         
-        for (int i = 0; i < actual.Length; i++)
+        for (var i = 0; i < actual.Length; i++)
         {
-            Execute.Assertion
-                .ForCondition(Math.Abs(actual[i] - expected[i]) <= tolerance)
-                .BecauseOf(because)
-                .FailWith("Expected array element at index {0} to be approximately {1} ± {2}{reason}, but found {3} (difference: {4}).",
-                    i, expected[i], tolerance, actual[i], Math.Abs(actual[i] - expected[i]));
+            if (Math.Abs(actual[i] - expected[i]) > tolerance)
+            {
+                throw new AssertionException($"Arrays differ at index {i}: expected {expected[i]} but was {actual[i]} (tolerance: {tolerance}){(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+            }
         }
     }
     
     /// <summary>
-    /// Asserts that an array contains only finite values (no NaN or infinity).
+    /// Asserts that an array contains only finite values (no NaN or Infinity).
     /// </summary>
-    public static void ShouldContainOnlyFiniteValues(this float[] actual, string because = "")
+    public static void ShouldContainOnlyFiniteValues(this float[] array, string because = "")
     {
-        actual.Should().NotBeNull(because);
+        array.Should().NotBeNull();
         
-        for (int i = 0; i < actual.Length; i++)
+        for (var i = 0; i < array.Length; i++)
         {
-            Execute.Assertion
-                .ForCondition(float.IsFinite(actual[i]))
-                .BecauseOf(because)
-                .FailWith("Expected array to contain only finite values{reason}, but found {0} at index {1}.",
-                    actual[i], i);
+            if (!float.IsFinite(array[i]))
+            {
+                throw new AssertionException($"Array contains non-finite value {array[i]} at index {i}{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+            }
         }
     }
     
     /// <summary>
-    /// Asserts that an array contains only finite values (no NaN or infinity).
+    /// Asserts that an array contains only finite values (no NaN or Infinity).
     /// </summary>
-    public static void ShouldContainOnlyFiniteValues(this double[] actual, string because = "")
+    public static void ShouldContainOnlyFiniteValues(this double[] array, string because = "")
     {
-        actual.Should().NotBeNull(because);
+        array.Should().NotBeNull();
         
-        for (int i = 0; i < actual.Length; i++)
+        for (var i = 0; i < array.Length; i++)
         {
-            Execute.Assertion
-                .ForCondition(double.IsFinite(actual[i]))
-                .BecauseOf(because)
-                .FailWith("Expected array to contain only finite values{reason}, but found {0} at index {1}.",
-                    actual[i], i);
-        }
-    }
-    
-    /// <summary>
-    /// Asserts that an array is sorted in ascending order.
-    /// </summary>
-    public static void ShouldBeSortedAscending<T>(this T[] actual, string because = "") where T : IComparable<T>
-    {
-        actual.Should().NotBeNull(because);
-        
-        for (int i = 1; i < actual.Length; i++)
-        {
-            Execute.Assertion
-                .ForCondition(actual[i - 1].CompareTo(actual[i]) <= 0)
-                .BecauseOf(because)
-                .FailWith("Expected array to be sorted in ascending order{reason}, but found {0} > {1} at indices {2} and {3}.",
-                    actual[i - 1], actual[i], i - 1, i);
-        }
-    }
-    
-    /// <summary>
-    /// Asserts that an array is sorted in descending order.
-    /// </summary>
-    public static void ShouldBeSortedDescending<T>(this T[] actual, string because = "") where T : IComparable<T>
-    {
-        actual.Should().NotBeNull(because);
-        
-        for (int i = 1; i < actual.Length; i++)
-        {
-            Execute.Assertion
-                .ForCondition(actual[i - 1].CompareTo(actual[i]) >= 0)
-                .BecauseOf(because)
-                .FailWith("Expected array to be sorted in descending order{reason}, but found {0} < {1} at indices {2} and {3}.",
-                    actual[i - 1], actual[i], i - 1, i);
+            if (!double.IsFinite(array[i]))
+            {
+                throw new AssertionException($"Array contains non-finite value {array[i]} at index {i}{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+            }
         }
     }
     
@@ -181,197 +127,28 @@ public static class CustomAssertions
     #region Matrix Assertions
     
     /// <summary>
-    /// Asserts that two matrices are element-wise approximately equal.
+    /// Asserts that two matrices are approximately equal.
     /// </summary>
-    public static void ShouldBeApproximatelyEqualTo(this float[,] actual, float[,] expected, float tolerance = 1e-6f, string because = "")
+    public static void ShouldBeApproximatelyEqualTo(this float[] actual, float[] expected, int rows, int cols, float tolerance = 1e-6f, string because = "")
     {
-        actual.Should().NotBeNull(because);
-        expected.Should().NotBeNull(because);
+        actual.Should().NotBeNull();
+        expected.Should().NotBeNull();
         
-        var actualRows = actual.GetLength(0);
-        var actualCols = actual.GetLength(1);
-        var expectedRows = expected.GetLength(0);
-        var expectedCols = expected.GetLength(1);
+        var expectedLength = rows * cols;
+        actual.Should().HaveCount(expectedLength);
+        expected.Should().HaveCount(expectedLength);
         
-        Execute.Assertion
-            .ForCondition(actualRows == expectedRows && actualCols == expectedCols)
-            .BecauseOf(because)
-            .FailWith("Expected matrix dimensions to be [{0}, {1}]{reason}, but found [{2}, {3}].",
-                expectedRows, expectedCols, actualRows, actualCols);
-        
-        for (int i = 0; i < actualRows; i++)
+        for (var row = 0; row < rows; row++)
         {
-            for (int j = 0; j < actualCols; j++)
+            for (var col = 0; col < cols; col++)
             {
-                Execute.Assertion
-                    .ForCondition(Math.Abs(actual[i, j] - expected[i, j]) <= tolerance)
-                    .BecauseOf(because)
-                    .FailWith("Expected matrix element at [{0}, {1}] to be approximately {2} ± {3}{reason}, but found {4} (difference: {5}).",
-                        i, j, expected[i, j], tolerance, actual[i, j], Math.Abs(actual[i, j] - expected[i, j]));
+                var index = row * cols + col;
+                if (Math.Abs(actual[index] - expected[index]) > tolerance)
+                {
+                    throw new AssertionException($"Matrices differ at [{row},{col}]: expected {expected[index]} but was {actual[index]} (tolerance: {tolerance}){(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+                }
             }
         }
-    }
-    
-    /// <summary>
-    /// Asserts that a matrix is symmetric.
-    /// </summary>
-    public static void ShouldBeSymmetric(this float[,] actual, float tolerance = 1e-6f, string because = "")
-    {
-        actual.Should().NotBeNull(because);
-        
-        var rows = actual.GetLength(0);
-        var cols = actual.GetLength(1);
-        
-        Execute.Assertion
-            .ForCondition(rows == cols)
-            .BecauseOf(because)
-            .FailWith("Expected matrix to be square (symmetric matrices must be square){reason}, but found dimensions [{0}, {1}].",
-                rows, cols);
-        
-        for (int i = 0; i < rows; i++)
-        {
-            for (int j = 0; j < cols; j++)
-            {
-                Execute.Assertion
-                    .ForCondition(Math.Abs(actual[i, j] - actual[j, i]) <= tolerance)
-                    .BecauseOf(because)
-                    .FailWith("Expected matrix to be symmetric{reason}, but element [{0}, {1}] = {2} != [{3}, {4}] = {5}.",
-                        i, j, actual[i, j], j, i, actual[j, i]);
-            }
-        }
-    }
-    
-    /// <summary>
-    /// Asserts that a matrix is an identity matrix.
-    /// </summary>
-    public static void ShouldBeIdentityMatrix(this float[,] actual, float tolerance = 1e-6f, string because = "")
-    {
-        actual.Should().NotBeNull(because);
-        
-        var rows = actual.GetLength(0);
-        var cols = actual.GetLength(1);
-        
-        Execute.Assertion
-            .ForCondition(rows == cols)
-            .BecauseOf(because)
-            .FailWith("Expected matrix to be square (identity matrices must be square){reason}, but found dimensions [{0}, {1}].",
-                rows, cols);
-        
-        for (int i = 0; i < rows; i++)
-        {
-            for (int j = 0; j < cols; j++)
-            {
-                var expectedValue = i == j ? 1.0f : 0.0f;
-                Execute.Assertion
-                    .ForCondition(Math.Abs(actual[i, j] - expectedValue) <= tolerance)
-                    .BecauseOf(because)
-                    .FailWith("Expected matrix to be identity{reason}, but element [{0}, {1}] = {2} (expected {3}).",
-                        i, j, actual[i, j], expectedValue);
-            }
-        }
-    }
-    
-    #endregion
-    
-    #region Vector Assertions
-    
-    /// <summary>
-    /// Asserts that two Vector2 arrays are approximately equal.
-    /// </summary>
-    public static void ShouldBeApproximatelyEqualTo(this Vector2[] actual, Vector2[] expected, float tolerance = 1e-6f, string because = "")
-    {
-        actual.Should().NotBeNull(because);
-        expected.Should().NotBeNull(because);
-        actual.Should().HaveSameCount(expected, because);
-        
-        for (int i = 0; i < actual.Length; i++)
-        {
-            var distance = Vector2.Distance(actual[i], expected[i]);
-            Execute.Assertion
-                .ForCondition(distance <= tolerance)
-                .BecauseOf(because)
-                .FailWith("Expected Vector2 at index {0} to be approximately {1} ± {2}{reason}, but found {3} (distance: {4}).",
-                    i, expected[i], tolerance, actual[i], distance);
-        }
-    }
-    
-    /// <summary>
-    /// Asserts that two Vector3 arrays are approximately equal.
-    /// </summary>
-    public static void ShouldBeApproximatelyEqualTo(this Vector3[] actual, Vector3[] expected, float tolerance = 1e-6f, string because = "")
-    {
-        actual.Should().NotBeNull(because);
-        expected.Should().NotBeNull(because);
-        actual.Should().HaveSameCount(expected, because);
-        
-        for (int i = 0; i < actual.Length; i++)
-        {
-            var distance = Vector3.Distance(actual[i], expected[i]);
-            Execute.Assertion
-                .ForCondition(distance <= tolerance)
-                .BecauseOf(because)
-                .FailWith("Expected Vector3 at index {0} to be approximately {1} ± {2}{reason}, but found {3} (distance: {4}).",
-                    i, expected[i], tolerance, actual[i], distance);
-        }
-    }
-    
-    /// <summary>
-    /// Asserts that two Vector4 arrays are approximately equal.
-    /// </summary>
-    public static void ShouldBeApproximatelyEqualTo(this Vector4[] actual, Vector4[] expected, float tolerance = 1e-6f, string because = "")
-    {
-        actual.Should().NotBeNull(because);
-        expected.Should().NotBeNull(because);
-        actual.Should().HaveSameCount(expected, because);
-        
-        for (int i = 0; i < actual.Length; i++)
-        {
-            var distance = Vector4.Distance(actual[i], expected[i]);
-            Execute.Assertion
-                .ForCondition(distance <= tolerance)
-                .BecauseOf(because)
-                .FailWith("Expected Vector4 at index {0} to be approximately {1} ± {2}{reason}, but found {3} (distance: {4}).",
-                    i, expected[i], tolerance, actual[i], distance);
-        }
-    }
-    
-    /// <summary>
-    /// Asserts that a vector has approximately unit length.
-    /// </summary>
-    public static void ShouldBeNormalized(this Vector2 actual, float tolerance = 1e-6f, string because = "")
-    {
-        var length = actual.Length();
-        Execute.Assertion
-            .ForCondition(Math.Abs(length - 1.0f) <= tolerance)
-            .BecauseOf(because)
-            .FailWith("Expected Vector2 to be normalized (length ≈ 1){reason}, but length was {0}.",
-                length);
-    }
-    
-    /// <summary>
-    /// Asserts that a vector has approximately unit length.
-    /// </summary>
-    public static void ShouldBeNormalized(this Vector3 actual, float tolerance = 1e-6f, string because = "")
-    {
-        var length = actual.Length();
-        Execute.Assertion
-            .ForCondition(Math.Abs(length - 1.0f) <= tolerance)
-            .BecauseOf(because)
-            .FailWith("Expected Vector3 to be normalized (length ≈ 1){reason}, but length was {0}.",
-                length);
-    }
-    
-    /// <summary>
-    /// Asserts that a vector has approximately unit length.
-    /// </summary>
-    public static void ShouldBeNormalized(this Vector4 actual, float tolerance = 1e-6f, string because = "")
-    {
-        var length = actual.Length();
-        Execute.Assertion
-            .ForCondition(Math.Abs(length - 1.0f) <= tolerance)
-            .BecauseOf(because)
-            .FailWith("Expected Vector4 to be normalized (length ≈ 1){reason}, but length was {0}.",
-                length);
     }
     
     #endregion
@@ -379,71 +156,104 @@ public static class CustomAssertions
     #region Performance Assertions
     
     /// <summary>
-    /// Asserts that an operation completes within a specified time limit.
+    /// Asserts that a measured time is within an expected limit.
     /// </summary>
-    public static void ShouldCompleteWithin(this Action action, TimeSpan timeLimit, string because = "")
+    public static void ShouldBeWithinTimeLimit(this double actualTimeMs, double maxTimeMs, string because = "")
     {
-        action.Should().NotBeNull(because);
+        if (actualTimeMs > maxTimeMs)
+        {
+            throw new AssertionException($"Operation took {actualTimeMs:F2}ms but was expected to complete within {maxTimeMs:F2}ms{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
         
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        action();
-        stopwatch.Stop();
-        
-        Execute.Assertion
-            .ForCondition(stopwatch.Elapsed <= timeLimit)
-            .BecauseOf(because)
-            .FailWith("Expected operation to complete within {0}{reason}, but it took {1}.",
-                timeLimit, stopwatch.Elapsed);
+        if (actualTimeMs < 0)
+        {
+            throw new AssertionException($"Operation time cannot be negative ({actualTimeMs:F2}ms)");
+        }
     }
     
     /// <summary>
-    /// Asserts that an async operation completes within a specified time limit.
+    /// Asserts that memory usage is within expected bounds.
     /// </summary>
-    public static async System.Threading.Tasks.Task ShouldCompleteWithin(this System.Threading.Tasks.Task task, TimeSpan timeLimit, string because = "")
+    public static void ShouldUseMemoryWithinBounds(this long actualBytes, long maxBytes, string because = "")
     {
-        task.Should().NotBeNull(because);
+        if (actualBytes > maxBytes)
+        {
+            throw new AssertionException($"Memory usage was {actualBytes / (1024.0 * 1024.0):F2}MB but was expected to be at most {maxBytes / (1024.0 * 1024.0):F2}MB{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
         
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        await task;
-        stopwatch.Stop();
-        
-        Execute.Assertion
-            .ForCondition(stopwatch.Elapsed <= timeLimit)
-            .BecauseOf(because)
-            .FailWith("Expected operation to complete within {0}{reason}, but it took {1}.",
-                timeLimit, stopwatch.Elapsed);
+        if (actualBytes < 0)
+        {
+            throw new AssertionException($"Memory usage cannot be negative ({actualBytes} bytes)");
+        }
     }
     
     #endregion
     
-    #region Memory Assertions
+    #region Memory Buffer Assertions
     
     /// <summary>
-    /// Asserts that the memory usage increase is within acceptable limits.
+    /// Asserts that a memory buffer is properly aligned.
     /// </summary>
-    public static void ShouldNotExceedMemoryIncrease(this Action action, long maxMemoryIncrease, string because = "")
+    public static void ShouldBeAligned(this IntPtr pointer, int alignment, string because = "")
     {
-        action.Should().NotBeNull(because);
+        var address = pointer.ToInt64();
+        if (address % alignment != 0)
+        {
+            throw new AssertionException($"Pointer 0x{address:X} is not aligned to {alignment} bytes{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
+    }
+    
+    /// <summary>
+    /// Asserts that a buffer size meets minimum requirements.
+    /// </summary>
+    public static void ShouldHaveMinimumSize(this long actualSize, long minimumSize, string because = "")
+    {
+        if (actualSize < minimumSize)
+        {
+            throw new AssertionException($"Buffer size {actualSize} bytes is less than minimum required {minimumSize} bytes{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
+    }
+    
+    #endregion
+    
+    #region Numerical Range Assertions
+    
+    /// <summary>
+    /// Asserts that all values in an array are within specified bounds.
+    /// </summary>
+    public static void ShouldBeWithinBounds(this float[] array, float min, float max, string because = "")
+    {
+        array.Should().NotBeNull();
         
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-        
-        var initialMemory = GC.GetTotalMemory(false);
-        action();
-        
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-        
-        var finalMemory = GC.GetTotalMemory(false);
-        var memoryIncrease = finalMemory - initialMemory;
-        
-        Execute.Assertion
-            .ForCondition(memoryIncrease <= maxMemoryIncrease)
-            .BecauseOf(because)
-            .FailWith("Expected memory increase to be at most {0} bytes{reason}, but it was {1} bytes.",
-                maxMemoryIncrease, memoryIncrease);
+        for (var i = 0; i < array.Length; i++)
+        {
+            if (array[i] < min || array[i] > max)
+            {
+                throw new AssertionException($"Value {array[i]} at index {i} is outside bounds [{min}, {max}]{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Asserts that a value is normalized (between 0 and 1).
+    /// </summary>
+    public static void ShouldBeNormalized(this float value, string because = "")
+    {
+        if (value < 0.0f || value > 1.0f)
+        {
+            throw new AssertionException($"Value {value} is not normalized (should be in [0, 1]){(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
+    }
+    
+    /// <summary>
+    /// Asserts that a value is normalized (between 0 and 1).
+    /// </summary>
+    public static void ShouldBeNormalized(this double value, string because = "")
+    {
+        if (value < 0.0 || value > 1.0)
+        {
+            throw new AssertionException($"Value {value} is not normalized (should be in [0, 1]){(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
     }
     
     #endregion
@@ -451,38 +261,92 @@ public static class CustomAssertions
     #region Statistical Assertions
     
     /// <summary>
-    /// Asserts that the mean of a dataset is approximately equal to an expected value.
+    /// Asserts that the mean of an array is approximately equal to an expected value.
     /// </summary>
-    public static void ShouldHaveMean(this IEnumerable<double> values, double expectedMean, double tolerance = 1e-12, string because = "")
+    public static void ShouldHaveMeanApproximately(this float[] array, float expectedMean, float tolerance = 1e-6f, string because = "")
     {
-        var valueList = values.ToList();
-        valueList.Should().NotBeEmpty(because);
+        array.Should().NotBeNull();
+        array.Should().NotBeEmpty();
         
-        var actualMean = valueList.Average();
-        Execute.Assertion
-            .ForCondition(Math.Abs(actualMean - expectedMean) <= tolerance)
-            .BecauseOf(because)
-            .FailWith("Expected mean to be approximately {0} ± {1}{reason}, but found {2}.",
-                expectedMean, tolerance, actualMean);
+        var actualMean = array.Average();
+        if (Math.Abs(actualMean - expectedMean) > tolerance)
+        {
+            throw new AssertionException($"Array mean {actualMean} differs from expected {expectedMean} by {Math.Abs(actualMean - expectedMean)} (tolerance: {tolerance}){(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
     }
     
     /// <summary>
-    /// Asserts that the standard deviation of a dataset is approximately equal to an expected value.
+    /// Asserts that the standard deviation of an array is approximately equal to an expected value.
     /// </summary>
-    public static void ShouldHaveStandardDeviation(this IEnumerable<double> values, double expectedStdDev, double tolerance = 1e-12, string because = "")
+    public static void ShouldHaveStandardDeviationApproximately(this float[] array, float expectedStdDev, float tolerance = 1e-6f, string because = "")
     {
-        var valueList = values.ToList();
-        valueList.Should().NotBeEmpty(because);
+        array.Should().NotBeNull();
+        array.Should().NotBeEmpty();
         
-        var mean = valueList.Average();
-        var variance = valueList.Average(x => Math.Pow(x - mean, 2));
-        var actualStdDev = Math.Sqrt(variance);
+        var mean = array.Average();
+        var variance = array.Select(x => Math.Pow(x - mean, 2)).Average();
+        var actualStdDev = (float)Math.Sqrt(variance);
         
-        Execute.Assertion
-            .ForCondition(Math.Abs(actualStdDev - expectedStdDev) <= tolerance)
-            .BecauseOf(because)
-            .FailWith("Expected standard deviation to be approximately {0} ± {1}{reason}, but found {2}.",
-                expectedStdDev, tolerance, actualStdDev);
+        if (Math.Abs(actualStdDev - expectedStdDev) > tolerance)
+        {
+            throw new AssertionException($"Array standard deviation {actualStdDev} differs from expected {expectedStdDev} by {Math.Abs(actualStdDev - expectedStdDev)} (tolerance: {tolerance}){(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
+    }
+    
+    #endregion
+    
+    #region Sparse Data Assertions
+    
+    /// <summary>
+    /// Asserts that an array has a specific sparsity ratio (percentage of zero values).
+    /// </summary>
+    public static void ShouldHaveSparsityRatio(this float[] array, float expectedRatio, float tolerance = 0.01f, string because = "")
+    {
+        array.Should().NotBeNull();
+        array.Should().NotBeEmpty();
+        
+        var zeroCount = array.Count(x => Math.Abs(x) < float.Epsilon);
+        var actualRatio = (float)zeroCount / array.Length;
+        
+        if (Math.Abs(actualRatio - expectedRatio) > tolerance)
+        {
+            throw new AssertionException($"Array sparsity ratio {actualRatio:P2} differs from expected {expectedRatio:P2} (tolerance: {tolerance:P2}){(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
+    }
+    
+    #endregion
+    
+    #region GPU-Specific Assertions
+    
+    /// <summary>
+    /// Asserts that a kernel execution time is within expected bounds for GPU operations.
+    /// </summary>
+    public static void ShouldHaveReasonableGpuPerformance(this double kernelTimeMs, int elementCount, double minThroughputGBps = 10.0, string because = "")
+    {
+        if (kernelTimeMs <= 0)
+        {
+            throw new AssertionException($"Kernel time must be positive (was {kernelTimeMs}ms)");
+        }
+        
+        // Calculate achieved throughput (assuming float32 read + write)
+        var bytesProcessed = elementCount * sizeof(float) * 2; // Read + Write
+        var throughputGBps = (bytesProcessed / 1e9) / (kernelTimeMs / 1000.0);
+        
+        if (throughputGBps < minThroughputGBps)
+        {
+            throw new AssertionException($"GPU throughput {throughputGBps:F2} GB/s is below minimum expected {minThroughputGBps:F2} GB/s{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
+    }
+    
+    /// <summary>
+    /// Asserts that memory is coalesced-friendly for GPU access.
+    /// </summary>
+    public static void ShouldBeCoalescedFriendly(this int stride, int warpSize = 32, string because = "")
+    {
+        if (stride % warpSize != 0)
+        {
+            throw new AssertionException($"Stride {stride} is not aligned to warp size {warpSize}, which may cause uncoalesced memory access{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+        }
     }
     
     #endregion

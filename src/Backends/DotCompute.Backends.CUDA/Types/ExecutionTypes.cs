@@ -155,7 +155,6 @@ namespace DotCompute.Backends.CUDA.Types
         public bool EnableBoundsChecking { get; set; }
 
         public bool EnableNanDetection { get; set; }
-
     }
 
     /// <summary>
@@ -207,5 +206,4 @@ namespace DotCompute.Backends.CUDA.Types
         public bool IsManaged { get; set; }
         public int DeviceId { get; set; }
     }
-
 }

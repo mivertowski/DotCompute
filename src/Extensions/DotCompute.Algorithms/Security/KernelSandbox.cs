@@ -738,7 +738,7 @@ internal sealed class SandboxResourceMonitor : IDisposable
         }
     }
 
-    private double GetCpuUsage()
+    private static double GetCpuUsage()
     {
         try
         {

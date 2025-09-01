@@ -90,19 +90,13 @@ namespace DotCompute.Abstractions.Memory
         /// </summary>
         /// <param name="options">The memory options.</param>
         /// <returns>True if memory should be zero-initialized.</returns>
-        public static bool InitializeToZero(this MemoryOptions options)
-        {
-            return options.HasFlag(MemoryOptions.InitializeToZero) || options.HasFlag(MemoryOptions.ZeroInitialized);
-        }
+        public static bool InitializeToZero(this MemoryOptions options) => options.HasFlag(MemoryOptions.InitializeToZero) || options.HasFlag(MemoryOptions.ZeroInitialized);
 
         /// <summary>
         /// Gets a value indicating whether the memory should automatically migrate between devices.
         /// </summary>
         /// <param name="options">The memory options.</param>
         /// <returns>True if memory should auto-migrate.</returns>
-        public static bool ShouldAutoMigrate(this MemoryOptions options)
-        {
-            return options.HasFlag(MemoryOptions.AutoMigrate);
-        }
+        public static bool ShouldAutoMigrate(this MemoryOptions options) => options.HasFlag(MemoryOptions.AutoMigrate);
     }
 }

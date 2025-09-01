@@ -162,7 +162,7 @@ public sealed class Matrix : IEquatable<Matrix>
     /// <param name="rows">Number of rows.</param>
     /// <param name="cols">Number of columns.</param>
     /// <returns>A zero matrix.</returns>
-    public static Matrix Zeros(int rows, int cols) => new Matrix(rows, cols);
+    public static Matrix Zeros(int rows, int cols) => new(rows, cols);
 
     /// <summary>
     /// Creates a matrix filled with ones.
@@ -257,7 +257,7 @@ public sealed class Matrix : IEquatable<Matrix>
     /// Creates a deep copy of the matrix.
     /// </summary>
     /// <returns>A new matrix with copied data.</returns>
-    public Matrix Clone() => new Matrix(_rows, _cols, _data);
+    public Matrix Clone() => new(_rows, _cols, _data);
 
     /// <inheritdoc/>
     public bool Equals(Matrix? other)

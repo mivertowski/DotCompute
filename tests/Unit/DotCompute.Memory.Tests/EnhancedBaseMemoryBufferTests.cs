@@ -206,8 +206,8 @@ public class EnhancedBaseMemoryBufferTests
         var testData = Enumerable.Range(1, 256).Select(i => (float)i).ToArray();
         
         // Act - Simulate D2D copy
-        await sourceBuffer.CopyFromAsync(testData);
-        var act = async () => await sourceBuffer.CopyToAsync(destBuffer.AsMemory());
+        await sourceBuffer.CopyFromAsync(testData, CancellationToken.None);
+        var act = async () => await sourceBuffer.CopyToAsync(destBuffer.AsMemory(), CancellationToken.None);
         
         // Assert
         await act.Should().NotThrowAsync();
@@ -225,7 +225,7 @@ public class EnhancedBaseMemoryBufferTests
         using var destBuffer = new TestMemoryBuffer<int>(800);
         
         var sourceData = Enumerable.Range(1, 200).ToArray();
-        await sourceBuffer.CopyFromAsync(sourceData);
+        await sourceBuffer.CopyFromAsync(sourceData, CancellationToken.None);
         
         // Act
         await sourceBuffer.CopyToAsync(sourceOffset, destBuffer, 0, count, CancellationToken.None);
@@ -243,7 +243,7 @@ public class EnhancedBaseMemoryBufferTests
         var tasks = new List<Task>();
         
         // Act - Run multiple concurrent copy operations
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             var data = new byte[100];
             Array.Fill(data, (byte)(i % 256));
@@ -270,8 +270,8 @@ public class EnhancedBaseMemoryBufferTests
         var stopwatch = Stopwatch.StartNew();
         
         // Act
-        await sourceBuffer.CopyFromAsync(sourceData);
-        await sourceBuffer.CopyToAsync(destBuffer.AsMemory());
+        await sourceBuffer.CopyFromAsync(sourceData, CancellationToken.None);
+        await sourceBuffer.CopyToAsync(destBuffer.AsMemory(), CancellationToken.None);
         
         stopwatch.Stop();
         
@@ -355,7 +355,7 @@ public class EnhancedBaseMemoryBufferTests
         var buffer = new TestPooledBuffer<int>(1024, b => returnCount++);
         
         // Act - Multiple dispose/reset cycles
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             buffer.AsSpan().Fill(i);
             buffer.Dispose();
@@ -430,8 +430,8 @@ public class EnhancedBaseMemoryBufferTests
         Action readOnlySpanAccess = () => buffer.AsReadOnlySpan();
         Action readOnlyMemoryAccess = () => buffer.AsReadOnlyMemory();
         
-        var copyFromTask = async () => await buffer.CopyFromAsync(new float[10]);
-        var copyToTask = async () => await buffer.CopyToAsync(new float[10]);
+        var copyFromTask = async () => await buffer.CopyFromAsync(new float[10], CancellationToken.None);
+        var copyToTask = async () => await buffer.CopyToAsync(new float[10], CancellationToken.None);
         var fillTask = async () => await buffer.FillAsync(1.0f);
         
         spanAccess.Should().Throw<ObjectDisposedException>();
@@ -453,7 +453,7 @@ public class EnhancedBaseMemoryBufferTests
         var largeData = new byte[1000];
         
         // Act & Assert
-        var act = async () => await smallBuffer.CopyFromAsync(largeData);
+        var act = async () => await smallBuffer.CopyFromAsync(largeData, CancellationToken.None);
         act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
@@ -482,14 +482,14 @@ public class EnhancedBaseMemoryBufferTests
         try
         {
             // Act - Create many buffers to simulate memory pressure
-            for (int i = 0; i < 100; i++)
+            for (var i = 0; i < 100; i++)
             {
                 var buffer = new TestMemoryBuffer<long>(8192); // 8KB each
                 buffers.Add(buffer);
                 
                 // Perform operations on each buffer
                 var data = Enumerable.Range(1, 1024).Select(x => (long)x).ToArray();
-                await buffer.CopyFromAsync(data);
+                await buffer.CopyFromAsync(data, CancellationToken.None);
             }
             
             // Assert - All buffers should be in valid state
@@ -518,7 +518,7 @@ public class EnhancedBaseMemoryBufferTests
         var disposeTasks = new List<Task>();
         
         // Act - Attempt concurrent dispose operations
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             disposeTasks.Add(Task.Run(async () =>
             {
@@ -558,9 +558,9 @@ public class EnhancedBaseMemoryBufferTests
         var stopwatch = Stopwatch.StartNew();
         
         // Act
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
-            await buffer.CopyFromAsync(sourceData);
+            await buffer.CopyFromAsync(sourceData, CancellationToken.None);
         }
         
         stopwatch.Stop();
@@ -586,7 +586,7 @@ public class EnhancedBaseMemoryBufferTests
         try
         {
             // Act
-            for (int i = 0; i < allocationCount; i++)
+            for (var i = 0; i < allocationCount; i++)
             {
                 buffers.Add(new TestMemoryBuffer<byte>(bufferSize));
             }
@@ -625,7 +625,7 @@ public class EnhancedBaseMemoryBufferTests
         try
         {
             // Act - Parallel copy operations
-            var tasks = buffers.Select(buffer => buffer.CopyFromAsync(sourceData).AsTask());
+            var tasks = buffers.Select(buffer => buffer.CopyFromAsync(sourceData, CancellationToken.None).AsTask());
             await Task.WhenAll(tasks);
             
             stopwatch.Stop();
@@ -660,7 +660,7 @@ public class EnhancedBaseMemoryBufferTests
         try
         {
             // Act
-            for (int i = 0; i < bufferCount; i++)
+            for (var i = 0; i < bufferCount; i++)
             {
                 buffers.Add(new TestMemoryBuffer<byte>(bufferSize));
             }
@@ -697,7 +697,7 @@ public class EnhancedBaseMemoryBufferTests
         
         // Measure sync baseline (direct span access)
         var syncStopwatch = Stopwatch.StartNew();
-        for (int i = 0; i < operationCount; i++)
+        for (var i = 0; i < operationCount; i++)
         {
             data.CopyTo(buffer.AsSpan());
         }
@@ -705,9 +705,9 @@ public class EnhancedBaseMemoryBufferTests
         
         // Measure async operations
         var asyncStopwatch = Stopwatch.StartNew();
-        for (int i = 0; i < operationCount; i++)
+        for (var i = 0; i < operationCount; i++)
         {
-            await buffer.CopyFromAsync(data);
+            await buffer.CopyFromAsync(data, CancellationToken.None);
         }
         asyncStopwatch.Stop();
         
@@ -752,7 +752,7 @@ public class EnhancedBaseMemoryBufferTests
         // Fill with random data first
         var random = new Random(42);
         var span = buffer.AsSpan();
-        for (int i = 0; i < span.Length; i++)
+        for (var i = 0; i < span.Length; i++)
         {
             span[i] = (ulong)random.NextInt64();
         }
@@ -761,7 +761,7 @@ public class EnhancedBaseMemoryBufferTests
         await buffer.FillAsync(0UL);
         
         // Assert
-        span.ToArray().Should().OnlyContain(x => x == 0UL, "all elements should be zero");
+        buffer.AsSpan().ToArray().Should().OnlyContain(x => x == 0UL, "all elements should be zero");
     }
 
     [Theory]
@@ -786,19 +786,19 @@ public class EnhancedBaseMemoryBufferTests
         var span = buffer.AsSpan();
         
         // Check region before fill
-        for (int i = 0; i < offset; i++)
+        for (var i = 0; i < offset; i++)
         {
             span[i].Should().Be(initialValue, $"element at index {i} should remain unchanged");
         }
         
         // Check filled region
-        for (int i = offset; i < offset + count; i++)
+        for (var i = offset; i < offset + count; i++)
         {
             span[i].Should().Be(fillValue, $"element at index {i} should be filled");
         }
         
         // Check region after fill
-        for (int i = offset + count; i < span.Length; i++)
+        for (var i = offset + count; i < span.Length; i++)
         {
             span[i].Should().Be(initialValue, $"element at index {i} should remain unchanged");
         }
@@ -815,7 +815,7 @@ public class EnhancedBaseMemoryBufferTests
         var span = buffer.AsSpan();
         span[0] = 1;
         span[1] = 1;
-        for (int i = 2; i < span.Length; i++)
+        for (var i = 2; i < span.Length; i++)
         {
             span[i] = span[i - 1] + span[i - 2];
         }
@@ -838,7 +838,7 @@ public class EnhancedBaseMemoryBufferTests
         reconstructed[0] = 1;
         reconstructed[1] = 1;
         
-        for (int i = 2; i < reconstructed.Length; i++)
+        for (var i = 2; i < reconstructed.Length; i++)
         {
             reconstructed[i] = reconstructed[i - 1] + reconstructed[i - 2];
             if (span[i] != reconstructed[i])
@@ -877,25 +877,25 @@ public class EnhancedBaseMemoryBufferTests
         
         // Create pattern
         var pattern = new byte[patternSize];
-        for (int i = 0; i < patternSize; i++)
+        for (var i = 0; i < patternSize; i++)
         {
             pattern[i] = (byte)(i * 17 + 42); // Arbitrary but deterministic pattern
         }
         
         // Act - Fill buffer with repeating pattern
         var span = buffer.AsSpan();
-        for (int rep = 0; rep < repetitions; rep++)
+        for (var rep = 0; rep < repetitions; rep++)
         {
-            for (int i = 0; i < patternSize; i++)
+            for (var i = 0; i < patternSize; i++)
             {
                 span[rep * patternSize + i] = pattern[i];
             }
         }
         
         // Assert - Verify pattern repetition
-        for (int rep = 0; rep < repetitions; rep++)
+        for (var rep = 0; rep < repetitions; rep++)
         {
-            for (int i = 0; i < patternSize; i++)
+            for (var i = 0; i < patternSize; i++)
             {
                 var expectedValue = pattern[i];
                 var actualValue = span[rep * patternSize + i];
@@ -913,13 +913,13 @@ public class EnhancedBaseMemoryBufferTests
         var span = buffer.AsSpan();
         
         // Act - Fill with chessboard pattern
-        for (int i = 0; i < span.Length; i++)
+        for (var i = 0; i < span.Length; i++)
         {
             span[i] = (byte)((i + (i / 64)) % 2); // Creates chessboard with 64-byte squares
         }
         
         // Assert - Verify pattern integrity
-        for (int i = 0; i < span.Length; i++)
+        for (var i = 0; i < span.Length; i++)
         {
             var expectedValue = (byte)((i + (i / 64)) % 2);
             span[i].Should().Be(expectedValue, $"chessboard pattern should be correct at index {i}");
@@ -1080,8 +1080,8 @@ public class EnhancedBaseMemoryBufferTests
         }
 
         // All required abstract method implementations
-        public override Span<T> AsSpan() => Span<T>.Empty;
-        public override ReadOnlySpan<T> AsReadOnlySpan() => ReadOnlySpan<T>.Empty;
+        public override Span<T> AsSpan() => [];
+        public override ReadOnlySpan<T> AsReadOnlySpan() => [];
         public override IUnifiedMemoryBuffer<TNew> AsType<TNew>() => throw new NotSupportedException();
         public override IAccelerator Accelerator => throw new NotSupportedException();
         public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
@@ -1142,7 +1142,7 @@ public class EnhancedBaseMemoryBufferTests
         }
 
         // Additional abstract method implementations required by BaseMemoryBuffer<T>
-        public override ReadOnlySpan<T> AsReadOnlySpan() => IsDisposed ? ReadOnlySpan<T>.Empty : ReadOnlySpan<T>.Empty;
+        public override ReadOnlySpan<T> AsReadOnlySpan() => IsDisposed ? [] : [];
         public override IUnifiedMemoryBuffer<TNew> AsType<TNew>() => throw new NotSupportedException();
         public override IAccelerator Accelerator => throw new NotSupportedException();
         public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
@@ -1218,8 +1218,8 @@ public class EnhancedBaseMemoryBufferTests
         public override DeviceMemory GetDeviceMemory() => throw new NotSupportedException();
         public override bool IsOnDevice => false;
         public override bool IsOnHost => true;
-        public override MappedMemory<T> Map(MapMode mode) => new MappedMemory<T>(_memory);
-        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode) => new MappedMemory<T>(_memory.Slice(offset, length));
+        public override MappedMemory<T> Map(MapMode mode) => new(_memory);
+        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode) => new(_memory.Slice(offset, length));
         public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
         public override void MarkDeviceDirty() { }
         public override void MarkHostDirty() { }

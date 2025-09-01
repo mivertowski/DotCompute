@@ -274,7 +274,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             _logger.LogDebug("Profiling kernel {KernelName}", kernelName);
             
             // Warmup runs
-            for (int i = 0; i < warmupRuns; i++)
+            for (var i = 0; i < warmupRuns; i++)
             {
                 await kernelExecution();
             }
@@ -287,7 +287,7 @@ namespace DotCompute.Backends.CUDA.Profiling
 
             // Profile runs
             var executionTimes = new List<TimeSpan>();
-            for (int i = 0; i < profileRuns; i++)
+            for (var i = 0; i < profileRuns; i++)
             {
                 var start = Stopwatch.GetTimestamp();
                 await kernelExecution();
@@ -335,7 +335,7 @@ namespace DotCompute.Backends.CUDA.Profiling
 
             try
             {
-                if (nvmlDeviceGetHandleByIndex((uint)deviceIndex, out IntPtr device) == NvmlReturn.Success)
+                if (nvmlDeviceGetHandleByIndex((uint)deviceIndex, out var device) == NvmlReturn.Success)
                 {
                     // Get utilization
                     if (nvmlDeviceGetUtilizationRates(device, out var utilization) == NvmlReturn.Success)
@@ -353,13 +353,13 @@ namespace DotCompute.Backends.CUDA.Profiling
                     }
 
                     // Get temperature
-                    if (nvmlDeviceGetTemperature(device, NvmlTemperatureSensor.Gpu, out uint temp) == NvmlReturn.Success)
+                    if (nvmlDeviceGetTemperature(device, NvmlTemperatureSensor.Gpu, out var temp) == NvmlReturn.Success)
                     {
                         metrics.Temperature = temp;
                     }
 
                     // Get power usage
-                    if (nvmlDeviceGetPowerUsage(device, out uint power) == NvmlReturn.Success)
+                    if (nvmlDeviceGetPowerUsage(device, out var power) == NvmlReturn.Success)
                     {
                         metrics.PowerUsage = power / 1000.0; // Convert to watts
                     }
@@ -608,7 +608,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Calculates average bandwidth for transfers.
         /// </summary>
-        private double CalculateAverageBandwidth(List<MemoryProfile> transfers)
+        private static double CalculateAverageBandwidth(List<MemoryProfile> transfers)
         {
             if (!transfers.Any())
             {
@@ -761,14 +761,14 @@ namespace DotCompute.Backends.CUDA.Profiling
         public class ProfilingReport
         {
             public DateTimeOffset GeneratedAt { get; init; }
-            public List<KernelProfile> KernelProfiles { get; init; } = new();
-            public List<MemoryProfile> MemoryProfiles { get; init; } = new();
+            public List<KernelProfile> KernelProfiles { get; init; } = [];
+            public List<MemoryProfile> MemoryProfiles { get; init; } = [];
             public TimeSpan TotalKernelTime { get; set; }
             public TimeSpan AverageKernelTime { get; set; }
             public long TotalMemoryTransferred { get; set; }
             public TimeSpan TotalMemoryTime { get; set; }
-            public List<KernelProfile> TopKernelsByTime { get; set; } = new();
-            public List<MemoryProfile> TopMemoryTransfers { get; set; } = new();
+            public List<KernelProfile> TopKernelsByTime { get; set; } = [];
+            public List<MemoryProfile> TopMemoryTransfers { get; set; } = [];
         }
 
         public class MemoryTransferAnalysis
@@ -777,8 +777,8 @@ namespace DotCompute.Backends.CUDA.Profiling
             public long TotalBytesTransferred { get; set; }
             public TimeSpan TotalTransferTime { get; set; }
             public double OverallBandwidth { get; set; }
-            public Dictionary<MemoryTransferType, TransferTypeStats> TransfersByType { get; set; } = new();
-            public List<string> Bottlenecks { get; set; } = new();
+            public Dictionary<MemoryTransferType, TransferTypeStats> TransfersByType { get; set; } = [];
+            public List<string> Bottlenecks { get; set; } = [];
         }
 
         public class TransferTypeStats

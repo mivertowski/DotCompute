@@ -152,10 +152,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Frees device memory asynchronously.
         /// </summary>
-        public async Task FreeAsync(IntPtr devicePtr, CancellationToken cancellationToken = default)
-        {
-            await Task.Run(() => Free(devicePtr), cancellationToken);
-        }
+        public async Task FreeAsync(IntPtr devicePtr, CancellationToken cancellationToken = default) => await Task.Run(() => Free(devicePtr), cancellationToken);
 
         /// <summary>
         /// Initializes memory information by querying the CUDA runtime.
@@ -233,9 +230,12 @@ namespace DotCompute.Backends.CUDA.Memory
         public void Dispose()
         {
             if (_disposed)
+            {
                 return;
+            }
 
             // Free all remaining allocations
+
             foreach (var allocation in _allocations.Keys)
             {
                 Free(allocation);
@@ -245,5 +245,4 @@ namespace DotCompute.Backends.CUDA.Memory
             _disposed = true;
         }
     }
-
 }

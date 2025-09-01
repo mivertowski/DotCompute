@@ -765,7 +765,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             return analysis;
         }
 
-        private int CalculateCriticalPath(CudaGraph graph)
+        private static int CalculateCriticalPath(CudaGraph graph)
         {
             // Simplified critical path calculation
             var visited = new HashSet<string>();
@@ -774,7 +774,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             int CalculatePathLength(CudaGraphNode node)
             {
                 if (visited.Contains(node.Id))
+                {
+
                     return pathLengths.GetValueOrDefault(node.Id, 0);
+                }
+
 
                 visited.Add(node.Id);
                 
@@ -791,7 +795,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 : 0;
         }
 
-        private int FindParallelizationOpportunities(CudaGraph graph)
+        private static int FindParallelizationOpportunities(CudaGraph graph)
         {
             // Find independent node groups that can run in parallel
             var levels = new Dictionary<CudaGraphNode, int>();
@@ -823,9 +827,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             var opportunities = 0;
             var kernelNodes = graph.Nodes.Where(n => n.Type == GraphNodeType.Kernel).ToList();
 
-            for (int i = 0; i < kernelNodes.Count - 1; i++)
+            for (var i = 0; i < kernelNodes.Count - 1; i++)
             {
-                for (int j = i + 1; j < kernelNodes.Count; j++)
+                for (var j = i + 1; j < kernelNodes.Count; j++)
                 {
                     if (CanFuseKernels(kernelNodes[i], kernelNodes[j]))
                     {
@@ -837,7 +841,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             return opportunities;
         }
 
-        private bool CanFuseKernels(CudaGraphNode kernel1, CudaGraphNode kernel2)
+        private static bool CanFuseKernels(CudaGraphNode kernel1, CudaGraphNode kernel2)
         {
             // Simplified fusion check - kernels can be fused if:
             // 1. One directly depends on the other
@@ -853,7 +857,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             return false;
         }
 
-        private long EstimateMemoryFootprint(CudaGraph graph)
+        private static long EstimateMemoryFootprint(CudaGraph graph)
         {
             // Estimate total memory used by graph operations
             long totalMemory = 0;
@@ -912,9 +916,12 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         public void Dispose()
         {
             if (_disposed)
+            {
                 return;
+            }
 
             // Destroy all graphs and executables
+
             foreach (var graphName in _graphs.Keys.ToList())
             {
                 DestroyGraph(graphName);

@@ -131,7 +131,7 @@ public class AuthenticodeValidator : IDisposable
     /// </summary>
     /// <param name="assemblyPath">Path to the assembly.</param>
     /// <returns>Validation result.</returns>
-    private async Task<AuthenticodeValidationResult> ValidateAssemblySignatureAsync(string assemblyPath)
+    private static async Task<AuthenticodeValidationResult> ValidateAssemblySignatureAsync(string assemblyPath)
     {
         // Mock implementation for cross-platform compatibility
         // In a real implementation, this would:

@@ -119,7 +119,7 @@ public static class MemoryOptimizations
             => AllocateAligned(size, alignment);
 
 
-        private static unsafe IntPtr AllocateAligned(int size, int alignment) => new IntPtr(NativeMemory.AlignedAlloc((uint)size, (uint)alignment));
+        private static unsafe IntPtr AllocateAligned(int size, int alignment) => new(NativeMemory.AlignedAlloc((uint)size, (uint)alignment));
 
         private static bool IsNumaAvailable()
             // Platform-specific NUMA detection would go here

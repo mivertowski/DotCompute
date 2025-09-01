@@ -134,7 +134,7 @@ public abstract class TestBase : IDisposable
         
         var stopwatch = Stopwatch.StartNew();
         
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             action();
         }
@@ -165,7 +165,7 @@ public abstract class TestBase : IDisposable
         
         var stopwatch = Stopwatch.StartNew();
         
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             await func();
         }
@@ -183,10 +183,7 @@ public abstract class TestBase : IDisposable
     /// </summary>
     /// <param name="name">Name of the benchmark.</param>
     /// <returns>Performance measurement context.</returns>
-    protected PerformanceContext CreatePerformanceContext(string name)
-    {
-        return new PerformanceContext(name, Output);
-    }
+    protected PerformanceContext CreatePerformanceContext(string name) => new(name, Output);
 
     #endregion
 
@@ -203,7 +200,7 @@ public abstract class TestBase : IDisposable
         var random = new Random(seed);
         var data = new float[size];
         
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = (float)(random.NextDouble() * 2.0 - 1.0); // Range: -1.0 to 1.0
         }
@@ -224,7 +221,7 @@ public abstract class TestBase : IDisposable
         var random = new Random(seed);
         var data = new int[size];
         
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = random.Next(minValue, maxValue);
         }
@@ -243,7 +240,7 @@ public abstract class TestBase : IDisposable
     {
         var data = new float[size];
         
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = start + i * increment;
         }

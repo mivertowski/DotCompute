@@ -99,30 +99,27 @@ public abstract class TestBase : IDisposable
     /// Ensures sufficient memory is available, skipping the test if not.
     /// </summary>
     protected void RequireHighMemory() => Fixture.RequireHighMemory();
-    
+
     #endregion
-    
+
     #region Logging and Output
-    
+
+
     /// <summary>
     /// Logs a message with timestamp.
     /// </summary>
     /// <param name="message">The message to log.</param>
-    protected void Log(string message)
-    {
-        Output.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {message}");
-    }
-    
+    protected void Log(string message) => Output.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {message}");
+
+
     /// <summary>
     /// Logs a formatted message with timestamp.
     /// </summary>
     /// <param name="format">The format string.</param>
     /// <param name="args">The format arguments.</param>
-    protected void Log(string format, params object[] args)
-    {
-        Log(string.Format(format, args));
-    }
-    
+    protected void Log(string format, params object[] args) => Log(string.Format(format, args));
+
+
     /// <summary>
     /// Logs test start information.
     /// </summary>
@@ -213,7 +210,7 @@ public abstract class TestBase : IDisposable
         }
         
         var stopwatch = Stopwatch.StartNew();
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             action();
         }
@@ -243,7 +240,7 @@ public abstract class TestBase : IDisposable
         }
         
         var stopwatch = Stopwatch.StartNew();
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             await action();
         }
@@ -320,7 +317,7 @@ public abstract class TestBase : IDisposable
     /// </summary>
     /// <param name="action">The action to test.</param>
     /// <param name="maxMemoryIncrease">The maximum allowed memory increase in bytes.</param>
-    protected void AssertMemoryUsage(Action action, long maxMemoryIncrease)
+    protected static void AssertMemoryUsage(Action action, long maxMemoryIncrease)
     {
         action.ShouldNotExceedMemoryIncrease(maxMemoryIncrease, 
             $"operation should not increase memory by more than {maxMemoryIncrease:N0} bytes");

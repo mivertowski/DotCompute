@@ -49,7 +49,7 @@ namespace DotCompute.Backends.CUDA.Factory
             _logger = logger ?? new NullLogger<CudaAcceleratorFactory>();
             _serviceProvider = serviceProvider;
             _loggerFactory = serviceProvider?.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance;
-            _createdAccelerators = new List<ProductionCudaAccelerator>();
+            _createdAccelerators = [];
             
             // Initialize core managers
             var deviceManagerLogger = _serviceProvider?.GetService<ILogger<CudaDeviceManager>>() 
@@ -115,13 +115,13 @@ namespace DotCompute.Backends.CUDA.Factory
                 }
 
                 // Check driver version
-                if (CudaRuntime.cudaDriverGetVersion(out int driverVersion) == CudaError.Success)
+                if (CudaRuntime.cudaDriverGetVersion(out var driverVersion) == CudaError.Success)
                 {
                     _logger.LogInformation("CUDA Driver Version: {Version}", FormatCudaVersion(driverVersion));
                 }
 
                 // Check runtime version
-                if (CudaRuntime.cudaRuntimeGetVersion(out int runtimeVersion) == CudaError.Success)
+                if (CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion) == CudaError.Success)
                 {
                     _logger.LogInformation("CUDA Runtime Version: {Version}", FormatCudaVersion(runtimeVersion));
                 }
@@ -212,7 +212,7 @@ namespace DotCompute.Backends.CUDA.Factory
                     PreferLargestMemory = true
                 };
                 
-                int bestDevice = _deviceManager.SelectBestDevice(criteria);
+                var bestDevice = _deviceManager.SelectBestDevice(criteria);
                 
                 _logger.LogInformation("Selected device {DeviceId} as default", bestDevice);
                 
@@ -440,7 +440,7 @@ namespace DotCompute.Backends.CUDA.Factory
         {
             try
             {
-                for (int peer = 0; peer < _deviceManager.DeviceCount; peer++)
+                for (var peer = 0; peer < _deviceManager.DeviceCount; peer++)
                 {
                     if (peer != deviceId && _deviceManager.CanAccessPeer(deviceId, peer))
                     {
@@ -528,10 +528,10 @@ namespace DotCompute.Backends.CUDA.Factory
         /// <summary>
         /// Formats CUDA version number.
         /// </summary>
-        private string FormatCudaVersion(int version)
+        private static string FormatCudaVersion(int version)
         {
-            int major = version / 1000;
-            int minor = (version % 1000) / 10;
+            var major = version / 1000;
+            var minor = (version % 1000) / 10;
             return $"{major}.{minor}";
         }
 
@@ -653,7 +653,7 @@ namespace DotCompute.Backends.CUDA.Factory
             public CudaDeviceManager DeviceManager { get; }
             public SystemInfoManager SystemInfoManager { get; }
             public ProductionConfiguration Configuration { get; }
-            public List<string> EnabledFeatures { get; set; } = new();
+            public List<string> EnabledFeatures { get; set; } = [];
 
             public ProductionCudaAccelerator(
                 int deviceId,
@@ -694,7 +694,8 @@ namespace DotCompute.Backends.CUDA.Factory
 
             // IAccelerator interface implementation
             public AcceleratorType Type => AcceleratorType.CUDA;
-            public AcceleratorInfo Info => new AcceleratorInfo
+            public AcceleratorInfo Info => new()
+
             {
                 Id = $"cuda_{DeviceId}",
                 Name = $"CUDA Device {DeviceId}",

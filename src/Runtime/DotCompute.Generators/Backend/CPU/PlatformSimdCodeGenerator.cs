@@ -79,7 +79,7 @@ public class PlatformSimdCodeGenerator : CpuCodeGeneratorBase
         }
     }
     
-    private void GenerateSimdArithmeticOperations(StringBuilder sb)
+    private static void GenerateSimdArithmeticOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // Load vectors for arithmetic operation");
         _ = sb.AppendLine("                var vec1 = new Vector<float>(input1, i);");
@@ -88,14 +88,14 @@ public class PlatformSimdCodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                result.CopyTo(output, i);");
     }
     
-    private void GenerateSimdMemoryOperations(StringBuilder sb)
+    private static void GenerateSimdMemoryOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // Vectorized memory copy");
         _ = sb.AppendLine("                var vec = new Vector<float>(input, i);");
         _ = sb.AppendLine("                vec.CopyTo(output, i);");
     }
     
-    private void GenerateGenericSimdOperations(StringBuilder sb)
+    private static void GenerateGenericSimdOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // Generic vector processing");
         _ = sb.AppendLine("                var vec = new Vector<float>(data, i);");

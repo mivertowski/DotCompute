@@ -46,5 +46,5 @@ public sealed class KernelPerformanceMetrics
     /// <summary>
     /// Gets or sets additional metrics.
     /// </summary>
-    public Dictionary<string, object> AdditionalMetrics { get; set; } = new();
+    public Dictionary<string, object> AdditionalMetrics { get; set; } = [];
 }

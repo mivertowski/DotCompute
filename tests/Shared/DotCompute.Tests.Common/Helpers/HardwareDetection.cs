@@ -93,7 +93,7 @@ public static class HardwareDetection
         try
         {
             // This would typically use CUDA API calls
-            // For now, we'll use a heuristic approach
+            // For now, we'll use a heuristic approach TODO
             return GetNvidiaGpuCount();
         }
         catch
@@ -112,7 +112,7 @@ public static class HardwareDetection
         try
         {
             // This would typically enumerate OpenCL platforms and devices
-            // For now, we'll return a conservative estimate
+            // For now, we'll return a conservative estimate TODO
             return Math.Max(GetNvidiaGpuCount() + GetAmdGpuCount() + GetIntelGpuCount(), 1);
         }
         catch
@@ -120,19 +120,18 @@ public static class HardwareDetection
             return 0;
         }
     }
-    
+
     #endregion
-    
+
     #region CPU Detection
-    
+
+
     /// <summary>
     /// Gets the number of logical CPU cores.
     /// </summary>
-    public static int GetLogicalCoreCount()
-    {
-        return Environment.ProcessorCount;
-    }
-    
+    public static int GetLogicalCoreCount() => Environment.ProcessorCount;
+
+
     /// <summary>
     /// Gets the number of physical CPU cores.
     /// </summary>
@@ -288,7 +287,7 @@ public static class HardwareDetection
         public long AvailableMemory { get; init; }
         public string Platform { get; init; } = string.Empty;
         public string Architecture { get; init; } = string.Empty;
-        public List<string> GpuNames { get; init; } = new();
+        public List<string> GpuNames { get; init; } = [];
         public string CpuName { get; init; } = string.Empty;
     }
     
@@ -325,12 +324,11 @@ public static class HardwareDetection
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) return "macOS";
         return "Unknown";
     }
-    
-    private static string GetArchitectureString()
-    {
-        return RuntimeInformation.ProcessArchitecture.ToString();
-    }
-    
+
+
+    private static string GetArchitectureString() => RuntimeInformation.ProcessArchitecture.ToString();
+
+
     private static List<string> GetGpuNames()
     {
         var gpuNames = new List<string>();
@@ -375,9 +373,13 @@ public static class HardwareDetection
     {
         try
         {
+#if WINDOWS
             // Check for NVIDIA display driver
             using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%NVIDIA%'");
             var hasNvidiaGpu = searcher.Get().Cast<ManagementObject>().Any();
+#else
+            var hasNvidiaGpu = false; //TODO
+#endif
             
             if (!hasNvidiaGpu) return false;
             
@@ -409,7 +411,8 @@ public static class HardwareDetection
         {
             // Check for nvidia-smi
             var result = ExecuteCommand("which", "nvidia-smi");
-            if (string.IsNullOrEmpty(result)) return false;
+            if (string.IsNullOrEmpty(result))
+                return false;
             
             // Check for CUDA libraries
             var ldLibraryPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "";
@@ -467,8 +470,12 @@ public static class HardwareDetection
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
+#if WINDOWS
                 using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%NVIDIA%'");
                 return searcher.Get().Cast<ManagementObject>().Count();
+#else
+                return 0; //TODO
+#endif
             }
             
             // For Linux/macOS, we'd need different approaches
@@ -486,8 +493,12 @@ public static class HardwareDetection
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
+#if WINDOWS
                 using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%AMD%' OR Name LIKE '%Radeon%'");
                 return searcher.Get().Cast<ManagementObject>().Count();
+#else
+                return 0; //TODO
+#endif
             }
             
             return 0;
@@ -504,8 +515,12 @@ public static class HardwareDetection
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
+#if WINDOWS
                 using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%Intel%'");
                 return searcher.Get().Cast<ManagementObject>().Count();
+#else
+                return 0; //TODO
+#endif
             }
             
             return 0;
@@ -518,9 +533,13 @@ public static class HardwareDetection
     
     private static int GetWindowsPhysicalCores()
     {
+#if WINDOWS
         using var searcher = new ManagementObjectSearcher("SELECT NumberOfCores FROM Win32_Processor");
         return searcher.Get().Cast<ManagementObject>()
             .Sum(item => Convert.ToInt32(item["NumberOfCores"]));
+#else
+        return Environment.ProcessorCount;
+#endif
     }
     
     private static int GetLinuxPhysicalCores()
@@ -557,9 +576,13 @@ public static class HardwareDetection
     
     private static long GetWindowsTotalMemory()
     {
+#if WINDOWS
         using var searcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem");
         var memory = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
         return memory != null ? Convert.ToInt64(memory["TotalPhysicalMemory"]) : 0;
+#else
+        return GC.GetTotalMemory(false);
+#endif
     }
     
     private static long GetLinuxTotalMemory()
@@ -600,9 +623,13 @@ public static class HardwareDetection
     
     private static long GetWindowsAvailableMemory()
     {
+#if WINDOWS
         using var searcher = new ManagementObjectSearcher("SELECT AvailablePhysicalMemory FROM Win32_OperatingSystem");
         var memory = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
         return memory != null ? Convert.ToInt64(memory["AvailablePhysicalMemory"]) : 0;
+#else
+        return GC.GetTotalMemory(false);
+#endif
     }
     
     private static long GetLinuxAvailableMemory()
@@ -648,6 +675,7 @@ public static class HardwareDetection
         var names = new List<string>();
         try
         {
+#if WINDOWS
             using var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_VideoController");
             foreach (var gpu in searcher.Get().Cast<ManagementObject>())
             {
@@ -657,6 +685,10 @@ public static class HardwareDetection
                     names.Add(name);
                 }
             }
+#else
+            // On non-Windows platforms, GPU enumeration is not implemented
+            // Could use nvidia-ml or other platform-specific APIs TODO
+#endif
         }
         catch
         {
@@ -670,9 +702,13 @@ public static class HardwareDetection
     {
         try
         {
+#if WINDOWS
             using var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_Processor");
             var cpu = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
             return cpu?["Name"]?.ToString() ?? "Unknown CPU";
+#else
+            return "Unknown CPU"; //TODO
+#endif
         }
         catch
         {

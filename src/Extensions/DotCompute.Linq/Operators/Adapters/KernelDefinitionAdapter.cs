@@ -78,7 +78,7 @@ public static class KernelDefinitionAdapter
         {
             return parameters;
         }
-        return Array.Empty<Parameters.KernelParameter>();
+        return [];
     }
     
     /// <summary>

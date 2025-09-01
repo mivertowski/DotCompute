@@ -32,7 +32,7 @@ public class GeneratedKernel
     /// <summary>
     /// Gets or sets the kernel parameters.
     /// </summary>
-    public GeneratedKernelParameter[] Parameters { get; set; } = System.Array.Empty<GeneratedKernelParameter>();
+    public GeneratedKernelParameter[] Parameters { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the required work group size.
@@ -63,5 +63,4 @@ public class GeneratedKernel
     /// Gets or sets the required shared memory size in bytes.
     /// </summary>
     public int RequiredSharedMemory { get; set; }
-
 }

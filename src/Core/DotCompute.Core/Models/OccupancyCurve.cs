@@ -20,7 +20,7 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets the list of occupancy data points at different block sizes.
         /// </summary>
-        public List<OccupancyDataPoint> DataPoints { get; } = new();
+        public List<OccupancyDataPoint> DataPoints { get; } = [];
 
         /// <summary>
         /// Gets or sets the block size that yields optimal occupancy.

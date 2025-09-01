@@ -26,7 +26,7 @@ public class BaseAcceleratorTests : IDisposable
     private readonly Mock<ILogger> _mockLogger;
     private readonly Mock<IUnifiedMemoryManager> _mockMemory;
     private readonly TestAccelerator _accelerator;
-    private readonly List<TestAccelerator> _accelerators = new();
+    private readonly List<TestAccelerator> _accelerators = [];
     private bool _disposed;
 
     public BaseAcceleratorTests()
@@ -157,7 +157,7 @@ public class BaseAcceleratorTests : IDisposable
         var tasks = new List<Task>();
         
         // Act - Attempt concurrent disposal
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             tasks.Add(Task.Run(async () => await accelerator.DisposeAsync()));
         }
@@ -415,19 +415,19 @@ public class BaseAcceleratorTests : IDisposable
         var act = async () => await _accelerator.SynchronizeAsync();
         await act.Should().ThrowAsync<ObjectDisposedException>();
     }
-    
+
     #endregion
-    
+
     #region Memory Integration Tests
-    
+
+
     [Fact]
     [Trait("TestType", "MemoryIntegration")]
     public void Memory_Property_ReturnsInjectedMemoryManager()
-    {
         // Assert
-        _accelerator.Memory.Should().Be(_mockMemory.Object);
-    }
-    
+        => _accelerator.Memory.Should().Be(_mockMemory.Object);
+
+
     [Fact]
     [Trait("TestType", "MemoryIntegration")]
     public void Memory_Integration_EnforcesMemoryLimits()
@@ -495,7 +495,7 @@ public class BaseAcceleratorTests : IDisposable
         var tasks = new List<Task>();
         
         // Act - Multiple concurrent synchronization calls
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             tasks.Add(_accelerator.SynchronizeAsync().AsTask());
         }
@@ -925,7 +925,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Recompile first few to test cache behavior
         var cachedResults = new List<ICompiledKernel>();
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var result = await accelerator.CompileKernelAsync(definitions[i]);
             cachedResults.Add(result);
@@ -959,7 +959,7 @@ public class BaseAcceleratorTests : IDisposable
         ICompiledKernel? result = null;
         var maxRetries = 3;
         
-        for (int attempt = 0; attempt < maxRetries; attempt++)
+        for (var attempt = 0; attempt < maxRetries; attempt++)
         {
             try
             {
@@ -1019,7 +1019,7 @@ public class BaseAcceleratorTests : IDisposable
         // Create mix of operations that will succeed and fail
         var operations = new List<Task<ICompiledKernel?>>();
         
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var definition = new KernelDefinition($"concurrent_test_{i}", "__kernel void test() {}", "test");
             
@@ -1094,7 +1094,7 @@ public class BaseAcceleratorTests : IDisposable
         var exceptions = new List<Exception>();
         
         // Act - Attempt multiple compilations as memory decreases
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             try
             {
@@ -1220,7 +1220,7 @@ public class BaseAcceleratorTests : IDisposable
         var compilationTimes = new List<TimeSpan>();
         
         // Act - Increase fragmentation over time
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             fragmentationLevel = i * 0.1; // 0%, 10%, 20%, 30%, 40% fragmentation
             var definition = new KernelDefinition($"frag_test_{i}", "__kernel void test() {}", "test");
@@ -1289,7 +1289,7 @@ public class BaseAcceleratorTests : IDisposable
         var completionTimes = new ConcurrentBag<DateTime>();
         
         // Act - Start multiple synchronization operations
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             syncTasks.Add(Task.Run(async () =>
             {
@@ -1386,7 +1386,7 @@ public class BaseAcceleratorTests : IDisposable
         var operations = new List<Task<ICompiledKernel>>();
         
         // Act - Perform various operations
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var definition = new KernelDefinition($"perf_test_{i}", 
                 $"__kernel void test_{i}(__global float* data) {{ data[get_global_id(0)] = {i}.0f; }}", 
@@ -1436,12 +1436,12 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act - Measure throughput in batches
         var batchSize = 10;
-        for (int batch = 0; batch < operationCount / batchSize; batch++)
+        for (var batch = 0; batch < operationCount / batchSize; batch++)
         {
             var batchStartTime = DateTime.UtcNow;
             var batchOperations = new List<Task<ICompiledKernel>>();
             
-            for (int i = 0; i < batchSize; i++)
+            for (var i = 0; i < batchSize; i++)
             {
                 var opIndex = batch * batchSize + i;
                 var definition = new KernelDefinition($"throughput_test_{opIndex}", 
@@ -1484,7 +1484,7 @@ public class BaseAcceleratorTests : IDisposable
         var initialMemory = GC.GetTotalMemory(true);
         
         // Act - Perform long-running operations
-        for (int cycle = 0; cycle < 20; cycle++)
+        for (var cycle = 0; cycle < 20; cycle++)
         {
             var definitions = Enumerable.Range(0, 10)
                 .Select(i => new KernelDefinition($"memory_cycle_{cycle}_{i}", 
@@ -1533,7 +1533,7 @@ public class BaseAcceleratorTests : IDisposable
         var latencies = new List<TimeSpan>();
         
         // Act - Measure latency for individual operations
-        for (int i = 0; i < 50; i++)
+        for (var i = 0; i < 50; i++)
         {
             var definition = new KernelDefinition($"latency_test_{i}", "__kernel void test() {}", "latency");
             
@@ -1661,7 +1661,7 @@ public class BaseAcceleratorTests : IDisposable
         public bool EnableResourceTracking { get; set; }
         
         // Performance counters
-        private readonly List<TimeSpan> _compilationTimes = new();
+        private readonly List<TimeSpan> _compilationTimes = [];
         private int _activeCompilations;
         private int _activeSyncs;
 

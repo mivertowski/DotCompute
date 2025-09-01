@@ -363,15 +363,15 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         return baseManager; // Placeholder - would wrap with OptimizedMemoryPool
     }
 
-    private IUnifiedMemoryManager CreatePooledMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory) =>
+    private IUnifiedMemoryManager CreatePooledMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
         // TODO: Production - Implement standard pooled memory manager
         // Missing: Pool size management, eviction policies, fragmentation handling
-        CreateDirectMemoryManager(config, loggerFactory); // Placeholder
+        => CreateDirectMemoryManager(config, loggerFactory); // Placeholder
 
-    private IUnifiedMemoryManager CreateUnifiedMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory) =>
+    private IUnifiedMemoryManager CreateUnifiedMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
         // TODO: Production - Implement unified memory manager for CUDA
         // Missing: cudaMallocManaged, prefetching, migration hints
-        CreateDirectMemoryManager(config, loggerFactory); // Placeholder
+        => CreateDirectMemoryManager(config, loggerFactory); // Placeholder
 
     [RequiresUnreferencedCode("Memory manager creation uses dynamic type loading")]
     private IUnifiedMemoryManager CreateDirectMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
@@ -500,10 +500,10 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         await Task.CompletedTask;
     }
 
-    private static long GetSystemMemory() =>
+    private static long GetSystemMemory()
         // TODO: Production - Implement proper system memory detection
         // Missing: Platform-specific memory queries (Windows WMI, Linux /proc/meminfo)
-        GC.GetTotalMemory(false) * 10; // Rough estimate
+        => GC.GetTotalMemory(false) * 10; // Rough estimate
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());

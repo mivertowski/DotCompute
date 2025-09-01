@@ -292,7 +292,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Creates device-specific tasks for data parallel execution.
         /// </summary>
-        private async ValueTask<DataParallelDeviceTask<T>[]> CreateDataParallelDeviceTasksAsync<T>(
+        private static async ValueTask<DataParallelDeviceTask<T>[]> CreateDataParallelDeviceTasksAsync<T>(
             string kernelName,
             WorkloadDistribution workloadDistribution,
             DependencyGraph dependencyGraph,
@@ -394,7 +394,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Creates pipeline stages with proper compilation and buffer setup.
         /// </summary>
-        private async ValueTask<PipelineStage<T>[]> CreatePipelineStagesAsync<T>(
+        private static async ValueTask<PipelineStage<T>[]> CreatePipelineStagesAsync<T>(
             PipelineDefinition<T> definition,
             Dictionary<string, IAccelerator> stageAssignments,
             DependencyGraph dependencies,

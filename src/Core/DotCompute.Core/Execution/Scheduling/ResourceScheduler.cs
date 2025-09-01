@@ -289,7 +289,7 @@ namespace DotCompute.Core.Execution.Scheduling
 
             // Calculate device weights based on performance characteristics
             var deviceWeights = await Task.WhenAll(
-                devices.Select(async d => await _performanceEstimator.CalculateDeviceWeightAsync(d, cancellationToken)).ToList());
+                devices.Select(async d => await DevicePerformanceEstimator.CalculateDeviceWeightAsync(d, cancellationToken)).ToList());
 
             var totalWeight = deviceWeights.Sum();
             if (totalWeight <= 0)
@@ -326,7 +326,6 @@ namespace DotCompute.Core.Execution.Scheduling
                 {
                     break;
                 }
-
             }
 
             return assignments;

@@ -54,10 +54,10 @@ internal static class BufferHelpers
     /// Gets the element count from a buffer.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetElementCount<T>(DotCompute.Abstractions.IUnifiedMemoryBuffer<T> buffer) where T : unmanaged =>
+    public static int GetElementCount<T>(DotCompute.Abstractions.IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
         // TODO: Implement proper element count retrieval from buffer
         // For now, assume buffer.SizeInBytes / sizeof(T)
-        (int)(buffer.SizeInBytes / GetElementSize<T>());
+        => (int)(buffer.SizeInBytes / GetElementSize<T>());
 
 
     /// <summary>

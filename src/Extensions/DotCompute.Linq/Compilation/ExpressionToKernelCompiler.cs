@@ -212,7 +212,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         return visitor.GetResult();
     }
 
-    private FusionContext? ExtractFusionContext(Expression expression)
+    private static FusionContext? ExtractFusionContext(Expression expression)
     {
         // Check if expression has fusion metadata
         var key = expression.ToString();
@@ -235,7 +235,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         return null;
     }
 
-    private DotCompute.Abstractions.Kernels.KernelDefinition CreateFusedKernelDefinition(FusionContext fusionContext, Expression expression)
+    private static DotCompute.Abstractions.Kernels.KernelDefinition CreateFusedKernelDefinition(FusionContext fusionContext, Expression expression)
     {
         var name = $"fused_kernel_{string.Join("_", fusionContext.FusedOperations).ToLowerInvariant()}_{Guid.NewGuid():N}";
 
@@ -492,7 +492,7 @@ public sealed class ExpressionAnalysisResult
 /// </summary>
 public sealed class FusionContext
 {
-    public IReadOnlyList<string> FusedOperations { get; init; } = new List<string>();
+    public IReadOnlyList<string> FusedOperations { get; init; } = [];
     public string FusionType { get; init; } = string.Empty;
     public Dictionary<string, object> Metadata { get; init; } = [];
     public double EstimatedSpeedup { get; init; } = 1.0;

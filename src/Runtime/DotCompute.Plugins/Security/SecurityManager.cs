@@ -153,7 +153,7 @@ public class SecurityManager : IDisposable
     /// <summary>
     /// Validates the basic structure of assembly metadata.
     /// </summary>
-    private bool ValidateMetadataStructure(MetadataReader metadataReader)
+    private static bool ValidateMetadataStructure(MetadataReader metadataReader)
     {
         try
         {
@@ -184,7 +184,7 @@ public class SecurityManager : IDisposable
     /// <summary>
     /// Analyzes types and methods for suspicious patterns.
     /// </summary>
-    private async Task AnalyzeTypesAndMethodsAsync(MetadataReader metadataReader, AssemblyMetadataAnalysis analysis, CancellationToken cancellationToken)
+    private static async Task AnalyzeTypesAndMethodsAsync(MetadataReader metadataReader, AssemblyMetadataAnalysis analysis, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -245,7 +245,7 @@ public class SecurityManager : IDisposable
     /// <summary>
     /// Analyzes string literals and resources for suspicious content.
     /// </summary>
-    private void AnalyzeStringsAndResources(MetadataReader metadataReader, AssemblyMetadataAnalysis analysis)
+    private static void AnalyzeStringsAndResources(MetadataReader metadataReader, AssemblyMetadataAnalysis analysis)
     {
         var suspiciousStrings = new[]
         {
@@ -278,7 +278,7 @@ public class SecurityManager : IDisposable
     /// <summary>
     /// Analyzes custom attributes for security-relevant information.
     /// </summary>
-    private void AnalyzeAttributes(MetadataReader metadataReader, AssemblyMetadataAnalysis analysis)
+    private static void AnalyzeAttributes(MetadataReader metadataReader, AssemblyMetadataAnalysis analysis)
     {
         var dangerousAttributes = new[]
         {
@@ -308,7 +308,7 @@ public class SecurityManager : IDisposable
     /// <summary>
     /// Analyzes referenced assemblies for potential security risks.
     /// </summary>
-    private void AnalyzeAssemblyReferences(MetadataReader metadataReader, AssemblyMetadataAnalysis analysis)
+    private static void AnalyzeAssemblyReferences(MetadataReader metadataReader, AssemblyMetadataAnalysis analysis)
     {
         var riskyAssemblies = new[]
         {
@@ -332,7 +332,7 @@ public class SecurityManager : IDisposable
     /// <summary>
     /// Calculates the overall risk level based on analysis results.
     /// </summary>
-    private RiskLevel CalculateRiskLevel(AssemblyMetadataAnalysis analysis)
+    private static RiskLevel CalculateRiskLevel(AssemblyMetadataAnalysis analysis)
     {
         var patternCount = analysis.SuspiciousPatterns.Count;
 

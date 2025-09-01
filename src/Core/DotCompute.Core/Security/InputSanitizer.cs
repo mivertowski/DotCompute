@@ -567,7 +567,7 @@ public sealed class InputSanitizer : IDisposable
         return true;
     }
 
-    private async Task DetectSecurityThreatsAsync(string input, SanitizationResult result, CancellationToken cancellationToken)
+    private static async Task DetectSecurityThreatsAsync(string input, SanitizationResult result, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -593,7 +593,7 @@ public sealed class InputSanitizer : IDisposable
         }, cancellationToken);
     }
 
-    private async Task<string> ApplySanitizationAsync(string input, SanitizationType sanitizationType,
+    private static async Task<string> ApplySanitizationAsync(string input, SanitizationType sanitizationType,
 
         SanitizationResult result, CancellationToken cancellationToken)
     {

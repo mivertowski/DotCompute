@@ -33,7 +33,7 @@ namespace DotCompute.Backends.CUDA.Models
         /// <summary>
         /// Gets or sets the list of validation results.
         /// </summary>
-        public List<UnifiedValidationResult> Results { get; set; } = new();
+        public List<UnifiedValidationResult> Results { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the total number of tests.
@@ -73,14 +73,14 @@ namespace DotCompute.Backends.CUDA.Models
         /// <summary>
         /// Gets the pass rate percentage.
         /// </summary>
-        public double PassRate => 
-            TotalTests > 0 ? (double)PassedTests / TotalTests * 100 : 0;
+        public double PassRate
+            => TotalTests > 0 ? (double)PassedTests / TotalTests * 100 : 0;
 
         /// <summary>
         /// Gets whether validation was successful.
         /// </summary>
-        public bool IsSuccessful => 
-            OverallStatus == ValidationStatus.Passed || 
+        public bool IsSuccessful
+            => OverallStatus == ValidationStatus.Passed || 
             OverallStatus == ValidationStatus.Warning && FailedTests == 0;
     }
 }

@@ -36,7 +36,7 @@ public class KernelGenerationContext
     /// <summary>
     /// Gets or sets custom optimization hints.
     /// </summary>
-    public Dictionary<string, object> OptimizationHints { get; set; } = new();
+    public Dictionary<string, object> OptimizationHints { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the work group dimensions for kernel execution.
@@ -46,7 +46,7 @@ public class KernelGenerationContext
     /// <summary>
     /// Gets or sets metadata for kernel generation.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Gets or sets device information for the target accelerator.

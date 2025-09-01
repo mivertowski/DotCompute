@@ -217,7 +217,7 @@ namespace DotCompute.Core.Types
         /// <summary>
         /// Gets the absolute value.
         /// </summary>
-        public static Half Abs(Half value) => new Half((ushort)(value._value & 0x7FFF));
+        public static Half Abs(Half value) => new((ushort)(value._value & 0x7FFF));
 
         private static ushort FloatToHalf(float value)
         {

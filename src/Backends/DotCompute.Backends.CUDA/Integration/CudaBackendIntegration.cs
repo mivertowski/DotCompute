@@ -500,7 +500,7 @@ namespace DotCompute.Backends.CUDA.Integration
                 _streamManager.OptimizeStreamUsage();
                 _advancedFeatures.CooperativeGroups.PerformMaintenance();
                 _advancedFeatures.DynamicParallelism.PerformMaintenance();
-                _advancedFeatures.UnifiedMemory.PerformMaintenance();
+                CudaUnifiedMemoryAdvanced.PerformMaintenance();
                 _advancedFeatures.TensorCores.PerformMaintenance();
 
                 _logger.LogInformation("CUDA backend maintenance completed");

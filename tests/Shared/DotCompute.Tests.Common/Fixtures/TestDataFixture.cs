@@ -298,7 +298,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
                 throw new ArgumentException("Vector lengths must match");
 
             var result = new float[a.Length];
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -314,7 +314,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         public static float[] VectorScalarMultiply(float[] vector, float scalar)
         {
             var result = new float[vector.Length];
-            for (int i = 0; i < vector.Length; i++)
+            for (var i = 0; i < vector.Length; i++)
             {
                 result[i] = vector[i] * scalar;
             }
@@ -334,12 +334,12 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         {
             var result = new float[rowsA * colsB];
             
-            for (int row = 0; row < rowsA; row++)
+            for (var row = 0; row < rowsA; row++)
             {
-                for (int col = 0; col < colsB; col++)
+                for (var col = 0; col < colsB; col++)
                 {
-                    float sum = 0.0f;
-                    for (int k = 0; k < colsA; k++)
+                    var sum = 0.0f;
+                    for (var k = 0; k < colsA; k++)
                     {
                         sum += a[row * colsA + k] * b[k * colsB + col];
                     }
@@ -355,10 +355,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         /// </summary>
         /// <param name="input">Input array.</param>
         /// <returns>Expected sum.</returns>
-        public static float ReductionSum(float[] input)
-        {
-            return input.Sum();
-        }
+        public static float ReductionSum(float[] input) => input.Sum();
 
         /// <summary>
         /// Calculates expected result for element-wise operations.
@@ -371,7 +368,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         {
             var result = new float[input.Length];
             
-            for (int i = 0; i < input.Length; i++)
+            for (var i = 0; i < input.Length; i++)
             {
                 result[i] = operation switch
                 {
@@ -406,7 +403,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
             var data = new float[size];
             var random = new Random(9999);
             
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 // Mix of small, large, and precision-sensitive values
                 data[i] = i switch
@@ -432,7 +429,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
             var data = new float[size];
             var random = new Random(seed);
             
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 if (random.NextSingle() < sparsityRatio)
                 {
@@ -454,7 +451,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         {
             var data = new float[size];
             
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 data[i] = pattern switch
                 {
@@ -492,7 +489,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
     private static float[] GenerateSequentialFloats(int size, float start = 0.0f, float increment = 1.0f)
     {
         var data = new float[size];
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = start + i * increment;
         }
@@ -502,7 +499,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
     private static int[] GenerateSequentialInts(int size, int start = 0, int increment = 1)
     {
         var data = new int[size];
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = start + i * increment;
         }
@@ -515,7 +512,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         var data = new float[size];
         var range = max - min;
         
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = min + (float)random.NextDouble() * range;
         }
@@ -527,7 +524,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         var random = new Random(seed);
         var data = new int[size];
         
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = random.Next(min, max);
         }
@@ -537,7 +534,7 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
     private static float[] GenerateIdentityMatrix(int rows, int cols)
     {
         var matrix = new float[rows * cols];
-        for (int i = 0; i < Math.Min(rows, cols); i++)
+        for (var i = 0; i < Math.Min(rows, cols); i++)
         {
             matrix[i * cols + i] = 1.0f;
         }

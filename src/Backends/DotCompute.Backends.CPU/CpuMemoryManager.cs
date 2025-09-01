@@ -134,7 +134,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     public override IAccelerator Accelerator => _accelerator ??= CreateDefaultAccelerator();
     private IAccelerator? _accelerator;
 
-    private IAccelerator CreateDefaultAccelerator()
+    private static IAccelerator CreateDefaultAccelerator()
     {
         // Create default options
         var acceleratorOptions = Microsoft.Extensions.Options.Options.Create(new CpuAcceleratorOptions());
@@ -183,29 +183,29 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc/>
-    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken) =>
+    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
         // Simple CPU memory copy - both buffers are in CPU memory
-        ValueTask.CompletedTask; // Implementation placeholder TODO
+        => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
-    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken) =>
+    public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken)
         // Simple CPU memory copy with offsets
-        ValueTask.CompletedTask; // Implementation placeholder TODO
+        => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
-    public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken) =>
+    public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken)
         // Copy from CPU buffer to host memory - essentially a no-op since both are host memory
-        ValueTask.CompletedTask; // Implementation placeholder TODO
+        => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
-    public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken) =>
+    public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
         // Copy from host memory to CPU buffer - essentially a no-op since both are host memory
-        ValueTask.CompletedTask; // Implementation placeholder TODO
+        => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
-    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) =>
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
         // Create typed view of the buffer TODO
-        throw new NotImplementedException("Typed view creation not yet implemented");
+        => throw new NotImplementedException("Typed view creation not yet implemented");
 
     /// <inheritdoc/>
     public override void Clear()
@@ -278,7 +278,7 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
         // View doesn't own the memory, parent does
     }
 
-    public ValueTask DisposeAsync() =>
+    public ValueTask DisposeAsync()
         // View doesn't own the memory, parent does
-        ValueTask.CompletedTask;
+        => ValueTask.CompletedTask;
 }

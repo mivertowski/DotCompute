@@ -27,7 +27,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 // Check for CUDA runtime library first
-                bool hasCudaRuntime = false;
+                var hasCudaRuntime = false;
                 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
@@ -47,7 +47,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
                 
                 // Try to initialize CUDA and get device count
-                var result = CudaRuntime.cudaGetDeviceCount(out int deviceCount);
+                var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
                 if (result != CudaError.Success || deviceCount == 0)
                 {
                     return false;
@@ -113,7 +113,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Get detailed device information for logging
         /// </summary>
-        protected string GetDeviceInfoString()
+        protected static string GetDeviceInfoString()
         {
             if (!IsCudaAvailable()) return "CUDA not available";
             
@@ -148,17 +148,13 @@ namespace DotCompute.Hardware.Cuda.Tests
                 _operationName = operationName;
                 _output = output;
             }
-            
-            public void Start()
-            {
-                _stopwatch.Restart();
-            }
-            
-            public void Stop()
-            {
-                _stopwatch.Stop();
-            }
-            
+
+
+            public void Start() => _stopwatch.Restart();
+
+            public void Stop() => _stopwatch.Stop();
+
+
             public TimeSpan ElapsedTime => _stopwatch.Elapsed;
             
             public void LogResults(long dataSize = 0, int operationCount = 1)
@@ -185,7 +181,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             public static float[] CreateLinearSequence(int count, float start = 0.0f, float step = 1.0f)
             {
                 var data = new float[count];
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
                     data[i] = start + i * step;
                 }
@@ -195,7 +191,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             public static float[] CreateSinusoidalData(int count, double frequency = 0.01, float amplitude = 1.0f)
             {
                 var data = new float[count];
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
                     data[i] = amplitude * (float)Math.Sin(i * frequency);
                 }
@@ -208,7 +204,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var data = new float[count];
                 var range = max - min;
                 
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
                     data[i] = min + (float)random.NextDouble() * range;
                 }
@@ -277,7 +273,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var errorCount = 0;
             const int maxErrorsToReport = 10;
             
-            for (int i = 0; i < elementsToCheck; i++)
+            for (var i = 0; i < elementsToCheck; i++)
             {
                 var diff = Math.Abs(expected[i] - actual[i]);
                 if (diff > tolerance)

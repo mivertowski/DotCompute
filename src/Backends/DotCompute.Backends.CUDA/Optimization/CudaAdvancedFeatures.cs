@@ -165,7 +165,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
             // Unified Memory optimization
             if (options.EnableUnifiedMemoryOptimization)
             {
-                var umOptimization = await _unifiedMemory.OptimizeMemoryAccessAsync(arguments, cancellationToken)
+                var umOptimization = await CudaUnifiedMemoryAdvanced.OptimizeMemoryAccessAsync(arguments, cancellationToken)
                     .ConfigureAwait(false);
                 if (umOptimization.Success)
                 {
@@ -220,7 +220,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
 
         try
         {
-            return await _unifiedMemory.OptimizePrefetchingAsync(buffers, targetDevice, accessPattern, cancellationToken)
+            return await CudaUnifiedMemoryAdvanced.OptimizePrefetchingAsync(buffers, targetDevice, accessPattern, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -242,7 +242,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
 
         try
         {
-            return await _unifiedMemory.SetOptimalAdviceAsync(buffer, usageHint, cancellationToken)
+            return await CudaUnifiedMemoryAdvanced.SetOptimalAdviceAsync(buffer, usageHint, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -263,7 +263,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
         {
             CooperativeGroupsMetrics = _cooperativeGroups.GetMetrics(),
             DynamicParallelismMetrics = ConvertDynamicParallelismMetrics(_dynamicParallelism.GetMetrics()),
-            UnifiedMemoryMetrics = _unifiedMemory.GetMetrics(),
+            UnifiedMemoryMetrics = CudaUnifiedMemoryAdvanced.GetMetrics(),
             TensorCoreMetrics = _tensorCores.GetMetrics(),
             OverallEfficiency = CalculateOverallEfficiency()
         };
@@ -333,11 +333,8 @@ public sealed class CudaAdvancedFeatures : IDisposable
     /// <summary>
     /// Converts from the execution metrics type to the feature metrics type.
     /// </summary>
-    private DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics ConvertDynamicParallelismMetrics(
-        DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics source)
-    {
-        return source; // Direct assignment - they're the same type now
-    }
+    private static DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics ConvertDynamicParallelismMetrics(
+        DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics source) => source; // Direct assignment - they're the same type now
 
     private double CalculateOverallEfficiency()
     {
@@ -345,7 +342,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
         {
         _cooperativeGroups.GetMetrics().EfficiencyScore,
         _dynamicParallelism.GetMetrics().EfficiencyScore,
-        _unifiedMemory.GetMetrics().EfficiencyScore,
+        CudaUnifiedMemoryAdvanced.GetMetrics().EfficiencyScore,
         _tensorCores.GetMetrics().EfficiencyScore
     };
 
@@ -365,7 +362,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
             // Periodic optimization of feature usage
             _cooperativeGroups.PerformMaintenance();
             _dynamicParallelism.PerformMaintenance();
-            _unifiedMemory.PerformMaintenance();
+            CudaUnifiedMemoryAdvanced.PerformMaintenance();
             _tensorCores.PerformMaintenance();
 
             var metrics = GetPerformanceMetrics();

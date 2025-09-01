@@ -50,7 +50,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         _doubleHostData = new double[BufferSize];
         
         var random = new Random(42);
-        for (int i = 0; i < BufferSize; i++)
+        for (var i = 0; i < BufferSize; i++)
         {
             _hostData[i] = (float)random.NextDouble();
             _intHostData[i] = random.Next();
@@ -70,8 +70,9 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         DataSize = GetElementSize() * BufferSize;
         var metrics = await RunBufferAllocationBenchmarkAsync();
         LogMetrics(metrics, $"Buffer Allocation ({ElementType.Name})");
-        
+
         // Memory allocation should be fast
+
         AssertPerformanceExpectations(metrics,
             maxAverageTimeMs: 100.0,
             maxStandardDeviationMs: 50.0);
@@ -86,7 +87,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         _measurements.Clear();
         var memoryBefore = GC.GetTotalMemory(true);
         
-        for (int i = 0; i < MeasurementIterations; i++)
+        for (var i = 0; i < MeasurementIterations; i++)
         {
             var time = await MeasureBufferAllocationAsync();
             _measurements.Add(time);
@@ -98,7 +99,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
     
     private async Task WarmupBufferAllocation()
     {
-        for (int i = 0; i < WarmupIterations; i++)
+        for (var i = 0; i < WarmupIterations; i++)
         {
             await ExecuteBufferAllocationAsync();
         }
@@ -112,12 +113,11 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         _stopwatch.Stop();
         return _stopwatch.Elapsed.TotalMilliseconds;
     }
-    
-    protected override async Task ExecuteOperationAsync()
-    {
-        await ExecuteBufferAllocationAsync();
-    }
-    
+
+
+    protected override async Task ExecuteOperationAsync() => await ExecuteBufferAllocationAsync();
+
+
     private async Task ExecuteBufferAllocationAsync()
     {
         IDisposable buffer = ElementType.Name switch
@@ -157,7 +157,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         _measurements.Clear();
         var memoryBefore = GC.GetTotalMemory(true);
         
-        for (int i = 0; i < MeasurementIterations; i++)
+        for (var i = 0; i < MeasurementIterations; i++)
         {
             var time = await MeasureHostToDeviceTransferAsync();
             _measurements.Add(time);
@@ -169,7 +169,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
     
     private async Task WarmupHostToDeviceTransfer()
     {
-        for (int i = 0; i < WarmupIterations; i++)
+        for (var i = 0; i < WarmupIterations; i++)
         {
             await ExecuteHostToDeviceTransferAsync();
         }
@@ -229,7 +229,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         _measurements.Clear();
         var memoryBefore = GC.GetTotalMemory(true);
         
-        for (int i = 0; i < MeasurementIterations; i++)
+        for (var i = 0; i < MeasurementIterations; i++)
         {
             var time = await MeasureDeviceToHostTransferAsync();
             _measurements.Add(time);
@@ -241,7 +241,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
     
     private async Task WarmupDeviceToHostTransfer()
     {
-        for (int i = 0; i < WarmupIterations; i++)
+        for (var i = 0; i < WarmupIterations; i++)
         {
             await ExecuteDeviceToHostTransferAsync();
         }
@@ -296,7 +296,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         _measurements.Clear();
         var memoryBefore = GC.GetTotalMemory(true);
         
-        for (int i = 0; i < MeasurementIterations; i++)
+        for (var i = 0; i < MeasurementIterations; i++)
         {
             var time = await MeasureBidirectionalTransferAsync();
             _measurements.Add(time);
@@ -308,7 +308,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
     
     private async Task WarmupBidirectionalTransfer()
     {
-        for (int i = 0; i < WarmupIterations; i++)
+        for (var i = 0; i < WarmupIterations; i++)
         {
             await ExecuteBidirectionalTransferAsync();
         }
@@ -338,7 +338,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         var sizes = new[] { 1024, 4096, 16384, 65536, 262144, 1048576, 4194304 };
         var bandwidths = new double[sizes.Length];
         
-        for (int i = 0; i < sizes.Length; i++)
+        for (var i = 0; i < sizes.Length; i++)
         {
             BufferSize = sizes[i];
             DataSize = sizeof(float) * BufferSize;
@@ -355,7 +355,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         // Find peak bandwidth
         var peakBandwidth = 0.0;
         var peakSize = 0;
-        for (int i = 0; i < bandwidths.Length; i++)
+        for (var i = 0; i < bandwidths.Length; i++)
         {
             if (bandwidths[i] > peakBandwidth)
             {
@@ -406,17 +406,17 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         var random = new Random(42);
         var randomData = new float[BufferSize];
         var indices = new int[BufferSize];
-        for (int i = 0; i < BufferSize; i++) indices[i] = i;
+        for (var i = 0; i < BufferSize; i++) indices[i] = i;
         
         // Shuffle indices
-        for (int i = BufferSize - 1; i > 0; i--)
+        for (var i = BufferSize - 1; i > 0; i--)
         {
-            int j = random.Next(i + 1);
+            var j = random.Next(i + 1);
             (indices[i], indices[j]) = (indices[j], indices[i]);
         }
         
         // Reorder data randomly
-        for (int i = 0; i < BufferSize; i++)
+        for (var i = 0; i < BufferSize; i++)
         {
             randomData[i] = _hostData[indices[i]];
         }
@@ -428,7 +428,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         
         // Restore original data
         var originalRandom = new Random(42);
-        for (int i = 0; i < BufferSize; i++)
+        for (var i = 0; i < BufferSize; i++)
         {
             _hostData[i] = (float)originalRandom.NextDouble();
         }
@@ -441,7 +441,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         // Create strided access pattern (every 4th element)
         var stride = 4;
         var stridedData = new float[BufferSize];
-        for (int i = 0; i < BufferSize; i++)
+        for (var i = 0; i < BufferSize; i++)
         {
             stridedData[i] = _hostData[(i * stride) % BufferSize];
         }
@@ -453,7 +453,7 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         
         // Restore original data
         var random = new Random(42);
-        for (int i = 0; i < BufferSize; i++)
+        for (var i = 0; i < BufferSize; i++)
         {
             _hostData[i] = (float)random.NextDouble();
         }
@@ -471,13 +471,12 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
             _ => sizeof(float)
         };
     }
-    
+
+
     [GlobalCleanup]
-    public override void Cleanup()
-    {
-        base.Cleanup();
-    }
-    
+    public override void Cleanup() => base.Cleanup();
+
+
     public void Dispose()
     {
         _deviceBuffer?.Dispose();

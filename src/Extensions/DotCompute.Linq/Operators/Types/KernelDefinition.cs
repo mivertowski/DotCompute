@@ -47,5 +47,5 @@ public class KernelDefinition
     /// <summary>
     /// Gets or sets the kernel parameters.
     /// </summary>
-    public List<KernelParameter> Parameters { get; set; } = new List<KernelParameter>();
+    public List<KernelParameter> Parameters { get; set; } = [];
 }

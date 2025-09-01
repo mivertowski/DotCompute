@@ -405,5 +405,4 @@ namespace DotCompute.Core.Kernels
         /// </summary>
         public Dictionary<string, double> ResourceUtilization { get; init; } = [];
     }
-
 }

@@ -36,7 +36,7 @@ public class WorkloadProfile
     /// <summary>
     /// Gets or sets the preferred backend names.
     /// </summary>
-    public List<string> PreferredBackends { get; set; } = new();
+    public List<string> PreferredBackends { get; set; } = [];
     
     /// <summary>
     /// Gets or sets the memory requirements in bytes.

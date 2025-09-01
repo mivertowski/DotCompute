@@ -130,7 +130,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (OutOfMemoryException ex)
         {
-            _statistics.RecordFailedAllocation(sizeInBytes);
+            MemoryStatistics.RecordFailedAllocation(sizeInBytes);
             _logger.LogError(ex, "Failed to allocate memory buffer of size {SizeBytes} - out of memory", sizeInBytes);
 
             // Attempt garbage collection and retry once
@@ -154,7 +154,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _statistics.RecordFailedAllocation(sizeInBytes);
+            MemoryStatistics.RecordFailedAllocation(sizeInBytes);
             _logger.LogError(ex, "Unexpected error during memory allocation for size {SizeBytes}", sizeInBytes);
             throw new InvalidOperationException($"Memory allocation failed: {ex.Message}", ex);
         }
@@ -573,7 +573,7 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
                 _nativeHandle = _pinnedHandle.AddrOfPinnedObject();
             }
 
-            _statistics.RecordBufferCreation(sizeInBytes);
+            MemoryStatistics.RecordBufferCreation(sizeInBytes);
             _logger.LogTrace("Created memory buffer {BufferId} with native handle 0x{Handle:X}", id, _nativeHandle.ToInt64());
         }
         catch (Exception ex)
@@ -920,12 +920,12 @@ public sealed class MemoryStatistics
         }
     }
 
-    public void RecordFailedAllocation(long bytes)
+    public static void RecordFailedAllocation(long bytes)
     {
         // Track failed allocations for monitoring
     }
 
-    public void RecordBufferCreation(long bytes)
+    public static void RecordBufferCreation(long bytes)
     {
         // Track buffer creation events
     }
@@ -1316,26 +1316,26 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
 
     // Basic copy operations
 
-    public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) =>
+    public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
         // For production implementation, this would use proper memory copying
-        await Task.CompletedTask;
+        => await Task.CompletedTask;
 
-    public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) =>
+    public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         // For production implementation, this would use proper memory copying
-        await Task.CompletedTask;
+        => await Task.CompletedTask;
 
-    public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) =>
+    public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
         // For production implementation, this would copy between buffers
-        await Task.CompletedTask;
+        => await Task.CompletedTask;
 
     public async ValueTask CopyToAsync(
         int sourceOffset,
         IUnifiedMemoryBuffer<T> destination,
         int destinationOffset,
         int count,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default)
         // For production implementation, this would copy with offsets
-        await Task.CompletedTask;
+        => await Task.CompletedTask;
 
     // Simplified implementations for remaining methods
 

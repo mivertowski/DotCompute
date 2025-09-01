@@ -26,7 +26,7 @@ public class ErrorHandlingTests : IDisposable
 {
     private readonly Mock<ILogger> _mockLogger;
     private readonly Mock<IUnifiedMemoryManager> _mockMemory;
-    private readonly List<TestErrorAccelerator> _accelerators = new();
+    private readonly List<TestErrorAccelerator> _accelerators = [];
     private bool _disposed;
 
     public ErrorHandlingTests()
@@ -78,7 +78,7 @@ public class ErrorHandlingTests : IDisposable
 
         // Act - Trigger multiple failures to open circuit breaker
         var tasks = new List<Task>();
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             tasks.Add(Task.Run(async () =>
             {
@@ -318,7 +318,7 @@ public class ErrorHandlingTests : IDisposable
         accelerator.RetryDelays.Should().HaveCount(3);
         
         // Verify exponential backoff (each delay should be roughly double the previous)
-        for (int i = 1; i < accelerator.RetryDelays.Count; i++)
+        for (var i = 1; i < accelerator.RetryDelays.Count; i++)
         {
             accelerator.RetryDelays[i].Should().BeGreaterThan(accelerator.RetryDelays[i - 1]);
         }
@@ -339,7 +339,7 @@ public class ErrorHandlingTests : IDisposable
 
         // Trigger failures to open circuit
         accelerator.SimulateTransientFailure = true;
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             try { await accelerator.CompileKernelAsync(definition); }
             catch { /* Expected */ }
@@ -552,7 +552,7 @@ public class ErrorHandlingTests : IDisposable
 
         // Act - Multiple concurrent operations with potential race conditions
         var tasks = new List<Task>();
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             tasks.Add(Task.Run(async () =>
             {
@@ -1149,7 +1149,7 @@ public class ErrorHandlingTests : IDisposable
         public TimeSpan CircuitBreakerTimeout { get; set; } = TimeSpan.FromSeconds(1);
         public CircuitBreakerState CircuitBreakerState { get; private set; } = CircuitBreakerState.Closed;
         public int RetryAttemptCount { get; private set; }
-        public List<TimeSpan> RetryDelays { get; } = new();
+        public List<TimeSpan> RetryDelays { get; } = [];
         public DateTime? LastSuccessfulCompilation { get; private set; }
         public bool CpuFallbackActivated { get; private set; }
         public string LastExecutionMode { get; private set; } = "GPU";
@@ -1644,10 +1644,7 @@ public class ErrorHandlingTests : IDisposable
             };
         }
 
-        public string CalculateStateChecksum()
-        {
-            return _internalState.Count.ToString();
-        }
+        public string CalculateStateChecksum() => _internalState.Count.ToString();
 
         public void RestoreFromCheckpoint()
         {
@@ -1660,21 +1657,12 @@ public class ErrorHandlingTests : IDisposable
             }
         }
 
-        protected override ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken)
-        {
-            return ValueTask.CompletedTask;
-        }
+        protected override ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
         // Additional helper methods for new error simulations
-        private void DeepMethodCall1()
-        {
-            DeepMethodCall2();
-        }
+        private void DeepMethodCall1() => DeepMethodCall2();
 
-        private void DeepMethodCall2()
-        {
-            DeepMethodCall3();
-        }
+        private void DeepMethodCall2() => DeepMethodCall3();
 
         private void DeepMethodCall3()
         {
@@ -1696,10 +1684,7 @@ public class ErrorHandlingTests : IDisposable
             await SimulateNestedAsyncCall(nestingLevel - 1);
         }
 
-        public void SetCorrelationId(Guid correlationId)
-        {
-            _correlationId = correlationId;
-        }
+        public void SetCorrelationId(Guid correlationId) => _correlationId = correlationId;
 
         // Synchronous validation methods
         public void ValidateKernelParameters(Dictionary<string, object>? parameters)

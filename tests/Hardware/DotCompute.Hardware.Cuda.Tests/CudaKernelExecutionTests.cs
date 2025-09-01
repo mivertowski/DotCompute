@@ -105,7 +105,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var hostB = new float[elementCount];
             var hostResult = new float[elementCount];
             
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostA[i] = i * 0.5f;
                 hostB[i] = i * 0.3f;
@@ -138,7 +138,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceC.ReadAsync(hostResult.AsSpan(), 0);
             
             // Verify results
-            for (int i = 0; i < Math.Min(1000, elementCount); i++) // Check first 1000 elements
+            for (var i = 0; i < Math.Min(1000, elementCount); i++) // Check first 1000 elements
             {
                 var expected = hostA[i] + hostB[i];
                 hostResult[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
@@ -170,7 +170,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var hostResult = new float[elementCount];
             
             var random = new Random(42);
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostA[i] = (float)(random.NextDouble() * 2.0 - 1.0);
                 hostB[i] = (float)(random.NextDouble() * 2.0 - 1.0);
@@ -205,12 +205,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceC.ReadAsync(hostResult.AsSpan(), 0);
             
             // Verify a few elements (full verification would be expensive)
-            for (int row = 0; row < Math.Min(10, matrixSize); row++)
+            for (var row = 0; row < Math.Min(10, matrixSize); row++)
             {
-                for (int col = 0; col < Math.Min(10, matrixSize); col++)
+                for (var col = 0; col < Math.Min(10, matrixSize); col++)
                 {
-                    float expected = 0.0f;
-                    for (int k = 0; k < matrixSize; k++)
+                    var expected = 0.0f;
+                    for (var k = 0; k < matrixSize; k++)
                     {
                         expected += hostA[row * matrixSize + k] * hostB[k * matrixSize + col];
                     }
@@ -246,7 +246,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var hostInput = new float[elementCount];
             var hostOutput = new float[gridSize];
             
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostInput[i] = 1.0f; // All ones for easy verification
             }
@@ -277,7 +277,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceOutput.ReadAsync(hostOutput.AsSpan(), 0);
             
             // Verify results - each block should sum to blockSize (all elements are 1.0f)
-            for (int i = 0; i < gridSize; i++)
+            for (var i = 0; i < gridSize; i++)
             {
                 var expectedSum = Math.Min(blockSize, elementCount - i * blockSize);
                 hostOutput[i].Should().BeApproximately(expectedSum, 0.0001f, $"block {i}");
@@ -318,7 +318,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Prepare test data
             var hostData = new float[elementCount];
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostData[i] = i + 1.0f;
             }
@@ -341,7 +341,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Verify some elements were doubled
             var elementsProcessed = 0;
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 if (Math.Abs(resultData[i] - hostData[i] * 2.0f) < 0.0001f)
                 {
@@ -371,7 +371,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var hostA = new float[elementCount];
             var hostB = new float[elementCount];
             
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostA[i] = i * 0.5f;
                 hostB[i] = i * 0.3f;
@@ -395,7 +395,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             var times = new double[iterations];
             
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
                 await kernel.LaunchAsync(launchConfig, deviceA, deviceB, deviceC, elementCount);

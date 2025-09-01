@@ -142,7 +142,7 @@ public class TelemetryConfiguration
     /// <summary>
     /// Gets or sets custom exporters.
     /// </summary>
-    public List<ITelemetryExporter> CustomExporters { get; set; } = new();
+    public List<ITelemetryExporter> CustomExporters { get; set; } = [];
     
     /// <summary>
     /// Gets or sets metric collection interval.
@@ -287,7 +287,7 @@ internal sealed class NullTelemetryProvider : ITelemetryProvider
     public void RecordAcceleratorUtilization(string acceleratorType, double utilization, long memoryUsed) { }
     public void RecordKernelExecution(string kernelName, TimeSpan duration, long operationCount) { }
     public void RecordMemoryTransfer(string direction, long bytes, TimeSpan duration) { }
-    public Meter GetMeter(string name, string? version = null) => new Meter(name, version);
+    public Meter GetMeter(string name, string? version = null) => new(name, version);
     public void Dispose() { }
     
     private sealed class NullTimer : IOperationTimer

@@ -81,7 +81,7 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
     /// <returns>A CompiledKernel instance with the same properties.</returns>
     public CompiledKernel ToCompiledKernel()
     {
-        var metadata = PerformanceMetadata ?? new Dictionary<string, object>();
+        var metadata = PerformanceMetadata ?? [];
         metadata["Handle"] = Handle;
         metadata["EntryPoint"] = Parameters.Length > 0 ? Name : "main";
         metadata["SharedMemorySize"] = SharedMemorySize;

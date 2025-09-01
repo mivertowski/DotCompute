@@ -396,7 +396,6 @@ public class CircuitOpenException : Exception
     public CircuitOpenException()
     {
     }
-
 }
 
 /// <summary>

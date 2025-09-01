@@ -164,7 +164,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
             return fusablePairs.Contains((second.Method.Name, first.Method.Name));
         }
 
-        private Expression CreateFusedExpression(MethodCallExpression first, MethodCallExpression second)
+        private static Expression CreateFusedExpression(MethodCallExpression first, MethodCallExpression second)
         {
             // Create a custom expression that represents the fused operation
             var fusedMethodName = $"{first.Method.Name}_{second.Method.Name}_Fused";

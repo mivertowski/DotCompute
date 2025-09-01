@@ -468,7 +468,7 @@ namespace DotCompute.Backends.CUDA.Execution
             return Math.Max(warpSize, Math.Min(blockSize, maxThreadsPerBlock));
         }
 
-        private static KernelArguments ConvertArgumentsToCuda(KernelArgument[] arguments) => new KernelArguments(arguments);
+        private static KernelArguments ConvertArgumentsToCuda(KernelArgument[] arguments) => [.. arguments];
 
         private async Task LaunchKernelAsync(
         CompiledKernel kernel,

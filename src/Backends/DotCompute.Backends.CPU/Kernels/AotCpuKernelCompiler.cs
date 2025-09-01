@@ -219,7 +219,10 @@ internal sealed class AotCpuKernelCompiler
         var bufferC = context.GetBuffer(2);
 
         if (bufferA == null || bufferB == null || bufferC == null)
+        {
             return;
+        }
+
 
         var length = Math.Min(Math.Min(bufferA.SizeInBytes, bufferB.SizeInBytes), bufferC.SizeInBytes) / sizeof(float);
 
@@ -242,7 +245,10 @@ internal sealed class AotCpuKernelCompiler
         var cols = context.GetScalar<int>(4);
 
         if (matrixA == null || matrixB == null || matrixC == null || rows <= 0 || cols <= 0)
+        {
             return;
+        }
+
 
         await Task.Run(() =>
         {
@@ -262,7 +268,10 @@ internal sealed class AotCpuKernelCompiler
         var bufferC = context.GetBuffer(2);
 
         if (bufferA == null || bufferB == null || bufferC == null)
+        {
             return;
+        }
+
 
         var length = Math.Min(Math.Min(bufferA.SizeInBytes, bufferB.SizeInBytes), bufferC.SizeInBytes) / sizeof(float);
 
@@ -281,7 +290,10 @@ internal sealed class AotCpuKernelCompiler
         var output = context.GetBuffer(1);
 
         if (input == null || output == null)
+        {
             return;
+        }
+
 
         await Task.Run(() =>
         {

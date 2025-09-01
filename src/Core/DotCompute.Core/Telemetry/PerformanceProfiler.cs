@@ -529,7 +529,7 @@ public sealed class PerformanceProfiler : IDisposable
         await Task.Delay(1, cancellationToken); // Yield control
     }
 
-    private async Task<ProfileAnalysis> AnalyzeProfileAsync(ActiveProfile profile,
+    private static async Task<ProfileAnalysis> AnalyzeProfileAsync(ActiveProfile profile,
 
         CancellationToken cancellationToken)
     {

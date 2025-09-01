@@ -43,7 +43,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
         // Create a unified memory buffer (mock implementation)
         var buffer = new RuntimeUnifiedMemoryBuffer(sizeInBytes);
 
-        _bufferAccelerators[buffer] = new HashSet<string>(acceleratorIds);
+        _bufferAccelerators[buffer] = [.. acceleratorIds];
         _coherenceStatus[buffer] = MemoryCoherenceStatus.Coherent;
 
         await Task.CompletedTask; // Placeholder for async allocation

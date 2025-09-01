@@ -324,8 +324,8 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
     /// </summary>
     /// <param name="pluginTypeName">The plugin type name.</param>
     /// <param name="factory">The factory function.</param>
-    public void RegisterPluginFactory(string pluginTypeName, Func<IBackendPlugin> factory) =>
-        _registrationService.RegisterPluginFactory(pluginTypeName, factory);
+    public void RegisterPluginFactory(string pluginTypeName, Func<IBackendPlugin> factory)
+        => _registrationService.RegisterPluginFactory(pluginTypeName, factory);
 
     /// <summary>
     /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

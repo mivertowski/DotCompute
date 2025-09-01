@@ -96,7 +96,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates the file header with required using statements.
     /// </summary>
-    private void GenerateFileHeader(StringBuilder sb)
+    private static void GenerateFileHeader(StringBuilder sb)
     {
         _ = sb.Append(CodeFormatter.GenerateHeader(
             "System",
@@ -150,7 +150,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates the closing braces for class and namespace.
     /// </summary>
-    private void GenerateClassClosing(StringBuilder sb)
+    private static void GenerateClassClosing(StringBuilder sb)
     {
         _ = sb.AppendLine("    }");
         _ = sb.AppendLine("}");
@@ -201,7 +201,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates a transformed scalar processing loop based on the original method body.
     /// </summary>
-    private void GenerateTransformedScalarLoop(StringBuilder sb, string methodBody)
+    private static void GenerateTransformedScalarLoop(StringBuilder sb, string methodBody)
     {
         _ = sb.AppendLine("            // Transformed scalar implementation:");
         var transformedBody = TransformMethodBodyForScalar(methodBody);
@@ -525,7 +525,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates SIMD arithmetic operations.
     /// </summary>
-    private void GenerateSimdArithmeticOperations(StringBuilder sb)
+    private static void GenerateSimdArithmeticOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // Load vectors for arithmetic operation");
         _ = sb.AppendLine("                var vec1 = new Vector<float>(input1, i);");
@@ -537,7 +537,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates SIMD memory operations.
     /// </summary>
-    private void GenerateSimdMemoryOperations(StringBuilder sb)
+    private static void GenerateSimdMemoryOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // Vectorized memory copy");
         _ = sb.AppendLine("                var vec = new Vector<float>(input, i);");
@@ -547,7 +547,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates generic SIMD operations.
     /// </summary>
-    private void GenerateGenericSimdOperations(StringBuilder sb)
+    private static void GenerateGenericSimdOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // Generic vector processing");
         _ = sb.AppendLine("                var vec = new Vector<float>(data, i);");
@@ -579,7 +579,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates AVX2 arithmetic operations.
     /// </summary>
-    private void GenerateAvx2ArithmeticOperations(StringBuilder sb)
+    private static void GenerateAvx2ArithmeticOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX2 arithmetic operations");
         _ = sb.AppendLine("                    fixed (float* pInput1 = &input1[i], pInput2 = &input2[i], pOutput = &output[i])");
@@ -594,7 +594,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates AVX2 memory operations.
     /// </summary>
-    private void GenerateAvx2MemoryOperations(StringBuilder sb)
+    private static void GenerateAvx2MemoryOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX2 memory operations");
         _ = sb.AppendLine("                    fixed (float* pInput = &input[i], pOutput = &output[i])");
@@ -628,7 +628,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates AVX-512 arithmetic operations.
     /// </summary>
-    private void GenerateAvx512ArithmeticOperations(StringBuilder sb)
+    private static void GenerateAvx512ArithmeticOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX-512 arithmetic operations");
         _ = sb.AppendLine("                    fixed (float* pInput1 = &input1[i], pInput2 = &input2[i], pOutput = &output[i])");
@@ -643,7 +643,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates AVX-512 memory operations.
     /// </summary>
-    private void GenerateAvx512MemoryOperations(StringBuilder sb)
+    private static void GenerateAvx512MemoryOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX-512 memory operations");
         _ = sb.AppendLine("                    fixed (float* pInput = &input[i], pOutput = &output[i])");
@@ -660,7 +660,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates method documentation comments.
     /// </summary>
-    private void GenerateMethodDocumentation(StringBuilder sb, string summary, string? remarks = null)
+    private static void GenerateMethodDocumentation(StringBuilder sb, string summary, string? remarks = null)
     {
         _ = sb.AppendLine("        /// <summary>");
         _ = sb.AppendLine($"        /// {summary}");
@@ -699,7 +699,7 @@ public class CpuCodeGenerator
     /// <summary>
     /// Generates a method body with the provided content generator.
     /// </summary>
-    private void GenerateMethodBody(StringBuilder sb, Action contentGenerator)
+    private static void GenerateMethodBody(StringBuilder sb, Action contentGenerator)
     {
         _ = sb.AppendLine("        {");
         contentGenerator();

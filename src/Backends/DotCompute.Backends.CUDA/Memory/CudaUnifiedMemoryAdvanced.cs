@@ -69,7 +69,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Frees unified memory.
         /// </summary>
-        public void Free(nint ptr)
+        public static void Free(nint ptr)
         {
             if (ptr != nint.Zero)
             {
@@ -80,7 +80,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Optimizes memory access patterns asynchronously.
         /// </summary>
-        public async Task<CudaOptimizationResult> OptimizeMemoryAccessAsync(
+        public static async Task<CudaOptimizationResult> OptimizeMemoryAccessAsync(
             KernelArgument[] arguments,
             CancellationToken cancellationToken = default)
         {
@@ -91,7 +91,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Optimizes prefetching for memory buffers.
         /// </summary>
-        public async Task<bool> OptimizePrefetchingAsync(
+        public static async Task<bool> OptimizePrefetchingAsync(
             IEnumerable<object> buffers,
             int targetDevice,
             CudaMemoryAccessPattern accessPattern,
@@ -104,7 +104,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Sets optimal memory advice for unified memory buffers.
         /// </summary>
-        public async Task<bool> SetOptimalAdviceAsync(
+        public static async Task<bool> SetOptimalAdviceAsync(
             DotCompute.Backends.CUDA.Types.CudaUnifiedMemoryBuffer buffer,
             CudaMemoryUsageHint usageHint,
             CancellationToken cancellationToken = default)
@@ -116,12 +116,12 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Gets performance metrics.
         /// </summary>
-        public CudaUnifiedMemoryMetrics GetMetrics() => new CudaUnifiedMemoryMetrics();
+        public static CudaUnifiedMemoryMetrics GetMetrics() => new();
 
         /// <summary>
         /// Performs maintenance tasks.
         /// </summary>
-        public void PerformMaintenance() { }
+        public static void PerformMaintenance() { }
 
         /// <inheritdoc/>
         public void Dispose()

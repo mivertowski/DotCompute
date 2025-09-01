@@ -101,9 +101,9 @@ public abstract class BaseAccelerator : IAccelerator
     /// Core initialization logic to be implemented by derived classes.
     /// </summary>
     /// <returns>Initialization result (typically null or status object)</returns>
-    protected virtual object? InitializeCore() =>
+    protected virtual object? InitializeCore()
         // Default implementation - derived classes can override
-        null;
+        => null;
 
 
     /// <summary>
@@ -187,9 +187,9 @@ public abstract class BaseAccelerator : IAccelerator
     /// <summary>
     /// Core disposal logic to be implemented by derived classes.
     /// </summary>
-    protected virtual ValueTask DisposeCoreAsync() =>
+    protected virtual ValueTask DisposeCoreAsync()
         // Default implementation - derived classes can override
-        ValueTask.CompletedTask;
+        => ValueTask.CompletedTask;
 }
 
 /// <summary>

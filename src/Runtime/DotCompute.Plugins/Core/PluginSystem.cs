@@ -369,7 +369,7 @@ public class PluginSystem : IDisposable
     {
         if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
         {
-            return Enumerable.Empty<Type>();
+            return [];
         }
 
         return assembly.GetTypes()

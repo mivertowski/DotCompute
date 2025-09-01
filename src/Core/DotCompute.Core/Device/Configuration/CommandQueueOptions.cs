@@ -121,7 +121,7 @@ namespace DotCompute.Core.Device.Configuration
         /// This method performs a shallow copy of the options, creating an independent
         /// instance that can be modified without affecting the original.
         /// </remarks>
-        public CommandQueueOptions Clone() => new CommandQueueOptions(EnableProfiling, EnableOutOfOrderExecution, Priority);
+        public CommandQueueOptions Clone() => new(EnableProfiling, EnableOutOfOrderExecution, Priority);
 
         /// <summary>
         /// Returns a string representation of the command queue options.

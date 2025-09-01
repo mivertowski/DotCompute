@@ -290,7 +290,7 @@ public sealed class LinqToGpuKernelCompiler
         return CompileAggregate<float>(null!, operation);
     }
 
-    private string GenerateSortKernel(MethodCallExpression methodCall, Type elementType)
+    private static string GenerateSortKernel(MethodCallExpression methodCall, Type elementType)
     {
         var lambda = methodCall.Arguments.Count > 1
             ? (LambdaExpression)((UnaryExpression)methodCall.Arguments[1]).Operand
@@ -446,11 +446,11 @@ public sealed class StringKernelSource : IKernelSource
     }
 
     public string Name => "LinqGeneratedKernel";
-    public KernelSourceType Type => KernelSourceType.Cuda;
+    public static KernelSourceType Type => KernelSourceType.Cuda;
     public string Code => _source;
     public KernelLanguage Language => KernelLanguage.CUDA;
     public string EntryPoint => "LinqGeneratedKernel";
-    public string[] Dependencies => Array.Empty<string>();
+    public string[] Dependencies => [];
 
     public ValueTask<string> GetSourceAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(_source);
 

@@ -35,7 +35,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public long MaxAllocationSize => _memoryManager.MaxAllocationSize;
 
         /// <inheritdoc/>
-        public MemoryStatistics Statistics => new MemoryStatistics
+        public MemoryStatistics Statistics => new()
+
         {
             TotalMemoryBytes = _memoryManager.TotalMemory,
             UsedMemoryBytes = _memoryManager.UsedMemory,
@@ -59,9 +60,9 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default) =>
+        public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
             // Synchronous free wrapped in ValueTask
-            ValueTask.CompletedTask;
+            => ValueTask.CompletedTask;
 
         /// <inheritdoc/>
         public IUnifiedMemoryBuffer<T> CreateView<T>(
@@ -94,9 +95,9 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ValueTask OptimizeAsync(CancellationToken cancellationToken = default) =>
+        public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
             // Optimization not implemented
-            ValueTask.CompletedTask;
+            => ValueTask.CompletedTask;
 
 
         /// <inheritdoc/>
@@ -124,9 +125,9 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
         /// <inheritdoc/>
-        public void Free(IUnifiedMemoryBuffer buffer) =>
+        public void Free(IUnifiedMemoryBuffer buffer)
             // Synchronous free
-            buffer?.Dispose();
+            => buffer?.Dispose();
 
 
         /// <inheritdoc/>

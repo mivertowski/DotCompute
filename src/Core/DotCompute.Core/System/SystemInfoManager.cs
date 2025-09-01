@@ -257,7 +257,7 @@ public sealed partial class SystemInfoManager : IDisposable
                     }
 
 
-                    foreach (dynamic mo in collection)
+                    foreach (var mo in collection)
                     {
                         info.Total = Convert.ToInt64(mo["TotalVisibleMemorySize"]) * 1024;
                         info.Available = Convert.ToInt64(mo["FreePhysicalMemory"]) * 1024;
@@ -379,7 +379,6 @@ public sealed partial class SystemInfoManager : IDisposable
                     {
                         pageSize = long.Parse(match.Groups[1].Value);
                     }
-
                 }
                 else if (line.Contains("Pages free:"))
                 {
@@ -519,7 +518,7 @@ public sealed partial class SystemInfoManager : IDisposable
                 }
 
 
-                foreach (dynamic mo in collection)
+                foreach (var mo in collection)
                 {
                     info.Name = mo["Name"]?.ToString() ?? "Unknown";
                     info.FrequencyMHz = Convert.ToInt32(mo["MaxClockSpeed"]);
@@ -571,7 +570,6 @@ public sealed partial class SystemInfoManager : IDisposable
                     {
                         info.FrequencyMHz = (int)mhz;
                     }
-
                 }
                 else if (line.StartsWith("processor"))
                 {
@@ -620,7 +618,6 @@ public sealed partial class SystemInfoManager : IDisposable
             {
                 info.FrequencyMHz = (int)(frequency / 1_000_000);
             }
-
         }
         catch (Exception ex)
         {

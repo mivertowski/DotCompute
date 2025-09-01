@@ -63,7 +63,7 @@ public sealed class CudaDeviceManager : IDisposable
         try
         {
             // Get device count
-            var result = CudaRuntime.cudaGetDeviceCount(out int deviceCount);
+            var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
             if (result != CudaError.Success)
             {
                 _logger.LogWarning("No CUDA devices found or CUDA not available: {Error}", result);
@@ -73,7 +73,7 @@ public sealed class CudaDeviceManager : IDisposable
             _logger.LogInformation("Found {Count} CUDA device(s)", deviceCount);
 
             // Enumerate each device
-            for (int deviceId = 0; deviceId < deviceCount; deviceId++)
+            for (var deviceId = 0; deviceId < deviceCount; deviceId++)
             {
                 try
                 {
@@ -114,7 +114,7 @@ public sealed class CudaDeviceManager : IDisposable
     /// <summary>
     /// Gets detailed information about a specific device.
     /// </summary>
-    private CudaDeviceInfo GetDeviceInfo(int deviceId)
+    private static CudaDeviceInfo GetDeviceInfo(int deviceId)
     {
         var props = new CudaDeviceProperties();
         var result = CudaRuntime.cudaGetDeviceProperties(ref props, deviceId);
@@ -183,10 +183,7 @@ public sealed class CudaDeviceManager : IDisposable
     /// <summary>
     /// Extracts device name from properties.
     /// </summary>
-    private static string GetDeviceName(CudaDeviceProperties props)
-    {
-        return props.DeviceName;
-    }
+    private static string GetDeviceName(CudaDeviceProperties props) => props.DeviceName;
 
     /// <summary>
     /// Detects P2P capabilities between all device pairs.
@@ -207,11 +204,11 @@ public sealed class CudaDeviceManager : IDisposable
 
                 try
                 {
-                    int canAccess = 0;
+                    var canAccess = 0;
                     var result = CudaRuntime.cudaDeviceCanAccessPeer(ref canAccess, device1, device2);
                     if (result == CudaError.Success)
                     {
-                        bool canAccessP2P = canAccess != 0;
+                        var canAccessP2P = canAccess != 0;
                         _p2pCapabilities.TryAdd((device1, device2), canAccessP2P);
                         
                         if (canAccessP2P)
@@ -288,7 +285,7 @@ public sealed class CudaDeviceManager : IDisposable
         }
 
 
-        return _p2pCapabilities.TryGetValue((fromDevice, toDevice), out bool canAccess) && canAccess;
+        return _p2pCapabilities.TryGetValue((fromDevice, toDevice), out var canAccess) && canAccess;
     }
 
     /// <summary>
@@ -334,7 +331,6 @@ public sealed class CudaDeviceManager : IDisposable
             {
                 SetDevice(savedDevice);
             }
-
         }
     }
 
@@ -370,7 +366,6 @@ public sealed class CudaDeviceManager : IDisposable
             {
                 SetDevice(savedDevice);
             }
-
         }
     }
 
@@ -398,7 +393,6 @@ public sealed class CudaDeviceManager : IDisposable
             {
                 SetDevice(savedDevice);
             }
-
         }
     }
 
@@ -491,7 +485,7 @@ public sealed class CudaDeviceManager : IDisposable
         }
         
         // Check minimum compute capability
-        double deviceComputeCapability = device.ComputeCapabilityMajor + (device.ComputeCapabilityMinor / 10.0);
+        var deviceComputeCapability = device.ComputeCapabilityMajor + (device.ComputeCapabilityMinor / 10.0);
         if (deviceComputeCapability < criteria.MinComputeCapability)
         {
             score *= 0.1; // Heavy penalty for not meeting minimum requirement

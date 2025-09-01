@@ -239,7 +239,7 @@ namespace DotCompute.Plugins.Platform
             return fallbacks;
         }
 
-        private int CalculateOptimalParallelism(ComputeBackendType backendType)
+        private static int CalculateOptimalParallelism(ComputeBackendType backendType)
         {
             var hardware = PlatformDetection.Hardware;
 
@@ -255,7 +255,7 @@ namespace DotCompute.Plugins.Platform
             };
         }
 
-        private MemoryConfiguration GetMemoryConfiguration()
+        private static MemoryConfiguration GetMemoryConfiguration()
         {
             var hardware = PlatformDetection.Hardware;
 
@@ -331,7 +331,7 @@ namespace DotCompute.Plugins.Platform
 
         #region Feature Detection Methods
 
-        private HashSet<string> GetCpuFeatures()
+        private static HashSet<string> GetCpuFeatures()
         {
             var hardware = PlatformDetection.Hardware;
             var features = new HashSet<string>();
@@ -399,7 +399,7 @@ namespace DotCompute.Plugins.Platform
             return features;
         }
 
-        private HashSet<string> GetCudaFeatures()
+        private static HashSet<string> GetCudaFeatures()
         {
             return
             [
@@ -409,7 +409,7 @@ namespace DotCompute.Plugins.Platform
             ];
         }
 
-        private HashSet<string> GetMetalFeatures()
+        private static HashSet<string> GetMetalFeatures()
         {
             return
             [
@@ -418,7 +418,7 @@ namespace DotCompute.Plugins.Platform
             ];
         }
 
-        private HashSet<string> GetOpenClFeatures()
+        private static HashSet<string> GetOpenClFeatures()
         {
             return
             [
@@ -427,7 +427,7 @@ namespace DotCompute.Plugins.Platform
             ];
         }
 
-        private HashSet<string> GetDirectComputeFeatures()
+        private static HashSet<string> GetDirectComputeFeatures()
         {
             return
             [
@@ -437,7 +437,7 @@ namespace DotCompute.Plugins.Platform
             ];
         }
 
-        private HashSet<string> GetVulkanFeatures()
+        private static HashSet<string> GetVulkanFeatures()
         {
             return
             [
@@ -450,7 +450,7 @@ namespace DotCompute.Plugins.Platform
 
         #region Performance Estimation Methods
 
-        private long EstimateGpuMemory()
+        private static long EstimateGpuMemory()
             // Conservative estimate - would be better to query actual GPU memory
 
             => 2L * 1024 * 1024 * 1024; // 2GB default
@@ -461,7 +461,7 @@ namespace DotCompute.Plugins.Platform
             return hardware.HasGpu ? EstimateGpuMemory() : hardware.AvailablePhysicalMemory / 4;
         }
 
-        private float EstimateMemoryBandwidth(ComputeBackendType backendType)
+        private static float EstimateMemoryBandwidth(ComputeBackendType backendType)
         {
             return backendType switch
             {
@@ -475,7 +475,7 @@ namespace DotCompute.Plugins.Platform
             };
         }
 
-        private float EstimateComputeThroughput(ComputeBackendType backendType)
+        private static float EstimateComputeThroughput(ComputeBackendType backendType)
         {
             var hardware = PlatformDetection.Hardware;
 
@@ -491,7 +491,7 @@ namespace DotCompute.Plugins.Platform
             };
         }
 
-        private float EstimateLatency(ComputeBackendType backendType)
+        private static float EstimateLatency(ComputeBackendType backendType)
         {
             return backendType switch
             {
@@ -505,7 +505,7 @@ namespace DotCompute.Plugins.Platform
             };
         }
 
-        private float EstimatePowerEfficiency(ComputeBackendType backendType)
+        private static float EstimatePowerEfficiency(ComputeBackendType backendType)
         {
             return backendType switch
             {
@@ -519,7 +519,7 @@ namespace DotCompute.Plugins.Platform
             };
         }
 
-        private List<string> GetSupportedSimdInstructions()
+        private static List<string> GetSupportedSimdInstructions()
         {
             var hardware = PlatformDetection.Hardware;
             var instructions = new List<string>();
@@ -557,7 +557,7 @@ namespace DotCompute.Plugins.Platform
             return instructions;
         }
 
-        private string DetermineArchitectureOptimization()
+        private static string DetermineArchitectureOptimization()
         {
             var platform = PlatformDetection.Current;
 

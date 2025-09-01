@@ -242,7 +242,7 @@ internal sealed class CpuKernelExecutor
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private unsafe void ExecuteVectorizedOperation(
+    private static unsafe void ExecuteVectorizedOperation(
         KernelDefinition definition,
         VectorizedBuffers args,
         long startElement,
@@ -974,7 +974,7 @@ internal sealed class CpuKernelExecutor
         return VectorOperationType.Add; // Default to add
     }
 
-    private void ExecuteWorkItem(KernelDefinition definition, KernelArguments arguments, long[] workItemId, KernelExecutionPlan executionPlan)
+    private static void ExecuteWorkItem(KernelDefinition definition, KernelArguments arguments, long[] workItemId, KernelExecutionPlan executionPlan)
     {
         // Basic scalar execution for a single work item
         var linearIndex = workItemId[0];

@@ -129,7 +129,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 // Allocate many small buffers
-                for (int i = 0; i < allocationCount; i++)
+                for (var i = 0; i < allocationCount; i++)
                 {
                     buffers[i] = accelerator.CreateBuffer<float>(allocationSize / sizeof(float));
                     
@@ -142,7 +142,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine($"✓ Successfully allocated {allocationCount} buffers of {allocationSize / (1024 * 1024)} MB each");
                 
                 // Verify all buffers are still valid
-                for (int i = 0; i < allocationCount; i++)
+                for (var i = 0; i < allocationCount; i++)
                 {
                     buffers[i].SizeInBytes.Should().Be(allocationSize);
                 }
@@ -150,7 +150,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             finally
             {
                 // Clean up all buffers
-                for (int i = 0; i < allocationCount; i++)
+                for (var i = 0; i < allocationCount; i++)
                 {
                     buffers[i]?.Dispose();
                 }
@@ -224,7 +224,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 // Create buffers and test data
-                for (int i = 0; i < bufferCount; i++)
+                for (var i = 0; i < bufferCount; i++)
                 {
                     buffers[i] = accelerator.CreateBuffer<float>(elementCount);
                     testDataSets[i] = TestDataGenerator.CreateRandomData(elementCount, seed: i * 1000);
@@ -233,7 +233,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var stopwatch = Stopwatch.StartNew();
                 
                 // Start concurrent uploads
-                for (int i = 0; i < bufferCount; i++)
+                for (var i = 0; i < bufferCount; i++)
                 {
                     var bufferIndex = i; // Capture loop variable
                     tasks[i] = Task.Run(async () =>
@@ -250,7 +250,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine($"Concurrent transfers completed in {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
                 
                 // Verify data integrity for all buffers
-                for (int i = 0; i < bufferCount; i++)
+                for (var i = 0; i < bufferCount; i++)
                 {
                     var downloaded = new float[elementCount];
                     await buffers[i].CopyToAsync(downloaded);
@@ -304,7 +304,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 const int iterations = 10;
                 var stopwatch = Stopwatch.StartNew();
                 
-                for (int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     await buffer.CopyFromAsync(testData);
                 }
@@ -349,7 +349,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int copyIterations = 20;
             
             perfMeasurement.Start();
-            for (int i = 0; i < copyIterations; i++)
+            for (var i = 0; i < copyIterations; i++)
             {
                 await destBuffer.CopyFromAsync(sourceBuffer);
             }
@@ -432,7 +432,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var results = new float[elementCount];
                 await buffer.CopyToAsync(results);
                 
-                for (int i = 0; i < Math.Min(1000, elementCount); i++)
+                for (var i = 0; i < Math.Min(1000, elementCount); i++)
                 {
                     var expected = testData[i] * 2.0f;
                     Math.Abs(results[i] - expected).Should().BeLessThan(0.001f,
@@ -498,7 +498,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var coalescedPerf = new PerformanceMeasurement("Coalesced Memory Access", Output);
             coalescedPerf.Start();
             
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 await coalescedKernelObj.LaunchAsync(launchConfig, inputBuffer, outputBuffer, arraySize);
             }
@@ -509,7 +509,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var stridedPerf = new PerformanceMeasurement("Strided Memory Access", Output);
             stridedPerf.Start();
             
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 await stridedKernelObj.LaunchAsync(launchConfig, inputBuffer, outputBuffer, arraySize, 32); // 32-element stride
             }
@@ -617,14 +617,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             var standardBuffers = new IMemoryBuffer<float>[allocationCount];
             
             standardAllocTime.Start();
-            for (int i = 0; i < allocationCount; i++)
+            for (var i = 0; i < allocationCount; i++)
             {
                 standardBuffers[i] = accelerator.CreateBuffer<float>(elementCount);
             }
             standardAllocTime.Stop();
             
             // Clean up
-            for (int i = 0; i < allocationCount; i++)
+            for (var i = 0; i < allocationCount; i++)
             {
                 standardBuffers[i].Dispose();
             }

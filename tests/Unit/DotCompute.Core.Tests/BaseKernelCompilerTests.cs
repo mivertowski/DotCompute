@@ -719,7 +719,7 @@ public class BaseKernelCompilerTests : IDisposable
         var tasks = new List<Task<ICompiledKernel>>();
         
         // Act
-        for (int i = 0; i < concurrentTasks; i++)
+        for (var i = 0; i < concurrentTasks; i++)
         {
             var kernelName = $"stress_test_{i}";
             var definition = new KernelDefinition(kernelName, $"__kernel void {kernelName}() {{}}", "main");

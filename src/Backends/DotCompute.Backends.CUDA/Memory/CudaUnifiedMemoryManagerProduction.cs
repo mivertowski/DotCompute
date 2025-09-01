@@ -72,7 +72,8 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
     public override IAccelerator Accelerator => throw new NotImplementedException("TODO: Return associated accelerator");
     
     /// <inheritdoc/>
-    public override MemoryStatistics Statistics => new MemoryStatistics
+    public override MemoryStatistics Statistics => new()
+
     {
         TotalAllocated = CurrentAllocatedMemory,
         TotalAvailable = TotalAvailableMemory,
@@ -120,7 +121,7 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
             if (_concurrentAccessSupported && _config.PreferredLocation != null)
             {
                         // Get default memory pool first
-                IntPtr memPool = IntPtr.Zero;
+                var memPool = IntPtr.Zero;
                 var result = CudaRuntime.cudaDeviceGetDefaultMemPool(ref memPool, _context.DeviceId);
                 if (result == CudaError.Success)
                 {
@@ -167,7 +168,7 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
         try
         {
             // Allocate managed memory
-            IntPtr devicePtr = IntPtr.Zero;
+            var devicePtr = IntPtr.Zero;
             var result = CudaRuntime.cudaMallocManaged(
                 ref devicePtr,
                 (ulong)sizeInBytes,
@@ -441,7 +442,7 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
         {
             // Query memory range attributes
             var result = CudaRuntime.cudaMemRangeGetAttribute(
-                out int isResident,
+                out var isResident,
                 CudaMemRangeAttribute.PreferredLocation,
                 devicePtr,
                 (ulong)sizeInBytes);
@@ -506,7 +507,7 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
     /// <summary>
     /// Determines optimal device based on access pattern.
     /// </summary>
-    private int DetermineOptimalDevice(AccessPattern pattern)
+    private static int DetermineOptimalDevice(AccessPattern pattern)
     {
         // If mostly accessed by one device, prefer that device
         if (pattern.DeviceSwitchCount < pattern.AccessCount / 10)
@@ -683,7 +684,7 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
 
         return await Task.Run(() =>
         {
-            IntPtr devicePtr = IntPtr.Zero;
+            var devicePtr = IntPtr.Zero;
             var result = CudaRuntime.cudaMallocManaged(
                 ref devicePtr,
                 (ulong)sizeInBytes,
@@ -905,12 +906,16 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
         /// </summary>
         public void RecordMemoryUsage(long memoryUsage)
         {
-            long currentPeak = _peakMemoryUsage;
+            var currentPeak = _peakMemoryUsage;
             while (memoryUsage > currentPeak)
             {
-                long result = Interlocked.CompareExchange(ref _peakMemoryUsage, memoryUsage, currentPeak);
+                var result = Interlocked.CompareExchange(ref _peakMemoryUsage, memoryUsage, currentPeak);
                 if (result == currentPeak)
+                {
                     break;
+                }
+
+
                 currentPeak = result;
             }
         }

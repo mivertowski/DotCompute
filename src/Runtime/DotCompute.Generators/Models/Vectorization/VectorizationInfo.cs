@@ -187,7 +187,7 @@ public class VectorizationInfo
 
             // Simple heuristic based on pattern recognition
 
-            double speedup = 1.0;
+            var speedup = 1.0;
             
             if (VectorizableLoops > 0)
             {

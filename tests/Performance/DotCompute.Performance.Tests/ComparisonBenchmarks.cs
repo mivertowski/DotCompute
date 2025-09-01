@@ -78,7 +78,7 @@ public class ComparisonBenchmarks : GpuTestBase
             perfContext.Checkpoint("Kernels compiled, starting warmup");
             
             // Warmup both backends
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 await cpuCompiledKernel.ExecuteAsync(arguments, _cts.Token);
                 await _cpuAccelerator.SynchronizeAsync(_cts.Token);
@@ -90,7 +90,7 @@ public class ComparisonBenchmarks : GpuTestBase
             perfContext.Checkpoint("Warmup completed, starting CPU measurements");
 
             // Measure CPU performance
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var sw = Stopwatch.StartNew();
                 await cpuCompiledKernel.ExecuteAsync(arguments, _cts.Token);
@@ -103,7 +103,7 @@ public class ComparisonBenchmarks : GpuTestBase
             perfContext.Checkpoint("CPU measurements completed, starting GPU measurements");
 
             // Measure GPU performance
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var sw = Stopwatch.StartNew();
                 await gpuCompiledKernel.ExecuteAsync(arguments, _cts.Token);
@@ -186,7 +186,7 @@ public class ComparisonBenchmarks : GpuTestBase
                 
                 // Measure CPU
                 var cpuTimes = new List<double>();
-                for (int i = 0; i < measurements; i++)
+                for (var i = 0; i < measurements; i++)
                 {
                     var sw = Stopwatch.StartNew();
                     await cpuCompiledKernel.ExecuteAsync(arguments, _cts.Token);
@@ -197,7 +197,7 @@ public class ComparisonBenchmarks : GpuTestBase
                 
                 // Measure GPU
                 var gpuTimes = new List<double>();
-                for (int i = 0; i < measurements; i++)
+                for (var i = 0; i < measurements; i++)
                 {
                     var sw = Stopwatch.StartNew();
                     await gpuCompiledKernel.ExecuteAsync(arguments, _cts.Token);
@@ -279,14 +279,14 @@ public class ComparisonBenchmarks : GpuTestBase
             try
             {
                 // Warmup
-                for (int i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
                     await compiledKernel.ExecuteAsync(arguments, _cts.Token);
                     await _gpuAccelerator.SynchronizeAsync(_cts.Token);
                 }
                 
                 // Measure execution performance
-                for (int i = 0; i < executions; i++)
+                for (var i = 0; i < executions; i++)
                 {
                     var sw = Stopwatch.StartNew();
                     await compiledKernel.ExecuteAsync(arguments, _cts.Token);
@@ -323,8 +323,9 @@ public class ComparisonBenchmarks : GpuTestBase
         
         // Store optimization results for cross-level comparison
         BenchmarkResults.RecordOptimizationResults(level, optimizationResults);
-        
+
         // Validate optimization effects
+
         ValidateOptimizationEffects(optimizationResults, level);
     }
 
@@ -362,7 +363,7 @@ public class ComparisonBenchmarks : GpuTestBase
             var executionTimes = new List<double>();
             
             // Measure multiple compilation runs
-            for (int i = 0; i < compilationRuns; i++)
+            for (var i = 0; i < compilationRuns; i++)
             {
                 var sw = Stopwatch.StartNew();
                 var compiledKernel = await _gpuAccelerator.CompileKernelAsync(kernel, options, _cts.Token);
@@ -442,14 +443,14 @@ public class ComparisonBenchmarks : GpuTestBase
             try
             {
                 // Warmup
-                for (int i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
                     await compiledKernel.ExecuteAsync(arguments, _cts.Token);
                     await _gpuAccelerator.SynchronizeAsync(_cts.Token);
                 }
                 
                 // Measure performance
-                for (int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     var initialMemory = GC.GetTotalMemory(false);
                     
@@ -536,7 +537,7 @@ public class ComparisonBenchmarks : GpuTestBase
             {
                 // Measure backend 1
                 var times1 = new List<double>();
-                for (int i = 0; i < measurements + 2; i++) // Include warmup
+                for (var i = 0; i < measurements + 2; i++) // Include warmup
                 {
                     var sw = Stopwatch.StartNew();
                     await compiledKernel1.ExecuteAsync(arguments, _cts.Token);
@@ -548,7 +549,7 @@ public class ComparisonBenchmarks : GpuTestBase
                 
                 // Measure backend 2
                 var times2 = new List<double>();
-                for (int i = 0; i < measurements + 2; i++) // Include warmup
+                for (var i = 0; i < measurements + 2; i++) // Include warmup
                 {
                     var sw = Stopwatch.StartNew();
                     await compiledKernel2.ExecuteAsync(arguments, _cts.Token);
@@ -624,7 +625,7 @@ public class ComparisonBenchmarks : GpuTestBase
     {
         _output.WriteLine("\n=== CPU vs GPU Scaling Pattern Analysis ===");
         
-        for (int i = 1; i < results.Count; i++)
+        for (var i = 1; i < results.Count; i++)
         {
             var current = results[i];
             var previous = results[i - 1];
@@ -663,7 +664,7 @@ public class ComparisonBenchmarks : GpuTestBase
         }
         
         // Find efficiency decline points
-        for (int i = 1; i < results.Count; i++)
+        for (var i = 1; i < results.Count; i++)
         {
             if (results[i].Speedup < results[i - 1].Speedup * 0.9)
             {
@@ -672,7 +673,7 @@ public class ComparisonBenchmarks : GpuTestBase
         }
     }
 
-    private void ValidateOptimizationEffects(List<OptimizationResult> results, OptimizationLevel level)
+    private static void ValidateOptimizationEffects(List<OptimizationResult> results, OptimizationLevel level)
     {
         foreach (var result in results)
         {
@@ -754,7 +755,7 @@ public class ComparisonBenchmarks : GpuTestBase
             .OrderByDescending(x => x.Score)
             .ToList();
         
-        for (int i = 0; i < rankedAlgorithms.Count; i++)
+        for (var i = 0; i < rankedAlgorithms.Count; i++)
         {
             var alg = rankedAlgorithms[i];
             _output.WriteLine($"{i + 1}. {alg.Algorithm}: Score {alg.Score:F2}, " +
@@ -781,7 +782,7 @@ public class ComparisonBenchmarks : GpuTestBase
         _output.WriteLine($"Maximum speedup: {maxSpeedup:F2}x");
         
         // Analyze trends across workload sizes
-        for (int i = 1; i < results.Count; i++)
+        for (var i = 1; i < results.Count; i++)
         {
             var current = results[i];
             var previous = results[i - 1];
@@ -849,7 +850,7 @@ public class ComparisonBenchmarks : GpuTestBase
         };
     }
 
-    private KernelArguments CreateBenchmarkArguments(int workloadSize)
+    private static KernelArguments CreateBenchmarkArguments(int workloadSize)
     {
         var input = GenerateRandomFloats(workloadSize);
         var output = new float[workloadSize];
@@ -868,7 +869,7 @@ public class ComparisonBenchmarks : GpuTestBase
         };
     }
 
-    private double CalculateEfficiencyRatio(int workloadSize, double cpuTimeMs, double gpuTimeMs)
+    private static double CalculateEfficiencyRatio(int workloadSize, double cpuTimeMs, double gpuTimeMs)
     {
         var cpuThroughput = workloadSize / cpuTimeMs;
         var gpuThroughput = workloadSize / gpuTimeMs;
@@ -895,7 +896,7 @@ public class ComparisonBenchmarks : GpuTestBase
         };
     }
 
-    private (double minSpeedup, double maxSpeedup) GetExpectedSpeedupRange(string algorithm, int workloadSize)
+    private static (double minSpeedup, double maxSpeedup) GetExpectedSpeedupRange(string algorithm, int workloadSize)
     {
         return algorithm switch
         {
@@ -909,7 +910,7 @@ public class ComparisonBenchmarks : GpuTestBase
         };
     }
 
-    private long GetEstimatedCodeSize(ICompiledKernel kernel, OptimizationLevel level)
+    private static long GetEstimatedCodeSize(ICompiledKernel kernel, OptimizationLevel level)
     {
         var baseSize = kernel.Name.Length * 100 + 1024;
         return level switch
@@ -921,13 +922,11 @@ public class ComparisonBenchmarks : GpuTestBase
         };
     }
 
-    private int CalculateBreakEvenPoint(double compilationTimeMs, double executionTimeMs)
-    {
+    private static int CalculateBreakEvenPoint(double compilationTimeMs, double executionTimeMs)
         // Simplified calculation: how many executions to amortize compilation cost
-        return (int)Math.Ceiling(compilationTimeMs / executionTimeMs);
-    }
+        => (int)Math.Ceiling(compilationTimeMs / executionTimeMs);
 
-    private double CalculateAlgorithmEfficiency(string algorithm, double executionTimeMs)
+    private static double CalculateAlgorithmEfficiency(string algorithm, double executionTimeMs)
     {
         // Algorithm-specific efficiency metric (simplified)
         return algorithm switch
@@ -940,7 +939,7 @@ public class ComparisonBenchmarks : GpuTestBase
         };
     }
 
-    private double CalculateCompositeScore(AlgorithmResult result)
+    private static double CalculateCompositeScore(AlgorithmResult result)
     {
         var timeScore = 1000.0 / result.AverageExecutionTimeMs;
         var memoryScore = 1000.0 / (result.AverageMemoryUsageBytes / 1024.0 + 1);
@@ -949,7 +948,7 @@ public class ComparisonBenchmarks : GpuTestBase
         return timeScore * 0.5 + memoryScore * 0.3 + consistencyScore * 0.2;
     }
 
-    private double CalculateStandardDeviation(IEnumerable<double> values)
+    private static double CalculateStandardDeviation(IEnumerable<double> values)
     {
         var valuesList = values.ToList();
         var mean = valuesList.Average();
@@ -957,7 +956,7 @@ public class ComparisonBenchmarks : GpuTestBase
         return Math.Sqrt(sumSquaredDiffs / valuesList.Count);
     }
 
-    private double GetPercentile(List<double> sortedValues, int percentile)
+    private static double GetPercentile(List<double> sortedValues, int percentile)
     {
         var index = (percentile / 100.0) * (sortedValues.Count - 1);
         var lower = (int)Math.Floor(index);
@@ -971,14 +970,14 @@ public class ComparisonBenchmarks : GpuTestBase
     }
 
     // Kernel generation methods (simplified mock implementations)
-    private string GenerateVectorAddKernel(string backend) => backend == "CPU" ? "/* CPU Vector Add */" : "__kernel void vector_add(__global float* a, __global float* b, __global float* c, int n) { int i = get_global_id(0); if (i < n) c[i] = a[i] + b[i]; }";
-    private string GenerateMatrixMultiplyKernel(string backend) => backend == "CPU" ? "/* CPU Matrix Multiply */" : "__kernel void matrix_multiply(__global float* a, __global float* b, __global float* c, int n) { /* matrix multiply */ }";
-    private string GenerateComplexMathKernel(string backend) => backend == "CPU" ? "/* CPU Complex Math */" : "__kernel void complex_math(__global float* data, int n) { int i = get_global_id(0); if (i < n) data[i] = sin(data[i]) * cos(data[i]); }";
-    private string GenerateFftKernel(string backend) => backend == "CPU" ? "/* CPU FFT */" : "__kernel void fft(__global float* data, int n) { /* FFT implementation */ }";
+    private static string GenerateVectorAddKernel(string backend) => backend == "CPU" ? "/* CPU Vector Add */" : "__kernel void vector_add(__global float* a, __global float* b, __global float* c, int n) { int i = get_global_id(0); if (i < n) c[i] = a[i] + b[i]; }";
+    private static string GenerateMatrixMultiplyKernel(string backend) => backend == "CPU" ? "/* CPU Matrix Multiply */" : "__kernel void matrix_multiply(__global float* a, __global float* b, __global float* c, int n) { /* matrix multiply */ }";
+    private static string GenerateComplexMathKernel(string backend) => backend == "CPU" ? "/* CPU Complex Math */" : "__kernel void complex_math(__global float* data, int n) { int i = get_global_id(0); if (i < n) data[i] = sin(data[i]) * cos(data[i]); }";
+    private static string GenerateFftKernel(string backend) => backend == "CPU" ? "/* CPU FFT */" : "__kernel void fft(__global float* data, int n) { /* FFT implementation */ }";
     private string GenerateSimpleAddKernel(string backend) => GenerateVectorAddKernel(backend);
-    private string GenerateQuickSortKernel(string backend) => backend == "CPU" ? "/* CPU QuickSort */" : "__kernel void quicksort(__global float* data, int n) { /* quicksort */ }";
-    private string GenerateMergeSortKernel(string backend) => backend == "CPU" ? "/* CPU MergeSort */" : "__kernel void mergesort(__global float* data, int n) { /* mergesort */ }";
-    private string GenerateDefaultKernel(string algorithm, string backend) => backend == "CPU" ? $"/* CPU {algorithm} */" : $"__kernel void {algorithm}(__global float* data, int n) {{ /* {algorithm} */ }}";
+    private static string GenerateQuickSortKernel(string backend) => backend == "CPU" ? "/* CPU QuickSort */" : "__kernel void quicksort(__global float* data, int n) { /* quicksort */ }";
+    private static string GenerateMergeSortKernel(string backend) => backend == "CPU" ? "/* CPU MergeSort */" : "__kernel void mergesort(__global float* data, int n) { /* mergesort */ }";
+    private static string GenerateDefaultKernel(string algorithm, string backend) => backend == "CPU" ? $"/* CPU {algorithm} */" : $"__kernel void {algorithm}(__global float* data, int n) {{ /* {algorithm} */ }}";
 
     #endregion
 
@@ -1099,7 +1098,7 @@ internal class MockCpuAccelerator : IAccelerator
         MaxComputeUnits = Environment.ProcessorCount
     };
     
-    public AcceleratorType Type => AcceleratorType.CPU;
+    public static AcceleratorType Type => AcceleratorType.CPU;
     public IUnifiedMemoryManager Memory { get; } = new MockMemoryManager();
     public AcceleratorContext Context { get; } = new AcceleratorContext();
 
@@ -1113,10 +1112,7 @@ internal class MockCpuAccelerator : IAccelerator
         return new MockCpuKernel(definition.Name);
     }
 
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask; // CPU synchronization is immediate
-    }
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask; // CPU synchronization is immediate
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
@@ -1137,7 +1133,7 @@ internal class MockGpuAccelerator : IAccelerator
         MaxComputeUnits = 32
     };
     
-    public AcceleratorType Type => AcceleratorType.GPU;
+    public static AcceleratorType Type => AcceleratorType.GPU;
     public IUnifiedMemoryManager Memory { get; } = new MockMemoryManager();
     public AcceleratorContext Context { get; } = new AcceleratorContext();
 
@@ -1155,10 +1151,7 @@ internal class MockGpuAccelerator : IAccelerator
         return new MockGpuKernel(definition.Name);
     }
 
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        return new ValueTask(Task.Delay(_random.Next(2, 8), cancellationToken)); // GPU sync takes longer
-    }
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => new(Task.Delay(_random.Next(2, 8), cancellationToken)); // GPU sync takes longer
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
@@ -1192,7 +1185,7 @@ internal class MockCpuKernel : ICompiledKernel
         return (int)(baseTime * (1 + variance));
     }
     
-    private int GetWorkloadSize(KernelArguments arguments)
+    private static int GetWorkloadSize(KernelArguments arguments)
     {
         if (arguments.Count > 0 && arguments[0] is float[] array)
             return array.Length;
@@ -1237,7 +1230,7 @@ internal class MockGpuKernel : ICompiledKernel
         return (int)(baseTime * (1 + variance));
     }
     
-    private int GetWorkloadSize(KernelArguments arguments)
+    private static int GetWorkloadSize(KernelArguments arguments)
     {
         if (arguments.Count > 0 && arguments[0] is float[] array)
             return array.Length;
@@ -1252,8 +1245,8 @@ internal class MockGpuKernel : ICompiledKernel
 /// </summary>
 internal static class BenchmarkResults
 {
-    private static readonly List<ComparisonRecord> _comparisons = new();
-    private static readonly Dictionary<OptimizationLevel, List<OptimizationResult>> _optimizationResults = new();
+    private static readonly List<ComparisonRecord> _comparisons = [];
+    private static readonly Dictionary<OptimizationLevel, List<OptimizationResult>> _optimizationResults = [];
     
     public static void RecordComparison(string algorithm, int workloadSize, string comparisonType, 
         double time1, double time2, double speedup)
@@ -1273,7 +1266,7 @@ internal static class BenchmarkResults
     public static void RecordOptimizationResults(OptimizationLevel level, List<OptimizationResult> results)
     {
         if (!_optimizationResults.ContainsKey(level))
-            _optimizationResults[level] = new List<OptimizationResult>();
+            _optimizationResults[level] = [];
             
         _optimizationResults[level].AddRange(results);
     }

@@ -27,12 +27,12 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets errors grouped by category.
         /// </summary>
-        public Dictionary<ErrorCategory, int> ErrorsByCategory { get; } = new();
+        public Dictionary<ErrorCategory, int> ErrorsByCategory { get; } = [];
 
         /// <summary>
         /// Gets recovery success rates by error category.
         /// </summary>
-        public Dictionary<ErrorCategory, double> RecoveryRateByCategory { get; } = new();
+        public Dictionary<ErrorCategory, double> RecoveryRateByCategory { get; } = [];
 
         /// <summary>
         /// Gets or sets the total retry attempts.
@@ -67,13 +67,13 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets the overall recovery rate.
         /// </summary>
-        public double OverallRecoveryRate => 
-            TotalErrors > 0 ? (double)RecoveredErrors / TotalErrors : 0;
+        public double OverallRecoveryRate
+            => TotalErrors > 0 ? (double)RecoveredErrors / TotalErrors : 0;
 
         /// <summary>
         /// Gets the retry success rate.
         /// </summary>
-        public double RetrySuccessRate => 
-            TotalRetryAttempts > 0 ? (double)SuccessfulRetries / TotalRetryAttempts : 0;
+        public double RetrySuccessRate
+            => TotalRetryAttempts > 0 ? (double)SuccessfulRetries / TotalRetryAttempts : 0;
     }
 }

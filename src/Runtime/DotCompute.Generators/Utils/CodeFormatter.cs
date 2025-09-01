@@ -121,7 +121,7 @@ public static class CodeFormatter
         {
             sb.AppendLine();
             var paramArray = parameters.Split(',');
-            for (int i = 0; i < paramArray.Length; i++)
+            for (var i = 0; i < paramArray.Length; i++)
             {
                 sb.Append(GetIndentation(1, style));
                 sb.Append(paramArray[i].Trim());

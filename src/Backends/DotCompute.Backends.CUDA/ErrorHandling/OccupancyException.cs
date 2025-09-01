@@ -30,6 +30,5 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         public OccupancyException()
         {
         }
-
     }
 }

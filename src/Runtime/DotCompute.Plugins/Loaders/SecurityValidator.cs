@@ -395,7 +395,7 @@ public class SecurityValidator
     /// <summary>
     /// Validates PE file signature.
     /// </summary>
-    private AuthenticodeResult ValidatePESignature(Stream stream)
+    private static AuthenticodeResult ValidatePESignature(Stream stream)
     {
         var result = new AuthenticodeResult();
 
@@ -454,7 +454,7 @@ public class SecurityValidator
     /// <summary>
     /// Validates assembly strong name.
     /// </summary>
-    private StrongNameResult ValidateStrongName(string assemblyPath)
+    private static StrongNameResult ValidateStrongName(string assemblyPath)
     {
         try
         {
@@ -550,7 +550,7 @@ public class SecurityValidator
     /// </summary>
     private async Task ScanPackageAsync(string packageId, string version, SecurityScanResult scanResult, CancellationToken cancellationToken)
     {
-        var vulnerabilities = await _vulnerabilityDatabase.GetVulnerabilitiesAsync(packageId, version, cancellationToken);
+        var vulnerabilities = await VulnerabilityDatabase.GetVulnerabilitiesAsync(packageId, version, cancellationToken);
 
 
         foreach (var vulnerability in vulnerabilities)
@@ -591,7 +591,7 @@ public class SecurityValidator
     /// <summary>
     /// Gets specific versions to scan for a dependency.
     /// </summary>
-    private async Task<List<string>> GetVersionsToScanAsync(NuGetPackageDependency dependency, CancellationToken cancellationToken)
+    private static async Task<List<string>> GetVersionsToScanAsync(NuGetPackageDependency dependency, CancellationToken cancellationToken)
     {
         // This would resolve the version range to specific versions
         // For now, return a single mock version
@@ -605,5 +605,5 @@ public class SecurityValidator
     private async Task CheckVulnerabilityDatabaseAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken)
         // Check if the plugin or its dependencies have known vulnerabilities
 
-        => await _vulnerabilityDatabase.CheckPluginAsync(manifest, scanResult, cancellationToken);
+        => await VulnerabilityDatabase.CheckPluginAsync(manifest, scanResult, cancellationToken);
 }

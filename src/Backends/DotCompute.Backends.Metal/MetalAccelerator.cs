@@ -450,7 +450,6 @@ public sealed class MetalAccelerator : BaseAccelerator
 
             return Math.Min(16 * 1024, maxThreads * 16); // 16KB shared memory
         }
-
     }
 }
 

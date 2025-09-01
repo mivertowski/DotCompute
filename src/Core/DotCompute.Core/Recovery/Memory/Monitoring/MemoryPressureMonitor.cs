@@ -70,7 +70,7 @@ public sealed class MemoryPressureMonitor : IDisposable
         }
     }
 
-    private MemoryPressureInfo CalculateMemoryPressure()
+    private static MemoryPressureInfo CalculateMemoryPressure()
     {
         var gcMemory = GC.GetTotalMemory(false);
         var totalMemory = GC.GetTotalMemory(true); // Force GC for more accurate reading

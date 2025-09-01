@@ -64,7 +64,7 @@ public class ScalarCodeGenerator : CpuCodeGeneratorBase
         }
     }
     
-    private void GenerateTransformedScalarLoop(StringBuilder sb, string methodBody)
+    private static void GenerateTransformedScalarLoop(StringBuilder sb, string methodBody)
     {
         _ = sb.AppendLine("            // Transformed scalar implementation:");
         var transformedBody = TransformMethodBodyForScalar(methodBody);

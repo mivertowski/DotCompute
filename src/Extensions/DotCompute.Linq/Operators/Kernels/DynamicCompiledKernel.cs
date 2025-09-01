@@ -116,7 +116,7 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
                 Language = _generatedKernel.Language,
                 TargetAccelerator = _accelerator,
                 OptimizationLevel = OptimizationLevel.Default,
-                Metadata = _generatedKernel.OptimizationMetadata ?? new Dictionary<string, object>()
+                Metadata = _generatedKernel.OptimizationMetadata ?? []
             };
 
             var result = await _compiler.Value.CompileKernelAsync(compilationRequest, cancellationToken)

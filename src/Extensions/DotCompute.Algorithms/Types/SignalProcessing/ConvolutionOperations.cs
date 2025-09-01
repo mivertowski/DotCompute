@@ -30,7 +30,7 @@ public class ConvolutionOperations : IDisposable
     /// <summary>
     /// Perform 1D convolution.
     /// </summary>
-    public float[] Convolve1D(float[] signal, float[] kernel)
+    public static float[] Convolve1D(float[] signal, float[] kernel)
         // Placeholder implementation
 
         => new float[signal.Length];
@@ -38,7 +38,7 @@ public class ConvolutionOperations : IDisposable
     /// <summary>
     /// Perform 2D convolution.
     /// </summary>
-    public float[,] Convolve2D(float[,] image, float[,] kernel)
+    public static float[,] Convolve2D(float[,] image, float[,] kernel)
         // Placeholder implementation
 
         => new float[image.GetLength(0), image.GetLength(1)];

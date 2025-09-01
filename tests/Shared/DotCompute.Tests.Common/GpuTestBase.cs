@@ -29,7 +29,7 @@ public abstract class GpuTestBase : TestBase
     /// <param name="output">Test output helper for logging GPU-specific test information.</param>
     protected GpuTestBase(ITestOutputHelper output) : base(output)
     {
-        _memorySnapshots = new Dictionary<string, GpuMemorySnapshot>();
+        _memorySnapshots = [];
         LogGpuEnvironment();
     }
 
@@ -133,7 +133,7 @@ public abstract class GpuTestBase : TestBase
     /// <summary>
     /// Skips the test if CUDA is not available.
     /// </summary>
-    protected void SkipIfNoCuda()
+    protected static void SkipIfNoCuda()
     {
         if (!IsCudaAvailable()) 
         {
@@ -144,7 +144,7 @@ public abstract class GpuTestBase : TestBase
     /// <summary>
     /// Skips the test if no GPU hardware is available.
     /// </summary>
-    protected void SkipIfNoGpu()
+    protected static void SkipIfNoGpu()
     {
         var hasAnyGpu = GetNvidiaCapabilities().HasNvidiaGpu || 
                         IsAmdGpuAvailable() || 
@@ -159,7 +159,7 @@ public abstract class GpuTestBase : TestBase
     /// <summary>
     /// Skips the test if OpenCL is not available.
     /// </summary>
-    protected void SkipIfNoOpenCL()
+    protected static void SkipIfNoOpenCL()
     {
         if (!IsOpenClAvailable()) 
         {
@@ -171,7 +171,7 @@ public abstract class GpuTestBase : TestBase
     /// Skips the test if the GPU doesn't meet minimum compute capability requirements.
     /// </summary>
     /// <param name="minimumComputeCapability">Minimum required compute capability (e.g., "3.5").</param>
-    protected void SkipIfInsufficientComputeCapability(string minimumComputeCapability)
+    protected static void SkipIfInsufficientComputeCapability(string minimumComputeCapability)
     {
         var capabilities = GetNvidiaCapabilities();
         
@@ -195,7 +195,7 @@ public abstract class GpuTestBase : TestBase
     /// Skips the test if insufficient GPU memory is available.
     /// </summary>
     /// <param name="requiredMemoryMB">Required memory in megabytes.</param>
-    protected void SkipIfInsufficientGpuMemory(int requiredMemoryMB)
+    protected static void SkipIfInsufficientGpuMemory(int requiredMemoryMB)
     {
         var capabilities = GetNvidiaCapabilities();
         
@@ -315,7 +315,7 @@ public abstract class GpuTestBase : TestBase
 
         var stopwatch = Stopwatch.StartNew();
 
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             kernelExecution();
         }
@@ -373,61 +373,43 @@ public abstract class GpuTestBase : TestBase
     }
 
     private static bool DetectNvidiaGpu()
-    {
         // Placeholder for actual NVIDIA GPU detection logic
         // In production, this would use CUDA runtime APIs
-        return IsCudaAvailable();
-    }
+        => IsCudaAvailable();
 
     private static bool DetectAmdGpu()
-    {
         // Placeholder for AMD GPU detection logic
         // In production, this would check for AMD drivers/runtime
-        return false;
-    }
+        => false;
 
     private static bool DetectIntelGpu()
-    {
         // Placeholder for Intel GPU detection logic
         // In production, this would check for Intel GPU drivers
-        return false;
-    }
+        => false;
 
     private static string GetComputeCapability()
-    {
         // Placeholder - would query actual compute capability
-        return "7.5"; // Example compute capability
-    }
+        => "7.5"; // Example compute capability
 
     private static int GetGpuMemoryMB()
-    {
         // Placeholder - would query actual GPU memory
-        return 8192; // Example 8GB
-    }
+        => 8192; // Example 8GB
 
     private static bool CheckUnifiedMemorySupport()
-    {
         // Placeholder - would check for unified memory support
-        return true;
-    }
+        => true;
 
     private static bool CheckDynamicParallelismSupport()
-    {
         // Placeholder - would check for dynamic parallelism support
-        return true;
-    }
+        => true;
 
     private static long GetCurrentGpuMemoryUsage()
-    {
         // Placeholder - would query actual GPU memory usage
-        return 1024 * 1024 * 256; // Example 256MB
-    }
+        => 1024 * 1024 * 256; // Example 256MB
 
     private static long GetFreeGpuMemory()
-    {
         // Placeholder - would query actual free GPU memory
-        return 1024L * 1024L * 1024L * 7L; // Example 7GB free
-    }
+        => 1024L * 1024L * 1024L * 7L; // Example 7GB free
 
     private static void SynchronizeGpu()
     {

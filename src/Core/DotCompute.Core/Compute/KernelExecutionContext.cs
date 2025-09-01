@@ -64,7 +64,12 @@ namespace DotCompute.Core.Compute
         public IUnifiedMemoryBuffer GetBuffer(int index)
         {
             if (_buffers.TryGetValue(index, out var buffer))
+            {
+
                 return buffer;
+            }
+
+
             throw new ArgumentException($"No buffer found at index {index}", nameof(index));
         }
         
@@ -77,7 +82,12 @@ namespace DotCompute.Core.Compute
         public T GetScalar<T>(int index)
         {
             if (_scalars.TryGetValue(index, out var scalar))
+            {
+
                 return (T)scalar;
+            }
+
+
             throw new ArgumentException($"No scalar found at index {index}", nameof(index));
         }
         
@@ -89,29 +99,29 @@ namespace DotCompute.Core.Compute
         public void SetParameter(int index, object value)
         {
             if (value is IUnifiedMemoryBuffer buffer)
+            {
                 _buffers[index] = buffer;
+            }
             else
+            {
                 _scalars[index] = value;
+            }
         }
-        
+
+
         /// <summary>
         /// Sets a buffer parameter.
         /// </summary>
         /// <param name="index">The parameter index.</param>
         /// <param name="buffer">The buffer value.</param>
-        public void SetBuffer(int index, IUnifiedMemoryBuffer buffer)
-        {
-            _buffers[index] = buffer ?? throw new ArgumentNullException(nameof(buffer));
-        }
-        
+        public void SetBuffer(int index, IUnifiedMemoryBuffer buffer) => _buffers[index] = buffer ?? throw new ArgumentNullException(nameof(buffer));
+
+
         /// <summary>
         /// Sets a scalar parameter.
         /// </summary>
         /// <param name="index">The parameter index.</param>
         /// <param name="scalar">The scalar value.</param>
-        public void SetScalar<T>(int index, T scalar)
-        {
-            _scalars[index] = scalar ?? throw new ArgumentNullException(nameof(scalar));
-        }
+        public void SetScalar<T>(int index, T scalar) => _scalars[index] = scalar ?? throw new ArgumentNullException(nameof(scalar));
     }
 }

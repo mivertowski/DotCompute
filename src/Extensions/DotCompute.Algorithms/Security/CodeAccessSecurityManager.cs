@@ -259,7 +259,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
     private void InitializeDefaultPermissionSets() => _logger.LogDebug("Initializing default permission sets");
 
-    private void AddTrustedPermissions(SecurityPermissionSet permissionSet)
+    private static void AddTrustedPermissions(SecurityPermissionSet permissionSet)
     {
         // Full trust permissions (MyComputer zone)
         permissionSet.AllowFileSystemAccess = true;
@@ -300,7 +300,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
         permissionSet.AllowedNetworkEndpoints.AddRange(_options.AllowedNetworkEndpoints);
     }
 
-    private void AddUntrustedPermissions(SecurityPermissionSet permissionSet)
+    private static void AddUntrustedPermissions(SecurityPermissionSet permissionSet)
     {
         // Minimal permissions for untrusted code
         permissionSet.AllowFileSystemAccess = false;
@@ -311,7 +311,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
         permissionSet.MaxExecutionTime = TimeSpan.FromMinutes(1);
     }
 
-    private void AddMinimalPermissions(SecurityPermissionSet permissionSet)
+    private static void AddMinimalPermissions(SecurityPermissionSet permissionSet)
     {
         // Absolute minimal permissions
         permissionSet.AllowFileSystemAccess = false;

@@ -371,7 +371,7 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
     public ValueTask<ValidationResult> ValidateAsync(KernelDefinition kernel, CancellationToken cancellationToken = default) => ValueTask.FromResult(Validate(kernel));
 
     /// <inheritdoc/>
-    public ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default) =>
+    public ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
         // TODO: Implement Metal-specific optimizations
-        ValueTask.FromResult(kernel);
+        => ValueTask.FromResult(kernel);
 }

@@ -88,7 +88,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var hostData = new float[elementCount];
                 
                 // Initialize with test pattern
-                for (int i = 0; i < elementCount; i++)
+                for (var i = 0; i < elementCount; i++)
                 {
                     hostData[i] = (float)Math.Sin(i * 0.001);
                 }
@@ -130,7 +130,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var resultData = new float[elementCount];
                 
                 // Initialize test data
-                for (int i = 0; i < elementCount; i++)
+                for (var i = 0; i < elementCount; i++)
                 {
                     hostData[i] = (float)(i % 1000) * 0.1f;
                 }
@@ -153,7 +153,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                                $"Rate: {transferRateGBps:F2} GB/s");
                 
                 // Verify data integrity
-                for (int i = 0; i < Math.Min(1000, elementCount); i++)
+                for (var i = 0; i < Math.Min(1000, elementCount); i++)
                 {
                     resultData[i].Should().BeApproximately(hostData[i], 0.0001f, $"at index {i}");
                 }
@@ -178,7 +178,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var resultDataB = new float[elementCount];
             
             // Initialize test data
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostDataA[i] = i * 0.5f;
                 hostDataB[i] = i * 1.5f;
@@ -207,7 +207,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             stopwatch.Stop();
             
             // Verify data integrity
-            for (int i = 0; i < Math.Min(1000, elementCount); i++)
+            for (var i = 0; i < Math.Min(1000, elementCount); i++)
             {
                 resultDataA[i].Should().BeApproximately(hostDataA[i], 0.0001f);
                 resultDataB[i].Should().BeApproximately(hostDataB[i], 0.0001f);
@@ -240,7 +240,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int elementCount = 1024 * 1024;
             var testData = new float[elementCount];
             
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 testData[i] = (float)Math.Cos(i * 0.001);
             }
@@ -259,7 +259,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             stopwatch.Stop();
             
             // Verify data integrity
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 resultData[i].Should().BeApproximately(testData[i], 0.0001f, $"at index {i}");
             }
@@ -313,7 +313,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var hostInput = new float[elementCount];
             var hostOutput = new float[elementCount];
             
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostInput[i] = (float)Math.Sin(i * 0.001);
             }
@@ -334,7 +334,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             var times = new double[iterations];
             
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
                 await kernel.LaunchAsync(launchConfig, deviceInput, deviceOutput, elementCount);
@@ -431,7 +431,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int iterations = 5;
             
             var regularHostData = new float[elementCount];
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 regularHostData[i] = (float)Math.Sin(i * 0.001);
             }
@@ -441,7 +441,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Test regular memory transfers
             var regularTimes = new double[iterations];
             
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
                 await deviceBuffer.WriteAsync(regularHostData.AsSpan(), 0);
@@ -460,14 +460,14 @@ namespace DotCompute.Hardware.Cuda.Tests
                 using var pinnedBuffer = accelerator.CreatePinnedBuffer<float>(elementCount);
                 
                 // Copy data to pinned buffer
-                for (int i = 0; i < elementCount; i++)
+                for (var i = 0; i < elementCount; i++)
                 {
                     pinnedBuffer[i] = regularHostData[i];
                 }
                 
                 var pinnedTimes = new double[iterations];
                 
-                for (int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     var stopwatch = Stopwatch.StartNew();
                     await deviceBuffer.WriteAsync(pinnedBuffer.AsSpan(), 0);

@@ -639,7 +639,7 @@ public sealed class AutoTuner : IDisposable
     #region Private Implementation
 
 
-    private async Task<PerformanceMeasurement> BenchmarkMatrixMultiplicationAsync(
+    private static async Task<PerformanceMeasurement> BenchmarkMatrixMultiplicationAsync(
         int[] testSizes, Dictionary<string, object> parameters)
     {
         return await Task.Run(() =>
@@ -691,7 +691,7 @@ public sealed class AutoTuner : IDisposable
     }
 
 
-    private async Task<PerformanceMeasurement> BenchmarkFFTAsync(
+    private static async Task<PerformanceMeasurement> BenchmarkFFTAsync(
         int[] testSizes, Dictionary<string, object> parameters)
     {
         return await Task.Run(() =>

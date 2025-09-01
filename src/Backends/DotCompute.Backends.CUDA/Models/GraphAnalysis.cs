@@ -21,7 +21,7 @@ namespace DotCompute.Backends.CUDA.Graphs.Models
         /// <summary>
         /// Gets the dictionary of node types and their counts.
         /// </summary>
-        public Dictionary<CudaGraphNodeType, int> NodeTypes { get; } = new();
+        public Dictionary<CudaGraphNodeType, int> NodeTypes { get; } = [];
 
         /// <summary>
         /// Gets or sets the maximum depth of the graph.
@@ -46,7 +46,7 @@ namespace DotCompute.Backends.CUDA.Graphs.Models
         /// <summary>
         /// Gets the list of optimization opportunities identified.
         /// </summary>
-        public List<string> OptimizationOpportunities { get; } = new();
+        public List<string> OptimizationOpportunities { get; } = [];
 
         /// <summary>
         /// Gets or sets the number of parallelization opportunities.

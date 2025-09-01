@@ -75,9 +75,9 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
             Namespace = methodSymbol.ContainingNamespace.ToDisplayString(),
             Parameters = GetParameterInfo(methodSymbol),
             ReturnType = methodSymbol.ReturnType.ToDisplayString(),
-            Backends = _attributeParser.GetBackendsFromAttribute(kernelAttribute),
-            VectorSize = _attributeParser.GetVectorSizeFromAttribute(kernelAttribute),
-            IsParallel = _attributeParser.GetIsParallelFromAttribute(kernelAttribute),
+            Backends = KernelAttributeParser.GetBackendsFromAttribute(kernelAttribute),
+            VectorSize = KernelAttributeParser.GetVectorSizeFromAttribute(kernelAttribute),
+            IsParallel = KernelAttributeParser.GetIsParallelFromAttribute(kernelAttribute),
             MethodDeclaration = methodDeclaration
         };
     }
@@ -122,7 +122,7 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
         }).ToList();
     }
 
-    private bool IsBufferType(ITypeSymbol type)
+    private static bool IsBufferType(ITypeSymbol type)
     {
         return type.Name.Contains("Buffer") ||
                type.Name.Contains("Span") ||

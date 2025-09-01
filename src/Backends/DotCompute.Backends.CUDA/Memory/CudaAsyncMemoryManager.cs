@@ -116,7 +116,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
             var stream = _context.Stream;
             
             // Allocate memory asynchronously on the specified stream
-            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (ulong)sizeInBytes, stream);
+            var result = CudaRuntime.TryAllocateMemoryAsync(out var devicePtr, (ulong)sizeInBytes, stream);
             CudaRuntime.CheckError(result, $"stream-ordered allocating {sizeInBytes} bytes");
 
             // Track allocation
@@ -158,10 +158,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
     public override async ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         IUnifiedMemoryBuffer<T> destination,
-        CancellationToken cancellationToken)
-    {
-        await CopyAsync(source, 0, destination, 0, source.Length, cancellationToken);
-    }
+        CancellationToken cancellationToken) => await CopyAsync(source, 0, destination, 0, source.Length, cancellationToken);
 
 
     /// <inheritdoc/>
@@ -253,7 +250,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         try
         {
             // Set release threshold (memory returned to OS when exceeded)
-            ulong releaseThreshold = 2UL * 1024 * 1024 * 1024; // 2GB
+            var releaseThreshold = 2UL * 1024 * 1024 * 1024; // 2GB
             var result = CudaRuntime.cudaMemPoolSetAttribute(
                 _defaultMemPool,
                 CudaMemPoolAttribute.ReleaseThreshold,
@@ -265,7 +262,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
             }
 
             // Enable reuse of allocations
-            int reuseEnabled = 1;
+            var reuseEnabled = 1;
             result = CudaRuntime.cudaMemPoolSetAttribute(
                 _defaultMemPool,
                 CudaMemPoolAttribute.ReuseAllowOpportunistic,
@@ -307,7 +304,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         try
         {
             // Allocate memory on stream
-            var result = CudaRuntime.TryAllocateMemoryAsync(out IntPtr devicePtr, (ulong)sizeInBytes, stream);
+            var result = CudaRuntime.TryAllocateMemoryAsync(out var devicePtr, (ulong)sizeInBytes, stream);
             CudaRuntime.CheckError(result, $"async allocating {sizeInBytes} bytes");
 
             // Track allocation
@@ -559,7 +556,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
             }
         };
 
-        var result = CudaRuntime.cudaMemPoolCreate(out IntPtr pool, ref poolProps);
+        var result = CudaRuntime.cudaMemPoolCreate(out var pool, ref poolProps);
         CudaRuntime.CheckError(result, "creating memory pool");
 
         // Configure pool
@@ -600,12 +597,12 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         {
             CudaRuntime.cudaMemPoolGetAttribute(
                 targetPool, CudaMemPoolAttribute.Used,
-                out IntPtr usedMemoryPtr);
+                out var usedMemoryPtr);
             var usedMemory = (ulong)usedMemoryPtr;
             
             CudaRuntime.cudaMemPoolGetAttribute(
                 targetPool, CudaMemPoolAttribute.Reserved,
-                out IntPtr reservedMemoryPtr);
+                out var reservedMemoryPtr);
             var reservedMemory = (ulong)reservedMemoryPtr;
 
             return new MemoryPoolStatistics
@@ -631,7 +628,7 @@ public sealed class CudaAsyncMemoryManager : BaseMemoryManager
         // Default stream allocation if async not supported
         if (!_asyncMemorySupported)
         {
-            var result = CudaRuntime.TryAllocateMemory(out IntPtr devicePtr, (ulong)sizeInBytes);
+            var result = CudaRuntime.TryAllocateMemory(out var devicePtr, (ulong)sizeInBytes);
             CudaRuntime.CheckError(result, $"allocating {sizeInBytes} bytes");
             
             return new CudaAsyncMemoryBuffer(

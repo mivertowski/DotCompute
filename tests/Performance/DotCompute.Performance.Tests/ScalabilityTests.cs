@@ -71,7 +71,7 @@ public class ScalabilityTests : GpuTestBase
         try
         {
             // Warmup
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 await compiledKernel.ExecuteAsync(arguments, _cts.Token);
                 await _accelerator.SynchronizeAsync(_cts.Token);
@@ -80,7 +80,7 @@ public class ScalabilityTests : GpuTestBase
             perfContext.Checkpoint("Warmup completed");
 
             // Act - Measure execution performance across iterations
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var initialMemory = GC.GetTotalMemory(false);
                 
@@ -160,14 +160,14 @@ public class ScalabilityTests : GpuTestBase
             try
             {
                 // Warmup
-                for (int i = 0; i < 2; i++)
+                for (var i = 0; i < 2; i++)
                 {
                     await compiledKernel.ExecuteAsync(arguments, _cts.Token);
                     await _accelerator.SynchronizeAsync(_cts.Token);
                 }
 
                 // Measure performance
-                for (int i = 0; i < measurements; i++)
+                for (var i = 0; i < measurements; i++)
                 {
                     var preExecution = _accelerator.GetResourceUsage();
                     
@@ -243,7 +243,7 @@ public class ScalabilityTests : GpuTestBase
         var compiledKernels = new List<ICompiledKernel>();
         
         // Pre-compile kernels for each thread to avoid compilation overhead
-        for (int i = 0; i < threadCount; i++)
+        for (var i = 0; i < threadCount; i++)
         {
             compiledKernels.Add(await _accelerator.CompileKernelAsync(kernel, null, _cts.Token));
         }
@@ -268,7 +268,7 @@ public class ScalabilityTests : GpuTestBase
                     await _accelerator.SynchronizeAsync(_cts.Token);
                     
                     // Execute multiple times per thread
-                    for (int i = 0; i < executionsPerThread; i++)
+                    for (var i = 0; i < executionsPerThread; i++)
                     {
                         var sw = Stopwatch.StartNew();
                         await compiledKernel.ExecuteAsync(arguments, _cts.Token);
@@ -309,7 +309,7 @@ public class ScalabilityTests : GpuTestBase
             _output.WriteLine($"  Thread efficiency: {threadEfficiency:F2} (1.0 = perfect scaling)");
             
             // Per-thread analysis
-            for (int i = 0; i < Math.Min(threadCount, 8); i++) // Limit output for readability
+            for (var i = 0; i < Math.Min(threadCount, 8); i++) // Limit output for readability
             {
                 var threadResult = results[i];
                 _output.WriteLine($"  Thread {i}: Avg {threadResult.AverageTimeMs:F2}ms, " +
@@ -361,7 +361,7 @@ public class ScalabilityTests : GpuTestBase
             var compiledKernels = new List<ICompiledKernel>();
             
             // Pre-compile kernels
-            for (int i = 0; i < threadCount; i++)
+            for (var i = 0; i < threadCount; i++)
             {
                 compiledKernels.Add(await _accelerator.CompileKernelAsync(kernel, null, _cts.Token));
             }
@@ -381,7 +381,7 @@ public class ScalabilityTests : GpuTestBase
                         var waitTimes = new List<double>();
                         var executionTimes = new List<double>();
                         
-                        for (int i = 0; i < executionsPerThread; i++)
+                        for (var i = 0; i < executionsPerThread; i++)
                         {
                             var waitSw = Stopwatch.StartNew();
                             // Simulate resource acquisition wait
@@ -548,7 +548,7 @@ public class ScalabilityTests : GpuTestBase
         _output.WriteLine("\n=== Workload Scaling Trend Analysis ===");
         
         // Calculate scaling factors
-        for (int i = 1; i < results.Count; i++)
+        for (var i = 1; i < results.Count; i++)
         {
             var current = results[i];
             var previous = results[i - 1];
@@ -581,7 +581,7 @@ public class ScalabilityTests : GpuTestBase
         var throughputs = results.Select(r => r.Throughput).ToList();
         var peakThroughput = throughputs.Max();
         
-        for (int i = 0; i < results.Count; i++)
+        for (var i = 0; i < results.Count; i++)
         {
             var result = results[i];
             var throughputRatio = result.Throughput / peakThroughput;
@@ -595,7 +595,7 @@ public class ScalabilityTests : GpuTestBase
         
         // Identify memory scaling issues
         var memoryUsages = results.Select(r => r.AverageResourceUsage.MemoryUsageMB).ToList();
-        for (int i = 1; i < results.Count; i++)
+        for (var i = 1; i < results.Count; i++)
         {
             var memoryRatio = memoryUsages[i] / memoryUsages[i - 1];
             var workloadRatio = (double)results[i].WorkloadSize / results[i - 1].WorkloadSize;
@@ -627,7 +627,7 @@ public class ScalabilityTests : GpuTestBase
         timeRatio.Should().BeLessThan(workloadRatio * 2, "Execution time should not scale worse than quadratically");
     }
 
-    private double CalculateThreadEfficiency(List<ThreadExecutionResult> results, int threadCount)
+    private static double CalculateThreadEfficiency(List<ThreadExecutionResult> results, int threadCount)
     {
         if (threadCount == 1) return 1.0;
         
@@ -733,10 +733,7 @@ public class ScalabilityTests : GpuTestBase
         };
     }
 
-    private KernelDefinition CreateThreadScalableKernel(string name, int workloadSize)
-    {
-        return CreateScalableKernel(name, workloadSize);
-    }
+    private KernelDefinition CreateThreadScalableKernel(string name, int workloadSize) => CreateScalableKernel(name, workloadSize);
 
     private KernelDefinition CreateResourceIntensiveKernel(string name, int workloadSize)
     {
@@ -761,12 +758,9 @@ public class ScalabilityTests : GpuTestBase
         };
     }
 
-    private KernelDefinition CreateResourceMonitoringKernel(string name, int workloadSize)
-    {
-        return CreateResourceIntensiveKernel(name, workloadSize);
-    }
+    private KernelDefinition CreateResourceMonitoringKernel(string name, int workloadSize) => CreateResourceIntensiveKernel(name, workloadSize);
 
-    private KernelArguments CreateKernelArguments(int size)
+    private static KernelArguments CreateKernelArguments(int size)
     {
         var data = GenerateRandomFloats(size);
         return new KernelArguments(new object[] { data, new float[size], size });
@@ -788,7 +782,7 @@ public class ScalabilityTests : GpuTestBase
         }
     }
 
-    private double CalculateStandardDeviation(IEnumerable<double> values)
+    private static double CalculateStandardDeviation(IEnumerable<double> values)
     {
         var valuesList = values.ToList();
         var mean = valuesList.Average();
@@ -796,7 +790,7 @@ public class ScalabilityTests : GpuTestBase
         return Math.Sqrt(sumSquaredDiffs / valuesList.Count);
     }
 
-    private double CalculateComputationalEfficiency(int workloadSize, double timeMs)
+    private static double CalculateComputationalEfficiency(int workloadSize, double timeMs)
     {
         // Estimate FLOPS based on kernel operations (simplified)
         var operationsPerElement = 20; // Approximate operations in scalable kernel
@@ -850,7 +844,7 @@ internal class ResourceUsage
 internal class ThreadExecutionResult
 {
     public int ThreadId { get; set; }
-    public double[] ExecutionTimes { get; set; } = Array.Empty<double>();
+    public double[] ExecutionTimes { get; set; } = [];
     public double AverageTimeMs { get; set; }
     public int TotalExecutions { get; set; }
 }
@@ -913,7 +907,7 @@ internal class MockScalableAccelerator : IAccelerator
         MaxComputeUnits = 32
     };
     
-    public AcceleratorType Type => AcceleratorType.CPU;
+    public static AcceleratorType Type => AcceleratorType.CPU;
     public IUnifiedMemoryManager Memory { get; } = new MockMemoryManager();
     public AcceleratorContext Context { get; } = new AcceleratorContext();
 
@@ -929,10 +923,7 @@ internal class MockScalableAccelerator : IAccelerator
         return new MockScalableKernel(definition.Name, this);
     }
 
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        return new ValueTask(Task.Delay(_random.Next(1, 5), cancellationToken));
-    }
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => new(Task.Delay(_random.Next(1, 5), cancellationToken));
 
     public ResourceUsage GetResourceUsage()
     {
@@ -990,7 +981,7 @@ internal class MockScalableKernel : ICompiledKernel
         await Task.Delay(executionTime, cancellationToken);
     }
     
-    private int GetWorkloadSize(KernelArguments arguments)
+    private static int GetWorkloadSize(KernelArguments arguments)
     {
         // Extract workload size from arguments (simplified)
         if (arguments.Count > 0 && arguments[0] is float[] array)
@@ -1008,7 +999,7 @@ internal class MockScalableKernel : ICompiledKernel
 /// </summary>
 internal static class ScalabilityMetrics
 {
-    private static readonly Dictionary<string, object> _metrics = new();
+    private static readonly Dictionary<string, object> _metrics = [];
     
     public static void RecordWorkloadMetrics(int workloadSize, double timeMs, double throughput, double efficiency)
     {
@@ -1027,11 +1018,9 @@ internal static class ScalabilityMetrics
             _metrics["single_thread_baseline"] = throughput;
         }
     }
-    
-    public static double GetSingleThreadThroughput()
-    {
-        return _metrics.TryGetValue("single_thread_baseline", out var value) ? (double)value : 0.0;
-    }
+
+
+    public static double GetSingleThreadThroughput() => _metrics.TryGetValue("single_thread_baseline", out var value) ? (double)value : 0.0;
 }
 
 #endregion

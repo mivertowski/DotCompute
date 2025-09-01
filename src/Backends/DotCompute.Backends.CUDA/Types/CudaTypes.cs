@@ -144,7 +144,7 @@ namespace DotCompute.Backends.CUDA.Types
         public static UnifiedValidationResult Error(string message) => new() { IsValid = false, ErrorMessage = message };
         public static UnifiedValidationResult Failure(string message) => new() { IsValid = false, ErrorMessage = message };
         public static UnifiedValidationResult SuccessWithWarnings(List<string> warnings) => new() { IsValid = true, Warnings = warnings };
-        public static UnifiedValidationResult SuccessWithWarnings(string[] warnings) => new() { IsValid = true, Warnings = new List<string>(warnings) };
+        public static UnifiedValidationResult SuccessWithWarnings(string[] warnings) => new() { IsValid = true, Warnings = [.. warnings] };
     }
 
     /// <summary>
@@ -179,7 +179,7 @@ namespace DotCompute.Backends.CUDA.Types
         /// <summary>
         /// Gets or sets the compiled kernel binary.
         /// </summary>
-        public byte[] Binary { get; set; } = Array.Empty<byte>();
+        public byte[] Binary { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the compilation timestamp.

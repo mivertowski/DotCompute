@@ -216,7 +216,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// <summary>
         /// Estimates problem size from kernel arguments
         /// </summary>
-        private int EstimateProblemSize(KernelArguments arguments)
+        private static int EstimateProblemSize(KernelArguments arguments)
         {
             // Look for buffer sizes or explicit size parameters
             for (var i = 0; i < arguments.Count; i++)

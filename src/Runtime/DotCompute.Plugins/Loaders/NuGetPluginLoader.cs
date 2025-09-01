@@ -442,7 +442,7 @@ public class NuGetPluginLoader : IDisposable
         return null;
     }
 
-    private async Task<NuGetPluginManifest?> CreateManifestFromNuspecAsync(ZipArchiveEntry nuspecEntry, string packagePath, CancellationToken cancellationToken)
+    private static async Task<NuGetPluginManifest?> CreateManifestFromNuspecAsync(ZipArchiveEntry nuspecEntry, string packagePath, CancellationToken cancellationToken)
     {
         // This would parse the .nuspec XML and create a plugin manifest
         // For now, return a basic manifest
@@ -461,7 +461,7 @@ public class NuGetPluginLoader : IDisposable
         };
     }
 
-    private void ValidateManifest(NuGetPluginManifest manifest, NuGetPluginValidationResult result)
+    private static void ValidateManifest(NuGetPluginManifest manifest, NuGetPluginValidationResult result)
     {
         if (string.IsNullOrWhiteSpace(manifest.Id))
         {
@@ -521,7 +521,7 @@ public class NuGetPluginLoader : IDisposable
         }
     }
 
-    private async Task<bool> DependencyExistsAsync(NuGetPackageDependency dependency, CancellationToken cancellationToken)
+    private static async Task<bool> DependencyExistsAsync(NuGetPackageDependency dependency, CancellationToken cancellationToken)
     {
         // This is a simplified implementation
         // In a real system, this would check NuGet repositories, local packages, etc.
@@ -551,7 +551,7 @@ public class NuGetPluginLoader : IDisposable
         }
     }
 
-    private async Task<NuGetPluginManifest?> LoadDependencyManifestAsync(ResolvedDependency dependency, CancellationToken cancellationToken)
+    private static async Task<NuGetPluginManifest?> LoadDependencyManifestAsync(ResolvedDependency dependency, CancellationToken cancellationToken)
     {
         // This would load the manifest for a dependency
         // For now, return null to indicate it's not a plugin dependency
@@ -749,7 +749,7 @@ public class NuGetPluginLoader : IDisposable
     /// <summary>
     /// Verifies assembly strong name signature.
     /// </summary>
-    private async Task VerifyStrongNameAsync(string assemblyPath, CancellationToken cancellationToken)
+    private static async Task VerifyStrongNameAsync(string assemblyPath, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
         {
@@ -1105,7 +1105,7 @@ public class NuGetPluginLoader : IDisposable
                fileName.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase);
     }
 
-    private Task<IBackendPlugin> CreatePluginInstanceAsync(Assembly assembly, NuGetPluginManifest manifest, CancellationToken cancellationToken)
+    private static Task<IBackendPlugin> CreatePluginInstanceAsync(Assembly assembly, NuGetPluginManifest manifest, CancellationToken cancellationToken)
     {
         var pluginTypes = PluginSystem.DiscoverPluginTypes(assembly).ToList();
 

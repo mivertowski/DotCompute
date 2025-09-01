@@ -48,7 +48,7 @@ public class PipelineError
     /// <summary>
     /// Gets or sets additional context information
     /// </summary>
-    public Dictionary<string, object> Context { get; set; } = new();
+    public Dictionary<string, object> Context { get; set; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether this error is recoverable
@@ -58,6 +58,6 @@ public class PipelineError
     /// <summary>
     /// Gets or sets the suggested recovery actions
     /// </summary>
-    public List<string> SuggestedActions { get; set; } = new();
+    public List<string> SuggestedActions { get; set; } = [];
 }
 

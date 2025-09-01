@@ -391,8 +391,9 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         // WMMA fragment declarations based on data type
         var wmmaShape = GetWmmaShape(inputType);
         ptx.AppendLine($"    // WMMA fragments for {wmmaShape.M}x{wmmaShape.N}x{wmmaShape.K}");
-        
+
         // Generate WMMA operations
+
         GenerateWmmaOperations(ptx, inputType, outputType, wmmaShape);
         
         ptx.AppendLine("}");
@@ -403,7 +404,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     /// <summary>
     /// Generates WMMA operations in PTX.
     /// </summary>
-    private void GenerateWmmaOperations(
+    private static void GenerateWmmaOperations(
         StringBuilder ptx,
         DataType inputType,
         DataType outputType,
@@ -428,11 +429,11 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     /// <summary>
     /// Compiles PTX code to cubin.
     /// </summary>
-    private byte[] CompilePtxToCubin(string ptxCode) =>
+    private static byte[] CompilePtxToCubin(string ptxCode)
         // TODO
         // This would use NVRTC to compile PTX to cubin
         // For now, return placeholder
-        Encoding.UTF8.GetBytes(ptxCode);
+        => Encoding.UTF8.GetBytes(ptxCode);
 
     /// <summary>
     /// Launches a tensor core kernel.
@@ -509,7 +510,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     /// <summary>
     /// Gets WMMA shape for data type.
     /// </summary>
-    private WmmaShape GetWmmaShape(DataType dataType)
+    private static WmmaShape GetWmmaShape(DataType dataType)
     {
         // Different architectures support different shapes
         return dataType switch
@@ -598,7 +599,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     {
         public string Key { get; init; } = string.Empty;
         public string Ptx { get; init; } = string.Empty;
-        public byte[] Cubin { get; init; } = Array.Empty<byte>();
+        public byte[] Cubin { get; init; } = [];
         public int M { get; init; }
         public int N { get; init; }
         public int K { get; init; }
@@ -752,7 +753,6 @@ public sealed class TensorCoreException : Exception
     public TensorCoreException()
     {
     }
-
 }
 
 /// <summary>

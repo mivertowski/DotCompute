@@ -432,7 +432,7 @@ namespace DotCompute.Core.Memory
 
         #region NVIDIA-Specific Implementation
 
-        private async ValueTask<P2PConnectionCapability> DetectNVIDIAP2PCapabilityAsync(
+        private static async ValueTask<P2PConnectionCapability> DetectNVIDIAP2PCapabilityAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)
@@ -571,7 +571,7 @@ namespace DotCompute.Core.Memory
 
         #region AMD-Specific Implementation
 
-        private async ValueTask<P2PConnectionCapability> DetectAMDP2PCapabilityAsync(
+        private static async ValueTask<P2PConnectionCapability> DetectAMDP2PCapabilityAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)

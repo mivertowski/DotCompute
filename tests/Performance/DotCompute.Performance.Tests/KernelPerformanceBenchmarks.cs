@@ -52,7 +52,7 @@ public class KernelPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         // Initialize input data
         var inputData = new float[_inputBuffer.Length];
         var random = new Random(42); // Fixed seed for reproducibility
-        for (int i = 0; i < inputData.Length; i++)
+        for (var i = 0; i < inputData.Length; i++)
         {
             inputData[i] = (float)random.NextDouble();
         }
@@ -111,8 +111,9 @@ public class KernelPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
     {
         var metrics = await RunBenchmarkAsync();
         LogMetrics(metrics, "Kernel Compilation");
-        
+
         // Assert compilation performance expectations
+
         AssertPerformanceExpectations(metrics, 
             maxAverageTimeMs: 5000.0, // 5 seconds max for compilation
             maxStandardDeviationMs: 1000.0);
@@ -159,7 +160,7 @@ public class KernelPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         _measurements.Clear();
         var memoryBefore = GC.GetTotalMemory(true);
         
-        for (int i = 0; i < MeasurementIterations; i++)
+        for (var i = 0; i < MeasurementIterations; i++)
         {
             var time = await MeasureVectorAddAsync();
             _measurements.Add(time);
@@ -171,7 +172,7 @@ public class KernelPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
     
     private async Task WarmupVectorAdd()
     {
-        for (int i = 0; i < WarmupIterations; i++)
+        for (var i = 0; i < WarmupIterations; i++)
         {
             await ExecuteVectorAddAsync();
         }
@@ -220,7 +221,7 @@ public class KernelPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         _measurements.Clear();
         var memoryBefore = GC.GetTotalMemory(true);
         
-        for (int i = 0; i < MeasurementIterations; i++)
+        for (var i = 0; i < MeasurementIterations; i++)
         {
             var time = await MeasureMatrixMultiplyAsync();
             _measurements.Add(time);
@@ -232,7 +233,7 @@ public class KernelPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
     
     private async Task WarmupMatrixMultiply()
     {
-        for (int i = 0; i < WarmupIterations; i++)
+        for (var i = 0; i < WarmupIterations; i++)
         {
             await ExecuteMatrixMultiplyAsync();
         }
@@ -284,7 +285,7 @@ public class KernelPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         _measurements.Clear();
         var memoryBefore = GC.GetTotalMemory(true);
         
-        for (int i = 0; i < MeasurementIterations; i++)
+        for (var i = 0; i < MeasurementIterations; i++)
         {
             var time = await MeasureComplexComputeAsync();
             _measurements.Add(time);
@@ -296,7 +297,7 @@ public class KernelPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
     
     private async Task WarmupComplexCompute()
     {
-        for (int i = 0; i < WarmupIterations; i++)
+        for (var i = 0; i < WarmupIterations; i++)
         {
             await ExecuteComplexComputeAsync();
         }
@@ -350,13 +351,12 @@ public class KernelPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
         DataSize = VectorSize * sizeof(float);
         return await RunBenchmarkAsync(); // This compiles fresh kernels each time
     }
-    
+
+
     [GlobalCleanup]
-    public override void Cleanup()
-    {
-        base.Cleanup();
-    }
-    
+    public override void Cleanup() => base.Cleanup();
+
+
     public void Dispose()
     {
         _vectorAddKernel?.Dispose();

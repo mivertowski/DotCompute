@@ -14,8 +14,8 @@ namespace DotCompute.Core.Pipelines.Profiling;
 /// </summary>
 internal sealed class BasicPipelineProfiler : IPipelineProfiler
 {
-    private readonly Dictionary<string, DateTime> _executionStarts = new();
-    private readonly Dictionary<string, DateTime> _stageStarts = new();
+    private readonly Dictionary<string, DateTime> _executionStarts = [];
+    private readonly Dictionary<string, DateTime> _stageStarts = [];
     private readonly ILogger<BasicPipelineProfiler>? _logger;
 
     /// <summary>
@@ -174,7 +174,7 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
                 StageExecutionTimes = new Dictionary<string, TimeSpan>(),
                 DataTransferTimes = new Dictionary<string, TimeSpan>()
             },
-            Timeline = new List<TimelineEvent>()
+            Timeline = []
         };
     }
 
@@ -197,8 +197,8 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
                 StandardDeviation = GetResults("example").Metrics,
                 Percentiles = new Dictionary<int, PipelineExecutionMetrics>()
             },
-            Trends = new List<PerformanceTrend>(),
-            CommonBottlenecks = new List<BottleneckInfo>()
+            Trends = [],
+            CommonBottlenecks = []
         };
     }
 }

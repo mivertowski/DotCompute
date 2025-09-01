@@ -29,7 +29,7 @@ public static class FluentAssertionsExtensions
         
         subjectArray.Should().HaveCount(expectedArray.Length, because, becauseArgs);
         
-        for (int i = 0; i < subjectArray.Length; i++)
+        for (var i = 0; i < subjectArray.Length; i++)
         {
             subjectArray[i].Should().BeApproximately(expectedArray[i], tolerance, 
                 $"element at index {i} should be approximately equal {because}", becauseArgs);
@@ -50,7 +50,7 @@ public static class FluentAssertionsExtensions
         
         subjectArray.Should().HaveCount(expectedArray.Length, because, becauseArgs);
         
-        for (int i = 0; i < subjectArray.Length; i++)
+        for (var i = 0; i < subjectArray.Length; i++)
         {
             subjectArray[i].Should().BeApproximately(expectedArray[i], tolerance, 
                 $"element at index {i} should be approximately equal {because}", becauseArgs);
@@ -77,50 +77,44 @@ public static class FluentAssertionsExtensions
         }
         // For other types, assume they are finite by nature
     }
-    
+
+
     /// <summary>
     /// Verifies that a single value is finite (not NaN or Infinity)
     /// </summary>
-    public static void ShouldBeFinite(this float subject, string because = "", params object[] becauseArgs)
-    {
-        subject.Should().Match(v => float.IsFinite(v), because, becauseArgs);
-    }
-    
+    public static void ShouldBeFinite(this float subject, string because = "", params object[] becauseArgs) => subject.Should().Match(v => float.IsFinite(v), because, becauseArgs);
+
+
     /// <summary>
     /// Verifies that a single value is finite (not NaN or Infinity)
     /// </summary>
-    public static void ShouldBeFinite(this double subject, string because = "", params object[] becauseArgs)
-    {
-        subject.Should().Match(v => double.IsFinite(v), because, becauseArgs);
-    }
-    
+    public static void ShouldBeFinite(this double subject, string because = "", params object[] becauseArgs) => subject.Should().Match(v => double.IsFinite(v), because, becauseArgs);
+
+
     /// <summary>
     /// Verifies that execution time is within acceptable limits
     /// </summary>
     public static void ShouldBeWithinTimeLimit(this double executionTimeMs, double maxTimeMs, string because = "", params object[] becauseArgs)
     {
-        executionTimeMs.Should().BeLessOrEqualTo(maxTimeMs, because, becauseArgs);
+        executionTimeMs.Should().BeLessThanOrEqualTo(maxTimeMs, because, becauseArgs);
         executionTimeMs.Should().BeGreaterThan(0, "because execution should take some measurable time");
     }
-    
+
+
     /// <summary>
     /// Verifies that a value is greater than a threshold
     /// </summary>
     public static void ShouldBeGreaterThan<T>(this T subject, T threshold, string because = "", params object[] becauseArgs)
-        where T : IComparable<T>
-    {
-        subject.Should().BeGreaterThan(threshold, because, becauseArgs);
-    }
-    
+        where T : IComparable<T> => subject.Should().BeGreaterThan(threshold, because, becauseArgs);
+
+
     /// <summary>
     /// Verifies that a value is less than a threshold
     /// </summary>
     public static void ShouldBeLessThan<T>(this T subject, T threshold, string because = "", params object[] becauseArgs)
-        where T : IComparable<T>
-    {
-        subject.Should().BeLessThan(threshold, because, becauseArgs);
-    }
-    
+        where T : IComparable<T> => subject.Should().BeLessThan(threshold, because, becauseArgs);
+
+
     /// <summary>
     /// Verifies that all elements in a collection satisfy a condition
     /// </summary>
@@ -157,7 +151,7 @@ public static class FluentAssertionsExtensions
     public static void ShouldMeetPerformanceThreshold(this double actualThroughput, double expectedMinThroughput, 
         string unit = "ops/sec", string because = "", params object[] becauseArgs)
     {
-        actualThroughput.Should().BeGreaterOrEqualTo(expectedMinThroughput, 
+        actualThroughput.Should().BeGreaterThanOrEqualTo(expectedMinThroughput, 
             $"because performance should achieve at least {expectedMinThroughput:F2} {unit} {because}", becauseArgs);
         actualThroughput.Should().BeGreaterThan(0, "because throughput should be positive");
     }
@@ -184,8 +178,8 @@ public static class FluentAssertionsExtensions
     public static void ShouldBeWithinMemoryBounds(this long actualMemoryBytes, long maxMemoryBytes, 
         string because = "", params object[] becauseArgs)
     {
-        actualMemoryBytes.Should().BeLessOrEqualTo(maxMemoryBytes, because, becauseArgs);
-        actualMemoryBytes.Should().BeGreaterOrEqualTo(0, "because memory usage should be non-negative");
+        actualMemoryBytes.Should().BeLessThanOrEqualTo(maxMemoryBytes, because, becauseArgs);
+        actualMemoryBytes.Should().BeGreaterThanOrEqualTo(0, "because memory usage should be non-negative");
     }
 
     /// <summary>
@@ -216,5 +210,34 @@ public static class FluentAssertionsExtensions
         }
         
         recovered.Should().BeTrue($"because the system should recover gracefully from {typeof(TException).Name} {because}", becauseArgs);
+    }
+    
+    /// <summary>
+    /// Asserts that an action does not exceed a specified memory increase.
+    /// </summary>
+    public static void ShouldNotExceedMemoryIncrease(this Action action, long maxMemoryIncrease, string because = "", params object[] becauseArgs)
+    {
+        // Force garbage collection before measurement
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        
+        // Measure initial memory
+        var initialMemory = GC.GetTotalMemory(true);
+        
+        // Execute the action
+        action();
+        
+        // Force garbage collection after execution
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        
+        // Measure final memory
+        var finalMemory = GC.GetTotalMemory(true);
+        var memoryIncrease = finalMemory - initialMemory;
+        
+        // Assert memory increase is within bounds
+        memoryIncrease.Should().BeLessThanOrEqualTo(maxMemoryIncrease, because, becauseArgs);
     }
 }

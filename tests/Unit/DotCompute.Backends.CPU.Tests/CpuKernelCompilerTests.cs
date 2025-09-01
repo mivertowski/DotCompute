@@ -227,7 +227,7 @@ public class CpuKernelCompilerTests : IDisposable
         compiledKernels.Should().HaveCount(5);
         compiledKernels.Should().OnlyContain(k => k != null);
         
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             compiledKernels[i].Name.Should().Be($"concurrent_{i}");
         }
@@ -293,7 +293,7 @@ public class CpuKernelCompilerTests : IDisposable
         await compiledKernel.DisposeAsync();
     }
     
-    private KernelDefinition CreateSimpleKernelDefinition(string name, int parameterCount, int workDimensions)
+    private static KernelDefinition CreateSimpleKernelDefinition(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateSimpleKernelCode(name), name)
         {
@@ -306,7 +306,7 @@ public class CpuKernelCompilerTests : IDisposable
         };
     }
     
-    private KernelDefinition CreateComplexKernelDefinition(string name, int parameterCount, int workDimensions)
+    private static KernelDefinition CreateComplexKernelDefinition(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateComplexKernelCode(name), name)
         {
@@ -319,7 +319,7 @@ public class CpuKernelCompilerTests : IDisposable
         };
     }
     
-    private KernelDefinition CreateVectorizableKernelDefinition(string name, int parameterCount, int workDimensions)
+    private static KernelDefinition CreateVectorizableKernelDefinition(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateVectorizableKernelCode(name), name)
         {
@@ -332,7 +332,7 @@ public class CpuKernelCompilerTests : IDisposable
         };
     }
     
-    private KernelDefinition CreateNonVectorizableKernelDefinition(string name, int parameterCount, int workDimensions)
+    private static KernelDefinition CreateNonVectorizableKernelDefinition(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateNonVectorizableKernelCode(name), name)
         {
@@ -345,7 +345,7 @@ public class CpuKernelCompilerTests : IDisposable
         };
     }
     
-    private KernelDefinition CreateMemoryIntensiveKernelDefinition(string name, int parameterCount, int workDimensions)
+    private static KernelDefinition CreateMemoryIntensiveKernelDefinition(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateMemoryIntensiveKernelCode(name), name)
         {
@@ -358,7 +358,7 @@ public class CpuKernelCompilerTests : IDisposable
         };
     }
     
-    private KernelDefinition CreateKernelWithDimensions(string name, int parameterCount, int workDimensions)
+    private static KernelDefinition CreateKernelWithDimensions(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateKernelWithDimensions(name, workDimensions), name)
         {
@@ -391,12 +391,11 @@ public class CpuKernelCompilerTests : IDisposable
             Logger = _logger
         };
     }
-    
-    private static string GenerateSimpleKernelCode(string name)
-    {
-        return $"__kernel void {name}(__global float* a, __global float* b, __global float* c) {{ int i = get_global_id(0); c[i] = a[i] + b[i]; }}";
-    }
-    
+
+
+    private static string GenerateSimpleKernelCode(string name) => $"__kernel void {name}(__global float* a, __global float* b, __global float* c) {{ int i = get_global_id(0); c[i] = a[i] + b[i]; }}";
+
+
     private static string GenerateComplexKernelCode(string name)
     {
         return $@"__kernel void {name}(__global float* input, __global float* output, __global float* temp, float factor) {{
@@ -405,12 +404,11 @@ public class CpuKernelCompilerTests : IDisposable
             output[i] = sqrt(temp[i] * temp[i] + input[i] * input[i]);
         }}";
     }
-    
-    private static string GenerateVectorizableKernelCode(string name)
-    {
-        return $"__kernel void {name}(__global const float* a, __global const float* b, __global float* c) {{ int i = get_global_id(0); c[i] = a[i] * b[i] + a[i]; }}";
-    }
-    
+
+
+    private static string GenerateVectorizableKernelCode(string name) => $"__kernel void {name}(__global const float* a, __global const float* b, __global float* c) {{ int i = get_global_id(0); c[i] = a[i] * b[i] + a[i]; }}";
+
+
     private static string GenerateNonVectorizableKernelCode(string name)
     {
         return $@"__kernel void {name}(__global float* data) {{

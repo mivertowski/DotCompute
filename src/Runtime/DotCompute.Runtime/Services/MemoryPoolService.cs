@@ -311,13 +311,21 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
     
     private double CalculateFragmentationPercentage()
     {
-        if (_acceleratorPools.Count == 0) return 0.0;
+        if (_acceleratorPools.Count == 0)
+        {
+            return 0.0;
+        }
+
+
+        var totalSize = _acceleratorPools.Values.Sum(p => p.TotalSize);
+        var totalUsed = _acceleratorPools.Values.Sum(p => p.UsedSize);
         
-        long totalSize = _acceleratorPools.Values.Sum(p => p.TotalSize);
-        long totalUsed = _acceleratorPools.Values.Sum(p => p.UsedSize);
-        
-        if (totalSize == 0) return 0.0;
-        
+        if (totalSize == 0)
+        {
+            return 0.0;
+        }
+
+
         return (double)(totalSize - totalUsed) / totalSize * 100.0;
     }
 
@@ -464,7 +472,7 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
             throw new ObjectDisposedException(nameof(PooledBuffer));
         }
 
-        // Simplified implementation for production usage
+        // Simplified implementation for production usage TODO
         return ValueTask.CompletedTask;
     }
 
@@ -475,7 +483,7 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
             throw new ObjectDisposedException(nameof(PooledBuffer));
         }
 
-        // Simplified implementation for production usage
+        // Simplified implementation for production usage TODO
         return ValueTask.CompletedTask;
     }
 

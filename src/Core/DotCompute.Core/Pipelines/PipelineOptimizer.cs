@@ -823,7 +823,7 @@ namespace DotCompute.Core.Pipelines
             return GetOperationBasedSizeEstimate(stage, isInput: false);
         }
 
-        private long EstimateStageWorkingSet(KernelStage stage)
+        private static long EstimateStageWorkingSet(KernelStage stage)
         {
             var baseWorkingSet = EstimateStageInputSize(stage) + EstimateStageOutputSize(stage);
 
@@ -1093,7 +1093,7 @@ namespace DotCompute.Core.Pipelines
             return Math.Clamp(calculatedSize, minBufferSize, maxBufferSize);
         }
 
-        private long GetConservativeEstimate(KernelStage stage1, KernelStage stage2)
+        private static long GetConservativeEstimate(KernelStage stage1, KernelStage stage2)
         {
             // Conservative fallback estimate
             var baseEstimate = 64 * KB; // 64KB base

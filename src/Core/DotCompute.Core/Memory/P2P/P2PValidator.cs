@@ -653,7 +653,7 @@ namespace DotCompute.Core.Memory.P2P
             }
         }
 
-        private async Task<P2PValidationDetail> ValidateChecksumIntegrityAsync<T>(
+        private static async Task<P2PValidationDetail> ValidateChecksumIntegrityAsync<T>(
             IUnifiedMemoryBuffer<T> sourceBuffer,
             IUnifiedMemoryBuffer<T> destinationBuffer,
             CancellationToken cancellationToken) where T : unmanaged
@@ -729,7 +729,7 @@ namespace DotCompute.Core.Memory.P2P
             return checksum;
         }
 
-        private async Task<P2PTransferBenchmark> BenchmarkTransferSizeAsync<T>(
+        private static async Task<P2PTransferBenchmark> BenchmarkTransferSizeAsync<T>(
             IAccelerator sourceDevice,
             IAccelerator targetDevice,
             long transferSizeBytes,
@@ -1002,13 +1002,13 @@ namespace DotCompute.Core.Memory.P2P
         public static ValueTask CopyFromHostAsync<TData>(TData[] source, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
             => ValueTask.CompletedTask;
 
-        public ValueTask CopyFromHostAsync<TData>(ReadOnlyMemory<TData> source, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
+        public static ValueTask CopyFromHostAsync<TData>(ReadOnlyMemory<TData> source, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
             => ValueTask.CompletedTask;
 
         public static Task CopyToHostAsync<TData>(TData[] destination, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
             => Task.CompletedTask;
 
-        public ValueTask CopyToHostAsync<TData>(Memory<TData> destination, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
+        public static ValueTask CopyToHostAsync<TData>(Memory<TData> destination, long offset, CancellationToken cancellationToken = default) where TData : unmanaged
             => ValueTask.CompletedTask;
 
         public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
@@ -1033,8 +1033,8 @@ namespace DotCompute.Core.Memory.P2P
             => new MockBuffer<TNew>(Accelerator, (int)(SizeInBytes / Unsafe.SizeOf<TNew>()));
 
         // Memory access methods
-        public Span<T> AsSpan() => Span<T>.Empty;
-        public ReadOnlySpan<T> AsReadOnlySpan() => ReadOnlySpan<T>.Empty;
+        public Span<T> AsSpan() => [];
+        public ReadOnlySpan<T> AsReadOnlySpan() => [];
         public Memory<T> AsMemory() => Memory<T>.Empty;
         public ReadOnlyMemory<T> AsReadOnlyMemory() => ReadOnlyMemory<T>.Empty;
         public DeviceMemory GetDeviceMemory() => DeviceMemory.Invalid;

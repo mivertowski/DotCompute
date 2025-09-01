@@ -366,7 +366,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Performs streaming transfer with chunking for large datasets.
         /// </summary>
-        private async ValueTask TransferStreamingAsync<T>(
+        private static async ValueTask TransferStreamingAsync<T>(
             IUnifiedMemoryBuffer<T> source,
             P2PBuffer<T> target,
             TransferStrategy strategy,

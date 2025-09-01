@@ -16,12 +16,12 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or initializes the list of kernel profiles.
         /// </summary>
-        public List<KernelProfile> KernelProfiles { get; init; } = new();
+        public List<KernelProfile> KernelProfiles { get; init; } = [];
 
         /// <summary>
         /// Gets or initializes the list of memory profiles.
         /// </summary>
-        public List<MemoryProfile> MemoryProfiles { get; init; } = new();
+        public List<MemoryProfile> MemoryProfiles { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the total time spent in kernel execution.
@@ -46,11 +46,11 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets the top kernels by execution time.
         /// </summary>
-        public List<KernelProfile> TopKernelsByTime { get; set; } = new();
+        public List<KernelProfile> TopKernelsByTime { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the top memory transfers by size.
         /// </summary>
-        public List<MemoryProfile> TopMemoryTransfers { get; set; } = new();
+        public List<MemoryProfile> TopMemoryTransfers { get; set; } = [];
     }
 }

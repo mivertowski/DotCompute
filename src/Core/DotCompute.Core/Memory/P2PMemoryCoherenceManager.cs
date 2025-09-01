@@ -378,7 +378,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Executes streamed synchronization for large buffers.
         /// </summary>
-        private async Task ExecuteStreamedSyncAsync(
+        private static async Task ExecuteStreamedSyncAsync(
             BufferCopy source,
             BufferCopy target,
             P2PBufferCoherenceInfo coherenceInfo,

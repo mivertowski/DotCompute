@@ -143,10 +143,8 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     }
 
     public DeviceMemory GetDeviceMemory()
-    {
         // For CPU backend, device memory is the same as host memory
-        return new DeviceMemory(_nativeHandle, _sizeInBytes);
-    }
+        => new(_nativeHandle, _sizeInBytes);
 
     public MappedMemory<byte> Map(MapMode mode = MapMode.ReadWrite)
     {
@@ -154,7 +152,9 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         var memory = AsMemory();
         return new MappedMemory<byte>(memory, () => {
             if (mode != MapMode.Read)
+            {
                 MarkHostDirty();
+            }
         });
     }
 
@@ -162,31 +162,30 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     {
         EnsureNotDisposed();
         if (offset < 0 || length < 0 || offset + length > _sizeInBytes)
+        {
+
             throw new ArgumentOutOfRangeException();
-        
+        }
+
+
         var memory = AsMemory().Slice(offset, length);
         return new MappedMemory<byte>(memory, () => {
             if (mode != MapMode.Read)
+            {
                 MarkHostDirty();
+            }
         });
     }
 
-    public ValueTask<MappedMemory<byte>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Map(mode));
-    }
+    public ValueTask<MappedMemory<byte>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
     public void EnsureOnHost()
-    {
         // CPU buffer is always on host
-        _state = BufferState.HostOnly;
-    }
+        => _state = BufferState.HostOnly;
 
     public void EnsureOnDevice()
-    {
         // CPU buffer is always on host (CPU is the device)
-        _state = BufferState.DeviceOnly;
-    }
+        => _state = BufferState.DeviceOnly;
 
     public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
@@ -200,10 +199,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         return ValueTask.CompletedTask;
     }
 
-    public void Synchronize()
-    {
-        _state = BufferState.Synchronized;
-    }
+    public void Synchronize() => _state = BufferState.Synchronized;
 
     public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
@@ -211,22 +207,20 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         return ValueTask.CompletedTask;
     }
 
-    public void MarkHostDirty()
-    {
-        _state = BufferState.HostDirty;
-    }
+    public void MarkHostDirty() => _state = BufferState.HostDirty;
 
-    public void MarkDeviceDirty()
-    {
-        _state = BufferState.DeviceDirty;
-    }
+    public void MarkDeviceDirty() => _state = BufferState.DeviceDirty;
 
     public ValueTask CopyFromAsync(ReadOnlyMemory<byte> source, CancellationToken cancellationToken = default)
     {
         EnsureNotDisposed();
         if (source.Length > _sizeInBytes)
+        {
+
             throw new ArgumentException("Source is larger than buffer");
-        
+        }
+
+
         source.Span.CopyTo(AsSpan());
         MarkHostDirty();
         return ValueTask.CompletedTask;
@@ -236,8 +230,12 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     {
         EnsureNotDisposed();
         if (destination.Length < _sizeInBytes)
+        {
+
             throw new ArgumentException("Destination is smaller than buffer");
-        
+        }
+
+
         AsReadOnlySpan().CopyTo(destination.Span);
         return ValueTask.CompletedTask;
     }
@@ -342,7 +340,10 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     private void EnsureNotDisposed()
     {
         if (_isDisposed)
+        {
+
             throw new ObjectDisposedException(nameof(CpuMemoryBuffer));
+        }
     }
 }
 
@@ -364,14 +365,24 @@ internal unsafe class UnmanagedMemoryManager<T> : MemoryManager<T> where T : unm
     public override Span<T> GetSpan()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(UnmanagedMemoryManager<T>));
+        }
+
+
         return new Span<T>(_pointer, _length);
     }
 
     public override MemoryHandle Pin(int elementIndex = 0)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(UnmanagedMemoryManager<T>));
+        }
+
+
         return new MemoryHandle(_pointer + elementIndex);
     }
 
@@ -380,9 +391,6 @@ internal unsafe class UnmanagedMemoryManager<T> : MemoryManager<T> where T : unm
         // Nothing to do for unmanaged memory
     }
 
-    protected override void Dispose(bool disposing)
-    {
-        _disposed = true;
-    }
+    protected override void Dispose(bool disposing) => _disposed = true;
 }
 

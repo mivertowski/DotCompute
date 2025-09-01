@@ -358,7 +358,7 @@ internal class PluginResourceTracker : IDisposable
                 NetworkIOOperations = _currentUsage.NetworkIOOperations,
                 ExecutionTime = _currentUsage.ExecutionTime,
                 IsExceedingLimits = _currentUsage.IsExceedingLimits,
-                ViolatedLimits = new List<string>(_currentUsage.ViolatedLimits)
+                ViolatedLimits = [.. _currentUsage.ViolatedLimits]
             };
         }
     }
@@ -366,7 +366,7 @@ internal class PluginResourceTracker : IDisposable
     /// <summary>
     /// Gets the current number of active threads for this plugin.
     /// </summary>
-    private int GetActiveThreadCount()
+    private static int GetActiveThreadCount()
     {
         try
         {

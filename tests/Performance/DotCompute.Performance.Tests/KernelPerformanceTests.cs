@@ -146,7 +146,7 @@ public class KernelPerformanceTests : GpuTestBase
         const int iterations = 10;
 
         // Act & Assert
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             var sw = Stopwatch.StartNew();
             var compiledKernel = await _mockAccelerator.CompileKernelAsync(kernel, options, _cts.Token);
@@ -198,14 +198,14 @@ public class KernelPerformanceTests : GpuTestBase
         var compilationTimes = new List<double>();
 
         // Warmup
-        for (int i = 0; i < warmupRuns; i++)
+        for (var i = 0; i < warmupRuns; i++)
         {
             var warmupKernel = await _mockAccelerator.CompileKernelAsync(kernel, options, _cts.Token);
             await warmupKernel.DisposeAsync();
         }
 
         // Act - Measure compilation performance
-        for (int i = 0; i < measureRuns; i++)
+        for (var i = 0; i < measureRuns; i++)
         {
             var sw = Stopwatch.StartNew();
             var compiledKernel = await _mockAccelerator.CompileKernelAsync(kernel, options, _cts.Token);
@@ -301,14 +301,14 @@ public class KernelPerformanceTests : GpuTestBase
         try
         {
             // Warmup
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 await compiledKernel.ExecuteAsync(arguments, _cts.Token);
                 await _mockAccelerator.SynchronizeAsync(_cts.Token);
             }
 
             // Act - Measure execution performance
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var sw = Stopwatch.StartNew();
                 await compiledKernel.ExecuteAsync(arguments, _cts.Token);
@@ -424,7 +424,7 @@ public class KernelPerformanceTests : GpuTestBase
         try
         {
             // Warmup
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 await compiledKernel.ExecuteAsync(arguments, _cts.Token);
                 await _mockAccelerator.SynchronizeAsync(_cts.Token);
@@ -433,7 +433,7 @@ public class KernelPerformanceTests : GpuTestBase
             perfContext.Checkpoint("Warmup completed");
 
             // Act - Collect latency measurements
-            for (int i = 0; i < samples; i++)
+            for (var i = 0; i < samples; i++)
             {
                 var sw = Stopwatch.StartNew();
                 await compiledKernel.ExecuteAsync(arguments, _cts.Token);
@@ -492,7 +492,7 @@ public class KernelPerformanceTests : GpuTestBase
 
     #region Helper Methods
 
-    private MockAccelerator CreateMockAccelerator()
+    private static MockAccelerator CreateMockAccelerator()
     {
         var info = new AcceleratorInfo
         {
@@ -513,7 +513,7 @@ public class KernelPerformanceTests : GpuTestBase
         return new MockAccelerator(info);
     }
 
-    private KernelDefinition CreateSimpleKernel(string name, int dataSize)
+    private static KernelDefinition CreateSimpleKernel(string name, int dataSize)
     {
         return new KernelDefinition
         {
@@ -543,7 +543,7 @@ public class KernelPerformanceTests : GpuTestBase
         };
     }
 
-    private KernelDefinition CreateScalableKernel(string name, int workloadSize)
+    private static KernelDefinition CreateScalableKernel(string name, int workloadSize)
     {
         return new KernelDefinition
         {
@@ -566,7 +566,7 @@ public class KernelPerformanceTests : GpuTestBase
         };
     }
 
-    private KernelDefinition CreateThroughputKernel(string name, int dataSize)
+    private static KernelDefinition CreateThroughputKernel(string name, int dataSize)
     {
         return new KernelDefinition
         {
@@ -585,7 +585,7 @@ public class KernelPerformanceTests : GpuTestBase
         };
     }
 
-    private KernelDefinition CreateLatencyTestKernel(string name, int size)
+    private static KernelDefinition CreateLatencyTestKernel(string name, int size)
     {
         return new KernelDefinition
         {
@@ -604,11 +604,9 @@ public class KernelPerformanceTests : GpuTestBase
         };
     }
 
-    private KernelArguments CreateKernelArguments(int size)
-    {
+    private static KernelArguments CreateKernelArguments(int size)
         // Mock implementation - create dummy arguments
-        return new KernelArguments(new object[] { new float[size], new float[size], size });
-    }
+        => new(new object[] { new float[size], new float[size], size });
 
     private string GenerateComplexKernelSource(string name, int size)
     {

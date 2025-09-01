@@ -30,7 +30,7 @@ public class CudaBenchmarks
         _resultData = new float[DataSize];
         
         // Initialize with test data
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _hostData[i] = (float)Math.Sin(i * 0.01);
         }
@@ -39,7 +39,7 @@ public class CudaBenchmarks
     [Benchmark(Baseline = true)]
     public void CpuVectorAddition()
     {
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _resultData[i] = _hostData[i] + _hostData[i];
         }
@@ -71,7 +71,7 @@ public class CudaBenchmarks
     [Benchmark]
     public void CpuMatrixMultiplication()
     {
-        int size = (int)Math.Sqrt(DataSize);
+        var size = (int)Math.Sqrt(DataSize);
         if (size * size != DataSize)
         {
             size = 32; // Fallback to small matrix
@@ -82,7 +82,7 @@ public class CudaBenchmarks
         var result = new float[size][];
         
         // Initialize jagged arrays
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             matrixA[i] = new float[size];
             matrixB[i] = new float[size];
@@ -90,9 +90,9 @@ public class CudaBenchmarks
         }
         
         // Initialize matrices
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
-            for (int j = 0; j < size; j++)
+            for (var j = 0; j < size; j++)
             {
                 matrixA[i][j] = i + j;
                 matrixB[i][j] = i * j + 1;
@@ -100,12 +100,12 @@ public class CudaBenchmarks
         }
         
         // Matrix multiplication
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
-            for (int j = 0; j < size; j++)
+            for (var j = 0; j < size; j++)
             {
                 float sum = 0;
-                for (int k = 0; k < size; k++)
+                for (var k = 0; k < size; k++)
                 {
                     sum += matrixA[i][k] * matrixB[k][j];
                 }
@@ -117,7 +117,7 @@ public class CudaBenchmarks
     [Benchmark]
     public void SimulatedCudaMatrixMultiplication()
     {
-        int size = (int)Math.Sqrt(DataSize);
+        var size = (int)Math.Sqrt(DataSize);
         if (size * size != DataSize)
         {
             size = 32; // Fallback to small matrix
@@ -131,7 +131,7 @@ public class CudaBenchmarks
         var result = new float[size][];
         
         // Initialize jagged arrays
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             matrixA[i] = new float[size];
             matrixB[i] = new float[size];
@@ -139,9 +139,9 @@ public class CudaBenchmarks
         }
         
         // Initialize matrices (simulate host-to-device transfer)
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
-            for (int j = 0; j < size; j++)
+            for (var j = 0; j < size; j++)
             {
                 matrixA[i][j] = i + j;
                 matrixB[i][j] = i * j + 1;
@@ -151,10 +151,10 @@ public class CudaBenchmarks
         // Simulate GPU computation (faster than CPU for large matrices)
         Parallel.For(0, size, i =>
         {
-            for (int j = 0; j < size; j++)
+            for (var j = 0; j < size; j++)
             {
                 float sum = 0;
-                for (int k = 0; k < size; k++)
+                for (var k = 0; k < size; k++)
                 {
                     sum += matrixA[i][k] * matrixB[k][j];
                 }
@@ -170,7 +170,7 @@ public class CudaBenchmarks
     public void CpuReduction()
     {
         float sum = 0;
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             sum += _hostData[i];
         }
@@ -185,7 +185,7 @@ public class CudaBenchmarks
     [Benchmark]
     public void CpuParallelReduction()
     {
-        float sum = _hostData.AsParallel().Sum();
+        var sum = _hostData.AsParallel().Sum();
         
         // Prevent optimization
         if (float.IsNaN(sum))
@@ -209,7 +209,7 @@ public class CudaBenchmarks
             var nextLevel = new float[(data.Length + 1) / 2];
             Parallel.For(0, nextLevel.Length, i =>
             {
-                int idx = i * 2;
+                var idx = i * 2;
                 nextLevel[i] = data[idx] + (idx + 1 < data.Length ? data[idx + 1] : 0);
             });
             data = nextLevel;

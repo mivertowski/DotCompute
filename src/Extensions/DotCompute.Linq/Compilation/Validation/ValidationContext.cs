@@ -16,12 +16,12 @@ public sealed class ValidationContext
     /// <summary>
     /// Gets the current validation errors.
     /// </summary>
-    public List<ValidationIssue> Errors { get; } = new();
+    public List<ValidationIssue> Errors { get; } = [];
 
     /// <summary>
     /// Gets the current validation warnings.
     /// </summary>
-    public List<ValidationIssue> Warnings { get; } = new();
+    public List<ValidationIssue> Warnings { get; } = [];
 
     /// <summary>
     /// Gets whether validation has passed.

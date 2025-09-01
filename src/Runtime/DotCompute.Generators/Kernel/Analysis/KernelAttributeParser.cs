@@ -13,7 +13,7 @@ namespace DotCompute.Generators.Kernel.Analysis;
 /// </summary>
 public class KernelAttributeParser
 {
-    public List<string> GetBackendsFromAttribute(AttributeData attribute)
+    public static List<string> GetBackendsFromAttribute(AttributeData attribute)
     {
         var backends = new List<string> { "CPU" }; // CPU is always supported
 
@@ -36,7 +36,7 @@ public class KernelAttributeParser
         return backends;
     }
 
-    public int GetVectorSizeFromAttribute(AttributeData attribute)
+    public static int GetVectorSizeFromAttribute(AttributeData attribute)
     {
         if (attribute.NamedArguments.FirstOrDefault(a => a.Key == "VectorSize").Value.Value is int vectorSize)
         {
@@ -45,7 +45,7 @@ public class KernelAttributeParser
         return 8; // Default to 256-bit vectors
     }
 
-    public bool GetIsParallelFromAttribute(AttributeData attribute)
+    public static bool GetIsParallelFromAttribute(AttributeData attribute)
     {
         if (attribute.NamedArguments.FirstOrDefault(a => a.Key == "IsParallel").Value.Value is bool isParallel)
         {

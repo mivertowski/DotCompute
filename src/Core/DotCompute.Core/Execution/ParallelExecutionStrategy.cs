@@ -555,7 +555,7 @@ namespace DotCompute.Core.Execution
             return plan;
         }
 
-        private async ValueTask<AbstractionsMemory.IUnifiedMemoryBuffer<T>[]> CreateDeviceBufferSlicesAsync<T>(
+        private static async ValueTask<AbstractionsMemory.IUnifiedMemoryBuffer<T>[]> CreateDeviceBufferSlicesAsync<T>(
             AbstractionsMemory.IUnifiedMemoryBuffer<T>[] sourceBuffers,
             IAccelerator device,
             int startIndex,

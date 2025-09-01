@@ -25,7 +25,7 @@ public class ExampleTests : TestBase
         
         // Act - Simulate some computation
         var result = new float[input1.Length];
-        for (int i = 0; i < input1.Length; i++)
+        for (var i = 0; i < input1.Length; i++)
         {
             result[i] = input1[i] + input2[i];
         }
@@ -51,14 +51,14 @@ public class ExampleTests : TestBase
         var executionTime = MeasureExecutionTime(() =>
         {
             // Simulate some CPU-intensive operation
-            for (int i = 0; i < data.Length; i++)
+            for (var i = 0; i < data.Length; i++)
             {
                 data[i] = MathF.Sin(data[i]) * MathF.Cos(data[i]);
             }
         }, iterations);
         
         // Assert - Validate performance expectations
-        executionTime.ShouldBeWithinTimeLimit(maxExpectedMs: 1000.0, 
+        executionTime.ShouldBeWithinTimeLimit(1000.0, 
             because: "Medium dataset should process within 1 second");
         
         // Calculate and log throughput
@@ -79,7 +79,7 @@ public class ExampleTests : TestBase
         
         // Process the data to ensure it's actually used
         double sum = 0;
-        for (int i = 0; i < largeDataSet.Length; i++)
+        for (var i = 0; i < largeDataSet.Length; i++)
         {
             sum += largeDataSet[i];
         }
@@ -108,7 +108,7 @@ public class ExampleTests : TestBase
             matrixA, matrixB, size, size, size);
         
         // Assert - Matrix multiplication by identity should return original matrix
-        result.ShouldBeApproximatelyEqualTo(matrixA, size, size, tolerance: 1e-6f,
+        result.ShouldBeApproximatelyEqualTo(matrixA, 1e-6f,
             because: "Matrix multiplied by identity should equal original matrix");
         
         Output.WriteLine($"Matrix multiplication verification completed for {size}x{size} matrices");
@@ -125,7 +125,8 @@ public class ExampleTests : TestBase
         
         // Validate patterns
         sineData.ShouldContainOnlyFiniteValues();
-        sineData.ShouldBeWithinBounds(-1.1f, 1.1f, because: "Sine values should be in [-1,1] range");
+        // Sine values should be in [-1,1] range
+        sineData.All(v => v >= -1.1f && v <= 1.1f).Should().BeTrue("Sine values should be in [-1,1] range");
         
         // Count non-zero elements in sparse data
         var nonZeroCount = sparseData.Count(x => x != 0.0f);
@@ -251,7 +252,7 @@ public class ExampleGpuTests : GpuTestBase
         }, iterations: 5);
         
         // Assert - Validate performance
-        kernelTime.ShouldBeWithinTimeLimit(maxExpectedMs: 50.0,
+        kernelTime.ShouldBeWithinTimeLimit(50.0,
             because: "GPU kernel should complete quickly");
         
         // Calculate theoretical bandwidth

@@ -52,7 +52,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _maxPoolSize = maxPoolSize;
         _namedStreams = new ConcurrentDictionary<string, StreamInfo>();
-        _streamPool = new ConcurrentBag<IntPtr>();
+        _streamPool = [];
         _streamCallbacks = new ConcurrentDictionary<IntPtr, StreamCallbackInfo>();
 
         InitializePriorityRange();
@@ -98,7 +98,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         _logger.LogDebug("Initializing stream pool with {Size} streams", _maxPoolSize / 2);
         
         // Pre-allocate half the max pool size
-        for (int i = 0; i < _maxPoolSize / 2; i++)
+        for (var i = 0; i < _maxPoolSize / 2; i++)
         {
             try
             {
@@ -164,12 +164,12 @@ public sealed class CudaStreamManagerProduction : IDisposable
     /// </summary>
     private IntPtr CreateStreamInternal(StreamPriority priority, StreamFlags flags)
     {
-        IntPtr stream = IntPtr.Zero;
+        var stream = IntPtr.Zero;
         CudaError result;
 
         if (PrioritiesSupported && priority != StreamPriority.Normal)
         {
-            int cudaPriority = MapPriorityToCuda(priority);
+            var cudaPriority = MapPriorityToCuda(priority);
             result = CudaRuntime.cudaStreamCreateWithPriority(
                 ref stream, (uint)flags, cudaPriority);
         }
@@ -439,7 +439,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
 
 
         var result = CudaRuntime.cudaStreamEndCapture(_captureStream, ref _currentGraph);
-        IntPtr graph = _currentGraph;
+        var graph = _currentGraph;
         CudaRuntime.CheckError(result, "ending graph capture");
         
         _currentGraph = graph;
@@ -458,7 +458,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
     {
         ThrowIfDisposed();
         
-        IntPtr graphExec = IntPtr.Zero;
+        var graphExec = IntPtr.Zero;
         var result = CudaRuntime.cudaGraphInstantiate(
             ref graphExec, graph, IntPtr.Zero, IntPtr.Zero, 0);
         CudaRuntime.CheckError(result, "instantiating graph");

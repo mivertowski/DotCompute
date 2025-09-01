@@ -33,7 +33,7 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
     private TestKernelCompiler? _compiler;
     private TestMemoryBuffer<float>? _buffer;
     private ILogger? _logger;
-    private readonly List<IAccelerator> _accelerators = new();
+    private readonly List<IAccelerator> _accelerators = [];
     private readonly Random _random = new(42); // Fixed seed for reproducible tests - reserved for future use
     
 #pragma warning disable CA1823 // Unused field '_random'
@@ -193,10 +193,12 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         await inputBuffer.CopyFromAsync(inputData.AsMemory(), CancellationToken.None);
         
         // Step 5: Execute kernel (simulated)
-        var arguments = new KernelArguments();
-        arguments.Add(inputBuffer);
-        arguments.Add(outputBuffer);
-        arguments.Add(256);
+        var arguments = new KernelArguments
+        {
+            inputBuffer,
+            outputBuffer,
+            256
+        };
         await kernel.ExecuteAsync(arguments, CancellationToken.None);
         
         // Step 6: Synchronize
@@ -253,11 +255,13 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         perfContext.Checkpoint("Data_Transfer_Complete");
         
         // Step 3: Kernel execution
-        var arguments = new KernelArguments();
-        arguments.Add(bufferA);
-        arguments.Add(bufferB);
-        arguments.Add(bufferResult);
-        arguments.Add(dataSize);
+        var arguments = new KernelArguments
+        {
+            bufferA,
+            bufferB,
+            bufferResult,
+            dataSize
+        };
         
         var executionTime = await MeasureExecutionTimeAsync(async () =>
             await kernel.ExecuteAsync(arguments, CancellationToken.None));
@@ -312,18 +316,32 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         await buffer1.CopyFromAsync(input.AsMemory(), CancellationToken.None);
         
         // Execute kernel chain
-        var args1 = new KernelArguments();
-        args1.Add(buffer1); args1.Add(buffer2); args1.Add(dataSize);
+        var args1 = new KernelArguments
+        {
+            buffer1,
+            buffer2,
+            dataSize
+        };
         await squareKernel.ExecuteAsync(args1);
         perfContext.Checkpoint("Square_Complete");
         
-        var args2 = new KernelArguments();
-        args2.Add(buffer2); args2.Add(buffer3); args2.Add(2.0f); args2.Add(dataSize);
+        var args2 = new KernelArguments
+        {
+            buffer2,
+            buffer3,
+            2.0f,
+            dataSize
+        };
         await scaleKernel.ExecuteAsync(args2);
         perfContext.Checkpoint("Scale_Complete");
         
-        var args3 = new KernelArguments();
-        args3.Add(buffer3); args3.Add(buffer1); args3.Add(1.0f); args3.Add(dataSize);
+        var args3 = new KernelArguments
+        {
+            buffer3,
+            buffer1,
+            1.0f,
+            dataSize
+        };
         await addKernel.ExecuteAsync(args3);
         perfContext.Checkpoint("Add_Complete");
         
@@ -412,8 +430,13 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         
         executionTime = await MeasureExecutionTimeAsync(async () =>
         {
-            var args = new KernelArguments();
-            args.Add(inputBuffer); args.Add(outputBuffer); args.Add(2.0f); args.Add(dataSize);
+            var args = new KernelArguments
+            {
+                inputBuffer,
+                outputBuffer,
+                2.0f,
+                dataSize
+            };
             await kernel.ExecuteAsync(args);
             await selectedAccelerator.SynchronizeAsync();
         });
@@ -495,7 +518,7 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         var currentData = input.ToArray();
         IAccelerator[] accelerators = { _accelerator!, _cpuAccelerator! };
         
-        for (int iteration = 0; iteration < 4; iteration++)
+        for (var iteration = 0; iteration < 4; iteration++)
         {
             var selectedAccelerator = accelerators[iteration % 2];
             var acceleratorName = selectedAccelerator.Type.ToString();
@@ -509,8 +532,13 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
             
             await buffer1.CopyFromAsync(currentData.AsMemory(), CancellationToken.None);
             
-            var args = new KernelArguments();
-            args.Add(buffer1); args.Add(buffer2); args.Add(1.1f); args.Add(dataSize);
+            var args = new KernelArguments
+            {
+                buffer1,
+                buffer2,
+                1.1f,
+                dataSize
+            };
             await kernel.ExecuteAsync(args);
             await selectedAccelerator.SynchronizeAsync();
             
@@ -527,7 +555,7 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         var expectedScale = Math.Pow(1.1, 4);
         var tolerance = 1e-4f;
         
-        for (int i = 0; i < Math.Min(10, dataSize); i++)
+        for (var i = 0; i < Math.Min(10, dataSize); i++)
         {
             var expected = (float)(input[i] * expectedScale);
             Assert.InRange(currentData[i], expected - tolerance, expected + tolerance);
@@ -603,7 +631,7 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
             {
                 try
                 {
-                    for (int iteration = 0; iteration < 10; iteration++)
+                    for (var iteration = 0; iteration < 10; iteration++)
                     {
                         var threadData = new float[dataSize];
                         await sharedBuffer.CopyToAsync(threadData.AsMemory(), CancellationToken.None);
@@ -665,8 +693,13 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
             new KernelDefinition("modify_gpu", Convert.ToBase64String(GenerateScaleKernelCode()), "scale"));
         
         using var tempBuffer = new TestMemoryBuffer<float>(dataSize * sizeof(float), _accelerator);
-        var args = new KernelArguments();
-        args.Add(gpuBuffer); args.Add(tempBuffer); args.Add(3.0f); args.Add(dataSize);
+        var args = new KernelArguments
+        {
+            gpuBuffer,
+            tempBuffer,
+            3.0f,
+            dataSize
+        };
         await gpuKernel.ExecuteAsync(args);
         await _accelerator.SynchronizeAsync();
         perfContext.Checkpoint("GPU_Processing_Complete");
@@ -728,8 +761,13 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
                 new KernelDefinition("add_fallback", Convert.ToBase64String(GenerateAddScalarKernelCode()), "add_scalar"));
             
             using var outputBuffer = new TestMemoryBuffer<float>(reasonableDataSize * sizeof(float), _accelerator);
-            var args = new KernelArguments();
-            args.Add(reasonableBuffer); args.Add(outputBuffer); args.Add(1.0f); args.Add(reasonableDataSize);
+            var args = new KernelArguments
+            {
+                reasonableBuffer,
+                outputBuffer,
+                1.0f,
+                reasonableDataSize
+            };
             
             await kernel.ExecuteAsync(args);
             await _accelerator.SynchronizeAsync();
@@ -763,11 +801,11 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         _accelerators.Add(intermittentAccelerator);
         
         ICompiledKernel? kernel = null;
-        int attemptCount = 0;
+        var attemptCount = 0;
         Exception? lastException = null;
         
         // Retry loop
-        for (int retry = 0; retry < maxRetries; retry++)
+        for (var retry = 0; retry < maxRetries; retry++)
         {
             attemptCount++;
             try
@@ -800,8 +838,13 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         
         await inputBuffer.CopyFromAsync(input.AsMemory(), CancellationToken.None);
         
-        var args = new KernelArguments();
-        args.Add(inputBuffer); args.Add(outputBuffer); args.Add(2.0f); args.Add(dataSize);
+        var args = new KernelArguments
+        {
+            inputBuffer,
+            outputBuffer,
+            2.0f,
+            dataSize
+        };
         await kernel!.ExecuteAsync(args);
         await intermittentAccelerator.SynchronizeAsync();
         
@@ -830,7 +873,7 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         var successfulOperations = 0;
         var failedOperations = 0;
         
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             try
             {
@@ -913,14 +956,16 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         
         var executionTime = await MeasureExecutionTimeAsync(async () =>
         {
-            var args = new KernelArguments();
-            args.Add(imageBuffer);
-            args.Add(kernelBuffer);
-            args.Add(resultBuffer);
-            args.Add(imageWidth);
-            args.Add(imageHeight);
-            args.Add(channels);
-            args.Add(kernelSize);
+            var args = new KernelArguments
+            {
+                imageBuffer,
+                kernelBuffer,
+                resultBuffer,
+                imageWidth,
+                imageHeight,
+                channels,
+                kernelSize
+            };
             
             await convKernel.ExecuteAsync(args);
             await _accelerator.SynchronizeAsync();
@@ -978,13 +1023,15 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         // Step 3: Execute matrix multiplication
         var executionTime = await MeasureExecutionTimeAsync(async () =>
         {
-            var args = new KernelArguments();
-            args.Add(bufferA);
-            args.Add(bufferB);
-            args.Add(bufferC);
-            args.Add(matrixSize);
-            args.Add(matrixSize);
-            args.Add(matrixSize);
+            var args = new KernelArguments
+            {
+                bufferA,
+                bufferB,
+                bufferC,
+                matrixSize,
+                matrixSize,
+                matrixSize
+            };
             
             await matMulKernel.ExecuteAsync(args);
             await _accelerator.SynchronizeAsync();
@@ -1045,20 +1092,24 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         var executionTime = await MeasureExecutionTimeAsync(async () =>
         {
             // Compute mean
-            var meanArgs = new KernelArguments();
-            meanArgs.Add(dataBuffer);
-            meanArgs.Add(resultBuffer);
-            meanArgs.Add(dataSize);
-            meanArgs.Add(0); // Offset for mean result
+            var meanArgs = new KernelArguments
+            {
+                dataBuffer,
+                resultBuffer,
+                dataSize,
+                0 // Offset for mean result
+            };
             
             await meanKernel.ExecuteAsync(meanArgs);
             
             // Compute variance (depends on mean)
-            var varianceArgs = new KernelArguments();
-            varianceArgs.Add(dataBuffer);
-            varianceArgs.Add(resultBuffer);
-            varianceArgs.Add(dataSize);
-            varianceArgs.Add(1); // Offset for variance result
+            var varianceArgs = new KernelArguments
+            {
+                dataBuffer,
+                resultBuffer,
+                dataSize,
+                1 // Offset for variance result
+            };
             
             await varianceKernel.ExecuteAsync(varianceArgs);
             await _accelerator.SynchronizeAsync();
@@ -1115,8 +1166,13 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         
         await inputBuffer.CopyFromAsync(input.AsMemory(), CancellationToken.None);
         
-        var args = new KernelArguments();
-        args.Add(inputBuffer); args.Add(outputBuffer); args.Add(2.0f); args.Add(size);
+        var args = new KernelArguments
+        {
+            inputBuffer,
+            outputBuffer,
+            2.0f,
+            size
+        };
         await kernel.ExecuteAsync(args);
         await _accelerator.SynchronizeAsync();
         
@@ -1140,8 +1196,13 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         
         await inputBuffer.CopyFromAsync(input.AsMemory(), CancellationToken.None);
         
-        var args = new KernelArguments();
-        args.Add(inputBuffer); args.Add(outputBuffer); args.Add(3.0); args.Add(size);
+        var args = new KernelArguments
+        {
+            inputBuffer,
+            outputBuffer,
+            3.0,
+            size
+        };
         await kernel.ExecuteAsync(args);
         await _accelerator.SynchronizeAsync();
         
@@ -1165,8 +1226,13 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         
         await inputBuffer.CopyFromAsync(input.AsMemory(), CancellationToken.None);
         
-        var args = new KernelArguments();
-        args.Add(inputBuffer); args.Add(outputBuffer); args.Add(10); args.Add(size);
+        var args = new KernelArguments
+        {
+            inputBuffer,
+            outputBuffer,
+            10,
+            size
+        };
         await kernel.ExecuteAsync(args);
         await _accelerator.SynchronizeAsync();
         
@@ -1185,8 +1251,12 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         
         await inputBuffer.CopyFromAsync(input, CancellationToken.None);
         
-        var args = new KernelArguments();
-        args.Add(inputBuffer); args.Add(outputBuffer); args.Add(input.Length);
+        var args = new KernelArguments
+        {
+            inputBuffer,
+            outputBuffer,
+            input.Length
+        };
         await kernel.ExecuteAsync(args, CancellationToken.None);
         await accelerator.SynchronizeAsync();
         
@@ -1290,7 +1360,7 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         public override ReadOnlySpan<T> AsReadOnlySpan() => _data.AsSpan();
         public override Memory<T> AsMemory() => _data.AsMemory();
         public override ReadOnlyMemory<T> AsReadOnlyMemory() => _data.AsMemory();
-        public override DeviceMemory GetDeviceMemory() => new DeviceMemory(IntPtr.Zero, SizeInBytes);
+        public override DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
         public override MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => throw new NotImplementedException();
         public override MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => throw new NotImplementedException();
         public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
@@ -1443,12 +1513,11 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         public override ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override ValueTask OptimizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override void Clear() { }
-        
+
+
         protected override void Dispose(bool disposing)
-        {
             // Cleanup any resources
-            base.Dispose(disposing);
-        }
+            => base.Dispose(disposing);
     }
 
     /// <summary>
@@ -1530,10 +1599,7 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         }
 
         protected override ValueTask<ICompiledKernel> CompileKernelCoreAsync(
-            KernelDefinition definition, CompilationOptions options, CancellationToken cancellationToken)
-        {
-            throw new InvalidOperationException("Simulated GPU failure for testing");
-        }
+            KernelDefinition definition, CompilationOptions options, CancellationToken cancellationToken) => throw new InvalidOperationException("Simulated GPU failure for testing");
 
         protected override ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken)
             => ValueTask.CompletedTask;
@@ -1569,5 +1635,4 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         protected override ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken)
             => ValueTask.CompletedTask;
     }
-
 }

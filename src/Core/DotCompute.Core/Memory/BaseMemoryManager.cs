@@ -287,7 +287,6 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
             {
                 break;
             }
-
         } while (Interlocked.CompareExchange(ref _peakAllocatedBytes, newTotal, currentPeak) != currentPeak);
     }
 

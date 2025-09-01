@@ -12,7 +12,7 @@ namespace DotCompute.Core.Recovery.Models;
 /// </summary>
 public class RecoveryMetrics
 {
-    private readonly ConcurrentBag<RecoveryAttempt> _attempts = new();
+    private readonly ConcurrentBag<RecoveryAttempt> _attempts = [];
     private long _successCount;
     private long _failureCount;
 

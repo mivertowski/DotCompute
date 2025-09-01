@@ -15,7 +15,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         {
             Name = name;
             Configuration = configuration;
-            Nodes = new List<CudaGraphNode>();
+            Nodes = [];
             CreatedAt = DateTime.UtcNow;
         }
 
@@ -46,7 +46,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         public IntPtr Handle { get; set; }
         public GraphNodeType Type { get; set; }
         public string Id { get; set; } = string.Empty;
-        public List<CudaGraphNode> Dependencies { get; set; } = new();
+        public List<CudaGraphNode> Dependencies { get; set; } = [];
         public object? UserData { get; set; }
         public CudaGraph? ChildGraph { get; set; }
     }

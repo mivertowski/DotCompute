@@ -113,7 +113,7 @@ public class MemoryManagementTests
         memoryManager.OnAllocate = () => allocationCount++;
         
         // Act - Create and dispose multiple buffers
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             using var buffer = new UnifiedBuffer<int>(memoryManager, 128);
             await buffer.FillAsync(i);
@@ -121,7 +121,7 @@ public class MemoryManagementTests
         
         // Assert - Should have fewer allocations due to pooling
         _output.WriteLine($"Total allocations: {allocationCount}");
-        allocationCount.Should().BeLessOrEqualTo(3, "memory pooling should reduce allocation count");
+        allocationCount.Should().BeLessThanOrEqualTo(3, "memory pooling should reduce allocation count");
     }
 
     #endregion
@@ -211,9 +211,9 @@ public class MemoryManagementTests
         var tasks = new List<Task>();
         
         // Act - Multiple concurrent operations
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            int value = i;
+            var value = i;
             tasks.Add(Task.Run(async () =>
             {
                 await buffer.FillAsync(value, value * 100, 50);
@@ -426,7 +426,7 @@ public class MemoryManagementTests
         
         // Act - Create many buffers without disposing
         var buffers = new List<WeakReference>();
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             using var memoryManager = new TestUnifiedMemoryManager();
             var buffer = new UnifiedBuffer<byte>(memoryManager, 1024);
@@ -474,7 +474,7 @@ public class MemoryManagementTests
         var stopwatch = Stopwatch.StartNew();
         
         // Act - Measure copy bandwidth
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             await buffer.CopyFromAsync(data);
             await buffer.CopyToAsync(data.AsMemory());
@@ -505,7 +505,7 @@ public class MemoryManagementTests
         
         // Act
         var owners = new List<IMemoryOwner<byte>>();
-        for (int i = 0; i < allocationCount; i++)
+        for (var i = 0; i < allocationCount; i++)
         {
             owners.Add(allocator.Allocate<byte>(bufferSize));
         }
@@ -608,7 +608,7 @@ public class MemoryManagementTests
     /// </summary>
     private sealed class TestUnifiedMemoryManager : IUnifiedMemoryManager
     {
-        private readonly List<IUnifiedMemoryBuffer> _allocatedBuffers = new();
+        private readonly List<IUnifiedMemoryBuffer> _allocatedBuffers = [];
         private readonly MemoryPool<byte> _pool = MemoryPool<byte>.Shared;
         private volatile bool _disposed;
         
@@ -617,12 +617,13 @@ public class MemoryManagementTests
 
         // IUnifiedMemoryManager properties
         public IAccelerator Accelerator => null!;
-        public MemoryStatistics Statistics => new(
-            _allocatedBuffers.Sum(b => b.SizeInBytes),
-            _allocatedBuffers.Count,
-            _allocatedBuffers.Count(b => !b.IsDisposed),
-            _allocatedBuffers.Sum(b => b.SizeInBytes)
-        );
+        public MemoryStatistics Statistics => new()
+        {
+            TotalAllocated = _allocatedBuffers.Sum(b => b.SizeInBytes),
+            AllocationCount = _allocatedBuffers.Count,
+            ActiveAllocations = _allocatedBuffers.Count(b => !b.IsDisposed),
+            CurrentUsage = _allocatedBuffers.Sum(b => b.SizeInBytes)
+        };
         long IUnifiedMemoryManager.MaxAllocationSize => MaxAllocationSize;
         public long TotalAvailableMemory => long.MaxValue;
         public long CurrentAllocatedMemory => _allocatedBuffers.Sum(b => b.SizeInBytes);
@@ -658,30 +659,15 @@ public class MemoryManagementTests
             return buffer;
         }
 
-        public IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int length) where T : unmanaged
-        {
-            return buffer.Slice(offset, length);
-        }
+        public IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int length) where T : unmanaged => buffer.Slice(offset, length);
 
-        public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            return source.CopyToAsync(destination, cancellationToken);
-        }
+        public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged => source.CopyToAsync(destination, cancellationToken);
 
-        public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            return source.CopyToAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);
-        }
+        public ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) where T : unmanaged => source.CopyToAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);
 
-        public ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            return destination.CopyFromAsync(source, cancellationToken);
-        }
+        public ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) where T : unmanaged => destination.CopyFromAsync(source, cancellationToken);
 
-        public ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            return source.CopyToAsync(destination, cancellationToken);
-        }
+        public ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken = default) where T : unmanaged => source.CopyToAsync(destination, cancellationToken);
 
         public void Free(IUnifiedMemoryBuffer buffer)
         {
@@ -696,10 +682,8 @@ public class MemoryManagementTests
         }
 
         public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
-        {
             // Simulate memory optimization
-            return ValueTask.CompletedTask;
-        }
+            => ValueTask.CompletedTask;
 
         public void Clear()
         {
@@ -712,7 +696,8 @@ public class MemoryManagementTests
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
             _disposed = true;
             Clear();
             _pool.Dispose();
@@ -720,7 +705,8 @@ public class MemoryManagementTests
 
         public async ValueTask DisposeAsync()
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
             _disposed = true;
             
             foreach (var buffer in _allocatedBuffers.ToList())
@@ -756,7 +742,7 @@ public class MemoryManagementTests
 
         public long SizeInBytes { get; }
         public int Length { get; }
-        public IntPtr DevicePointer => IntPtr.Zero;
+        public static IntPtr DevicePointer => IntPtr.Zero;
         public IAccelerator Accelerator => null!;
         public MemoryOptions Options => MemoryOptions.None;
         public BufferState State => _state;
@@ -865,10 +851,7 @@ public class MemoryManagementTests
             MarkHostDirty();
         }
 
-        public async ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long byteOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
-        {
-            throw new NotSupportedException("Type conversion not supported in test implementation");
-        }
+        public async ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long byteOffset, CancellationToken cancellationToken = default) where TSource : unmanaged => throw new NotSupportedException("Type conversion not supported in test implementation");
 
         public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         {
@@ -876,15 +859,9 @@ public class MemoryManagementTests
             _hostArray.AsSpan().CopyTo(destination.Span);
         }
 
-        public async ValueTask CopyToAsync<TDestination>(Memory<TDestination> destination, long byteOffset, CancellationToken cancellationToken = default) where TDestination : unmanaged
-        {
-            throw new NotSupportedException("Type conversion not supported in test implementation");
-        }
+        public async ValueTask CopyToAsync<TDestination>(Memory<TDestination> destination, long byteOffset, CancellationToken cancellationToken = default) where TDestination : unmanaged => throw new NotSupportedException("Type conversion not supported in test implementation");
 
-        public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
-        {
-            await destination.CopyFromAsync(_hostArray, cancellationToken);
-        }
+        public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => await destination.CopyFromAsync(_hostArray, cancellationToken);
 
         public async ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
         {
@@ -916,29 +893,19 @@ public class MemoryManagementTests
         }
 
         public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
-        {
             // Return a mock type-converted buffer
-            return new TestUnifiedBuffer<TNew>(Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
-        }
+            => new TestUnifiedBuffer<TNew>(Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
 
-        public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
-        {
-            return new MappedMemory<T>(AsMemory());
-        }
+        public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => new(AsMemory());
 
-        public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
-        {
-            return new MappedMemory<T>(_hostArray.AsMemory(offset, length));
-        }
+        public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => new(_hostArray.AsMemory(offset, length));
 
-        public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-        {
-            return ValueTask.FromResult(Map(mode));
-        }
+        public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
             _disposed = true;
             
             if (_handle.IsAllocated)
@@ -968,29 +935,34 @@ public class MemoryManagementTests
         }
 
         public long SizeInBytes { get; }
-        public IntPtr DevicePointer => IntPtr.Zero;
-        public IAccelerator Accelerator => null!;
+        public static IntPtr DevicePointer => IntPtr.Zero;
+        public static IAccelerator Accelerator => null!;
         public MemoryOptions Options => MemoryOptions.None;
         public BufferState State => BufferState.HostOnly;
         public bool IsDisposed => _disposed;
-        public bool IsOnHost => true;
-        public bool IsOnDevice => false;
-        public bool IsDirty => false;
+        public static bool IsOnHost => true;
+        public static bool IsOnDevice => false;
+        public static bool IsDirty => false;
 
         public DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
-        public void EnsureOnHost() { }
-        public void EnsureOnDevice() { }
-        public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public void Synchronize() { }
-        public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public void MarkHostDirty() { }
-        public void MarkDeviceDirty() { }
+        public static void EnsureOnHost() { }
+        public static void EnsureOnDevice() { }
+        public static ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static void Synchronize() { }
+        public static ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static void MarkHostDirty() { }
+        public static void MarkDeviceDirty() { }
+        
+        // Copy operations - minimal implementation for testing
+        public static ValueTask CopyFromAsync(ReadOnlyMemory<byte> source, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
+        public static ValueTask CopyToAsync(Memory<byte> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask CopyToAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
+        public static ValueTask CopyToAsync(IUnifiedMemoryBuffer destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static ValueTask FillAsync(byte value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
-        public void Dispose()
-        {
-            _disposed = true;
-        }
+        public void Dispose() => _disposed = true;
 
         public ValueTask DisposeAsync()
         {
@@ -1010,8 +982,5 @@ internal static class TestExtensions
     /// <summary>
     /// Copies data from a source array to a span.
     /// </summary>
-    public static void CopyFrom<T>(this Span<T> destination, T[] source)
-    {
-        source.AsSpan().CopyTo(destination);
-    }
+    public static void CopyFrom<T>(this Span<T> destination, T[] source) => source.AsSpan().CopyTo(destination);
 }// Additional methods for TestRawUnifiedBuffer...

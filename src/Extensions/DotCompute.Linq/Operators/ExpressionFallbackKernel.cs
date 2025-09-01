@@ -58,9 +58,9 @@ public class ExpressionFallbackKernel : Interfaces.IKernel
     };
 
     /// <inheritdoc/>
-    public Task CompileAsync(CancellationToken cancellationToken = default) =>
+    public Task CompileAsync(CancellationToken cancellationToken = default)
         // Already compiled or interpreted
-        Task.CompletedTask;
+        => Task.CompletedTask;
 
     /// <inheritdoc/>
     public async Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)

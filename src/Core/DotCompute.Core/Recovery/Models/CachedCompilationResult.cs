@@ -70,7 +70,7 @@ public class CachedCompilationResult
     /// <summary>
     /// Gets or sets additional metadata
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Gets a value indicating whether this cache entry has expired

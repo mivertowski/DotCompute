@@ -75,7 +75,7 @@ namespace DotCompute.Backends.CUDA.Graphs.Models
         /// <summary>
         /// Gets the average launch time.
         /// </summary>
-        public TimeSpan AverageLaunchTime => 
-            LaunchCount > 0 ? TotalLaunchTime / LaunchCount : TimeSpan.Zero;
+        public TimeSpan AverageLaunchTime
+            => LaunchCount > 0 ? TotalLaunchTime / LaunchCount : TimeSpan.Zero;
     }
 }

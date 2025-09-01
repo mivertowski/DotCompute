@@ -111,7 +111,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var expected = new float[elementCount];
             
             // Calculate expected results
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 expected[i] = testData1[i] + testData2[i];
             }
@@ -259,7 +259,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Basic sanity check - results should not be all zeros
             var nonZeroCount = 0;
-            for (int i = 0; i < Math.Min(1000, results.Length); i++)
+            for (var i = 0; i < Math.Min(1000, results.Length); i++)
             {
                 if (Math.Abs(results[i]) > 0.001f) nonZeroCount++;
             }
@@ -489,7 +489,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var perfMeasurement = new PerformanceMeasurement("Host to Device Transfer", Output);
             
             perfMeasurement.Start();
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 await buffer.CopyFromAsync(testData);
                 await accelerator.SynchronizeAsync();
@@ -504,7 +504,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             perfMeasurement = new PerformanceMeasurement("Device to Host Transfer", Output);
             
             perfMeasurement.Start();
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 await buffer.CopyToAsync(results);
                 await accelerator.SynchronizeAsync();

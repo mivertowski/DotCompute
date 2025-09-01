@@ -37,7 +37,7 @@ public sealed partial class KernelManager : IDisposable
         _kernelCache = new ConcurrentDictionary<string, ManagedCompiledKernel>();
         _compilationSemaphore = new SemaphoreSlim(Environment.ProcessorCount);
 
-        InitializeBuiltInGenerators();
+            InitializeBuiltInGenerators();
     }
 
     /// <summary>
@@ -299,7 +299,7 @@ public sealed partial class KernelManager : IDisposable
         }
     }
 
-    private void InitializeBuiltInGenerators()
+    private static void InitializeBuiltInGenerators()
     {
         // Generators are now handled by the backend-specific implementations
         // No need for separate kernel generators in Core

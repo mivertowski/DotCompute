@@ -242,7 +242,7 @@ public static class MethodBodyExtractor
         
         var invocations = new List<MethodInvocationInfo>();
         
-        SyntaxNode? searchRoot = method.Body ?? (SyntaxNode?)method.ExpressionBody;
+        var searchRoot = method.Body ?? (SyntaxNode?)method.ExpressionBody;
         if (searchRoot == null)
         {
             return invocations;
@@ -320,7 +320,7 @@ public static class MethodBodyExtractor
             IsExpressionBodied = method.ExpressionBody != null
         };
         
-        SyntaxNode? searchRoot = method.Body ?? (SyntaxNode?)method.ExpressionBody;
+        var searchRoot = method.Body ?? (SyntaxNode?)method.ExpressionBody;
         if (searchRoot == null)
         {
             return analysis;
@@ -392,7 +392,7 @@ public static class MethodBodyExtractor
     public class MethodInvocationInfo
     {
         public string MethodName { get; set; } = string.Empty;
-        public List<string> Arguments { get; set; } = new();
+        public List<string> Arguments { get; set; } = [];
         public string FullExpression { get; set; } = string.Empty;
     }
 

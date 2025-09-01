@@ -252,7 +252,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         KernelDefinition definition,
         Dictionary<string, object> additionalMetadata)
     {
-        var metadata = definition.Metadata ?? new Dictionary<string, object>();
+        var metadata = definition.Metadata ?? [];
         
         // Add compilation metadata
         metadata["Compiler"] = CompilerName;
@@ -286,10 +286,10 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// <inheritdoc/>
     public virtual async ValueTask<DotCompute.Abstractions.Validation.UnifiedValidationResult> ValidateAsync(
         KernelDefinition source,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default)
         // For base implementation, use synchronous validation
         // Derived classes can override for async validation
-        await ValueTask.FromResult(Validate(source));
+        => await ValueTask.FromResult(Validate(source));
 
 
     /// <inheritdoc/>
@@ -315,9 +315,9 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     protected virtual ValueTask<ICompiledKernel> OptimizeKernelCore(
         ICompiledKernel kernel,
         OptimizationLevel level,
-        CancellationToken cancellationToken) =>
+        CancellationToken cancellationToken)
         // Default: no optimization
-        ValueTask.FromResult(kernel);
+        => ValueTask.FromResult(kernel);
 }
 
 /// <summary>
@@ -342,5 +342,4 @@ public class KernelCompilationException : Exception
     public KernelCompilationException()
     {
     }
-
 }

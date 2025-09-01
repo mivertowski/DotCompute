@@ -71,64 +71,51 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
         // Log hardware information for debugging
         LogHardwareInfo();
     }
-    
+
+
     /// <summary>
     /// Sets the test output helper for logging.
     /// </summary>
     /// <param name="output">The test output helper.</param>
-    public void SetOutput(ITestOutputHelper output)
-    {
-        Output = output;
-    }
-    
+    public void SetOutput(ITestOutputHelper output) => Output = output;
+
+
     /// <summary>
     /// Skips the current test if CUDA is not available.
     /// </summary>
-    public void RequireCuda()
-    {
-        Skip.If(!IsCudaAvailable, "CUDA is not available on this system");
-    }
-    
+    public void RequireCuda() => Skip.If(!IsCudaAvailable, "CUDA is not available on this system");
+
+
     /// <summary>
     /// Skips the current test if OpenCL is not available.
     /// </summary>
-    public void RequireOpenCL()
-    {
-        Skip.If(!IsOpenCLAvailable, "OpenCL is not available on this system");
-    }
-    
+    public void RequireOpenCL() => Skip.If(!IsOpenCLAvailable, "OpenCL is not available on this system");
+
+
     /// <summary>
     /// Skips the current test if GPU is not available.
     /// </summary>
-    public void RequireGpu()
-    {
-        Skip.If(!IsGpuAvailable, "GPU support (CUDA or OpenCL) is not available on this system");
-    }
-    
+    public void RequireGpu() => Skip.If(!IsGpuAvailable, "GPU support (CUDA or OpenCL) is not available on this system");
+
+
     /// <summary>
     /// Skips the current test if multi-GPU setup is not available.
     /// </summary>
-    public void RequireMultiGpu()
-    {
-        Skip.If(!IsMultiGpuAvailable, "Multi-GPU setup is not available on this system");
-    }
-    
+    public void RequireMultiGpu() => Skip.If(!IsMultiGpuAvailable, "Multi-GPU setup is not available on this system");
+
+
     /// <summary>
     /// Skips the current test if high-performance CPU features are not available.
     /// </summary>
-    public void RequireHighPerformanceCpu()
-    {
-        Skip.If(!IsHighPerformanceCpuAvailable, "High-performance CPU features (AVX, 4+ cores) are not available on this system");
-    }
-    
+    public void RequireHighPerformanceCpu() => Skip.If(!IsHighPerformanceCpuAvailable, "High-performance CPU features (AVX, 4+ cores) are not available on this system");
+
+
     /// <summary>
     /// Skips the current test if sufficient memory is not available.
     /// </summary>
-    public void RequireHighMemory()
-    {
-        Skip.If(!IsHighMemoryAvailable, "Insufficient memory available for high-memory tests (4GB+ required)");
-    }
-    
+    public void RequireHighMemory() => Skip.If(!IsHighMemoryAvailable, "Insufficient memory available for high-memory tests (4GB+ required)");
+
+
     /// <summary>
     /// Creates a temporary file in the fixture's temp directory.
     /// </summary>
@@ -159,16 +146,15 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
         
         return dirPath;
     }
-    
+
+
     /// <summary>
     /// Logs a message to the test output if available.
     /// </summary>
     /// <param name="message">The message to log.</param>
-    public void Log(string message)
-    {
-        Output?.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {message}");
-    }
-    
+    public void Log(string message) => Output?.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {message}");
+
+
     /// <summary>
     /// Logs hardware information for debugging purposes.
     /// </summary>
@@ -259,17 +245,17 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
             _disposed = true;
         }
     }
-    
+
+
     /// <summary>
     /// Performs asynchronous cleanup operations.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     protected virtual ValueTask DisposeAsyncCore()
-    {
         // Perform any async cleanup here
-        return ValueTask.CompletedTask;
-    }
-    
+        => ValueTask.CompletedTask;
+
+
     /// <summary>
     /// Finalizer for CommonTestFixture.
     /// </summary>

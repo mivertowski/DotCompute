@@ -161,7 +161,7 @@ public class PluginServiceProvider : IPluginServiceProvider, IDisposable
         _ = _pluginServices.TryRemove(pluginId, out _);
     }
 
-    private IServiceProvider CreatePluginServiceProvider(IServiceCollection pluginServices, IServiceProvider parentProvider)
+    private static IServiceProvider CreatePluginServiceProvider(IServiceCollection pluginServices, IServiceProvider parentProvider)
         // Simple fallback implementation - return the parent provider for now
         // TODO: Implement proper plugin service isolation when ServiceCollection extensions are available
 
@@ -415,7 +415,7 @@ public class PluginDependencyResolver : IPluginDependencyResolver
             var dependencies = GetRequiredServices(type);
             foreach (var dependency in dependencies)
             {
-                var dependencyCircular = DetectCircularDependencies(dependency, serviceProvider, new HashSet<Type>(visited));
+                var dependencyCircular = DetectCircularDependencies(dependency, serviceProvider, [.. visited]);
                 circular.AddRange(dependencyCircular);
             }
         }

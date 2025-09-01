@@ -49,7 +49,7 @@ public sealed class BlasOperationDescriptor
     /// <summary>
     /// Gets or sets the input matrices.
     /// </summary>
-    public List<MatrixDescriptor> InputMatrices { get; set; } = new();
+    public List<MatrixDescriptor> InputMatrices { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the output matrix.
@@ -59,7 +59,7 @@ public sealed class BlasOperationDescriptor
     /// <summary>
     /// Gets or sets the operation parameters.
     /// </summary>
-    public Dictionary<string, object> Parameters { get; set; } = new();
+    public Dictionary<string, object> Parameters { get; set; } = [];
 }
 
 /// <summary>

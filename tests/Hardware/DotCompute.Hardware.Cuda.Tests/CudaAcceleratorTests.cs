@@ -93,7 +93,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var hostData = new float[elementCount];
             
             // Initialize test data
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostData[i] = i * 2.5f;
             }
@@ -125,7 +125,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var resultData = new float[elementCount];
             
             // Initialize test data
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 originalData[i] = (float)Math.Sin(i * 0.1);
             }
@@ -146,7 +146,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Transfer rate: {transferRate:F2} MB/s");
             
             // Verify data integrity
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 resultData[i].Should().BeApproximately(originalData[i], 0.0001f);
             }
@@ -236,7 +236,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int elementCount = 1024;
             var testData = new float[elementCount];
             
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 testData[i] = i * 0.5f;
             }
@@ -248,7 +248,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var resultData = new float[elementCount];
             await unifiedBuffer.ReadAsync(resultData.AsSpan(), 0);
             
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 resultData[i].Should().BeApproximately(testData[i], 0.0001f);
             }

@@ -421,7 +421,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             return precisions;
         }
 
-        private async Task<CudaTensorCoreExecutionMetrics> ExecuteSpecificTensorOperationAsync(
+        private static async Task<CudaTensorCoreExecutionMetrics> ExecuteSpecificTensorOperationAsync(
             CudaTensorOperation operation,
             CancellationToken cancellationToken)
         {

@@ -66,7 +66,7 @@ public sealed class MetalMemoryBufferView : IUnifiedMemoryBuffer
     }
 
     /// <inheritdoc/>
-    public ValueTask DisposeAsync() =>
+    public ValueTask DisposeAsync()
         // Views don't dispose the parent buffer
-        ValueTask.CompletedTask;
+        => ValueTask.CompletedTask;
 }

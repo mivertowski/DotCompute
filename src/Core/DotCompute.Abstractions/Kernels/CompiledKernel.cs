@@ -62,7 +62,7 @@ public class CompiledKernel : IDisposable
     /// </summary>
     public byte[] Cubin 
     { 
-        get => Metadata.TryGetValue(nameof(Cubin), out var value) ? value as byte[] ?? Array.Empty<byte>() : Array.Empty<byte>();
+        get => Metadata.TryGetValue(nameof(Cubin), out var value) ? value as byte[] ?? [] : [];
         set => Metadata[nameof(Cubin)] = value; 
     }
 
@@ -71,7 +71,7 @@ public class CompiledKernel : IDisposable
     /// </summary>
     public byte[] Binary 
     { 
-        get => Metadata.TryGetValue(nameof(Binary), out var value) ? value as byte[] ?? Array.Empty<byte>() : Array.Empty<byte>();
+        get => Metadata.TryGetValue(nameof(Binary), out var value) ? value as byte[] ?? [] : [];
         set => Metadata[nameof(Binary)] = value; 
     }
 

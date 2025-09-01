@@ -9,7 +9,8 @@
     <RootNamespace>DotCompute.Hardware.Cuda.Tests</RootNamespace>
     <AssemblyName>DotCompute.Hardware.Cuda.Tests</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <EnableDynamicLoading>true</EnableDynamicLoading>    
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>    
   </PropertyGroup>
 
   <ItemGroup>

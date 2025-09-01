@@ -24,8 +24,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// </remarks>
     public sealed class CudaGraph : IDisposable
     {
-        private readonly object _lock = new object();
-        private readonly ConcurrentBag<CudaGraphNode> _nodes = new ConcurrentBag<CudaGraphNode>();
+        private readonly object _lock = new();
+        private readonly ConcurrentBag<CudaGraphNode> _nodes = [];
         private volatile bool _disposed;
 
         /// <summary>
@@ -50,7 +50,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         public CudaGraph(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
+            {
+
                 throw new ArgumentException("Graph name cannot be null or empty.", nameof(name));
+            }
+
 
             CreatedAt = DateTimeOffset.UtcNow;
             Id = Guid.NewGuid().ToString();
@@ -205,15 +209,23 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             if (string.IsNullOrWhiteSpace(nodeId))
+            {
+
                 throw new ArgumentException("Node ID cannot be null or empty.", nameof(nodeId));
+            }
+
 
             lock (_lock)
             {
                 var nodeToRemove = _nodes.FirstOrDefault(n => n.Id == nodeId);
                 if (nodeToRemove == null)
+                {
+
                     return false;
+                }
 
                 // Create a new collection without the removed node
+
                 var remainingNodes = _nodes.Where(n => n.Id != nodeId).ToList();
                 
                 // Remove dependencies to the deleted node
@@ -248,7 +260,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             if (string.IsNullOrWhiteSpace(nodeId))
+            {
+
                 throw new ArgumentException("Node ID cannot be null or empty.", nameof(nodeId));
+            }
+
 
             return _nodes.FirstOrDefault(n => n.Id == nodeId);
         }
@@ -301,12 +317,18 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         public void Dispose()
         {
             if (_disposed)
+            {
                 return;
+            }
+
 
             lock (_lock)
             {
                 if (_disposed)
+                {
                     return;
+                }
+
 
                 try
                 {

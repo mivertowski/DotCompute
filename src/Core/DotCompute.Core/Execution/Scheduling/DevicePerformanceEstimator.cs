@@ -13,9 +13,9 @@ internal class DevicePerformanceEstimator
 {
     public DevicePerformanceEstimator()
     {
-        _devicePerformanceScores = new Dictionary<string, double>();
+        _devicePerformanceScores = [];
     }
-    private readonly Dictionary<string, double> _devicePerformanceScores = new();
+    private readonly Dictionary<string, double> _devicePerformanceScores = [];
     
     /// <summary>
     /// Estimates the execution time for a kernel on a specific device.
@@ -44,26 +44,26 @@ internal class DevicePerformanceEstimator
     /// <summary>
     /// Gets the relative performance factor for a device.
     /// </summary>
-    public double GetDevicePerformanceFactor(IAccelerator device) =>
+    public static double GetDevicePerformanceFactor(IAccelerator device)
         // TODO: Calculate based on device capabilities and historical performance
         // TODO: Use device.Type to determine performance factor
         // For now, return a default value
-        1.0;
+        => 1.0;
 
 
     /// <summary>
     /// Predicts memory requirements for kernel execution.
     /// </summary>
-    public long PredictMemoryRequirement(string kernelName, long inputDataSize) =>
+    public static long PredictMemoryRequirement(string kernelName, long inputDataSize)
         // TODO: Implement based on kernel analysis and historical data
         // For now, estimate 2x input size for working memory
-        inputDataSize * 2;
+        => inputDataSize * 2;
 
 
     /// <summary>
     /// Calculates device weight asynchronously.
     /// </summary>
-    public async Task<double> CalculateDeviceWeightAsync(IAccelerator device, CancellationToken cancellationToken = default)
+    public static async Task<double> CalculateDeviceWeightAsync(IAccelerator device, CancellationToken cancellationToken = default)
     {
         // TODO: Implement proper device weight calculation
         await Task.Delay(1, cancellationToken);

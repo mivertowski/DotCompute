@@ -68,7 +68,7 @@ public class KernelArguments : IEnumerable<object?>
     public KernelArguments(params object?[] arguments)
     {
         ArgumentNullException.ThrowIfNull(arguments);
-        _arguments = new List<object?>(arguments);
+        _arguments = [.. arguments];
     }
 
     /// <summary>
@@ -222,7 +222,7 @@ public class KernelArguments : IEnumerable<object?>
     /// <param name="capacity">The initial capacity for arguments.</param>
     /// <returns>A new KernelArguments instance with the specified capacity.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="capacity"/> is negative.</exception>
-    public static KernelArguments Create(int capacity) => new KernelArguments(capacity);
+    public static KernelArguments Create(int capacity) => new(capacity);
 
     /// <summary>
     /// Creates a new <see cref="KernelArguments"/> instance with the specified arguments.
@@ -230,7 +230,7 @@ public class KernelArguments : IEnumerable<object?>
     /// <param name="arguments">The initial arguments to store.</param>
     /// <returns>A new KernelArguments instance with the specified arguments.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="arguments"/> is null.</exception>
-    public static KernelArguments Create(params object?[] arguments) => new KernelArguments(arguments);
+    public static KernelArguments Create(params object?[] arguments) => [.. arguments];
 
     /// <summary>
     /// Removes all arguments from this instance, resetting the Count to zero.

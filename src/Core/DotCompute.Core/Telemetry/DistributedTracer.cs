@@ -213,9 +213,9 @@ public sealed class DistributedTracer : IDisposable
 
         spanContext.Events.Add(eventData);
         _ = (spanContext.Activity?.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow,
-            new ActivityTagsCollection(attributes.Select(kvp =>
+            [.. attributes.Select(kvp =>
 
-                new KeyValuePair<string, object?>(kvp.Key, kvp.Value))))));
+                new KeyValuePair<string, object?>(kvp.Key, kvp.Value))])));
 
 
         _logger.LogTrace("Recorded event '{EventName}' in span {SpanId}", eventName, spanContext.SpanId);

@@ -83,7 +83,7 @@ public class Avx2CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                }");
     }
     
-    private void GenerateAvx2ArithmeticOperations(StringBuilder sb)
+    private static void GenerateAvx2ArithmeticOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX2 arithmetic operations");
         _ = sb.AppendLine("                    fixed (float* pInput1 = &input1[i], pInput2 = &input2[i], pOutput = &output[i])");
@@ -95,7 +95,7 @@ public class Avx2CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                    }");
     }
     
-    private void GenerateAvx2MemoryOperations(StringBuilder sb)
+    private static void GenerateAvx2MemoryOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX2 memory operations");
         _ = sb.AppendLine("                    fixed (float* pInput = &input[i], pOutput = &output[i])");
@@ -105,7 +105,7 @@ public class Avx2CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                    }");
     }
     
-    private void GenerateAvx2GenericOperations(StringBuilder sb)
+    private static void GenerateAvx2GenericOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX2 generic operations");
         _ = sb.AppendLine("                    fixed (float* pData = &data[i], pOutput = &output[i])");

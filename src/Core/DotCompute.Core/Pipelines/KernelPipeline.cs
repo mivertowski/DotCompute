@@ -107,7 +107,7 @@ namespace DotCompute.Core.Pipelines
                 {
                     throw new PipelineValidationException(
                         "Pipeline validation failed",
-                        validationResult.Errors ?? new List<ValidationIssue>(),
+                        validationResult.Errors ?? [],
                         validationResult.Warnings);
                 }
 

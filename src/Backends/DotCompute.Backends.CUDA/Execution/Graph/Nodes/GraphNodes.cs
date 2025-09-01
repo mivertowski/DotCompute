@@ -25,7 +25,7 @@ public abstract class GraphNode
     /// <summary>
     /// Gets or sets the list of dependency nodes.
     /// </summary>
-    public List<GraphNode> Dependencies { get; set; } = new();
+    public List<GraphNode> Dependencies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets user-defined data associated with this node.

@@ -215,7 +215,7 @@ public class SimdOperationsTests
         var expected = new float[vectorSize];
         var result = new float[vectorSize];
         
-        for (int i = 0; i < vectorSize; i++)
+        for (var i = 0; i < vectorSize; i++)
         {
             a[i] = i + 1.0f;
             b[i] = i + 2.0f;
@@ -241,7 +241,7 @@ public class SimdOperationsTests
         var expected = new float[vectorSize];
         var result = new float[vectorSize];
         
-        for (int i = 0; i < vectorSize; i++)
+        for (var i = 0; i < vectorSize; i++)
         {
             a[i] = i + 1.0f;
             b[i] = 2.0f;
@@ -266,7 +266,7 @@ public class SimdOperationsTests
         var scalarResult = new float[size];
         var vectorResult = new float[size];
         
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             a[i] = i;
             b[i] = i + 1;
@@ -274,7 +274,7 @@ public class SimdOperationsTests
         
         // Act - Scalar operation
         var scalarStopwatch = System.Diagnostics.Stopwatch.StartNew();
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             scalarResult[i] = a[i] + b[i];
         }
@@ -388,7 +388,7 @@ public class SimdOperationsTests
         var tasks = new Task<float[]>[Environment.ProcessorCount];
         
         // Act
-        for (int i = 0; i < tasks.Length; i++)
+        for (var i = 0; i < tasks.Length; i++)
         {
             tasks[i] = Task.Run(() =>
             {
@@ -419,10 +419,10 @@ public class SimdOperationsTests
         
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
-            int vectorSize = Vector<float>.Count;
-            int vectorLength = a.Length - (a.Length % vectorSize);
+            var vectorSize = Vector<float>.Count;
+            var vectorLength = a.Length - (a.Length % vectorSize);
             
-            for (int i = 0; i < vectorLength; i += vectorSize)
+            for (var i = 0; i < vectorLength; i += vectorSize)
             {
                 var vectorA = new Vector<float>(a, i);
                 var vectorB = new Vector<float>(b, i);
@@ -430,7 +430,7 @@ public class SimdOperationsTests
             }
             
             // Handle remaining elements
-            for (int i = vectorLength; i < a.Length; i++)
+            for (var i = vectorLength; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -443,7 +443,7 @@ public class SimdOperationsTests
     
     private static void PerformScalarAddition(float[] a, float[] b, float[] result)
     {
-        for (int i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -457,24 +457,24 @@ public class SimdOperationsTests
         
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
-            int vectorSize = Vector<float>.Count;
-            int vectorLength = a.Length - (a.Length % vectorSize);
+            var vectorSize = Vector<float>.Count;
+            var vectorLength = a.Length - (a.Length % vectorSize);
             
-            for (int i = 0; i < vectorLength; i += vectorSize)
+            for (var i = 0; i < vectorLength; i += vectorSize)
             {
                 var vectorA = new Vector<float>(a, i);
                 var vectorB = new Vector<float>(b, i);
                 (vectorA * vectorB).CopyTo(result, i);
             }
             
-            for (int i = vectorLength; i < a.Length; i++)
+            for (var i = vectorLength; i < a.Length; i++)
             {
                 result[i] = a[i] * b[i];
             }
         }
         else
         {
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] * b[i];
             }
@@ -485,23 +485,23 @@ public class SimdOperationsTests
     {
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
-            int vectorSize = Vector<float>.Count;
-            int vectorLength = input.Length - (input.Length % vectorSize);
+            var vectorSize = Vector<float>.Count;
+            var vectorLength = input.Length - (input.Length % vectorSize);
             
-            for (int i = 0; i < vectorLength; i += vectorSize)
+            for (var i = 0; i < vectorLength; i += vectorSize)
             {
                 var vector = new Vector<float>(input, i);
                 Vector.Abs(vector).CopyTo(result, i);
             }
             
-            for (int i = vectorLength; i < input.Length; i++)
+            for (var i = vectorLength; i < input.Length; i++)
             {
                 result[i] = Math.Abs(input[i]);
             }
         }
         else
         {
-            for (int i = 0; i < input.Length; i++)
+            for (var i = 0; i < input.Length; i++)
             {
                 result[i] = Math.Abs(input[i]);
             }
@@ -512,23 +512,23 @@ public class SimdOperationsTests
     {
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
-            int vectorSize = Vector<float>.Count;
-            int vectorLength = input.Length - (input.Length % vectorSize);
+            var vectorSize = Vector<float>.Count;
+            var vectorLength = input.Length - (input.Length % vectorSize);
             
-            for (int i = 0; i < vectorLength; i += vectorSize)
+            for (var i = 0; i < vectorLength; i += vectorSize)
             {
                 var vector = new Vector<float>(input, i);
                 Vector.SquareRoot(vector).CopyTo(result, i);
             }
             
-            for (int i = vectorLength; i < input.Length; i++)
+            for (var i = vectorLength; i < input.Length; i++)
             {
                 result[i] = (float)Math.Sqrt(input[i]);
             }
         }
         else
         {
-            for (int i = 0; i < input.Length; i++)
+            for (var i = 0; i < input.Length; i++)
             {
                 result[i] = (float)Math.Sqrt(input[i]);
             }

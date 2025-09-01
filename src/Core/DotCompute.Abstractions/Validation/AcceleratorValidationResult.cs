@@ -156,7 +156,6 @@ public sealed class AcceleratorValidationResult
             {
                 result.AddWarning(warning, "ACCELERATOR_VALIDATION", "AcceleratorFactory");
             }
-
         }
 
         return new AcceleratorValidationResult(result, acceleratorType, deviceIndex);
@@ -355,5 +354,4 @@ public sealed class AcceleratorValidationException : Exception
     {
         ValidationResult = AcceleratorValidationResult.Failure("Unknown accelerator validation error");
     }
-
 }

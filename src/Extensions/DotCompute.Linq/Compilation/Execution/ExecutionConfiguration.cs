@@ -71,8 +71,8 @@ public class ExecutionConfiguration
     /// <value>
     /// The total number of threads across all blocks and grids.
     /// </value>
-    public long TotalThreads =>
-        (long)GridDimensions.X * GridDimensions.Y * GridDimensions.Z *
+    public long TotalThreads
+        => (long)GridDimensions.X * GridDimensions.Y * GridDimensions.Z *
         BlockDimensions.X * BlockDimensions.Y * BlockDimensions.Z;
 
     /// <summary>
@@ -81,6 +81,6 @@ public class ExecutionConfiguration
     /// <value>
     /// The total number of blocks in the grid.
     /// </value>
-    public long TotalBlocks =>
-        (long)GridDimensions.X * GridDimensions.Y * GridDimensions.Z;
+    public long TotalBlocks
+        => (long)GridDimensions.X * GridDimensions.Y * GridDimensions.Z;
 }

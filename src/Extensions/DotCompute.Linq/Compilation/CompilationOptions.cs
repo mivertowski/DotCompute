@@ -62,7 +62,7 @@ public class CompilationOptions
     /// <summary>
     /// Gets or sets metadata for the compilation.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether to enable operator fusion.

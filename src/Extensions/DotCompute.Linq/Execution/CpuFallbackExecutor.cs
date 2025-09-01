@@ -117,7 +117,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
         }
     }
 
-    private T ExecuteExpression<T>(Expression expression)
+    private static T ExecuteExpression<T>(Expression expression)
     {
         // Compile and execute the expression
         var lambda = Expression.Lambda<Func<T>>(expression);
@@ -523,7 +523,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private float SumVectorFloat(float[] source)
+    private static float SumVectorFloat(float[] source)
     {
         var sumVec = Vector<float>.Zero;
         var vectorSize = Vector<float>.Count;
@@ -553,7 +553,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private double SumSimdDouble(double[] source)
+    private static double SumSimdDouble(double[] source)
     {
         var sumVec = Vector<double>.Zero;
         var vectorSize = Vector<double>.Count;
@@ -580,7 +580,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int SumSimdInt32(int[] source)
+    private static int SumSimdInt32(int[] source)
     {
         var sumVec = Vector<int>.Zero;
         var vectorSize = Vector<int>.Count;
@@ -606,7 +606,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
         return result;
     }
 
-    private float AggregateSimdFloat(float[] source, float seed, Func<float, float, float> func)
+    private static float AggregateSimdFloat(float[] source, float seed, Func<float, float, float> func)
     {
         // For general aggregation, we need to fall back to scalar
         // as the function may not be vectorizable
@@ -618,7 +618,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
         return result;
     }
 
-    private double AggregateSimdDouble(double[] source, double seed, Func<double, double, double> func)
+    private static double AggregateSimdDouble(double[] source, double seed, Func<double, double, double> func)
     {
         var result = seed;
         for (var i = 0; i < source.Length; i++)
@@ -628,7 +628,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
         return result;
     }
 
-    private int AggregateSimdInt32(int[] source, int seed, Func<int, int, int> func)
+    private static int AggregateSimdInt32(int[] source, int seed, Func<int, int, int> func)
     {
         var result = seed;
         for (var i = 0; i < source.Length; i++)
@@ -642,7 +642,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
 
     #region Helper Methods
 
-    private bool IsSimpleOperation<T>(Func<T, T> operation)
+    private static bool IsSimpleOperation<T>(Func<T, T> operation)
     {
         // Check if the operation is simple enough to vectorize
         // This is a simplified check - real implementation would analyze the expression tree
@@ -653,7 +653,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
                method.Name.Contains("Divide");
     }
 
-    private Vector<float> ApplySimpleOperationFloat(Vector<float> vec, Func<float, float> operation)
+    private static Vector<float> ApplySimpleOperationFloat(Vector<float> vec, Func<float, float> operation)
     {
         // Apply simple operations that can be vectorized
         // This is a simplified implementation
@@ -671,7 +671,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
         return vec;
     }
 
-    private Vector<double> ApplySimpleOperationDouble(Vector<double> vec, Func<double, double> operation)
+    private static Vector<double> ApplySimpleOperationDouble(Vector<double> vec, Func<double, double> operation)
     {
         var methodName = operation.Method.Name;
 
@@ -710,7 +710,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
         }
     }
 
-    private int Partition<T, TKey>(T[] array, Func<T, TKey> keySelector, int left, int right)
+    private static int Partition<T, TKey>(T[] array, Func<T, TKey> keySelector, int left, int right)
         where TKey : IComparable<TKey>
     {
         var pivot = array[right];

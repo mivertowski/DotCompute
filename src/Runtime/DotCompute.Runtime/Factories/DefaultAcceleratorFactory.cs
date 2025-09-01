@@ -312,7 +312,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     }
 
     [RequiresUnreferencedCode("Creating provider instances requires runtime type information")]
-    private ValueTask<object> CreateProviderAsync(Type providerType, IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
+    private static ValueTask<object> CreateProviderAsync(Type providerType, IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         // For AOT compatibility, try using ActivatorUtilities first
         try

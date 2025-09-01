@@ -50,14 +50,14 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets the dominant access location based on statistics.
         /// </summary>
-        public string DominantAccessLocation => 
-            HostAccessCount > DeviceAccessCount ? "Host" : "Device";
+        public string DominantAccessLocation
+            => HostAccessCount > DeviceAccessCount ? "Host" : "Device";
 
         /// <summary>
         /// Gets the access ratio (device accesses / total accesses).
         /// </summary>
-        public double DeviceAccessRatio => 
-            HostAccessCount + DeviceAccessCount > 0 
+        public double DeviceAccessRatio
+            => HostAccessCount + DeviceAccessCount > 0 
                 ? (double)DeviceAccessCount / (HostAccessCount + DeviceAccessCount) 
                 : 0;
     }

@@ -26,7 +26,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, CudaCooperativeKernel> _cooperativeKernels;
         private readonly Timer _metricsTimer;
-        private readonly object _metricsLock = new object();
+        private readonly object _metricsLock = new();
         private double _efficiencyScore = 0.5;
         private double _synchronizationOverhead = 0.0;
         private long _totalCooperativeLaunches = 0;
@@ -375,9 +375,13 @@ namespace DotCompute.Backends.CUDA.Advanced
         {
             // Estimate synchronization overhead for cooperative groups
             if (_cooperativeKernels.Count == 0)
+            {
+
                 return 0.0;
+            }
 
             // Base overhead increases with number of active groups
+
             var baseOverhead = _cooperativeKernels.Count * 0.01; // 1% per group
             
             double avgSyncPoints;
@@ -394,7 +398,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             return Math.Min(0.2, baseOverhead + syncOverhead); // Cap at 20% overhead
         }
 
-        private long CalculateThreadCount(CudaCooperativeKernel kernel)
+        private static long CalculateThreadCount(CudaCooperativeKernel kernel)
         {
             // Estimate thread count based on kernel analysis
             // In production, this would be based on actual launch configurations
@@ -408,9 +412,13 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Estimate memory bandwidth utilization
             // This is a simplified calculation - production would use hardware counters
             if (_cooperativeKernels.Count == 0)
+            {
+
                 return 0.0;
+            }
 
             // Assume cooperative groups achieve better memory utilization
+
             var baseUtilization = 0.6; // 60% base utilization
             var cooperativeBonus = Math.Min(0.3, _cooperativeKernels.Count * 0.05); // Up to 30% bonus
             
@@ -422,9 +430,13 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Estimate compute utilization
             // This is a simplified calculation - production would use hardware counters
             if (_cooperativeKernels.Count == 0)
+            {
+
                 return 0.0;
+            }
 
             // Base compute utilization with cooperative groups benefits
+
             var totalKernels = _cooperativeKernels.Count;
             var avgLaunchCount = totalKernels > 0 
                 ? _cooperativeKernels.Values.Average(k => k.LaunchCount) 

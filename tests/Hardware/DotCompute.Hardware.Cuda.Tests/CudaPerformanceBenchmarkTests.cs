@@ -117,14 +117,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             var measure = new PerformanceMeasurement("Memory Bandwidth", Output);
             
             // Warmup
-            for (int i = 0; i < warmupIterations; i++)
+            for (var i = 0; i < warmupIterations; i++)
             {
                 await kernel.LaunchAsync(launchConfig, deviceInput, deviceOutput, elementCount);
             }
             
             var times = new double[iterations];
             
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 measure.Start();
                 await kernel.LaunchAsync(launchConfig, deviceInput, deviceOutput, elementCount);
@@ -192,7 +192,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             var times = new double[iterations];
             
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
                 await kernel.LaunchAsync(launchConfig, deviceInput, deviceOutput, elementCount);
@@ -209,7 +209,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceOutput.ReadAsync(hostOutput.AsSpan(), 0);
             
             var significantDifferences = 0;
-            for (int i = 0; i < Math.Min(1000, elementCount); i++)
+            for (var i = 0; i < Math.Min(1000, elementCount); i++)
             {
                 if (Math.Abs(hostOutput[i] - hostInput[i]) > 0.1f)
                 {
@@ -279,7 +279,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             var times = new double[iterations];
             
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
                 await kernel.LaunchAsync(launchConfig, deviceA, deviceB, deviceC, matrixSize);
@@ -300,12 +300,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceC.ReadAsync(hostResult.AsSpan(), 0);
             
             // Quick verification - compute first few elements on CPU
-            for (int row = 0; row < Math.Min(3, matrixSize); row++)
+            for (var row = 0; row < Math.Min(3, matrixSize); row++)
             {
-                for (int col = 0; col < Math.Min(3, matrixSize); col++)
+                for (var col = 0; col < Math.Min(3, matrixSize); col++)
                 {
-                    float expected = 0.0f;
-                    for (int k = 0; k < matrixSize; k++)
+                    var expected = 0.0f;
+                    for (var k = 0; k < matrixSize; k++)
                     {
                         expected += hostA[row * matrixSize + k] * hostB[k * matrixSize + col];
                     }
@@ -360,7 +360,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 
                 // Host to Device
                 var h2dTimes = new double[iterations];
-                for (int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     var stopwatch = Stopwatch.StartNew();
                     await deviceBuffer.WriteAsync(hostData.AsSpan(), 0);
@@ -372,7 +372,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // Device to Host
                 var d2hTimes = new double[iterations];
                 var resultData = new float[elementCount];
-                for (int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     var stopwatch = Stopwatch.StartNew();
                     await deviceBuffer.ReadAsync(resultData.AsSpan(), 0);
@@ -383,7 +383,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 
                 // Bidirectional
                 var biTimes = new double[iterations];
-                for (int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     var stopwatch = Stopwatch.StartNew();
                     var uploadTask = deviceBuffer.WriteAsync(hostData.AsSpan(), 0);
@@ -431,7 +431,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var deviceBuffersC = new IBuffer<float>[numStreams];
             var streams = new IStream[numStreams];
             
-            for (int i = 0; i < numStreams; i++)
+            for (var i = 0; i < numStreams; i++)
             {
                 hostDataA[i] = TestDataGenerator.CreateLinearSequence(elementCount, i * 1000);
                 hostDataB[i] = TestDataGenerator.CreateLinearSequence(elementCount, i * 2000);
@@ -446,11 +446,11 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // Sequential execution
                 var sequentialTimes = new double[iterations];
                 
-                for (int iter = 0; iter < iterations; iter++)
+                for (var iter = 0; iter < iterations; iter++)
                 {
                     var stopwatch = Stopwatch.StartNew();
                     
-                    for (int i = 0; i < numStreams; i++)
+                    for (var i = 0; i < numStreams; i++)
                     {
                         await deviceBuffersA[i].WriteAsync(hostDataA[i].AsSpan(), 0);
                         await deviceBuffersB[i].WriteAsync(hostDataB[i].AsSpan(), 0);
@@ -464,12 +464,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // Concurrent execution
                 var concurrentTimes = new double[iterations];
                 
-                for (int iter = 0; iter < iterations; iter++)
+                for (var iter = 0; iter < iterations; iter++)
                 {
                     var stopwatch = Stopwatch.StartNew();
                     
                     var tasks = new Task[numStreams];
-                    for (int i = 0; i < numStreams; i++)
+                    for (var i = 0; i < numStreams; i++)
                     {
                         var streamIndex = i; // Capture for lambda
                         tasks[i] = Task.Run(async () =>
@@ -502,7 +502,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             finally
             {
                 // Cleanup
-                for (int i = 0; i < numStreams; i++)
+                for (var i = 0; i < numStreams; i++)
                 {
                     deviceBuffersA[i]?.Dispose();
                     deviceBuffersB[i]?.Dispose();

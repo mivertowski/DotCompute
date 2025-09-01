@@ -167,7 +167,7 @@ public readonly struct MemoryAccessMetrics
     /// <summary>
     /// Creates metrics from a simple transfer
     /// </summary>
-    public static MemoryAccessMetrics FromTransfer(long bytes, TimeSpan duration) => new MemoryAccessMetrics(bytes, duration);
+    public static MemoryAccessMetrics FromTransfer(long bytes, TimeSpan duration) => new(bytes, duration);
 
     /// <summary>
     /// Creates metrics from a measured operation
@@ -177,7 +177,7 @@ public readonly struct MemoryAccessMetrics
 
         Stopwatch stopwatch,
 
-        MemoryAccessPattern pattern = MemoryAccessPattern.Sequential) => new MemoryAccessMetrics(bytes, stopwatch.Elapsed, accessPattern: pattern);
+        MemoryAccessPattern pattern = MemoryAccessPattern.Sequential) => new(bytes, stopwatch.Elapsed, accessPattern: pattern);
 
     /// <summary>
     /// Combines multiple metrics into aggregate metrics

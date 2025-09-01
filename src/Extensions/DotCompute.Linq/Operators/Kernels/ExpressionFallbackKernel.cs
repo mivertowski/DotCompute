@@ -76,9 +76,9 @@ internal class ExpressionFallbackKernel : IKernel
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A completed task.</returns>
-    public Task CompileAsync(CancellationToken cancellationToken = default) =>
+    public static Task CompileAsync(CancellationToken cancellationToken = default)
         // Already compiled during construction
-        Task.CompletedTask;
+        => Task.CompletedTask;
 
     /// <summary>
     /// Executes the expression on CPU.
@@ -113,7 +113,7 @@ internal class ExpressionFallbackKernel : IKernel
     /// Gets parameter information (empty for fallback kernel).
     /// </summary>
     /// <returns>An empty array of kernel parameters.</returns>
-    public IReadOnlyList<KernelParameter> GetParameterInfo() => Array.Empty<KernelParameter>();
+    public static IReadOnlyList<KernelParameter> GetParameterInfo() => Array.Empty<KernelParameter>();
 
     /// <summary>
     /// Disposes the fallback kernel.
