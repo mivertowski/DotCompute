@@ -35,11 +35,11 @@
 
   <!-- Test runner configuration -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="All" />
-    <PackageReference Include="coverlet.collector" Version="6.0.2" PrivateAssets="All" />
-    <PackageReference Include="coverlet.msbuild" Version="6.0.2" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" PrivateAssets="All" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4" PrivateAssets="All" />
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4" PrivateAssets="All" />
   </ItemGroup>
 
   <!-- Category attribute definitions -->
