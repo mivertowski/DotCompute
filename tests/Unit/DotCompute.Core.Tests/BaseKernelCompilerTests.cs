@@ -876,7 +876,7 @@ public class BaseKernelCompilerTests : IDisposable
         memoryIncrease.Should().BeGreaterThan(0, "compilation should use memory");
         
         // Verify performance characteristics
-        stopwatch.ElapsedMilliseconds.Should().BeGreaterThan(totalCompilationTime * 0.5, "wall clock time should be reasonable");
+        stopwatch.ElapsedMilliseconds.Should().BeGreaterThan((long)(totalCompilationTime * 0.5), "wall clock time should be reasonable");
     }
 
     #endregion
@@ -1154,7 +1154,7 @@ public class BaseKernelCompilerTests : IDisposable
         };
         
         // Act
-        var tasks = definitions.Select(d => compiler.CompileAsync(d)).ToArray();
+        var tasks = definitions.Select(d => compiler.CompileAsync(d).AsTask()).ToArray();
         await Task.WhenAll(tasks);
         
         // Clear cache and compile again to test metrics persistence

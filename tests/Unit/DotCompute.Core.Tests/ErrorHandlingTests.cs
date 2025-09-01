@@ -494,9 +494,9 @@ public class ErrorHandlingTests : IDisposable
         // Assert
         accelerator.LastDiagnosticInfo.Should().NotBeNull();
         accelerator.LastDiagnosticInfo.Should().NotBeNull();
-        accelerator.LastDiagnosticInfo!.Should().ContainKey("MemoryUsage");
-        accelerator.LastDiagnosticInfo!.Should().ContainKey("ThreadCount");
-        accelerator.LastDiagnosticInfo!.Should().ContainKey("SystemLoad");
+        accelerator.LastDiagnosticInfo!.ContainsKey("MemoryUsage").Should().BeTrue();
+        accelerator.LastDiagnosticInfo!.ContainsKey("ThreadCount").Should().BeTrue();
+        accelerator.LastDiagnosticInfo!.ContainsKey("SystemLoad").Should().BeTrue();
     }
 
     #endregion
