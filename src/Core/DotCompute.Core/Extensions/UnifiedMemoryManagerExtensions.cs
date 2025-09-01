@@ -207,5 +207,69 @@ namespace DotCompute.Core.Extensions
         }
 
         #endregion
+
+        #region CUDA-Specific Allocation Methods
+
+        /// <summary>
+        /// Allocates unified memory that is accessible by both host and device.
+        /// This is primarily a CUDA feature.
+        /// </summary>
+        /// <typeparam name="T">The element type.</typeparam>
+        /// <param name="memoryManager">The memory manager.</param>
+        /// <param name="count">The number of elements to allocate.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A unified memory buffer.</returns>
+        public static ValueTask<IUnifiedMemoryBuffer<T>> AllocateUnifiedAsync<T>(
+            this IUnifiedMemoryManager memoryManager,
+            int count,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            ArgumentNullException.ThrowIfNull(memoryManager);
+            
+            // Try to use native implementation if available
+            var method = memoryManager.GetType().GetMethod("AllocateUnifiedAsync", new[] { typeof(int), typeof(CancellationToken) });
+            if (method != null && method.IsGenericMethodDefinition)
+            {
+                var genericMethod = method.MakeGenericMethod(typeof(T));
+                var result = genericMethod.Invoke(memoryManager, new object[] { count, cancellationToken });
+                if (result is ValueTask<IUnifiedMemoryBuffer<T>> valueTask)
+                    return valueTask;
+            }
+            
+            // Fall back to regular allocation with unified memory flag
+            return memoryManager.AllocateAsync<T>(count, MemoryOptions.Unified, cancellationToken);
+        }
+
+        /// <summary>
+        /// Allocates pinned (page-locked) host memory for faster transfers.
+        /// This is primarily a CUDA feature.
+        /// </summary>
+        /// <typeparam name="T">The element type.</typeparam>
+        /// <param name="memoryManager">The memory manager.</param>
+        /// <param name="count">The number of elements to allocate.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A pinned memory buffer.</returns>
+        public static ValueTask<IUnifiedMemoryBuffer<T>> AllocatePinnedAsync<T>(
+            this IUnifiedMemoryManager memoryManager,
+            int count,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            ArgumentNullException.ThrowIfNull(memoryManager);
+            
+            // Try to use native implementation if available
+            var method = memoryManager.GetType().GetMethod("AllocatePinnedAsync", new[] { typeof(int), typeof(CancellationToken) });
+            if (method != null && method.IsGenericMethodDefinition)
+            {
+                var genericMethod = method.MakeGenericMethod(typeof(T));
+                var result = genericMethod.Invoke(memoryManager, new object[] { count, cancellationToken });
+                if (result is ValueTask<IUnifiedMemoryBuffer<T>> valueTask)
+                    return valueTask;
+            }
+            
+            // Fall back to regular allocation with pinned memory flag
+            return memoryManager.AllocateAsync<T>(count, MemoryOptions.Pinned, cancellationToken);
+        }
+
+        #endregion
     }
 }

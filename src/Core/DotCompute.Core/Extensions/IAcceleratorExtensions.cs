@@ -100,6 +100,66 @@ namespace DotCompute.Core.Extensions
     }
 
     /// <summary>
+    /// Extension methods for IComputeStream to provide additional functionality.
+    /// </summary>
+    public static class ComputeStreamExtensions
+    {
+        /// <summary>
+        /// Begins capturing operations in this stream for graph construction.
+        /// This is primarily used for CUDA graph functionality.
+        /// </summary>
+        /// <param name="stream">The compute stream.</param>
+        /// <returns>A task representing the begin capture operation.</returns>
+        public static ValueTask BeginCapture(this IComputeStream stream)
+        {
+            ArgumentNullException.ThrowIfNull(stream);
+            
+            // For CUDA streams, try to use reflection to call the native BeginCapture method
+            var method = stream.GetType().GetMethod("BeginCapture");
+            if (method != null)
+            {
+                var result = method.Invoke(stream, null);
+                if (result is ValueTask valueTask)
+                    return valueTask;
+                if (result is Task task)
+                    return new ValueTask(task);
+            }
+            
+            // For other stream types, return completed task
+            return ValueTask.CompletedTask;
+        }
+
+        /// <summary>
+        /// Ends capturing operations in this stream and returns the captured graph.
+        /// This is primarily used for CUDA graph functionality.
+        /// </summary>
+        /// <param name="stream">The compute stream.</param>
+        /// <returns>A task representing the end capture operation, returning the captured graph.</returns>
+        public static ValueTask<object?> EndCapture(this IComputeStream stream)
+        {
+            ArgumentNullException.ThrowIfNull(stream);
+            
+            // For CUDA streams, try to use reflection to call the native EndCapture method
+            var method = stream.GetType().GetMethod("EndCapture");
+            if (method != null)
+            {
+                var result = method.Invoke(stream, null);
+                if (result is ValueTask<object?> valueTask)
+                    return valueTask;
+                if (result is Task<object?> task)
+                    return new ValueTask<object?>(task);
+                if (result is ValueTask<object> valueTaskNonNull)
+                    return new ValueTask<object?>(valueTaskNonNull.AsTask().ContinueWith(t => (object?)t.Result));
+                if (result is Task<object> taskNonNull)
+                    return new ValueTask<object?>(taskNonNull.ContinueWith(t => (object?)t.Result));
+            }
+            
+            // For other stream types, return null
+            return ValueTask.FromResult<object?>(null);
+        }
+    }
+
+    /// <summary>
     /// Represents performance metrics for an accelerator.
     /// </summary>
     public interface IPerformanceMetrics

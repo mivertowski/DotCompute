@@ -59,6 +59,11 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     /// </summary>
     public int AllocationCount => _allocationCount;
 
+    /// <summary>
+    /// Gets a value indicating whether this memory manager has been disposed.
+    /// </summary>
+    public bool IsDisposed => _disposed;
+
     /// <inheritdoc/>
     public virtual async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
         int count,

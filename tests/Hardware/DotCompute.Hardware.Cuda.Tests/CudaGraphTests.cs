@@ -55,7 +55,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Graph_Creation_Should_Succeed()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -123,7 +123,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Graph_Capture_Should_Work()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -184,7 +184,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Multi_Kernel_Graph_Should_Execute_Correctly()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -258,7 +258,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Graph_Performance_Should_Be_Better_Than_Individual_Launches()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -332,7 +332,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Graph_With_Dependencies_Should_Execute_In_Order()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -400,7 +400,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Graph_Memory_Operations_Should_Work()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
+            Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -453,8 +453,8 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Graph_Update_Should_Work()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
-            Skip.IfNot(SupportsGraphUpdate(), "CUDA graph update not supported");
+            Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
+            Skip.IfNot(await SupportsGraphUpdate(), "CUDA graph update not supported");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -523,7 +523,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         private static async Task<bool> SupportsGraphs()
         {
-            if (!await IsCudaAvailable())
+            if (!IsCudaAvailable())
             {
                 return false;
             }

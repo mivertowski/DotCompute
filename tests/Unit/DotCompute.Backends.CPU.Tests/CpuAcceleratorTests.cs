@@ -31,13 +31,12 @@ public class CpuAcceleratorTests : IDisposable
         {
             EnableAutoVectorization = true,
             PreferPerformanceOverPower = true,
-            MaxThreads = Environment.ProcessorCount
+            MaxWorkGroupSize = Environment.ProcessorCount
         });
         
         var threadPoolOptions = Options.Create(new CpuThreadPoolOptions
         {
-            MaxThreads = Environment.ProcessorCount,
-            MinThreads = 1
+            WorkerThreads = Environment.ProcessorCount
         });
         
         _accelerator = new CpuAccelerator(acceleratorOptions, threadPoolOptions, _logger);
@@ -50,7 +49,7 @@ public class CpuAcceleratorTests : IDisposable
         
         // Assert
         _accelerator.Should().NotBeNull();
-        _accelerator.AcceleratorType.Should().Be(AcceleratorType.CPU);
+        _accelerator.Type.Should().Be(AcceleratorType.CPU);
         _accelerator.IsDisposed.Should().BeFalse();
     }
     
@@ -58,11 +57,11 @@ public class CpuAcceleratorTests : IDisposable
     public void AcceleratorInfo_ContainsExpectedProperties()
     {
         // Act
-        var info = _accelerator.AcceleratorInfo;
+        var info = _accelerator.Info;
         
         // Assert
         info.Should().NotBeNull();
-        info.Type.Should().Be(AcceleratorType.CPU);
+        info.Type.Should().Be(AcceleratorType.CPU.ToString());
         info.IsUnifiedMemory.Should().BeTrue();
         info.ComputeUnits.Should().Be(Environment.ProcessorCount);
         info.Capabilities.Should().NotBeNull();
@@ -77,7 +76,7 @@ public class CpuAcceleratorTests : IDisposable
     public void AcceleratorInfo_SimdCapabilities_AreDetectedCorrectly()
     {
         // Act
-        var info = _accelerator.AcceleratorInfo;
+        var info = _accelerator.Info;
         var simdWidth = info.Capabilities["SimdWidth"];
         var supportedSets = info.Capabilities["SimdInstructionSets"] as IReadOnlySet<string>;
         
@@ -94,7 +93,7 @@ public class CpuAcceleratorTests : IDisposable
     public void ThreadCount_MatchesProcessorCount()
     {
         // Act
-        var threadCount = _accelerator.AcceleratorInfo.Capabilities["ThreadCount"];
+        var threadCount = _accelerator.Info.Capabilities["ThreadCount"];
         
         // Assert
         threadCount.Should().Be(Environment.ProcessorCount);
@@ -176,7 +175,7 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act & Assert
         await _accelerator.Invoking(a => a.CompileKernelAsync(invalidKernel, options))
-            .Should().ThrowAsync<Exception>();
+            .Should().ThrowExactlyAsync<Exception>();
     }
     
     [Theory]
@@ -223,7 +222,7 @@ public class CpuAcceleratorTests : IDisposable
     public void MemoryManager_IsNotNull()
     {
         // Act
-        var memoryManager = _accelerator.MemoryManager;
+        var memoryManager = _accelerator.Memory;
         
         // Assert
         memoryManager.Should().NotBeNull();
@@ -276,7 +275,7 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act & Assert
         await _accelerator.Invoking(a => a.CompileKernelAsync(nullKernel!, options))
-            .Should().ThrowAsync<ArgumentNullException>();
+            .Should().ThrowExactlyAsync<ArgumentNullException>();
     }
     
     [Fact]
@@ -289,7 +288,7 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act & Assert
         await _accelerator.Invoking(a => a.CompileKernelAsync(kernelDefinition, nullOptions!))
-            .Should().ThrowAsync<ArgumentNullException>();
+            .Should().ThrowExactlyAsync<ArgumentNullException>();
     }
     
     [Fact]
@@ -321,7 +320,7 @@ public class CpuAcceleratorTests : IDisposable
     public void SimdCapabilities_AreAccessibleThroughAcceleratorInfo()
     {
         // Act
-        var capabilities = _accelerator.AcceleratorInfo.Capabilities;
+        var capabilities = _accelerator.Info.Capabilities;
         var instructionSets = capabilities["SimdInstructionSets"] as IReadOnlySet<string>;
         var vectorWidth = capabilities["SimdWidth"];
         
@@ -358,7 +357,7 @@ public class CpuAcceleratorTests : IDisposable
         
         // Assert
         accelerator.Should().NotBeNull();
-        accelerator.AcceleratorType.Should().Be(AcceleratorType.CPU);
+        accelerator.Type.Should().Be(AcceleratorType.CPU);
     }
     
     [Fact]
@@ -378,7 +377,7 @@ public class CpuAcceleratorTests : IDisposable
     
     public void Dispose()
     {
-        _accelerator?.Dispose();
+        _accelerator?.DisposeAsync().AsTask().Wait();
         GC.SuppressFinalize(this);
     }
 }

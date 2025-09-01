@@ -76,11 +76,7 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task AllocateAsync_WithVariousSizes_AllocatesSuccessfully(long sizeInBytes)
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         // Act
         var buffer = await _memoryManager.AllocateAsync(sizeInBytes, options);
@@ -99,11 +95,7 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task AllocateAsync_WithNumaPolicy_ConsidersNumaPlacement()
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         var numaPolicy = new NumaMemoryPolicy
         {
@@ -127,11 +119,7 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task AllocateAsync_MultipleAllocations_TracksMemoryCorrectly()
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         var initialAllocated = _memoryManager.CurrentAllocatedMemory;
         
@@ -154,11 +142,7 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task CreateView_WithValidBuffer_CreatesViewSuccessfully()
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         var buffer = await _memoryManager.AllocateAsync(1024, options);
         
@@ -236,11 +220,7 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task FreeAsync_WithValidBuffer_UpdatesStatistics()
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         var buffer = await _memoryManager.AllocateAsync(1024, options) as CpuMemoryBuffer;
         var beforeFree = _memoryManager.Statistics;
@@ -286,15 +266,11 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task AllocateAsync_WithZeroSize_ThrowsArgumentException()
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         // Act & Assert
         await _memoryManager.Invoking(mm => mm.AllocateAsync(0, options))
-            .Should().ThrowAsync<ArgumentException>();
+            .Should().ThrowExactlyAsync<ArgumentException>();
     }
     
     [Fact]
@@ -302,15 +278,11 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task AllocateAsync_WithNegativeSize_ThrowsArgumentException()
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         // Act & Assert
         await _memoryManager.Invoking(mm => mm.AllocateAsync(-1024, options))
-            .Should().ThrowAsync<ArgumentException>();
+            .Should().ThrowExactlyAsync<ArgumentException>();
     }
     
     [Fact]
@@ -318,11 +290,7 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task CreateView_WithInvalidRange_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         var buffer = await _memoryManager.AllocateAsync(1024, options);
         
@@ -339,11 +307,7 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task AllocateAsync_ConcurrentAllocations_HandlesParallelRequests()
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         var allocationTasks = Enumerable.Range(0, 10)
             .Select(_ => _memoryManager.AllocateAsync(1024, options).AsTask())
@@ -368,11 +332,7 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task AllocateAsync_PerformanceBenchmark_MeetsTimingRequirements()
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var buffers = new List<IUnifiedMemoryBuffer>();
@@ -404,11 +364,7 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task AllocateAsync_WithDifferentAccessModes_ConfiguresCorrectly(MemoryAccessMode accessMode)
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = accessMode,
-            Location = MemoryLocation.Host
-        };
+        var options = MemoryOptions.HostVisible;
         
         // Act
         var buffer = await _memoryManager.AllocateAsync(1024, options);
@@ -426,12 +382,7 @@ public class CpuMemoryManagerTests : IDisposable
     public async Task AllocateAsync_WithPinnedMemory_ConfiguresCorrectly()
     {
         // Arrange
-        var options = new MemoryOptions
-        {
-            AccessMode = MemoryAccessMode.ReadWrite,
-            Location = MemoryLocation.Host,
-            IsPinned = true
-        };
+        var options = MemoryOptions.Pinned | MemoryOptions.HostVisible;
         
         // Act
         var buffer = await _memoryManager.AllocateAsync(1024, options);

@@ -52,7 +52,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Compute_Capability_Should_Be_8_9_For_RTX_2000()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(await IsRTX2000Available(), "RTX 2000 series GPU not available");
+            Skip.IfNot(IsRTX2000Available(), "RTX 2000 series GPU not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -189,8 +189,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Try to allocate too much memory (should fail gracefully)
             var action = async () => await accelerator.Memory.AllocateAsync<float>((int)Math.Min(long.MaxValue / sizeof(float), int.MaxValue));
             
-            await action.Should().ThrowAsync<Exception>()
-                .Which.Message.Should().Contain("memory");
+            var exception = await action.Should().ThrowAsync<Exception>();
+            exception.Which.Message.Should().Contain("memory");
             
             Output.WriteLine("Error handling test completed - excessive allocation properly rejected");
         }
@@ -280,9 +280,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Checks if an RTX 2000 series GPU is available
         /// </summary>
-        private static async Task<bool> IsRTX2000Available()
+        private static bool IsRTX2000Available()
         {
-            if (!await IsCudaAvailable())
+            if (!IsCudaAvailable())
             {
                 return false;
             }

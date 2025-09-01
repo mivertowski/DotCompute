@@ -40,7 +40,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             foreach (var sizeBytes in sizes)
             {
                 var elementCount = (int)(sizeBytes / sizeof(float));
-                await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
+                await using var buffer = await accelerator.Memory.AllocateAsync<float>((int)elementCount);
                 
                 buffer.Should().NotBeNull();
                 buffer.SizeInBytes.Should().Be(sizeBytes);
@@ -65,7 +65,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var targetSize = Math.Min(availableMemory / 2, 1024L * 1024 * 1024); // Max 1GB for test
             var elementCount = (long)(targetSize / sizeof(float));
             
-            await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var buffer = await accelerator.Memory.AllocateAsync<float>((int)elementCount);
             
             buffer.Should().NotBeNull();
             buffer.SizeInBytes.Should().Be(elementCount * sizeof(float));
@@ -411,7 +411,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int elementCount = (int)(bufferSize / sizeof(float));
             
             // Allocate memory
-            await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var buffer = await accelerator.Memory.AllocateAsync<float>((int)elementCount);
             
             // Get statistics after allocation
             var afterAllocStats = accelerator.GetMemoryStatistics();

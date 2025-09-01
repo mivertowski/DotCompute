@@ -1314,6 +1314,11 @@ public sealed class NumaTopology
     public bool SupportsMemoryPolicy { get; init; }
 
     /// <summary>
+    /// Gets the total memory size across all NUMA nodes in bytes.
+    /// </summary>
+    public long TotalMemoryBytes => Nodes.Sum(n => n.MemorySize);
+
+    /// <summary>
     /// Gets the node for a specific processor.
     /// </summary>
     public int GetNodeForProcessor(int processorId)

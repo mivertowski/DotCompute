@@ -8,6 +8,8 @@ using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Tests.Common;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DotCompute.Backends.CPU.Tests;
@@ -30,8 +32,7 @@ public class CpuKernelCompilerTests : IDisposable
         
         var threadPoolOptions = Options.Create(new CpuThreadPoolOptions
         {
-            MaxThreads = Environment.ProcessorCount,
-            MinThreads = 1
+            WorkerThreads = Environment.ProcessorCount
         });
         
         _threadPool = new CpuThreadPool(threadPoolOptions);
@@ -247,7 +248,7 @@ public class CpuKernelCompilerTests : IDisposable
             EnableDebugInfo = true,
             AdditionalFlags = new[] { "debug", "symbols" }
         };
-        var context = CreateCompilationContext(definition, options);
+        var context = CreateCompilationContext(definition, OptimizationLevel.None);
         
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
@@ -448,9 +449,28 @@ public class CpuKernelCompilerTests : IDisposable
         };
     }
     
+    private CpuKernelCompilationContext CreateCompilationContext(KernelDefinition definition, OptimizationLevel optimizationLevel)
+    {
+        var options = new CompilationOptions
+        {
+            OptimizationLevel = optimizationLevel
+        };
+
+        var simdCapabilities = SimdCapabilities.GetSummary();
+
+        return new CpuKernelCompilationContext
+        {
+            Definition = definition,
+            Options = options,
+            SimdCapabilities = simdCapabilities,
+            ThreadPool = _threadPool,
+            Logger = _logger
+        };
+    }
+    
     public void Dispose()
     {
-        _threadPool?.Dispose();
+        _threadPool?.DisposeAsync().AsTask().Wait();
         GC.SuppressFinalize(this);
     }
 }

@@ -234,7 +234,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                     }
                 }";
             
-            using var kernel = await accelerator.CompileKernelAsync(matMulKernel, "MatrixMultiply");
+            using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "MatrixMultiply", Source = matMulKernel, EntryPoint = "MatrixMultiply" });
             
             var perfMeasurement = new PerformanceMeasurement("Matrix Multiplication", Output);
             
@@ -371,7 +371,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task RTX_2000_Ada_Hardware_Should_Have_Specific_Capabilities()
         {
             Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(IsRTX2000AdaAvailable(), "RTX 2000 Ada hardware not available");
+            Skip.IfNot(await IsRTX2000AdaAvailable(), "RTX 2000 Ada hardware not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -417,7 +417,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             Func<Task> compileAction = async () => 
             {
-                using var kernel = await accelerator.CompileKernelAsync(invalidKernelSource, "InvalidKernel");
+                using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "InvalidKernel", Source = invalidKernelSource, EntryPoint = "InvalidKernel" });
             };
             
             await compileAction.Should().ThrowAsync<Exception>("Invalid kernel should fail to compile");
@@ -446,7 +446,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }";
             
             await using var buffer = await accelerator.Memory.AllocateAsync<int>(1);
-            using var kernel = await accelerator.CompileKernelAsync(longRunningKernel, "LongRunningKernel");
+            using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "LongRunningKernel", Source = longRunningKernel, EntryPoint = "LongRunningKernel" });
             
             try
             {

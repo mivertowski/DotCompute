@@ -98,5 +98,12 @@ namespace DotCompute.Abstractions.Memory
         /// <param name="options">The memory options.</param>
         /// <returns>True if memory should auto-migrate.</returns>
         public static bool ShouldAutoMigrate(this MemoryOptions options) => options.HasFlag(MemoryOptions.AutoMigrate);
+
+        /// <summary>
+        /// Gets a value indicating whether the memory should be pinned in host memory.
+        /// </summary>
+        /// <param name="options">The memory options.</param>
+        /// <returns>True if memory should be pinned.</returns>
+        public static bool IsPinned(this MemoryOptions options) => options.HasFlag(MemoryOptions.Pinned);
     }
 }
