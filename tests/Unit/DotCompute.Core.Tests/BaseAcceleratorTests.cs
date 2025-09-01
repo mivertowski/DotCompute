@@ -443,7 +443,7 @@ public class BaseAcceleratorTests : IDisposable
         memory.Should().Be(memoryManager.Object);
         accelerator.Info.TotalMemory.Should().BeGreaterThan(0);
         accelerator.Info.AvailableMemory.Should().BeGreaterThan(0);
-        accelerator.Info.AvailableMemory.Should().BeLessOrEqualTo(accelerator.Info.TotalMemory);
+        accelerator.Info.AvailableMemory.Should().BeLessThanOrEqualTo(accelerator.Info.TotalMemory);
     }
     
     [Fact]
@@ -934,8 +934,8 @@ public class BaseAcceleratorTests : IDisposable
         // Assert
         results.Should().HaveCount(50);
         cachedResults.Should().HaveCount(5);
-        accelerator.TotalCompilations.Should().BeGreaterOrEqualTo(50);
-        accelerator.CacheHitCount.Should().BeGreaterOrEqualTo(0); // Some cache hits expected
+        accelerator.TotalCompilations.Should().BeGreaterThanOrEqualTo(50);
+        accelerator.CacheHitCount.Should().BeGreaterThanOrEqualTo(0); // Some cache hits expected
     }
     
     #endregion
@@ -1405,7 +1405,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Assert
         accelerator.TotalCompilations.Should().Be(10);
-        accelerator.TotalSynchronizations.Should().BeGreaterOrEqualTo(3);
+        accelerator.TotalSynchronizations.Should().BeGreaterThanOrEqualTo(3);
         accelerator.AverageCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
         
         var totalElapsed = endTime - startTime;
@@ -1557,8 +1557,8 @@ public class BaseAcceleratorTests : IDisposable
         averageLatency.Should().BeGreaterThan(TimeSpan.Zero);
         minLatency.Should().BeLessThan(averageLatency);
         maxLatency.Should().BeGreaterThan(averageLatency);
-        p95Latency.Should().BeLessOrEqualTo(maxLatency);
-        p99Latency.Should().BeLessOrEqualTo(maxLatency);
+        p95Latency.Should().BeLessThanOrEqualTo(maxLatency);
+        p99Latency.Should().BeLessThanOrEqualTo(maxLatency);
         
         // Performance expectations
         averageLatency.Should().BeLessThan(TimeSpan.FromSeconds(1), "average latency should be reasonable");

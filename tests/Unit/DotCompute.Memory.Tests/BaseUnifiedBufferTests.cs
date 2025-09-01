@@ -89,8 +89,8 @@ public class BaseUnifiedBufferTests
         var devicePtr = buffer.DevicePointer;
         
         // Assert
-        span.Should().NotBeNull();
-        readOnlySpan.Should().NotBeNull();
+        span.Length.Should().BeGreaterThan(0);
+        readOnlySpan.Length.Should().BeGreaterThan(0);
         memory.Should().NotBeNull();
         devicePtr.Should().Be(IntPtr.Zero); // Test implementation returns Zero
     }

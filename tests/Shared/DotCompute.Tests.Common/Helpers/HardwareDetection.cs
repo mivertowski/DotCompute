@@ -88,12 +88,13 @@ public static class HardwareDetection
     /// </summary>
     public static int GetCudaDeviceCount()
     {
-        if (!IsCudaAvailable()) return 0;
+        if (!IsCudaAvailable())
+            return 0;
         
         try
         {
             // This would typically use CUDA API calls
-            // For now, we'll use a heuristic approach TODO
+            // For now, we'll use a heuristic approach. TODO: Use proper CUDA device enumeration API
             return GetNvidiaGpuCount();
         }
         catch
@@ -107,12 +108,13 @@ public static class HardwareDetection
     /// </summary>
     public static int GetOpenCLDeviceCount()
     {
-        if (!IsOpenCLAvailable()) return 0;
+        if (!IsOpenCLAvailable())
+            return 0;
         
         try
         {
             // This would typically enumerate OpenCL platforms and devices
-            // For now, we'll return a conservative estimate TODO
+            // For now, we'll return a conservative estimate. TODO: Use proper OpenCL device enumeration
             return Math.Max(GetNvidiaGpuCount() + GetAmdGpuCount() + GetIntelGpuCount(), 1);
         }
         catch
@@ -319,9 +321,12 @@ public static class HardwareDetection
     
     private static string GetPlatformString()
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return "Windows";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return "Linux";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) return "macOS";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return "Windows";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return "Linux";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return "macOS";
         return "Unknown";
     }
 
@@ -378,10 +383,11 @@ public static class HardwareDetection
             using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%NVIDIA%'");
             var hasNvidiaGpu = searcher.Get().Cast<ManagementObject>().Any();
 #else
-            var hasNvidiaGpu = false; //TODO
+            var hasNvidiaGpu = false; // TODO: Implement GPU detection for non-Windows platforms
 #endif
             
-            if (!hasNvidiaGpu) return false;
+            if (!hasNvidiaGpu)
+                return false;
             
             // Check for CUDA runtime libraries
             var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
@@ -416,7 +422,7 @@ public static class HardwareDetection
             
             // Check for CUDA libraries
             var ldLibraryPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "";
-            return ldLibraryPath.Contains("cuda") || 
+            return ldLibraryPath.Contains("cuda", StringComparison.OrdinalIgnoreCase) || 
                    Directory.Exists("/usr/local/cuda") ||
                    Directory.Exists("/opt/cuda");
         }
@@ -444,7 +450,7 @@ public static class HardwareDetection
         try
         {
             var result = ExecuteCommand("ldconfig", "-p");
-            return result.Contains("libOpenCL.so");
+            return result.Contains("libOpenCL.so", StringComparison.OrdinalIgnoreCase);
         }
         catch
         {
@@ -474,7 +480,7 @@ public static class HardwareDetection
                 using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%NVIDIA%'");
                 return searcher.Get().Cast<ManagementObject>().Count();
 #else
-                return 0; //TODO
+                return 0; // TODO: Implement cross-platform GPU detection
 #endif
             }
             
@@ -497,7 +503,7 @@ public static class HardwareDetection
                 using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%AMD%' OR Name LIKE '%Radeon%'");
                 return searcher.Get().Cast<ManagementObject>().Count();
 #else
-                return 0; //TODO
+                return 0; // TODO: Implement cross-platform GPU detection
 #endif
             }
             
@@ -519,7 +525,7 @@ public static class HardwareDetection
                 using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%Intel%'");
                 return searcher.Get().Cast<ManagementObject>().Count();
 #else
-                return 0; //TODO
+                return 0; // TODO: Implement cross-platform GPU detection
 #endif
             }
             
@@ -548,7 +554,7 @@ public static class HardwareDetection
         {
             var cpuInfo = File.ReadAllText("/proc/cpuinfo");
             var coreIds = cpuInfo.Split('\n')
-                .Where(line => line.StartsWith("core id"))
+                .Where(line => line.StartsWith("core id", StringComparison.OrdinalIgnoreCase))
                 .Select(line => line.Split(':')[1].Trim())
                 .Distinct()
                 .Count();
@@ -590,7 +596,7 @@ public static class HardwareDetection
         try
         {
             var memInfo = File.ReadAllText("/proc/meminfo");
-            var totalLine = memInfo.Split('\n').FirstOrDefault(line => line.StartsWith("MemTotal:"));
+            var totalLine = memInfo.Split('\n').FirstOrDefault(line => line.StartsWith("MemTotal:", StringComparison.OrdinalIgnoreCase));
             if (totalLine != null)
             {
                 var parts = totalLine.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
@@ -637,7 +643,7 @@ public static class HardwareDetection
         try
         {
             var memInfo = File.ReadAllText("/proc/meminfo");
-            var availableLine = memInfo.Split('\n').FirstOrDefault(line => line.StartsWith("MemAvailable:"));
+            var availableLine = memInfo.Split('\n').FirstOrDefault(line => line.StartsWith("MemAvailable:", StringComparison.OrdinalIgnoreCase));
             if (availableLine != null)
             {
                 var parts = availableLine.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
@@ -707,7 +713,7 @@ public static class HardwareDetection
             var cpu = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
             return cpu?["Name"]?.ToString() ?? "Unknown CPU";
 #else
-            return "Unknown CPU"; //TODO
+            return "Unknown CPU"; // TODO: Implement cross-platform CPU name detection
 #endif
         }
         catch

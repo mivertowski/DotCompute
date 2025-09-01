@@ -205,7 +205,7 @@ public static class FluentAssertionsExtensions
             }
             catch
             {
-                recovered = false;
+                // Recovery failed - recovered remains false
             }
         }
         

@@ -165,7 +165,7 @@ public class ExampleTests : TestBase
         var exception = Assert.Throws<InvalidOperationException>(() =>
             dataWithSpecialValues.ShouldContainOnlyFiniteValues());
         
-        Assert.Contains("finite values", exception.Message);
+        Assert.Contains("finite values", exception.Message, StringComparison.OrdinalIgnoreCase);
         
         Output.WriteLine("Error handling validation completed");
     }

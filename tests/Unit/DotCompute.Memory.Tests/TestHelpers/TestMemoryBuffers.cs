@@ -98,7 +98,7 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
         => destination.CopyFromAsync(_memory, cancellationToken);
     
     public override ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
-        => destination.CopyFromAsync(_memory.Slice(sourceOffset, count), destinationOffset, cancellationToken);
+        => destination.CopyFromAsync<T>(_memory.Slice(sourceOffset, count), destinationOffset, cancellationToken);
     
     public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
     {
@@ -133,6 +133,17 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
 
 
     public override void Dispose() => _isDisposed = true;
+
+    /// <summary>
+    /// Test method to expose ValidateCopyParameters for testing.
+    /// </summary>
+    public void TestValidateCopyParameters(long sourceLength, long sourceOffset, long destinationLength, long destinationOffset, long count)
+        => ValidateCopyParameters(sourceLength, sourceOffset, destinationLength, destinationOffset, count);
+
+    /// <summary>
+    /// Test method to expose ThrowIfDisposed for testing.
+    /// </summary>
+    public void TestThrowIfDisposed() => ThrowIfDisposed();
 }
 
 /// <summary>
@@ -277,6 +288,11 @@ internal sealed unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T
     public override Memory<T> AsMemory() => _data != null ? _data.AsMemory() : Memory<T>.Empty;
     public override ReadOnlyMemory<T> AsReadOnlyMemory() => _data != null ? _data.AsMemory() : ReadOnlyMemory<T>.Empty;
     
+    /// <summary>
+    /// Memory property for unified buffer access.
+    /// </summary>
+    public Memory<T> Memory => AsMemory();
+    
     public override DeviceMemory GetDeviceMemory() => new(_pinnedPointer, SizeInBytes);
 
 
@@ -306,8 +322,8 @@ internal sealed unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T
     public override void MarkHostDirty() { }
     public override void MarkDeviceDirty() { }
 
-    public override Span<T> AsSpan() => _data?.AsSpan() ?? Span<T>.Empty;
-    public override ReadOnlySpan<T> AsReadOnlySpan() => _data?.AsSpan() ?? ReadOnlySpan<T>.Empty;
+    public override Span<T> AsSpan() => _data != null ? _data.AsSpan() : Span<T>.Empty;
+    public override ReadOnlySpan<T> AsReadOnlySpan() => _data != null ? _data.AsSpan() : ReadOnlySpan<T>.Empty;
 
     public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
@@ -347,7 +363,7 @@ internal sealed unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T
     public override ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
     {
         if (_data != null)
-            return destination.CopyFromAsync(_data.AsMemory().Slice(sourceOffset, count), destinationOffset, cancellationToken);
+            return destination.CopyFromAsync<T>(_data.AsMemory().Slice(sourceOffset, count), destinationOffset, cancellationToken);
         return ValueTask.CompletedTask;
     }
     
@@ -476,7 +492,7 @@ internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmana
         => destination.CopyFromAsync(_memory, cancellationToken);
     
     public override ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
-        => destination.CopyFromAsync(_memory.Slice(sourceOffset, count), destinationOffset, cancellationToken);
+        => destination.CopyFromAsync<T>(_memory.Slice(sourceOffset, count), destinationOffset, cancellationToken);
     
     public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
     {

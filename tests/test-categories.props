@@ -33,14 +33,7 @@
     <TestArtifactsDirectory>$(TestResultsDirectory)/Artifacts</TestArtifactsDirectory>
   </PropertyGroup>
 
-  <!-- Test runner configuration -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="All" />
-    <PackageReference Include="coverlet.collector" Version="6.0.2" PrivateAssets="All" />
-    <PackageReference Include="coverlet.msbuild" Version="6.0.2" PrivateAssets="All" />
-  </ItemGroup>
+  <!-- Test runner configuration packages are provided via Directory.Build.targets -->
 
   <!-- Category attribute definitions -->
   <ItemGroup>

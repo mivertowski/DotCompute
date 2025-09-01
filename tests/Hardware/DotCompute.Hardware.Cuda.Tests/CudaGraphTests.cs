@@ -8,6 +8,8 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Execution.Graph;
+using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Abstractions.Types;
 using DotCompute.Tests.Common;
 using FluentAssertions;
 using Xunit;
@@ -55,7 +57,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 1024;
             
@@ -85,7 +87,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Add kernel to graph
             graph.AddKernel(kernel, launchConfig, deviceA, deviceB, deviceC, elementCount);
@@ -118,7 +124,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 2048;
             
@@ -135,7 +141,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Create and start graph capture
             var stream = accelerator.CreateStream();
@@ -174,7 +184,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 1024;
             
@@ -201,7 +211,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Create graph with multiple operations
             var graph = accelerator.CreateGraph();
@@ -242,7 +256,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 1024;
             const int iterations = 100;
@@ -260,7 +274,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Test individual kernel launches
             var individualTimes = new double[iterations];
@@ -300,7 +318,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Speedup: {speedup:F2}x");
             
             // Graph execution should be at least as fast, often faster due to reduced overhead
-            avgGraphTime.Should().BeLessOrEqualTo(avgIndividualTime * 1.1, 
+            avgGraphTime.Should().BeLessThanOrEqualTo(avgIndividualTime * 1.1, 
                 "Graph execution should not be significantly slower than individual launches");
         }
 
@@ -311,7 +329,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 1024;
             
@@ -332,7 +350,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Create graph with dependencies:
             // 1. Scale input by 2.0 -> temp
@@ -373,7 +395,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 1024;
             
@@ -427,7 +449,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(SupportsGraphUpdate(), "CUDA graph update not supported");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 512;
             
@@ -444,7 +466,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Create initial graph with scale factor 2.0
             var graph = accelerator.CreateGraph();
@@ -493,10 +519,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                using var accelerator = factory.CreateAccelerator(0);
+                await using var accelerator = factory.CreateDefaultAccelerator();
                 
                 // CUDA graphs require compute capability 3.5+ and CUDA 10.0+
-                var cc = accelerator.DeviceInfo.ComputeCapability;
+                var cc = accelerator.Info.ComputeCapability;
                 return cc.Major > 3 || (cc.Major == 3 && cc.Minor >= 5);
             }
             catch
@@ -515,7 +541,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                using var accelerator = factory.CreateAccelerator(0);
+                await using var accelerator = factory.CreateDefaultAccelerator();
                 
                 // Graph updates require CUDA 11.1+
                 // For now, assume supported if graphs are supported

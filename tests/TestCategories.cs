@@ -35,6 +35,9 @@ namespace DotCompute.Tests.Common
         public const string SlowIntegration = "SlowIntegration";
         public const string MemoryIntensive = "MemoryIntensive";
         public const string NetworkDependent = "NetworkDependent";
+        public const string HardwareIndependent = "HardwareIndependent";
+        public const string Concurrency = "Concurrency";
+        public const string ErrorHandling = "ErrorHandling";
 
         // Component-specific categories
         public const string Core = "Core";
@@ -42,6 +45,12 @@ namespace DotCompute.Tests.Common
         public const string Algorithms = "Algorithms";
         public const string Backends = "Backends";
         public const string Extensions = "Extensions";
+        public const string KernelCompilation = "KernelCompilation";
+        public const string Benchmark = "Benchmark";
+        public const string AdvancedFeatures = "AdvancedFeatures";
+        public const string RequiresGPU = "RequiresGPU";
+        public const string RequiresCUDA = "RequiresCUDA";
+        public const string RequiresSIMD = "RequiresSIMD";
 
         // Platform-specific categories
         public const string Windows = "Windows";

@@ -652,70 +652,7 @@ internal class TransferResult
     public long DataSizeBytes { get; set; }
 }
 
-/// <summary>
-/// Mock memory manager for performance testing
-/// </summary>
-internal class MockMemoryManager : IUnifiedMemoryManager
-{
-    private readonly bool _usePool;
-    private readonly Dictionary<int, Queue<MockMemoryBuffer>> _pool;
-    private readonly Random _random = new(42);
-    
-    public MockMemoryManager(bool usePool = true)
-    {
-        _usePool = usePool;
-        _pool = [];
-    }
-
-    public async ValueTask<IMemoryBuffer> AllocateAsync(long sizeBytes, CancellationToken cancellationToken = default)
-    {
-        // Simulate allocation time
-        var allocationDelay = _usePool ? 
-            Math.Max(1, (int)(sizeBytes / (10 * 1024 * 1024))) : // Pool: 1ms per 10MB
-            Math.Max(5, (int)(sizeBytes / (5 * 1024 * 1024)));   // No pool: 5ms per 5MB
-        
-        await Task.Delay(allocationDelay, cancellationToken);
-        
-        var sizeKey = GetSizeKey(sizeBytes);
-        
-        if (_usePool && _pool.TryGetValue(sizeKey, out var queue) && queue.Count > 0)
-        {
-            // Reuse from pool
-            return queue.Dequeue();
-        }
-        
-        return new MockMemoryBuffer(sizeBytes, this);
-    }
-
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-        // Simulate synchronization delay
-        => new(Task.Delay(_random.Next(1, 3), cancellationToken));
-
-
-    internal void ReturnToPool(MockMemoryBuffer buffer)
-    {
-        if (!_usePool) return;
-        
-        var sizeKey = GetSizeKey(buffer.Size);
-        if (!_pool.ContainsKey(sizeKey))
-        {
-            _pool[sizeKey] = new Queue<MockMemoryBuffer>();
-        }
-        
-        if (_pool[sizeKey].Count < 10) // Limit pool size
-        {
-            _pool[sizeKey].Enqueue(buffer);
-        }
-    }
-    
-    private static int GetSizeKey(long size) => (int)(size / (1024 * 1024)); // Group by MB
-
-    public ValueTask DisposeAsync()
-    {
-        _pool.Clear();
-        return ValueTask.CompletedTask;
-    }
-}
+// Removed duplicate MockMemoryManager - using the one from KernelPerformanceTests.cs
 
 /// <summary>
 /// Interface for memory buffers used in performance testing

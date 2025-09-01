@@ -21,6 +21,7 @@ public static class TestCategories
     public const string EndToEnd = "EndToEnd";
     
     // Hardware-Specific Categories
+    public const string Hardware = "Hardware";
     public const string Cuda = "CUDA";
     public const string OpenCL = "OpenCL";
     public const string CPU = "CPU";

@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using DotCompute.Acceleration;
-using DotCompute.Core.Kernels;
-using DotCompute.Memory;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Core.Memory;
 using Xunit;
 using Xunit.Abstractions;
 

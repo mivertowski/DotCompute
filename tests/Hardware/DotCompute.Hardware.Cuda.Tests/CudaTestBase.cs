@@ -6,6 +6,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Tests.Common;
 using Xunit.Abstractions;
 
@@ -55,7 +58,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 
                 // Try to create an accelerator to verify everything works
                 var factory = new CudaAcceleratorFactory();
-                using var accelerator = factory.CreateAccelerator(0);
+                await using var accelerator = factory.CreateDefaultAccelerator();
                 
                 return accelerator != null;
             }
@@ -68,16 +71,16 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Check if RTX 2000 series Ada GPU is available
         /// </summary>
-        protected static bool IsRTX2000AdaAvailable()
+        protected static async Task<bool> IsRTX2000AdaAvailable()
         {
             if (!IsCudaAvailable()) return false;
             
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                using var accelerator = factory.CreateAccelerator(0);
+                await using var accelerator = factory.CreateDefaultAccelerator();
                 
-                var deviceInfo = accelerator.DeviceInfo;
+                var deviceInfo = accelerator.Info;
                 return deviceInfo.IsRTX2000Ada && 
                        deviceInfo.ComputeCapability.Major == 8 && 
                        deviceInfo.ComputeCapability.Minor == 9 &&
@@ -92,16 +95,16 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Check if compute capability meets minimum requirements
         /// </summary>
-        protected static bool HasMinimumComputeCapability(int majorMin, int minorMin = 0)
+        protected static async Task<bool> HasMinimumComputeCapability(int majorMin, int minorMin = 0)
         {
             if (!IsCudaAvailable()) return false;
             
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                using var accelerator = factory.CreateAccelerator(0);
+                await using var accelerator = factory.CreateDefaultAccelerator();
                 
-                var cc = accelerator.DeviceInfo.ComputeCapability;
+                var cc = accelerator.Info.ComputeCapability;
                 return cc.Major > majorMin || (cc.Major == majorMin && cc.Minor >= minorMin);
             }
             catch
@@ -113,16 +116,16 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Get detailed device information for logging
         /// </summary>
-        protected static string GetDeviceInfoString()
+        protected static async Task<string> GetDeviceInfoString()
         {
             if (!IsCudaAvailable()) return "CUDA not available";
             
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                using var accelerator = factory.CreateAccelerator(0);
+                await using var accelerator = factory.CreateDefaultAccelerator();
                 
-                var info = accelerator.DeviceInfo;
+                var info = accelerator.Info;
                 return $"{info.Name} (CC {info.ComputeCapability.Major}.{info.ComputeCapability.Minor}, " +
                        $"{info.GlobalMemoryBytes / (1024 * 1024 * 1024):F1} GB, " +
                        $"{info.MultiprocessorCount} SMs, " +
@@ -299,7 +302,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Log device capabilities and limits
         /// </summary>
-        protected void LogDeviceCapabilities()
+        protected async Task LogDeviceCapabilities()
         {
             if (!IsCudaAvailable())
             {
@@ -310,9 +313,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                using var accelerator = factory.CreateAccelerator(0);
+                await using var accelerator = factory.CreateDefaultAccelerator();
                 
-                var info = accelerator.DeviceInfo;
+                var info = accelerator.Info;
                 
                 Output.WriteLine("CUDA Device Capabilities:");
                 Output.WriteLine($"  Name: {info.Name}");

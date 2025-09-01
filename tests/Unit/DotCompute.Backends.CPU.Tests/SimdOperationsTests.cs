@@ -291,7 +291,7 @@ public class SimdOperationsTests
         // Performance assertion - SIMD should be faster if hardware accelerated
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
-            vectorStopwatch.ElapsedMilliseconds.Should().BeLessOrEqualTo(scalarStopwatch.ElapsedMilliseconds);
+            vectorStopwatch.ElapsedMilliseconds.Should().BeLessThanOrEqualTo(scalarStopwatch.ElapsedMilliseconds);
         }
     }
     
@@ -377,7 +377,7 @@ public class SimdOperationsTests
     
     [Fact]
     [Trait("Category", TestCategories.Concurrency)]
-    public void VectorOperations_ConcurrentExecution_ProducesConsistentResults()
+    public async Task VectorOperations_ConcurrentExecution_ProducesConsistentResults()
     {
         // Arrange
         const int arraySize = 1024;
@@ -398,7 +398,7 @@ public class SimdOperationsTests
             });
         }
         
-        var results = Task.WhenAll(tasks).Result;
+        var results = await Task.WhenAll(tasks);
         
         // Assert
         foreach (var result in results)

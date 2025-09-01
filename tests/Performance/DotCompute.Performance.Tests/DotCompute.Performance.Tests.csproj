@@ -12,9 +12,9 @@
 
   <ItemGroup>
     <!-- Test packages are included automatically via Directory.Build.targets -->
-    <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
-    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
+    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
   <ItemGroup>

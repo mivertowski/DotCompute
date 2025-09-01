@@ -13,7 +13,7 @@
   <!-- Test framework packages are included automatically from Directory.Build.targets -->
 
   <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
-    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="System.Management" />
   </ItemGroup>
 
   <ItemGroup>

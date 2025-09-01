@@ -203,12 +203,12 @@ public class BaseKernelCompilerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "CompilationCaching")]
-    public void ClearCache_RemovesAllEntries()
+    public async Task ClearCache_RemovesAllEntries()
     {
         // Arrange
         var compiler = CreateTestCompiler();
         var definition = new KernelDefinition("clear_test", "__kernel void test() {}", "main");
-        compiler.CompileAsync(definition).AsTask().Wait();
+        await compiler.CompileAsync(definition);
         compiler.GetCacheCount().Should().BeGreaterThan(0);
 
         // Act
@@ -704,9 +704,9 @@ public class BaseKernelCompilerTests : IDisposable
         await Task.WhenAll(compileTask.AsTask(), optimizeTask.Unwrap(), cacheTask.AsTask(), clearTask);
 
         // Assert
-        compiler.CompileKernelCoreCallCount.Should().BeGreaterOrEqualTo(2);
+        compiler.CompileKernelCoreCallCount.Should().BeGreaterThanOrEqualTo(2);
         compiler.OptimizeKernelCoreCallCount.Should().Be(1);
-        compiler.MaxConcurrentCompilations.Should().BeGreaterOrEqualTo(1);
+        compiler.MaxConcurrentCompilations.Should().BeGreaterThanOrEqualTo(1);
     }
 
     [Fact]
@@ -765,7 +765,7 @@ public class BaseKernelCompilerTests : IDisposable
         await Task.WhenAll(compileTasks.Concat(clearTasks));
         
         // Assert - Should not throw and all compilations should succeed
-        var results = compileTasks.Select(t => t.Result).ToArray();
+        var results = await Task.WhenAll(compileTasks);
         results.Should().AllSatisfy(r => r.Should().NotBeNull());
     }
 
@@ -1143,7 +1143,7 @@ public class BaseKernelCompilerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "ResourceUsage")]
-    public void GetMetrics_AfterMultipleOperations_ProvidesCompleteMetrics()
+    public async Task GetMetrics_AfterMultipleOperations_ProvidesCompleteMetrics()
     {
         // Arrange
         var compiler = CreateTestCompiler();
@@ -1154,21 +1154,19 @@ public class BaseKernelCompilerTests : IDisposable
         };
         
         // Act
-        var tasks = definitions.Select(d => compiler.CompileAsync(d).AsTask()).ToArray();
-        Task.WaitAll(tasks);
+        var tasks = definitions.Select(d => compiler.CompileAsync(d)).ToArray();
+        await Task.WhenAll(tasks);
         
         // Clear cache and compile again to test metrics persistence
         compiler.ClearCache();
-        var task3 = compiler.CompileAsync(definitions[0]).AsTask();
-        task3.Wait();
+        await compiler.CompileAsync(definitions[0]);
         
         // Assert
         var metrics = compiler.GetMetrics();
         metrics.Should().HaveCount(0, "metrics should be cleared with cache");
         
         // Compile once more to verify new metrics
-        var task4 = compiler.CompileAsync(new KernelDefinition("metrics3", "__kernel void test3() {}", "main")).AsTask();
-        task4.Wait();
+        await compiler.CompileAsync(new KernelDefinition("metrics3", "__kernel void test3() {}", "main"));
         
         var newMetrics = compiler.GetMetrics();
         newMetrics.Should().HaveCount(1);

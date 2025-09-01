@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using DotCompute.Acceleration;
-using DotCompute.Memory;
+using DotCompute.Abstractions;
+using DotCompute.Core.Memory;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,9 +17,9 @@ public class MemoryPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
 {
     private readonly ITestOutputHelper _output;
     private IAccelerator _accelerator;
-    private IMemoryBuffer<float> _deviceBuffer;
-    private IMemoryBuffer<int> _intBuffer;
-    private IMemoryBuffer<double> _doubleBuffer;
+    private IUnifiedMemoryBuffer<float> _deviceBuffer;
+    private IUnifiedMemoryBuffer<int> _intBuffer;
+    private IUnifiedMemoryBuffer<double> _doubleBuffer;
     private float[] _hostData;
     private int[] _intHostData;
     private double[] _doubleHostData;

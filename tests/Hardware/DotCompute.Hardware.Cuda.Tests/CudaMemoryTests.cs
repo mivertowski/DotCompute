@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Abstractions.Types;
 using DotCompute.Tests.Common;
 using FluentAssertions;
 using Xunit;
@@ -29,7 +31,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             // Test various allocation sizes
             var sizes = new[] { 1024, 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024 };
@@ -53,9 +55,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
-            var deviceInfo = accelerator.DeviceInfo;
+            var deviceInfo = accelerator.Info;
             var availableMemory = deviceInfo.AvailableMemory;
             
             // Try to allocate 50% of available memory
@@ -78,7 +80,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             var transferSizes = new[] { 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024 };
             
@@ -119,7 +121,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             var transferSizes = new[] { 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024 };
             
@@ -168,7 +170,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 1024 * 1024; // 1M elements
             
@@ -229,9 +231,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
-            if (!accelerator.DeviceInfo.SupportsUnifiedMemory)
+            if (!accelerator.Info.SupportsUnifiedMemory)
             {
                 Output.WriteLine("Unified memory not supported - skipping test");
                 return;
@@ -276,9 +278,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
-            var deviceInfo = accelerator.DeviceInfo;
+            var deviceInfo = accelerator.Info;
             var expectedBandwidth = deviceInfo.MemoryBandwidthGBps;
             
             Output.WriteLine($"Memory Specifications:");
@@ -296,7 +298,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             // Use bandwidth testing kernel
             const string bandwidthKernel = @"
@@ -327,7 +329,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Warmup
             await kernel.LaunchAsync(launchConfig, deviceInput, deviceOutput, elementCount);
@@ -367,7 +373,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             // Test different buffer sizes for alignment
             var sizes = new[] { 1024, 2048, 4096, 8192, 16384, 32768 };
@@ -394,7 +400,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             // Get initial statistics
             var initialStats = accelerator.GetMemoryStatistics();
@@ -410,7 +416,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Verify statistics changed
             afterAllocStats.UsedMemoryBytes.Should().BeGreaterThan(initialStats.UsedMemoryBytes);
-            afterAllocStats.AllocationCount.Should().BeGreaterOrEqualTo(initialStats.AllocationCount);
+            afterAllocStats.AllocationCount.Should().BeGreaterThanOrEqualTo(initialStats.AllocationCount);
             
             Output.WriteLine($"Memory Statistics:");
             Output.WriteLine($"  Initial Used: {initialStats.UsedMemoryBytes / (1024 * 1024):F1} MB");
@@ -425,7 +431,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 4 * 1024 * 1024; // 4M elements
             const int iterations = 5;
@@ -483,7 +489,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine($"  Pinned Memory: {pinnedBandwidth:F2} GB/s");
                 Output.WriteLine($"  Improvement: {pinnedBandwidth / regularBandwidth:F2}x");
                 
-                pinnedBandwidth.Should().BeGreaterOrEqualTo(regularBandwidth, "Pinned memory should not be slower");
+                pinnedBandwidth.Should().BeGreaterThanOrEqualTo(regularBandwidth, "Pinned memory should not be slower");
             }
             catch (NotSupportedException)
             {

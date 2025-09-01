@@ -337,7 +337,8 @@ public abstract class GpuTestBase : TestBase
     /// <returns>Bandwidth in GB/s.</returns>
     protected double CalculateBandwidth(long bytesTransferred, double elapsedMs)
     {
-        if (elapsedMs <= 0) return 0;
+        if (elapsedMs <= 0)
+            return 0;
 
         var bandwidthGBps = (bytesTransferred / (1024.0 * 1024.0 * 1024.0)) / (elapsedMs / 1000.0);
         

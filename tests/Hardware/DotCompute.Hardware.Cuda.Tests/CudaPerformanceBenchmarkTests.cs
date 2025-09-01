@@ -97,7 +97,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             using var memoryTracker = new MemoryTracker(Output);
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             LogDeviceCapabilities();
             
@@ -112,7 +112,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             var measure = new PerformanceMeasurement("Memory Bandwidth", Output);
             
@@ -141,7 +145,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var avgBandwidthGBps = bytesPerIteration / (avgTime * 1024 * 1024 * 1024);
             var peakBandwidthGBps = bytesPerIteration / (minTime * 1024 * 1024 * 1024);
             
-            var expectedBandwidth = accelerator.DeviceInfo.MemoryBandwidthGBps;
+            var expectedBandwidth = accelerator.Info.MemoryBandwidthGBps;
             var achievedRatio = avgBandwidthGBps / expectedBandwidth;
             
             Output.WriteLine($"Memory Bandwidth Benchmark Results:");
@@ -168,7 +172,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 1024 * 1024; // 1M elements
             const int iterations = 10;
@@ -185,7 +189,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Warmup
             await kernel.LaunchAsync(launchConfig, deviceInput, deviceOutput, elementCount);
@@ -235,13 +243,13 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             var matrixSizes = new[] { 512, 1024, 2048 };
             
             foreach (var matrixSize in matrixSizes)
             {
-                if (accelerator.DeviceInfo.AvailableMemory < (long)matrixSize * matrixSize * sizeof(float) * 3 * 2)
+                if (accelerator.Info.AvailableMemory < (long)matrixSize * matrixSize * sizeof(float) * 3 * 2)
                 {
                     Output.WriteLine($"Skipping matrix size {matrixSize} due to insufficient memory");
                     continue;
@@ -342,7 +350,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             var transferSizes = new[] { 1, 4, 16, 64, 256 }; // MB
             const int iterations = 10;
@@ -412,7 +420,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(HasMinimumComputeCapability(2, 0), "Concurrent streams require compute capability 2.0+");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 1024 * 1024;
             const int numStreams = 4;
@@ -421,7 +429,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             var kernel = accelerator.CompileKernel(SimpleKernel, "simpleAdd");
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Prepare data for each stream
             var hostDataA = new float[numStreams][];

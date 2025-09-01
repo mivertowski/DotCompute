@@ -89,11 +89,20 @@
     <LongRunningTestTimeout Condition="'$(LongRunningTestTimeout)' == ''">600000</LongRunningTestTimeout> <!-- 10 minutes -->
   </PropertyGroup>
 
-  <ItemGroup>
+  <!-- Source Link and ILLink for non-test projects -->
+  <ItemGroup Condition="'$(IsTestProject)' != 'true'">
     <!-- Source Link -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     <!-- Fix ILLink.Tasks version globally -->
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
+  </ItemGroup>
+
+  <!-- Source Link and ILLink for test projects (centralized version management) -->
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <!-- Source Link -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
+    <!-- Fix ILLink.Tasks version globally -->
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" />
   </ItemGroup>
   
   <!-- Test project dependencies are handled by individual test projects and tests/Directory.Build.targets -->

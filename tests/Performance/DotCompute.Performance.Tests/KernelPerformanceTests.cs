@@ -15,98 +15,15 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Tests.Common;
 using System.Collections.Concurrent;
 using ConcurrentQueue = System.Collections.Concurrent.ConcurrentQueue<object>;
-
-// Define missing types and enums
-namespace DotCompute.Abstractions.Kernels
-{
-    public enum KernelLanguage
-    {
-        OpenCL,
-        CUDA,
-        CSharp,
-        HLSL
-    }
-    
-    public enum OptimizationLevel
-    {
-        None,
-        Default,
-        Aggressive
-    }
-    
-    public class KernelDefinition
-    {
-        public required string Name { get; set; }
-        public required string Source { get; set; }
-        public KernelLanguage Language { get; set; }
-        public required string EntryPoint { get; set; }
-    }
-    
-    public class CompilationOptions
-    {
-        public OptimizationLevel OptimizationLevel { get; set; } = OptimizationLevel.Default;
-        public bool EnableDebugInfo { get; set; }
-    }
-    
-    public class KernelArguments
-    {
-        private readonly object[] _arguments;
-        
-        public KernelArguments(object[] arguments)
-        {
-            _arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
-        }
-        
-        public int Count => _arguments.Length;
-        public object this[int index] => _arguments[index];
-    }
-    
-    public class KernelParameter
-    {
-        public required string Name { get; set; }
-        public required Type Type { get; set; }
-    }
-    
-    public class KernelExecutionOptions
-    {
-        public int[]? GlobalWorkSize { get; set; }
-        public int[]? LocalWorkSize { get; set; }
-    }
-    
-    public class KernelExecutionResult
-    {
-        public TimeSpan ExecutionTime { get; set; }
-        public bool Success { get; set; }
-        public string? ErrorMessage { get; set; }
-    }
-}
-
-namespace DotCompute.Abstractions
-{
-    public enum AcceleratorType
-    {
-        CPU,
-        GPU,
-        TPU,
-        FPGA
-    }
-    
-    public class AcceleratorContext
-    {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-    }
-    
-    public interface IUnifiedMemoryManager : IAsyncDisposable
-    {
-        // Mock interface for memory management
-    }
-}
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using System.Linq;
 
-namespace DotCompute.Performance.Tests;
+
+namespace DotCompute.Performance.Tests
+{
 
 /// <summary>
 /// Performance benchmarks for kernel compilation and execution operations.
@@ -242,7 +159,7 @@ public class KernelPerformanceTests : GpuTestBase
             OptimizationLevel.Aggressive
         };
         
-        var results = new Dictionary<OptimizationLevel, (double CompilationTime, long ByteCodeSize)>();
+        var results = new Dictionary<DotCompute.Abstractions.Kernels.OptimizationLevel, (double CompilationTime, long ByteCodeSize)>();
 
         // Act
         foreach (var level in optimizationLevels)
@@ -268,12 +185,12 @@ public class KernelPerformanceTests : GpuTestBase
         }
 
         // Assert - Verify optimization effects
-        var noneResult = results[OptimizationLevel.None];
-        var aggressiveResult = results[OptimizationLevel.Aggressive];
+        var noneResult = results[DotCompute.Abstractions.Kernels.OptimizationLevel.None];
+        var aggressiveResult = results[DotCompute.Abstractions.Kernels.OptimizationLevel.Aggressive];
         
         // Aggressive optimization should typically result in smaller bytecode
         // but may take longer to compile
-        aggressiveResult.ByteCodeSize.Should().BeLessOrEqualTo(noneResult.ByteCodeSize,
+        aggressiveResult.ByteCodeSize.Should().BeLessThanOrEqualTo(noneResult.ByteCodeSize,
             "Aggressive optimization should produce smaller or equal bytecode size");
         
         _output.WriteLine($"Bytecode size reduction: {((double)(noneResult.ByteCodeSize - aggressiveResult.ByteCodeSize) / noneResult.ByteCodeSize) * 100:F1}%");
@@ -518,7 +435,7 @@ public class KernelPerformanceTests : GpuTestBase
         return new KernelDefinition
         {
             Name = name,
-            Source = @"
+            Source = $@"
                 __kernel void {name}(__global float* input, __global float* output, int size)
                 {{
                     int gid = get_global_id(0);
@@ -548,7 +465,7 @@ public class KernelPerformanceTests : GpuTestBase
         return new KernelDefinition
         {
             Name = name,
-            Source = @"
+            Source = $@"
                 __kernel void {name}(__global float* data, int size)
                 {{
                     int gid = get_global_id(0);
@@ -571,7 +488,7 @@ public class KernelPerformanceTests : GpuTestBase
         return new KernelDefinition
         {
             Name = name,
-            Source = @"
+            Source = $@"
                 __kernel void {name}(__global float* input, __global float* output, int size)
                 {{
                     int gid = get_global_id(0);
@@ -590,7 +507,7 @@ public class KernelPerformanceTests : GpuTestBase
         return new KernelDefinition
         {
             Name = name,
-            Source = @"
+            Source = $@"
                 __kernel void {name}(__global float* data, int size)
                 {{
                     int gid = get_global_id(0);
@@ -605,13 +522,15 @@ public class KernelPerformanceTests : GpuTestBase
     }
 
     private static KernelArguments CreateKernelArguments(int size)
+    {
         // Mock implementation - create dummy arguments
-        => new(new object[] { new float[size], new float[size], size });
+        return new KernelArguments(new object[] { new float[size], new float[size], size });
+    }
 
     private string GenerateComplexKernelSource(string name, int size)
     {
         // Generate a more complex kernel for compilation benchmarking
-        return $"""
+        return $@"
             __kernel void {name}(__global float* matrix_a, __global float* matrix_b, __global float* result, int N)
             {{
                 int row = get_global_id(0);
@@ -628,19 +547,19 @@ public class KernelPerformanceTests : GpuTestBase
             ";
     }
 
-    private long GetEstimatedByteCodeSize(ICompiledKernel kernel)
+    private static long GetEstimatedByteCodeSize(ICompiledKernel kernel)
     {
         // Mock implementation - estimate bytecode size
         return kernel.Name.Length * 100 + 2048; // Simplified estimation
     }
 
-    private long GetEstimatedDataSize(KernelArguments arguments)
+    private static long GetEstimatedDataSize(KernelArguments arguments)
     {
         // Mock implementation - estimate data transfer size
         return arguments.Count * 4 * 1024; // Simplified estimation
     }
 
-    private double CalculateStandardDeviation(IEnumerable<double> values)
+    private static double CalculateStandardDeviation(IEnumerable<double> values)
     {
         var valuesList = values.ToList();
         var mean = valuesList.Average();
@@ -648,7 +567,7 @@ public class KernelPerformanceTests : GpuTestBase
         return Math.Sqrt(sumSquaredDiffs / valuesList.Count);
     }
 
-    private double GetPercentile(List<double> sortedValues, int percentile)
+    private static double GetPercentile(List<double> sortedValues, int percentile)
     {
         var index = (percentile / 100.0) * (sortedValues.Count - 1);
         var lower = (int)Math.Floor(index);
@@ -674,21 +593,83 @@ public class KernelPerformanceTests : GpuTestBase
     }
 }
 
+#region Mock Types
+
+// Mock types for testing - simplified versions of the actual types
+public enum KernelLanguage
+{
+    OpenCL,
+    CUDA,
+    CSharp,
+    HLSL
+}
+
+public enum OptimizationLevel
+{
+    None,
+    Default,
+    Aggressive
+}
+
+public class KernelDefinition
+{
+    public required string Name { get; set; }
+    public required string Source { get; set; }
+    public KernelLanguage Language { get; set; }
+    public required string EntryPoint { get; set; }
+}
+
+public class CompilationOptions
+{
+    public OptimizationLevel OptimizationLevel { get; set; } = OptimizationLevel.Default;
+    public bool EnableDebugInfo { get; set; }
+}
+
+public class KernelArguments
+{
+    private readonly object[] _arguments;
+    
+    public KernelArguments(object[] arguments)
+    {
+        _arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
+    }
+    
+    public int Count => _arguments.Length;
+    public object this[int index] => _arguments[index];
+}
+
+public interface ITestUnifiedMemoryManager : IAsyncDisposable
+{
+    // Mock interface for memory management
+}
+
+public interface IAcceleratorTest : IAsyncDisposable
+{
+    AcceleratorInfo Info { get; }
+    DotCompute.Abstractions.AcceleratorType Type { get; }
+    ITestUnifiedMemoryManager Memory { get; }
+    DotCompute.Abstractions.AcceleratorContext Context { get; }
+    ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default);
+    ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
+}
+
+#endregion
+
 /// <summary>
 /// Mock accelerator for performance testing
 /// </summary>
-internal class MockAccelerator : IAccelerator
+internal class MockAccelerator : IAcceleratorTest
 {
     public AcceleratorInfo Info { get; }
-    public AcceleratorType Type => AcceleratorType.CPU;
-    public IUnifiedMemoryManager Memory { get; }
-    public AcceleratorContext Context { get; }
+    public DotCompute.Abstractions.AcceleratorType Type => DotCompute.Abstractions.AcceleratorType.CPU;
+    public ITestUnifiedMemoryManager Memory { get; }
+    public DotCompute.Abstractions.AcceleratorContext Context { get; }
 
     public MockAccelerator(AcceleratorInfo info)
     {
         Info = info;
         Memory = new MockMemoryManager();
-        Context = new AcceleratorContext();
+        Context = new DotCompute.Abstractions.AcceleratorContext();
     }
 
     public async ValueTask<ICompiledKernel> CompileKernelAsync(
@@ -744,6 +725,17 @@ internal class MockCompiledKernel : ICompiledKernel
         
         await Task.Delay(executionDelay, cancellationToken);
     }
+    
+    public ValueTask ExecuteAsync(DotCompute.Abstractions.Kernels.KernelArguments arguments, CancellationToken cancellationToken = default)
+    {
+        // Convert our test KernelArguments to the interface expected type
+        var testArgs = new KernelArguments(new object[arguments.Count]);
+        for (int i = 0; i < arguments.Count; i++)
+        {
+            testArgs[i] = arguments[i];
+        }
+        return ExecuteAsync(testArgs, cancellationToken);
+    }
 
     public ValueTask DisposeAsync()
     {
@@ -754,9 +746,84 @@ internal class MockCompiledKernel : ICompiledKernel
 /// <summary>
 /// Mock memory manager for testing
 /// </summary>
-internal class MockMemoryManager : IUnifiedMemoryManager
+internal class MockMemoryManager : ITestUnifiedMemoryManager
 {
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+/// <summary>
+/// Mock memory buffer for testing
+/// </summary>
+internal class MockMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+{
+    public int Count { get; }
+    public long SizeInBytes => Count * sizeof(T);
+    public MemoryLocation Location => MemoryLocation.Device;
+    public bool IsDisposed { get; private set; }
+
+    public MockMemoryBuffer(int count)
+    {
+        Count = count;
+    }
+
+    public Span<T> AsSpan() => new Span<T>(new T[Count]);
+    public Memory<T> AsMemory() => new Memory<T>(new T[Count]);
+    public ValueTask<Memory<T>> GetHostMemoryAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(AsMemory());
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync() { IsDisposed = true; return ValueTask.CompletedTask; }
+}
+
+/// <summary>
+/// Mock raw memory buffer for testing
+/// </summary>
+internal class MockRawMemoryBuffer : IUnifiedMemoryBuffer
+{
+    public long SizeInBytes { get; }
+    public MemoryLocation Location => MemoryLocation.Device;
+    public MemoryOptions Options { get; } = new MemoryOptions();
+    public MemoryBufferState State => IsDisposed ? MemoryBufferState.Disposed : MemoryBufferState.DeviceResident;
+    public bool IsDisposed { get; private set; }
+
+    public MockRawMemoryBuffer(long sizeInBytes)
+    {
+        SizeInBytes = sizeInBytes;
+    }
+
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offsetInBytes, CancellationToken cancellationToken = default) where T : unmanaged
+        => ValueTask.CompletedTask;
+
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offsetInBytes, CancellationToken cancellationToken = default) where T : unmanaged
+        => ValueTask.CompletedTask;
+
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync() { IsDisposed = true; return ValueTask.CompletedTask; }
+    public void Dispose() { IsDisposed = true; }
+}
+
+/// <summary>
+/// Mock memory buffer view for testing
+/// </summary>
+internal class MockMemoryBufferView<T> : IUnifiedMemoryBufferView<T> where T : unmanaged
+{
+    public int Count { get; }
+    public long SizeInBytes => Count * sizeof(T);
+    public MemoryLocation Location => MemoryLocation.Device;
+    public bool IsDisposed { get; private set; }
+    public IUnifiedMemoryBuffer<T> BaseBuffer { get; }
+    public int Offset { get; }
+
+    public MockMemoryBufferView(IUnifiedMemoryBuffer<T> baseBuffer, int offset, int count)
+    {
+        BaseBuffer = baseBuffer;
+        Offset = offset;
+        Count = count;
+    }
+
+    public Span<T> AsSpan() => new Span<T>(new T[Count]);
+    public Memory<T> AsMemory() => new Memory<T>(new T[Count]);
+    public ValueTask<Memory<T>> GetHostMemoryAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(AsMemory());
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync() { IsDisposed = true; return ValueTask.CompletedTask; }
 }
 
 /// <summary>
@@ -772,15 +839,4 @@ internal class TestContext
     public T? Get<T>(string key) => _data.TryGetValue(key, out var value) ? (T?)value : default;
 }
 
-/// <summary>
-/// Test context for storing cross-test data
-/// </summary>
-internal static class TestContext
-{
-    private static readonly Dictionary<string, object> _data = new();
-    
-    public static TestContext Current { get; } = new TestContext();
-    
-    public void Set(string key, object value) => _data[key] = value;
-    public T? Get<T>(string key) => _data.TryGetValue(key, out var value) ? (T?)value : default;
 }

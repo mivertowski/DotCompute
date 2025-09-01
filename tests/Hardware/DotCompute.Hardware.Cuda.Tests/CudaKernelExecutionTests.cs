@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Abstractions.Types;
 using DotCompute.Tests.Common;
 using FluentAssertions;
 using Xunit;
@@ -96,7 +98,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 1024 * 1024; // 1M elements
             
@@ -127,7 +129,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Configure launch parameters
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Execute kernel
             var stopwatch = Stopwatch.StartNew();
@@ -159,7 +165,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int matrixSize = 512; // 512x512 matrices
             const int elementCount = matrixSize * matrixSize;
@@ -191,10 +197,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Configure launch parameters - 2D grid for matrix operations
             const int blockDim = 16;
             var gridDim = (matrixSize + blockDim - 1) / blockDim;
-            var launchConfig = new LaunchConfiguration(
-                new Dim3(gridDim, gridDim), 
-                new Dim3(blockDim, blockDim)
-            );
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridDim, gridDim),
+                BlockSize = new Dim3(blockDim, blockDim)
+            };
             
             // Execute kernel
             var stopwatch = Stopwatch.StartNew();
@@ -236,7 +243,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int elementCount = 1024 * 256; // Multiple blocks
             const int blockSize = 256;
@@ -262,11 +269,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             var kernel = accelerator.CompileKernel(SharedMemoryKernel, "sharedMemoryReduce");
             
             // Configure launch parameters with shared memory
-            var launchConfig = new LaunchConfiguration(
-                new Dim3(gridSize), 
-                new Dim3(blockSize)
-            );
-            launchConfig.SharedMemorySizeBytes = blockSize * sizeof(float);
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize),
+                SharedMemoryBytes = (ulong)(blockSize * sizeof(float))
+            };
             
             // Execute kernel
             var stopwatch = Stopwatch.StartNew();
@@ -304,10 +312,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             // Check if dynamic parallelism is supported (compute capability >= 3.5)
-            var computeCapability = accelerator.DeviceInfo.ComputeCapability;
+            var computeCapability = accelerator.Info.ComputeCapability;
             if (computeCapability.Major < 3 || (computeCapability.Major == 3 && computeCapability.Minor < 5))
             {
                 Output.WriteLine($"Dynamic parallelism not supported (compute capability {computeCapability.Major}.{computeCapability.Minor})");
@@ -329,7 +337,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Compile kernel with dynamic parallelism
             var kernel = accelerator.CompileKernel(DynamicParallelismKernel, "parentKernel");
             
-            var launchConfig = new LaunchConfiguration(new Dim3(4), new Dim3(8));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(4),
+                BlockSize = new Dim3(8)
+            };
             
             var stopwatch = Stopwatch.StartNew();
             await kernel.LaunchAsync(launchConfig, deviceData, elementCount);
@@ -363,7 +375,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int iterations = 10;
             const int elementCount = 1024 * 1024;
@@ -388,7 +400,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration(new Dim3(gridSize), new Dim3(blockSize));
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridSize),
+                BlockSize = new Dim3(blockSize)
+            };
             
             // Warmup
             await kernel.LaunchAsync(launchConfig, deviceA, deviceB, deviceC, elementCount);
@@ -426,9 +442,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            using var accelerator = factory.CreateAccelerator(0);
+            await using var accelerator = factory.CreateDefaultAccelerator();
             
-            var deviceInfo = accelerator.DeviceInfo;
+            var deviceInfo = accelerator.Info;
             
             // Test different block sizes for optimal performance
             var blockSizes = new[] { 32, 64, 128, 256, 512, 1024 };
@@ -446,9 +462,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                     Output.WriteLine($"Block Size: {blockSize}, Grid Size: {maxGridSize}");
                     
                     blockSize.Should().BeGreaterThan(0);
-                    blockSize.Should().BeLessOrEqualTo(deviceInfo.MaxThreadsPerBlock);
+                    blockSize.Should().BeLessThanOrEqualTo(deviceInfo.MaxThreadsPerBlock);
                     maxGridSize.Should().BeGreaterThan(0);
-                    maxGridSize.Should().BeLessOrEqualTo(65535);
+                    maxGridSize.Should().BeLessThanOrEqualTo(65535);
                 }
             }
             

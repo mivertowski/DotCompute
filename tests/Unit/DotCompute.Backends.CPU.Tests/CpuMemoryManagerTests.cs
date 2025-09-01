@@ -143,7 +143,7 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Assert
         afterAllocation.Should().BeGreaterThan(initialAllocated);
-        (afterAllocation - initialAllocated).Should().BeGreaterOrEqualTo(3072); // At least 1024 + 2048
+        (afterAllocation - initialAllocated).Should().BeGreaterThanOrEqualTo(3072); // At least 1024 + 2048
         
         // Cleanup
         await buffer1.DisposeAsync();
@@ -226,10 +226,10 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Assert
         statistics.Should().NotBeNull();
-        statistics.TotalAllocated.Should().BeGreaterOrEqualTo(0);
-        statistics.TotalFreed.Should().BeGreaterOrEqualTo(0);
-        statistics.ActiveBuffers.Should().BeGreaterOrEqualTo(0);
-        statistics.PeakMemoryUsage.Should().BeGreaterOrEqualTo(0);
+        statistics.TotalAllocated.Should().BeGreaterThanOrEqualTo(0);
+        statistics.TotalFreed.Should().BeGreaterThanOrEqualTo(0);
+        statistics.ActiveBuffers.Should().BeGreaterThanOrEqualTo(0);
+        statistics.PeakMemoryUsage.Should().BeGreaterThanOrEqualTo(0);
     }
     
     [Fact]

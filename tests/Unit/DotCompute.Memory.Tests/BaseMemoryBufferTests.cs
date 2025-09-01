@@ -472,7 +472,7 @@ public class BaseMemoryBufferTests
             }
             return new TestPooledBuffer<int>(1024, b => {
                 returnCount++;
-                pool.Enqueue(b);
+                pool.Enqueue((TestPooledBuffer<int>)b);
             });
         }
         
