@@ -10,6 +10,7 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Tests.Common;
+using DotCompute.Core.Extensions;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -114,16 +115,17 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             
             // Allocate device memory
-            using var deviceA = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceB = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceC = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
             
             // Transfer data to device
             await deviceA.WriteAsync(hostA.AsSpan(), 0);
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
             // Compile kernel
-            var kernel = accelerator.CompileKernel(VectorAddKernel, "vectorAdd");
+            var kernelDef = new KernelDefinition("vectorAdd", VectorAddKernel);
+            var kernel = await accelerator.CompileKernelAsync(kernelDef);
             kernel.Should().NotBeNull();
             
             // Configure launch parameters
@@ -183,16 +185,17 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             
             // Allocate device memory
-            using var deviceA = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceB = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceC = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
             
             // Transfer data to device
             await deviceA.WriteAsync(hostA.AsSpan(), 0);
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
             // Compile kernel
-            var kernel = accelerator.CompileKernel(MatrixMultiplyKernel, "matrixMultiply");
+            var kernelDef = new KernelDefinition("matrixMultiply", MatrixMultiplyKernel);
+            var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             // Configure launch parameters - 2D grid for matrix operations
             const int blockDim = 16;
@@ -259,14 +262,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             
             // Allocate device memory
-            using var deviceInput = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceOutput = accelerator.CreateBuffer<float>(gridSize);
+            await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceOutput = await accelerator.Memory.AllocateAsync<float>(gridSize);
             
             // Transfer data to device
             await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
             
             // Compile kernel
-            var kernel = accelerator.CompileKernel(SharedMemoryKernel, "sharedMemoryReduce");
+            var kernelDef = new KernelDefinition("sharedMemoryReduce", SharedMemoryKernel);
+            var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             // Configure launch parameters with shared memory
             var launchConfig = new LaunchConfiguration
@@ -331,11 +335,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                 hostData[i] = i + 1.0f;
             }
             
-            using var deviceData = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceData = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await deviceData.WriteAsync(hostData.AsSpan(), 0);
             
             // Compile kernel with dynamic parallelism
-            var kernel = accelerator.CompileKernel(DynamicParallelismKernel, "parentKernel");
+            var kernelDef = new KernelDefinition("parentKernel", DynamicParallelismKernel);
+            var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             var launchConfig = new LaunchConfiguration
             {
@@ -389,14 +394,15 @@ namespace DotCompute.Hardware.Cuda.Tests
                 hostB[i] = i * 0.3f;
             }
             
-            using var deviceA = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceB = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceC = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
             
             await deviceA.WriteAsync(hostA.AsSpan(), 0);
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
-            var kernel = accelerator.CompileKernel(VectorAddKernel, "vectorAdd");
+            var kernelDef = new KernelDefinition("vectorAdd", VectorAddKernel);
+            var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
@@ -437,7 +443,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         }
 
         [SkippableFact]
-        public void Grid_Block_Configuration_Should_Be_Optimized()
+        public async Task Grid_Block_Configuration_Should_Be_Optimized()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             

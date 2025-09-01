@@ -371,6 +371,11 @@ public class CpuKernelCompilerTests : IDisposable
         };
     }
     
+    // NOTE: CpuKernelCompilationContext is internal and cannot be accessed from tests
+    // These methods are commented out because they reference internal types
+    // Tests that use these methods need to be refactored to use public APIs
+    
+    /*
     private CpuKernelCompilationContext CreateCompilationContext(KernelDefinition definition, OptimizationLevel optimizationLevel)
     {
         return CreateCompilationContext(definition, new CompilationOptions
@@ -391,6 +396,7 @@ public class CpuKernelCompilerTests : IDisposable
             Logger = _logger
         };
     }
+    */
 
 
     private static string GenerateSimpleKernelCode(string name) => $"__kernel void {name}(__global float* a, __global float* b, __global float* c) {{ int i = get_global_id(0); c[i] = a[i] + b[i]; }}";

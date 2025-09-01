@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
@@ -462,9 +463,9 @@ public class ErrorHandlingTests : IDisposable
         var exception = await act.Should().ThrowAsync<InvalidOperationException>();
 
         // Verify context is preserved
-        exception.Which.Data.Should().ContainKey("KernelName");
-        exception.Which.Data.Should().ContainKey("AcceleratorType");
-        exception.Which.Data.Should().ContainKey("Timestamp");
+        exception.Which.Data.Contains("KernelName").Should().BeTrue();
+        exception.Which.Data.Contains("AcceleratorType").Should().BeTrue();
+        exception.Which.Data.Contains("Timestamp").Should().BeTrue();
         exception.Which.Data["KernelName"].Should().Be("context_test");
     }
 
@@ -492,9 +493,10 @@ public class ErrorHandlingTests : IDisposable
 
         // Assert
         accelerator.LastDiagnosticInfo.Should().NotBeNull();
+        accelerator.LastDiagnosticInfo.Should().NotBeNull();
         accelerator.LastDiagnosticInfo!.Should().ContainKey("MemoryUsage");
-        accelerator.LastDiagnosticInfo.Should().ContainKey("ThreadCount");
-        accelerator.LastDiagnosticInfo.Should().ContainKey("SystemLoad");
+        accelerator.LastDiagnosticInfo!.Should().ContainKey("ThreadCount");
+        accelerator.LastDiagnosticInfo!.Should().ContainKey("SystemLoad");
     }
 
     #endregion
@@ -702,9 +704,9 @@ public class ErrorHandlingTests : IDisposable
         var exception = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*version mismatch*");
 
-        exception.Which.Data.Should().ContainKey("RequiredVersion");
-        exception.Which.Data.Should().ContainKey("AvailableVersion");
-        exception.Which.Data.Should().ContainKey("IsBackwardCompatible");
+        exception.Which.Data.Contains("RequiredVersion").Should().BeTrue();
+        exception.Which.Data.Contains("AvailableVersion").Should().BeTrue();
+        exception.Which.Data.Contains("IsBackwardCompatible").Should().BeTrue();
     }
 
     [Fact]
@@ -773,9 +775,9 @@ public class ErrorHandlingTests : IDisposable
         var exception = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Buffer overflow detected*");
 
-        exception.Which.Data.Should().ContainKey("BufferSize");
-        exception.Which.Data.Should().ContainKey("AttemptedAccess");
-        exception.Which.Data.Should().ContainKey("ProtectionEnabled");
+        exception.Which.Data.Contains("BufferSize").Should().BeTrue();
+        exception.Which.Data.Contains("AttemptedAccess").Should().BeTrue();
+        exception.Which.Data.Contains("ProtectionEnabled").Should().BeTrue();
 
         accelerator.BufferOverflowPrevented.Should().BeTrue();
     }
@@ -868,7 +870,7 @@ public class ErrorHandlingTests : IDisposable
         // Verify stack trace contains method names from the call chain
         exception.Which.StackTrace.Should().Contain(nameof(CompileKernelCoreAsync));
         exception.Which.StackTrace.Should().Contain("DeepMethodCall");
-        exception.Which.Data.Should().ContainKey("OriginalStackTrace");
+        exception.Which.Data.Contains("OriginalStackTrace").Should().BeTrue();
     }
 
     [Fact]
@@ -908,7 +910,7 @@ public class ErrorHandlingTests : IDisposable
         exceptions.Should().HaveCount(2);
         exceptions.Should().AllSatisfy(ex =>
         {
-            ex.Data.Should().ContainKey("CorrelationId");
+            ex.Data.Contains("CorrelationId").Should().BeTrue();
             ex.Data["CorrelationId"].Should().Be(correlationId);
         });
 
@@ -977,8 +979,8 @@ public class ErrorHandlingTests : IDisposable
             .WithMessage("*nested async error*");
 
         // Verify nested context is preserved
-        exception.Which.Data.Should().ContainKey("NestingLevel");
-        exception.Which.Data.Should().ContainKey("AsyncCallChain");
+        exception.Which.Data.Contains("NestingLevel").Should().BeTrue();
+        exception.Which.Data.Contains("AsyncCallChain").Should().BeTrue();
         exception.Which.Data["NestingLevel"].Should().Be(5);
     }
 

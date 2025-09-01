@@ -11,6 +11,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Tests.Common;
+using DotCompute.Core.Extensions;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -42,16 +43,16 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             Output.WriteLine($"Device Name: {accelerator.Info.Name}");
             Output.WriteLine($"Compute Capability: {accelerator.Info.ComputeCapability.Major}.{accelerator.Info.ComputeCapability.Minor}");
-            Output.WriteLine($"Global Memory: {accelerator.Info.GlobalMemoryBytes / (1024.0 * 1024.0 * 1024.0):F2} GB");
-            Output.WriteLine($"Multiprocessors: {accelerator.Info.MultiprocessorCount}");
-            Output.WriteLine($"CUDA Cores (est.): {accelerator.Info.EstimatedCudaCores}");
+            Output.WriteLine($"Global Memory: {accelerator.Info.GlobalMemoryBytes() / (1024.0 * 1024.0 * 1024.0):F2} GB");
+            Output.WriteLine($"Multiprocessors: {accelerator.Info.MultiprocessorCount()}");
+            Output.WriteLine($"CUDA Cores (est.): {accelerator.Info.EstimatedCudaCores()}");
         }
 
         [SkippableFact]
         public async Task Compute_Capability_Should_Be_8_9_For_RTX_2000()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(IsRTX2000Available(), "RTX 2000 series GPU not available");
+            Skip.IfNot(await IsRTX2000Available(), "RTX 2000 series GPU not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -61,7 +62,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // RTX 2000 Ada series should have compute capability 8.9
             computeCapability.Major.Should().Be(8);
             computeCapability.Minor.Should().Be(9);
-            accelerator.Info.ArchitectureGeneration.Should().Be("Ada Lovelace");
+            accelerator.Info.ArchitectureGeneration().Should().Be("Ada Lovelace");
         }
 
         [SkippableFact]
@@ -77,10 +78,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             buffer.Should().NotBeNull();
             buffer.SizeInBytes.Should().Be(bufferSize);
-            buffer.ElementCount.Should().Be(bufferSize / sizeof(float));
+            buffer.ElementCount().Should().Be(bufferSize / sizeof(float));
             
             Output.WriteLine($"Allocated {bufferSize} bytes on device");
-            Output.WriteLine($"Buffer element count: {buffer.ElementCount}");
+            Output.WriteLine($"Buffer element count: {buffer.ElementCount()}");
         }
 
         [SkippableFact]
@@ -279,9 +280,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Checks if an RTX 2000 series GPU is available
         /// </summary>
-        private static bool IsRTX2000Available()
+        private static async Task<bool> IsRTX2000Available()
         {
-            if (!IsCudaAvailable()) return false;
+            if (!await IsCudaAvailable()) return false;
             
             try
             {

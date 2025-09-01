@@ -10,6 +10,7 @@ using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Tests.Common;
+using DotCompute.Core.Extensions;
 using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
@@ -25,7 +26,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Enhanced CUDA availability check with detailed logging
         /// </summary>
-        protected new static bool IsCudaAvailable()
+        protected new static async Task<bool> IsCudaAvailable()
         {
             try
             {
@@ -73,7 +74,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         protected static async Task<bool> IsRTX2000AdaAvailable()
         {
-            if (!IsCudaAvailable()) return false;
+            if (!await IsCudaAvailable()) return false;
             
             try
             {
@@ -81,10 +82,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await using var accelerator = factory.CreateDefaultAccelerator();
                 
                 var deviceInfo = accelerator.Info;
-                return deviceInfo.IsRTX2000Ada && 
-                       deviceInfo.ComputeCapability.Major == 8 && 
+                return deviceInfo.IsRTX2000Ada() && 
+                       deviceInfo.ComputeCapability!.Major == 8 && 
                        deviceInfo.ComputeCapability.Minor == 9 &&
-                       deviceInfo.ArchitectureGeneration.Contains("Ada");
+                       deviceInfo.ArchitectureGeneration().Contains("Ada");
             }
             catch
             {
@@ -97,7 +98,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         protected static async Task<bool> HasMinimumComputeCapability(int majorMin, int minorMin = 0)
         {
-            if (!IsCudaAvailable()) return false;
+            if (!await IsCudaAvailable()) return false;
             
             try
             {
@@ -118,7 +119,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         protected static async Task<string> GetDeviceInfoString()
         {
-            if (!IsCudaAvailable()) return "CUDA not available";
+            if (!await IsCudaAvailable()) return "CUDA not available";
             
             try
             {
@@ -126,10 +127,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await using var accelerator = factory.CreateDefaultAccelerator();
                 
                 var info = accelerator.Info;
-                return $"{info.Name} (CC {info.ComputeCapability.Major}.{info.ComputeCapability.Minor}, " +
-                       $"{info.GlobalMemoryBytes / (1024 * 1024 * 1024):F1} GB, " +
-                       $"{info.MultiprocessorCount} SMs, " +
-                       $"{info.EstimatedCudaCores} cores)";
+                return $"{info.Name} (CC {info.ComputeCapability?.Major}.{info.ComputeCapability?.Minor}, " +
+                       $"{info.GlobalMemorySize / (1024 * 1024 * 1024):F1} GB, " +
+                       $"{info.MaxComputeUnits} SMs, " +
+                       $"{info.MaxComputeUnits * 64} cores)";
             }
             catch (Exception ex)
             {
@@ -319,7 +320,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 
                 Output.WriteLine("CUDA Device Capabilities:");
                 Output.WriteLine($"  Name: {info.Name}");
-                Output.WriteLine($"  Architecture: {info.ArchitectureGeneration}");
+                Output.WriteLine($"  Architecture: {info.ArchitectureGeneration()}");
                 Output.WriteLine($"  Compute Capability: {info.ComputeCapability.Major}.{info.ComputeCapability.Minor}");
                 Output.WriteLine($"  Global Memory: {info.GlobalMemoryBytes / (1024.0 * 1024.0 * 1024.0):F2} GB");
                 Output.WriteLine($"  Available Memory: {info.AvailableMemory / (1024.0 * 1024.0 * 1024.0):F2} GB");
@@ -328,7 +329,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine($"  Max Threads/Block: {info.MaxThreadsPerBlock}");
                 Output.WriteLine($"  Shared Memory/Block: {info.SharedMemoryPerBlock / 1024:F0} KB");
                 Output.WriteLine($"  L2 Cache Size: {info.L2CacheSize / 1024:F0} KB");
-                Output.WriteLine($"  Memory Bandwidth: {info.MemoryBandwidthGBps:F0} GB/s");
+                Output.WriteLine($"  Memory Bandwidth: {info.MemoryBandwidthGBps():F0} GB/s");
                 Output.WriteLine($"  Core Clock: {info.ClockRate / 1000.0:F0} MHz");
                 Output.WriteLine($"  Memory Clock: {info.MemoryClockRate / 1000.0:F0} MHz");
                 Output.WriteLine($"  Warp Size: {info.WarpSize}");

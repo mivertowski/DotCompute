@@ -18,8 +18,8 @@ public class KernelPerformanceBenchmarks : PerformanceBenchmarkBase, IDisposable
 {
     private readonly ITestOutputHelper _output;
     private IAccelerator _accelerator;
-    private IMemoryBuffer<float> _inputBuffer;
-    private IMemoryBuffer<float> _outputBuffer;
+    private IUnifiedMemoryBuffer<float> _inputBuffer;
+    private IUnifiedMemoryBuffer<float> _outputBuffer;
     private IKernel _vectorAddKernel;
     private IKernel _matrixMultiplyKernel;
     private IKernel _complexComputeKernel;

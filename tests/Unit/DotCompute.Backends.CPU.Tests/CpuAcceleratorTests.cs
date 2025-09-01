@@ -65,11 +65,12 @@ public class CpuAcceleratorTests : IDisposable
         info.Type.Should().Be(AcceleratorType.CPU);
         info.IsUnifiedMemory.Should().BeTrue();
         info.ComputeUnits.Should().Be(Environment.ProcessorCount);
-        info.Capabilities.Should().ContainKey("SimdWidth");
-        info.Capabilities.Should().ContainKey("SimdInstructionSets");
-        info.Capabilities.Should().ContainKey("ThreadCount");
-        info.Capabilities.Should().ContainKey("NumaNodes");
-        info.Capabilities.Should().ContainKey("CacheLineSize");
+        info.Capabilities.Should().NotBeNull();
+        info.Capabilities!.Should().ContainKey("SimdWidth");
+        info.Capabilities!.Should().ContainKey("SimdInstructionSets");
+        info.Capabilities!.Should().ContainKey("ThreadCount");
+        info.Capabilities!.Should().ContainKey("NumaNodes");
+        info.Capabilities!.Should().ContainKey("CacheLineSize");
     }
     
     [Fact]

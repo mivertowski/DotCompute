@@ -8,6 +8,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core;
+using DotCompute.Core.Extensions;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;

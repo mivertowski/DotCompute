@@ -12,6 +12,7 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Tests.Common;
+using DotCompute.Core.Extensions;
 using static DotCompute.Tests.Common.TestCategories;
 using FluentAssertions;
 using Xunit;
@@ -55,7 +56,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             foreach (var sizeBytes in testSizes)
             {
-                var elementCount = sizeBytes / sizeof(float);
+                var elementCount = (int)(sizeBytes / sizeof(float));
                 
                 try
                 {
@@ -63,7 +64,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                     
                     buffer.Should().NotBeNull();
                     buffer.SizeInBytes.Should().Be(sizeBytes);
-                    buffer.ElementCount.Should().Be(elementCount);
+                    buffer.ElementCount().Should().Be(elementCount);
                     
                     Output.WriteLine($"✓ Successfully allocated {sizeBytes / (1024.0 * 1024.0):F1} MB");
                     memoryTracker.LogCurrentUsage($"After {sizeBytes / (1024 * 1024)}MB allocation");
@@ -94,7 +95,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Try to allocate 80% of available memory
             var targetAllocationBytes = (long)(deviceInfo.AvailableMemory * 0.8);
-            var elementCount = targetAllocationBytes / sizeof(float);
+            var elementCount = (long)(targetAllocationBytes / sizeof(float));
             
             try
             {
@@ -287,7 +288,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var accelerator = factory.CreateDefaultAccelerator();
             
             var deviceInfo = accelerator.Info;
-            var theoreticalBandwidthGBps = deviceInfo.MemoryBandwidthGBps;
+            var theoreticalBandwidthGBps = deviceInfo.MemoryBandwidthGBps();
             
             Output.WriteLine($"Theoretical Memory Bandwidth: {theoreticalBandwidthGBps:F0} GB/s");
             
@@ -297,7 +298,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             foreach (var sizeMB in testSizes)
             {
                 var sizeBytes = sizeMB * 1024 * 1024;
-                var elementCount = sizeBytes / sizeof(float);
+                var elementCount = (int)(sizeBytes / sizeof(float));
                 var testData = TestDataGenerator.CreateRandomData(elementCount);
                 
                 await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
@@ -554,7 +555,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 // Try to allocate more memory than available
                 var excessiveSize = deviceInfo.GlobalMemoryBytes + (1024L * 1024L * 1024L); // +1GB
-                var elementCount = excessiveSize / sizeof(float);
+                var elementCount = (long)(excessiveSize / sizeof(float));
                 
                 // This should either throw an exception or fail gracefully
                 Func<Task> allocateExcessiveMemory = async () =>
@@ -612,7 +613,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int allocationCount = 100;
             const int bufferSize = 1024 * 1024; // 1MB each
-            const int elementCount = bufferSize / sizeof(float);
+            const int elementCount = (int)(bufferSize / sizeof(float));
             
             // Measure standard allocation performance
             var standardAllocTime = new PerformanceMeasurement("Standard Allocations", Output);
@@ -650,10 +651,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int dataSize = 64 * 1024 * 1024; // 64MB
-            const int elementCount = dataSize / sizeof(float);
+            const int elementCount = (int)(dataSize / sizeof(float));
             
             var testData = TestDataGenerator.CreateRandomData(elementCount);
-            using var buffer = accelerator.CreateBuffer<float>(elementCount);
+            await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
             
             // Test without prefetching
             var noPrefetchPerf = new PerformanceMeasurement("No Prefetch", Output);

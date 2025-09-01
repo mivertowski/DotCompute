@@ -955,7 +955,7 @@ public class BaseKernelCompilerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "ErrorScenarios")]
-    public async Task Validate_ComplexValidationScenarios_HandlesAllCases()
+    public void Validate_ComplexValidationScenarios_HandlesAllCases()
     {
         // Test valid kernel with complex metadata
         var validDefinition = new KernelDefinition("complex_valid", "__kernel void test() {}", "main")
@@ -1216,6 +1216,13 @@ public class BaseKernelCompilerTests : IDisposable
         protected override string CompilerName => "TestCompiler";
 
         public override IReadOnlyList<KernelLanguage> SupportedSourceTypes => [KernelLanguage.OpenCL, KernelLanguage.CUDA];
+
+        public override IReadOnlyDictionary<string, object> Capabilities { get; } = new Dictionary<string, object>
+        {
+            ["SupportsAsync"] = true,
+            ["SupportsCaching"] = true,
+            ["SupportsOptimization"] = true
+        };
 
         // Test properties
         public bool EnableCachingOverride { get; set; } = true;

@@ -36,10 +36,29 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     public override bool IsOnDevice => false;
     public override bool IsDirty => false;
     
-    public override Span<T> AsSpan() => _memory.Span;
-    public override ReadOnlySpan<T> AsReadOnlySpan() => _memory.Span;
-    public override Memory<T> AsMemory() => _memory;
-    public override ReadOnlyMemory<T> AsReadOnlyMemory() => _memory;
+    public override Span<T> AsSpan() 
+    {
+        ThrowIfDisposed();
+        return _memory.Span;
+    }
+    
+    public override ReadOnlySpan<T> AsReadOnlySpan() 
+    {
+        ThrowIfDisposed();
+        return _memory.Span;
+    }
+    
+    public override Memory<T> AsMemory() 
+    {
+        ThrowIfDisposed();
+        return _memory;
+    }
+    
+    public override ReadOnlyMemory<T> AsReadOnlyMemory() 
+    {
+        ThrowIfDisposed();
+        return _memory;
+    }
     
     public override DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
 
@@ -72,24 +91,44 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     
     public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
+        ThrowIfDisposed();
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        if (source.Length > Length)
+            throw new ArgumentOutOfRangeException(nameof(source), "Source is larger than buffer capacity");
+            
         source.CopyTo(_memory);
         return ValueTask.CompletedTask;
     }
     
     public override ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
     {
+        ThrowIfDisposed();
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        if (destination.Length < Length)
+            throw new ArgumentOutOfRangeException(nameof(destination), "Destination is smaller than buffer size");
+            
         _memory.CopyTo(destination);
         return ValueTask.CompletedTask;
     }
     
     public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default)
     {
+        ThrowIfDisposed();
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        ValidateCopyParameters(source.Length, 0, Length, offset, source.Length);
         source.CopyTo(_memory.Slice((int)offset));
         return ValueTask.CompletedTask;
     }
     
     public override ValueTask CopyToAsync(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default)
     {
+        ThrowIfDisposed();
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        ValidateCopyParameters(Length, offset, destination.Length, 0, destination.Length);
         _memory.Slice((int)offset).CopyTo(destination);
         return ValueTask.CompletedTask;
     }
@@ -113,7 +152,13 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     }
     
     public override IUnifiedMemoryBuffer<T> Slice(int offset, int length)
-        => new TestMemoryBuffer<T>(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), _memoryType);
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, Length);
+        
+        return new TestMemoryBuffer<T>(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), _memoryType);
+    }
     
     public override ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
@@ -383,7 +428,13 @@ internal sealed unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T
         => ValueTask.CompletedTask;
 
     public override IUnifiedMemoryBuffer<T> Slice(int offset, int length)
-        => this; // Simplified for testing
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, Length);
+        
+        return this; // Simplified for testing
+    }
 
     public override IUnifiedMemoryBuffer<TNew> AsType<TNew>()
         => throw new NotSupportedException();

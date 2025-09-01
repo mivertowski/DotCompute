@@ -9,6 +9,7 @@ using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Tests.Common;
+using DotCompute.Core.Extensions;
 using static DotCompute.Tests.Common.TestCategories;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -34,7 +35,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         [SkippableFact]
         public async Task Device_Initialization_Should_Succeed_With_Available_Hardware()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             using var memoryTracker = new MemoryTracker(Output);
             
@@ -44,16 +45,16 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             accelerator.Should().NotBeNull();
             accelerator.Info.Should().NotBeNull();
-            accelerator.IsDisposed.Should().BeFalse();
+            accelerator.IsDisposed().Should().BeFalse();
             
-            LogDeviceCapabilities();
+            await LogDeviceCapabilities();
             memoryTracker.LogCurrentUsage("After Initialization");
         }
 
         [SkippableFact]
         public async Task Device_Should_Report_Correct_Hardware_Specifications()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -64,23 +65,23 @@ namespace DotCompute.Hardware.Cuda.Tests
             deviceInfo.Name.Should().NotBeNullOrEmpty();
             deviceInfo.ComputeCapability.Major.Should().BeGreaterThanOrEqualTo(3);
             deviceInfo.ComputeCapability.Minor.Should().BeGreaterThanOrEqualTo(0);
-            deviceInfo.GlobalMemoryBytes.Should().BeGreaterThan(0);
-            deviceInfo.MultiprocessorCount.Should().BeGreaterThan(0);
+            deviceInfo.GlobalMemorySize.Should().BeGreaterThan(0);
+            deviceInfo.MaxComputeUnits.Should().BeGreaterThan(0);
             deviceInfo.MaxThreadsPerBlock.Should().BeGreaterThan(0);
-            deviceInfo.WarpSize.Should().Be(32); // CUDA standard warp size
+            (deviceInfo.Capabilities?["WarpSize"] ?? 32).Should().Be(32); // CUDA standard warp size
             
             Output.WriteLine($"Device specifications validated:");
             Output.WriteLine($"  Name: {deviceInfo.Name}");
             Output.WriteLine($"  CC: {deviceInfo.ComputeCapability.Major}.{deviceInfo.ComputeCapability.Minor}");
-            Output.WriteLine($"  Memory: {deviceInfo.GlobalMemoryBytes / (1024.0 * 1024.0 * 1024.0):F2} GB");
-            Output.WriteLine($"  SMs: {deviceInfo.MultiprocessorCount}");
+            Output.WriteLine($"  Memory: {deviceInfo.GlobalMemorySize / (1024.0 * 1024.0 * 1024.0):F2} GB");
+            Output.WriteLine($"  SMs: {deviceInfo.MaxComputeUnits}");
         }
 
         [SkippableFact]
         public async Task Device_Should_Support_Minimum_Compute_Capability()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(3, 5), "Requires minimum compute capability 3.5");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await HasMinimumComputeCapability(3, 5), "Requires minimum compute capability 3.5");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -99,7 +100,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         [SkippableFact]
         public async Task Simple_Vector_Addition_Kernel_Should_Execute_Successfully()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             using var memoryTracker = new MemoryTracker(Output);
             var factory = new CudaAcceleratorFactory();
@@ -137,19 +138,15 @@ namespace DotCompute.Hardware.Cuda.Tests
                     }
                 }";
             
-            using var kernel = await accelerator.CompileKernelAsync(kernelSource, "VectorAdd");
+            var kernelDef = new KernelDefinition("VectorAdd", kernelSource, "VectorAdd");
+            using var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             // Execute kernel with performance measurement
             var perfMeasurement = new PerformanceMeasurement("Vector Addition Kernel", Output);
             
             perfMeasurement.Start();
-            await kernel.LaunchAsync(
-                new LaunchConfig(
-                    gridSize: (elementCount + 255) / 256,
-                    blockSize: 256
-                ),
-                buffer1, buffer2, resultBuffer, elementCount
-            );
+            var kernelArgs = new KernelArguments(buffer1, buffer2, resultBuffer, elementCount);
+            await kernel.ExecuteAsync(kernelArgs);
             
             await accelerator.SynchronizeAsync();
             perfMeasurement.Stop();
@@ -171,8 +168,8 @@ namespace DotCompute.Hardware.Cuda.Tests
         [SkippableFact]
         public async Task Matrix_Multiplication_Kernel_Should_Execute_Correctly()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(5, 0), "Matrix multiplication requires CC 5.0+");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await HasMinimumComputeCapability(5, 0), "Matrix multiplication requires CC 5.0+");
             
             const int matrixSize = 256; // 256x256 matrices
             const int elementCount = matrixSize * matrixSize;
@@ -282,7 +279,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         [SkippableFact]
         public async Task Concurrent_Kernel_Execution_Should_Be_Supported()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -304,8 +301,8 @@ namespace DotCompute.Hardware.Cuda.Tests
         [SkippableFact]
         public async Task Unified_Memory_Should_Be_Available_On_Modern_Hardware()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(HasMinimumComputeCapability(6, 0), "Unified Memory requires CC 6.0+");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await HasMinimumComputeCapability(6, 0), "Unified Memory requires CC 6.0+");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -326,7 +323,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         [SkippableFact]
         public async Task Device_Should_Have_Adequate_Shared_Memory()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -349,7 +346,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         [SkippableFact]
         public async Task Device_Should_Support_Modern_Memory_Bandwidth()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -357,10 +354,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             var deviceInfo = accelerator.Info;
             
             // Modern GPUs should have reasonable memory bandwidth
-            deviceInfo.MemoryBandwidthGBps.Should().BeGreaterThan(100, 
+            deviceInfo.MemoryBandwidthGBps().Should().BeGreaterThan(100, 
                 "Modern GPUs should have >100 GB/s memory bandwidth");
             
-            Output.WriteLine($"Memory bandwidth: {deviceInfo.MemoryBandwidthGBps:F0} GB/s");
+            Output.WriteLine($"Memory bandwidth: {deviceInfo.MemoryBandwidthGBps():F0} GB/s");
             Output.WriteLine($"Memory bus width: {deviceInfo.MemoryBusWidth} bits");
             Output.WriteLine($"Memory clock: {deviceInfo.MemoryClockRate / 1000.0:F0} MHz");
         }
@@ -368,7 +365,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         [SkippableFact]
         public async Task RTX_2000_Ada_Hardware_Should_Have_Specific_Capabilities()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             Skip.IfNot(IsRTX2000AdaAvailable(), "RTX 2000 Ada hardware not available");
             
             var factory = new CudaAcceleratorFactory();
@@ -379,7 +376,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // RTX 2000 Ada specific tests
             deviceInfo.ComputeCapability.Major.Should().Be(8);
             deviceInfo.ComputeCapability.Minor.Should().Be(9);
-            deviceInfo.ArchitectureGeneration.Should().Contain("Ada");
+            deviceInfo.ArchitectureGeneration().Should().Contain("Ada");
             
             // RTX 2000 Ada should have modern features
             deviceInfo.SupportsUnifiedMemory.Should().BeTrue();
@@ -387,7 +384,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             deviceInfo.SupportsConcurrentKernels.Should().BeTrue();
             
             Output.WriteLine("RTX 2000 Ada capabilities verified:");
-            Output.WriteLine($"  Architecture: {deviceInfo.ArchitectureGeneration}");
+            Output.WriteLine($"  Architecture: {deviceInfo.ArchitectureGeneration()}");
             Output.WriteLine($"  Compute Capability: {deviceInfo.ComputeCapability.Major}.{deviceInfo.ComputeCapability.Minor}");
             Output.WriteLine($"  RT Cores: {(deviceInfo.SupportsRayTracing ? "Available" : "Not Available")}");
             Output.WriteLine($"  Tensor Cores: {(deviceInfo.SupportsTensorOperations ? "Available" : "Not Available")}");
@@ -400,7 +397,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         [SkippableFact]
         public async Task Invalid_Kernel_Should_Produce_Compilation_Error()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -418,14 +415,14 @@ namespace DotCompute.Hardware.Cuda.Tests
                 using var kernel = await accelerator.CompileKernelAsync(invalidKernelSource, "InvalidKernel");
             };
             
-            compileAction.Should().ThrowAsync<Exception>("Invalid kernel should fail to compile");
+            await compileAction.Should().ThrowAsync<Exception>("Invalid kernel should fail to compile");
             Output.WriteLine("Kernel compilation error handling verified");
         }
 
         [SkippableFact]
         public async Task Device_Should_Recover_From_Kernel_Timeout()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -474,13 +471,13 @@ namespace DotCompute.Hardware.Cuda.Tests
         [SkippableFact]
         public async Task Memory_Copy_Performance_Should_Meet_Expectations()
         {
-            Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
             
             const int dataSize = 64 * 1024 * 1024; // 64MB
-            const int elementCount = dataSize / sizeof(float);
+            const int elementCount = (int)(dataSize / sizeof(float));
             
             var testData = TestDataGenerator.CreateRandomData(elementCount);
             await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);

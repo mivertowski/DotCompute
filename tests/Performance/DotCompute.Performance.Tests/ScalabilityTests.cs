@@ -10,6 +10,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Tests.Common;
 using FluentAssertions;
 using Xunit;
@@ -907,7 +909,7 @@ internal class MockScalableAccelerator : IAccelerator
         MaxComputeUnits = 32
     };
     
-    public static AcceleratorType Type => AcceleratorType.CPU;
+    public AcceleratorType Type => AcceleratorType.CPU;
     public IUnifiedMemoryManager Memory { get; } = new MockMemoryManager();
     public AcceleratorContext Context { get; } = new AcceleratorContext();
 

@@ -11,6 +11,7 @@ using DotCompute.Backends.CUDA.Execution.Graph;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Tests.Common;
+using DotCompute.Core.Extensions;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -71,15 +72,16 @@ namespace DotCompute.Hardware.Cuda.Tests
                 hostB[i] = i * 0.3f;
             }
             
-            using var deviceA = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceB = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceC = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
             
             await deviceA.WriteAsync(hostA.AsSpan(), 0);
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
             // Compile kernel
-            var kernel = accelerator.CompileKernel(SimpleKernel, "simpleAdd");
+            var kernelDef = new KernelDefinition("simpleAdd", SimpleKernel);
+            var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             // Create graph
             var graph = accelerator.CreateGraph();
@@ -134,10 +136,11 @@ namespace DotCompute.Hardware.Cuda.Tests
                 hostData[i] = i * 0.1f;
             }
             
-            using var deviceData = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceData = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await deviceData.WriteAsync(hostData.AsSpan(), 0);
             
-            var kernel = accelerator.CompileKernel(MultiKernel2, "scale");
+            var kernelDef = new KernelDefinition("scale", MultiKernel2);
+            var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
@@ -197,17 +200,19 @@ namespace DotCompute.Hardware.Cuda.Tests
                 hostB[i] = (i + 1) * 0.3f;
             }
             
-            using var deviceA = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceB = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceC = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceD = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceD = await accelerator.Memory.AllocateAsync<float>(elementCount);
             
             await deviceA.WriteAsync(hostA.AsSpan(), 0);
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
             // Compile kernels
-            var multiplyKernel = accelerator.CompileKernel(MultiKernel1, "multiply");
-            var scaleKernel = accelerator.CompileKernel(MultiKernel2, "scale");
+            var multiplyKernelDef = new KernelDefinition("multiply", MultiKernel1);
+            var multiplyKernel = await accelerator.CompileKernelAsync(multiplyKernelDef);
+            var scaleKernelDef = new KernelDefinition("scale", MultiKernel2);
+            var scaleKernel = await accelerator.CompileKernelAsync(scaleKernelDef);
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
@@ -267,10 +272,11 @@ namespace DotCompute.Hardware.Cuda.Tests
                 hostData[i] = i * 0.1f;
             }
             
-            using var deviceData = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceData = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await deviceData.WriteAsync(hostData.AsSpan(), 0);
             
-            var kernel = accelerator.CompileKernel(MultiKernel2, "scale");
+            var kernelDef = new KernelDefinition("scale", MultiKernel2);
+            var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
@@ -339,14 +345,16 @@ namespace DotCompute.Hardware.Cuda.Tests
                 hostInput[i] = i + 1.0f; // Start with values 1, 2, 3, ...
             }
             
-            using var deviceInput = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceTemp = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceOutput = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceTemp = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceOutput = await accelerator.Memory.AllocateAsync<float>(elementCount);
             
             await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
             
-            var scaleKernel = accelerator.CompileKernel(MultiKernel2, "scale");
-            var addKernel = accelerator.CompileKernel(SimpleKernel, "simpleAdd");
+            var scaleKernelDef = new KernelDefinition("scale", MultiKernel2);
+            var scaleKernel = await accelerator.CompileKernelAsync(scaleKernelDef);
+            var addKernelDef = new KernelDefinition("simpleAdd", SimpleKernel);
+            var addKernel = await accelerator.CompileKernelAsync(addKernelDef);
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
@@ -405,9 +413,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                 hostData[i] = (float)Math.Sin(i * 0.01);
             }
             
-            using var deviceSrc = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceDst1 = accelerator.CreateBuffer<float>(elementCount);
-            using var deviceDst2 = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceSrc = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceDst1 = await accelerator.Memory.AllocateAsync<float>(elementCount);
+            await using var deviceDst2 = await accelerator.Memory.AllocateAsync<float>(elementCount);
             
             await deviceSrc.WriteAsync(hostData.AsSpan(), 0);
             
@@ -459,10 +467,11 @@ namespace DotCompute.Hardware.Cuda.Tests
                 hostData[i] = i * 0.1f;
             }
             
-            using var deviceData = accelerator.CreateBuffer<float>(elementCount);
+            await using var deviceData = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await deviceData.WriteAsync(hostData.AsSpan(), 0);
             
-            var kernel = accelerator.CompileKernel(MultiKernel2, "scale");
+            var kernelDef = new KernelDefinition("scale", MultiKernel2);
+            var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
@@ -512,9 +521,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Check if CUDA graphs are supported on this device/driver
         /// </summary>
-        private static bool SupportsGraphs()
+        private static async Task<bool> SupportsGraphs()
         {
-            if (!IsCudaAvailable()) return false;
+            if (!await IsCudaAvailable()) return false;
             
             try
             {
@@ -534,9 +543,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Check if CUDA graph updates are supported
         /// </summary>
-        private static bool SupportsGraphUpdate()
+        private static async Task<bool> SupportsGraphUpdate()
         {
-            if (!SupportsGraphs()) return false;
+            if (!await SupportsGraphs()) return false;
             
             try
             {

@@ -13,6 +13,8 @@ using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Tests.Common;
 using FluentAssertions;
 using Xunit;
@@ -1098,7 +1100,7 @@ internal class MockCpuAccelerator : IAccelerator
         MaxComputeUnits = Environment.ProcessorCount
     };
     
-    public static AcceleratorType Type => AcceleratorType.CPU;
+    public AcceleratorType Type => AcceleratorType.CPU;
     public IUnifiedMemoryManager Memory { get; } = new MockMemoryManager();
     public AcceleratorContext Context { get; } = new AcceleratorContext();
 
@@ -1133,7 +1135,7 @@ internal class MockGpuAccelerator : IAccelerator
         MaxComputeUnits = 32
     };
     
-    public static AcceleratorType Type => AcceleratorType.GPU;
+    public AcceleratorType Type => AcceleratorType.GPU;
     public IUnifiedMemoryManager Memory { get; } = new MockMemoryManager();
     public AcceleratorContext Context { get; } = new AcceleratorContext();
 

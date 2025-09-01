@@ -12,6 +12,7 @@ using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Tests.Common;
 using System.Collections.Concurrent;
 using ConcurrentQueue = System.Collections.Concurrent.ConcurrentQueue<object>;
@@ -756,20 +757,86 @@ internal class MockMemoryManager : ITestUnifiedMemoryManager
 /// </summary>
 internal class MockMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
-    public int Count { get; }
-    public long SizeInBytes => Count * sizeof(T);
-    public MemoryLocation Location => MemoryLocation.Device;
+    private readonly T[] _data;
+    
+    public int Length { get; }
+    public long SizeInBytes => Length * sizeof(T);
+    public MemoryOptions Options { get; } = new MemoryOptions();
     public bool IsDisposed { get; private set; }
+    public BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
+    public IAccelerator Accelerator { get; } = null!;
+    public bool IsOnHost => true;
+    public bool IsOnDevice => true;
+    public bool IsDirty => false;
 
     public MockMemoryBuffer(int count)
     {
-        Count = count;
+        Length = count;
+        _data = new T[count];
     }
 
-    public Span<T> AsSpan() => new Span<T>(new T[Count]);
-    public Memory<T> AsMemory() => new Memory<T>(new T[Count]);
-    public ValueTask<Memory<T>> GetHostMemoryAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(AsMemory());
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public Span<T> AsSpan() => new Span<T>(_data);
+    public ReadOnlySpan<T> AsReadOnlySpan() => new ReadOnlySpan<T>(_data);
+    public Memory<T> AsMemory() => new Memory<T>(_data);
+    public ReadOnlyMemory<T> AsReadOnlyMemory() => new ReadOnlyMemory<T>(_data);
+    public DeviceMemory GetDeviceMemory() => new DeviceMemory(IntPtr.Zero, SizeInBytes);
+    
+    public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => new MappedMemory<T>(_data.AsMemory(), this);
+    public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => new MappedMemory<T>(_data.AsMemory(offset, length), this);
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) 
+        => ValueTask.FromResult(Map(mode));
+    
+    public void EnsureOnHost() { }
+    public void EnsureOnDevice() { }
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    
+    public void Synchronize() { }
+    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    
+    public void MarkHostDirty() { }
+    public void MarkDeviceDirty() { }
+    
+    public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
+    {
+        source.CopyTo(_data.AsMemory());
+        return ValueTask.CompletedTask;
+    }
+    
+    public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
+    {
+        _data.AsMemory().CopyTo(destination);
+        return ValueTask.CompletedTask;
+    }
+    
+    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
+        => destination.CopyFromAsync(_data.AsMemory(), cancellationToken);
+    
+    public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
+        => destination.CopyFromAsync(_data.AsMemory(sourceOffset, count), cancellationToken);
+    
+    public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
+    {
+        _data.AsSpan().Fill(value);
+        return ValueTask.CompletedTask;
+    }
+    
+    public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
+    {
+        _data.AsSpan(offset, count).Fill(value);
+        return ValueTask.CompletedTask;
+    }
+    
+    public IUnifiedMemoryBuffer<T> Slice(int offset, int length) => this;
+    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged => new MockMemoryBuffer<TNew>(Length * sizeof(T) / sizeof(TNew));
+    
+    public ValueTask CopyFromAsync<TElement>(ReadOnlyMemory<TElement> source, long offset = 0, CancellationToken cancellationToken = default) where TElement : unmanaged
+        => ValueTask.CompletedTask;
+    
+    public ValueTask CopyToAsync<TElement>(Memory<TElement> destination, long offset = 0, CancellationToken cancellationToken = default) where TElement : unmanaged
+        => ValueTask.CompletedTask;
+    
+    public void Dispose() { IsDisposed = true; }
     public ValueTask DisposeAsync() { IsDisposed = true; return ValueTask.CompletedTask; }
 }
 
@@ -779,9 +846,8 @@ internal class MockMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
 internal class MockRawMemoryBuffer : IUnifiedMemoryBuffer
 {
     public long SizeInBytes { get; }
-    public MemoryLocation Location => MemoryLocation.Device;
     public MemoryOptions Options { get; } = new MemoryOptions();
-    public MemoryBufferState State => IsDisposed ? MemoryBufferState.Disposed : MemoryBufferState.DeviceResident;
+    public BufferState State => IsDisposed ? BufferState.Disposed : BufferState.DeviceReady;
     public bool IsDisposed { get; private set; }
 
     public MockRawMemoryBuffer(long sizeInBytes)
@@ -803,7 +869,7 @@ internal class MockRawMemoryBuffer : IUnifiedMemoryBuffer
 /// <summary>
 /// Mock memory buffer view for testing
 /// </summary>
-internal class MockMemoryBufferView<T> : IUnifiedMemoryBufferView<T> where T : unmanaged
+internal class MockMemoryBufferView<T> where T : unmanaged
 {
     public int Count { get; }
     public long SizeInBytes => Count * sizeof(T);

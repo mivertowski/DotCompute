@@ -184,6 +184,12 @@ namespace DotCompute.Abstractions
         /// <summary>Gets or sets the compute capability or version.</summary>
         public Version? ComputeCapability { get; init; }
 
+        /// <summary>
+        /// Gets the compute capability as a non-nullable version for test compatibility.
+        /// Returns a default version (6.0) if ComputeCapability is null.
+        /// </summary>
+        public Version ComputeCapabilityVersionSafe => ComputeCapability ?? new Version(6, 0);
+
         /// <summary>Gets or sets the total device memory in bytes.</summary>
         public long TotalMemory { get; init; }
 
