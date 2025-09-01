@@ -523,7 +523,10 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         private static async Task<bool> SupportsGraphs()
         {
-            if (!await IsCudaAvailable()) return false;
+            if (!await IsCudaAvailable())
+            {
+                return false;
+            }
             
             try
             {
@@ -545,7 +548,10 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         private static async Task<bool> SupportsGraphUpdate()
         {
-            if (!await SupportsGraphs()) return false;
+            if (!await SupportsGraphs())
+            {
+                return false;
+            }
             
             try
             {

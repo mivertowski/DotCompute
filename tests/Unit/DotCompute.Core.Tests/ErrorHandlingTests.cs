@@ -868,7 +868,7 @@ public class ErrorHandlingTests : IDisposable
         var exception = await act.Should().ThrowAsync<InvalidOperationException>();
 
         // Verify stack trace contains method names from the call chain
-        exception.Which.StackTrace.Should().Contain(nameof(CompileKernelCoreAsync));
+        exception.Which.StackTrace.Should().Contain("CompileKernelCoreAsync");
         exception.Which.StackTrace.Should().Contain("DeepMethodCall");
         exception.Which.Data.Contains("OriginalStackTrace").Should().BeTrue();
     }

@@ -8,6 +8,8 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Configuration;
+using DotCompute.Abstractions.Types;
 using DotCompute.Tests.Common;
 using DotCompute.Core.Extensions;
 using static DotCompute.Tests.Common.TestCategories;
@@ -258,7 +260,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             var nonZeroCount = 0;
             for (var i = 0; i < Math.Min(1000, results.Length); i++)
             {
-                if (Math.Abs(results[i]) > 0.001f) nonZeroCount++;
+                if (Math.Abs(results[i]) > 0.001f)
+                {
+                    nonZeroCount++;
+                }
             }
             
             nonZeroCount.Should().BeGreaterThan(results.Length / 10, "Matrix multiplication should produce meaningful results");

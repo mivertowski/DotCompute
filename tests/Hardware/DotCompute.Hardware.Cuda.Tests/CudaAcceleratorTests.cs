@@ -282,7 +282,10 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         private static async Task<bool> IsRTX2000Available()
         {
-            if (!await IsCudaAvailable()) return false;
+            if (!await IsCudaAvailable())
+            {
+                return false;
+            }
             
             try
             {

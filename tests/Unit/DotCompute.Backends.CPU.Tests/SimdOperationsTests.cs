@@ -323,7 +323,9 @@ public class SimdOperationsTests
         PerformVectorAbs(input, result);
         
         // Assert
-        result.Should().Equal(expected, options => options.Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f)));
+        result.Should().BeEquivalentTo(expected, options => options
+            .Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
+            .WhenTypeIs<float>());
     }
     
     [Theory]
@@ -338,7 +340,9 @@ public class SimdOperationsTests
         PerformVectorSqrt(input, result);
         
         // Assert
-        result.Should().Equal(expected, options => options.Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f)));
+        result.Should().BeEquivalentTo(expected, options => options
+            .Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
+            .WhenTypeIs<float>());
     }
     
     [Fact]

@@ -306,7 +306,7 @@ public class CpuAcceleratorTests : IDisposable
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
         
         // Act
-        var compilationTasks = kernels.Select(k => _accelerator.CompileKernelAsync(k, options)).ToArray();
+        var compilationTasks = kernels.Select(k => _accelerator.CompileKernelAsync(k, options).AsTask()).ToArray();
         var compiledKernels = await Task.WhenAll(compilationTasks);
         
         // Assert

@@ -127,7 +127,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             const int allocationCount = 100;
             const int allocationSize = 1024 * 1024; // 1MB each
-            var buffers = new IMemoryBuffer<float>[allocationCount];
+            var buffers = new IUnifiedMemoryBuffer<float>[allocationCount];
             
             try
             {
@@ -220,7 +220,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int bufferCount = 4;
             const int elementCount = 256 * 1024; // 256K elements each
             
-            var buffers = new IMemoryBuffer<float>[bufferCount];
+            var buffers = new IUnifiedMemoryBuffer<float>[bufferCount];
             var testDataSets = new float[bufferCount][];
             var tasks = new Task[bufferCount];
             
@@ -617,7 +617,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Measure standard allocation performance
             var standardAllocTime = new PerformanceMeasurement("Standard Allocations", Output);
-            var standardBuffers = new IMemoryBuffer<float>[allocationCount];
+            var standardBuffers = new IUnifiedMemoryBuffer<float>[allocationCount];
             
             standardAllocTime.Start();
             for (var i = 0; i < allocationCount; i++)

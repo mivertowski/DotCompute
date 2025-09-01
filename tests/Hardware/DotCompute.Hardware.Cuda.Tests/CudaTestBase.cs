@@ -74,7 +74,10 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         protected static async Task<bool> IsRTX2000AdaAvailable()
         {
-            if (!await IsCudaAvailable()) return false;
+            if (!await IsCudaAvailable())
+            {
+                return false;
+            }
             
             try
             {
@@ -98,7 +101,10 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         protected static async Task<bool> HasMinimumComputeCapability(int majorMin, int minorMin = 0)
         {
-            if (!await IsCudaAvailable()) return false;
+            if (!await IsCudaAvailable())
+            {
+                return false;
+            }
             
             try
             {
@@ -119,7 +125,10 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         protected static async Task<string> GetDeviceInfoString()
         {
-            if (!await IsCudaAvailable()) return "CUDA not available";
+            if (!await IsCudaAvailable())
+            {
+                return "CUDA not available";
+            }
             
             try
             {
@@ -285,7 +294,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                     if (errorCount < maxErrorsToReport)
                     {
                         var message = $"Mismatch at index {i}: expected {expected[i]}, actual {actual[i]}, diff {diff}";
-                        if (context != null) message = $"{context} - {message}";
+                        if (context != null)
+                        {
+                            message = $"{context} - {message}";
+                        }
                         throw new InvalidOperationException(message);
                     }
                     errorCount++;
@@ -295,7 +307,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             if (errorCount > 0)
             {
                 var message = $"Found {errorCount} mismatches out of {elementsToCheck} elements checked (tolerance: {tolerance})";
-                if (context != null) message = $"{context} - {message}";
+                if (context != null)
+                {
+                    message = $"{context} - {message}";
+                }
                 throw new InvalidOperationException(message);
             }
         }
