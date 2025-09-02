@@ -920,7 +920,7 @@ internal class MockScalableAccelerator : IAccelerator
     {
         // Simulate compilation time
         var complexity = definition.Source.Length / 50;
-        await Task.Delay(Math.Max(10, complexity), cancellationToken);
+        await Task.Delay(Math.Max(10, complexity), cancellationToken).ConfigureAwait(false);
         
         return new MockScalableKernel(definition.Name, this);
     }
@@ -980,7 +980,7 @@ internal class MockScalableKernel : ICompiledKernel
         var variability = _random.NextDouble() * 0.3; // ±30% variability
         var executionTime = (int)(baseTime * (1 + variability));
         
-        await Task.Delay(executionTime, cancellationToken);
+        await Task.Delay(executionTime, cancellationToken).ConfigureAwait(false);
     }
     
     private static int GetWorkloadSize(KernelArguments arguments)

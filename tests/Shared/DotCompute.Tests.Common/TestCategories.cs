@@ -23,6 +23,7 @@ public static class TestCategories
     // Hardware-Specific Categories
     public const string Hardware = "Hardware";
     public const string Cuda = "CUDA";
+    public const string CUDA = "CUDA"; // Alias for compatibility
     public const string OpenCL = "OpenCL";
     public const string CPU = "CPU";
     public const string GPU = "GPU";
@@ -68,12 +69,14 @@ public static class TestCategories
     
     // Feature Categories
     public const string Compilation = "Compilation";
+    public const string KernelCompilation = "KernelCompilation";
     public const string Execution = "Execution";
     public const string Optimization = "Optimization";
     public const string Parallelization = "Parallelization";
     public const string VectorOperations = "VectorOperations";
     public const string MatrixOperations = "MatrixOperations";
     public const string GraphOperations = "GraphOperations";
+    public const string RequiresSIMD = "RequiresSIMD";
     
     // Security Categories
     public const string Security = "Security";

@@ -1271,12 +1271,15 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
         public bool SynchronizeCalled { get; private set; }
         public int DisposeCallCount { get; private set; }
         private readonly TestMemoryManager _memoryManager;
+        
+        private static TestMemoryManager CreateMemoryManager() => new TestMemoryManager();
 
 #pragma warning disable CA2000 // Dispose objects before losing scope - Test memory manager owned by BaseAccelerator
         public TestAccelerator(AcceleratorInfo info, ILogger logger)
-            : base(info, AcceleratorType.CPU, new TestMemoryManager(), new AcceleratorContext(IntPtr.Zero, 0), logger)
+            : base(info, AcceleratorType.CPU, CreateMemoryManager(), new AcceleratorContext(IntPtr.Zero, 0), logger)
 #pragma warning restore CA2000
         {
+            ((TestMemoryManager)Memory).SetAccelerator(this);
             _memoryManager = (TestMemoryManager)Memory;
         }
 
@@ -1481,12 +1484,12 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
 
 #pragma warning disable CA2000 // Dispose objects before losing scope - Test memory buffer managed by caller
         public override ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
-            => ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(new TestMemoryBuffer<T>(count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()));
+            => ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(new TestMemoryBuffer<T>(count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), _accelerator));
 #pragma warning restore CA2000
 
         public override async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
         {
-            var buffer = new TestMemoryBuffer<T>(source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+            var buffer = new TestMemoryBuffer<T>(source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), _accelerator);
             await buffer.CopyFromAsync(source, cancellationToken);
             return buffer;
         }
@@ -1503,7 +1506,7 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
 
 #pragma warning disable CA2000 // Dispose objects before losing scope - Test memory view managed by caller
         public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int length)
-            => new TestMemoryBuffer<T>(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+            => new TestMemoryBuffer<T>(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), _accelerator);
 #pragma warning restore CA2000
 
         public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
@@ -1573,9 +1576,12 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
     /// </summary>
     private sealed class TestCpuAccelerator : BaseAccelerator
     {
+        private static TestMemoryManager CreateMemoryManager() => new TestMemoryManager();
+        
         public TestCpuAccelerator(AcceleratorInfo info, ILogger logger)
-            : base(info, AcceleratorType.CPU, new TestMemoryManager(), new AcceleratorContext(IntPtr.Zero, 0), logger)
+            : base(info, AcceleratorType.CPU, CreateMemoryManager(), new AcceleratorContext(IntPtr.Zero, 0), logger)
         {
+            ((TestMemoryManager)Memory).SetAccelerator(this);
         }
 
 #pragma warning disable CA2000 // Dispose objects before losing scope
@@ -1593,9 +1599,12 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
     /// </summary>
     private sealed class FailingTestAccelerator : BaseAccelerator
     {
+        private static TestMemoryManager CreateMemoryManager() => new TestMemoryManager();
+        
         public FailingTestAccelerator(AcceleratorInfo info, ILogger logger)
-            : base(info, AcceleratorType.CUDA, new TestMemoryManager(), new AcceleratorContext(IntPtr.Zero, 0), logger)
+            : base(info, AcceleratorType.CUDA, CreateMemoryManager(), new AcceleratorContext(IntPtr.Zero, 0), logger)
         {
+            ((TestMemoryManager)Memory).SetAccelerator(this);
         }
 
         protected override ValueTask<ICompiledKernel> CompileKernelCoreAsync(
@@ -1610,13 +1619,16 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
     /// </summary>
     private sealed class IntermittentFailureAccelerator : BaseAccelerator
     {
+        private static TestMemoryManager CreateMemoryManager() => new TestMemoryManager();
+        
         private int _failureCount;
         private int _currentAttempt;
 
         public IntermittentFailureAccelerator(AcceleratorInfo info, ILogger logger, int failureCount)
-            : base(info, AcceleratorType.CUDA, new TestMemoryManager(), new AcceleratorContext(IntPtr.Zero, 0), logger)
+            : base(info, AcceleratorType.CUDA, CreateMemoryManager(), new AcceleratorContext(IntPtr.Zero, 0), logger)
         {
             _failureCount = failureCount;
+            ((TestMemoryManager)Memory).SetAccelerator(this);
         }
 
 #pragma warning disable CA2000 // Dispose objects before losing scope

@@ -37,7 +37,7 @@
 
   <!-- Category attribute definitions -->
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)TestCategories.cs" Link="TestCategories.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared/DotCompute.Tests.Common/TestCategories.cs" Link="TestCategories.cs" />
   </ItemGroup>
 
   <!-- MSBuild targets for running different test categories -->

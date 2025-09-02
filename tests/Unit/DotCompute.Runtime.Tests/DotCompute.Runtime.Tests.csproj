@@ -15,9 +15,6 @@
     <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Runtime\DotCompute.Runtime.csproj" />
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
-    <Compile Include="..\..\TestCategories.cs">
-      <Link>TestCategories.cs</Link>
-    </Compile>
   </ItemGroup>
 
 

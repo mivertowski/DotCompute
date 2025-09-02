@@ -1110,7 +1110,7 @@ internal class MockCpuAccelerator : IAccelerator
         CancellationToken cancellationToken = default)
     {
         // Simulate CPU compilation (faster than GPU)
-        await Task.Delay(_random.Next(20, 50), cancellationToken);
+        await Task.Delay(_random.Next(20, 50), cancellationToken).ConfigureAwait(false);
         return new MockCpuKernel(definition.Name);
     }
 
@@ -1149,7 +1149,7 @@ internal class MockGpuAccelerator : IAccelerator
         if (options?.OptimizationLevel == OptimizationLevel.Aggressive)
             baseDelay = (int)(baseDelay * 1.5);
             
-        await Task.Delay(baseDelay, cancellationToken);
+        await Task.Delay(baseDelay, cancellationToken).ConfigureAwait(false);
         return new MockGpuKernel(definition.Name);
     }
 
@@ -1176,7 +1176,7 @@ internal class MockCpuKernel : ICompiledKernel
     {
         var workloadSize = GetWorkloadSize(arguments);
         var executionTime = CalculateCpuExecutionTime(workloadSize);
-        await Task.Delay(executionTime, cancellationToken);
+        await Task.Delay(executionTime, cancellationToken).ConfigureAwait(false);
     }
     
     private int CalculateCpuExecutionTime(int workloadSize)
@@ -1215,7 +1215,7 @@ internal class MockGpuKernel : ICompiledKernel
     {
         var workloadSize = GetWorkloadSize(arguments);
         var executionTime = CalculateGpuExecutionTime(workloadSize);
-        await Task.Delay(executionTime, cancellationToken);
+        await Task.Delay(executionTime, cancellationToken).ConfigureAwait(false);
     }
     
     private int CalculateGpuExecutionTime(int workloadSize)
