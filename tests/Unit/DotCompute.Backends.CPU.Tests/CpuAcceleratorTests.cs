@@ -96,7 +96,7 @@ public class CpuAcceleratorTests : IDisposable
         var threadCount = _accelerator.Info.Capabilities["ThreadCount"];
         
         // Assert
-        threadCount.Should().Be(Environment.ProcessorCount);
+        threadCount!.Should().Be(Environment.ProcessorCount);
     }
     
     [Fact]

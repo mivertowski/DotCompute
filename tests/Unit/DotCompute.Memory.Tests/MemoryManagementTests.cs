@@ -634,7 +634,7 @@ public class MemoryManagementTests
         public long TotalAvailableMemory => long.MaxValue;
         public long CurrentAllocatedMemory => _allocatedBuffers.Sum(b => b.SizeInBytes);
 
-        public async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, MemoryOptions options, CancellationToken cancellationToken = default) where T : unmanaged
+        public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, MemoryOptions options, CancellationToken cancellationToken = default) where T : unmanaged
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             
@@ -648,7 +648,7 @@ public class MemoryManagementTests
             
             var buffer = new TestUnifiedBuffer<T>(count);
             _allocatedBuffers.Add(buffer);
-            return buffer;
+            return new ValueTask<IUnifiedMemoryBuffer<T>>(buffer);
         }
 
         public async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
@@ -658,11 +658,11 @@ public class MemoryManagementTests
             return buffer;
         }
 
-        public async ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+        public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
         {
             var buffer = new TestRawUnifiedBuffer(sizeInBytes);
             _allocatedBuffers.Add(buffer);
-            return buffer;
+            return new ValueTask<IUnifiedMemoryBuffer>(buffer);
         }
 
         public IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int length) where T : unmanaged => buffer.Slice(offset, length);
