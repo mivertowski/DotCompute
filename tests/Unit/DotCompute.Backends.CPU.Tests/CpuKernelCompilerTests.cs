@@ -156,8 +156,8 @@ public class CpuKernelCompilerTests : IDisposable
         var context = CreateCompilationContext(invalidDefinition, OptimizationLevel.Default);
         
         // Act & Assert
-        await FluentActions.Invoking(() => CpuKernelCompiler.CompileAsync(context))
-            .Should().ThrowAsync<KernelCompilationException>();
+        Func<Task> act = async () => await CpuKernelCompiler.CompileAsync(context);
+        await act.Should().ThrowAsync<KernelCompilationException>();
     }
     
     [Fact]
@@ -165,8 +165,8 @@ public class CpuKernelCompilerTests : IDisposable
     public async Task CompileAsync_WithNullContext_ThrowsArgumentNullException()
     {
         // Act & Assert
-        await FluentActions.Invoking(() => CpuKernelCompiler.CompileAsync(null!))
-            .Should().ThrowAsync<ArgumentNullException>();
+        Func<Task> act = async () => await CpuKernelCompiler.CompileAsync(null!);
+        await act.Should().ThrowAsync<ArgumentNullException>();
     }
     
     [Theory]
@@ -221,7 +221,7 @@ public class CpuKernelCompilerTests : IDisposable
             CreateCompilationContext(d, OptimizationLevel.Default)).ToArray();
         
         // Act
-        var compilationTasks = contexts.Select(CpuKernelCompiler.CompileAsync).ToArray();
+        var compilationTasks = contexts.Select(c => CpuKernelCompiler.CompileAsync(c).AsTask()).ToArray();
         var compiledKernels = await Task.WhenAll(compilationTasks);
         
         // Assert
@@ -246,7 +246,7 @@ public class CpuKernelCompilerTests : IDisposable
         {
             OptimizationLevel = OptimizationLevel.None,
             EnableDebugInfo = true,
-            AdditionalFlags = new[] { "debug", "symbols" }
+            AdditionalFlags = new List<string> { "debug", "symbols" }
         };
         var context = CreateCompilationContext(definition, OptimizationLevel.None);
         

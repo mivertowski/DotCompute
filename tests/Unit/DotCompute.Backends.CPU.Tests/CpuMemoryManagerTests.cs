@@ -199,7 +199,7 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Assert
         accelerator.Should().NotBeNull();
-        accelerator.AcceleratorType.Should().Be(AcceleratorType.CPU);
+        accelerator.Type.Should().Be(AcceleratorType.CPU);
     }
     
     [Fact]
@@ -226,7 +226,7 @@ public class CpuMemoryManagerTests : IDisposable
         var beforeFree = _memoryManager.Statistics;
         
         // Act
-        await _memoryManager.FreeAsync(buffer!);
+        await _memoryManager.FreeAsync(buffer!, CancellationToken.None);
         
         // Assert
         var afterFree = _memoryManager.Statistics;
@@ -241,7 +241,7 @@ public class CpuMemoryManagerTests : IDisposable
         var beforeGC = GC.CollectionCount(0);
         
         // Act
-        await _memoryManager.OptimizeAsync();
+        await _memoryManager.OptimizeAsync(CancellationToken.None);
         
         // Assert
         var afterGC = GC.CollectionCount(0);
@@ -269,8 +269,8 @@ public class CpuMemoryManagerTests : IDisposable
         var options = MemoryOptions.HostVisible;
         
         // Act & Assert
-        await _memoryManager.Invoking(mm => mm.AllocateAsync(0, options))
-            .Should().ThrowExactlyAsync<ArgumentException>();
+        Func<Task> act = async () => await _memoryManager.AllocateAsync(0, options);
+        await act.Should().ThrowExactlyAsync<ArgumentException>();
     }
     
     [Fact]
@@ -281,8 +281,8 @@ public class CpuMemoryManagerTests : IDisposable
         var options = MemoryOptions.HostVisible;
         
         // Act & Assert
-        await _memoryManager.Invoking(mm => mm.AllocateAsync(-1024, options))
-            .Should().ThrowExactlyAsync<ArgumentException>();
+        Func<Task> act = async () => await _memoryManager.AllocateAsync(-1024, options);
+        await act.Should().ThrowExactlyAsync<ArgumentException>();
     }
     
     [Fact]
@@ -389,7 +389,7 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Assert
         buffer.Should().NotBeNull();
-        buffer.Options.IsPinned.Should().BeTrue();
+        buffer.Options.IsPinned().Should().BeTrue();
         
         // Cleanup
         await buffer.DisposeAsync();

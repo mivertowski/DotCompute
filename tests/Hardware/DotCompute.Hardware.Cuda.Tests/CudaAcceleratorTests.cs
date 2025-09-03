@@ -52,7 +52,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Compute_Capability_Should_Be_8_9_For_RTX_2000()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            Skip.IfNot(IsRTX2000Available(), "RTX 2000 series GPU not available");
+            Skip.IfNot(await IsRTX2000Available(), "RTX 2000 series GPU not available");
             
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
@@ -209,16 +209,16 @@ namespace DotCompute.Hardware.Cuda.Tests
             deviceInfo.Name.Should().NotBeNullOrEmpty();
             deviceInfo.ComputeCapability.Major.Should().BeGreaterThan(0);
             deviceInfo.ComputeCapability.Minor.Should().BeGreaterThanOrEqualTo(0);
-            deviceInfo.GlobalMemoryBytes.Should().BeGreaterThan(0);
-            deviceInfo.MultiprocessorCount.Should().BeGreaterThan(0);
+            deviceInfo.GlobalMemoryBytes().Should().BeGreaterThan(0);
+            deviceInfo.MultiprocessorCount().Should().BeGreaterThan(0);
             deviceInfo.MaxThreadsPerBlock.Should().BeGreaterThan(0);
-            deviceInfo.WarpSize.Should().Be(32); // Standard CUDA warp size
+            deviceInfo.WarpSize().Should().Be(32); // Standard CUDA warp size
             
             Output.WriteLine($"Device validation complete:");
             Output.WriteLine($"  Name: {deviceInfo.Name}");
             Output.WriteLine($"  Compute: {deviceInfo.ComputeCapability.Major}.{deviceInfo.ComputeCapability.Minor}");
-            Output.WriteLine($"  Memory: {deviceInfo.GlobalMemoryBytes / (1024.0 * 1024.0):F0} MB");
-            Output.WriteLine($"  SMs: {deviceInfo.MultiprocessorCount}");
+            Output.WriteLine($"  Memory: {deviceInfo.GlobalMemoryBytes() / (1024.0 * 1024.0):F0} MB");
+            Output.WriteLine($"  SMs: {deviceInfo.MultiprocessorCount()}");
             Output.WriteLine($"  Max Threads/Block: {deviceInfo.MaxThreadsPerBlock}");
         }
 
@@ -230,7 +230,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
             
-            if (!accelerator.Info.SupportsUnifiedMemory)
+            if (!accelerator.Info.SupportsUnifiedMemory())
             {
                 Output.WriteLine("Unified memory not supported on this device - skipping test");
                 return;
@@ -280,7 +280,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Checks if an RTX 2000 series GPU is available
         /// </summary>
-        private static bool IsRTX2000Available()
+        private static async Task<bool> IsRTX2000Available()
         {
             if (!IsCudaAvailable())
             {
@@ -293,7 +293,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await using var accelerator = factory.CreateDefaultAccelerator();
                 
                 var deviceInfo = accelerator.Info;
-                return deviceInfo.IsRTX2000Ada && 
+                return deviceInfo.IsRTX2000Ada() && 
                        deviceInfo.ComputeCapability.Major == 8 && 
                        deviceInfo.ComputeCapability.Minor == 9;
             }

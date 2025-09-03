@@ -174,8 +174,8 @@ public class CpuAcceleratorTests : IDisposable
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
         
         // Act & Assert
-        await _accelerator.Invoking(a => a.CompileKernelAsync(invalidKernel, options))
-            .Should().ThrowExactlyAsync<Exception>();
+        Func<Task> act = async () => await _accelerator.CompileKernelAsync(invalidKernel, options);
+        await act.Should().ThrowExactlyAsync<Exception>();
     }
     
     [Theory]
@@ -274,8 +274,8 @@ public class CpuAcceleratorTests : IDisposable
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
         
         // Act & Assert
-        await _accelerator.Invoking(a => a.CompileKernelAsync(nullKernel!, options))
-            .Should().ThrowExactlyAsync<ArgumentNullException>();
+        Func<Task> act = async () => await _accelerator.CompileKernelAsync(nullKernel!, options);
+        await act.Should().ThrowExactlyAsync<ArgumentNullException>();
     }
     
     [Fact]
@@ -287,8 +287,8 @@ public class CpuAcceleratorTests : IDisposable
         CompilationOptions? nullOptions = null;
         
         // Act & Assert
-        await _accelerator.Invoking(a => a.CompileKernelAsync(kernelDefinition, nullOptions!))
-            .Should().ThrowExactlyAsync<ArgumentNullException>();
+        Func<Task> act = async () => await _accelerator.CompileKernelAsync(kernelDefinition, nullOptions!);
+        await act.Should().ThrowExactlyAsync<ArgumentNullException>();
     }
     
     [Fact]
@@ -341,7 +341,7 @@ public class CpuAcceleratorTests : IDisposable
     [InlineData(true, false)]  // Enable vectorization, don't prefer performance
     [InlineData(false, true)]  // Disable vectorization, prefer performance
     [InlineData(false, false)] // Disable vectorization, don't prefer performance
-    public void Constructor_WithDifferentOptions_ConfiguresCorrectly(bool enableVectorization, bool preferPerformance)
+    public async Task Constructor_WithDifferentOptions_ConfiguresCorrectly(bool enableVectorization, bool preferPerformance)
     {
         // Arrange
         var acceleratorOptions = Options.Create(new CpuAcceleratorOptions
@@ -353,7 +353,7 @@ public class CpuAcceleratorTests : IDisposable
         var threadPoolOptions = Options.Create(new CpuThreadPoolOptions());
         
         // Act
-        using var accelerator = new CpuAccelerator(acceleratorOptions, threadPoolOptions, _logger);
+        await using var accelerator = new CpuAccelerator(acceleratorOptions, threadPoolOptions, _logger);
         
         // Assert
         accelerator.Should().NotBeNull();

@@ -4,6 +4,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Types;
@@ -12,6 +13,7 @@ using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Tests.Common;
 using DotCompute.Core.Extensions;
+using DotCompute.Hardware.Cuda.Tests.Helpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -103,7 +105,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             executableGraph.Should().NotBeNull();
             
             // Execute graph
-            await executableGraph.LaunchAsync();
+            await executableGraph.LaunchAsync(null);
             
             // Verify results
             var result = new float[elementCount];
@@ -152,18 +154,19 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Create and start graph capture
             var stream = accelerator.CreateStream();
-            var capturedGraph = stream.BeginCapture();
+            stream.BeginCapture();
             
             // Execute operations in capture mode
             await kernel.LaunchAsync(launchConfig, stream, deviceData, 2.0f, elementCount);
             await kernel.LaunchAsync(launchConfig, stream, deviceData, 1.5f, elementCount);
             
             // End capture
-            var executableGraph = stream.EndCapture();
-            executableGraph.Should().NotBeNull();
+            var capturedGraph = stream.EndCapture();
+            capturedGraph.Should().NotBeNull();
             
             // Execute the captured graph
-            await executableGraph.LaunchAsync();
+            var executableGraph = capturedGraph.Instantiate();
+            await executableGraph.LaunchAsync(null);
             
             // Verify results (should be scaled by 2.0 * 1.5 = 3.0)
             var result = new float[elementCount];
@@ -236,7 +239,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Execute the multi-kernel graph
             var stopwatch = Stopwatch.StartNew();
-            await executableGraph.LaunchAsync();
+            await executableGraph.LaunchAsync(null);
             stopwatch.Stop();
             
             // Verify results
@@ -301,7 +304,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             var stream = accelerator.CreateStream();
             stream.BeginCapture();
             await kernel.LaunchAsync(launchConfig, stream, deviceData, 1.01f, elementCount);
-            var executableGraph = stream.EndCapture();
+            var capturedGraph2 = stream.EndCapture();
+            var executableGraph = capturedGraph2.Instantiate();
             
             // Test graph execution
             var graphTimes = new double[iterations];
@@ -309,7 +313,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
-                await executableGraph.LaunchAsync();
+                await executableGraph.LaunchAsync(null);
                 stopwatch.Stop();
                 graphTimes[i] = stopwatch.Elapsed.TotalMicroseconds;
             }
@@ -380,7 +384,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             graph.AddDependency(scaleNode, addNode);
             
             var executableGraph = graph.Instantiate();
-            await executableGraph.LaunchAsync();
+            await executableGraph.LaunchAsync(null);
             
             // Verify results (should be input * 3)
             var result = new float[elementCount];
@@ -429,7 +433,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             graph.AddMemoryCopy(deviceDst1, deviceDst2, elementCount * sizeof(float));
             
             var executableGraph = graph.Instantiate();
-            await executableGraph.LaunchAsync();
+            await executableGraph.LaunchAsync(null);
             
             // Verify both destinations have correct data
             var result1 = new float[elementCount];
@@ -486,7 +490,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var kernelNode = graph.AddKernel(kernel, launchConfig, deviceData, 2.0f, elementCount);
             
             var executableGraph = graph.Instantiate();
-            await executableGraph.LaunchAsync();
+            await executableGraph.LaunchAsync(null);
             
             // Verify initial results (scaled by 2.0)
             var result1 = new float[elementCount];
@@ -501,7 +505,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 
                 // Reset data and execute updated graph
                 await deviceData.WriteAsync(hostData.AsSpan(), 0);
-                await executableGraph.LaunchAsync();
+                await executableGraph.LaunchAsync(null);
                 
                 var result2 = new float[elementCount];
                 await deviceData.ReadAsync(result2.AsSpan(), 0);

@@ -4,6 +4,8 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Types;
@@ -234,7 +236,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
             
-            if (!accelerator.Info.SupportsUnifiedMemory)
+            if (!accelerator.Info.SupportsUnifiedMemory())
             {
                 Output.WriteLine("Unified memory not supported - skipping test");
                 return;
@@ -286,8 +288,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             Output.WriteLine($"Memory Specifications:");
             Output.WriteLine($"  Device: {deviceInfo.Name}");
-            Output.WriteLine($"  Memory Size: {deviceInfo.GlobalMemoryBytes / (1024.0 * 1024.0 * 1024.0):F2} GB");
-            Output.WriteLine($"  Memory Clock: {deviceInfo.MemoryClockRate / 1000.0:F0} MHz");
+            Output.WriteLine($"  Memory Size: {deviceInfo.GlobalMemoryBytes() / (1024.0 * 1024.0 * 1024.0):F2} GB");
+            Output.WriteLine($"  Memory Clock: {deviceInfo.MemoryClockRate() / 1000.0:F0} MHz");
             Output.WriteLine($"  Expected Bandwidth: {expectedBandwidth:F0} GB/s");
             
             expectedBandwidth.Should().BeGreaterThan(100, "Modern GPUs should have substantial memory bandwidth");
@@ -468,9 +470,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await using var pinnedBuffer = await accelerator.Memory.AllocatePinnedAsync<float>(elementCount);
                 
                 // Copy data to pinned buffer
+                var pinnedSpan = pinnedBuffer.AsSpan();
                 for (var i = 0; i < elementCount; i++)
                 {
-                    pinnedBuffer[i] = regularHostData[i];
+                    pinnedSpan[i] = regularHostData[i];
                 }
                 
                 var pinnedTimes = new double[iterations];

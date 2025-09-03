@@ -921,7 +921,6 @@ internal class MockScalableAccelerator : IAccelerator
         // Simulate compilation time
         var complexity = definition.Source.Length / 50;
         await Task.Delay(Math.Max(10, complexity), cancellationToken).ConfigureAwait(false);
-        
         return new MockScalableKernel(definition.Name, this);
     }
 

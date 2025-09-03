@@ -7,7 +7,7 @@
     <IsPackable>false</IsPackable>
     
     <!-- Suppress warnings that are common in test projects -->
-    <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CA1001;CA5394;CA2265;xUnit1031;VSTHRD002;IDE0011;CA1002;CA1024;CA1034;CA1051;CA1305;CA1708;CA1711;CA1720;CA1814;CA1861</NoWarn>
+    <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CA1001;CA5394;CA2265;xUnit1031;VSTHRD002;IDE0011;CA1002;CA1024;CA1034;CA1051;CA1305;CA1708;CA1711;CA1720;CA1814;CA1861;CS0436</NoWarn>
     
     <!-- CA1707: Identifiers should not contain underscores (test method naming) -->
     <!-- CA1515: Make internal types that are not accessed outside the assembly internal -->

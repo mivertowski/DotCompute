@@ -320,7 +320,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// </summary>
         protected async Task LogDeviceCapabilities()
         {
-            if (!IsCudaAvailable())
+            if (!(await IsCudaAvailable()))
             {
                 Output.WriteLine("CUDA not available");
                 return;
@@ -337,21 +337,21 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine($"  Name: {info.Name}");
                 Output.WriteLine($"  Architecture: {info.ArchitectureGeneration()}");
                 Output.WriteLine($"  Compute Capability: {info.ComputeCapability.Major}.{info.ComputeCapability.Minor}");
-                Output.WriteLine($"  Global Memory: {info.GlobalMemoryBytes / (1024.0 * 1024.0 * 1024.0):F2} GB");
+                Output.WriteLine($"  Global Memory: {info.GlobalMemoryBytes() / (1024.0 * 1024.0 * 1024.0):F2} GB");
                 Output.WriteLine($"  Available Memory: {info.AvailableMemory / (1024.0 * 1024.0 * 1024.0):F2} GB");
-                Output.WriteLine($"  Multiprocessors: {info.MultiprocessorCount}");
-                Output.WriteLine($"  CUDA Cores (est.): {info.EstimatedCudaCores}");
+                Output.WriteLine($"  Multiprocessors: {info.MultiprocessorCount()}");
+                Output.WriteLine($"  CUDA Cores (est.): {info.EstimatedCudaCores()}");
                 Output.WriteLine($"  Max Threads/Block: {info.MaxThreadsPerBlock}");
-                Output.WriteLine($"  Shared Memory/Block: {info.SharedMemoryPerBlock / 1024:F0} KB");
-                Output.WriteLine($"  L2 Cache Size: {info.L2CacheSize / 1024:F0} KB");
+                Output.WriteLine($"  Shared Memory/Block: {info.SharedMemoryPerBlock() / 1024:F0} KB");
+                Output.WriteLine($"  L2 Cache Size: {info.L2CacheSize() / 1024:F0} KB");
                 Output.WriteLine($"  Memory Bandwidth: {info.MemoryBandwidthGBps():F0} GB/s");
-                Output.WriteLine($"  Core Clock: {info.ClockRate / 1000.0:F0} MHz");
-                Output.WriteLine($"  Memory Clock: {info.MemoryClockRate / 1000.0:F0} MHz");
-                Output.WriteLine($"  Warp Size: {info.WarpSize}");
-                Output.WriteLine($"  Unified Memory: {(info.SupportsUnifiedMemory ? "Yes" : "No")}");
-                Output.WriteLine($"  Managed Memory: {(info.SupportsManagedMemory ? "Yes" : "No")}");
-                Output.WriteLine($"  Concurrent Kernels: {(info.SupportsConcurrentKernels ? "Yes" : "No")}");
-                Output.WriteLine($"  ECC Enabled: {(info.IsECCEnabled ? "Yes" : "No")}");
+                Output.WriteLine($"  Core Clock: {info.ClockRate() / 1000.0:F0} MHz");
+                Output.WriteLine($"  Memory Clock: {info.MemoryClockRate() / 1000.0:F0} MHz");
+                Output.WriteLine($"  Warp Size: {info.WarpSize()}");
+                Output.WriteLine($"  Unified Memory: {(info.SupportsUnifiedMemory() ? "Yes" : "No")}");
+                Output.WriteLine($"  Managed Memory: {(info.SupportsManagedMemory() ? "Yes" : "No")}");
+                Output.WriteLine($"  Concurrent Kernels: {(info.SupportsConcurrentKernels() ? "Yes" : "No")}");
+                Output.WriteLine($"  ECC Enabled: {(info.IsECCEnabled() ? "Yes" : "No")}");
             }
             catch (Exception ex)
             {

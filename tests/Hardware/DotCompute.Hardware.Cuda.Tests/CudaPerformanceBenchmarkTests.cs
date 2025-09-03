@@ -283,10 +283,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             var gridDim = (matrixSize + 15) / 16; // 16x16 blocks
-            var launchConfig = new LaunchConfiguration(
-                new Dim3(gridDim, gridDim), 
-                new Dim3(16, 16)
-            );
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(gridDim, gridDim),
+                BlockSize = new Dim3(16, 16)
+            };
             
             // Warmup
             await kernel.LaunchAsync(launchConfig, deviceA, deviceB, deviceC, matrixSize);
@@ -445,10 +446,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Prepare data for each stream
             var hostDataA = new float[numStreams][];
             var hostDataB = new float[numStreams][];
-            var deviceBuffersA = new IBuffer<float>[numStreams];
-            var deviceBuffersB = new IBuffer<float>[numStreams];
-            var deviceBuffersC = new IBuffer<float>[numStreams];
-            var streams = new IStream[numStreams];
+            var deviceBuffersA = new IUnifiedMemoryBuffer<float>[numStreams];
+            var deviceBuffersB = new IUnifiedMemoryBuffer<float>[numStreams];
+            var deviceBuffersC = new IUnifiedMemoryBuffer<float>[numStreams];
+            var streams = new IComputeStream[numStreams];
             
             for (var i = 0; i < numStreams; i++)
             {
@@ -493,9 +494,17 @@ namespace DotCompute.Hardware.Cuda.Tests
                         var streamIndex = i; // Capture for lambda
                         tasks[i] = Task.Run(async () =>
                         {
-                            await deviceBuffersA[streamIndex].WriteAsync(hostDataA[streamIndex].AsSpan(), 0, streams[streamIndex]);
-                            await deviceBuffersB[streamIndex].WriteAsync(hostDataB[streamIndex].AsSpan(), 0, streams[streamIndex]);
-                            await kernel.LaunchAsync(launchConfig, streams[streamIndex], deviceBuffersA[streamIndex], deviceBuffersB[streamIndex], deviceBuffersC[streamIndex], elementCount);
+                            await deviceBuffersA[streamIndex].CopyFromAsync(hostDataA[streamIndex].AsMemory());
+                            await deviceBuffersB[streamIndex].CopyFromAsync(hostDataB[streamIndex].AsMemory());
+                            var args = new KernelArguments();
+                            args.Add(deviceBuffersA[streamIndex]);
+                            args.Add(deviceBuffersB[streamIndex]);
+                            args.Add(deviceBuffersC[streamIndex]);
+                            args.Add(elementCount);
+                            await kernel.LaunchAsync(
+                                (launchConfig.GridSize.X, launchConfig.GridSize.Y, launchConfig.GridSize.Z),
+                                (launchConfig.BlockSize.X, launchConfig.BlockSize.Y, launchConfig.BlockSize.Z),
+                                args);
                         });
                     }
                     

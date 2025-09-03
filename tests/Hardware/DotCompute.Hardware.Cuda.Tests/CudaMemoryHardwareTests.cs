@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Native;
@@ -87,7 +88,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var accelerator = factory.CreateDefaultAccelerator();
             
             var deviceInfo = accelerator.Info;
-            var totalMemoryGB = deviceInfo.GlobalMemoryBytes / (1024.0 * 1024.0 * 1024.0);
+            var totalMemoryGB = deviceInfo.GlobalMemoryBytes() / (1024.0 * 1024.0 * 1024.0);
             var availableMemoryGB = deviceInfo.AvailableMemory / (1024.0 * 1024.0 * 1024.0);
             
             Output.WriteLine($"GPU Memory Information:");
@@ -392,7 +393,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             var deviceInfo = accelerator.Info;
             
-            if (!deviceInfo.SupportsUnifiedMemory)
+            if (!deviceInfo.SupportsUnifiedMemory())
             {
                 Skip.If(true, "Device does not support Unified Memory");
                 return;
@@ -422,12 +423,17 @@ namespace DotCompute.Hardware.Cuda.Tests
                         }
                     }";
                 
-                using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "ModifyUnifiedData", Source = unifiedMemoryKernel, EntryPoint = "ModifyUnifiedData" });
+                await using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "ModifyUnifiedData", Source = unifiedMemoryKernel, EntryPoint = "ModifyUnifiedData" });
                 
                 // Execute kernel
+                var kernelArgs = new KernelArguments();
+                kernelArgs.Add(buffer);
+                kernelArgs.Add(elementCount);
+                kernelArgs.Add(2.0f);
                 await kernel.LaunchAsync(
-                    new LaunchConfig(gridSize: (elementCount + 255) / 256, blockSize: 256),
-                    buffer, elementCount, 2.0f
+                    ((elementCount + 255) / 256, 1, 1),
+                    (256, 1, 1),
+                    kernelArgs
                 );
                 
                 await accelerator.SynchronizeAsync();
@@ -493,10 +499,11 @@ namespace DotCompute.Hardware.Cuda.Tests
                     }
                 }";
             
-            using var coalescedKernelObj = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "CoalescedCopy", Source = coalescedKernel, EntryPoint = "CoalescedCopy" });
-            using var stridedKernelObj = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "StridedCopy", Source = stridedKernel, EntryPoint = "StridedCopy" });
+            await using var coalescedKernelObj = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "CoalescedCopy", Source = coalescedKernel, EntryPoint = "CoalescedCopy" });
+            await using var stridedKernelObj = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "StridedCopy", Source = stridedKernel, EntryPoint = "StridedCopy" });
             
-            var launchConfig = new LaunchConfig(gridSize: (arraySize + 255) / 256, blockSize: 256);
+            var gridSize = (arraySize + 255) / 256;
+            var blockSize = 256;
             
             // Measure coalesced access performance
             var coalescedPerf = new PerformanceMeasurement("Coalesced Memory Access", Output);
@@ -504,7 +511,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             for (var i = 0; i < 10; i++)
             {
-                await coalescedKernelObj.LaunchAsync(launchConfig, inputBuffer, outputBuffer, arraySize);
+                var coalescedArgs = new KernelArguments();
+                coalescedArgs.Add(inputBuffer);
+                coalescedArgs.Add(outputBuffer);
+                coalescedArgs.Add(arraySize);
+                await coalescedKernelObj.LaunchAsync(
+                    (gridSize, 1, 1),
+                    (blockSize, 1, 1),
+                    coalescedArgs
+                );
             }
             await accelerator.SynchronizeAsync();
             coalescedPerf.Stop();
@@ -515,7 +530,16 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             for (var i = 0; i < 10; i++)
             {
-                await stridedKernelObj.LaunchAsync(launchConfig, inputBuffer, outputBuffer, arraySize, 32); // 32-element stride
+                var stridedArgs = new KernelArguments();
+                stridedArgs.Add(inputBuffer);
+                stridedArgs.Add(outputBuffer);
+                stridedArgs.Add(arraySize);
+                stridedArgs.Add(32); // 32-element stride
+                await stridedKernelObj.LaunchAsync(
+                    (gridSize, 1, 1),
+                    (blockSize, 1, 1),
+                    stridedArgs
+                );
             }
             await accelerator.SynchronizeAsync();
             stridedPerf.Stop();
@@ -550,12 +574,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var accelerator = factory.CreateDefaultAccelerator();
             
             var deviceInfo = accelerator.Info;
-            Output.WriteLine($"Testing memory limits on device with {deviceInfo.GlobalMemoryBytes / (1024.0 * 1024.0 * 1024.0):F2} GB");
+            Output.WriteLine($"Testing memory limits on device with {deviceInfo.GlobalMemoryBytes() / (1024.0 * 1024.0 * 1024.0):F2} GB");
             
             try
             {
                 // Try to allocate more memory than available
-                var excessiveSize = deviceInfo.GlobalMemoryBytes + (1024L * 1024L * 1024L); // +1GB
+                var excessiveSize = deviceInfo.GlobalMemoryBytes() + (1024L * 1024L * 1024L); // +1GB
                 var elementCount = (long)(excessiveSize / sizeof(float));
                 
                 // This should either throw an exception or fail gracefully
@@ -673,12 +697,17 @@ namespace DotCompute.Hardware.Cuda.Tests
                     }
                 }";
             
-            using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "AccessData", Source = accessKernel, EntryPoint = "AccessData" });
+            await using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "AccessData", Source = accessKernel, EntryPoint = "AccessData" });
             await using var resultBuffer = await accelerator.Memory.AllocateAsync<float>(1);
             
+            var kernelArgs2 = new KernelArguments();
+            kernelArgs2.Add(buffer);
+            kernelArgs2.Add(elementCount);
+            kernelArgs2.Add(resultBuffer);
             await kernel.LaunchAsync(
-                new LaunchConfig(gridSize: (elementCount + 255) / 256, blockSize: 256),
-                buffer, elementCount, resultBuffer
+                ((elementCount + 255) / 256, 1, 1),
+                (256, 1, 1),
+                kernelArgs2
             );
             
             await accelerator.SynchronizeAsync();

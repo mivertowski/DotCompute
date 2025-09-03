@@ -141,7 +141,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }";
             
             var kernelDef = new KernelDefinition("VectorAdd", kernelSource, "VectorAdd");
-            using var kernel = await accelerator.CompileKernelAsync(kernelDef);
+            await using var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             // Execute kernel with performance measurement
             var perfMeasurement = new PerformanceMeasurement("Vector Addition Kernel", Output);
@@ -234,7 +234,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                     }
                 }";
             
-            using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "MatrixMultiply", Source = matMulKernel, EntryPoint = "MatrixMultiply" });
+            await using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "MatrixMultiply", Source = matMulKernel, EntryPoint = "MatrixMultiply" });
             
             var perfMeasurement = new PerformanceMeasurement("Matrix Multiplication", Output);
             
@@ -244,9 +244,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             var blockDim = (16, 16, 1);
             
             perfMeasurement.Start();
+            var kernelArgs = new KernelArguments();
+            kernelArgs.Add(bufferA);
+            kernelArgs.Add(bufferB);
+            kernelArgs.Add(resultBuffer);
+            kernelArgs.Add(matrixSize);
             await kernel.LaunchAsync(
-                new LaunchConfig(gridSize: gridDim, blockSize: blockDim),
-                bufferA, bufferB, resultBuffer, matrixSize
+                (gridDim, 1, 1),
+                (blockDim, 1, 1),
+                kernelArgs
             );
             
             await accelerator.SynchronizeAsync();
@@ -291,10 +297,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             var deviceInfo = accelerator.Info;
             
-            if (deviceInfo.SupportsConcurrentKernels)
+            if (deviceInfo.SupportsConcurrentKernels())
             {
                 Output.WriteLine("Device supports concurrent kernel execution");
-                deviceInfo.SupportsConcurrentKernels.Should().BeTrue();
+                deviceInfo.SupportsConcurrentKernels().Should().BeTrue();
             }
             else
             {
@@ -314,9 +320,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             var deviceInfo = accelerator.Info;
             
-            if (deviceInfo.SupportsUnifiedMemory)
+            if (deviceInfo.SupportsUnifiedMemory())
             {
-                deviceInfo.SupportsUnifiedMemory.Should().BeTrue();
+                deviceInfo.SupportsUnifiedMemory().Should().BeTrue();
                 Output.WriteLine("Unified Memory is supported and available");
             }
             else
@@ -336,13 +342,13 @@ namespace DotCompute.Hardware.Cuda.Tests
             var deviceInfo = accelerator.Info;
             
             // Modern GPUs should have at least 48KB shared memory per block
-            var sharedMemoryKB = deviceInfo.SharedMemoryPerBlock / 1024;
+            var sharedMemoryKB = deviceInfo.SharedMemoryPerBlock() / 1024;
             sharedMemoryKB.Should().BeGreaterThanOrEqualTo(32, "Modern GPUs should have at least 32KB shared memory");
             
             Output.WriteLine($"Shared memory per block: {sharedMemoryKB} KB");
             
             // Check if device supports configurable shared memory
-            if (HasMinimumComputeCapability(7, 0))
+            if (await HasMinimumComputeCapability(7, 0))
             {
                 sharedMemoryKB.Should().BeGreaterThanOrEqualTo(64, "CC 7.0+ devices should support 64KB+ shared memory");
             }
@@ -364,7 +370,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             Output.WriteLine($"Memory bandwidth: {deviceInfo.MemoryBandwidthGBps():F0} GB/s");
             Output.WriteLine($"Memory bus width: {deviceInfo.MemoryBusWidth} bits");
-            Output.WriteLine($"Memory clock: {deviceInfo.MemoryClockRate / 1000.0:F0} MHz");
+            Output.WriteLine($"Memory clock: {deviceInfo.MemoryClockRate() / 1000.0:F0} MHz");
         }
 
         [SkippableFact]
@@ -384,15 +390,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             deviceInfo.ArchitectureGeneration().Should().Contain("Ada");
             
             // RTX 2000 Ada should have modern features
-            deviceInfo.SupportsUnifiedMemory.Should().BeTrue();
-            deviceInfo.SupportsManagedMemory.Should().BeTrue();
-            deviceInfo.SupportsConcurrentKernels.Should().BeTrue();
+            deviceInfo.SupportsUnifiedMemory().Should().BeTrue();
+            deviceInfo.SupportsManagedMemory().Should().BeTrue();
+            deviceInfo.SupportsConcurrentKernels().Should().BeTrue();
             
             Output.WriteLine("RTX 2000 Ada capabilities verified:");
             Output.WriteLine($"  Architecture: {deviceInfo.ArchitectureGeneration()}");
             Output.WriteLine($"  Compute Capability: {deviceInfo.ComputeCapability.Major}.{deviceInfo.ComputeCapability.Minor}");
-            Output.WriteLine($"  RT Cores: {(deviceInfo.SupportsRayTracing ? "Available" : "Not Available")}");
-            Output.WriteLine($"  Tensor Cores: {(deviceInfo.SupportsTensorOperations ? "Available" : "Not Available")}");
+            Output.WriteLine($"  RT Cores: {(deviceInfo.SupportsRayTracing() ? "Available" : "Not Available")}");
+            Output.WriteLine($"  Tensor Cores: {(deviceInfo.SupportsTensorOperations() ? "Available" : "Not Available")}");
         }
 
         #endregion
@@ -417,7 +423,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             Func<Task> compileAction = async () => 
             {
-                using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "InvalidKernel", Source = invalidKernelSource, EntryPoint = "InvalidKernel" });
+                await using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "InvalidKernel", Source = invalidKernelSource, EntryPoint = "InvalidKernel" });
             };
             
             await compileAction.Should().ThrowAsync<Exception>("Invalid kernel should fail to compile");
@@ -446,13 +452,14 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }";
             
             await using var buffer = await accelerator.Memory.AllocateAsync<int>(1);
-            using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "LongRunningKernel", Source = longRunningKernel, EntryPoint = "LongRunningKernel" });
+            await using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "LongRunningKernel", Source = longRunningKernel, EntryPoint = "LongRunningKernel" });
             
             try
             {
                 // Launch a kernel that might timeout (with very high iteration count)
                 await kernel.LaunchAsync(
-                    new LaunchConfig(gridSize: 1, blockSize: 1),
+                    (1, 1, 1),
+                    (1, 1, 1),
                     buffer, 100_000_000 // Very high iteration count
                 );
                 
