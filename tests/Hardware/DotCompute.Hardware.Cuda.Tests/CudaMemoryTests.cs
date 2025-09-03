@@ -328,7 +328,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
             
-            var kernelDef = new KernelDefinition("memoryBandwidthTest", bandwidthKernel);
+            var kernelDef = new KernelDefinition("memoryBandwidthTest", bandwidthKernel, "memoryBandwidthTest");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;

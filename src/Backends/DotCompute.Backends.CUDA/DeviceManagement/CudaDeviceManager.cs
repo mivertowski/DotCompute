@@ -164,6 +164,7 @@ public sealed class CudaDeviceManager : IDisposable
             GlobalL1CacheSupported = props.GlobalL1CacheSupported != 0,
             LocalL1CacheSupported = props.LocalL1CacheSupported != 0,
             ManagedMemory = props.ManagedMemory != 0,
+            SupportsManagedMemory = props.ManagedMemory != 0,  // Set both properties for compatibility
             IsMultiGpuBoard = props.IsMultiGpuBoard != 0,
             MultiGpuBoardGroupId = props.MultiGpuBoardGroupID,
             HostNativeAtomicSupported = props.HostNativeAtomicSupported != 0,

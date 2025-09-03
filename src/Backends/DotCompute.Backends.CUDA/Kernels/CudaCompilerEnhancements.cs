@@ -150,37 +150,16 @@ namespace DotCompute.Backends.CUDA.Compilation
             _ = builder.AppendLine($"// Optimization: {options?.OptimizationLevel ?? OptimizationLevel.Default}");
             _ = builder.AppendLine();
 
-            // Add essential CUDA headers
-            _ = builder.AppendLine("#include <cuda_runtime.h>");
-            _ = builder.AppendLine("#include <device_launch_parameters.h>");
-
-            // Add modern architecture headers
-            if (major >= 8) // Ampere and newer
-            {
-                _ = builder.AppendLine("#include <cuda_fp16.h>");
-                _ = builder.AppendLine("#include <cuda_bf16.h>");
-                _ = builder.AppendLine("#include <cooperative_groups.h>");
-                _ = builder.AppendLine("#include <mma.h>"); // Matrix Multiply-Accumulate
-            }
-
-            if (major >= 8 && minor >= 9) // Ada generation
-            {
-                _ = builder.AppendLine("#include <cuda_fp8.h>"); // FP8 support for Ada
-            }
-
-            if (major >= 9) // Hopper
-            {
-                _ = builder.AppendLine("#include <cuda_pipeline.h>");
-                _ = builder.AppendLine("#include <cooperative_groups/memcpy_async.h>");
-            }
-
-            // Mathematical libraries based on source analysis
-            if (source.Code.Contains("sin", StringComparison.Ordinal) ||
-                source.Code.Contains("cos", StringComparison.Ordinal) ||
-                source.Code.Contains("exp", StringComparison.Ordinal))
-            {
-                _ = builder.AppendLine("#include <math_functions.h>");
-            }
+            // NVRTC does not support external headers - all built-in CUDA functions
+            // are available without explicit includes:
+            // - CUDA built-in variables (threadIdx, blockIdx, blockDim, gridDim)
+            // - Math functions (sin, cos, exp, sqrt, etc.)
+            // - Atomic operations (__atomicAdd, etc.)
+            // - Synchronization primitives (__syncthreads, etc.)
+            // - FP16/BF16 types and operations (when supported by architecture)
+            // - Cooperative groups (via intrinsics)
+            //
+            // The NVRTC compiler has all these functions built-in without needing headers
 
             _ = builder.AppendLine();
 
@@ -400,11 +379,10 @@ namespace DotCompute.Backends.CUDA.Compilation
                 logger.LogDebug("Starting enhanced NVRTC compilation for: {KernelName}", kernelName);
 
                 // Create NVRTC program using enhanced interop
-                var result = NvrtcInterop.nvrtcCreateProgram(
+                var result = NvrtcInterop.CreateProgram(
                     out program,
                     cudaSource,
                     kernelName + ".cu",
-                    0, // numHeaders
                     null, // headers
                     null  // includeNames
                 );
@@ -416,10 +394,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 logger.LogDebug("Enhanced NVRTC options: {Options}", string.Join(" ", compilationOptions));
 
                 // Compile the program
-                result = NvrtcInterop.nvrtcCompileProgram(
-                    program,
-                    compilationOptions.Length,
-                    compilationOptions);
+                result = NvrtcInterop.CompileProgram(program, compilationOptions);
 
                 // Get compilation log
                 var compilerLog = NvrtcInterop.GetCompilationLog(program);

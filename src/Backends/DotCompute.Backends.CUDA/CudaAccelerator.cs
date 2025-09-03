@@ -25,7 +25,6 @@ namespace DotCompute.Backends.CUDA
         private readonly CudaDevice _device;
         private readonly CudaContext _context;
         private readonly Memory.CudaMemoryManager _memoryManager;
-        private readonly CudaAsyncMemoryManagerAdapter _memoryAdapter;
         private readonly CudaKernelCompiler _kernelCompiler;
 
         /// <summary>
@@ -42,7 +41,7 @@ namespace DotCompute.Backends.CUDA
             : base(
                 BuildAcceleratorInfo(deviceId, logger ?? new NullLogger<CudaAccelerator>()),
                 AcceleratorType.CUDA,
-                CreateMemoryAdapter(deviceId, logger ?? new NullLogger<CudaAccelerator>()),
+                CreateMemoryAdapter(deviceId, out var memoryManager, logger ?? new NullLogger<CudaAccelerator>()),
                 new AcceleratorContext(IntPtr.Zero, 0),
                 logger ?? new NullLogger<CudaAccelerator>())
         {
@@ -51,8 +50,7 @@ namespace DotCompute.Backends.CUDA
             // Initialize CUDA-specific components
             _device = new CudaDevice(deviceId, actualLogger);
             _context = new CudaContext(deviceId);
-            _memoryManager = new CudaMemoryManager(_context, _device, actualLogger);
-            _memoryAdapter = new CudaAsyncMemoryManagerAdapter(_memoryManager);
+            _memoryManager = memoryManager;
             
 #pragma warning disable IL2026, IL3050 // CudaKernelCompiler uses runtime code generation which is not trimming/AOT compatible
             _kernelCompiler = new CudaKernelCompiler(_context, actualLogger);
@@ -80,9 +78,16 @@ namespace DotCompute.Backends.CUDA
 
         /// <inheritdoc/>
         protected override object? InitializeCore()
+        {
             // CUDA-specific initialization is handled in constructor
             // Return device info for logging purposes
-            => new { DeviceName = _device.Name, ComputeCapability = _device.ComputeCapability };
+            // Note: _device might be null when called from base constructor
+            if (_device == null)
+            {
+                return new { DeviceName = "CUDA Device (initializing)", ComputeCapability = "Unknown" };
+            }
+            return new { DeviceName = _device.Name, ComputeCapability = _device.ComputeCapability };
+        }
 
         /// <inheritdoc/>
         protected override async ValueTask DisposeCoreAsync()
@@ -92,6 +97,9 @@ namespace DotCompute.Backends.CUDA
             await _memoryManager.DisposeAsync().ConfigureAwait(false);
             _context.Dispose();
             _device.Dispose();
+            
+            // Call base disposal
+            await base.DisposeCoreAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -173,10 +181,10 @@ namespace DotCompute.Backends.CUDA
             }
         }
 
-        private static IUnifiedMemoryManager CreateMemoryAdapter(int deviceId, ILogger logger)
+        private static CudaAsyncMemoryManagerAdapter CreateMemoryAdapter(int deviceId, out CudaMemoryManager memoryManager, ILogger logger)
         {
             var context = new CudaContext(deviceId);
-            var memoryManager = new CudaMemoryManager(context, logger);
+            memoryManager = new CudaMemoryManager(context, logger);
             return new CudaAsyncMemoryManagerAdapter(memoryManager);
         }
     }

@@ -60,6 +60,32 @@ public sealed class CudaUnifiedMemoryManagerProduction : BaseMemoryManager
     public bool ConcurrentAccessSupported => _concurrentAccessSupported;
     
     /// <inheritdoc/>
+    public override async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
+        int count,
+        MemoryOptions options = MemoryOptions.None,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        var sizeInBytes = count * Unsafe.SizeOf<T>();
+        
+        // Allocate unified memory
+        var devicePtr = await AllocateUnifiedAsync(sizeInBytes, cancellationToken).ConfigureAwait(false);
+        
+        // Create typed buffer
+        var buffer = new CudaUnifiedMemoryBuffer<T>(
+            devicePtr, 
+            count, 
+            this, 
+            ManagedMemoryFlags.AttachGlobal,
+            _logger as ILogger<CudaUnifiedMemoryBuffer<T>>,
+            _context.DeviceId);
+        
+        TrackBuffer(buffer, sizeInBytes);
+        
+        return buffer;
+    }
+    
+    /// <inheritdoc/>
     public override long TotalAvailableMemory => _deviceManager.GetDevice(_context.DeviceId).TotalMemory;
     
     /// <inheritdoc/>

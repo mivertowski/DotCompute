@@ -18,6 +18,20 @@ public abstract class TestBase : IDisposable
     private readonly Stopwatch _testStopwatch;
     private readonly long _initialMemory;
     private bool _disposed;
+    
+    static TestBase()
+    {
+        // Initialize LD_LIBRARY_PATH for Linux to ensure CUDA libraries are found
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            var currentPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "";
+            if (!currentPath.Contains("/usr/lib/wsl/lib", StringComparison.Ordinal))
+            {
+                Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", 
+                    "/usr/lib/wsl/lib:" + currentPath);
+            }
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the TestBase class.
@@ -42,19 +56,65 @@ public abstract class TestBase : IDisposable
     {
         try
         {
-            // Check for CUDA runtime library
+            // For production quality, we need to actually check if CUDA is functional
+            // not just if the libraries exist. We'll use P/Invoke to test the runtime API.
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return System.IO.File.Exists("cudart64_12.dll") || 
-                       System.IO.File.Exists("cudart64_11.dll");
+                return CheckWindowsCuda();
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                return System.IO.File.Exists("/usr/local/cuda/lib64/libcudart.so") ||
-                       System.IO.File.Exists("/usr/lib/x86_64-linux-gnu/libcudart.so");
+                return CheckLinuxCuda();
             }
             
             return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
+    [DllImport("cudart64_12", EntryPoint = "cudaGetDeviceCount")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
+    private static extern int CudaGetDeviceCount_Windows12(out int count);
+    
+    [DllImport("cudart64_11", EntryPoint = "cudaGetDeviceCount")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
+    private static extern int CudaGetDeviceCount_Windows11(out int count);
+    
+    [DllImport("cudart", EntryPoint = "cudaGetDeviceCount")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
+    private static extern int CudaGetDeviceCount_Linux(out int count);
+    
+    private static bool CheckWindowsCuda()
+    {
+        try
+        {
+            // Try CUDA 12 first
+            if (CudaGetDeviceCount_Windows12(out var count) == 0 && count > 0)
+                return true;
+        }
+        catch { }
+        
+        try
+        {
+            // Try CUDA 11
+            if (CudaGetDeviceCount_Windows11(out var count) == 0 && count > 0)
+                return true;
+        }
+        catch { }
+        
+        return false;
+    }
+    
+    private static bool CheckLinuxCuda()
+    {
+        try
+        {
+            // On Linux, the runtime library should be found via standard paths
+            var result = CudaGetDeviceCount_Linux(out var count);
+            return result == 0 && count > 0;
         }
         catch
         {

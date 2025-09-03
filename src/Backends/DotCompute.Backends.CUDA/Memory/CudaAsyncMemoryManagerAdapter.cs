@@ -1,9 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Backends.CUDA.Extensions;
+using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Memory
 {
@@ -14,6 +18,8 @@ namespace DotCompute.Backends.CUDA.Memory
     public sealed class CudaAsyncMemoryManagerAdapter : Abstractions.IUnifiedMemoryManager
     {
         private readonly CudaMemoryManager _memoryManager;
+        private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, long> _bufferSizes;
+        private long _totalAllocatedBytes;
         private bool _disposed;
 
         /// <summary>
@@ -23,28 +29,40 @@ namespace DotCompute.Backends.CUDA.Memory
         public CudaAsyncMemoryManagerAdapter(CudaMemoryManager memoryManager)
         {
             _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+            _bufferSizes = new ConcurrentDictionary<IUnifiedMemoryBuffer, long>();
         }
 
         /// <inheritdoc/>
         public long TotalAvailableMemory => _memoryManager.TotalMemory;
 
         /// <inheritdoc/>
-        public long CurrentAllocatedMemory => _memoryManager.UsedMemory;
+        public long CurrentAllocatedMemory => _totalAllocatedBytes;
 
         /// <inheritdoc/>
         public long MaxAllocationSize => _memoryManager.MaxAllocationSize;
 
         /// <inheritdoc/>
-        public MemoryStatistics Statistics => new()
-
+        public MemoryStatistics Statistics
         {
-            TotalMemoryBytes = _memoryManager.TotalMemory,
-            UsedMemoryBytes = _memoryManager.UsedMemory,
-            AvailableMemoryBytes = _memoryManager.TotalMemory - _memoryManager.UsedMemory,
-            AllocationCount = 0, // Not tracked in CudaMemoryManager
-            DeallocationCount = 0, // Not tracked in CudaMemoryManager
-            PeakMemoryUsageBytes = _memoryManager.UsedMemory // Simplified
-        };
+            get
+            {
+                // Also include memory tracked by the underlying manager
+                var managerUsedMemory = _memoryManager.UsedMemory;
+                var totalUsed = Math.Max(_totalAllocatedBytes, managerUsedMemory);
+                
+                System.Console.WriteLine($"[DEBUG Statistics] _totalAllocatedBytes: {_totalAllocatedBytes}, managerUsedMemory: {managerUsedMemory}, totalUsed: {totalUsed}, bufferCount: {_bufferSizes.Count}");
+                
+                return new MemoryStatistics
+                {
+                    TotalMemoryBytes = _memoryManager.TotalMemory,
+                    UsedMemoryBytes = totalUsed,
+                    AvailableMemoryBytes = _memoryManager.TotalMemory - totalUsed,
+                    AllocationCount = _bufferSizes.Count,
+                    DeallocationCount = 0, // Would need separate tracking
+                    PeakMemoryUsageBytes = totalUsed // Simplified - would need history tracking
+                };
+            }
+        }
 
         /// <inheritdoc/>
         public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
@@ -52,46 +70,173 @@ namespace DotCompute.Backends.CUDA.Memory
             MemoryOptions options = MemoryOptions.None,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            // Synchronous allocation wrapped in ValueTask
-            var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            ThrowIfDisposed();
             
-            // For now, return a simple stub - this would need proper implementation TODO
-            throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.AllocateAsync not fully implemented");
+            return new ValueTask<IUnifiedMemoryBuffer<T>>(Task.Run(() =>
+            {
+                var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var devicePtr = IntPtr.Zero;
+                
+                // Use unified memory for better host/device interop
+                // CudaMemAttachFlags.Global = 0x01
+                var result = CudaRuntime.cudaMallocManaged(ref devicePtr, (nuint)sizeInBytes, 0x01);
+                CudaRuntime.CheckError(result, "allocating unified memory");
+                
+                // Create simplified buffer for the adapter
+                // We'll need to create a simpler version that doesn't depend on CudaUnifiedMemoryManagerProduction
+                var buffer = new SimpleCudaUnifiedMemoryBuffer<T>(devicePtr, count);
+                
+                // Track allocation
+                if (_bufferSizes.TryAdd(buffer, sizeInBytes))
+                {
+                    Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
+                    System.Console.WriteLine($"[DEBUG AllocateAsync<T>] Allocated {sizeInBytes} bytes, total tracked: {_totalAllocatedBytes}");
+                }
+                else
+                {
+                    System.Console.WriteLine($"[DEBUG AllocateAsync<T>] Failed to track {sizeInBytes} bytes");
+                }
+                
+                return (IUnifiedMemoryBuffer<T>)buffer;
+            }, cancellationToken));
         }
 
         /// <inheritdoc/>
         public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
-            // Synchronous free wrapped in ValueTask
-            => ValueTask.CompletedTask;
+        {
+            if (buffer == null)
+                return ValueTask.CompletedTask;
+                
+            return new ValueTask(Task.Run(() =>
+            {
+                if (_bufferSizes.TryRemove(buffer, out var size))
+                {
+                    Interlocked.Add(ref _totalAllocatedBytes, -size);
+                }
+                
+                buffer.Dispose();
+            }, cancellationToken));
+        }
 
         /// <inheritdoc/>
         public IUnifiedMemoryBuffer<T> CreateView<T>(
             IUnifiedMemoryBuffer<T> buffer,
             int offset,
-            int count) where T : unmanaged => throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CreateView not implemented");
+            int count) where T : unmanaged
+        {
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(buffer);
+            
+            if (offset < 0 || count < 0 || offset + count > buffer.Length)
+                throw new ArgumentOutOfRangeException("Invalid view range");
+            
+            // Create a view without allocating new memory
+            unsafe
+            {
+                var deviceMemory = buffer.GetDeviceMemory();
+                var basePtr = deviceMemory.Handle;
+                var viewPtr = IntPtr.Add(basePtr, offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+                return new SimpleCudaUnifiedMemoryBuffer<T>(viewPtr, count, ownsMemory: false);
+            }
+        }
 
         /// <inheritdoc/>
         public ValueTask CopyAsync<T>(
             IUnifiedMemoryBuffer<T> source,
             IUnifiedMemoryBuffer<T> destination,
-            CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CopyAsync not implemented");
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(source);
+            ArgumentNullException.ThrowIfNull(destination);
+            
+            if (source.Length != destination.Length)
+                throw new ArgumentException("Source and destination buffers must have the same length");
+                
+            return new ValueTask(Task.Run(() =>
+            {
+                var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var result = CudaRuntime.cudaMemcpy(
+                    destination.GetDeviceMemory().Handle,
+                    source.GetDeviceMemory().Handle, 
+                    (nuint)sizeInBytes,
+                    CudaMemcpyKind.DeviceToDevice
+                );
+                CudaRuntime.CheckError(result, "copying device memory");
+            }, cancellationToken));
+        }
 
         /// <inheritdoc/>
         public ValueTask CopyToDeviceAsync<T>(
             ReadOnlyMemory<T> source,
             IUnifiedMemoryBuffer<T> destination,
-            CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CopyToDeviceAsync not implemented");
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(destination);
+            
+            if (source.Length != destination.Length)
+                throw new ArgumentException("Source and destination must have the same length");
+                
+            return new ValueTask(Task.Run(() =>
+            {
+                unsafe
+                {
+                    using var pinned = source.Pin();
+                    var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                    var result = CudaRuntime.cudaMemcpy(
+                        destination.GetDeviceMemory().Handle,
+                        new IntPtr(pinned.Pointer),
+                        (nuint)sizeInBytes,
+                        CudaMemcpyKind.HostToDevice
+                    );
+                    CudaRuntime.CheckError(result, "copying memory to device");
+                }
+            }, cancellationToken));
+        }
 
         /// <inheritdoc/>
         public ValueTask CopyFromDeviceAsync<T>(
             IUnifiedMemoryBuffer<T> source,
             Memory<T> destination,
-            CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("CudaAsyncMemoryManagerAdapter.CopyFromDeviceAsync not implemented");
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(source);
+            
+            if (source.Length != destination.Length)
+                throw new ArgumentException("Source and destination must have the same length");
+                
+            return new ValueTask(Task.Run(() =>
+            {
+                unsafe
+                {
+                    using var pinned = destination.Pin();
+                    var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                    var srcMemory = source.GetDeviceMemory();
+                    var result = CudaRuntime.cudaMemcpy(
+                        new IntPtr(pinned.Pointer),
+                        srcMemory.Handle,
+                        (nuint)sizeInBytes,
+                        CudaMemcpyKind.DeviceToHost
+                    );
+                    CudaRuntime.CheckError(result, "copying memory from device");
+                }
+            }, cancellationToken));
+        }
 
         /// <inheritdoc/>
         public void Clear()
         {
-            // Clear any cached allocations
+            ThrowIfDisposed();
+            
+            // Free all tracked buffers
+            foreach (var kvp in _bufferSizes)
+            {
+                kvp.Key.Dispose();
+            }
+            _bufferSizes.Clear();
+            _totalAllocatedBytes = 0;
         }
 
         /// <inheritdoc/>
@@ -104,14 +249,47 @@ namespace DotCompute.Backends.CUDA.Memory
         public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
             ReadOnlyMemory<T> data,
             MemoryOptions options = MemoryOptions.None,
-            CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("AllocateAndCopyAsync not implemented"); //TODO
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            ThrowIfDisposed();
+            
+            return Task.Run(async () =>
+            {
+                var buffer = await AllocateAsync<T>(data.Length, options, cancellationToken).ConfigureAwait(false);
+                await CopyToDeviceAsync(data, buffer, cancellationToken).ConfigureAwait(false);
+                return buffer;
+            }, cancellationToken).AsValueTask();
+        }
 
 
         /// <inheritdoc/>
         public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
             long sizeInBytes,
             MemoryOptions options = MemoryOptions.None,
-            CancellationToken cancellationToken = default) => throw new NotImplementedException("AllocateRawAsync not implemented"); //TODO
+            CancellationToken cancellationToken = default)
+        {
+            ThrowIfDisposed();
+            
+            return Task.Run(() =>
+            {
+                var devicePtr = IntPtr.Zero;
+                
+                // Use unified memory for better host/device interop
+                // CudaMemAttachFlags.Global = 0x01
+                var result = CudaRuntime.cudaMallocManaged(ref devicePtr, (nuint)sizeInBytes, 0x01);
+                CudaRuntime.CheckError(result, "allocating unified memory");
+                
+                var buffer = new CudaRawMemoryBuffer(devicePtr, sizeInBytes);
+                
+                // Track allocation
+                if (_bufferSizes.TryAdd(buffer, sizeInBytes))
+                {
+                    Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
+                }
+                
+                return (IUnifiedMemoryBuffer)buffer;
+            }, cancellationToken).AsValueTask();
+        }
 
 
         /// <inheritdoc/>
@@ -121,24 +299,65 @@ namespace DotCompute.Backends.CUDA.Memory
             IUnifiedMemoryBuffer<T> destination,
             int destinationOffset,
             int count,
-            CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("CopyAsync with offsets not implemented"); //TODO
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(source);
+            ArgumentNullException.ThrowIfNull(destination);
+            
+            if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
+                throw new ArgumentOutOfRangeException("Offsets and count must be non-negative");
+                
+            if (sourceOffset + count > source.Length || destinationOffset + count > destination.Length)
+                throw new ArgumentOutOfRangeException("Copy range exceeds buffer bounds");
+                
+            return new ValueTask(Task.Run(() =>
+            {
+                unsafe
+                {
+                    var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                    var srcMemory = source.GetDeviceMemory();
+                    var dstMemory = destination.GetDeviceMemory();
+                    var srcPtr = IntPtr.Add(srcMemory.Handle, sourceOffset * elementSize);
+                    var dstPtr = IntPtr.Add(dstMemory.Handle, destinationOffset * elementSize);
+                    var sizeInBytes = count * elementSize;
+                    
+                    var result = CudaRuntime.cudaMemcpy(
+                        dstPtr,
+                        srcPtr,
+                        (nuint)sizeInBytes,
+                        CudaMemcpyKind.DeviceToDevice
+                    );
+                    CudaRuntime.CheckError(result, "copying device memory with offsets");
+                }
+            }, cancellationToken));
+        }
 
 
         /// <inheritdoc/>
         public void Free(IUnifiedMemoryBuffer buffer)
-            // Synchronous free
-            => buffer?.Dispose();
+        {
+            if (buffer == null)
+                return;
+                
+            if (_bufferSizes.TryRemove(buffer, out var size))
+            {
+                Interlocked.Add(ref _totalAllocatedBytes, -size);
+            }
+            
+            buffer.Dispose();
+        }
 
 
         /// <inheritdoc/>
-        public IAccelerator Accelerator => throw new NotImplementedException("Accelerator not implemented"); //TODO
+        public IAccelerator Accelerator => throw new NotImplementedException("Accelerator reference will be set by CudaAccelerator");
 
         /// <inheritdoc/>
         public void Dispose()
         {
             if (!_disposed)
             {
-                // Cleanup if needed
+                Clear();
                 _disposed = true;
             }
         }
@@ -148,6 +367,11 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             Dispose();
             return ValueTask.CompletedTask;
+        }
+        
+        private void ThrowIfDisposed()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
         }
     }
 }

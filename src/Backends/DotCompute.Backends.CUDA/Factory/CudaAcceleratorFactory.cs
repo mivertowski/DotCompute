@@ -222,7 +222,7 @@ namespace DotCompute.Backends.CUDA.Factory
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create default accelerator");
-                return null;
+                throw; // Re-throw to see the actual error
             }
         }
 

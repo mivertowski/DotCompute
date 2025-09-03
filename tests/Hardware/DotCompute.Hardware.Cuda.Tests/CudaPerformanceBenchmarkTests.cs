@@ -111,7 +111,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(elementCount * 4); // float4
             await using var deviceOutput = await accelerator.Memory.AllocateAsync<float>(elementCount * 4);
             
-            var kernelDef = new KernelDefinition("memoryBandwidthTest", MemoryBandwidthKernel);
+            var kernelDef = new KernelDefinition("memoryBandwidthTest", MemoryBandwidthKernel, "memoryBandwidthTest");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;
@@ -189,7 +189,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
             
-            var kernelDef = new KernelDefinition("computeIntensiveTest", ComputeIntensiveKernel);
+            var kernelDef = new KernelDefinition("computeIntensiveTest", ComputeIntensiveKernel, "computeIntensiveTest");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;
@@ -279,7 +279,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceA.WriteAsync(hostA.AsSpan(), 0);
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
-            var kernelDef = new KernelDefinition("matrixMultiplyOptimized", MatrixMultiplyOptimized);
+            var kernelDef = new KernelDefinition("matrixMultiplyOptimized", MatrixMultiplyOptimized, "matrixMultiplyOptimized");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             var gridDim = (matrixSize + 15) / 16; // 16x16 blocks
@@ -433,7 +433,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int numStreams = 4;
             const int iterations = 5;
             
-            var kernelDef = new KernelDefinition("simpleAdd", SimpleKernel);
+            var kernelDef = new KernelDefinition("simpleAdd", SimpleKernel, "simpleAdd");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;

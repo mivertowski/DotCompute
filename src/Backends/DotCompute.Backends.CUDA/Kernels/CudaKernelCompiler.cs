@@ -163,6 +163,30 @@ namespace DotCompute.Backends.CUDA.Compilation
                     compiledCode = await CompileToPtxAsync(cudaSource, source.Name, options).ConfigureAwait(false);
                 }
 
+                // Debug: Write PTX to temp file for inspection
+                if (!useCubin)
+                {
+                    var ptxString = System.Text.Encoding.UTF8.GetString(compiledCode);
+                    var tempPath = $"/tmp/kernel_{source.Name}.ptx";
+                    System.IO.File.WriteAllText(tempPath, ptxString);
+                    // Also write the source that was compiled
+                    var sourcePath = $"/tmp/kernel_{source.Name}.cu";
+                    System.IO.File.WriteAllText(sourcePath, cudaSource);
+                    Console.WriteLine($"[DEBUG] PTX written to {tempPath}, source written to {sourcePath}");
+                    
+                    // Also check for the entry point
+                    if (!ptxString.Contains($".entry {source.EntryPoint}") && !ptxString.Contains($".func {source.EntryPoint}"))
+                    {
+                        Console.WriteLine($"[WARNING] Entry point '{source.EntryPoint}' not found in PTX!");
+                        Console.WriteLine($"Functions found in PTX:");
+                        var funcLines = ptxString.Split('\n').Where(l => l.Contains(".entry") || l.Contains(".func"));
+                        foreach (var line in funcLines)
+                        {
+                            Console.WriteLine($"  {line.Trim()}");
+                        }
+                    }
+                }
+                
                 // Verify compiled code
                 if (!VerifyCompiledCode(compiledCode, source.Name))
                 {
@@ -257,22 +281,15 @@ namespace DotCompute.Backends.CUDA.Compilation
             _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Optimization level: {options?.OptimizationLevel ?? OptimizationLevel.Default}");
             _ = builder.AppendLine();
 
-            // Add essential CUDA headers
-            _ = builder.AppendLine("#include <cuda_runtime.h>");
-            _ = builder.AppendLine("#include <device_launch_parameters.h>");
-
-            // Add performance-oriented headers
-            if (options?.OptimizationLevel == OptimizationLevel.Maximum)
-            {
-                _ = builder.AppendLine("#include <cuda_fp16.h>");  // Half precision support
-                _ = builder.AppendLine("#include <cooperative_groups.h>");  // Cooperative groups
-            }
-
-            // Add mathematical libraries if needed
-            if (source.Code.Contains("sin", StringComparison.Ordinal) || source.Code.Contains("cos", StringComparison.Ordinal) || source.Code.Contains("exp", StringComparison.Ordinal))
-            {
-                _ = builder.AppendLine("#include <math_functions.h>");
-            }
+            // NVRTC doesn't support external headers - all built-in CUDA functions are available
+            // without explicit includes. The compiler has implicit access to:
+            // - CUDA built-in variables (threadIdx, blockIdx, blockDim, gridDim)
+            // - Math functions (sin, cos, exp, etc.)
+            // - Atomic operations
+            // - Synchronization primitives (__syncthreads, etc.)
+            
+            // For NVRTC, we don't need to include any headers
+            // The runtime compilation has all CUDA intrinsics built-in
 
             _ = builder.AppendLine();
 
@@ -329,10 +346,26 @@ namespace DotCompute.Backends.CUDA.Compilation
             _ = builder.AppendLine();
 
             // Add the kernel source code
+            // For NVRTC, we need to ensure kernels have extern "C" to prevent name mangling
             switch (source.Language)
             {
                 case KernelLanguage.Cuda:
-                    _ = builder.Append(source.Code);
+                    // Check if the code already has extern "C"
+                    if (!source.Code.Contains("extern \"C\""))
+                    {
+                        // Add extern "C" to __global__ functions
+                        // This regex replaces "__global__ void funcname" with "extern \"C\" __global__ void funcname"
+                        var modifiedCode = System.Text.RegularExpressions.Regex.Replace(
+                            source.Code,
+                            @"(\s*)(__global__\s+void\s+)",
+                            "$1extern \"C\" $2",
+                            System.Text.RegularExpressions.RegexOptions.Multiline);
+                        _ = builder.Append(modifiedCode);
+                    }
+                    else
+                    {
+                        _ = builder.Append(source.Code);
+                    }
                     break;
 
                 case KernelLanguage.OpenCL:
@@ -382,11 +415,10 @@ namespace DotCompute.Backends.CUDA.Compilation
                 LogNvrtcCompilationStart(_logger, kernelName);
 
                 // Create NVRTC program
-                var result = NvrtcInterop.nvrtcCreateProgram(
+                var result = NvrtcInterop.CreateProgram(
                     out program,
                     cudaSource,
                     kernelName + ".cu",
-                    0, // numHeaders
                     null, // headers
                     null  // includeNames
                 );
@@ -396,12 +428,15 @@ namespace DotCompute.Backends.CUDA.Compilation
                 var compilationOptions = BuildCompilationOptions(options);
 
                 LogNvrtcCompilationOptions(_logger, string.Join(" ", compilationOptions));
+                
+                // Log each option individually for debugging
+                foreach (var option in compilationOptions)
+                {
+                    _logger.LogDebug("NVRTC Option: {Option}", option);
+                }
 
                 // Compile the program
-                result = NvrtcInterop.nvrtcCompileProgram(
-                    program,
-                    compilationOptions.Length,
-                    compilationOptions);
+                result = NvrtcInterop.CompileProgram(program, compilationOptions);
 
                 // Get compilation log regardless of success/failure
                 var compilerLog = await GetCompilationLogAsync(program).ConfigureAwait(false);
@@ -415,15 +450,22 @@ namespace DotCompute.Backends.CUDA.Compilation
                     else
                     {
                         LogNvrtcCompilationError(_logger, kernelName, compilerLog);
+                        // Also output to console for immediate debugging
+                        Console.WriteLine($"[NVRTC COMPILATION ERROR for '{kernelName}']:");
+                        Console.WriteLine(compilerLog);
+                        Console.WriteLine("[END NVRTC ERROR]");
                     }
                 }
 
                 // Check compilation result
                 if (result != NvrtcResult.Success)
                 {
-                    throw new KernelCompilationException(
-                        $"NVRTC compilation failed for kernel '{kernelName}': {NvrtcInterop.GetErrorString(result)}",
-                        compilerLog);
+                    var errorDetails = $"NVRTC compilation failed for kernel '{kernelName}': {NvrtcInterop.GetErrorString(result)}";
+                    if (!string.IsNullOrWhiteSpace(compilerLog))
+                    {
+                        errorDetails += $"\nCompilation Log:\n{compilerLog}";
+                    }
+                    throw new KernelCompilationException(errorDetails, compilerLog);
                 }
 
                 // Get PTX code using safe helper method
@@ -475,64 +517,15 @@ namespace DotCompute.Backends.CUDA.Compilation
         {
             var optionsList = new List<string>();
 
-            // Get target GPU architecture  
+            // MINIMAL OPTIONS ONLY - NVRTC is very picky about what it accepts
+            
+            // Get target GPU architecture - this is REQUIRED
             var (major, minor) = GetTargetComputeCapability();
             var archString = ComputeCapability.GetArchString(major, minor);
             optionsList.Add($"--gpu-architecture={archString}");
-
-            // For Ada generation (8.9), ensure we target the correct architecture
-            if (major == 8 && minor == 9)
-            {
-                optionsList.Add("--gpu-code=sm_89");
-                optionsList.Add("--generate-code=arch=compute_89,code=sm_89");
-            }
-
-            // Add optimization level
-            var optLevel = options?.OptimizationLevel ?? OptimizationLevel.Default;
-            switch (optLevel)
-            {
-                case OptimizationLevel.None:
-                    optionsList.Add("-O0");
-                    break;
-                case OptimizationLevel.Maximum:
-                    optionsList.Add("-O3");
-                    optionsList.Add("--use_fast_math");
-                    optionsList.Add("--fmad=true");
-                    break;
-                default: // Default
-                    optionsList.Add("-O2");
-                    break;
-            }
-
-            // Debug information
-            if (options?.EnableDebugInfo == true)
-            {
-                optionsList.Add("-g");
-                optionsList.Add("-G");
-                optionsList.Add("--device-debug");
-                optionsList.Add("--generate-line-info");
-            }
-            else
-            {
-                // Release optimizations
-                optionsList.Add("--restrict");
-                optionsList.Add("--extra-device-vectorization");
-
-                // Ada-specific optimizations for RTX 2000
-                var (targetMajor, targetMinor) = GetTargetComputeCapability();
-                if (targetMajor == 8 && targetMinor == 9)
-                {
-                    optionsList.Add("--ftz=true"); // Flush denormals to zero
-                    optionsList.Add("--prec-div=false"); // Fast division
-                    optionsList.Add("--prec-sqrt=false"); // Fast sqrt
-                    optionsList.Add("--fmad=true"); // Fused multiply-add
-                }
-            }
-
-            // Standard includes and defines
-            optionsList.Add("-default-device");
-            optionsList.Add("-std=c++17");
-            optionsList.Add("-DCUDA_KERNEL_COMPILATION");
+            
+            // That's it! Let's try with just the architecture option
+            // NVRTC should handle everything else by default
 
             // Add any additional user-specified flags
             if (options?.AdditionalFlags != null)
@@ -577,11 +570,10 @@ namespace DotCompute.Backends.CUDA.Compilation
                 LogNvrtcCubinCompilationStart(_logger, kernelName);
 
                 // Create NVRTC program
-                var result = NvrtcInterop.nvrtcCreateProgram(
+                var result = NvrtcInterop.CreateProgram(
                     out program,
                     cudaSource,
                     kernelName + ".cu",
-                    0, // numHeaders
                     null, // headers
                     null  // includeNames
                 );
@@ -593,10 +585,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 LogNvrtcCubinCompilationOptions(_logger, string.Join(" ", compilationOptions));
 
                 // Compile the program
-                result = NvrtcInterop.nvrtcCompileProgram(
-                    program,
-                    compilationOptions.Length,
-                    compilationOptions);
+                result = NvrtcInterop.CompileProgram(program, compilationOptions);
 
                 // Get compilation log
                 var compilerLog = await GetCompilationLogAsync(program).ConfigureAwait(false);
@@ -655,75 +644,14 @@ namespace DotCompute.Backends.CUDA.Compilation
         {
             var optionsList = new List<string>();
 
+            // MINIMAL OPTIONS FOR CUBIN - NVRTC is very limited
+            
             // Get target GPU architecture for CUBIN generation
             var (major, minor) = GetTargetComputeCapability();
-            var codeString = ComputeCapability.GetCodeString(major, minor);
             var archString = ComputeCapability.GetArchString(major, minor);
-
-            optionsList.Add($"--gpu-code={codeString}");
+            
+            // Just use architecture - NVRTC will handle the rest
             optionsList.Add($"--gpu-architecture={archString}");
-
-            // For Ada generation (8.9), add specific optimizations
-            if (major == 8 && minor == 9)
-            {
-                optionsList.Add("--generate-code=arch=compute_89,code=sm_89");
-                optionsList.Add("--maxrregcount=255"); // Max registers for Ada
-                optionsList.Add("--opt-level=3");
-                optionsList.Add("--use-local-env");
-            }
-
-            // Add optimization level
-            var optLevel = options?.OptimizationLevel ?? OptimizationLevel.Default;
-            switch (optLevel)
-            {
-                case OptimizationLevel.None:
-                    optionsList.Add("-O0");
-                    break;
-                case OptimizationLevel.Maximum:
-                    optionsList.Add("-O3");
-                    optionsList.Add("--use_fast_math");
-                    optionsList.Add("--fmad=true");
-                    optionsList.Add("--prec-div=false");
-                    optionsList.Add("--prec-sqrt=false");
-                    break;
-                default: // Default
-                    optionsList.Add("-O2");
-                    break;
-            }
-
-            // Debug information
-            if (options?.EnableDebugInfo == true)
-            {
-                optionsList.Add("-g");
-                optionsList.Add("-G");
-                optionsList.Add("--device-debug");
-                optionsList.Add("--generate-line-info");
-            }
-            else
-            {
-                // Release optimizations specific to CUBIN
-                optionsList.Add("--restrict");
-                optionsList.Add("--extra-device-vectorization");
-                optionsList.Add("--optimize-float-atomics");
-
-                // Ada-specific CUBIN optimizations for RTX 2000
-                var (targetMajor, targetMinor) = GetTargetComputeCapability();
-                if (targetMajor == 8 && targetMinor == 9)
-                {
-                    optionsList.Add("--ptxas-options=-v"); // Verbose PTX assembly
-                    optionsList.Add("--ptxas-options=--opt-level=3");
-                    optionsList.Add("--ptxas-options=--warn-on-spills");
-                    optionsList.Add("--maxrregcount=255"); // Optimize register usage
-                    optionsList.Add("--optimize-shared-memory");
-                }
-            }
-
-            // CUBIN-specific optimizations
-            optionsList.Add("-rdc=false"); // Disable relocatable device code for better optimization
-            optionsList.Add("-default-device");
-            optionsList.Add("-std=c++17");
-            optionsList.Add("-DCUDA_KERNEL_COMPILATION");
-            optionsList.Add("-DCUDA_CUBIN_COMPILATION");
 
             // Add any additional user-specified flags
             if (options?.AdditionalFlags != null)

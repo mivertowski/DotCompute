@@ -82,7 +82,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
             // Compile kernel
-            var kernelDef = new KernelDefinition("simpleAdd", SimpleKernel);
+            var kernelDef = new KernelDefinition("simpleAdd", SimpleKernel, "simpleAdd");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             // Create graph
@@ -141,7 +141,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var deviceData = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await deviceData.WriteAsync(hostData.AsSpan(), 0);
             
-            var kernelDef = new KernelDefinition("scale", MultiKernel2);
+            var kernelDef = new KernelDefinition("scale", MultiKernel2, "scale");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;
@@ -212,9 +212,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
             // Compile kernels
-            var multiplyKernelDef = new KernelDefinition("multiply", MultiKernel1);
+            var multiplyKernelDef = new KernelDefinition("multiply", MultiKernel1, "multiply");
             var multiplyKernel = await accelerator.CompileKernelAsync(multiplyKernelDef);
-            var scaleKernelDef = new KernelDefinition("scale", MultiKernel2);
+            var scaleKernelDef = new KernelDefinition("scale", MultiKernel2, "scale");
             var scaleKernel = await accelerator.CompileKernelAsync(scaleKernelDef);
             
             const int blockSize = 256;
@@ -278,7 +278,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var deviceData = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await deviceData.WriteAsync(hostData.AsSpan(), 0);
             
-            var kernelDef = new KernelDefinition("scale", MultiKernel2);
+            var kernelDef = new KernelDefinition("scale", MultiKernel2, "scale");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;
@@ -355,9 +355,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
             
-            var scaleKernelDef = new KernelDefinition("scale", MultiKernel2);
+            var scaleKernelDef = new KernelDefinition("scale", MultiKernel2, "scale");
             var scaleKernel = await accelerator.CompileKernelAsync(scaleKernelDef);
-            var addKernelDef = new KernelDefinition("simpleAdd", SimpleKernel);
+            var addKernelDef = new KernelDefinition("simpleAdd", SimpleKernel, "simpleAdd");
             var addKernel = await accelerator.CompileKernelAsync(addKernelDef);
             
             const int blockSize = 256;
@@ -474,7 +474,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var deviceData = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await deviceData.WriteAsync(hostData.AsSpan(), 0);
             
-            var kernelDef = new KernelDefinition("scale", MultiKernel2);
+            var kernelDef = new KernelDefinition("scale", MultiKernel2, "scale");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;

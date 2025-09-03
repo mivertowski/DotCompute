@@ -249,11 +249,10 @@ public sealed class CudaKernelCache : IDisposable
         return await Task.Run(() =>
         {
             // Create NVRTC program
-            var result = NvrtcInterop.nvrtcCreateProgram(
+            var result = NvrtcInterop.CreateProgram(
                 out var prog,
                 sourceCode,
                 kernelName,
-                0,
                 null,
                 null);
             
@@ -268,10 +267,7 @@ public sealed class CudaKernelCache : IDisposable
                 var compileOptions = BuildNvrtcOptions(options);
                 
                 // Compile program
-                result = NvrtcInterop.nvrtcCompileProgram(
-                    prog,
-                    compileOptions.Length,
-                    compileOptions);
+                result = NvrtcInterop.CompileProgram(prog, compileOptions);
                 
                 if (result != NvrtcResult.Success)
                 {

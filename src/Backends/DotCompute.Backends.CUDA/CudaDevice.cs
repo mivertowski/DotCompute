@@ -184,7 +184,10 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Gets the memory manager for this device.
         /// </summary>
-        public Memory.CudaMemoryManager Memory { get; private set; } = null!;
+        /// <remarks>
+        /// Memory manager must be set externally to avoid circular dependencies.
+        /// </remarks>
+        public Memory.CudaMemoryManager? Memory { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaDevice"/> class.
@@ -216,9 +219,11 @@ namespace DotCompute.Backends.CUDA
             // Build capabilities dictionary
             _capabilities = BuildCapabilities();
 
-            // Initialize memory manager with context
-            var context = new CudaContext(_deviceId);
-            Memory = new Memory.CudaMemoryManager(context, _logger);
+            // Note: Memory manager must be set externally to avoid circular dependencies
+            
+            // Log managed memory support for debugging
+            _logger.LogInformation("Device {DeviceId} ManagedMemory field value: {ManagedMemory}, SupportsManagedMemory: {Supports}",
+                deviceId, _deviceProperties.ManagedMemory, SupportsManagedMemory);
 
             _logger.LogInformation("Initialized CUDA device {DeviceId}: {DeviceName} (CC {Major}.{Minor})",
                 _deviceId, Name, ComputeCapabilityMajor, ComputeCapabilityMinor);
@@ -374,7 +379,7 @@ namespace DotCompute.Backends.CUDA
                 maxClockFrequency: ClockRate / 1000, // Convert kHz to MHz
                 computeCapability: ComputeCapability,
                 maxSharedMemoryPerBlock: (long)SharedMemoryPerBlock,
-                isUnifiedMemory: false
+                isUnifiedMemory: SupportsManagedMemory
             )
             {
                 Capabilities = new Dictionary<string, object>(_capabilities)
@@ -513,7 +518,12 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Allocates memory on this device asynchronously.
         /// </summary>
-        public async Task<IUnifiedMemoryBuffer> AllocateAsync(ulong sizeInBytes) => await Memory.AllocateAsync((long)sizeInBytes).ConfigureAwait(false);
+        public async Task<IUnifiedMemoryBuffer> AllocateAsync(ulong sizeInBytes)
+        {
+            if (Memory == null)
+                throw new InvalidOperationException("Memory manager has not been initialized for this device");
+            return await Memory.AllocateAsync((long)sizeInBytes).ConfigureAwait(false);
+        }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 

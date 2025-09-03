@@ -30,6 +30,14 @@ namespace DotCompute.Backends.CUDA
 
         private void Initialize()
         {
+            // Initialize CUDA driver API if not already done
+            var initResult = CudaRuntime.cuInit(0);
+            // CUDA_ERROR_ALREADY_INITIALIZED = 4 for driver API
+            if (initResult != CudaError.Success && initResult != (CudaError)4)
+            {
+                throw new AcceleratorException($"Failed to initialize CUDA driver: {initResult}");
+            }
+
             // Set the active device
             var result = CudaRuntime.cudaSetDevice(_deviceId);
             if (result != CudaError.Success)

@@ -42,7 +42,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
                     hasCudaRuntime = System.IO.File.Exists("/usr/local/cuda/lib64/libcudart.so") ||
-                                   System.IO.File.Exists("/usr/lib/x86_64-linux-gnu/libcudart.so");
+                                   System.IO.File.Exists("/usr/lib/x86_64-linux-gnu/libcudart.so") ||
+                                   System.IO.File.Exists("/usr/local/cuda-12.6/targets/x86_64-linux/lib/libcudart.so") ||
+                                   System.IO.File.Exists("/usr/local/cuda-12.8/targets/x86_64-linux/lib/libcudart.so.12");
                 }
                 
                 if (!hasCudaRuntime)
@@ -50,15 +52,14 @@ namespace DotCompute.Hardware.Cuda.Tests
                     return false;
                 }
                 
-                // Try to initialize CUDA and get device count
-                var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
-                if (result != CudaError.Success || deviceCount == 0)
+                // Use the factory's IsAvailable method which can access internal CudaRuntime methods
+                var factory = new CudaAcceleratorFactory();
+                if (!factory.IsAvailable())
                 {
                     return false;
                 }
                 
                 // Try to create an accelerator to verify everything works
-                var factory = new CudaAcceleratorFactory();
                 await using var accelerator = factory.CreateDefaultAccelerator();
                 
                 return accelerator != null;

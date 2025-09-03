@@ -124,7 +124,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
             // Compile kernel
-            var kernelDef = new KernelDefinition("vectorAdd", VectorAddKernel);
+            var kernelDef = new KernelDefinition("vectorAdd", VectorAddKernel, "vectorAdd");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             kernel.Should().NotBeNull();
             
@@ -194,7 +194,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
             // Compile kernel
-            var kernelDef = new KernelDefinition("matrixMultiply", MatrixMultiplyKernel);
+            var kernelDef = new KernelDefinition("matrixMultiply", MatrixMultiplyKernel, "matrixMultiply");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             // Configure launch parameters - 2D grid for matrix operations
@@ -269,7 +269,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
             
             // Compile kernel
-            var kernelDef = new KernelDefinition("sharedMemoryReduce", SharedMemoryKernel);
+            var kernelDef = new KernelDefinition("sharedMemoryReduce", SharedMemoryKernel, "sharedMemoryReduce");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             // Configure launch parameters with shared memory
@@ -339,7 +339,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceData.WriteAsync(hostData.AsSpan(), 0);
             
             // Compile kernel with dynamic parallelism
-            var kernelDef = new KernelDefinition("parentKernel", DynamicParallelismKernel);
+            var kernelDef = new KernelDefinition("parentKernel", DynamicParallelismKernel, "parentKernel");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             var launchConfig = new LaunchConfiguration
@@ -401,7 +401,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await deviceA.WriteAsync(hostA.AsSpan(), 0);
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
             
-            var kernelDef = new KernelDefinition("vectorAdd", VectorAddKernel);
+            var kernelDef = new KernelDefinition("vectorAdd", VectorAddKernel, "vectorAdd");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             
             const int blockSize = 256;

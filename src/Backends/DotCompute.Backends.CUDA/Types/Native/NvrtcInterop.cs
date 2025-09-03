@@ -47,8 +47,8 @@ namespace DotCompute.Backends.CUDA.Native
             [MarshalAs(UnmanagedType.LPUTF8Str)] string src,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string? name,
             int numHeaders,
-            [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPUTF8Str)] string[]? headers,
-            [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPUTF8Str)] string[]? includeNames);
+            IntPtr headers,  // Pass as IntPtr array instead
+            IntPtr includeNames);  // Pass as IntPtr array instead
 
         /// <summary>
         /// Destroys a compilation program and frees associated resources.
@@ -65,7 +65,7 @@ namespace DotCompute.Backends.CUDA.Native
         internal static extern NvrtcResult nvrtcCompileProgram(
             IntPtr prog,
             int numOptions,
-            [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPUTF8Str)] string[]? options);
+            IntPtr options);  // Pass as IntPtr array instead
 
         #endregion
 
@@ -84,6 +84,107 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern NvrtcResult nvrtcGetPTX(IntPtr prog, IntPtr ptx);
+
+        #endregion
+
+        #region Helper Methods for String Array Marshaling
+
+        /// <summary>
+        /// Helper method to create a program with proper string array marshaling.
+        /// </summary>
+        internal static NvrtcResult CreateProgram(
+            out IntPtr prog,
+            string src,
+            string? name = null,
+            string[]? headers = null,
+            string[]? includeNames = null)
+        {
+            if (headers == null || includeNames == null || headers.Length == 0)
+            {
+                return nvrtcCreateProgram(out prog, src, name, 0, IntPtr.Zero, IntPtr.Zero);
+            }
+
+            // Marshal headers and include names manually
+            var headerPtrs = new IntPtr[headers.Length];
+            var includePtrs = new IntPtr[includeNames.Length];
+            
+            try
+            {
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    headerPtrs[i] = Marshal.StringToHGlobalAnsi(headers[i]);
+                }
+                
+                for (int i = 0; i < includeNames.Length; i++)
+                {
+                    includePtrs[i] = Marshal.StringToHGlobalAnsi(includeNames[i]);
+                }
+
+                unsafe
+                {
+                    fixed (IntPtr* hPtr = headerPtrs)
+                    fixed (IntPtr* iPtr = includePtrs)
+                    {
+                        return nvrtcCreateProgram(out prog, src, name, headers.Length, 
+                            new IntPtr(hPtr), new IntPtr(iPtr));
+                    }
+                }
+            }
+            finally
+            {
+                // Clean up allocated strings
+                foreach (var ptr in headerPtrs)
+                {
+                    if (ptr != IntPtr.Zero)
+                        Marshal.FreeHGlobal(ptr);
+                }
+                
+                foreach (var ptr in includePtrs)
+                {
+                    if (ptr != IntPtr.Zero)
+                        Marshal.FreeHGlobal(ptr);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method to compile a program with proper string array marshaling.
+        /// </summary>
+        internal static NvrtcResult CompileProgram(IntPtr prog, string[]? options = null)
+        {
+            if (options == null || options.Length == 0)
+            {
+                return nvrtcCompileProgram(prog, 0, IntPtr.Zero);
+            }
+
+            // Marshal options manually
+            var optionPtrs = new IntPtr[options.Length];
+            
+            try
+            {
+                for (int i = 0; i < options.Length; i++)
+                {
+                    optionPtrs[i] = Marshal.StringToHGlobalAnsi(options[i]);
+                }
+
+                unsafe
+                {
+                    fixed (IntPtr* oPtr = optionPtrs)
+                    {
+                        return nvrtcCompileProgram(prog, options.Length, new IntPtr(oPtr));
+                    }
+                }
+            }
+            finally
+            {
+                // Clean up allocated strings
+                foreach (var ptr in optionPtrs)
+                {
+                    if (ptr != IntPtr.Zero)
+                        Marshal.FreeHGlobal(ptr);
+                }
+            }
+        }
 
         #endregion
 

@@ -112,6 +112,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     CudaRuntime.CheckError(result, "Module load");
 
                     // Get function handle
+                    Console.WriteLine($"[DEBUG LoadModule] Attempting to get function '{_entryPoint}' from module");
                     result = CudaRuntime.cuModuleGetFunction(ref _function, _module, _entryPoint);
                     CudaRuntime.CheckError(result, "Get function");
 

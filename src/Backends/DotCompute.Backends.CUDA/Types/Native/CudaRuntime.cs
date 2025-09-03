@@ -8,6 +8,7 @@ using Microsoft.Win32.SafeHandles;
 using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
+using System.Runtime.Loader;
 
 namespace DotCompute.Backends.CUDA.Native
 {
@@ -19,7 +20,44 @@ namespace DotCompute.Backends.CUDA.Native
     public static partial class CudaRuntime
     {
         private const string CUDA_LIBRARY = "cudart";
+#if WINDOWS
+        private const string CUDA_DRIVER_LIBRARY = "nvcuda";
+#else
         private const string CUDA_DRIVER_LIBRARY = "cuda";
+#endif
+
+        static CudaRuntime()
+        {
+            // Help .NET find CUDA libraries on Linux
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                try
+                {
+                    // Try to explicitly load the CUDA driver library
+                    var handle = NativeLibrary.Load("libcuda.so.1");
+                    if (handle != IntPtr.Zero)
+                    {
+                        NativeLibrary.SetDllImportResolver(typeof(CudaRuntime).Assembly, (libraryName, assembly, searchPath) =>
+                        {
+                            if (libraryName == "cuda")
+                            {
+                                // Try various CUDA library names
+                                foreach (var name in new[] { "libcuda.so.1", "libcuda.so", "cuda" })
+                                {
+                                    if (NativeLibrary.TryLoad(name, out var h))
+                                        return h;
+                                }
+                            }
+                            return IntPtr.Zero;
+                        });
+                    }
+                }
+                catch
+                {
+                    // Ignore errors, let the normal loading mechanism handle it
+                }
+            }
+        }
 
         // Device Management - Using LibraryImport for better AOT compatibility
         [LibraryImport(CUDA_LIBRARY)]
