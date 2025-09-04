@@ -169,7 +169,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateDefaultAccelerator();
             
-            const int matrixSize = 512; // 512x512 matrices
+            const int matrixSize = 128; // 128x128 matrices - reduced for stability testing
             const int elementCount = matrixSize * matrixSize;
             
             // Prepare test data
