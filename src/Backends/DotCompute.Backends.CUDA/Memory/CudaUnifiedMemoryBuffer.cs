@@ -168,6 +168,13 @@ public sealed class CudaUnifiedMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T
         {
             if (_state == BufferState.DeviceDirty || _state == BufferState.DeviceReady)
             {
+                // First, ensure any pending CUDA operations are complete
+                var syncResult = CudaRuntime.cudaDeviceSynchronize();
+                if (syncResult != CudaError.Success)
+                {
+                    throw new InvalidOperationException($"Device synchronization failed before host access: {syncResult}");
+                }
+                
                 // For unified memory with prefetch support, we can hint to move data to host
                 if (_manager.UnifiedMemorySupported && _manager.ConcurrentAccessSupported)
                 {
@@ -666,6 +673,9 @@ public sealed class CudaUnifiedMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T
 
         public override Span<TElement> GetSpan()
         {
+            // Ensure memory is accessible on host before creating span
+            _owner.EnsureOnHost();
+            
             unsafe
             {
                 return new Span<TElement>(_ptr.ToPointer(), _length);

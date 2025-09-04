@@ -279,6 +279,12 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// </summary>
         private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles)
         {
+            // Validate input
+            if (argValue == null)
+            {
+                throw new ArgumentNullException(nameof(argValue), "Kernel argument cannot be null");
+            }
+            
             // First, check for CudaUnifiedMemoryBuffer<T> directly by type name - this handles the current failing case
             var argType = argValue.GetType();
             if (argType.IsGenericType && 
