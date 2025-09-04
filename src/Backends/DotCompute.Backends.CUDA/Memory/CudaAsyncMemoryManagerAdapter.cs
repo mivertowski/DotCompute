@@ -21,6 +21,7 @@ namespace DotCompute.Backends.CUDA.Memory
         private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, long> _bufferSizes;
         private long _totalAllocatedBytes;
         private bool _disposed;
+        private readonly string _instanceId;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaAsyncMemoryManagerAdapter"/> class.
@@ -30,6 +31,7 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
             _bufferSizes = new ConcurrentDictionary<IUnifiedMemoryBuffer, long>();
+            _instanceId = Guid.NewGuid().ToString("N")[0..8];
         }
 
         /// <inheritdoc/>
@@ -37,6 +39,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
         /// <inheritdoc/>
         public long CurrentAllocatedMemory => _totalAllocatedBytes;
+
 
         /// <inheritdoc/>
         public long MaxAllocationSize => _memoryManager.MaxAllocationSize;
@@ -50,7 +53,6 @@ namespace DotCompute.Backends.CUDA.Memory
                 var managerUsedMemory = _memoryManager.UsedMemory;
                 var totalUsed = Math.Max(_totalAllocatedBytes, managerUsedMemory);
                 
-                System.Console.WriteLine($"[DEBUG Statistics] _totalAllocatedBytes: {_totalAllocatedBytes}, managerUsedMemory: {managerUsedMemory}, totalUsed: {totalUsed}, bufferCount: {_bufferSizes.Count}");
                 
                 return new MemoryStatistics
                 {
@@ -58,6 +60,7 @@ namespace DotCompute.Backends.CUDA.Memory
                     UsedMemoryBytes = totalUsed,
                     AvailableMemoryBytes = _memoryManager.TotalMemory - totalUsed,
                     AllocationCount = _bufferSizes.Count,
+                    TotalAllocated = totalUsed,
                     DeallocationCount = 0, // Would need separate tracking
                     PeakMemoryUsageBytes = totalUsed // Simplified - would need history tracking
                 };
@@ -90,11 +93,9 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (_bufferSizes.TryAdd(buffer, sizeInBytes))
                 {
                     Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
-                    System.Console.WriteLine($"[DEBUG AllocateAsync<T>] Allocated {sizeInBytes} bytes, total tracked: {_totalAllocatedBytes}");
                 }
                 else
                 {
-                    System.Console.WriteLine($"[DEBUG AllocateAsync<T>] Failed to track {sizeInBytes} bytes");
                 }
                 
                 return (IUnifiedMemoryBuffer<T>)buffer;

@@ -23,7 +23,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             string name,
             string entryPoint,
             byte[] compiledCode,
-            CompilationOptions? options,
+            Abstractions.CompilationOptions? options,
             ILogger logger,
             ICompilationMetadata? metadata = null) => new(context, name, entryPoint, compiledCode, options, logger);
 

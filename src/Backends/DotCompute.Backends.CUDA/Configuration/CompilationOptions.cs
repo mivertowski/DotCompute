@@ -55,7 +55,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets whether to enable CUDA Dynamic Parallelism.
         /// </summary>
-        public bool EnableDynamicParallelism { get; set; }
+        public new bool EnableDynamicParallelism { get; set; }
 
 
         /// <summary>

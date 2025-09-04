@@ -54,12 +54,16 @@ public static class AcceleratorExtensions
         {
             try
             {
-                return memoryManager.Statistics;
+                var stats = memoryManager.Statistics;
+                return stats;
             }
             catch
             {
                 // Fall back to default if not implemented
             }
+        }
+        else
+        {
         }
         
         // Return default statistics

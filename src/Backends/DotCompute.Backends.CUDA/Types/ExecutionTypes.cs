@@ -199,7 +199,7 @@ namespace DotCompute.Backends.CUDA.Types
     /// <summary>
     /// CUDA unified memory buffer implementation.
     /// </summary>
-    public sealed class CudaUnifiedMemoryBuffer
+    public sealed class CudaMemoryBufferInfo
     {
         public nint DevicePointer { get; set; }
         public long SizeInBytes { get; set; }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using global::System.Runtime.InteropServices;
+using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
@@ -167,7 +168,7 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Performs the AXPY operation: y = alpha * x + y
     /// </summary>
-    public async Task<CudaMemoryBuffer> AxpyAsync(float alpha, CudaMemoryBuffer x, CudaMemoryBuffer y, CancellationToken cancellationToken = default)
+    public async Task<IUnifiedMemoryBuffer> AxpyAsync(float alpha, IUnifiedMemoryBuffer x, IUnifiedMemoryBuffer y, CancellationToken cancellationToken = default)
     {
         ValidateVectorDimensions(x, y);
 
@@ -186,7 +187,7 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Performs the AXPY operation: y = alpha * x + y (double precision)
     /// </summary>
-    public async Task<CudaMemoryBuffer> AxpyAsync(double alpha, CudaMemoryBuffer x, CudaMemoryBuffer y, CancellationToken cancellationToken = default)
+    public async Task<IUnifiedMemoryBuffer> AxpyAsync(double alpha, IUnifiedMemoryBuffer x, IUnifiedMemoryBuffer y, CancellationToken cancellationToken = default)
     {
         ValidateVectorDimensions(x, y);
 
@@ -205,7 +206,7 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Computes the dot product of two vectors: result = x^T * y
     /// </summary>
-    public async Task<float> DotAsync(CudaMemoryBuffer x, CudaMemoryBuffer y, CancellationToken cancellationToken = default)
+    public async Task<float> DotAsync(IUnifiedMemoryBuffer x, IUnifiedMemoryBuffer y, CancellationToken cancellationToken = default)
     {
         ValidateVectorDimensions(x, y);
 
@@ -225,7 +226,7 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Computes the Euclidean norm of a vector: ||x||_2
     /// </summary>
-    public async Task<float> Nrm2Async(CudaMemoryBuffer x, CancellationToken cancellationToken = default)
+    public async Task<float> Nrm2Async(IUnifiedMemoryBuffer x, CancellationToken cancellationToken = default)
     {
         using var _ = _device.CreateContext();
         var n = (int)(x.SizeInBytes / sizeof(float));
@@ -243,7 +244,7 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Scales a vector by a scalar: x = alpha * x
     /// </summary>
-    public async Task<CudaMemoryBuffer> ScalAsync(float alpha, CudaMemoryBuffer x, CancellationToken cancellationToken = default)
+    public async Task<IUnifiedMemoryBuffer> ScalAsync(float alpha, IUnifiedMemoryBuffer x, CancellationToken cancellationToken = default)
     {
         using var _ = _device.CreateContext();
         var n = (int)(x.SizeInBytes / sizeof(float));
@@ -260,7 +261,7 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Copies vector x to vector y: y = x
     /// </summary>
-    public async Task<CudaMemoryBuffer> CopyAsync(CudaMemoryBuffer x, CudaMemoryBuffer y, CancellationToken cancellationToken = default)
+    public async Task<IUnifiedMemoryBuffer> CopyAsync(IUnifiedMemoryBuffer x, IUnifiedMemoryBuffer y, CancellationToken cancellationToken = default)
     {
         ValidateVectorDimensions(x, y);
 
@@ -279,7 +280,7 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Finds the index of the element with maximum absolute value
     /// </summary>
-    public async Task<int> IamaxAsync(CudaMemoryBuffer x, CancellationToken cancellationToken = default)
+    public async Task<int> IamaxAsync(IUnifiedMemoryBuffer x, CancellationToken cancellationToken = default)
     {
         using var _ = _device.CreateContext();
         var n = (int)(x.SizeInBytes / sizeof(float));
@@ -301,9 +302,9 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Performs matrix-vector multiplication: y = alpha * A * x + beta * y
     /// </summary>
-    public async Task<CudaMemoryBuffer> GemvAsync(
-        float alpha, CudaMemoryBuffer A, CudaMemoryBuffer x,
-        float beta, CudaMemoryBuffer y,
+    public async Task<IUnifiedMemoryBuffer> GemvAsync(
+        float alpha, IUnifiedMemoryBuffer A, IUnifiedMemoryBuffer x,
+        float beta, IUnifiedMemoryBuffer y,
         int m, int n, bool transpose = false,
         CancellationToken cancellationToken = default)
     {
@@ -325,8 +326,8 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Solves a triangular system of equations: A * x = b
     /// </summary>
-    public async Task<CudaMemoryBuffer> TrsvAsync(
-        CudaMemoryBuffer A, CudaMemoryBuffer x, int n,
+    public async Task<IUnifiedMemoryBuffer> TrsvAsync(
+        IUnifiedMemoryBuffer A, IUnifiedMemoryBuffer x, int n,
         bool upper = true, bool transpose = false, bool unitDiagonal = false,
         CancellationToken cancellationToken = default)
     {
@@ -349,8 +350,8 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Performs rank-1 update: A = alpha * x * y^T + A
     /// </summary>
-    public async Task<CudaMemoryBuffer> GerAsync(
-        float alpha, CudaMemoryBuffer x, CudaMemoryBuffer y, CudaMemoryBuffer A,
+    public async Task<IUnifiedMemoryBuffer> GerAsync(
+        float alpha, IUnifiedMemoryBuffer x, IUnifiedMemoryBuffer y, IUnifiedMemoryBuffer A,
         int m, int n, CancellationToken cancellationToken = default)
     {
         using var _ = _device.CreateContext();
@@ -372,9 +373,9 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Performs general matrix-matrix multiplication: C = alpha * A * B + beta * C
     /// </summary>
-    public async Task<CudaMemoryBuffer> GemmAsync(
-        float alpha, CudaMemoryBuffer A, CudaMemoryBuffer B,
-        float beta, CudaMemoryBuffer C,
+    public async Task<IUnifiedMemoryBuffer> GemmAsync(
+        float alpha, IUnifiedMemoryBuffer A, IUnifiedMemoryBuffer B,
+        float beta, IUnifiedMemoryBuffer C,
         int m, int n, int k,
         bool transposeA = false, bool transposeB = false,
         CancellationToken cancellationToken = default)
@@ -402,9 +403,9 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Performs batched matrix-matrix multiplication for multiple matrix pairs
     /// </summary>
-    public async Task<CudaMemoryBuffer[]> GemmBatchedAsync(
-        float alpha, CudaMemoryBuffer[] A, CudaMemoryBuffer[] B,
-        float beta, CudaMemoryBuffer[] C,
+    public async Task<IUnifiedMemoryBuffer[]> GemmBatchedAsync(
+        float alpha, IUnifiedMemoryBuffer[] A, IUnifiedMemoryBuffer[] B,
+        float beta, IUnifiedMemoryBuffer[] C,
         int m, int n, int k,
         bool transposeA = false, bool transposeB = false,
         CancellationToken cancellationToken = default)
@@ -444,9 +445,9 @@ public sealed class CuBLASWrapper : IDisposable
         try
         {
             // Allocate device arrays for pointers
-            var devA = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(batchCount * IntPtr.Size)).ConfigureAwait(false);
-            var devB = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(batchCount * IntPtr.Size)).ConfigureAwait(false);
-            var devC = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(batchCount * IntPtr.Size)).ConfigureAwait(false);
+            var devA = (IUnifiedMemoryBuffer)await _device.AllocateAsync((ulong)(batchCount * IntPtr.Size)).ConfigureAwait(false);
+            var devB = (IUnifiedMemoryBuffer)await _device.AllocateAsync((ulong)(batchCount * IntPtr.Size)).ConfigureAwait(false);
+            var devC = (IUnifiedMemoryBuffer)await _device.AllocateAsync((ulong)(batchCount * IntPtr.Size)).ConfigureAwait(false);
 
             // Copy pointer arrays to device
             await CudaDevice.CopyToDeviceAsync(aHandle.AddrOfPinnedObject(), devA, (ulong)(batchCount * IntPtr.Size), cancellationToken).ConfigureAwait(false);
@@ -480,8 +481,8 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Solves triangular matrix equation: A * X = alpha * B
     /// </summary>
-    public async Task<CudaMemoryBuffer> TrsmAsync(
-        float alpha, CudaMemoryBuffer A, CudaMemoryBuffer B,
+    public async Task<IUnifiedMemoryBuffer> TrsmAsync(
+        float alpha, IUnifiedMemoryBuffer A, IUnifiedMemoryBuffer B,
         int m, int n,
         bool leftSide = true, bool upper = true,
         bool transpose = false, bool unitDiagonal = false,
@@ -511,9 +512,9 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Performs symmetric rank-k update: C = alpha * A * A^T + beta * C
     /// </summary>
-    public async Task<CudaMemoryBuffer> SyrkAsync(
-        float alpha, CudaMemoryBuffer A,
-        float beta, CudaMemoryBuffer C,
+    public async Task<IUnifiedMemoryBuffer> SyrkAsync(
+        float alpha, IUnifiedMemoryBuffer A,
+        float beta, IUnifiedMemoryBuffer C,
         int n, int k,
         bool upper = true, bool transpose = false,
         CancellationToken cancellationToken = default)
@@ -543,17 +544,17 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Performs batched LU decomposition with pivoting
     /// </summary>
-    public async Task<(CudaMemoryBuffer L, CudaMemoryBuffer U, int[] pivot)> LUDecompositionAsync(
-        CudaMemoryBuffer A, int n, CancellationToken cancellationToken = default)
+    public async Task<(IUnifiedMemoryBuffer L, IUnifiedMemoryBuffer U, int[] pivot)> LUDecompositionAsync(
+        IUnifiedMemoryBuffer A, int n, CancellationToken cancellationToken = default)
     {
         using var _ = _device.CreateContext();
 
         // Allocate buffers for L and U
-        var L = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
-        var U = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
+        var L = (IUnifiedMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
+        var U = (IUnifiedMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
 
         // Copy A to working buffer
-        var work = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
+        var work = (IUnifiedMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
         // Copy A to working buffer using memory copy
         var result = CudaRuntime.cudaMemcpy(work.DevicePointer, A.DevicePointer, (nuint)(n * n * sizeof(float)), CudaMemcpyKind.DeviceToDevice);
         if (result != CudaError.Success)
@@ -576,13 +577,13 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Performs Cholesky decomposition for symmetric positive definite matrices
     /// </summary>
-    public async Task<CudaMemoryBuffer> CholeskyDecompositionAsync(
-        CudaMemoryBuffer A, int n, bool upper = true,
+    public async Task<IUnifiedMemoryBuffer> CholeskyDecompositionAsync(
+        IUnifiedMemoryBuffer A, int n, bool upper = true,
         CancellationToken cancellationToken = default)
     {
         using var _ = _device.CreateContext();
 
-        var L = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
+        var L = (IUnifiedMemoryBuffer)await _device.AllocateAsync((ulong)(n * n * sizeof(float))).ConfigureAwait(false);
 
         // Copy A to L using memory copy
         var copyResult = CudaRuntime.cudaMemcpy(L.DevicePointer, A.DevicePointer, (nuint)(n * n * sizeof(float)), CudaMemcpyKind.DeviceToDevice);
@@ -601,13 +602,13 @@ public sealed class CuBLASWrapper : IDisposable
     /// <summary>
     /// Performs QR decomposition using Householder reflections
     /// </summary>
-    public async Task<(CudaMemoryBuffer Q, CudaMemoryBuffer R)> QRDecompositionAsync(
-        CudaMemoryBuffer A, int m, int n, CancellationToken cancellationToken = default)
+    public async Task<(IUnifiedMemoryBuffer Q, IUnifiedMemoryBuffer R)> QRDecompositionAsync(
+        IUnifiedMemoryBuffer A, int m, int n, CancellationToken cancellationToken = default)
     {
         using var _ = _device.CreateContext();
 
-        var Q = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(m * m * sizeof(float))).ConfigureAwait(false);
-        var R = (CudaMemoryBuffer)await _device.AllocateAsync((ulong)(m * n * sizeof(float))).ConfigureAwait(false);
+        var Q = (IUnifiedMemoryBuffer)await _device.AllocateAsync((ulong)(m * m * sizeof(float))).ConfigureAwait(false);
+        var R = (IUnifiedMemoryBuffer)await _device.AllocateAsync((ulong)(m * n * sizeof(float))).ConfigureAwait(false);
 
         // Perform QR decomposition using custom kernel
         await PerformQRDecompositionKernelAsync(A, Q, R, m, n, cancellationToken).ConfigureAwait(false);
@@ -620,7 +621,7 @@ public sealed class CuBLASWrapper : IDisposable
 
     #region Helper Methods
 
-    private static void ValidateVectorDimensions(CudaMemoryBuffer x, CudaMemoryBuffer y)
+    private static void ValidateVectorDimensions(IUnifiedMemoryBuffer x, IUnifiedMemoryBuffer y)
     {
         if (x.SizeInBytes != y.SizeInBytes)
         {
@@ -655,7 +656,7 @@ public sealed class CuBLASWrapper : IDisposable
         }
     }
 
-    private async Task PerformLUDecompositionKernelAsync(CudaMemoryBuffer work, CudaMemoryBuffer L, CudaMemoryBuffer U,
+    private async Task PerformLUDecompositionKernelAsync(IUnifiedMemoryBuffer work, IUnifiedMemoryBuffer L, IUnifiedMemoryBuffer U,
         int[] pivot, int n, CancellationToken cancellationToken)
     {
         // This would be implemented with a custom CUDA kernel or cuSOLVER
@@ -664,7 +665,7 @@ public sealed class CuBLASWrapper : IDisposable
         _logger.LogDebug("LU decomposition kernel executed for {N}x{N} matrix", n, n);
     }
 
-    private async Task PerformCholeskyDecompositionKernelAsync(CudaMemoryBuffer L, int n, bool upper,
+    private async Task PerformCholeskyDecompositionKernelAsync(IUnifiedMemoryBuffer L, int n, bool upper,
         CancellationToken cancellationToken)
     {
         // This would be implemented with a custom CUDA kernel or cuSOLVER TODO
@@ -672,7 +673,7 @@ public sealed class CuBLASWrapper : IDisposable
         _logger.LogDebug("Cholesky decomposition kernel executed for {N}x{N} matrix", n, n);
     }
 
-    private async Task PerformQRDecompositionKernelAsync(CudaMemoryBuffer A, CudaMemoryBuffer Q, CudaMemoryBuffer R,
+    private async Task PerformQRDecompositionKernelAsync(IUnifiedMemoryBuffer A, IUnifiedMemoryBuffer Q, IUnifiedMemoryBuffer R,
         int m, int n, CancellationToken cancellationToken)
     {
         // This would be implemented with a custom CUDA kernel or cuSOLVER TODO

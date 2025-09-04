@@ -68,8 +68,36 @@ namespace DotCompute.Core.Extensions
         }
 
         /// <summary>
-        /// Launches the kernel with launch configuration and buffer arguments.
-        /// This matches the test signature for vector operations.
+        /// Launches the kernel with launch configuration and buffer arguments (non-generic version).
+        /// This overload takes precedence for tests and avoids generic type inference issues.
+        /// </summary>
+        /// <param name="kernel">The compiled kernel to execute</param>
+        /// <param name="launchConfig">Launch configuration (grid/block dimensions)</param>
+        /// <param name="arguments">Variable number of kernel arguments</param>
+        /// <returns>A ValueTask representing the asynchronous operation</returns>
+        public static ValueTask LaunchAsync(this ICompiledKernel kernel,
+            object launchConfig,
+            params object[] arguments)
+        {
+            ArgumentNullException.ThrowIfNull(kernel);
+            ArgumentNullException.ThrowIfNull(arguments);
+            
+            // Console.WriteLine($"[DEBUG] LaunchAsync non-generic called with launchConfig={launchConfig?.GetType().Name}, arguments.Length={arguments?.Length}");
+            
+            var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? Array.Empty<object>());
+            
+            // Store launch configuration for backend-specific handling
+            if (launchConfig != null)
+            {
+                kernelArgs.SetLaunchConfiguration(launchConfig);
+            }
+            
+            return kernel.ExecuteAsync(kernelArgs);
+        }
+
+        /// <summary>
+        /// Launches the kernel with launch configuration and buffer arguments (generic version).
+        /// This matches the test signature for vector operations with type safety.
         /// </summary>
         /// <typeparam name="T">The data type for type safety</typeparam>
         /// <param name="kernel">The compiled kernel to execute</param>
@@ -83,7 +111,7 @@ namespace DotCompute.Core.Extensions
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(arguments);
             
-            // LaunchAsync<T> called - this should receive all 4 kernel arguments
+            // Console.WriteLine($"[DEBUG] LaunchAsync<T> called with launchConfig={launchConfig?.GetType().Name}, arguments.Length={arguments?.Length}");
             
             var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? Array.Empty<object>());
             
@@ -99,20 +127,23 @@ namespace DotCompute.Core.Extensions
         /// <summary>
         /// Launches the kernel with launch configuration and stream support.
         /// This overload supports CUDA streams for concurrent execution.
+        /// Uses IComputeStream interface to match test expectations.
         /// </summary>
         /// <param name="kernel">The compiled kernel to execute</param>
         /// <param name="launchConfig">Launch configuration (grid/block dimensions)</param>
-        /// <param name="stream">CUDA stream or execution stream</param>
+        /// <param name="stream">CUDA stream or execution stream (IComputeStream interface)</param>
         /// <param name="arguments">Variable number of kernel arguments</param>
         /// <returns>A ValueTask representing the asynchronous operation</returns>
         public static ValueTask LaunchAsync(this ICompiledKernel kernel,
             object launchConfig,
-            object stream,
+            IComputeStream stream,
             params object[] arguments)
         {
             ArgumentNullException.ThrowIfNull(kernel);
+            ArgumentNullException.ThrowIfNull(stream);
             ArgumentNullException.ThrowIfNull(arguments);
             
+            // Console.WriteLine($"[DEBUG] LaunchAsync with IComputeStream called with launchConfig={launchConfig?.GetType().Name}, stream={stream?.GetType().Name}, arguments.Length={arguments?.Length}");
             
             var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? Array.Empty<object>());
             

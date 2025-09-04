@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Memory;
@@ -222,9 +224,9 @@ namespace DotCompute.Backends.CUDA.P2P
         /// Performs a direct P2P memory transfer between devices
         /// </summary>
         public async Task<CudaP2PTransferResult> TransferAsync(
-            CudaMemoryBuffer sourceBuffer,
+            IUnifiedMemoryBuffer sourceBuffer,
             int sourceDevice,
-            CudaMemoryBuffer destinationBuffer,
+            IUnifiedMemoryBuffer destinationBuffer,
             int destinationDevice,
             ulong sizeBytes,
             IntPtr stream = default,
@@ -254,9 +256,11 @@ namespace DotCompute.Backends.CUDA.P2P
                 if (stream == IntPtr.Zero)
                 {
                     // Synchronous transfer
+                    var srcCuda = sourceBuffer as CudaMemoryBuffer ?? throw new ArgumentException("Source buffer must be CudaMemoryBuffer");
+                    var dstCuda = destinationBuffer as CudaMemoryBuffer ?? throw new ArgumentException("Destination buffer must be CudaMemoryBuffer");
                     result = CudaRuntime.cudaMemcpy(
-                        destinationBuffer.DevicePointer,
-                        sourceBuffer.DevicePointer,
+                        dstCuda.DevicePointer,
+                        srcCuda.DevicePointer,
                         (nuint)sizeBytes,
                         CudaMemcpyKind.DeviceToDevice);
                     CudaRuntime.CheckError(result, "P2P memory transfer");
@@ -264,9 +268,11 @@ namespace DotCompute.Backends.CUDA.P2P
                 else
                 {
                     // Asynchronous transfer
+                    var srcCudaAsync = sourceBuffer as CudaMemoryBuffer ?? throw new ArgumentException("Source buffer must be CudaMemoryBuffer");
+                    var dstCudaAsync = destinationBuffer as CudaMemoryBuffer ?? throw new ArgumentException("Destination buffer must be CudaMemoryBuffer");
                     result = CudaRuntime.cudaMemcpyAsync(
-                        destinationBuffer.DevicePointer,
-                        sourceBuffer.DevicePointer,
+                        dstCudaAsync.DevicePointer,
+                        srcCudaAsync.DevicePointer,
                         (nuint)sizeBytes,
                         CudaMemcpyKind.DeviceToDevice,
                         stream);

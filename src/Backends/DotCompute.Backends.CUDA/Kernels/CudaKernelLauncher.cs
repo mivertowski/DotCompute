@@ -110,8 +110,16 @@ namespace DotCompute.Backends.CUDA.Compilation
                 for (var i = 0; i < arguments.Count; i++)
                 {
                     var arg = arguments.Get(i) ?? throw new ArgumentNullException($"Argument at index {i} is null");
-                    var argPtr = PrepareKernelArgument(arg, handles, unmanagedAllocations);
+                    
+                    // Enhanced diagnostic logging for debugging scale kernel issues
+                    _logger.LogInformation("Preparing kernel argument {Index}: Type={Type}, Value={Value}, FullName={FullName}",
+                        i, arg.GetType().Name, arg, arg.GetType().FullName);
+                    
+                    var argPtr = PrepareKernelArgument(arg, handles, unmanagedAllocations, _logger);
                     argPointers.Add(argPtr);
+                    
+                    _logger.LogDebug("Kernel argument {Index} prepared: Pointer=0x{Pointer:X}",
+                        i, argPtr.ToInt64());
                 }
 
                 // Pin argument array - this creates an array of pointers where each entry points to an argument value
@@ -120,10 +128,32 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 try
                 {
-                    _logger.LogDebug("Launching CUDA kernel with config: Grid({GridX},{GridY},{GridZ}), Block({BlockX},{BlockY},{BlockZ}), SharedMem={SharedMem}",
+                    _logger.LogDebug("Launching CUDA kernel with config: Grid({GridX},{GridY},{GridZ}), Block({BlockX},{BlockY},{BlockZ}), SharedMem={SharedMem}, ArgCount={ArgCount}",
                         launchConfig.GridX, launchConfig.GridY, launchConfig.GridZ,
                         launchConfig.BlockX, launchConfig.BlockY, launchConfig.BlockZ,
-                        launchConfig.SharedMemoryBytes);
+                        launchConfig.SharedMemoryBytes, argPointers.Count);
+                    
+                    // Additional diagnostic logging for debugging
+                    _logger.LogDebug("Total threads: {TotalThreads}, Function ptr: 0x{FuncPtr:X}, Stream: 0x{Stream:X}",
+                        launchConfig.GridX * launchConfig.GridY * launchConfig.GridZ * 
+                        launchConfig.BlockX * launchConfig.BlockY * launchConfig.BlockZ,
+                        function.ToInt64(), _context.Stream.ToInt64());
+                    
+                    // Log first few argument pointers for debugging
+                    for (int i = 0; i < Math.Min(5, argPointers.Count); i++)
+                    {
+                        unsafe
+                        {
+                            var ptr = argPointers[i];
+                            if (ptr != IntPtr.Zero)
+                            {
+                                // Try to read the value at the pointer location
+                                var value = *(IntPtr*)ptr;
+                                _logger.LogDebug("Arg[{Index}]: Ptr=0x{Ptr:X} -> Value=0x{Value:X}",
+                                    i, ptr.ToInt64(), value.ToInt64());
+                            }
+                        }
+                    }
 
                     // Launch the kernel
                     var result = CudaRuntime.cuLaunchKernel(
@@ -151,6 +181,15 @@ namespace DotCompute.Backends.CUDA.Compilation
                 foreach (var handle in handles)
                 {
                     handle.Free();
+                }
+                
+                // Clean up unmanaged memory allocations
+                foreach (var ptr in unmanagedAllocations)
+                {
+                    if (ptr != IntPtr.Zero)
+                    {
+                        Marshal.FreeHGlobal(ptr);
+                    }
                 }
             }
         }
@@ -276,9 +315,9 @@ namespace DotCompute.Backends.CUDA.Compilation
         }
 
         /// <summary>
-        /// Prepares a single kernel argument for launch
+        /// Prepares a single kernel argument for launch following ILGPU/NVIDIA best practices
         /// </summary>
-        private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles, List<IntPtr> unmanagedAllocations)
+        private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles, List<IntPtr> unmanagedAllocations, ILogger logger)
         {
             // Validate input
             if (argValue == null)
@@ -286,11 +325,41 @@ namespace DotCompute.Backends.CUDA.Compilation
                 throw new ArgumentNullException(nameof(argValue), "Kernel argument cannot be null");
             }
             
-            // First, check for CudaUnifiedMemoryBuffer<T> directly by type name - this handles the current failing case
+            // ILGPU-inspired blittable type validation for better error reporting
             var argType = argValue.GetType();
+            if (!IsValidKernelParameterType(argType))
+            {
+                logger?.LogWarning("Potentially invalid kernel parameter type: {Type}. " +
+                    "CUDA kernels prefer blittable value types for optimal performance.", argType.FullName);
+            }
+            
+            // First, check for SimpleCudaUnifiedMemoryBuffer<T> specifically
             if (argType.IsGenericType && 
                 argType.FullName != null && 
-                argType.FullName.Contains("CudaUnifiedMemoryBuffer"))
+                argType.FullName.Contains("SimpleCudaUnifiedMemoryBuffer"))
+            {
+                // Use reflection to get DevicePointer property
+                var devicePtrProperty = argType.GetProperty("DevicePointer");
+                if (devicePtrProperty != null && devicePtrProperty.GetValue(argValue) is IntPtr devicePtr)
+                {
+                    unsafe
+                    {
+                        var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
+                        *(IntPtr*)ptrStorage = devicePtr;
+                        unmanagedAllocations.Add(ptrStorage);
+                        
+                        logger?.LogInformation("SimpleCudaUnifiedMemoryBuffer (first check): DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
+                            devicePtr.ToInt64(), ptrStorage.ToInt64());
+                        
+                        return ptrStorage;
+                    }
+                }
+            }
+            
+            // Second, check for other CudaMemoryBuffer<T> types
+            if (argType.IsGenericType && 
+                argType.FullName != null && 
+                argType.FullName.Contains("CudaMemoryBuffer"))
             {
                 // Try to get the DevicePointer property (internal)
                 var devicePtrProp = argType.GetProperty("DevicePointer", 
@@ -307,6 +376,10 @@ namespace DotCompute.Backends.CUDA.Compilation
                         *(IntPtr*)ptrStorage = devicePtr;
                         // Track this allocation for cleanup
                         unmanagedAllocations.Add(ptrStorage);
+                        
+                        logger?.LogDebug("CudaMemoryBuffer: DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
+                            devicePtr.ToInt64(), ptrStorage.ToInt64());
+                        
                         return ptrStorage;
                     }
                 }
@@ -325,6 +398,10 @@ namespace DotCompute.Backends.CUDA.Compilation
                         *(IntPtr*)ptrStorage = fieldPtr;
                         // Track this allocation for cleanup
                         unmanagedAllocations.Add(ptrStorage);
+                        
+                        logger?.LogDebug("CudaMemoryBuffer (field): DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
+                            fieldPtr.ToInt64(), ptrStorage.ToInt64());
+                        
                         return ptrStorage;
                     }
                 }
@@ -343,12 +420,37 @@ namespace DotCompute.Backends.CUDA.Compilation
                         var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
                         *(IntPtr*)ptrStorage = devicePtr;
                         unmanagedAllocations.Add(ptrStorage);
+                        
+                        logger?.LogDebug("CudaMemoryBuffer: DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
+                            devicePtr.ToInt64(), ptrStorage.ToInt64());
+                        
                         return ptrStorage;
                     }
                 }
                 
                 // This code was moved above the ISyncMemoryBuffer check
                 
+                // Handle SimpleCudaUnifiedMemoryBuffer<T> specifically
+                if (argValue.GetType().Name.StartsWith("SimpleCudaUnifiedMemoryBuffer"))
+                {
+                    // Use reflection to get DevicePointer property
+                    var devicePtrProperty = argValue.GetType().GetProperty("DevicePointer");
+                    if (devicePtrProperty != null && devicePtrProperty.GetValue(argValue) is IntPtr devicePtr)
+                    {
+                        unsafe
+                        {
+                            var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
+                            *(IntPtr*)ptrStorage = devicePtr;
+                            unmanagedAllocations.Add(ptrStorage);
+                            
+                            logger?.LogDebug("SimpleCudaUnifiedMemoryBuffer: DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
+                                devicePtr.ToInt64(), ptrStorage.ToInt64());
+                            
+                            return ptrStorage;
+                        }
+                    }
+                }
+
                 // Handle other types of unified memory buffers
                 if (argValue is IUnifiedMemoryBuffer unifiedBuffer)
                 {
@@ -365,18 +467,37 @@ namespace DotCompute.Backends.CUDA.Compilation
                             var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
                             *(IntPtr*)ptrStorage = devicePtr;
                             unmanagedAllocations.Add(ptrStorage);
+                            
+                            logger?.LogDebug("IUnifiedMemoryBuffer: DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
+                                devicePtr.ToInt64(), ptrStorage.ToInt64());
+                            
                             return ptrStorage;
                         }
                     }
                 }
             }
 
-            // Handle primitive types and blittable structs that can be pinned directly
+            // Handle primitive types and blittable structs
             if (CanPinDirectly(argValue))
             {
-                var scalarHandle = GCHandle.Alloc(argValue, GCHandleType.Pinned);
-                handles.Add(scalarHandle);
-                return scalarHandle.AddrOfPinnedObject();
+                // For scalars, we also need to allocate unmanaged memory and copy the value
+                // This ensures proper memory alignment and lifetime management
+                unsafe
+                {
+                    var valueType = argValue.GetType();
+                    var size = Marshal.SizeOf(valueType);
+                    var ptrStorage = Marshal.AllocHGlobal(size);
+                    
+                    // Copy the value to unmanaged memory
+                    Marshal.StructureToPtr(argValue, ptrStorage, false);
+                    
+                    unmanagedAllocations.Add(ptrStorage);
+                    
+                    logger?.LogInformation("Scalar argument: Type={Type}, Value={Value}, Size={Size}, Ptr=0x{Ptr:X}",
+                        valueType.Name, argValue, size, ptrStorage.ToInt64());
+                    
+                    return ptrStorage;
+                }
             }
 
             // Handle arrays of blittable types
@@ -413,6 +534,43 @@ namespace DotCompute.Backends.CUDA.Compilation
             throw new ArgumentException($"Cannot marshal argument of type '{argValue.GetType().FullName}' for CUDA kernel. " +
                                       "Supported types: primitives, blittable structs, arrays of blittable types, memory buffers, and IntPtr.", 
                                       nameof(argValue));
+        }
+
+        /// <summary>
+        /// Validates if a type is suitable for CUDA kernel parameters (ILGPU-inspired)
+        /// Based on ILGPU's blittable type checks and NVIDIA best practices
+        /// </summary>
+        private static bool IsValidKernelParameterType(Type type)
+        {
+            // ILGPU rule: All parameter types must be value types
+            if (!type.IsValueType)
+                return false;
+                
+            // Primitive types are always valid
+            if (type.IsPrimitive)
+                return true;
+                
+            // Enums are valid (they're value types with primitive underlying types)
+            if (type.IsEnum)
+                return true;
+                
+            // Check for common valid struct types
+            if (type == typeof(IntPtr) || type == typeof(UIntPtr))
+                return true;
+                
+            // Generic types need special handling - memory buffers are passed as views/pointers
+            if (type.IsGenericType)
+            {
+                var genericDef = type.GetGenericTypeDefinition();
+                // Allow memory buffer types - they'll be converted to device pointers
+                if (type.FullName?.Contains("MemoryBuffer") == true || 
+                    type.FullName?.Contains("ArrayView") == true)
+                    return true;
+            }
+                
+            // For other structs, check if they're likely blittable
+            // This is a heuristic - true blittable checking requires runtime marshaling validation
+            return type.IsValueType && !type.IsGenericType;
         }
 
         /// <summary>

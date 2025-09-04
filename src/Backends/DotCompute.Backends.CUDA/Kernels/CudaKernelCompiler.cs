@@ -552,8 +552,20 @@ namespace DotCompute.Backends.CUDA.Compilation
             var archString = ComputeCapability.GetArchString(major, minor);
             optionsList.Add($"--gpu-architecture={archString}");
             
-            // That's it! Let's try with just the architecture option
-            // NVRTC should handle everything else by default
+            // Add dynamic parallelism support if requested
+            // Dynamic parallelism requires relocatable device code (-rdc=true)
+            if (options?.EnableDynamicParallelism == true)
+            {
+                optionsList.Add("--relocatable-device-code=true");
+                _logger.LogDebug("Enabled relocatable device code for dynamic parallelism support");
+            }
+            
+            // Add debug info if requested
+            if (options?.EnableDebugInfo == true)
+            {
+                optionsList.Add("--device-debug");
+                optionsList.Add("--generate-line-info");
+            }
 
             // Add any additional user-specified flags
             if (options?.AdditionalFlags != null)
@@ -722,6 +734,21 @@ namespace DotCompute.Backends.CUDA.Compilation
             
             // Just use architecture - NVRTC will handle the rest
             optionsList.Add($"--gpu-architecture={archString}");
+
+            // Add dynamic parallelism support if requested
+            // Dynamic parallelism requires relocatable device code (-rdc=true)
+            if (options?.EnableDynamicParallelism == true)
+            {
+                optionsList.Add("--relocatable-device-code=true");
+                _logger.LogDebug("Enabled relocatable device code for dynamic parallelism support (CUBIN)");
+            }
+            
+            // Add debug info if requested
+            if (options?.EnableDebugInfo == true)
+            {
+                optionsList.Add("--device-debug");
+                optionsList.Add("--generate-line-info");
+            }
 
             // Add any additional user-specified flags
             if (options?.AdditionalFlags != null)

@@ -41,15 +41,15 @@ namespace DotCompute.Backends.CUDA
             : base(
                 BuildAcceleratorInfo(deviceId, logger ?? new NullLogger<CudaAccelerator>()),
                 AcceleratorType.CUDA,
-                CreateMemoryAdapter(deviceId, out var memoryManager, logger ?? new NullLogger<CudaAccelerator>()),
+                CreateMemoryAdapter(deviceId, out var memoryManager, out var context, out var device, logger ?? new NullLogger<CudaAccelerator>()),
                 new AcceleratorContext(IntPtr.Zero, 0),
                 logger ?? new NullLogger<CudaAccelerator>())
         {
             var actualLogger = logger ?? new NullLogger<CudaAccelerator>();
             
-            // Initialize CUDA-specific components
-            _device = new CudaDevice(deviceId, actualLogger);
-            _context = new CudaContext(deviceId);
+            // Use the same instances created by CreateMemoryAdapter
+            _device = device;
+            _context = context;
             _memoryManager = memoryManager;
             
 #pragma warning disable IL2026, IL3050 // CudaKernelCompiler uses runtime code generation which is not trimming/AOT compatible
@@ -181,10 +181,11 @@ namespace DotCompute.Backends.CUDA
             }
         }
 
-        private static CudaAsyncMemoryManagerAdapter CreateMemoryAdapter(int deviceId, out CudaMemoryManager memoryManager, ILogger logger)
+        private static IUnifiedMemoryManager CreateMemoryAdapter(int deviceId, out CudaMemoryManager memoryManager, out CudaContext context, out CudaDevice device, ILogger logger)
         {
-            var context = new CudaContext(deviceId);
-            memoryManager = new CudaMemoryManager(context, logger);
+            context = new CudaContext(deviceId);
+            device = new CudaDevice(deviceId, logger);
+            memoryManager = new CudaMemoryManager(context, device, logger);
             return new CudaAsyncMemoryManagerAdapter(memoryManager);
         }
     }

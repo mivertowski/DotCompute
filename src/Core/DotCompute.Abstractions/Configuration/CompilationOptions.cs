@@ -123,6 +123,11 @@ public class CompilationOptions
     /// </summary>
     public bool EnableParallelExecution { get; set; }
 
+    /// <summary>
+    /// Enable dynamic parallelism support for CUDA kernels
+    /// Allows kernels to launch other kernels from GPU code
+    /// </summary>
+    public bool EnableDynamicParallelism { get; set; }
 
     /// <summary>
     /// Enable loop unrolling optimizations

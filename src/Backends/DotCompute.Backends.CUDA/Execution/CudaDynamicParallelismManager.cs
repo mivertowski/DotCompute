@@ -3,6 +3,8 @@
 
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Models;
+using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Execution.Metrics;
@@ -108,9 +110,9 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Gets metrics for dynamic parallelism usage
         /// </summary>
-        public CudaDynamicParallelismMetrics GetMetrics()
+        public DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics GetMetrics()
         {
-            return new CudaDynamicParallelismMetrics
+            return new DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics
             {
                 ChildKernelLaunches = _childKernelLaunches,
                 EfficiencyScore = _efficiencyScore,

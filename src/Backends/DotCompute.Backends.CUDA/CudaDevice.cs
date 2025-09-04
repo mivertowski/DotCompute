@@ -498,7 +498,7 @@ namespace DotCompute.Backends.CUDA
         /// </summary>
         public static async Task CopyToDeviceAsync(IntPtr hostPtr, IUnifiedMemoryBuffer deviceBuffer, ulong sizeInBytes, CancellationToken cancellationToken = default)
         {
-            if (deviceBuffer is CudaMemoryBuffer cudaBuffer)
+            if (deviceBuffer is Memory.CudaMemoryBuffer cudaBuffer)
             {
                 await Task.Run(() =>
                 {

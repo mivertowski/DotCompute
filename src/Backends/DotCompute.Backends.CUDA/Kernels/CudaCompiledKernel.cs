@@ -5,7 +5,9 @@ using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Core.Extensions;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
@@ -47,7 +49,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             string name,
             string entryPoint,
             byte[] ptxData,
-            CompilationOptions? options,
+            Abstractions.CompilationOptions? options,
             ILogger logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -168,8 +170,45 @@ namespace DotCompute.Backends.CUDA.Compilation
             {
                 _logger.LogDebug("Executing CUDA kernel '{Name}' with {ArgCount} arguments", Name, arguments.Arguments.Count);
 
+                // Try to extract launch configuration from arguments metadata
+                CudaLaunchConfig? config = null;
+                var launchConfigObj = arguments.GetLaunchConfiguration();
+                
+                if (launchConfigObj != null)
+                {
+                    _logger.LogDebug("Found launch configuration in arguments metadata: {Config}", launchConfigObj);
+                    
+                    // Check if it's a LaunchConfiguration type from abstractions
+                    if (launchConfigObj is LaunchConfiguration launchConfig)
+                    {
+                        // Convert LaunchConfiguration to CudaLaunchConfig
+                        config = new CudaLaunchConfig(
+                            (uint)launchConfig.GridSize.X, 
+                            (uint)launchConfig.GridSize.Y, 
+                            (uint)launchConfig.GridSize.Z,
+                            (uint)launchConfig.BlockSize.X, 
+                            (uint)launchConfig.BlockSize.Y, 
+                            (uint)launchConfig.BlockSize.Z,
+                            (uint)launchConfig.SharedMemoryBytes);
+                        
+                        _logger.LogDebug("Converted LaunchConfiguration to CudaLaunchConfig: Grid({GridX},{GridY},{GridZ}) Block({BlockX},{BlockY},{BlockZ}) SharedMem={SharedMem}",
+                            config.Value.GridX, config.Value.GridY, config.Value.GridZ,
+                            config.Value.BlockX, config.Value.BlockY, config.Value.BlockZ,
+                            config.Value.SharedMemoryBytes);
+                    }
+                    else if (launchConfigObj is CudaLaunchConfig cudaConfig)
+                    {
+                        // Already a CudaLaunchConfig
+                        config = cudaConfig;
+                        _logger.LogDebug("Using CudaLaunchConfig directly: Grid({GridX},{GridY},{GridZ}) Block({BlockX},{BlockY},{BlockZ}) SharedMem={SharedMem}",
+                            config.Value.GridX, config.Value.GridY, config.Value.GridZ,
+                            config.Value.BlockX, config.Value.BlockY, config.Value.BlockZ,
+                            config.Value.SharedMemoryBytes);
+                    }
+                }
+
                 // Use the advanced launcher for optimal performance
-                await _launcher.LaunchKernelAsync(_function, arguments, null, cancellationToken).ConfigureAwait(false);
+                await _launcher.LaunchKernelAsync(_function, arguments, config, cancellationToken).ConfigureAwait(false);
 
                 _logger.LogDebug("Successfully executed CUDA kernel '{Name}'", Name);
             }

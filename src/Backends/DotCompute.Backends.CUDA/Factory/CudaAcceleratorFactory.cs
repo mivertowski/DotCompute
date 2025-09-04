@@ -270,9 +270,9 @@ namespace DotCompute.Backends.CUDA.Factory
                 // Create loggers using the logger factory
                 var acceleratorLogger = _loggerFactory.CreateLogger<ProductionCudaAccelerator>();
                 var streamLogger = _loggerFactory.CreateLogger<CudaStreamManagerProduction>();
-                var memoryLogger = _loggerFactory.CreateLogger<CudaAsyncMemoryManager>();
+                var memoryLogger = _loggerFactory.CreateLogger<CudaMemoryManager>();
                 var errorLogger = _loggerFactory.CreateLogger<CudaErrorHandler>();
-                var unifiedLogger = _loggerFactory.CreateLogger<CudaUnifiedMemoryManagerProduction>();
+                var unifiedLogger = _loggerFactory.CreateLogger<CudaMemoryManager>();
                 var tensorLogger = _loggerFactory.CreateLogger<CudaTensorCoreManagerProduction>();
                 var kernelCacheLogger = _loggerFactory.CreateLogger<CudaKernelCache>();
                 var graphLogger = _loggerFactory.CreateLogger<CudaGraphOptimizationManager>();
@@ -282,9 +282,9 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 // Create managers with all required parameters
                 var streamManager = new CudaStreamManagerProduction(context, streamLogger);
-                var memoryManager = new CudaAsyncMemoryManager(context, memoryLogger);
+                var memoryManager = new CudaMemoryManager(context, memoryLogger);
                 var errorHandler = new CudaErrorHandler(errorLogger);
-                var unifiedMemoryManager = new CudaUnifiedMemoryManagerProduction(context, _deviceManager, unifiedLogger);
+                var unifiedMemoryManager = new CudaMemoryManager(context, null, unifiedLogger);
                 var tensorCoreManager = new CudaTensorCoreManagerProduction(context, _deviceManager, tensorLogger);
                 var kernelCache = new CudaKernelCache(kernelCacheLogger);
                 var graphOptimizer = new CudaGraphOptimizationManager(graphLogger);
@@ -639,11 +639,12 @@ namespace DotCompute.Backends.CUDA.Factory
         public class ProductionCudaAccelerator : IAccelerator, IDisposable, IAsyncDisposable
         {
             private readonly CudaAccelerator _baseAccelerator;
+            private readonly Lazy<IUnifiedMemoryManager> _memoryAdapter;
             
             public CudaStreamManagerProduction StreamManager { get; }
-            public CudaAsyncMemoryManager AsyncMemoryManager { get; }
+            public CudaMemoryManager AsyncMemoryManager { get; }
             public CudaErrorHandler ErrorHandler { get; }
-            public CudaUnifiedMemoryManagerProduction UnifiedMemoryManager { get; }
+            public CudaMemoryManager UnifiedMemoryManager { get; }
             public CudaTensorCoreManagerProduction TensorCoreManager { get; }
             public CudaKernelCache KernelCache { get; }
             public CudaGraphOptimizationManager GraphOptimizer { get; }
@@ -660,9 +661,9 @@ namespace DotCompute.Backends.CUDA.Factory
                 ProductionConfiguration config,
                 ILogger<ProductionCudaAccelerator> logger,
                 CudaStreamManagerProduction streamManager,
-                CudaAsyncMemoryManager asyncMemoryManager,
+                CudaMemoryManager asyncMemoryManager,
                 CudaErrorHandler errorHandler,
-                CudaUnifiedMemoryManagerProduction unifiedMemoryManager,
+                CudaMemoryManager unifiedMemoryManager,
                 CudaTensorCoreManagerProduction tensorCoreManager,
                 CudaKernelCache kernelCache,
                 CudaGraphOptimizationManager graphOptimizer,
@@ -690,6 +691,9 @@ namespace DotCompute.Backends.CUDA.Factory
                 // Create base accelerator for delegation
                 // Use NullLogger to avoid type conversion issues
                 _baseAccelerator = new CudaAccelerator(deviceId, NullLogger<CudaAccelerator>.Instance);
+                
+                // Initialize memory adapter with lazy loading to avoid multiple instances
+                _memoryAdapter = new Lazy<IUnifiedMemoryManager>(() => new Memory.CudaAsyncMemoryManagerAdapter(UnifiedMemoryManager));
             }
 
             // IAccelerator interface implementation
@@ -709,7 +713,7 @@ namespace DotCompute.Backends.CUDA.Factory
                 SupportsFloat64 = true,
                 SupportsInt64 = true
             };
-            public IUnifiedMemoryManager Memory => UnifiedMemoryManager;
+            public IUnifiedMemoryManager Memory => _memoryAdapter.Value;
             public AcceleratorContext Context { get; private set; }
 
             public async ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
@@ -755,9 +759,9 @@ namespace DotCompute.Backends.CUDA.Factory
                 ErrorHandler?.Dispose();
                 
                 // Handle async disposal for memory and stream managers if they support it
-                if (AsyncMemoryManager is IAsyncDisposable asyncMemoryManager)
+                if (AsyncMemoryManager is IDisposable syncMemoryManager)
                 {
-                    await asyncMemoryManager.DisposeAsync().ConfigureAwait(false);
+                    syncMemoryManager.Dispose();
                 }
                 else
                 {

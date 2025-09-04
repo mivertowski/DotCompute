@@ -32,7 +32,7 @@ namespace DotCompute.Backends.CUDA.Integration
         private readonly CudaKernelExecutor _kernelExecutor;
         private readonly CudaGraphSupport _graphSupport;
         private readonly CudaP2PManager _p2pManager;
-        private readonly CudaAdvancedFeatures _advancedFeatures;
+        // private readonly CudaAdvancedFeatures _advancedFeatures; // Removed - consolidated
         private readonly CudaPerformanceMonitor _performanceMonitor;
         private readonly Timer _healthCheckTimer;
         private bool _disposed;
@@ -53,14 +53,14 @@ namespace DotCompute.Backends.CUDA.Integration
             var executorLogger = loggerFactory.CreateLogger<CudaKernelExecutor>();
             var graphLogger = loggerFactory.CreateLogger<CudaGraphSupport>();
             var p2pLogger = loggerFactory.CreateLogger<CudaP2PManager>();
-            var advancedLogger = loggerFactory.CreateLogger<CudaAdvancedFeatures>();
+            // var advancedLogger = loggerFactory.CreateLogger<CudaAdvancedFeatures>();
 
             _streamManager = new CudaStreamManager(context, streamLogger);
             _eventManager = new CudaEventManager(context, eventLogger);
             _kernelExecutor = new CudaKernelExecutor(context.ToIAccelerator(), context, _streamManager, _eventManager, executorLogger);
             _graphSupport = new CudaGraphSupport(context, _streamManager, _eventManager, graphLogger);
             _p2pManager = new CudaP2PManager(p2pLogger);
-            _advancedFeatures = new CudaAdvancedFeatures(context, advancedLogger);
+            // _advancedFeatures = new CudaAdvancedFeatures(context, advancedLogger);
             _performanceMonitor = new CudaPerformanceMonitor(context, _logger);
 
             // Set up health monitoring
@@ -96,10 +96,10 @@ namespace DotCompute.Backends.CUDA.Integration
         /// </summary>
         public CudaP2PManager P2PManager => _p2pManager;
 
-        /// <summary>
-        /// Advanced features manager
-        /// </summary>
-        public CudaAdvancedFeatures AdvancedFeatures => _advancedFeatures;
+        // /// <summary>
+        // /// Advanced features manager
+        // /// </summary>
+        // public CudaAdvancedFeatures AdvancedFeatures => _advancedFeatures;
 
         /// <summary>
         /// Performance monitoring and metrics
@@ -212,9 +212,9 @@ namespace DotCompute.Backends.CUDA.Integration
         /// Performs multi-GPU data transfer with optimization
         /// </summary>
         public async Task<CudaP2PTransferResult> TransferDataOptimizedAsync(
-            CudaMemoryBuffer sourceBuffer,
+            IUnifiedMemoryBuffer sourceBuffer,
             int sourceDevice,
-            CudaMemoryBuffer destinationBuffer,
+            IUnifiedMemoryBuffer destinationBuffer,
             int destinationDevice,
             CudaTransferOptions options,
             CancellationToken cancellationToken = default)
@@ -260,7 +260,7 @@ namespace DotCompute.Backends.CUDA.Integration
                 var streamStats = _streamManager.GetStatistics();
                 var eventStats = _eventManager.GetStatistics();
                 var p2pStats = _p2pManager.GetStatistics();
-                var featureMetrics = _advancedFeatures.GetPerformanceMetrics();
+                // var featureMetrics = _advancedFeatures.GetPerformanceMetrics(); // Advanced features disabled
                 var perfMetrics = _performanceMonitor.GetCurrentMetrics();
 
                 return new CudaSystemHealth
@@ -269,7 +269,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     StreamHealth = CalculateStreamHealth(streamStats),
                     EventHealth = CalculateEventHealth(eventStats),
                     P2PHealth = CalculateP2PHealth(p2pStats),
-                    AdvancedFeaturesHealth = featureMetrics.OverallEfficiency,
+                    AdvancedFeaturesHealth = 0.0, // featureMetrics.OverallEfficiency disabled
                     PerformanceHealth = CalculatePerformanceHealth(perfMetrics),
                     LastChecked = DateTimeOffset.UtcNow
                 };
@@ -320,12 +320,12 @@ namespace DotCompute.Backends.CUDA.Integration
                 }
 
                 // Advanced features optimization based on profile
-                if (profile.HasMatrixOperations && _advancedFeatures.TensorCores.IsSupported)
+                if (profile.HasMatrixOperations) // && _advancedFeatures.TensorCores.IsSupported)
                 {
                     summary.OptimizationsApplied.Add("Tensor Core optimizations enabled");
                 }
 
-                if (profile.HasCooperativeWorkloads && _advancedFeatures.CooperativeGroups.IsSupported)
+                if (profile.HasCooperativeWorkloads) // && _advancedFeatures.CooperativeGroups.IsSupported)
                 {
                     summary.OptimizationsApplied.Add("Cooperative Groups optimizations enabled");
                 }
@@ -349,18 +349,14 @@ namespace DotCompute.Backends.CUDA.Integration
         }
 
 
-        private async Task ApplyAdvancedOptimizationsAsync(
+        private Task ApplyAdvancedOptimizationsAsync(
             CudaCompiledKernel kernel,
             KernelArgument[] arguments,
             CudaExecutionOptions options,
             CancellationToken cancellationToken)
         {
-            if (options.AdaOptimizationOptions != null)
-            {
-                _ = await _advancedFeatures.OptimizeForAdaArchitectureAsync(
-                    kernel, arguments, options.AdaOptimizationOptions, cancellationToken)
-                    .ConfigureAwait(false);
-            }
+            // Advanced features optimization disabled
+            return Task.CompletedTask;
         }
 
         private async Task<KernelExecutionConfig> GetOptimalExecutionConfigAsync(
@@ -498,10 +494,11 @@ namespace DotCompute.Backends.CUDA.Integration
             try
             {
                 _streamManager.OptimizeStreamUsage();
-                _advancedFeatures.CooperativeGroups.PerformMaintenance();
-                _advancedFeatures.DynamicParallelism.PerformMaintenance();
-                CudaUnifiedMemoryAdvanced.PerformMaintenance();
-                _advancedFeatures.TensorCores.PerformMaintenance();
+                // Advanced features maintenance disabled
+                // _advancedFeatures.CooperativeGroups.PerformMaintenance();
+                // _advancedFeatures.DynamicParallelism.PerformMaintenance();
+                // CudaMemoryManager.PerformMaintenance();
+                // _advancedFeatures.TensorCores.PerformMaintenance();
 
                 _logger.LogInformation("CUDA backend maintenance completed");
             }
@@ -526,7 +523,7 @@ namespace DotCompute.Backends.CUDA.Integration
                 _healthCheckTimer?.Dispose();
 
                 _performanceMonitor?.Dispose();
-                _advancedFeatures?.Dispose();
+                // _advancedFeatures?.Dispose(); // Advanced features disabled"
                 _p2pManager?.Dispose();
                 _graphSupport?.Dispose();
                 _kernelExecutor?.Dispose();
@@ -581,12 +578,12 @@ namespace DotCompute.Backends.CUDA.Integration
 
             {
                 private readonly Memory.CudaMemoryManager _cudaMemoryManager;
-                private readonly CudaAsyncMemoryManagerAdapter _asyncAdapter;
+                private readonly IUnifiedMemoryManager _asyncAdapter;
 
                 public CudaContextMemoryManager(CudaContext context, ILogger logger)
                 {
                     _cudaMemoryManager = new Memory.CudaMemoryManager(context, logger);
-                    _asyncAdapter = new CudaAsyncMemoryManagerAdapter(_cudaMemoryManager);
+                    _asyncAdapter = new Memory.CudaAsyncMemoryManagerAdapter(_cudaMemoryManager);
                 }
 
                 public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
@@ -1037,7 +1034,7 @@ namespace DotCompute.Backends.CUDA.Integration
         public bool EnableAdvancedOptimizations { get; set; } = true;
         public object? PreferredStream { get; set; }
         public bool CaptureTimings { get; set; } = true;
-        public CudaAdaOptimizationOptions? AdaOptimizationOptions { get; set; }
+        // public CudaAdaOptimizationOptions? AdaOptimizationOptions { get; set; } // Removed - consolidated
     }
 
     public sealed class CudaWorkflowOptions

@@ -50,6 +50,11 @@ namespace DotCompute.Backends.CUDA.Memory
         public long TotalMemory => _totalMemory;
 
         /// <summary>
+        /// Gets the total available memory on the device for interface compatibility.
+        /// </summary>
+        public long TotalAvailableMemory => _totalMemory;
+
+        /// <summary>
         /// Gets the currently used memory on the device.
         /// </summary>
         public long UsedMemory => _totalAllocated;
