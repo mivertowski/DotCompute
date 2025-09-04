@@ -112,7 +112,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     argPointers.Add(argPtr);
                 }
 
-                // Pin argument array
+                // Pin argument array - this creates an array of pointers where each entry points to an argument value
                 var argPtrs = argPointers.ToArray();
                 var argPtrsHandle = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
@@ -278,7 +278,25 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// </summary>
         private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles)
         {
-            // Check if it's a memory buffer type first
+            // First, check for CudaUnifiedMemoryBuffer<T> directly by type name - this handles the current failing case
+            var argType = argValue.GetType();
+            if (argType.IsGenericType && 
+                argType.FullName != null && 
+                argType.FullName.Contains("CudaUnifiedMemoryBuffer"))
+            {
+                // Try to find the _devicePtr field
+                var devicePtrField = argType.GetField("_devicePtr", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                
+                if (devicePtrField != null && devicePtrField.GetValue(argValue) is IntPtr devicePtr && devicePtr != IntPtr.Zero)
+                {
+                    var handle = GCHandle.Alloc(devicePtr, GCHandleType.Pinned);
+                    handles.Add(handle);
+                    return handle.AddrOfPinnedObject();
+                }
+            }
+
+            // Check if it's a memory buffer type second
             if (argValue is ISyncMemoryBuffer)
             {
                 // For CUDA memory buffers, we need the device pointer
@@ -289,6 +307,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                     handles.Add(handle);
                     return handle.AddrOfPinnedObject();
                 }
+                
+                // This code was moved above the ISyncMemoryBuffer check
                 
                 // Handle other types of unified memory buffers
                 if (argValue is IUnifiedMemoryBuffer unifiedBuffer)
@@ -307,10 +327,132 @@ namespace DotCompute.Backends.CUDA.Compilation
                 }
             }
 
-            // For scalar values, pin the value directly
-            var scalarHandle = GCHandle.Alloc(argValue, GCHandleType.Pinned);
-            handles.Add(scalarHandle);
-            return scalarHandle.AddrOfPinnedObject();
+            // Handle primitive types and blittable structs that can be pinned directly
+            if (CanPinDirectly(argValue))
+            {
+                var scalarHandle = GCHandle.Alloc(argValue, GCHandleType.Pinned);
+                handles.Add(scalarHandle);
+                return scalarHandle.AddrOfPinnedObject();
+            }
+
+            // Handle arrays of blittable types
+            if (argValue is Array array && array.Length > 0)
+            {
+                var elementType = array.GetType().GetElementType()!;
+                if (IsBlittableType(elementType))
+                {
+                    var arrayHandle = GCHandle.Alloc(array, GCHandleType.Pinned);
+                    handles.Add(arrayHandle);
+                    return arrayHandle.AddrOfPinnedObject();
+                }
+            }
+
+            // For non-blittable objects, try to extract a pinnable value
+            // This handles cases like passing complex objects that need marshaling
+            if (TryExtractPinnableValue(argValue, out var pinnableValue))
+            {
+                var extractedHandle = GCHandle.Alloc(pinnableValue, GCHandleType.Pinned);
+                handles.Add(extractedHandle);
+                return extractedHandle.AddrOfPinnedObject();
+            }
+
+            // Last resort: convert to a pinnable representation
+            // For objects that cannot be pinned, try to serialize to bytes or convert to IntPtr
+            if (argValue is IntPtr ptr)
+            {
+                var ptrHandle = GCHandle.Alloc(ptr, GCHandleType.Pinned);
+                handles.Add(ptrHandle);
+                return ptrHandle.AddrOfPinnedObject();
+            }
+
+            // For other objects, throw a more descriptive exception
+            throw new ArgumentException($"Cannot marshal argument of type '{argValue.GetType().FullName}' for CUDA kernel. " +
+                                      "Supported types: primitives, blittable structs, arrays of blittable types, memory buffers, and IntPtr.", 
+                                      nameof(argValue));
+        }
+
+        /// <summary>
+        /// Checks if a value can be pinned directly with GCHandleType.Pinned
+        /// </summary>
+        private static bool CanPinDirectly(object value)
+        {
+            if (value == null) return false;
+
+            var type = value.GetType();
+            
+            // Primitive types can be pinned
+            if (type.IsPrimitive) return true;
+            
+            // IntPtr and UIntPtr can be pinned
+            if (type == typeof(IntPtr) || type == typeof(UIntPtr)) return true;
+            
+            // Enums can be pinned
+            if (type.IsEnum) return true;
+            
+            // Value types without references can be pinned
+            if (type.IsValueType && IsBlittableType(type)) return true;
+            
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a type is blittable (can be pinned and has the same representation in managed and unmanaged code)
+        /// </summary>
+        private static bool IsBlittableType(Type type)
+        {
+            if (type.IsPrimitive) return true;
+            if (type == typeof(IntPtr) || type == typeof(UIntPtr)) return true;
+            if (type.IsEnum) return true;
+            
+            if (type.IsValueType)
+            {
+                // Common blittable structs
+                if (type == typeof(Guid) || 
+                    type == typeof(DateTime) || 
+                    type == typeof(decimal)) return false; // These have special layouts
+                
+                // Check if all fields are blittable
+                var fields = type.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                foreach (var field in fields)
+                {
+                    if (!IsBlittableType(field.FieldType))
+                        return false;
+                }
+                return true;
+            }
+            
+            return false;
+        }
+
+        /// <summary>
+        /// Attempts to extract a pinnable value from a complex object
+        /// </summary>
+        private static bool TryExtractPinnableValue(object obj, out object pinnableValue)
+        {
+            pinnableValue = obj;
+            
+            // Check for common patterns like wrapper objects with Value properties
+            var objType = obj.GetType();
+            var valueProperty = objType.GetProperty("Value");
+            if (valueProperty != null && CanPinDirectly(valueProperty.GetValue(obj)!))
+            {
+                pinnableValue = valueProperty.GetValue(obj)!;
+                return true;
+            }
+            
+            // Check for data properties
+            var dataProperty = objType.GetProperty("Data");
+            if (dataProperty != null)
+            {
+                var dataValue = dataProperty.GetValue(obj);
+                if (dataValue != null && CanPinDirectly(dataValue))
+                {
+                    pinnableValue = dataValue;
+                    return true;
+                }
+            }
+            
+            return false;
         }
 
         /// <summary>

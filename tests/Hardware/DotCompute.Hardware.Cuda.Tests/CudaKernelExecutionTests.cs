@@ -139,7 +139,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Execute kernel
             var stopwatch = Stopwatch.StartNew();
-            await kernel.LaunchAsync(launchConfig, deviceA, deviceB, deviceC, elementCount);
+            await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, elementCount);
             stopwatch.Stop();
             
             // Read results

@@ -304,5 +304,23 @@ namespace DotCompute.Backends.CUDA.Compilation
             Level = LogLevel.Information,
             Message = "NVRTC supported architectures: {Architectures}")]
         private static partial void LogSupportedArchitectures(ILogger logger, string architectures);
+
+        [LoggerMessage(
+            EventId = 1049,
+            Level = LogLevel.Warning,
+            Message = "Failed to register name expression for function: {FunctionName} - {Error}")]
+        private static partial void LogFailedToRegisterNameExpression(ILogger logger, string functionName, string error);
+
+        [LoggerMessage(
+            EventId = 1050,
+            Level = LogLevel.Warning,
+            Message = "Failed to get mangled name for function: {FunctionName}")]
+        private static partial void LogFailedToGetMangledName(ILogger logger, string functionName);
+
+        [LoggerMessage(
+            EventId = 1051,
+            Level = LogLevel.Warning,
+            Message = "Failed to extract function names from CUDA source")]
+        private static partial void LogFailedToExtractFunctionNames(ILogger logger, Exception ex);
     }
 }

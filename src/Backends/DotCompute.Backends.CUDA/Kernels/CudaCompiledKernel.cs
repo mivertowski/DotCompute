@@ -111,13 +111,27 @@ namespace DotCompute.Backends.CUDA.Compilation
                     var result = CudaRuntime.cuModuleLoadData(ref _module, ptxPtr);
                     CudaRuntime.CheckError(result, "Module load");
 
-                    // Get function handle
-                    Console.WriteLine($"[DEBUG LoadModule] Attempting to get function '{_entryPoint}' from module");
-                    result = CudaRuntime.cuModuleGetFunction(ref _function, _module, _entryPoint);
+                    // Try to get the mangled function name for proper symbol resolution
+                    var actualEntryPoint = _entryPoint;
+                    var mangledName = Compilation.CudaKernelCompiler.GetMangledFunctionName(Name, _entryPoint);
+                    if (!string.IsNullOrEmpty(mangledName))
+                    {
+                        actualEntryPoint = mangledName;
+                        _logger.LogDebug("Using mangled function name '{MangledName}' for kernel '{Name}' entry point '{EntryPoint}'",
+                            mangledName, Name, _entryPoint);
+                    }
+                    else
+                    {
+                        _logger.LogDebug("No mangled name found for '{EntryPoint}', using original name for kernel '{Name}'",
+                            _entryPoint, Name);
+                    }
+
+                    // Get function handle using the appropriate name (mangled or original)
+                    result = CudaRuntime.cuModuleGetFunction(ref _function, _module, actualEntryPoint);
                     CudaRuntime.CheckError(result, "Get function");
 
-                    _logger.LogDebug("Loaded CUDA module for kernel '{Name}' with entry point '{EntryPoint}'",
-                        Name, _entryPoint);
+                    _logger.LogDebug("Successfully loaded CUDA module for kernel '{Name}' with entry point '{EntryPoint}' -> '{ActualEntryPoint}'",
+                        Name, _entryPoint, actualEntryPoint);
                 }
                 finally
                 {
@@ -126,7 +140,16 @@ namespace DotCompute.Backends.CUDA.Compilation
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to load CUDA module for kernel '{Name}'", ex);
+                // Enhanced error message with debugging information
+                var errorMessage = $"Failed to load CUDA module for kernel '{Name}' with entry point '{_entryPoint}'";
+                var allMangledNames = Compilation.CudaKernelCompiler.GetAllMangledNames(Name);
+                if (allMangledNames != null && allMangledNames.Count > 0)
+                {
+                    var mangledNamesStr = string.Join(", ", allMangledNames.Select(kvp => $"{kvp.Key} -> {kvp.Value}"));
+                    errorMessage += $". Available mangled names: {mangledNamesStr}";
+                }
+                
+                throw new InvalidOperationException(errorMessage, ex);
             }
         }
 

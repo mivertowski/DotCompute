@@ -62,6 +62,9 @@ namespace DotCompute.Backends.CUDA.Compilation
         private readonly string _cacheDirectory;
         private bool _disposed;
 
+        // Static storage for mangled function names - shared across all compiler instances
+        private static readonly ConcurrentDictionary<string, Dictionary<string, string>> _mangledNamesCache = new();
+
         // Cached JsonSerializerOptions to avoid CA1869
         private static readonly System.Text.Json.JsonSerializerOptions _jsonOptions = new()
         {
@@ -163,29 +166,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     compiledCode = await CompileToPtxAsync(cudaSource, source.Name, options).ConfigureAwait(false);
                 }
 
-                // Debug: Write PTX to temp file for inspection
-                if (!useCubin)
-                {
-                    var ptxString = System.Text.Encoding.UTF8.GetString(compiledCode);
-                    var tempPath = $"/tmp/kernel_{source.Name}.ptx";
-                    System.IO.File.WriteAllText(tempPath, ptxString);
-                    // Also write the source that was compiled
-                    var sourcePath = $"/tmp/kernel_{source.Name}.cu";
-                    System.IO.File.WriteAllText(sourcePath, cudaSource);
-                    Console.WriteLine($"[DEBUG] PTX written to {tempPath}, source written to {sourcePath}");
-                    
-                    // Also check for the entry point
-                    if (!ptxString.Contains($".entry {source.EntryPoint}") && !ptxString.Contains($".func {source.EntryPoint}"))
-                    {
-                        Console.WriteLine($"[WARNING] Entry point '{source.EntryPoint}' not found in PTX!");
-                        Console.WriteLine($"Functions found in PTX:");
-                        var funcLines = ptxString.Split('\n').Where(l => l.Contains(".entry") || l.Contains(".func"));
-                        foreach (var line in funcLines)
-                        {
-                            Console.WriteLine($"  {line.Trim()}");
-                        }
-                    }
-                }
+                // Kernel compiled successfully with proper extern "C" handling
                 
                 // Verify compiled code
                 if (!VerifyCompiledCode(compiledCode, source.Name))
@@ -409,6 +390,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         {
             var stopwatch = Stopwatch.StartNew();
             var program = IntPtr.Zero;
+            var registeredFunctionNames = new List<string>();
 
             try
             {
@@ -423,6 +405,25 @@ namespace DotCompute.Backends.CUDA.Compilation
                     null  // includeNames
                 );
                 NvrtcInterop.CheckResult(result, "creating NVRTC program");
+
+                // Extract function names from CUDA source and register them with NVRTC
+                // This is essential for proper name resolution with C++ mangling
+                var functionNames = ExtractKernelFunctionNames(cudaSource);
+                foreach (var funcName in functionNames)
+                {
+                    // Register name expression for kernel function
+                    var nameExpression = $"&{funcName}";
+                    result = NvrtcInterop.nvrtcAddNameExpression(program, nameExpression);
+                    if (result == NvrtcResult.Success)
+                    {
+                        registeredFunctionNames.Add(funcName);
+                        _logger.LogDebug("Registered name expression for kernel function: {FunctionName}", funcName);
+                    }
+                    else
+                    {
+                        LogFailedToRegisterNameExpression(_logger, funcName, NvrtcInterop.GetErrorString(result));
+                    }
+                }
 
                 // Build compilation options
                 var compilationOptions = BuildCompilationOptions(options);
@@ -466,6 +467,33 @@ namespace DotCompute.Backends.CUDA.Compilation
                         errorDetails += $"\nCompilation Log:\n{compilerLog}";
                     }
                     throw new KernelCompilationException(errorDetails, compilerLog);
+                }
+
+                // Get lowered (mangled) names for all registered functions
+                // This is critical for proper kernel symbol resolution
+                var mangledNames = new Dictionary<string, string>();
+                foreach (var funcName in registeredFunctionNames)
+                {
+                    var nameExpression = $"&{funcName}";
+                    var mangledName = NvrtcInterop.GetLoweredName(program, nameExpression);
+                    if (!string.IsNullOrEmpty(mangledName))
+                    {
+                        mangledNames[funcName] = mangledName;
+                        _logger.LogDebug("Retrieved mangled name for '{FunctionName}': '{MangledName}'", funcName, mangledName);
+                    }
+                    else
+                    {
+                        LogFailedToGetMangledName(_logger, funcName);
+                        // Fallback to original name if mangling fails
+                        mangledNames[funcName] = funcName;
+                    }
+                }
+
+                // Store mangled names in thread-local storage for CudaCompiledKernel to access
+                // We use a simple approach: store in a concurrent dictionary keyed by kernel name
+                if (mangledNames.Count > 0)
+                {
+                    StoreMangledNames(kernelName, mangledNames);
                 }
 
                 // Get PTX code using safe helper method
@@ -564,6 +592,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         {
             var stopwatch = Stopwatch.StartNew();
             var program = IntPtr.Zero;
+            var registeredFunctionNames = new List<string>();
 
             try
             {
@@ -578,6 +607,23 @@ namespace DotCompute.Backends.CUDA.Compilation
                     null  // includeNames
                 );
                 NvrtcInterop.CheckResult(result, "creating NVRTC program");
+
+                // Extract function names and register them with NVRTC for name resolution
+                var functionNames = ExtractKernelFunctionNames(cudaSource);
+                foreach (var funcName in functionNames)
+                {
+                    var nameExpression = $"&{funcName}";
+                    result = NvrtcInterop.nvrtcAddNameExpression(program, nameExpression);
+                    if (result == NvrtcResult.Success)
+                    {
+                        registeredFunctionNames.Add(funcName);
+                        _logger.LogDebug("Registered name expression for CUBIN kernel function: {FunctionName}", funcName);
+                    }
+                    else
+                    {
+                        LogFailedToRegisterNameExpression(_logger, funcName, NvrtcInterop.GetErrorString(result));
+                    }
+                }
 
                 // Build compilation options for CUBIN (use code generation instead of compute architecture)
                 var compilationOptions = BuildCompilationOptionsForCubin(options);
@@ -608,6 +654,30 @@ namespace DotCompute.Backends.CUDA.Compilation
                     throw new KernelCompilationException(
                         $"NVRTC CUBIN compilation failed for kernel '{kernelName}': {NvrtcInterop.GetErrorString(result)}",
                         compilerLog);
+                }
+
+                // Get lowered (mangled) names for all registered functions (CUBIN path)
+                var mangledNames = new Dictionary<string, string>();
+                foreach (var funcName in registeredFunctionNames)
+                {
+                    var nameExpression = $"&{funcName}";
+                    var mangledName = NvrtcInterop.GetLoweredName(program, nameExpression);
+                    if (!string.IsNullOrEmpty(mangledName))
+                    {
+                        mangledNames[funcName] = mangledName;
+                        _logger.LogDebug("Retrieved CUBIN mangled name for '{FunctionName}': '{MangledName}'", funcName, mangledName);
+                    }
+                    else
+                    {
+                        LogFailedToGetMangledName(_logger, funcName);
+                        mangledNames[funcName] = funcName;
+                    }
+                }
+
+                // Store mangled names for CUBIN kernels
+                if (mangledNames.Count > 0)
+                {
+                    StoreMangledNames(kernelName, mangledNames);
                 }
 
                 // Get CUBIN code using safe helper method
@@ -988,6 +1058,103 @@ namespace DotCompute.Backends.CUDA.Compilation
             // Hit rate = (total accesses - unique kernels) / total accesses
             // This represents how often we served from cache vs compiled new
             return uniqueKernels > totalAccess ? 0.0 : (double)(totalAccess - uniqueKernels) / totalAccess;
+        }
+
+        /// <summary>
+        /// Extracts kernel function names from CUDA source code.
+        /// Looks for __global__ function declarations to register with NVRTC name resolution.
+        /// </summary>
+        private List<string> ExtractKernelFunctionNames(string cudaSource)
+        {
+            var functionNames = new List<string>();
+            
+            try
+            {
+                // Use regex to find __global__ function declarations
+                // Pattern matches: [extern "C"] __global__ void functionName(
+                var pattern = @"(?:extern\s*""C""\s*)?__global__\s+void\s+(\w+)\s*\(";
+                var matches = System.Text.RegularExpressions.Regex.Matches(
+                    cudaSource, 
+                    pattern, 
+                    System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                foreach (System.Text.RegularExpressions.Match match in matches)
+                {
+                    if (match.Groups.Count > 1)
+                    {
+                        var funcName = match.Groups[1].Value;
+                        if (!string.IsNullOrWhiteSpace(funcName) && !functionNames.Contains(funcName))
+                        {
+                            functionNames.Add(funcName);
+                        }
+                    }
+                }
+
+                // If no functions found, try to extract from entry point or kernel name
+                if (functionNames.Count == 0)
+                {
+                    // Look for any function-like patterns as fallback
+                    var fallbackPattern = @"void\s+(\w+)\s*\([^)]*\)\s*\{";
+                    var fallbackMatches = System.Text.RegularExpressions.Regex.Matches(
+                        cudaSource, 
+                        fallbackPattern, 
+                        System.Text.RegularExpressions.RegexOptions.Multiline);
+
+                    foreach (System.Text.RegularExpressions.Match match in fallbackMatches)
+                    {
+                        if (match.Groups.Count > 1)
+                        {
+                            var funcName = match.Groups[1].Value;
+                            if (!string.IsNullOrWhiteSpace(funcName) && !functionNames.Contains(funcName))
+                            {
+                                functionNames.Add(funcName);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogFailedToExtractFunctionNames(_logger, ex);
+            }
+
+            return functionNames;
+        }
+
+        /// <summary>
+        /// Stores mangled function names for a kernel in the cache.
+        /// </summary>
+        private void StoreMangledNames(string kernelName, Dictionary<string, string> mangledNames)
+        {
+            try
+            {
+                _mangledNamesCache.TryAdd(kernelName, new Dictionary<string, string>(mangledNames));
+                _logger.LogDebug("Stored {Count} mangled names for kernel '{KernelName}'", mangledNames.Count, kernelName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to store mangled names for kernel '{KernelName}'", kernelName);
+            }
+        }
+
+        /// <summary>
+        /// Gets the mangled function name for a kernel and function name.
+        /// </summary>
+        public static string? GetMangledFunctionName(string kernelName, string functionName)
+        {
+            if (_mangledNamesCache.TryGetValue(kernelName, out var mangledNames))
+            {
+                return mangledNames.TryGetValue(functionName, out var mangledName) ? mangledName : null;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets all mangled function names for a kernel.
+        /// </summary>
+        public static Dictionary<string, string>? GetAllMangledNames(string kernelName)
+        {
+            return _mangledNamesCache.TryGetValue(kernelName, out var mangledNames) ? mangledNames : null;
         }
 
         /// <summary>

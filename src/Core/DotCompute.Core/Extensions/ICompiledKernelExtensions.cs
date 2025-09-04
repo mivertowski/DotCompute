@@ -83,7 +83,9 @@ namespace DotCompute.Core.Extensions
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(arguments);
             
-            var kernelArgs = CreateKernelArgumentsFromObjects(arguments);
+            // LaunchAsync<T> called - this should receive all 4 kernel arguments
+            
+            var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? Array.Empty<object>());
             
             // Store launch configuration for backend-specific handling
             if (launchConfig != null)
@@ -111,7 +113,8 @@ namespace DotCompute.Core.Extensions
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(arguments);
             
-            var kernelArgs = CreateKernelArgumentsFromObjects(arguments);
+            
+            var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? Array.Empty<object>());
             
             // Store launch configuration and stream for backend-specific handling
             if (launchConfig != null)
@@ -431,7 +434,6 @@ namespace DotCompute.Core.Extensions
                     }
                 }
             }
-            
             return kernelArgs;
         }
     }
