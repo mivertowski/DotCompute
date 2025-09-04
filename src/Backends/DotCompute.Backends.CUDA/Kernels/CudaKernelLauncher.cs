@@ -337,9 +337,14 @@ namespace DotCompute.Backends.CUDA.Compilation
                 if (argValue is DotCompute.Backends.CUDA.Memory.CudaMemoryBuffer cudaBuffer)
                 {
                     var devicePtr = cudaBuffer.DevicePointer;
-                    var handle = GCHandle.Alloc(devicePtr, GCHandleType.Pinned);
-                    handles.Add(handle);
-                    return handle.AddrOfPinnedObject();
+                    // CRITICAL: Store the device pointer value and return a pointer TO it
+                    unsafe
+                    {
+                        var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
+                        *(IntPtr*)ptrStorage = devicePtr;
+                        unmanagedAllocations.Add(ptrStorage);
+                        return ptrStorage;
+                    }
                 }
                 
                 // This code was moved above the ISyncMemoryBuffer check
@@ -354,9 +359,14 @@ namespace DotCompute.Backends.CUDA.Compilation
                     
                     if (devicePtrProperty != null && devicePtrProperty.GetValue(unifiedBuffer) is IntPtr devicePtr)
                     {
-                        var handle = GCHandle.Alloc(devicePtr, GCHandleType.Pinned);
-                        handles.Add(handle);
-                        return handle.AddrOfPinnedObject();
+                        // CRITICAL: Store the device pointer value and return a pointer TO it
+                        unsafe
+                        {
+                            var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
+                            *(IntPtr*)ptrStorage = devicePtr;
+                            unmanagedAllocations.Add(ptrStorage);
+                            return ptrStorage;
+                        }
                     }
                 }
             }
