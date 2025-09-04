@@ -208,7 +208,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Execute kernel
             var stopwatch = Stopwatch.StartNew();
-            await kernel.LaunchAsync(launchConfig, deviceA, deviceB, deviceC, matrixSize);
+            await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, matrixSize);
             stopwatch.Stop();
             
             // Read results
@@ -282,7 +282,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Execute kernel
             var stopwatch = Stopwatch.StartNew();
-            await kernel.LaunchAsync(launchConfig, deviceInput, deviceOutput, elementCount);
+            await kernel.LaunchAsync<float>(launchConfig, deviceInput, deviceOutput, elementCount);
             stopwatch.Stop();
             
             // Read results
@@ -349,7 +349,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
             
             var stopwatch = Stopwatch.StartNew();
-            await kernel.LaunchAsync(launchConfig, deviceData, elementCount);
+            await kernel.LaunchAsync<float>(launchConfig, deviceData, elementCount);
             stopwatch.Stop();
             
             // Read results
@@ -413,14 +413,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
             
             // Warmup
-            await kernel.LaunchAsync(launchConfig, deviceA, deviceB, deviceC, elementCount);
+            await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, elementCount);
             
             var times = new double[iterations];
             
             for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
-                await kernel.LaunchAsync(launchConfig, deviceA, deviceB, deviceC, elementCount);
+                await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, elementCount);
                 stopwatch.Stop();
                 times[i] = stopwatch.Elapsed.TotalMilliseconds;
             }

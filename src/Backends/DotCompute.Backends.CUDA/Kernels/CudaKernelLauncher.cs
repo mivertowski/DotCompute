@@ -108,7 +108,8 @@ namespace DotCompute.Backends.CUDA.Compilation
             {
                 for (var i = 0; i < arguments.Count; i++)
                 {
-                    var argPtr = PrepareKernelArgument(arguments.Get(i) ?? throw new ArgumentNullException($"Argument at index {i} is null"), handles);
+                    var arg = arguments.Get(i) ?? throw new ArgumentNullException($"Argument at index {i} is null");
+                    var argPtr = PrepareKernelArgument(arg, handles);
                     argPointers.Add(argPtr);
                 }
 

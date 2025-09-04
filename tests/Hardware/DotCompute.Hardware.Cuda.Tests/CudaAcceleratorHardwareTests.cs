@@ -240,20 +240,16 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Configure launch parameters for tiled matrix multiplication
             var tilesPerSide = (matrixSize + 15) / 16; // 16x16 tiles
-            var gridDim = (tilesPerSide, tilesPerSide, 1);
-            var blockDim = (16, 16, 1);
             
             perfMeasurement.Start();
-            var kernelArgs = new KernelArguments();
-            kernelArgs.Add(bufferA);
-            kernelArgs.Add(bufferB);
-            kernelArgs.Add(resultBuffer);
-            kernelArgs.Add(matrixSize);
-            await kernel.LaunchAsync(
-                (gridDim, 1, 1),
-                (blockDim, 1, 1),
-                kernelArgs
-            );
+            
+            // Use the same successful pattern as Vector Add test instead of the problematic (gridDim, blockDim, args) signature
+            var launchConfig = new LaunchConfiguration
+            {
+                GridSize = new Dim3(tilesPerSide, tilesPerSide),
+                BlockSize = new Dim3(16, 16)
+            };
+            await kernel.LaunchAsync<float>(launchConfig, bufferA, bufferB, resultBuffer, matrixSize);
             
             await accelerator.SynchronizeAsync();
             perfMeasurement.Stop();
