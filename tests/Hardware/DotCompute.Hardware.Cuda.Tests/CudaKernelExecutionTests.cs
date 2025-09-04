@@ -200,6 +200,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Configure launch parameters - 2D grid for matrix operations
             const int blockDim = 16;
             var gridDim = (matrixSize + blockDim - 1) / blockDim;
+            
+            // Debug output
+            Output.WriteLine($"Matrix size: {matrixSize}x{matrixSize}");
+            Output.WriteLine($"Grid dimensions: {gridDim}x{gridDim}");
+            Output.WriteLine($"Block dimensions: {blockDim}x{blockDim}");
+            Output.WriteLine($"Total threads: {gridDim * gridDim * blockDim * blockDim}");
+            Output.WriteLine($"Device pointers - A: 0x{deviceA.GetHashCode():X}, B: 0x{deviceB.GetHashCode():X}, C: 0x{deviceC.GetHashCode():X}");
+            
             var launchConfig = new LaunchConfiguration
             {
                 GridSize = new Dim3(gridDim, gridDim),

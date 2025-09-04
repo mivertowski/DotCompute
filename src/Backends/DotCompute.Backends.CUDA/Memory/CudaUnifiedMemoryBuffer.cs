@@ -100,6 +100,11 @@ public sealed class CudaUnifiedMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T
     /// <inheritdoc/>
     public bool IsOnDevice => 
         State == BufferState.DeviceReady || State == BufferState.DeviceDirty;
+    
+    /// <summary>
+    /// Gets the device pointer for this buffer (for kernel argument passing)
+    /// </summary>
+    internal IntPtr DevicePointer => _devicePtr;
 
     /// <inheritdoc/>
     public bool IsDirty => 

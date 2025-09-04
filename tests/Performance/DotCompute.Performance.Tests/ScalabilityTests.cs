@@ -913,15 +913,15 @@ internal class MockScalableAccelerator : IAccelerator
     public IUnifiedMemoryManager Memory { get; } = new MockMemoryManager();
     public AcceleratorContext Context { get; } = new AcceleratorContext();
 
-    public async ValueTask<ICompiledKernel> CompileKernelAsync(
+    public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         // Simulate compilation time
         var complexity = definition.Source.Length / 50;
-        await Task.Delay(Math.Max(10, complexity), cancellationToken).ConfigureAwait(false);
-        return new MockScalableKernel(definition.Name, this);
+        var delay = Task.Delay(Math.Max(10, complexity), cancellationToken);
+        return new ValueTask<ICompiledKernel>(delay.ContinueWith(_ => (ICompiledKernel)new MockScalableKernel(definition.Name, this), cancellationToken));
     }
 
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => new(Task.Delay(_random.Next(1, 5), cancellationToken));
@@ -969,7 +969,7 @@ internal class MockScalableKernel : ICompiledKernel
         _accelerator = accelerator;
     }
 
-    public async ValueTask ExecuteAsync(
+    public ValueTask ExecuteAsync(
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
@@ -979,7 +979,7 @@ internal class MockScalableKernel : ICompiledKernel
         var variability = _random.NextDouble() * 0.3; // ±30% variability
         var executionTime = (int)(baseTime * (1 + variability));
         
-        await Task.Delay(executionTime, cancellationToken).ConfigureAwait(false);
+        return new ValueTask(Task.Delay(executionTime, cancellationToken));
     }
     
     private static int GetWorkloadSize(KernelArguments arguments)

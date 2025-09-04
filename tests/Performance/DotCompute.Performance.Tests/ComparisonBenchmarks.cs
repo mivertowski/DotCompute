@@ -1104,14 +1104,14 @@ internal class MockCpuAccelerator : IAccelerator
     public IUnifiedMemoryManager Memory { get; } = new MockMemoryManager();
     public AcceleratorContext Context { get; } = new AcceleratorContext();
 
-    public async ValueTask<ICompiledKernel> CompileKernelAsync(
+    public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         // Simulate CPU compilation (faster than GPU)
-        await Task.Delay(_random.Next(20, 50), cancellationToken).ConfigureAwait(false);
-        return new MockCpuKernel(definition.Name);
+        var delay = Task.Delay(_random.Next(20, 50), cancellationToken);
+        return new ValueTask<ICompiledKernel>(delay.ContinueWith(_ => (ICompiledKernel)new MockCpuKernel(definition.Name), cancellationToken));
     }
 
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask; // CPU synchronization is immediate
@@ -1139,7 +1139,7 @@ internal class MockGpuAccelerator : IAccelerator
     public IUnifiedMemoryManager Memory { get; } = new MockMemoryManager();
     public AcceleratorContext Context { get; } = new AcceleratorContext();
 
-    public async ValueTask<ICompiledKernel> CompileKernelAsync(
+    public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
@@ -1149,8 +1149,8 @@ internal class MockGpuAccelerator : IAccelerator
         if (options?.OptimizationLevel == OptimizationLevel.Aggressive)
             baseDelay = (int)(baseDelay * 1.5);
             
-        await Task.Delay(baseDelay, cancellationToken).ConfigureAwait(false);
-        return new MockGpuKernel(definition.Name);
+        var delay = Task.Delay(baseDelay, cancellationToken);
+        return new ValueTask<ICompiledKernel>(delay.ContinueWith(_ => (ICompiledKernel)new MockGpuKernel(definition.Name), cancellationToken));
     }
 
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => new(Task.Delay(_random.Next(2, 8), cancellationToken)); // GPU sync takes longer
@@ -1170,13 +1170,13 @@ internal class MockCpuKernel : ICompiledKernel
 
     public MockCpuKernel(string name) => Name = name;
 
-    public async ValueTask ExecuteAsync(
+    public ValueTask ExecuteAsync(
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
         var workloadSize = GetWorkloadSize(arguments);
         var executionTime = CalculateCpuExecutionTime(workloadSize);
-        await Task.Delay(executionTime, cancellationToken).ConfigureAwait(false);
+        return new ValueTask(Task.Delay(executionTime, cancellationToken));
     }
     
     private int CalculateCpuExecutionTime(int workloadSize)
@@ -1209,13 +1209,13 @@ internal class MockGpuKernel : ICompiledKernel
 
     public MockGpuKernel(string name) => Name = name;
 
-    public async ValueTask ExecuteAsync(
+    public ValueTask ExecuteAsync(
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
         var workloadSize = GetWorkloadSize(arguments);
         var executionTime = CalculateGpuExecutionTime(workloadSize);
-        await Task.Delay(executionTime, cancellationToken).ConfigureAwait(false);
+        return new ValueTask(Task.Delay(executionTime, cancellationToken));
     }
     
     private int CalculateGpuExecutionTime(int workloadSize)

@@ -103,13 +103,14 @@ namespace DotCompute.Backends.CUDA.Compilation
             // Prepare kernel arguments
             var argPointers = new List<IntPtr>();
             var handles = new List<GCHandle>();
+            var unmanagedAllocations = new List<IntPtr>(); // Track unmanaged memory allocations
 
             try
             {
                 for (var i = 0; i < arguments.Count; i++)
                 {
                     var arg = arguments.Get(i) ?? throw new ArgumentNullException($"Argument at index {i} is null");
-                    var argPtr = PrepareKernelArgument(arg, handles);
+                    var argPtr = PrepareKernelArgument(arg, handles, unmanagedAllocations);
                     argPointers.Add(argPtr);
                 }
 
@@ -277,7 +278,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// <summary>
         /// Prepares a single kernel argument for launch
         /// </summary>
-        private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles)
+        private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles, List<IntPtr> unmanagedAllocations)
         {
             // Validate input
             if (argValue == null)
@@ -291,15 +292,41 @@ namespace DotCompute.Backends.CUDA.Compilation
                 argType.FullName != null && 
                 argType.FullName.Contains("CudaUnifiedMemoryBuffer"))
             {
-                // Try to find the _devicePtr field
+                // Try to get the DevicePointer property (internal)
+                var devicePtrProp = argType.GetProperty("DevicePointer", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                
+                if (devicePtrProp != null && devicePtrProp.GetValue(argValue) is IntPtr devicePtr && devicePtr != IntPtr.Zero)
+                {
+                    // CRITICAL: We need to store the device pointer value and return a pointer TO it
+                    // CUDA expects a pointer to the argument value, not the value itself
+                    unsafe
+                    {
+                        // Allocate unmanaged memory to hold the device pointer value
+                        var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
+                        *(IntPtr*)ptrStorage = devicePtr;
+                        // Track this allocation for cleanup
+                        unmanagedAllocations.Add(ptrStorage);
+                        return ptrStorage;
+                    }
+                }
+                
+                // Fallback to field if property not found
                 var devicePtrField = argType.GetField("_devicePtr", 
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 
-                if (devicePtrField != null && devicePtrField.GetValue(argValue) is IntPtr devicePtr && devicePtr != IntPtr.Zero)
+                if (devicePtrField != null && devicePtrField.GetValue(argValue) is IntPtr fieldPtr && fieldPtr != IntPtr.Zero)
                 {
-                    var handle = GCHandle.Alloc(devicePtr, GCHandleType.Pinned);
-                    handles.Add(handle);
-                    return handle.AddrOfPinnedObject();
+                    // CRITICAL: We need to store the device pointer value and return a pointer TO it
+                    unsafe
+                    {
+                        // Allocate unmanaged memory to hold the device pointer value
+                        var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
+                        *(IntPtr*)ptrStorage = fieldPtr;
+                        // Track this allocation for cleanup
+                        unmanagedAllocations.Add(ptrStorage);
+                        return ptrStorage;
+                    }
                 }
             }
 
