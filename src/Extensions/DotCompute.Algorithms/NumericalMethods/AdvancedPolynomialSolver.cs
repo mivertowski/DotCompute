@@ -249,7 +249,7 @@ public static class AdvancedPolynomialSolver
 
     private static float[] SolveHighDegree(float[] coeffs, float tolerance, int maxIterations)
     {
-        var degree = coeffs.Length - 1;
+        _ = coeffs.Length - 1;
         var complexRoots = DurandKernerMethod(coeffs, tolerance, maxIterations);
 
         // Extract real roots

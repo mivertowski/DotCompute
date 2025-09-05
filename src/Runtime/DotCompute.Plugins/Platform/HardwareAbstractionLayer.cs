@@ -29,7 +29,7 @@ namespace DotCompute.Plugins.Platform
         public ComputeConfiguration GetOptimalConfiguration()
         {
             var platformInfo = PlatformDetection.Current;
-            var hardware = PlatformDetection.Hardware;
+            _ = PlatformDetection.Hardware;
 
             _logger.LogInformation("Analyzing optimal compute configuration for {OS} {Arch} with {CPUs} cores",
                 platformInfo.OperatingSystem, platformInfo.Architecture, platformInfo.ProcessorCount);

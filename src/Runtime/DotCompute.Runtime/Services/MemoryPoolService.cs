@@ -294,7 +294,7 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
             var emptyPools = _sizePools.Where(kvp => kvp.Value.Count == 0).Select(kvp => kvp.Key).ToList();
             foreach (var poolSize in emptyPools)
             {
-                _sizePools.TryRemove(poolSize, out _);
+                _ = _sizePools.TryRemove(poolSize, out _);
             }
 
             lock (_statsLock)

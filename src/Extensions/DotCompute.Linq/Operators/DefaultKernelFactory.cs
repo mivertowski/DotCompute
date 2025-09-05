@@ -184,7 +184,8 @@ public class DefaultKernelFactory : IKernelFactory
     /// <returns>The supported kernel languages.</returns>
     public IReadOnlyList<KernelLanguage> GetSupportedLanguages(IAccelerator accelerator)
     {
-        if (_generators.TryGetValue(accelerator.Type, out var generator))
+
+        if (_generators.TryGetValue(accelerator.Type, out _))
         {
             return new[] { GetKernelLanguageForAccelerator(accelerator.Type) };
         }

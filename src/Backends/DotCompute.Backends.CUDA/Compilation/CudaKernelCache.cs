@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using global::System.Runtime.CompilerServices;
 using global::System.Security.Cryptography;
 using System.Text;
@@ -13,6 +14,8 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Types;
+using DotCompute.Backends.CUDA.Native.Exceptions;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Execution;
 using Microsoft.Extensions.Logging;
 
@@ -87,7 +90,7 @@ public sealed class CudaKernelCache : IDisposable
         {
             if (!Directory.Exists(_diskCachePath))
             {
-                Directory.CreateDirectory(_diskCachePath);
+                _ = Directory.CreateDirectory(_diskCachePath);
                 _logger.LogInformation("Created disk cache directory: {Path}", _diskCachePath);
             }
             
@@ -126,7 +129,7 @@ public sealed class CudaKernelCache : IDisposable
                     // Validate that cached files still exist
                     if (File.Exists(value.DiskPath))
                     {
-                        _metadataCache.TryAdd(key, value);
+                        _ = _metadataCache.TryAdd(key, value);
                     }
                 }
                 
@@ -286,7 +289,7 @@ public sealed class CudaKernelCache : IDisposable
             finally
             {
                 // Destroy program
-                NvrtcInterop.nvrtcDestroyProgram(ref prog);
+                _ = NvrtcInterop.nvrtcDestroyProgram(ref prog);
             }
         }, cancellationToken);
     }
@@ -301,15 +304,119 @@ public sealed class CudaKernelCache : IDisposable
     {
         return await Task.Run(() =>
         {
-            // Use CUDA driver API to compile PTX to cubin
-            // This is a simplified version - real implementation would use cuLinkCreate/cuLinkAddData
+            var linkState = IntPtr.Zero;
+            var cubinPtr = IntPtr.Zero;
+            nuint cubinSize = 0;
             
-            _logger.LogDebug("Compiling PTX to cubin for compute_{Major}_{Minor}",
-                options.ComputeCapability.Major, options.ComputeCapability.Minor);
-            
-            // For now, return PTX as bytes
-            // TODO: Implement actual PTX to cubin compilation
-            return Encoding.UTF8.GetBytes(ptx);
+            try
+            {
+                _logger.LogDebug("Compiling PTX to cubin for compute_{Major}_{Minor}",
+                    options.ComputeCapability.Major, options.ComputeCapability.Minor);
+                
+                // Setup JIT compilation options
+                var jitOptions = new[]
+                {
+                    CUjit_option.CU_JIT_TARGET,
+                    CUjit_option.CU_JIT_OPTIMIZATION_LEVEL,
+                    CUjit_option.CU_JIT_GENERATE_DEBUG_INFO,
+                    CUjit_option.CU_JIT_GENERATE_LINE_INFO,
+                    CUjit_option.CU_JIT_LOG_VERBOSE
+                };
+                
+                // Calculate target compute capability
+                var targetCompute = options.ComputeCapability.Major * 10 + options.ComputeCapability.Minor;
+                var jitTarget = (CUjit_target)targetCompute;
+                
+                // Prepare option values
+                var optionValues = new IntPtr[]
+                {
+                    new IntPtr((int)jitTarget),
+                    new IntPtr((int)options.OptimizationLevel),
+                    new IntPtr(options.GenerateDebugInfo ? 1 : 0),
+                    new IntPtr(options.GenerateDebugInfo ? 1 : 0),
+                    new IntPtr(0) // Verbose logging off for now
+                };
+                
+                // Marshal options and values
+                var optionsHandle = GCHandle.Alloc(jitOptions, GCHandleType.Pinned);
+                var valuesHandle = GCHandle.Alloc(optionValues, GCHandleType.Pinned);
+                
+                try
+                {
+                    // Create JIT linker state
+                    var result = CudaRuntime.cuLinkCreate(
+                        (uint)jitOptions.Length,
+                        optionsHandle.AddrOfPinnedObject(),
+                        valuesHandle.AddrOfPinnedObject(),
+                        ref linkState);
+                    
+                    if (result != CudaError.Success)
+                    {
+                        throw new CudaException($"Failed to create JIT linker: {result}");
+                    }
+                    
+                    // Add PTX data to linker
+                    var ptxBytes = Encoding.UTF8.GetBytes(ptx + "\0"); // Null-terminate PTX
+                    var ptxHandle = GCHandle.Alloc(ptxBytes, GCHandleType.Pinned);
+                    
+                    try
+                    {
+                        result = CudaRuntime.cuLinkAddData(
+                            linkState,
+                            CUjitInputType.CU_JIT_INPUT_PTX,
+                            ptxHandle.AddrOfPinnedObject(),
+                            (nuint)ptxBytes.Length,
+                            "kernel.ptx", // Name for debugging
+                            0, // No additional options
+                            IntPtr.Zero,
+                            IntPtr.Zero);
+                        
+                        if (result != CudaError.Success)
+                        {
+                            throw new CudaException($"Failed to add PTX data: {result}");
+                        }
+                    }
+                    finally
+                    {
+                        ptxHandle.Free();
+                    }
+                    
+                    // Complete linking to generate CUBIN
+                    result = CudaRuntime.cuLinkComplete(linkState, ref cubinPtr, ref cubinSize);
+                    
+                    if (result != CudaError.Success)
+                    {
+                        throw new CudaException($"Failed to complete JIT linking: {result}");
+                    }
+                    
+                    // Copy CUBIN data to managed array
+                    var cubinBytes = new byte[cubinSize];
+                    Marshal.Copy(cubinPtr, cubinBytes, 0, (int)cubinSize);
+                    
+                    _logger.LogInformation("Successfully compiled PTX to CUBIN: {Size} bytes", cubinSize);
+                    
+                    return cubinBytes;
+                }
+                finally
+                {
+                    optionsHandle.Free();
+                    valuesHandle.Free();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to compile PTX to CUBIN, falling back to PTX");
+                // Fallback: return PTX as bytes if CUBIN compilation fails
+                return Encoding.UTF8.GetBytes(ptx);
+            }
+            finally
+            {
+                // Clean up linker state
+                if (linkState != IntPtr.Zero)
+                {
+                    _ = CudaRuntime.cuLinkDestroy(linkState);
+                }
+            }
         }, cancellationToken);
     }
 
@@ -391,17 +498,17 @@ public sealed class CudaKernelCache : IDisposable
         using var sha256 = SHA256.Create();
         
         var input = new StringBuilder();
-        input.Append(sourceCode);
-        input.Append(kernelName);
-        input.Append(options.ComputeCapability.Major);
-        input.Append(options.ComputeCapability.Minor);
-        input.Append((int)options.OptimizationLevel);
-        input.Append(options.GenerateDebugInfo);
-        input.Append(options.UseFastMath);
+        _ = input.Append(sourceCode);
+        _ = input.Append(kernelName);
+        _ = input.Append(options.ComputeCapability.Major);
+        _ = input.Append(options.ComputeCapability.Minor);
+        _ = input.Append((int)options.OptimizationLevel);
+        _ = input.Append(options.GenerateDebugInfo);
+        _ = input.Append(options.UseFastMath);
         
         foreach (var define in options.Defines.OrderBy(kvp => kvp.Key))
         {
-            input.Append($"{define.Key}={define.Value}");
+            _ = input.Append($"{define.Key}={define.Value}");
         }
         
         var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(input.ToString()));
@@ -451,7 +558,7 @@ public sealed class CudaKernelCache : IDisposable
             
             if (!File.Exists(ptxPath))
             {
-                _metadataCache.TryRemove(cacheKey, out _);
+                _ = _metadataCache.TryRemove(cacheKey, out _);
                 return false;
             }
             
@@ -483,7 +590,7 @@ public sealed class CudaKernelCache : IDisposable
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to load kernel from disk cache: {Key}", cacheKey);
-            _metadataCache.TryRemove(cacheKey, out _);
+            _ = _metadataCache.TryRemove(cacheKey, out _);
             return false;
         }
     }
@@ -535,7 +642,7 @@ public sealed class CudaKernelCache : IDisposable
         
         if (_memoryCache.TryAdd(cacheKey, cached))
         {
-            Interlocked.Add(ref _currentCacheSize, kernelSize);
+            _ = Interlocked.Add(ref _currentCacheSize, kernelSize);
             UpdateLru(cacheKey);
             
             _logger.LogDebug("Added kernel to memory cache: {Key} ({Size} bytes)", 
@@ -572,8 +679,8 @@ public sealed class CudaKernelCache : IDisposable
                 CompiledAt = new DateTimeOffset(kernel.CompiledAt),
                 FileSize = new FileInfo(ptxPath).Length
             };
-            
-            _metadataCache.TryAdd(cacheKey, metadata);
+
+            _ = _metadataCache.TryAdd(cacheKey, metadata);
             
             // Persist metadata
             await SaveCacheMetadataAsync(cancellationToken);
@@ -613,8 +720,8 @@ public sealed class CudaKernelCache : IDisposable
     {
         lock (_lruLock)
         {
-            _lruList.Remove(cacheKey);
-            _lruList.AddFirst(cacheKey);
+            _ = _lruList.Remove(cacheKey);
+            _ = _lruList.AddFirst(cacheKey);
         }
     }
 
@@ -638,7 +745,7 @@ public sealed class CudaKernelCache : IDisposable
                 
                 if (_memoryCache.TryRemove(lruKey, out var cached))
                 {
-                    Interlocked.Add(ref _currentCacheSize, -cached.Size);
+                    _ = Interlocked.Add(ref _currentCacheSize, -cached.Size);
                     _logger.LogDebug("Evicted kernel from memory cache: {Key}", lruKey);
                     return true;
                 }
@@ -732,7 +839,7 @@ public sealed class CudaKernelCache : IDisposable
         
         foreach (var key in keysToRemove)
         {
-            _metadataCache.TryRemove(key, out _);
+            _ = _metadataCache.TryRemove(key, out _);
         }
         
         if (keysToRemove.Count > 0)
@@ -775,7 +882,7 @@ public sealed class CudaKernelCache : IDisposable
         {
             _memoryCache.Clear();
             _lruList.Clear();
-            Interlocked.Exchange(ref _currentCacheSize, 0);
+            _ = Interlocked.Exchange(ref _currentCacheSize, 0);
         }
         
         _logger.LogInformation("Cleared kernel cache");

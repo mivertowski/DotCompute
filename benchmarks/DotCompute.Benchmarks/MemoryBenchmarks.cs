@@ -84,7 +84,7 @@ public class MemoryBenchmarks
     [Benchmark]
     public void ParallelArrayCopy()
     {
-        Parallel.For(0, BufferSize, i =>
+        _ = Parallel.For(0, BufferSize, i =>
         {
             _targetData[i] = _sourceData[i];
         });

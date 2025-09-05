@@ -170,8 +170,8 @@ public abstract class TestBase : IDisposable
     {
         directoryName ??= $"subdir_{Guid.NewGuid():N}";
         var dirPath = Path.Combine(TempDirectory, directoryName);
-        
-        Directory.CreateDirectory(dirPath);
+
+        _ = Directory.CreateDirectory(dirPath);
         
         return dirPath;
     }
@@ -184,7 +184,7 @@ public abstract class TestBase : IDisposable
     {
         var testName = GetType().Name;
         var tempDir = Path.Combine(Fixture.TempDirectory, $"{testName}_{Guid.NewGuid():N}");
-        Directory.CreateDirectory(tempDir);
+        _ = Directory.CreateDirectory(tempDir);
         return tempDir;
     }
     
@@ -200,8 +200,8 @@ public abstract class TestBase : IDisposable
     /// <returns>The average execution time per iteration.</returns>
     protected TimeSpan MeasureExecutionTime(Action action, int iterations = 1)
     {
-        action.Should().NotBeNull();
-        iterations.Should().BePositive();
+        _ = action.Should().NotBeNull();
+        _ = iterations.Should().BePositive();
         
         // Warm-up
         if (iterations > 1)
@@ -230,8 +230,8 @@ public abstract class TestBase : IDisposable
     /// <returns>The average execution time per iteration.</returns>
     protected async Task<TimeSpan> MeasureExecutionTimeAsync(Func<Task> action, int iterations = 1)
     {
-        action.Should().NotBeNull();
-        iterations.Should().BePositive();
+        _ = action.Should().NotBeNull();
+        _ = iterations.Should().BePositive();
         
         // Warm-up
         if (iterations > 1)
@@ -261,7 +261,7 @@ public abstract class TestBase : IDisposable
     protected void BenchmarkOperation(Action action, TimeSpan timeLimit, int iterations = 1)
     {
         var averageTime = MeasureExecutionTime(action, iterations);
-        averageTime.Should().BeLessThanOrEqualTo(timeLimit, 
+        _ = averageTime.Should().BeLessThanOrEqualTo(timeLimit,
             $"operation should complete within {timeLimit.TotalMilliseconds:F2} ms on average, but took {averageTime.TotalMilliseconds:F2} ms");
     }
     
@@ -274,7 +274,7 @@ public abstract class TestBase : IDisposable
     protected async Task BenchmarkOperationAsync(Func<Task> action, TimeSpan timeLimit, int iterations = 1)
     {
         var averageTime = await MeasureExecutionTimeAsync(action, iterations);
-        averageTime.Should().BeLessThanOrEqualTo(timeLimit, 
+        _ = averageTime.Should().BeLessThanOrEqualTo(timeLimit,
             $"async operation should complete within {timeLimit.TotalMilliseconds:F2} ms on average, but took {averageTime.TotalMilliseconds:F2} ms");
     }
     
@@ -289,7 +289,7 @@ public abstract class TestBase : IDisposable
     /// <returns>The memory increase in bytes.</returns>
     protected long MeasureMemoryUsage(Action action)
     {
-        action.Should().NotBeNull();
+        _ = action.Should().NotBeNull();
         
         // Force garbage collection before measurement
         GC.Collect();
@@ -341,7 +341,7 @@ public abstract class TestBase : IDisposable
         
         if (!string.IsNullOrEmpty(expectedMessage))
         {
-            exception.Message.Should().Contain(expectedMessage);
+            _ = exception.Message.Should().Contain(expectedMessage);
         }
         
         Log($"Expected exception thrown: {typeof(TException).Name}: {exception.Message}");
@@ -363,7 +363,7 @@ public abstract class TestBase : IDisposable
         
         if (!string.IsNullOrEmpty(expectedMessage))
         {
-            exception.Message.Should().Contain(expectedMessage);
+            _ = exception.Message.Should().Contain(expectedMessage);
         }
         
         Log($"Expected async exception thrown: {typeof(TException).Name}: {exception.Message}");

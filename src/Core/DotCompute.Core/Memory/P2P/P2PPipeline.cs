@@ -297,7 +297,8 @@ namespace DotCompute.Core.Memory.P2P
             _pipelineCts.Dispose();
 
             // Clear staging buffers
-            while (_availableStages.TryDequeue(out var stage))
+
+            while (_availableStages.TryDequeue(out _))
             {
                 // Staging buffers will be garbage collected
             }

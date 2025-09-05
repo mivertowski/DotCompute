@@ -93,9 +93,13 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(destination);
             
             if (destination.SizeInBytes != _sizeInBytes)
+            {
+
                 throw new ArgumentException("Destination buffer must have the same size");
-            
+            }
+
             // For raw buffer copy, we need to copy via host memory since we don't have device pointer access
+
             unsafe
             {
                 var tempBuffer = new byte[_sizeInBytes];
@@ -122,9 +126,13 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(source);
             
             if (source.SizeInBytes != _sizeInBytes)
+            {
+
                 throw new ArgumentException("Source buffer must have the same size");
-            
+            }
+
             // For raw buffer copy, we need to copy via host memory since we don't have device pointer access
+
             unsafe
             {
                 var tempBuffer = new byte[_sizeInBytes];
@@ -183,7 +191,11 @@ namespace DotCompute.Backends.CUDA.Memory
             var sourceSizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<TSource>();
             
             if (destinationOffset + sourceSizeInBytes > _sizeInBytes)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(destinationOffset));
+            }
+
 
             await Task.Run(() =>
             {
@@ -211,7 +223,11 @@ namespace DotCompute.Backends.CUDA.Memory
             var destSizeInBytes = destination.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<TDest>();
             
             if (sourceOffset + destSizeInBytes > _sizeInBytes)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(sourceOffset));
+            }
+
 
             await Task.Run(() =>
             {

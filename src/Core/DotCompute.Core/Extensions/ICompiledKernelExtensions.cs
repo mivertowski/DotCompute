@@ -84,7 +84,7 @@ namespace DotCompute.Core.Extensions
             
             // Console.WriteLine($"[DEBUG] LaunchAsync non-generic called with launchConfig={launchConfig?.GetType().Name}, arguments.Length={arguments?.Length}");
             
-            var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? Array.Empty<object>());
+            var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? []);
             
             // Store launch configuration for backend-specific handling
             if (launchConfig != null)
@@ -113,7 +113,7 @@ namespace DotCompute.Core.Extensions
             
             // Console.WriteLine($"[DEBUG] LaunchAsync<T> called with launchConfig={launchConfig?.GetType().Name}, arguments.Length={arguments?.Length}");
             
-            var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? Array.Empty<object>());
+            var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? []);
             
             // Store launch configuration for backend-specific handling
             if (launchConfig != null)
@@ -145,7 +145,7 @@ namespace DotCompute.Core.Extensions
             
             // Console.WriteLine($"[DEBUG] LaunchAsync with IComputeStream called with launchConfig={launchConfig?.GetType().Name}, stream={stream?.GetType().Name}, arguments.Length={arguments?.Length}");
             
-            var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? Array.Empty<object>());
+            var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? []);
             
             // Store launch configuration and stream for backend-specific handling
             if (launchConfig != null)
@@ -175,8 +175,10 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentNullException.ThrowIfNull(kernel);
             
-            var arguments = new KernelArguments();
-            arguments.Add(arg1);
+            var arguments = new KernelArguments
+            {
+                arg1
+            };
             
             return kernel.ExecuteAsync(arguments, cancellationToken);
         }
@@ -198,9 +200,11 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentNullException.ThrowIfNull(kernel);
             
-            var arguments = new KernelArguments();
-            arguments.Add(arg1);
-            arguments.Add(arg2);
+            var arguments = new KernelArguments
+            {
+                arg1,
+                arg2
+            };
             
             return kernel.ExecuteAsync(arguments, cancellationToken);
         }
@@ -225,10 +229,12 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentNullException.ThrowIfNull(kernel);
             
-            var arguments = new KernelArguments();
-            arguments.Add(arg1);
-            arguments.Add(arg2);
-            arguments.Add(arg3);
+            var arguments = new KernelArguments
+            {
+                arg1,
+                arg2,
+                arg3
+            };
             
             return kernel.ExecuteAsync(arguments, cancellationToken);
         }
@@ -366,8 +372,8 @@ namespace DotCompute.Core.Extensions
                 ["CreatedAt"] = DateTime.UtcNow,
                 ["IsDisposed"] = IsDisposed(kernel)
             };
-            
-            s_metadataCache.TryAdd(cacheKey, newMetadata);
+
+            _ = s_metadataCache.TryAdd(cacheKey, newMetadata);
             return ValueTask.FromResult(newMetadata);
         }
 
@@ -475,7 +481,7 @@ namespace DotCompute.Core.Extensions
     /// </summary>
     public static class KernelArgumentsExtensions
     {
-        private static readonly ConditionalWeakTable<KernelArguments, Dictionary<string, object>> s_metadataTable = new();
+        private static readonly ConditionalWeakTable<KernelArguments, Dictionary<string, object>> s_metadataTable = [];
         
         private const string GridDimensionsKey = "__grid_dimensions";
         private const string BlockDimensionsKey = "__block_dimensions";

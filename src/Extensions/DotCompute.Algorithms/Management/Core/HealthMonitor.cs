@@ -46,7 +46,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
     {
         if (_options.EnableHealthChecks && _healthCheckTimer != null)
         {
-            _healthCheckTimer.Change(_options.HealthCheckInterval, _options.HealthCheckInterval);
+            _ = _healthCheckTimer.Change(_options.HealthCheckInterval, _options.HealthCheckInterval);
             _logger.LogInformation("Health monitoring started with interval: {Interval}", _options.HealthCheckInterval);
         }
     }
@@ -54,7 +54,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
     /// <inheritdoc/>
     public void StopHealthMonitoring()
     {
-        _healthCheckTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        _ = (_healthCheckTimer?.Change(Timeout.Infinite, Timeout.Infinite));
         _logger.LogInformation("Health monitoring stopped");
     }
 

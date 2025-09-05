@@ -299,7 +299,7 @@ public sealed class PrometheusExporter : IDisposable
 
     private void InitializeMetrics()
     {
-        var commonLabels = _options.CommonLabels.ToArray();
+        _ = _options.CommonLabels.ToArray();
 
         // Core execution metrics
 

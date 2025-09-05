@@ -46,11 +46,11 @@ public class CpuAcceleratorTests : IDisposable
     public void Constructor_WithValidOptions_InitializesSuccessfully()
     {
         // Arrange & Act - accelerator created in constructor
-        
+
         // Assert
-        _accelerator.Should().NotBeNull();
-        _accelerator.Type.Should().Be(AcceleratorType.CPU);
-        _accelerator.IsDisposed.Should().BeFalse();
+        _ = _accelerator.Should().NotBeNull();
+        _ = _accelerator.Type.Should().Be(AcceleratorType.CPU);
+        _ = _accelerator.IsDisposed.Should().BeFalse();
     }
     
     [Fact]
@@ -58,18 +58,18 @@ public class CpuAcceleratorTests : IDisposable
     {
         // Act
         var info = _accelerator.Info;
-        
+
         // Assert
-        info.Should().NotBeNull();
-        info.Type.Should().Be(AcceleratorType.CPU.ToString());
-        info.IsUnifiedMemory.Should().BeTrue();
-        info.ComputeUnits.Should().Be(Environment.ProcessorCount);
-        info.Capabilities.Should().NotBeNull();
-        info.Capabilities!.Should().ContainKey("SimdWidth");
-        info.Capabilities!.Should().ContainKey("SimdInstructionSets");
-        info.Capabilities!.Should().ContainKey("ThreadCount");
-        info.Capabilities!.Should().ContainKey("NumaNodes");
-        info.Capabilities!.Should().ContainKey("CacheLineSize");
+        _ = info.Should().NotBeNull();
+        _ = info.Type.Should().Be(AcceleratorType.CPU.ToString());
+        _ = info.IsUnifiedMemory.Should().BeTrue();
+        _ = info.ComputeUnits.Should().Be(Environment.ProcessorCount);
+        _ = info.Capabilities.Should().NotBeNull();
+        _ = info.Capabilities!.Should().ContainKey("SimdWidth");
+        _ = info.Capabilities!.Should().ContainKey("SimdInstructionSets");
+        _ = info.Capabilities!.Should().ContainKey("ThreadCount");
+        _ = info.Capabilities!.Should().ContainKey("NumaNodes");
+        _ = info.Capabilities!.Should().ContainKey("CacheLineSize");
     }
     
     [Fact]
@@ -79,14 +79,14 @@ public class CpuAcceleratorTests : IDisposable
         var info = _accelerator.Info;
         var simdWidth = info.Capabilities["SimdWidth"];
         var supportedSets = info.Capabilities["SimdInstructionSets"] as IReadOnlySet<string>;
-        
+
         // Assert
-        simdWidth.Should().NotBeNull();
-        simdWidth.Should().BeOfType<int>();
-        ((int)simdWidth).Should().BeGreaterThan(0);
-        
-        supportedSets.Should().NotBeNull();
-        supportedSets.Should().NotBeEmpty();
+        _ = simdWidth.Should().NotBeNull();
+        _ = simdWidth.Should().BeOfType<int>();
+        _ = ((int)simdWidth).Should().BeGreaterThan(0);
+
+        _ = supportedSets.Should().NotBeNull();
+        _ = supportedSets.Should().NotBeEmpty();
     }
     
     [Fact]
@@ -94,9 +94,9 @@ public class CpuAcceleratorTests : IDisposable
     {
         // Act
         var threadCount = _accelerator.Info.Capabilities["ThreadCount"];
-        
+
         // Assert
-        threadCount!.Should().Be(Environment.ProcessorCount);
+        _ = threadCount!.Should().Be(Environment.ProcessorCount);
     }
     
     [Fact]
@@ -116,11 +116,11 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be("simple_add");
-        compiledKernel.Id.Should().NotBe(Guid.Empty);
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be("simple_add");
+        _ = compiledKernel.Id.Should().NotBe(Guid.Empty);
         
         // Cleanup
         await compiledKernel.DisposeAsync();
@@ -151,16 +151,16 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be("vector_add");
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be("vector_add");
         
         // Check if SIMD capabilities are noted in metadata (if available)
         var metadata = kernelDefinition.Metadata;
         if (metadata?.ContainsKey("SimdCapabilities") == true)
         {
-            metadata["SimdCapabilities"].Should().NotBeNull();
+            _ = metadata["SimdCapabilities"].Should().NotBeNull();
         }
         
         await compiledKernel.DisposeAsync();
@@ -175,7 +175,7 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act & Assert
         Func<Task> act = async () => await _accelerator.CompileKernelAsync(invalidKernel, options);
-        await act.Should().ThrowExactlyAsync<Exception>();
+        _ = await act.Should().ThrowExactlyAsync<Exception>();
     }
     
     [Theory]
@@ -198,10 +198,10 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be($"test_kernel_{level}");
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be($"test_kernel_{level}");
         
         await compiledKernel.DisposeAsync();
     }
@@ -211,11 +211,11 @@ public class CpuAcceleratorTests : IDisposable
     {
         // Act
         var synchronizeTask = _accelerator.SynchronizeAsync();
-        
+
         // Assert
-        synchronizeTask.Should().NotBeNull();
+        _ = synchronizeTask.Should().NotBeNull();
         await synchronizeTask;
-        synchronizeTask.IsCompleted.Should().BeTrue();
+        _ = synchronizeTask.IsCompleted.Should().BeTrue();
     }
     
     [Fact]
@@ -223,10 +223,10 @@ public class CpuAcceleratorTests : IDisposable
     {
         // Act
         var memoryManager = _accelerator.Memory;
-        
+
         // Assert
-        memoryManager.Should().NotBeNull();
-        memoryManager.Should().BeOfType<CpuMemoryManager>();
+        _ = memoryManager.Should().NotBeNull();
+        _ = memoryManager.Should().BeOfType<CpuMemoryManager>();
     }
     
     [Fact]
@@ -234,11 +234,11 @@ public class CpuAcceleratorTests : IDisposable
     {
         // Act
         var context = _accelerator.Context;
-        
+
         // Assert
-        context.Should().NotBeNull();
+        _ = context.Should().NotBeNull();
         // CPU context uses IntPtr.Zero as it doesn't require a specific context
-        context.DeviceId.Should().Be(0);
+        _ = context.DeviceId.Should().Be(0);
     }
     
     [Fact]
@@ -257,10 +257,10 @@ public class CpuAcceleratorTests : IDisposable
         // Act
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
         stopwatch.Stop();
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); // Should compile within 5 seconds
+        _ = compiledKernel.Should().NotBeNull();
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); // Should compile within 5 seconds
         
         await compiledKernel.DisposeAsync();
     }
@@ -275,7 +275,7 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act & Assert
         Func<Task> act = async () => await _accelerator.CompileKernelAsync(nullKernel!, options);
-        await act.Should().ThrowExactlyAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowExactlyAsync<ArgumentNullException>();
     }
     
     [Fact]
@@ -288,7 +288,7 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act & Assert
         Func<Task> act = async () => await _accelerator.CompileKernelAsync(kernelDefinition, nullOptions!);
-        await act.Should().ThrowExactlyAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowExactlyAsync<ArgumentNullException>();
     }
     
     [Fact]
@@ -307,10 +307,10 @@ public class CpuAcceleratorTests : IDisposable
         // Act
         var compilationTasks = kernels.Select(k => _accelerator.CompileKernelAsync(k, options).AsTask()).ToArray();
         var compiledKernels = await Task.WhenAll(compilationTasks);
-        
+
         // Assert
-        compiledKernels.Should().HaveCount(5);
-        compiledKernels.Should().OnlyContain(k => k != null);
+        _ = compiledKernels.Should().HaveCount(5);
+        _ = compiledKernels.Should().OnlyContain(k => k != null);
         
         // Cleanup
         await Task.WhenAll(compiledKernels.Select(k => k.DisposeAsync().AsTask()));
@@ -323,16 +323,16 @@ public class CpuAcceleratorTests : IDisposable
         var capabilities = _accelerator.Info.Capabilities;
         var instructionSets = capabilities["SimdInstructionSets"] as IReadOnlySet<string>;
         var vectorWidth = capabilities["SimdWidth"];
-        
+
         // Assert
-        instructionSets.Should().NotBeNull();
-        vectorWidth.Should().NotBeNull();
+        _ = instructionSets.Should().NotBeNull();
+        _ = vectorWidth.Should().NotBeNull();
         
         // Should contain at least basic instruction set information
         if (SimdCapabilities.IsSupported)
         {
-            instructionSets!.Should().NotBeEmpty();
-            ((int)vectorWidth!).Should().BeGreaterThan(0);
+            _ = instructionSets!.Should().NotBeEmpty();
+            _ = ((int)vectorWidth!).Should().BeGreaterThan(0);
         }
     }
     
@@ -354,10 +354,10 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act
         await using var accelerator = new CpuAccelerator(acceleratorOptions, threadPoolOptions, _logger);
-        
+
         // Assert
-        accelerator.Should().NotBeNull();
-        accelerator.Type.Should().Be(AcceleratorType.CPU);
+        _ = accelerator.Should().NotBeNull();
+        _ = accelerator.Type.Should().Be(AcceleratorType.CPU);
     }
     
     [Fact]
@@ -370,9 +370,9 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act
         await accelerator.DisposeAsync();
-        
+
         // Assert
-        accelerator.IsDisposed.Should().BeTrue();
+        _ = accelerator.IsDisposed.Should().BeTrue();
     }
     
     public void Dispose()

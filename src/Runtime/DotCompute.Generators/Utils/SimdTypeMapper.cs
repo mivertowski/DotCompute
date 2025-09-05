@@ -135,8 +135,7 @@ public static class SimdTypeMapper
         ArgumentValidation.ThrowIfNullOrEmpty(elementType);
         
         config ??= new SimdConfiguration();
-        
-        var elementSize = GetElementSizeInBytes(elementType);
+        _ = GetElementSizeInBytes(elementType);
         var targetBits = config.DefaultVectorBitWidth;
         
         // Check hardware support

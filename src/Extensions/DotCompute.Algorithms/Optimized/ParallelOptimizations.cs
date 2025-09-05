@@ -68,7 +68,7 @@ public static class ParallelOptimizations
             }
 
 
-            var workerId = Thread.CurrentThread.ManagedThreadId % _queues.Length;
+            var workerId = Environment.CurrentManagedThreadId % _queues.Length;
             _queues[workerId].Enqueue(task);
         }
 
@@ -119,11 +119,10 @@ public static class ParallelOptimizations
 
             while (!token.IsCancellationRequested)
             {
-                Action? task = null;
 
                 // Try to dequeue from local queue
 
-                if (queue.TryDequeue(out task) && task != null)
+                if (queue.TryDequeue(out var task) && task != null)
                 {
                     ExecuteTask(task);
                     continue;
@@ -657,7 +656,7 @@ public static class ParallelOptimizations
     {
         var aSpan = a.AsSpan();
         var bSpan = b.AsSpan();
-        var resultSpan = result.AsSpan();
+        _ = result.AsSpan();
 
 
         for (var i = iStart; i < iEnd; i++)

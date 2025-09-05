@@ -140,7 +140,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         }
         finally
         {
-            _deviceDiscoverySemaphore.Release();
+            _ = _deviceDiscoverySemaphore.Release();
         }
     }
 
@@ -491,8 +491,8 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             Environment.ProcessorCount + " Core CPU",
             Environment.Version.ToString(),
             GetSystemMemory());
-        
-        _deviceCache.TryAdd("CPU_0", cpuInfo);
+
+        _ = _deviceCache.TryAdd("CPU_0", cpuInfo);
         
         // Discover other devices through backend-specific APIs
         // This would involve calling into CUDA, OpenCL, etc. APIs - TODO

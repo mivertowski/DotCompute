@@ -141,8 +141,8 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
     {
         directoryName ??= $"temp_{Guid.NewGuid():N}";
         var dirPath = Path.Combine(TempDirectory, directoryName);
-        
-        Directory.CreateDirectory(dirPath);
+
+        _ = Directory.CreateDirectory(dirPath);
         
         return dirPath;
     }
@@ -194,7 +194,7 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
     private static string CreateTempDirectory()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "DotCompute.Tests", $"fixture_{Guid.NewGuid():N}");
-        Directory.CreateDirectory(tempDir);
+        _ = Directory.CreateDirectory(tempDir);
         return tempDir;
     }
     

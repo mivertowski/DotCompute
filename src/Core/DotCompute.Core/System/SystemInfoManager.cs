@@ -23,9 +23,9 @@ public sealed partial class SystemInfoManager : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _monitoringTimer = new Timer(UpdateSystemInfo, null, Timeout.Infinite, Timeout.Infinite);
-        
+
         // Get initial system info
-        RefreshSystemInfo();
+        _ = RefreshSystemInfo();
     }
 
     /// <summary>
@@ -45,7 +45,7 @@ public sealed partial class SystemInfoManager : IDisposable
 
 
         _isMonitoring = true;
-        _monitoringTimer.Change(TimeSpan.Zero, interval);
+        _ = _monitoringTimer.Change(TimeSpan.Zero, interval);
         _logger.LogInformation("Started system monitoring with {Interval}s interval", interval.TotalSeconds);
     }
 
@@ -61,7 +61,7 @@ public sealed partial class SystemInfoManager : IDisposable
 
 
         _isMonitoring = false;
-        _monitoringTimer.Change(Timeout.Infinite, Timeout.Infinite);
+        _ = _monitoringTimer.Change(Timeout.Infinite, Timeout.Infinite);
         _logger.LogInformation("Stopped system monitoring");
     }
 
@@ -573,11 +573,11 @@ public sealed partial class SystemInfoManager : IDisposable
                 }
                 else if (line.StartsWith("processor"))
                 {
-                    processors.Add(line.Split(':', 2)[1].Trim());
+                    _ = processors.Add(line.Split(':', 2)[1].Trim());
                 }
                 else if (line.StartsWith("physical id"))
                 {
-                    physicalIds.Add(line.Split(':', 2)[1].Trim());
+                    _ = physicalIds.Add(line.Split(':', 2)[1].Trim());
                 }
                 else if (line.StartsWith("flags") && string.IsNullOrEmpty(info.Features))
                 {
@@ -697,10 +697,10 @@ public sealed partial class SystemInfoManager : IDisposable
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            
-            process.Start();
+
+            _ = process.Start();
             var output = process.StandardOutput.ReadToEnd();
-            process.WaitForExit(1000);
+            _ = process.WaitForExit(1000);
             
             return output;
         }
@@ -727,7 +727,7 @@ public sealed partial class SystemInfoManager : IDisposable
     {
         try
         {
-            RefreshSystemInfo();
+            _ = RefreshSystemInfo();
         }
         catch (Exception ex)
         {

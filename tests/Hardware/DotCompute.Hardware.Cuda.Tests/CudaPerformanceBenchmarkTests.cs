@@ -100,7 +100,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             using var memoryTracker = new MemoryTracker(Output);
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             await LogDeviceCapabilities();
             
@@ -161,11 +161,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Peak Bandwidth: {peakBandwidthGBps:F1} GB/s");
             Output.WriteLine($"  Theoretical Max: {expectedBandwidth:F1} GB/s");
             Output.WriteLine($"  Efficiency: {achievedRatio:P1}");
-            
+
             // Performance validations
-            avgBandwidthGBps.Should().BeGreaterThan(50, "Should achieve reasonable memory bandwidth");
-            achievedRatio.Should().BeGreaterThan(0.3, "Should achieve at least 30% of theoretical bandwidth");
-            peakBandwidthGBps.Should().BeGreaterThan(avgBandwidthGBps, "Peak should exceed average");
+            _ = avgBandwidthGBps.Should().BeGreaterThan(50, "Should achieve reasonable memory bandwidth");
+            _ = achievedRatio.Should().BeGreaterThan(0.3, "Should achieve at least 30% of theoretical bandwidth");
+            _ = peakBandwidthGBps.Should().BeGreaterThan(avgBandwidthGBps, "Peak should exceed average");
             
             memoryTracker.LogCurrentUsage("After benchmark");
         }
@@ -176,7 +176,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 1024 * 1024; // 1M elements
             const int iterations = 10;
@@ -237,9 +237,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Average Time: {avgTime * 1000:F2} ms");
             Output.WriteLine($"  Performance: {gflops:F2} GFLOPS");
             Output.WriteLine($"  Verification: {significantDifferences}/1000 elements changed significantly");
-            
-            gflops.Should().BeGreaterThan(1.0, "Should achieve reasonable compute performance");
-            significantDifferences.Should().BeGreaterThan(900, "Most elements should be modified by computation");
+
+            _ = gflops.Should().BeGreaterThan(1.0, "Should achieve reasonable compute performance");
+            _ = significantDifferences.Should().BeGreaterThan(900, "Most elements should be modified by computation");
         }
 
         [SkippableFact]
@@ -248,7 +248,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             var matrixSizes = new[] { 512, 1024, 2048 };
             
@@ -326,7 +326,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                     }
                     
                     var actual = hostResult[row * matrixSize + col];
-                    Math.Abs(actual - expected).Should().BeLessThan(0.01f, 
+                    _ = Math.Abs(actual - expected).Should().BeLessThan(0.01f,
                         $"Matrix multiply result incorrect at ({row},{col})");
                 }
             }
@@ -346,8 +346,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                 2048 => 1000.0, // Should achieve high performance
                 _ => 50.0
             };
-            
-            avgGflops.Should().BeGreaterThan(expectedMinGflops, 
+
+            _ = avgGflops.Should().BeGreaterThan(expectedMinGflops,
                 $"Matrix multiply should achieve reasonable performance for {matrixSize}x{matrixSize}");
         }
 
@@ -357,7 +357,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             var transferSizes = new[] { 1, 4, 16, 64, 256 }; // MB
             const int iterations = 10;
@@ -414,8 +414,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // Performance validations for larger transfers
                 if (sizeMB >= 16)
                 {
-                    h2dBandwidth.Should().BeGreaterThan(2.0, $"H2D bandwidth should be reasonable for {sizeMB}MB");
-                    d2hBandwidth.Should().BeGreaterThan(2.0, $"D2H bandwidth should be reasonable for {sizeMB}MB");
+                    _ = h2dBandwidth.Should().BeGreaterThan(2.0, $"H2D bandwidth should be reasonable for {sizeMB}MB");
+                    _ = d2hBandwidth.Should().BeGreaterThan(2.0, $"D2H bandwidth should be reasonable for {sizeMB}MB");
                 }
             }
         }
@@ -427,7 +427,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await HasMinimumComputeCapability(2, 0), "Concurrent streams require compute capability 2.0+");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 1024 * 1024;
             const int numStreams = 4;
@@ -496,11 +496,13 @@ namespace DotCompute.Hardware.Cuda.Tests
                         {
                             await deviceBuffersA[streamIndex].CopyFromAsync(hostDataA[streamIndex].AsMemory());
                             await deviceBuffersB[streamIndex].CopyFromAsync(hostDataB[streamIndex].AsMemory());
-                            var args = new KernelArguments();
-                            args.Add(deviceBuffersA[streamIndex]);
-                            args.Add(deviceBuffersB[streamIndex]);
-                            args.Add(deviceBuffersC[streamIndex]);
-                            args.Add(elementCount);
+                            var args = new KernelArguments
+                            {
+                                deviceBuffersA[streamIndex],
+                                deviceBuffersB[streamIndex],
+                                deviceBuffersC[streamIndex],
+                                elementCount
+                            };
                             await kernel.LaunchAsync(
                                 (launchConfig.GridSize.X, launchConfig.GridSize.Y, launchConfig.GridSize.Z),
                                 (launchConfig.BlockSize.X, launchConfig.BlockSize.Y, launchConfig.BlockSize.Z),
@@ -523,9 +525,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine($"  Sequential time: {avgSequential * 1000:F2} ms");
                 Output.WriteLine($"  Concurrent time: {avgConcurrent * 1000:F2} ms");
                 Output.WriteLine($"  Speedup: {speedup:F2}x");
-                
+
                 // Should see some benefit from concurrency
-                speedup.Should().BeGreaterThan(1.1, "Concurrent streams should provide some performance benefit");
+                _ = speedup.Should().BeGreaterThan(1.1, "Concurrent streams should provide some performance benefit");
             }
             finally
             {

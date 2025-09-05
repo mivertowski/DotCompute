@@ -390,7 +390,8 @@ namespace DotCompute.Backends.CUDA.Factory
         private ProductionConfiguration DetermineOptimalConfiguration(CudaDeviceInfo device)
         {
             // Start with default configuration
-            var config = ProductionConfiguration.Default;
+            _ = ProductionConfiguration.Default;
+            ProductionConfiguration? config;
 
             // Adjust based on compute capability
             if (device.Major >= 7) // Volta and newer

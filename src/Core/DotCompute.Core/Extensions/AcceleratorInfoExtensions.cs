@@ -30,9 +30,13 @@ namespace DotCompute.Core.Extensions
         {
             // L2 cache size estimates based on typical GPU architectures
             if (info.DeviceType == "CPU")
+            {
+
                 return 8 * 1024 * 1024; // 8 MB for CPUs
-            
+            }
+
             // For GPUs, estimate based on compute capability or use reasonable defaults
+
             if (info.ComputeCapability != null)
             {
                 var major = info.ComputeCapability.Major;
@@ -54,9 +58,13 @@ namespace DotCompute.Core.Extensions
         public static double MemoryBandwidthGBps(this AcceleratorInfo info)
         {
             if (info.DeviceType == "CPU")
+            {
+
                 return 100.0; // Typical DDR4/DDR5 bandwidth
+            }
 
             // GPU memory bandwidth estimates based on compute capability
+
             if (info.ComputeCapability != null)
             {
                 var major = info.ComputeCapability.Major;
@@ -78,9 +86,13 @@ namespace DotCompute.Core.Extensions
         public static int MemoryBusWidth(this AcceleratorInfo info)
         {
             if (info.DeviceType == "CPU")
+            {
+
                 return 128; // Typical CPU memory bus width
+            }
 
             // GPU memory bus width estimates
+
             if (info.ComputeCapability != null)
             {
                 var major = info.ComputeCapability.Major;
@@ -102,9 +114,13 @@ namespace DotCompute.Core.Extensions
         public static int MemoryClockRate(this AcceleratorInfo info)
         {
             if (info.DeviceType == "CPU")
+            {
+
                 return 3200; // DDR4-3200 equivalent
+            }
 
             // GPU memory clock estimates
+
             if (info.ComputeCapability != null)
             {
                 var major = info.ComputeCapability.Major;
@@ -135,9 +151,13 @@ namespace DotCompute.Core.Extensions
         public static int EstimatedCudaCores(this AcceleratorInfo info)
         {
             if (info.DeviceType == "CPU")
+            {
+
                 return info.MaxComputeUnits; // CPU cores
+            }
 
             // CUDA cores per SM based on compute capability
+
             var coresPerSM = info.ComputeCapability?.Major switch
             {
                 8 => 128,  // Ampere architecture
@@ -165,13 +185,21 @@ namespace DotCompute.Core.Extensions
         public static int ClockRate(this AcceleratorInfo info)
         {
             if (info.MaxClockFrequency > 0)
+            {
+
                 return info.MaxClockFrequency;
+            }
 
             // Provide reasonable defaults based on device type
+
             if (info.DeviceType == "CPU")
+            {
+
                 return 3000; // 3 GHz typical
+            }
 
             // GPU clock rate estimates
+
             if (info.ComputeCapability != null)
             {
                 var major = info.ComputeCapability.Major;
@@ -197,10 +225,18 @@ namespace DotCompute.Core.Extensions
         public static string ArchitectureGeneration(this AcceleratorInfo info)
         {
             if (info.DeviceType == "CPU")
+            {
+
                 return "x86_64";
+            }
+
 
             if (info.ComputeCapability == null)
+            {
+
                 return "Unknown";
+            }
+
 
             var major = info.ComputeCapability.Major;
             return major switch
@@ -250,9 +286,13 @@ namespace DotCompute.Core.Extensions
         public static bool SupportsConcurrentKernels(this AcceleratorInfo info)
         {
             if (info.DeviceType == "CPU")
+            {
+
                 return true; // CPUs support concurrent execution
+            }
 
             // Most modern GPUs support concurrent kernels
+
             return info.ComputeCapability?.Major >= 6;
         }
 
@@ -271,10 +311,18 @@ namespace DotCompute.Core.Extensions
         {
             // Ray tracing support started with Turing (7.5) and Ada Lovelace
             if (info.ComputeCapability?.Major == 7 && info.ComputeCapability?.Minor >= 5)
+            {
                 return true;
+            }
+
+
             if (info.ComputeCapability?.Major >= 8)
+            {
+
                 return true;
-            
+            }
+
+
             return false;
         }
 

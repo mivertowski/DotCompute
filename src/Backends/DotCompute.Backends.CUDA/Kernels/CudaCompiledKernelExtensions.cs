@@ -76,7 +76,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             // Ada generation (RTX 2000 series) optimizations
             var warpSize = props.WarpSize;
             var maxThreadsPerBlock = props.MaxThreadsPerBlock;
-            var multiprocessorCount = props.MultiProcessorCount;
+            _ = props.MultiProcessorCount;
 
             // For Ada, we can use larger blocks more efficiently
             var optimalBlockSize = Math.Min(512, maxThreadsPerBlock); // Ada handles 512-thread blocks well

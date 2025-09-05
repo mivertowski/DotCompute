@@ -245,7 +245,7 @@ public sealed class PluginDiscoveryService : IPluginDiscovery
         {
             if (_loadedPlugins.TryGetValue(pluginId, out var plugin))
             {
-                _loadedPlugins.Remove(pluginId);
+                _ = _loadedPlugins.Remove(pluginId);
                 _logger.LogDebug("Unregistered loaded plugin {PluginId}", pluginId);
                 return plugin;
             }

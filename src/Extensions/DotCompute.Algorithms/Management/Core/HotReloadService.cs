@@ -77,7 +77,7 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
                     EnableRaisingEvents = true
                 };
                 pdbWatcher.Changed += OnAssemblyChanged;
-                _watchers.TryAdd(pdbPath, pdbWatcher);
+                _ = _watchers.TryAdd(pdbPath, pdbWatcher);
             }
 
             if (File.Exists(manifestPath))
@@ -88,10 +88,10 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
                     EnableRaisingEvents = true
                 };
                 manifestWatcher.Changed += OnAssemblyChanged;
-                _watchers.TryAdd(manifestPath, manifestWatcher);
+                _ = _watchers.TryAdd(manifestPath, manifestWatcher);
             }
 
-            _watchers.TryAdd(assemblyPath, watcher);
+            _ = _watchers.TryAdd(assemblyPath, watcher);
             LogHotReloadSetup(assemblyPath);
         }
         catch (Exception ex)

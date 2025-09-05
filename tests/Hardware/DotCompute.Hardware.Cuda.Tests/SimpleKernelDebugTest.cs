@@ -24,7 +24,7 @@ public class SimpleKernelDebugTest : CudaTestBase
         
         const int size = 256;
         var factory = new CudaAcceleratorFactory();
-        await using var accelerator = factory.CreateDefaultAccelerator();
+        await using var accelerator = factory.CreateProductionAccelerator(0);
         
         // Create GPU buffer
         await using var outputBuffer = await accelerator.Memory.AllocateAsync<float>(size);
@@ -72,8 +72,8 @@ public class SimpleKernelDebugTest : CudaTestBase
         Output.WriteLine($"First 10 results: {string.Join(", ", results.Take(10).Select(x => x.ToString("F1")))}");
         Output.WriteLine($"All zeros? {results.All(x => x == 0)}");
         Output.WriteLine($"All 42? {results.All(x => Math.Abs(x - 42.0f) < 0.001f)}");
-        
-        results.Should().AllSatisfy(x => x.Should().BeApproximately(42.0f, 0.001f));
+
+        _ = results.Should().AllSatisfy(x => x.Should().BeApproximately(42.0f, 0.001f));
     }
     
     [SkippableFact]
@@ -83,7 +83,7 @@ public class SimpleKernelDebugTest : CudaTestBase
         
         const int size = 256;
         var factory = new CudaAcceleratorFactory();
-        await using var accelerator = factory.CreateDefaultAccelerator();
+        await using var accelerator = factory.CreateProductionAccelerator(0);
         
         // Create test data
         var inputData = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
@@ -140,13 +140,14 @@ public class SimpleKernelDebugTest : CudaTestBase
         Output.WriteLine($"First 10 results: {string.Join(", ", results.Take(10).Select(x => x.ToString("F1")))}");
         Output.WriteLine($"All zeros? {results.All(x => x == 0)}");
         
-        for (int i = 0; i < Math.Min(10, size); i++)
+        for (var i = 0; i < Math.Min(10, size); i++)
         {
             var expected = inputData[i] * 2.0f;
             Output.WriteLine($"[{i}] Input: {inputData[i]:F1}, Expected: {expected:F1}, Got: {results[i]:F1}");
         }
-        
-        results.Should().BeEquivalentTo(inputData.Select(x => x * 2.0f), options => 
+
+        _ = results.Should().BeEquivalentTo(inputData.Select(x => x * 2.0f), options =>
+
             options.Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
                    .WhenTypeIs<float>());
     }

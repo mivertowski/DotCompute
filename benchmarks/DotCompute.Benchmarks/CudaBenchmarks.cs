@@ -48,7 +48,7 @@ public class CudaBenchmarks
     [Benchmark]
     public void CpuParallelVectorAddition()
     {
-        Parallel.For(0, DataSize, i =>
+        _ = Parallel.For(0, DataSize, i =>
         {
             _resultData[i] = _hostData[i] + _hostData[i];
         });
@@ -59,8 +59,8 @@ public class CudaBenchmarks
     {
         // Simulate GPU computation with some overhead
         Task.Delay(1).GetAwaiter().GetResult(); // Simulate kernel launch overhead
-        
-        Parallel.For(0, DataSize, i =>
+
+        _ = Parallel.For(0, DataSize, i =>
         {
             _resultData[i] = _hostData[i] + _hostData[i];
         });
@@ -147,9 +147,9 @@ public class CudaBenchmarks
                 matrixB[i][j] = i * j + 1;
             }
         }
-        
+
         // Simulate GPU computation (faster than CPU for large matrices)
-        Parallel.For(0, size, i =>
+        _ = Parallel.For(0, size, i =>
         {
             for (var j = 0; j < size; j++)
             {
@@ -207,7 +207,7 @@ public class CudaBenchmarks
         while (data.Length > 1)
         {
             var nextLevel = new float[(data.Length + 1) / 2];
-            Parallel.For(0, nextLevel.Length, i =>
+            _ = Parallel.For(0, nextLevel.Length, i =>
             {
                 var idx = i * 2;
                 nextLevel[i] = data[idx] + (idx + 1 < data.Length ? data[idx + 1] : 0);

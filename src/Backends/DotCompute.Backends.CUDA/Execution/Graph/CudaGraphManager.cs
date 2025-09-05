@@ -189,24 +189,24 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             var depHandles = dependencies?.Select(d => d.Handle).ToArray() ?? [];
 
             // Use driver API for memcpy node
-            var cudaParams = new CudaMemcpy3DParams
+            var cudaParams = new CudaMemcpy3DParms
             {
                 srcArray = IntPtr.Zero,
                 srcPos = new CudaPos { x = 0, y = 0, z = 0 },
-                srcPtr = new CudaMemcpy3DPeer { ptr = nodeParams.Source, pitch = 0, height = 0 },
+                srcPtr = nodeParams.Source,
                 dstArray = IntPtr.Zero,
                 dstPos = new CudaPos { x = 0, y = 0, z = 0 },
-                dstPtr = new CudaMemcpy3DPeer { ptr = nodeParams.Destination, pitch = 0, height = 0 },
-                extent = new CudaExtent3D { width = nodeParams.ByteCount, height = 1, depth = 1 }
+                dstPtr = nodeParams.Destination,
+                extent = new CudaExtent { width = nodeParams.ByteCount, height = 1, depth = 1 },
+                kind = CudaMemcpyKind.DeviceToDevice
             };
 
-            var result = CudaGraphExtensions.cuGraphAddMemcpyNode(
+            var result = CudaRuntime.cuGraphAddMemcpyNode(
                 ref nodeHandle,
                 graph.Handle,
                 depHandles,
-                (nuint)depHandles.Length,
-                ref cudaParams,
-                IntPtr.Zero);
+                (ulong)depHandles.Length,
+                ref cudaParams);
 
             CudaRuntime.CheckError(result, "adding memcpy node to graph");
 
@@ -250,13 +250,12 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 pitch = nodeParams.Pitch
             };
 
-            var result = CudaGraphExtensions.cuGraphAddMemsetNode(
-                ref nodeHandle,
+            var result = CudaRuntime.cuGraphAddMemsetNode(
+                out nodeHandle,
                 graph.Handle,
-                depHandles,
+                IntPtr.Zero,
                 (nuint)depHandles.Length,
-                ref cudaParams,
-                IntPtr.Zero);
+                ref cudaParams);
 
             CudaRuntime.CheckError(result, "adding memset node to graph");
 
@@ -299,11 +298,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
             var cudaParams = new CudaHostNodeParams
             {
-                fn = callbackPtr, // Use the original nint pointer directly
+                fn = hostFn,
                 userData = nodeParams.UserData
             };
 
-            var result = CudaGraphExtensions.cudaGraphAddHostNode(
+            var result = CudaRuntime.cudaGraphAddHostNode(
                 out nodeHandle,
                 graph.Handle,
                 IntPtr.Zero,
@@ -342,10 +341,10 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             var nodeHandle = IntPtr.Zero;
             var depHandles = dependencies?.Select(d => d.Handle).ToArray() ?? [];
 
-            var result = CudaGraphExtensions.cuGraphAddEventRecordNode(
-                ref nodeHandle,
+            var result = CudaRuntime.cuGraphAddEventRecordNode(
+                out nodeHandle,
                 graph.Handle,
-                depHandles,
+                IntPtr.Zero,
                 (nuint)depHandles.Length,
                 eventHandle);
 
@@ -380,10 +379,10 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             var nodeHandle = IntPtr.Zero;
             var depHandles = dependencies?.Select(d => d.Handle).ToArray() ?? [];
 
-            var result = CudaGraphExtensions.cuGraphAddEventWaitNode(
-                ref nodeHandle,
+            var result = CudaRuntime.cuGraphAddEventWaitNode(
+                out nodeHandle,
                 graph.Handle,
-                depHandles,
+                IntPtr.Zero,
                 (nuint)depHandles.Length,
                 eventHandle);
 
@@ -419,10 +418,10 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             var nodeHandle = IntPtr.Zero;
             var depHandles = dependencies?.Select(d => d.Handle).ToArray() ?? [];
 
-            var result = CudaGraphExtensions.cuGraphAddChildGraphNode(
-                ref nodeHandle,
+            var result = CudaRuntime.cuGraphAddChildGraphNode(
+                out nodeHandle,
                 parentGraph.Handle,
-                depHandles,
+                IntPtr.Zero,
                 (nuint)depHandles.Length,
                 childGraph.Handle);
 
@@ -514,31 +513,31 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 // Record start event
                 var startEvent = IntPtr.Zero;
                 var endEvent = IntPtr.Zero;
-                CudaRuntime.cudaEventCreate(ref startEvent);
-                CudaRuntime.cudaEventCreate(ref endEvent);
+                _ = CudaRuntime.cudaEventCreate(ref startEvent);
+                _ = CudaRuntime.cudaEventCreate(ref endEvent);
 
-                CudaRuntime.cudaEventRecord(startEvent, stream);
+                _ = CudaRuntime.cudaEventRecord(startEvent, stream);
 
                 // Launch the graph
                 var result = CudaRuntime.cudaGraphLaunch(executable.Handle, stream);
                 CudaRuntime.CheckError(result, "launching graph");
 
                 // Record end event
-                CudaRuntime.cudaEventRecord(endEvent, stream);
+                _ = CudaRuntime.cudaEventRecord(endEvent, stream);
 
                 // Wait for completion if not cancelled
                 await Task.Run(() =>
                 {
-                    CudaRuntime.cudaStreamSynchronize(stream);
+                    _ = CudaRuntime.cudaStreamSynchronize(stream);
                 }, cancellationToken);
 
                 // Calculate execution time
                 float elapsedMs = 0;
-                CudaRuntime.cudaEventElapsedTime(ref elapsedMs, startEvent, endEvent);
+                _ = CudaRuntime.cudaEventElapsedTime(ref elapsedMs, startEvent, endEvent);
 
                 // Clean up events
-                CudaRuntime.cudaEventDestroy(startEvent);
-                CudaRuntime.cudaEventDestroy(endEvent);
+                _ = CudaRuntime.cudaEventDestroy(startEvent);
+                _ = CudaRuntime.cudaEventDestroy(endEvent);
 
                 var executionResult = new GraphExecutionResult
                 {
@@ -627,7 +626,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             }
 
             var cloneHandle = IntPtr.Zero;
-            var result = CudaGraphExtensions.cuGraphClone(ref cloneHandle, sourceGraph.Handle);
+            var result = CudaRuntime.cuGraphClone(out cloneHandle, sourceGraph.Handle);
             CudaRuntime.CheckError(result, "cloning graph");
 
             var clonedGraph = new CudaGraph
@@ -704,22 +703,22 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             ArgumentNullException.ThrowIfNull(graph);
 
             var dot = new System.Text.StringBuilder();
-            dot.AppendLine($"digraph {graph.Name} {{");
-            dot.AppendLine("  rankdir=TB;");
-            dot.AppendLine("  node [shape=box];");
+            _ = dot.AppendLine($"digraph {graph.Name} {{");
+            _ = dot.AppendLine("  rankdir=TB;");
+            _ = dot.AppendLine("  node [shape=box];");
 
             foreach (var node in graph.Nodes)
             {
                 var label = $"{node.Type}\\n{node.Id.Substring(0, 8)}";
-                dot.AppendLine($"  \"{node.Id}\" [label=\"{label}\"];");
+                _ = dot.AppendLine($"  \"{node.Id}\" [label=\"{label}\"];");
 
                 foreach (var dep in node.Dependencies)
                 {
-                    dot.AppendLine($"  \"{dep.Id}\" -> \"{node.Id}\";");
+                    _ = dot.AppendLine($"  \"{dep.Id}\" -> \"{node.Id}\";");
                 }
             }
 
-            dot.AppendLine("}");
+            _ = dot.AppendLine("}");
             return dot.ToString();
         }
 
@@ -739,13 +738,13 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                     }
                 }
 
-                CudaRuntime.cudaGraphDestroy(graph.Handle);
+                _ = CudaRuntime.cudaGraphDestroy(graph.Handle);
                 _logger.LogInformation("Destroyed graph '{GraphName}'", graphName);
             }
 
             if (_executables.TryRemove(graphName, out var executable))
             {
-                CudaRuntime.cuGraphExecDestroy(executable.Handle);
+                _ = CudaRuntime.cuGraphExecDestroy(executable.Handle);
                 _logger.LogDebug("Destroyed graph executable for '{GraphName}'", graphName);
             }
         }
@@ -780,7 +779,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 }
 
 
-                visited.Add(node.Id);
+                _ = visited.Add(node.Id);
                 
                 var maxDepPath = node.Dependencies.Count > 0
                     ? node.Dependencies.Max(d => CalculatePathLength(d))
@@ -899,7 +898,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
         private void UpdateStatistics(string graphName, Action<Types.GraphStatistics> update)
         {
-            _statistics.AddOrUpdate(graphName,
+            _ = _statistics.AddOrUpdate(graphName,
                 _ =>
                 {
                     var stats = new Types.GraphStatistics { Name = graphName };
@@ -972,7 +971,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         {
             if (!_disposed)
             {
-                EndCapture();
+                _ = EndCapture();
             }
         }
     }

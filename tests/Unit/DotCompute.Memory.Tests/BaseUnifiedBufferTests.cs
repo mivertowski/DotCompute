@@ -20,12 +20,12 @@ public class BaseUnifiedBufferTests
     {
         // Arrange & Act
         using var buffer = new TestUnifiedBuffer<double>(512); // 64 elements
-        
+
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.MemoryType.Should().Be(MemoryType.Unified);
-        buffer.SizeInBytes.Should().Be(512);
-        buffer.Length.Should().Be(64); // 512 bytes / 8 bytes per double
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.MemoryType.Should().Be(MemoryType.Unified);
+        _ = buffer.SizeInBytes.Should().Be(512);
+        _ = buffer.Length.Should().Be(64); // 512 bytes / 8 bytes per double
     }
     
     [Fact]
@@ -37,11 +37,11 @@ public class BaseUnifiedBufferTests
         
         // Act
         using var buffer = new TestUnifiedBuffer<int>(existingPointer, 256);
-        
+
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.SizeInBytes.Should().Be(256);
-        buffer.MemoryType.Should().Be(MemoryType.Unified);
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.SizeInBytes.Should().Be(256);
+        _ = buffer.MemoryType.Should().Be(MemoryType.Unified);
     }
     
     [Fact]
@@ -53,10 +53,10 @@ public class BaseUnifiedBufferTests
         
         // Act
         var slice = buffer.Slice(4, 8); // Get middle 8 elements
-        
+
         // Assert
-        slice.Should().NotBeNull();
-        slice.Should().BeSameAs(buffer); // Test implementation returns self
+        _ = slice.Should().NotBeNull();
+        _ = slice.Should().BeSameAs(buffer); // Test implementation returns self
     }
     
     [Theory]
@@ -72,7 +72,7 @@ public class BaseUnifiedBufferTests
         
         // Act & Assert
         Action act = () => buffer.Slice(start, length);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
     
     [Fact]
@@ -87,11 +87,11 @@ public class BaseUnifiedBufferTests
         var readOnlySpan = buffer.AsReadOnlySpan();
         var memory = buffer.Memory;
         var devicePtr = buffer.DevicePointer;
-        
+
         // Assert
-        span.Length.Should().BeGreaterThan(0);
-        readOnlySpan.Length.Should().BeGreaterThan(0);
-        memory.Should().NotBeNull();
-        devicePtr.Should().Be(IntPtr.Zero); // Test implementation returns Zero
+        _ = span.Length.Should().BeGreaterThan(0);
+        _ = readOnlySpan.Length.Should().BeGreaterThan(0);
+        _ = memory.Should().NotBeNull();
+        _ = devicePtr.Should().Be(IntPtr.Zero); // Test implementation returns Zero
     }
 }

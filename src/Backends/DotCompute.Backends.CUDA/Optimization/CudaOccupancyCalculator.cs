@@ -87,10 +87,11 @@ namespace DotCompute.Backends.CUDA.Optimization
             
             // Get kernel attributes
             var kernelAttrs = await GetKernelAttributesAsync(kernelFunc);
-            
+
             // Calculate optimal block size
+
             var error = cudaOccupancyMaxPotentialBlockSize(
-                out var minGridSize,
+                out _,
                 out var blockSize,
                 kernelFunc,
                 dynamicSharedMemory,
@@ -428,52 +429,52 @@ namespace DotCompute.Backends.CUDA.Optimization
             var props = new DeviceProperties { DeviceId = deviceId };
 
             // Get all relevant device attributes
-            cudaDeviceGetAttribute(out var value, CudaDeviceAttribute.MaxThreadsPerBlock, deviceId);
+            _ = cudaDeviceGetAttribute(out var value, CudaDeviceAttribute.MaxThreadsPerBlock, deviceId);
             props.MaxThreadsPerBlock = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxBlockDimX, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxBlockDimX, deviceId);
             props.MaxBlockDimX = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxBlockDimY, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxBlockDimY, deviceId);
             props.MaxBlockDimY = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxBlockDimZ, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxBlockDimZ, deviceId);
             props.MaxBlockDimZ = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxGridDimX, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxGridDimX, deviceId);
             props.MaxGridSize = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.WarpSize, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.WarpSize, deviceId);
             props.WarpSize = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxRegistersPerBlock, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxRegistersPerBlock, deviceId);
             props.RegistersPerBlock = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxRegistersPerMultiprocessor, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxRegistersPerMultiprocessor, deviceId);
             props.RegistersPerMultiprocessor = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxSharedMemoryPerBlock, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxSharedMemoryPerBlock, deviceId);
             props.SharedMemoryPerBlock = (nuint)value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxSharedMemoryPerMultiprocessor, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxSharedMemoryPerMultiprocessor, deviceId);
             props.SharedMemoryPerMultiprocessor = (nuint)value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MultiprocessorCount, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MultiprocessorCount, deviceId);
             props.MultiprocessorCount = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxBlocksPerMultiprocessor, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxBlocksPerMultiprocessor, deviceId);
             props.MaxBlocksPerMultiprocessor = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxWarpsPerMultiprocessor, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxWarpsPerMultiprocessor, deviceId);
             props.MaxWarpsPerMultiprocessor = value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.ComputeCapabilityMajor, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.ComputeCapabilityMajor, deviceId);
             props.ComputeCapability = value * 10;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.ComputeCapabilityMinor, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.ComputeCapabilityMinor, deviceId);
             props.ComputeCapability += value;
 
-            cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxDeviceDepth, deviceId);
+            _ = cudaDeviceGetAttribute(out value, CudaDeviceAttribute.MaxDeviceDepth, deviceId);
             props.MaxDeviceDepth = value;
 
             _devicePropertiesCache[deviceId] = props;

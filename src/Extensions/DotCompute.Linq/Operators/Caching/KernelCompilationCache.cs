@@ -27,21 +27,21 @@ internal static class KernelCompilationCache
     public static string GenerateCacheKey(KernelCompilationRequest request)
     {
         var keyBuilder = new StringBuilder();
-        keyBuilder.Append(request.Name);
-        keyBuilder.Append('|');
-        keyBuilder.Append(request.Language);
-        keyBuilder.Append('|');
-        keyBuilder.Append(request.OptimizationLevel);
-        keyBuilder.Append('|');
-        keyBuilder.Append(request.TargetAccelerator?.Info.Name ?? "CPU");
-        keyBuilder.Append('|');
+        _ = keyBuilder.Append(request.Name);
+        _ = keyBuilder.Append('|');
+        _ = keyBuilder.Append(request.Language);
+        _ = keyBuilder.Append('|');
+        _ = keyBuilder.Append(request.OptimizationLevel);
+        _ = keyBuilder.Append('|');
+        _ = keyBuilder.Append(request.TargetAccelerator?.Info.Name ?? "CPU");
+        _ = keyBuilder.Append('|');
         
         // Hash the source code to keep the key manageable
         using var sha256 = SHA256.Create();
         var sourceBytes = Encoding.UTF8.GetBytes(request.Source);
         var hashBytes = sha256.ComputeHash(sourceBytes);
         var sourceHash = Convert.ToBase64String(hashBytes);
-        keyBuilder.Append(sourceHash);
+        _ = keyBuilder.Append(sourceHash);
 
         return keyBuilder.ToString();
     }
@@ -65,7 +65,7 @@ internal static class KernelCompilationCache
             else
             {
                 // The kernel was garbage collected, remove the stale entry
-                _cache.TryRemove(cacheKey, out _);
+                _ = _cache.TryRemove(cacheKey, out _);
             }
         }
 

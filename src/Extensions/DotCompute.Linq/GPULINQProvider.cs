@@ -355,11 +355,12 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
     [RequiresUnreferencedCode("Creating instances may require unreferenced code")]
     private static object? ExtractSingleValue(object buffer, Type expectedType)
     {
-        if (buffer is IUnifiedMemoryBuffer memoryBuffer)
+
+        if (buffer is IUnifiedMemoryBuffer)
         {
             // Read single value from device memory
-            var elementSize = GetElementSize(expectedType);
-            var hostArray = Array.CreateInstance(expectedType, 1);
+            _ = GetElementSize(expectedType);
+            _ = Array.CreateInstance(expectedType, 1);
 
             // This would need to be implemented based on the actual memory buffer type
             // For now, return a default value
@@ -372,7 +373,8 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
     [RequiresDynamicCode("Array.CreateInstance requires dynamic code")]
     private static object? ExtractArrayResult(object buffer, Type expectedType)
     {
-        if (buffer is IUnifiedMemoryBuffer memoryBuffer)
+
+        if (buffer is IUnifiedMemoryBuffer)
         {
             // This would need proper implementation to read from device memory
             // For now, return empty array of the expected type

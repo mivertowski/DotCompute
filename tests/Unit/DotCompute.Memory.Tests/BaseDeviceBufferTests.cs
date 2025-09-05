@@ -24,13 +24,13 @@ public class BaseDeviceBufferTests
         
         // Act
         using var buffer = new TestDeviceBuffer<float>(accelerator, 1024);
-        
+
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.MemoryType.Should().Be(MemoryType.Device);
-        buffer.Accelerator.Should().BeSameAs(accelerator);
-        buffer.SizeInBytes.Should().Be(1024);
-        buffer.Length.Should().Be(256); // 1024 bytes / 4 bytes per float
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.MemoryType.Should().Be(MemoryType.Device);
+        _ = buffer.Accelerator.Should().BeSameAs(accelerator);
+        _ = buffer.SizeInBytes.Should().Be(1024);
+        _ = buffer.Length.Should().Be(256); // 1024 bytes / 4 bytes per float
     }
     
     [Theory]
@@ -45,10 +45,10 @@ public class BaseDeviceBufferTests
         
         // Act
         using var buffer = new TestDeviceBuffer<int>(accelerator, 512, memoryType);
-        
+
         // Assert
-        buffer.MemoryType.Should().Be(memoryType);
-        buffer.State.Should().Be(BufferState.Allocated);
+        _ = buffer.MemoryType.Should().Be(memoryType);
+        _ = buffer.State.Should().Be(BufferState.Allocated);
     }
     
     [Fact]
@@ -62,9 +62,9 @@ public class BaseDeviceBufferTests
         // Act & Assert
         Action spanAccess = () => buffer.AsSpan();
         Action readOnlySpanAccess = () => buffer.AsReadOnlySpan();
-        
-        spanAccess.Should().Throw<NotSupportedException>("device buffers don't support direct span access");
-        readOnlySpanAccess.Should().Throw<NotSupportedException>("device buffers don't support direct span access");
+
+        _ = spanAccess.Should().Throw<NotSupportedException>("device buffers don't support direct span access");
+        _ = readOnlySpanAccess.Should().Throw<NotSupportedException>("device buffers don't support direct span access");
     }
     
     [Fact]
@@ -77,9 +77,9 @@ public class BaseDeviceBufferTests
         
         // Act
         buffer.Dispose();
-        
+
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
-        buffer.State.Should().Be(BufferState.Disposed);
+        _ = buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.State.Should().Be(BufferState.Disposed);
     }
 }

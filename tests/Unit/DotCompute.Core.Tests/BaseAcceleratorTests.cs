@@ -58,11 +58,11 @@ public class BaseAcceleratorTests : IDisposable
     public void Constructor_InitializesProperties_Correctly()
     {
         // Assert
-        _accelerator.Info.Should().NotBeNull();
-        _accelerator.Type.Should().Be(AcceleratorType.CPU);
-        _accelerator.Memory.Should().Be(_mockMemory.Object);
-        _accelerator.IsDisposed.Should().BeFalse();
-        _accelerator.Context.Should().NotBeNull();
+        _ = _accelerator.Info.Should().NotBeNull();
+        _ = _accelerator.Type.Should().Be(AcceleratorType.CPU);
+        _ = _accelerator.Memory.Should().Be(_mockMemory.Object);
+        _ = _accelerator.IsDisposed.Should().BeFalse();
+        _ = _accelerator.Context.Should().NotBeNull();
     }
     
     [Theory]
@@ -83,13 +83,13 @@ public class BaseAcceleratorTests : IDisposable
         // Act
         var accelerator = new TestAccelerator(info, mockMemory.Object, mockLogger.Object);
         _accelerators.Add(accelerator);
-        
+
         // Assert
-        accelerator.Info.Name.Should().Be(name);
-        accelerator.Type.Should().Be(type);
-        accelerator.Memory.Should().Be(mockMemory.Object);
-        accelerator.IsDisposed.Should().BeFalse();
-        accelerator.InitializeCoreCalled.Should().BeTrue();
+        _ = accelerator.Info.Name.Should().Be(name);
+        _ = accelerator.Type.Should().Be(type);
+        _ = accelerator.Memory.Should().Be(mockMemory.Object);
+        _ = accelerator.IsDisposed.Should().BeFalse();
+        _ = accelerator.InitializeCoreCalled.Should().BeTrue();
     }
 
     [Fact]
@@ -100,10 +100,10 @@ public class BaseAcceleratorTests : IDisposable
         Action act1 = () => new TestAccelerator(null!, _mockMemory.Object, _mockLogger.Object);
         Action act2 = () => new TestAccelerator(_accelerator.Info, null!, _mockLogger.Object);
         Action act3 = () => new TestAccelerator(_accelerator.Info, _mockMemory.Object, null!);
-        
-        act1.Should().Throw<ArgumentNullException>().WithParameterName("info");
-        act2.Should().Throw<ArgumentNullException>().WithParameterName("memory");
-        act3.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+
+        _ = act1.Should().Throw<ArgumentNullException>().WithParameterName("info");
+        _ = act2.Should().Throw<ArgumentNullException>().WithParameterName("memory");
+        _ = act3.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
     
     [Fact]
@@ -115,11 +115,11 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act
         await accelerator.DisposeAsync();
-        
+
         // Assert
-        accelerator.IsDisposed.Should().BeTrue();
-        accelerator.DisposeCallCount.Should().Be(1);
-        accelerator.SynchronizeCoreCalled.Should().BeTrue("synchronization should occur before disposal");
+        _ = accelerator.IsDisposed.Should().BeTrue();
+        _ = accelerator.DisposeCallCount.Should().Be(1);
+        _ = accelerator.SynchronizeCoreCalled.Should().BeTrue("synchronization should occur before disposal");
         
         // Verify logging
         _mockLogger.Verify(
@@ -143,10 +143,10 @@ public class BaseAcceleratorTests : IDisposable
         await accelerator.DisposeAsync();
         await accelerator.DisposeAsync(); // Second call
         await accelerator.DisposeAsync(); // Third call
-        
+
         // Assert
-        accelerator.IsDisposed.Should().BeTrue();
-        accelerator.DisposeCallCount.Should().Be(1, "dispose should only be called once");
+        _ = accelerator.IsDisposed.Should().BeTrue();
+        _ = accelerator.DisposeCallCount.Should().Be(1, "dispose should only be called once");
     }
     
     [Fact]
@@ -164,10 +164,10 @@ public class BaseAcceleratorTests : IDisposable
         }
         
         await Task.WhenAll(tasks);
-        
+
         // Assert
-        accelerator.IsDisposed.Should().BeTrue();
-        accelerator.DisposeCallCount.Should().Be(1, "only one thread should successfully dispose");
+        _ = accelerator.IsDisposed.Should().BeTrue();
+        _ = accelerator.DisposeCallCount.Should().Be(1, "only one thread should successfully dispose");
     }
     
     #endregion
@@ -180,7 +180,7 @@ public class BaseAcceleratorTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new KernelDefinition("", null!, null!);
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
     
     [Fact]
@@ -193,13 +193,13 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act
         var result = await _accelerator.CompileKernelAsync(definition, options);
-        
+
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be("test_kernel");
-        _accelerator.CompileKernelCoreCalled.Should().BeTrue();
-        _accelerator.LastCompiledDefinition.Should().Be(definition);
-        _accelerator.LastCompilationOptions.Should().Be(options);
+        _ = result.Should().NotBeNull();
+        _ = result.Name.Should().Be("test_kernel");
+        _ = _accelerator.CompileKernelCoreCalled.Should().BeTrue();
+        _ = _accelerator.LastCompiledDefinition.Should().Be(definition);
+        _ = _accelerator.LastCompilationOptions.Should().Be(options);
     }
     
     [Theory]
@@ -218,10 +218,10 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act
         var result = await _accelerator.CompileKernelAsync(definition, options);
-        
+
         // Assert
-        result.Should().NotBeNull();
-        _accelerator.LastCompilationOptions.OptimizationLevel.Should().Be(optimizationLevel);
+        _ = result.Should().NotBeNull();
+        _ = _accelerator.LastCompilationOptions.OptimizationLevel.Should().Be(optimizationLevel);
     }
     
     [Fact]
@@ -233,12 +233,12 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act
         var result = await _accelerator.CompileKernelAsync(definition, null);
-        
+
         // Assert
-        result.Should().NotBeNull();
-        _accelerator.LastCompilationOptions.Should().NotBeNull();
-        _accelerator.LastCompilationOptions.OptimizationLevel.Should().Be(OptimizationLevel.Default);
-        _accelerator.LastCompilationOptions.EnableDebugInfo.Should().BeFalse();
+        _ = result.Should().NotBeNull();
+        _ = _accelerator.LastCompilationOptions.Should().NotBeNull();
+        _ = _accelerator.LastCompilationOptions.OptimizationLevel.Should().Be(OptimizationLevel.Default);
+        _ = _accelerator.LastCompilationOptions.EnableDebugInfo.Should().BeFalse();
     }
     
     [Fact]
@@ -252,7 +252,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Compilation failed*");
     }
     
@@ -273,11 +273,11 @@ public class BaseAcceleratorTests : IDisposable
         }
         
         var results = await Task.WhenAll(compilationTasks);
-        
+
         // Assert
-        results.Should().HaveCount(10);
-        results.Should().AllSatisfy(r => r.Should().NotBeNull());
-        _accelerator.ConcurrentCompilationCount.Should().BeGreaterThan(1, "should handle concurrent compilations");
+        _ = results.Should().HaveCount(10);
+        _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
+        _ = _accelerator.ConcurrentCompilationCount.Should().BeGreaterThan(1, "should handle concurrent compilations");
     }
     
     [Fact]
@@ -292,12 +292,12 @@ public class BaseAcceleratorTests : IDisposable
         // Act
         var result1 = await accelerator.CompileKernelAsync(definition);
         var result2 = await accelerator.CompileKernelAsync(definition);
-        
+
         // Assert
-        result1.Should().NotBeNull();
-        result2.Should().NotBeNull();
-        result1.Id.Should().Be(result2.Id, "cached kernels should have same ID");
-        accelerator.CacheHitCount.Should().Be(1, "second compilation should hit cache");
+        _ = result1.Should().NotBeNull();
+        _ = result2.Should().NotBeNull();
+        _ = result1.Id.Should().Be(result2.Id, "cached kernels should have same ID");
+        _ = accelerator.CacheHitCount.Should().Be(1, "second compilation should hit cache");
     }
     
     [Fact]
@@ -313,7 +313,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition, cancellationToken: cts.Token);
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
     
     #endregion
@@ -331,7 +331,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<OutOfMemoryException>();
+        _ = await act.Should().ThrowAsync<OutOfMemoryException>();
         
         // Verify error logging
         _mockLogger.Verify(
@@ -357,7 +357,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition, cancellationToken: cts.Token);
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
     
     [Fact]
@@ -370,14 +370,14 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert - First sync throws
         var act1 = async () => await accelerator.SynchronizeAsync();
-        await act1.Should().ThrowAsync<InvalidOperationException>();
+        _ = await act1.Should().ThrowAsync<InvalidOperationException>();
         
         // Reset error condition
         accelerator.ShouldThrowOnSynchronize = false;
         
         // Act - Second sync should succeed
         var act2 = async () => await accelerator.SynchronizeAsync();
-        await act2.Should().NotThrowAsync();
+        _ = await act2.Should().NotThrowAsync();
     }
     
     [Fact]
@@ -389,7 +389,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert
         var act = () => _accelerator.TestThrowIfDisposed();
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
     
     [Fact]
@@ -402,7 +402,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert
         var act = async () => await _accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
     
     [Fact]
@@ -414,7 +414,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert
         var act = async () => await _accelerator.SynchronizeAsync();
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     #endregion
@@ -439,12 +439,12 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act
         var memory = accelerator.Memory;
-        
+
         // Assert
-        memory.Should().Be(memoryManager.Object);
-        accelerator.Info.TotalMemory.Should().BeGreaterThan(0);
-        accelerator.Info.AvailableMemory.Should().BeGreaterThan(0);
-        accelerator.Info.AvailableMemory.Should().BeLessThanOrEqualTo(accelerator.Info.TotalMemory);
+        _ = memory.Should().Be(memoryManager.Object);
+        _ = accelerator.Info.TotalMemory.Should().BeGreaterThan(0);
+        _ = accelerator.Info.AvailableMemory.Should().BeGreaterThan(0);
+        _ = accelerator.Info.AvailableMemory.Should().BeLessThanOrEqualTo(accelerator.Info.TotalMemory);
     }
     
     [Fact]
@@ -457,9 +457,9 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act
         await accelerator.DisposeAsync();
-        
+
         // Assert
-        accelerator.IsDisposed.Should().BeTrue();
+        _ = accelerator.IsDisposed.Should().BeTrue();
         // Memory manager disposal is handled by AcceleratorUtilities
     }
     
@@ -473,9 +473,9 @@ public class BaseAcceleratorTests : IDisposable
     {
         // Act
         await _accelerator.SynchronizeAsync();
-        
+
         // Assert
-        _accelerator.SynchronizeCoreCalled.Should().BeTrue();
+        _ = _accelerator.SynchronizeCoreCalled.Should().BeTrue();
         
         // Verify logging
         _mockLogger.Verify(
@@ -503,9 +503,9 @@ public class BaseAcceleratorTests : IDisposable
         
         // Assert
         var act = async () => await Task.WhenAll(tasks);
-        await act.Should().NotThrowAsync();
-        _accelerator.SynchronizeCoreCalled.Should().BeTrue();
-        _accelerator.ConcurrentSyncCount.Should().BeGreaterThan(1);
+        _ = await act.Should().NotThrowAsync();
+        _ = _accelerator.SynchronizeCoreCalled.Should().BeTrue();
+        _ = _accelerator.ConcurrentSyncCount.Should().BeGreaterThan(1);
     }
     
     [Fact]
@@ -520,7 +520,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert
         var act = async () => await accelerator.SynchronizeAsync(cts.Token);
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
     
     #endregion
@@ -587,12 +587,12 @@ public class BaseAcceleratorTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
         var result = await accelerator.CompileKernelAsync(definition);
         stopwatch.Stop();
-        
+
         // Assert
-        result.Should().NotBeNull();
-        accelerator.LastCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
-        accelerator.LastCompilationTime.Should().BeLessThan(stopwatch.Elapsed);
-        accelerator.CompilationMetricsLogged.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = accelerator.LastCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
+        _ = accelerator.LastCompilationTime.Should().BeLessThan(stopwatch.Elapsed);
+        _ = accelerator.CompilationMetricsLogged.Should().BeTrue();
     }
     
     [Fact]
@@ -609,14 +609,14 @@ public class BaseAcceleratorTests : IDisposable
         // Act
         foreach (var definition in definitions)
         {
-            await accelerator.CompileKernelAsync(definition);
+            _ = await accelerator.CompileKernelAsync(definition);
             await accelerator.SynchronizeAsync();
         }
-        
+
         // Assert
-        accelerator.TotalCompilations.Should().Be(5);
-        accelerator.TotalSynchronizations.Should().Be(5);
-        accelerator.AverageCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
+        _ = accelerator.TotalCompilations.Should().Be(5);
+        _ = accelerator.TotalSynchronizations.Should().Be(5);
+        _ = accelerator.AverageCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
     }
     
     #endregion
@@ -629,11 +629,11 @@ public class BaseAcceleratorTests : IDisposable
     {
         // Act
         var options = _accelerator.TestGetEffectiveOptions(null);
-        
+
         // Assert
-        options.Should().NotBeNull();
-        options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
-        options.EnableDebugInfo.Should().BeFalse();
+        _ = options.Should().NotBeNull();
+        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
+        _ = options.EnableDebugInfo.Should().BeFalse();
     }
     
     [Fact]
@@ -649,11 +649,11 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act
         var options = _accelerator.TestGetEffectiveOptions(providedOptions);
-        
+
         // Assert
-        options.Should().Be(providedOptions);
-        options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
-        options.EnableDebugInfo.Should().BeTrue();
+        _ = options.Should().Be(providedOptions);
+        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
+        _ = options.EnableDebugInfo.Should().BeTrue();
     }
     
     #endregion
@@ -678,8 +678,8 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert
         var results = await Task.WhenAll(initTasks);
-        results.Should().AllSatisfy(r => r.Should().NotBeNull());
-        accelerator.ConcurrentCompilationCount.Should().BeGreaterThan(1);
+        _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
+        _ = accelerator.ConcurrentCompilationCount.Should().BeGreaterThan(1);
     }
     
     [Fact]
@@ -700,14 +700,14 @@ public class BaseAcceleratorTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
         await accelerator.DisposeAsync();
         stopwatch.Stop();
-        
+
         // Assert
-        accelerator.IsDisposed.Should().BeTrue();
-        stopwatch.Elapsed.Should().BeGreaterThan(TimeSpan.FromMilliseconds(100));
+        _ = accelerator.IsDisposed.Should().BeTrue();
+        _ = stopwatch.Elapsed.Should().BeGreaterThan(TimeSpan.FromMilliseconds(100));
         
         // Compilation should still complete
         var result = await compilationTask;
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
     
     [Fact]
@@ -716,7 +716,7 @@ public class BaseAcceleratorTests : IDisposable
     {
         // Arrange
         var memoryManager = new Mock<IUnifiedMemoryManager>();
-        memoryManager.SetupSequence(m => m.GetAvailableMemory())
+        _ = memoryManager.SetupSequence(m => m.GetAvailableMemory())
             .Throws(new OutOfMemoryException("Memory pressure"))
             .Throws(new OutOfMemoryException("Memory pressure"))
             .Returns(1024 * 1024 * 500); // 500MB available
@@ -726,7 +726,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert - First attempts should handle memory pressure gracefully
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().NotThrowAsync();
+        _ = await act.Should().NotThrowAsync();
     }
     
     [Fact]
@@ -748,7 +748,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert
         var act = () => new TestAccelerator(invalidInfo, _mockMemory.Object, _mockLogger.Object);
-        act.Should().Throw<ArgumentException>();
+        _ = act.Should().Throw<ArgumentException>();
     }
     
     #endregion
@@ -770,13 +770,13 @@ public class BaseAcceleratorTests : IDisposable
         {
             // Assert - Should throw for invalid names
             var act = async () => await _accelerator.CompileKernelAsync(definition);
-            await act.Should().ThrowAsync<ArgumentException>();
+            _ = await act.Should().ThrowAsync<ArgumentException>();
         }
         else
         {
             // Assert - Should handle special characters gracefully
             var result = await _accelerator.CompileKernelAsync(definition);
-            result.Should().NotBeNull();
+            _ = result.Should().NotBeNull();
         }
     }
     
@@ -795,12 +795,12 @@ public class BaseAcceleratorTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
         var result = await _accelerator.CompileKernelAsync(definition);
         stopwatch.Stop();
-        
+
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be("large_kernel");
+        _ = result.Should().NotBeNull();
+        _ = result.Name.Should().Be("large_kernel");
         // Should complete in reasonable time even for large sources
-        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
+        _ = stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
     }
     
     [Fact]
@@ -821,11 +821,11 @@ public class BaseAcceleratorTests : IDisposable
         // Act
         var helperResult = await _accelerator.CompileKernelAsync(helperKernel);
         var mainResult = await _accelerator.CompileKernelAsync(mainKernel);
-        
+
         // Assert
-        helperResult.Should().NotBeNull();
-        mainResult.Should().NotBeNull();
-        _accelerator.TotalCompilations.Should().Be(2);
+        _ = helperResult.Should().NotBeNull();
+        _ = mainResult.Should().NotBeNull();
+        _ = _accelerator.TotalCompilations.Should().Be(2);
     }
     
     [Fact]
@@ -856,10 +856,10 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act
         var result = await _accelerator.CompileKernelAsync(kernelWithDirectives, options);
-        
+
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be("preprocessor_test");
+        _ = result.Should().NotBeNull();
+        _ = result.Name.Should().Be("preprocessor_test");
     }
     
     [Fact]
@@ -891,16 +891,16 @@ public class BaseAcceleratorTests : IDisposable
         {
             var options = new CompilationOptions { OptimizationLevel = level };
             var stopwatch = Stopwatch.StartNew();
-            await accelerator.CompileKernelAsync(definition, options);
+            _ = await accelerator.CompileKernelAsync(definition, options);
             stopwatch.Stop();
             compilationTimes.Add(stopwatch.Elapsed);
         }
-        
+
         // Assert
-        compilationTimes.Should().HaveCount(5);
-        accelerator.TotalCompilations.Should().Be(5);
+        _ = compilationTimes.Should().HaveCount(5);
+        _ = accelerator.TotalCompilations.Should().Be(5);
         // Higher optimization levels might take more time but should still be reasonable
-        compilationTimes.Should().AllSatisfy(t => t.Should().BeLessThan(TimeSpan.FromSeconds(10)));
+        _ = compilationTimes.Should().AllSatisfy(t => t.Should().BeLessThan(TimeSpan.FromSeconds(10)));
     }
     
     [Fact]
@@ -931,12 +931,12 @@ public class BaseAcceleratorTests : IDisposable
             var result = await accelerator.CompileKernelAsync(definitions[i]);
             cachedResults.Add(result);
         }
-        
+
         // Assert
-        results.Should().HaveCount(50);
-        cachedResults.Should().HaveCount(5);
-        accelerator.TotalCompilations.Should().BeGreaterThanOrEqualTo(50);
-        accelerator.CacheHitCount.Should().BeGreaterThanOrEqualTo(0); // Some cache hits expected
+        _ = results.Should().HaveCount(50);
+        _ = cachedResults.Should().HaveCount(5);
+        _ = accelerator.TotalCompilations.Should().BeGreaterThanOrEqualTo(50);
+        _ = accelerator.CacheHitCount.Should().BeGreaterThanOrEqualTo(0); // Some cache hits expected
     }
     
     #endregion
@@ -976,10 +976,10 @@ public class BaseAcceleratorTests : IDisposable
                 await Task.Delay(100); // Brief delay between retries
             }
         }
-        
+
         // Assert
-        result.Should().NotBeNull();
-        attemptCount.Should().Be(3);
+        _ = result.Should().NotBeNull();
+        _ = attemptCount.Should().Be(3);
     }
     
     [Fact]
@@ -995,7 +995,7 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act & Assert - Critical failure
         var act1 = async () => await accelerator.CompileKernelAsync(failingDefinition);
-        await act1.Should().ThrowAsync<OutOfMemoryException>();
+        _ = await act1.Should().ThrowAsync<OutOfMemoryException>();
         
         // Recovery - Reset error condition and retry
         accelerator.ShouldThrowOutOfMemory = false;
@@ -1004,10 +1004,10 @@ public class BaseAcceleratorTests : IDisposable
         // Act - Should recover and work normally
         var result = await accelerator.CompileKernelAsync(recoveryDefinition);
         await accelerator.SynchronizeAsync(); // Should also work
-        
+
         // Assert
-        result.Should().NotBeNull();
-        accelerator.SynchronizeCoreCalled.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = accelerator.SynchronizeCoreCalled.Should().BeTrue();
     }
     
     [Fact]
@@ -1048,10 +1048,10 @@ public class BaseAcceleratorTests : IDisposable
         // Assert
         var successfulResults = results.Where(r => r != null).ToArray();
         var failedResults = results.Where(r => r == null).ToArray();
-        
-        successfulResults.Should().HaveCount(5); // Odd numbered operations
-        failedResults.Should().HaveCount(5);     // Even numbered operations
-        accelerator.CompileKernelCoreCalled.Should().BeTrue();
+
+        _ = successfulResults.Should().HaveCount(5); // Odd numbered operations
+        _ = failedResults.Should().HaveCount(5);     // Even numbered operations
+        _ = accelerator.CompileKernelCoreCalled.Should().BeTrue();
     }
     
     [Theory]
@@ -1072,7 +1072,7 @@ public class BaseAcceleratorTests : IDisposable
         var act = async () => await accelerator.CompileKernelAsync(definition, cancellationToken: cts.Token);
         
         var exception = await act.Should().ThrowAsync<OperationCanceledException>();
-        exception.Which.CancellationToken.Should().Be(cts.Token);
+        _ = exception.Which.CancellationToken.Should().Be(cts.Token);
     }
     
     [Fact]
@@ -1082,9 +1082,9 @@ public class BaseAcceleratorTests : IDisposable
         // Arrange
         var accelerator = CreateTestAccelerator();
         var memoryManager = new Mock<IUnifiedMemoryManager>();
-        
+
         // Simulate gradually decreasing available memory
-        memoryManager.SetupSequence(m => m.GetAvailableMemory())
+        _ = memoryManager.SetupSequence(m => m.GetAvailableMemory())
             .Returns(1024 * 1024 * 1024) // 1GB
             .Returns(512 * 1024 * 1024)  // 512MB
             .Returns(256 * 1024 * 1024)  // 256MB
@@ -1108,11 +1108,11 @@ public class BaseAcceleratorTests : IDisposable
                 exceptions.Add(ex);
             }
         }
-        
+
         // Assert
-        results.Should().HaveCountGreaterThan(0, "some operations should succeed");
-        exceptions.Should().HaveCountGreaterThan(0, "some operations should fail due to resource exhaustion");
-        exceptions.Should().AllBeOfType<OutOfMemoryException>();
+        _ = results.Should().HaveCountGreaterThan(0, "some operations should succeed");
+        _ = exceptions.Should().HaveCountGreaterThan(0, "some operations should fail due to resource exhaustion");
+        _ = exceptions.Should().AllBeOfType<OutOfMemoryException>();
     }
     
     #endregion
@@ -1126,20 +1126,20 @@ public class BaseAcceleratorTests : IDisposable
         // Arrange
         var memoryManager = new Mock<IUnifiedMemoryManager>();
         var currentMemoryUsage = 0L;
-        
-        memoryManager.Setup(m => m.GetTotalMemory()).Returns(1024 * 1024 * 1024); // 1GB
-        memoryManager.Setup(m => m.GetAvailableMemory()).Returns(() => 1024 * 1024 * 1024 - currentMemoryUsage);
-        memoryManager.Setup(m => m.GetUsedMemory()).Returns(() => currentMemoryUsage);
+
+        _ = memoryManager.Setup(m => m.GetTotalMemory()).Returns(1024 * 1024 * 1024); // 1GB
+        _ = memoryManager.Setup(m => m.GetAvailableMemory()).Returns(() => 1024 * 1024 * 1024 - currentMemoryUsage);
+        _ = memoryManager.Setup(m => m.GetUsedMemory()).Returns(() => currentMemoryUsage);
         
         var accelerator = CreateTestAccelerator(memoryManager: memoryManager.Object);
         
         // Act - Simulate memory allocations
         currentMemoryUsage = 100 * 1024 * 1024; // 100MB allocated
-        
+
         // Assert
-        accelerator.Memory.GetUsedMemory().Should().Be(100 * 1024 * 1024);
-        accelerator.Memory.GetAvailableMemory().Should().Be(1024 * 1024 * 1024 - 100 * 1024 * 1024);
-        accelerator.Info.TotalMemory.Should().Be(1024 * 1024 * 1024);
+        _ = accelerator.Memory.GetUsedMemory().Should().Be(100 * 1024 * 1024);
+        _ = accelerator.Memory.GetAvailableMemory().Should().Be(1024 * 1024 * 1024 - 100 * 1024 * 1024);
+        _ = accelerator.Info.TotalMemory.Should().Be(1024 * 1024 * 1024);
     }
     
     [Fact]
@@ -1149,10 +1149,10 @@ public class BaseAcceleratorTests : IDisposable
         // Arrange
         var memoryManager = new Mock<IUnifiedMemoryManager>();
         var gcCollected = false;
-        
-        memoryManager.Setup(m => m.GetAvailableMemory())
+
+        _ = memoryManager.Setup(m => m.GetAvailableMemory())
             .Returns(10 * 1024 * 1024) // Low available memory
-            .Callback(() => 
+            .Callback(() =>
             {
                 if (!gcCollected)
                 {
@@ -1167,10 +1167,10 @@ public class BaseAcceleratorTests : IDisposable
         
         // Act
         var result = await accelerator.CompileKernelAsync(definition);
-        
+
         // Assert
-        result.Should().NotBeNull();
-        gcCollected.Should().BeTrue("garbage collection should have been triggered");
+        _ = result.Should().NotBeNull();
+        _ = gcCollected.Should().BeTrue("garbage collection should have been triggered");
         memoryManager.Verify(m => m.GetAvailableMemory(), Times.AtLeastOnce);
     }
     
@@ -1181,9 +1181,9 @@ public class BaseAcceleratorTests : IDisposable
         // Arrange
         var memoryManager = new Mock<IUnifiedMemoryManager>();
         var allocationSize = 0L;
-        
-        memoryManager.Setup(m => m.GetUsedMemory()).Returns(() => allocationSize);
-        memoryManager.Setup(m => m.GetAvailableMemory()).Returns(() => 1024 * 1024 * 1024 - allocationSize);
+
+        _ = memoryManager.Setup(m => m.GetUsedMemory()).Returns(() => allocationSize);
+        _ = memoryManager.Setup(m => m.GetAvailableMemory()).Returns(() => 1024 * 1024 * 1024 - allocationSize);
         
         var accelerator = CreateTestAccelerator(memoryManager: memoryManager.Object);
         
@@ -1197,9 +1197,9 @@ public class BaseAcceleratorTests : IDisposable
         // Act
         allocationSize = 500 * 1024 * 1024; // Simulate 500MB allocation during compilation
         var result = await accelerator.CompileKernelAsync(definition);
-        
+
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
         memoryManager.Verify(m => m.GetUsedMemory(), Times.AtLeastOnce);
         memoryManager.Verify(m => m.GetAvailableMemory(), Times.AtLeastOnce);
     }
@@ -1211,8 +1211,8 @@ public class BaseAcceleratorTests : IDisposable
         // Arrange
         var memoryManager = new Mock<IUnifiedMemoryManager>();
         var fragmentationLevel = 0.0;
-        
-        memoryManager.Setup(m => m.GetAvailableMemory())
+
+        _ = memoryManager.Setup(m => m.GetAvailableMemory())
             .Returns(() => (long)(1024 * 1024 * 1024 * (1.0 - fragmentationLevel)));
         
         var accelerator = CreateTestAccelerator(memoryManager: memoryManager.Object);
@@ -1227,17 +1227,17 @@ public class BaseAcceleratorTests : IDisposable
             var definition = new KernelDefinition($"frag_test_{i}", "__kernel void test() {}", "test");
             
             var stopwatch = Stopwatch.StartNew();
-            await accelerator.CompileKernelAsync(definition);
+            _ = await accelerator.CompileKernelAsync(definition);
             stopwatch.Stop();
             
             compilationTimes.Add(stopwatch.Elapsed);
         }
-        
+
         // Assert
-        compilationTimes.Should().HaveCount(5);
+        _ = compilationTimes.Should().HaveCount(5);
         // With increasing fragmentation, compilation might take longer
         // but should still complete successfully
-        compilationTimes.Should().AllSatisfy(t => t.Should().BeLessThan(TimeSpan.FromSeconds(30)));
+        _ = compilationTimes.Should().AllSatisfy(t => t.Should().BeLessThan(TimeSpan.FromSeconds(30)));
     }
     
     #endregion
@@ -1271,11 +1271,11 @@ public class BaseAcceleratorTests : IDisposable
         
         // Assert
         var results = await Task.WhenAll(compilationTasks);
-        results.Should().AllSatisfy(r => r.Should().NotBeNull());
-        
+        _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
+
         // Synchronization should wait for pending operations
-        syncStopwatch.Elapsed.Should().BeGreaterThan(TimeSpan.FromMilliseconds(50));
-        accelerator.SynchronizeCoreCalled.Should().BeTrue();
+        _ = syncStopwatch.Elapsed.Should().BeGreaterThan(TimeSpan.FromMilliseconds(50));
+        _ = accelerator.SynchronizeCoreCalled.Should().BeTrue();
     }
     
     [Fact]
@@ -1300,15 +1300,15 @@ public class BaseAcceleratorTests : IDisposable
         }
         
         await Task.WhenAll(syncTasks);
-        
+
         // Assert
-        completionTimes.Should().HaveCount(10);
-        accelerator.ConcurrentSyncCount.Should().BeGreaterThan(1);
+        _ = completionTimes.Should().HaveCount(10);
+        _ = accelerator.ConcurrentSyncCount.Should().BeGreaterThan(1);
         
         // All operations should complete within a reasonable timeframe
         var times = completionTimes.OrderBy(t => t).ToArray();
         var totalSpan = times.Last() - times.First();
-        totalSpan.Should().BeLessThan(TimeSpan.FromSeconds(2));
+        _ = totalSpan.Should().BeLessThan(TimeSpan.FromSeconds(2));
     }
     
     [Fact]
@@ -1333,10 +1333,10 @@ public class BaseAcceleratorTests : IDisposable
         
         // Assert
         var act = async () => await syncTask;
-        await act.Should().ThrowAsync<OperationCanceledException>();
-        
-        childCts.Token.IsCancellationRequested.Should().BeTrue();
-        parentCts.Token.IsCancellationRequested.Should().BeTrue();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
+
+        _ = childCts.Token.IsCancellationRequested.Should().BeTrue();
+        _ = parentCts.Token.IsCancellationRequested.Should().BeTrue();
     }
     
     [Fact]
@@ -1354,20 +1354,20 @@ public class BaseAcceleratorTests : IDisposable
         var task1 = Task.Run(async () =>
         {
             sync1Started.Set();
-            sync2Started.Wait(TimeSpan.FromSeconds(1)); // Wait for other sync to start
+            _ = sync2Started.Wait(TimeSpan.FromSeconds(1)); // Wait for other sync to start
             await accelerator1.SynchronizeAsync();
         });
         
         var task2 = Task.Run(async () =>
         {
             sync2Started.Set();
-            sync1Started.Wait(TimeSpan.FromSeconds(1)); // Wait for other sync to start
+            _ = sync1Started.Wait(TimeSpan.FromSeconds(1)); // Wait for other sync to start
             await accelerator2.SynchronizeAsync();
         });
         
         // Assert - Both operations should complete without deadlock
         var act = async () => await Task.WhenAll(task1, task2);
-        await act.Should().CompleteWithinAsync(TimeSpan.FromSeconds(5));
+        _ = await act.Should().CompleteWithinAsync(TimeSpan.FromSeconds(5));
     }
     
     #endregion
@@ -1400,17 +1400,17 @@ public class BaseAcceleratorTests : IDisposable
                 await accelerator.SynchronizeAsync();
             }
         }
-        
-        await Task.WhenAll(operations);
+
+        _ = await Task.WhenAll(operations);
         var endTime = DateTime.UtcNow;
-        
+
         // Assert
-        accelerator.TotalCompilations.Should().Be(10);
-        accelerator.TotalSynchronizations.Should().BeGreaterThanOrEqualTo(3);
-        accelerator.AverageCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
+        _ = accelerator.TotalCompilations.Should().Be(10);
+        _ = accelerator.TotalSynchronizations.Should().BeGreaterThanOrEqualTo(3);
+        _ = accelerator.AverageCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
         
         var totalElapsed = endTime - startTime;
-        accelerator.AverageCompilationTime.Should().BeLessThan(totalElapsed);
+        _ = accelerator.AverageCompilationTime.Should().BeLessThan(totalElapsed);
         
         // Verify metrics were logged
         _mockLogger.Verify(
@@ -1449,8 +1449,8 @@ public class BaseAcceleratorTests : IDisposable
                     "__kernel void test() {}", "throughput");
                 batchOperations.Add(accelerator.CompileKernelAsync(definition).AsTask());
             }
-            
-            await Task.WhenAll(batchOperations);
+
+            _ = await Task.WhenAll(batchOperations);
             var batchDuration = DateTime.UtcNow - batchStartTime;
             
             var throughput = batchSize / batchDuration.TotalSeconds;
@@ -1458,22 +1458,22 @@ public class BaseAcceleratorTests : IDisposable
             
             operations.AddRange(batchOperations);
         }
-        
+
         // Assert
-        operations.Should().HaveCount(operationCount);
-        throughputSamples.Should().HaveCount(operationCount / batchSize);
+        _ = operations.Should().HaveCount(operationCount);
+        _ = throughputSamples.Should().HaveCount(operationCount / batchSize);
         
         var averageThroughput = throughputSamples.Average();
         var minThroughput = throughputSamples.Min();
         var maxThroughput = throughputSamples.Max();
-        
-        averageThroughput.Should().BeGreaterThan(0);
-        minThroughput.Should().BeGreaterThan(0);
+
+        _ = averageThroughput.Should().BeGreaterThan(0);
+        _ = minThroughput.Should().BeGreaterThan(0);
         
         // Throughput should be relatively stable (coefficient of variation < 50%)
         var standardDeviation = Math.Sqrt(throughputSamples.Average(t => Math.Pow(t - averageThroughput, 2)));
         var coefficientOfVariation = standardDeviation / averageThroughput;
-        coefficientOfVariation.Should().BeLessThan(0.5, "throughput should be relatively stable");
+        _ = coefficientOfVariation.Should().BeLessThan(0.5, "throughput should be relatively stable");
     }
     
     [Fact]
@@ -1518,11 +1518,11 @@ public class BaseAcceleratorTests : IDisposable
         // Assert
         var memoryIncrease = finalMemory - initialMemory;
         // Memory increase should be reasonable (less than 100MB for this test)
-        memoryIncrease.Should().BeLessThan(100 * 1024 * 1024, 
+        _ = memoryIncrease.Should().BeLessThan(100 * 1024 * 1024,
             "memory usage should remain stable over long operations");
-        
-        accelerator.TotalCompilations.Should().Be(200); // 20 cycles * 10 operations
-        accelerator.TotalSynchronizations.Should().Be(20);
+
+        _ = accelerator.TotalCompilations.Should().Be(200); // 20 cycles * 10 operations
+        _ = accelerator.TotalSynchronizations.Should().Be(20);
     }
     
     [Fact]
@@ -1539,31 +1539,31 @@ public class BaseAcceleratorTests : IDisposable
             var definition = new KernelDefinition($"latency_test_{i}", "__kernel void test() {}", "latency");
             
             var stopwatch = Stopwatch.StartNew();
-            await accelerator.CompileKernelAsync(definition);
+            _ = await accelerator.CompileKernelAsync(definition);
             stopwatch.Stop();
             
             latencies.Add(stopwatch.Elapsed);
         }
-        
+
         // Assert
-        latencies.Should().HaveCount(50);
+        _ = latencies.Should().HaveCount(50);
         
         var averageLatency = TimeSpan.FromTicks((long)latencies.Average(l => l.Ticks));
         var minLatency = latencies.Min();
         var maxLatency = latencies.Max();
         var p95Latency = latencies.OrderBy(l => l).Skip((int)(latencies.Count * 0.95)).First();
         var p99Latency = latencies.OrderBy(l => l).Skip((int)(latencies.Count * 0.99)).First();
-        
+
         // Basic sanity checks
-        averageLatency.Should().BeGreaterThan(TimeSpan.Zero);
-        minLatency.Should().BeLessThan(averageLatency);
-        maxLatency.Should().BeGreaterThan(averageLatency);
-        p95Latency.Should().BeLessThanOrEqualTo(maxLatency);
-        p99Latency.Should().BeLessThanOrEqualTo(maxLatency);
-        
+        _ = averageLatency.Should().BeGreaterThan(TimeSpan.Zero);
+        _ = minLatency.Should().BeLessThan(averageLatency);
+        _ = maxLatency.Should().BeGreaterThan(averageLatency);
+        _ = p95Latency.Should().BeLessThanOrEqualTo(maxLatency);
+        _ = p99Latency.Should().BeLessThanOrEqualTo(maxLatency);
+
         // Performance expectations
-        averageLatency.Should().BeLessThan(TimeSpan.FromSeconds(1), "average latency should be reasonable");
-        p99Latency.Should().BeLessThan(TimeSpan.FromSeconds(5), "99th percentile should be acceptable");
+        _ = averageLatency.Should().BeLessThan(TimeSpan.FromSeconds(1), "average latency should be reasonable");
+        _ = p99Latency.Should().BeLessThan(TimeSpan.FromSeconds(5), "99th percentile should be acceptable");
     }
     
     #endregion
@@ -1602,7 +1602,7 @@ public class BaseAcceleratorTests : IDisposable
                 {
                     try
                     {
-                        accelerator.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(1));
+                        _ = accelerator.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(1));
                     }
                     catch
                     {
@@ -1720,15 +1720,15 @@ public class BaseAcceleratorTests : IDisposable
                 // Create new kernel
                 var mockKernel = new Mock<ICompiledKernel>();
                 var kernelId = Guid.NewGuid();
-                mockKernel.Setup(x => x.Id).Returns(kernelId);
-                mockKernel.Setup(x => x.Name).Returns(definition.Name);
+                _ = mockKernel.Setup(x => x.Id).Returns(kernelId);
+                _ = mockKernel.Setup(x => x.Name).Returns(definition.Name);
                 
                 var kernel = mockKernel.Object;
                 
                 // Cache if enabled
                 if (EnableCompilationCaching)
                 {
-                    _kernelCache.TryAdd(cacheKey, kernel);
+                    _ = _kernelCache.TryAdd(cacheKey, kernel);
                 }
                 
                 // Track performance metrics
@@ -1752,7 +1752,7 @@ public class BaseAcceleratorTests : IDisposable
             }
             finally
             {
-                Interlocked.Decrement(ref _activeCompilations);
+                _ = Interlocked.Decrement(ref _activeCompilations);
             }
         }
 
@@ -1780,7 +1780,7 @@ public class BaseAcceleratorTests : IDisposable
             }
             finally
             {
-                Interlocked.Decrement(ref _activeSyncs);
+                _ = Interlocked.Decrement(ref _activeSyncs);
             }
         }
 

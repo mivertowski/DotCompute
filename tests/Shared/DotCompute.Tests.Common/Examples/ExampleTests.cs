@@ -126,7 +126,7 @@ public class ExampleTests : TestBase
         // Validate patterns
         sineData.ShouldContainOnlyFiniteValues();
         // Sine values should be in [-1,1] range
-        sineData.All(v => v >= -1.1f && v <= 1.1f).Should().BeTrue("Sine values should be in [-1,1] range");
+        _ = sineData.All(v => v >= -1.1f && v <= 1.1f).Should().BeTrue("Sine values should be in [-1,1] range");
         
         // Count non-zero elements in sparse data
         var nonZeroCount = sparseData.Count(x => x != 0.0f);
@@ -155,7 +155,7 @@ public class ExampleTests : TestBase
         
         // Test single element operations
         var singleResult = TestDataFixture.ExpectedResults.VectorScalarMultiply(singleElement, 2.0f);
-        Assert.Single(singleResult);
+        _ = Assert.Single(singleResult);
         Assert.Equal(84.0f, singleResult[0]);
         
         // Test NaN handling in custom data

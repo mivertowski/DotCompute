@@ -32,12 +32,12 @@ public class BasePooledBufferTests
         
         // Act
         using var buffer = new TestPooledBuffer<float>(1024, returnAction);
-        
+
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.MemoryType.Should().Be(MemoryType.Host);
-        buffer.SizeInBytes.Should().Be(1024);
-        buffer.Length.Should().Be(256); // 1024 bytes / 4 bytes per float
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.MemoryType.Should().Be(MemoryType.Host);
+        _ = buffer.SizeInBytes.Should().Be(1024);
+        _ = buffer.Length.Should().Be(256); // 1024 bytes / 4 bytes per float
     }
     
     [Fact]
@@ -55,10 +55,10 @@ public class BasePooledBufferTests
         
         // Act
         buffer.Dispose();
-        
+
         // Assert
-        returnCalled.Should().BeTrue("return action should be called on dispose");
-        buffer.IsDisposed.Should().BeTrue();
+        _ = returnCalled.Should().BeTrue("return action should be called on dispose");
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
     
     [Fact]
@@ -90,10 +90,10 @@ public class BasePooledBufferTests
         
         var buffer2 = CreateOrRent(); // Reuses from pool
         buffer2.Dispose();
-        
+
         // Assert
-        returnCount.Should().Be(2, "buffer should be returned twice");
-        pool.Count.Should().Be(1, "one buffer should be in the pool");
+        _ = returnCount.Should().Be(2, "buffer should be returned twice");
+        _ = pool.Count.Should().Be(1, "one buffer should be in the pool");
     }
     
     [Fact]
@@ -113,16 +113,16 @@ public class BasePooledBufferTests
         {
             span[i] = i * 1.5f;
         }
-        
+
         // Assert
-        span.Length.Should().Be(16); // 64 bytes / 4 bytes per float
-        readOnlySpan.Length.Should().Be(16);
-        memory.Length.Should().Be(16);
+        _ = span.Length.Should().Be(16); // 64 bytes / 4 bytes per float
+        _ = readOnlySpan.Length.Should().Be(16);
+        _ = memory.Length.Should().Be(16);
         
         // Verify data integrity
         for (var i = 0; i < span.Length; i++)
         {
-            span[i].Should().Be(i * 1.5f);
+            _ = span[i].Should().Be(i * 1.5f);
         }
     }
     
@@ -145,9 +145,9 @@ public class BasePooledBufferTests
         {
             buffer.Dispose();
         }
-        
+
         // Assert
-        returnCount.Should().Be(5, "all buffers should call return action");
-        buffers.Should().OnlyContain(b => b.IsDisposed, "all buffers should be disposed");
+        _ = returnCount.Should().Be(5, "all buffers should call return action");
+        _ = buffers.Should().OnlyContain(b => b.IsDisposed, "all buffers should be disposed");
     }
 }

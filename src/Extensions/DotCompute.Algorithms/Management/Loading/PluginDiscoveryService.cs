@@ -162,7 +162,7 @@ public sealed partial class PluginDiscoveryService : IPluginDiscoveryService
         }
         finally
         {
-            _loadingSemaphore.Release();
+            _ = _loadingSemaphore.Release();
         }
     }
 

@@ -367,7 +367,7 @@ internal sealed unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T
     public override void MarkHostDirty() { }
     public override void MarkDeviceDirty() { }
 
-    public override Span<T> AsSpan() => _data != null ? _data.AsSpan() : Span<T>.Empty;
+    public override Span<T> AsSpan() => _data != null ? _data.AsSpan() : [];
     public override ReadOnlySpan<T> AsReadOnlySpan() => _data != null ? _data.AsSpan() : ReadOnlySpan<T>.Empty;
 
     public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)

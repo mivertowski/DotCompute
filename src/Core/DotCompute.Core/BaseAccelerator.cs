@@ -39,9 +39,9 @@ public abstract class BaseAccelerator : IAccelerator
         Memory = memory;
         Context = context;
         _logger = logger;
-        
+
         // Use AcceleratorUtilities for consistent initialization logging
-        AcceleratorUtilities.InitializeWithLogging(
+        _ = AcceleratorUtilities.InitializeWithLogging(
             _logger,
             Type.ToString(),
             () => InitializeCore(),

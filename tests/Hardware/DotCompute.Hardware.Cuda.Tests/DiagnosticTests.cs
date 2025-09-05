@@ -43,16 +43,16 @@ namespace DotCompute.Hardware.Cuda.Tests
             unsafe
             {
                 Output.WriteLine("\n=== Raw Memory Check ===");
-                CudaDeviceProperties* ptr = &props;
-                byte* bytes = (byte*)ptr;
-                int* intAt652 = (int*)(bytes + 652);
+                var ptr = &props;
+                var bytes = (byte*)ptr;
+                var intAt652 = (int*)(bytes + 652);
                 Output.WriteLine($"Raw int value at offset 652: {*intAt652}");
                 
                 // Check surrounding bytes
                 Output.WriteLine("Bytes around offset 652:");
-                for (int i = 648; i < 660; i += 4)
+                for (var i = 648; i < 660; i += 4)
                 {
-                    int* val = (int*)(bytes + i);
+                    var val = (int*)(bytes + i);
                     Output.WriteLine($"  Offset {i}: {*val}");
                 }
             }
@@ -106,7 +106,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine("=== Accelerator Creation Test ===");
             
             var factory = new CudaAcceleratorFactory();
-            var accelerator = factory.CreateDefaultAccelerator();
+            var accelerator = factory.CreateProductionAccelerator(0);
             
             Assert.NotNull(accelerator);
             
@@ -155,7 +155,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 
                 // Check field offsets
                 var props = new CudaDeviceProperties();
-                CudaDeviceProperties* ptr = &props;
+                var ptr = &props;
                 Output.WriteLine("\n=== Field Offsets ===");
                 Output.WriteLine($"DeviceName offset: 0");
                 Output.WriteLine($"Major offset: {(byte*)&ptr->Major - (byte*)ptr}");
@@ -176,7 +176,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             Output.WriteLine("=== Multiple Calls Consistency Test ===");
             
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 var props = new CudaDeviceProperties();
                 var result = CudaRuntime.cudaGetDeviceProperties(ref props, 0);

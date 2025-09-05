@@ -156,19 +156,19 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         }
         
         var caps = new StringBuilder();
-        caps.AppendLine("Tensor Core Capabilities:");
-        caps.AppendLine($"  WMMA: {_capabilities.WmmaSupported}");
-        caps.AppendLine($"  FP16: {_capabilities.Fp16Supported}");
-        caps.AppendLine($"  BF16: {_capabilities.Bf16Supported}");
-        caps.AppendLine($"  TF32: {_capabilities.Tf32Supported}");
-        caps.AppendLine($"  FP8: {_capabilities.Fp8Supported}");
-        caps.AppendLine($"  INT8: {_capabilities.Int8Supported}");
-        caps.AppendLine($"  INT4: {_capabilities.Int4Supported}");
-        caps.AppendLine($"  FP64: {_capabilities.Fp64Supported}");
-        caps.AppendLine($"  Sparsity: {_capabilities.SparsitySupported}");
-        caps.AppendLine($"  Transformer Engine: {_capabilities.TransformerEngineSupported}");
-        caps.AppendLine($"  Max Tile: {_capabilities.MaxWmmaM}x{_capabilities.MaxWmmaN}x{_capabilities.MaxWmmaK}");
-        caps.AppendLine($"  Peak TFLOPS: {_capabilities.PeakTflops:F2}");
+        _ = caps.AppendLine("Tensor Core Capabilities:");
+        _ = caps.AppendLine($"  WMMA: {_capabilities.WmmaSupported}");
+        _ = caps.AppendLine($"  FP16: {_capabilities.Fp16Supported}");
+        _ = caps.AppendLine($"  BF16: {_capabilities.Bf16Supported}");
+        _ = caps.AppendLine($"  TF32: {_capabilities.Tf32Supported}");
+        _ = caps.AppendLine($"  FP8: {_capabilities.Fp8Supported}");
+        _ = caps.AppendLine($"  INT8: {_capabilities.Int8Supported}");
+        _ = caps.AppendLine($"  INT4: {_capabilities.Int4Supported}");
+        _ = caps.AppendLine($"  FP64: {_capabilities.Fp64Supported}");
+        _ = caps.AppendLine($"  Sparsity: {_capabilities.SparsitySupported}");
+        _ = caps.AppendLine($"  Transformer Engine: {_capabilities.TransformerEngineSupported}");
+        _ = caps.AppendLine($"  Max Tile: {_capabilities.MaxWmmaM}x{_capabilities.MaxWmmaN}x{_capabilities.MaxWmmaK}");
+        _ = caps.AppendLine($"  Peak TFLOPS: {_capabilities.PeakTflops:F2}");
         
         _logger.LogInformation(caps.ToString());
     }
@@ -347,8 +347,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
                 CompiledAt = DateTimeOffset.UtcNow
             };
         }, cancellationToken);
-        
-        _kernelCache.TryAdd(kernelKey, kernel);
+
+        _ = _kernelCache.TryAdd(kernelKey, kernel);
         return kernel;
     }
 
@@ -363,40 +363,40 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         MatrixLayout layoutB)
     {
         var ptx = new StringBuilder();
-        
+
         // PTX version and target
-        ptx.AppendLine(".version 7.0");
-        ptx.AppendLine(".target sm_70"); // Minimum for tensor cores
-        ptx.AppendLine(".address_size 64");
-        
+        _ = ptx.AppendLine(".version 7.0");
+        _ = ptx.AppendLine(".target sm_70"); // Minimum for tensor cores
+        _ = ptx.AppendLine(".address_size 64");
+
         // Kernel entry point
-        ptx.AppendLine($".visible .entry tensor_gemm_{inputType}_{outputType}(");
-        ptx.AppendLine("    .param .u64 param_a,");
-        ptx.AppendLine("    .param .u64 param_b,");
-        ptx.AppendLine("    .param .u64 param_c,");
-        ptx.AppendLine("    .param .u32 param_m,");
-        ptx.AppendLine("    .param .u32 param_n,");
-        ptx.AppendLine("    .param .u32 param_k,");
-        ptx.AppendLine("    .param .f32 param_alpha,");
-        ptx.AppendLine("    .param .f32 param_beta");
-        ptx.AppendLine(")");
-        ptx.AppendLine("{");
-        
+        _ = ptx.AppendLine($".visible .entry tensor_gemm_{inputType}_{outputType}(");
+        _ = ptx.AppendLine("    .param .u64 param_a,");
+        _ = ptx.AppendLine("    .param .u64 param_b,");
+        _ = ptx.AppendLine("    .param .u64 param_c,");
+        _ = ptx.AppendLine("    .param .u32 param_m,");
+        _ = ptx.AppendLine("    .param .u32 param_n,");
+        _ = ptx.AppendLine("    .param .u32 param_k,");
+        _ = ptx.AppendLine("    .param .f32 param_alpha,");
+        _ = ptx.AppendLine("    .param .f32 param_beta");
+        _ = ptx.AppendLine(")");
+        _ = ptx.AppendLine("{");
+
         // Register declarations
-        ptx.AppendLine("    .reg .pred %p<2>;");
-        ptx.AppendLine("    .reg .b32 %r<64>;");
-        ptx.AppendLine("    .reg .b64 %rd<16>;");
-        ptx.AppendLine("    .reg .f32 %f<32>;");
+        _ = ptx.AppendLine("    .reg .pred %p<2>;");
+        _ = ptx.AppendLine("    .reg .b32 %r<64>;");
+        _ = ptx.AppendLine("    .reg .b64 %rd<16>;");
+        _ = ptx.AppendLine("    .reg .f32 %f<32>;");
         
         // WMMA fragment declarations based on data type
         var wmmaShape = GetWmmaShape(inputType);
-        ptx.AppendLine($"    // WMMA fragments for {wmmaShape.M}x{wmmaShape.N}x{wmmaShape.K}");
+        _ = ptx.AppendLine($"    // WMMA fragments for {wmmaShape.M}x{wmmaShape.N}x{wmmaShape.K}");
 
         // Generate WMMA operations
 
         GenerateWmmaOperations(ptx, inputType, outputType, wmmaShape);
-        
-        ptx.AppendLine("}");
+
+        _ = ptx.AppendLine("}");
         
         return ptx.ToString();
     }
@@ -411,19 +411,19 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         WmmaShape shape)
     {
         // Load fragments
-        ptx.AppendLine($"    // Load A fragment");
-        ptx.AppendLine($"    wmma.load.a.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.{GetPtxType(inputType)}");
-        
-        ptx.AppendLine($"    // Load B fragment");
-        ptx.AppendLine($"    wmma.load.b.sync.aligned.{shape.M}x{shape.N}x{shape.K}.col.{GetPtxType(inputType)}");
-        
+        _ = ptx.AppendLine($"    // Load A fragment");
+        _ = ptx.AppendLine($"    wmma.load.a.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.{GetPtxType(inputType)}");
+
+        _ = ptx.AppendLine($"    // Load B fragment");
+        _ = ptx.AppendLine($"    wmma.load.b.sync.aligned.{shape.M}x{shape.N}x{shape.K}.col.{GetPtxType(inputType)}");
+
         // Compute
-        ptx.AppendLine($"    // Compute C = A * B");
-        ptx.AppendLine($"    wmma.mma.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.col.{GetPtxType(outputType)}.{GetPtxType(inputType)}");
-        
+        _ = ptx.AppendLine($"    // Compute C = A * B");
+        _ = ptx.AppendLine($"    wmma.mma.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.col.{GetPtxType(outputType)}.{GetPtxType(inputType)}");
+
         // Store result
-        ptx.AppendLine($"    // Store C fragment");
-        ptx.AppendLine($"    wmma.store.d.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.{GetPtxType(outputType)}");
+        _ = ptx.AppendLine($"    // Store C fragment");
+        _ = ptx.AppendLine($"    wmma.store.d.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.{GetPtxType(outputType)}");
     }
 
     /// <summary>
@@ -623,15 +623,15 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         
         public void RecordOperation(string kernel, double elapsedMs, double gflops)
         {
-            Interlocked.Increment(ref _totalOperations);
-            
-            var totalGflops = Interlocked.Exchange(ref _totalGFlops, _totalGFlops + gflops);
-            
+            _ = Interlocked.Increment(ref _totalOperations);
+            _ = Interlocked.Exchange(ref _totalGFlops, _totalGFlops + gflops);
+
             // Update peak
+
             var currentPeak = _peakGFlops;
             while (gflops > currentPeak)
             {
-                Interlocked.CompareExchange(ref _peakGFlops, gflops, currentPeak);
+                _ = Interlocked.CompareExchange(ref _peakGFlops, gflops, currentPeak);
                 currentPeak = _peakGFlops;
             }
         }

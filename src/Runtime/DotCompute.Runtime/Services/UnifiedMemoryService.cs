@@ -108,7 +108,7 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
         }
         finally
         {
-            _allocationSemaphore.Release();
+            _ = _allocationSemaphore.Release();
         }
     }
 

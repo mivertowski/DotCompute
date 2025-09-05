@@ -465,7 +465,7 @@ public static class AdvancedFFT
         for (var k = 1; k < halfN; k++)
         {
             var wk = Complex.FromPolarCoordinates(1.0, -Math.PI * k / halfN);
-            var wkConj = Complex.Conjugate(wk);
+            _ = Complex.Conjugate(wk);
 
             var pk = packed[k];
             var pkMinus = Complex.Conjugate(packed[halfN - k]);

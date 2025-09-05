@@ -52,7 +52,7 @@ public class ErrorHandlingTests : IDisposable
         var definition = new KernelDefinition("device_reset_test", "__kernel void test() {}", "test");
         
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Device error*");
 
         // Enable recovery
@@ -60,8 +60,8 @@ public class ErrorHandlingTests : IDisposable
         
         // Second call should succeed after device reset
         var result = await accelerator.CompileKernelAsync(definition);
-        result.Should().NotBeNull();
-        accelerator.DeviceResetCount.Should().Be(1);
+        _ = result.Should().NotBeNull();
+        _ = accelerator.DeviceResetCount.Should().Be(1);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class ErrorHandlingTests : IDisposable
             {
                 try
                 {
-                    await accelerator.CompileKernelAsync(definition);
+                    _ = await accelerator.CompileKernelAsync(definition);
                 }
                 catch
                 {
@@ -97,11 +97,11 @@ public class ErrorHandlingTests : IDisposable
         await Task.WhenAll(tasks);
 
         // Assert - Circuit breaker should be open
-        accelerator.CircuitBreakerState.Should().Be(CircuitBreakerState.Open);
+        _ = accelerator.CircuitBreakerState.Should().Be(CircuitBreakerState.Open);
         
         // New requests should fail immediately
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<CircuitBreakerOpenException>();
+        _ = await act.Should().ThrowAsync<CircuitBreakerOpenException>();
     }
 
     [Theory]
@@ -122,7 +122,7 @@ public class ErrorHandlingTests : IDisposable
 
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage($"*{errorMessage}*");
 
         // Verify error logging
@@ -158,9 +158,9 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.RetryAttemptCount.Should().Be(2);
-        accelerator.LastSuccessfulCompilation.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        _ = result.Should().NotBeNull();
+        _ = accelerator.RetryAttemptCount.Should().Be(2);
+        _ = accelerator.LastSuccessfulCompilation.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public class ErrorHandlingTests : IDisposable
 
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -191,9 +191,9 @@ public class ErrorHandlingTests : IDisposable
 
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition, cancellationToken: cts.Token);
-        await act.Should().ThrowAsync<OperationCanceledException>();
-        
-        accelerator.CompilationCancelled.Should().BeTrue();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
+
+        _ = accelerator.CompilationCancelled.Should().BeTrue();
     }
 
     [Fact]
@@ -210,11 +210,11 @@ public class ErrorHandlingTests : IDisposable
 
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<StackOverflowException>();
-        
+        _ = await act.Should().ThrowAsync<StackOverflowException>();
+
         // Verify diagnostic information is captured
-        accelerator.LastStackOverflowInfo.Should().NotBeNull();
-        accelerator.LastStackOverflowInfo!.KernelName.Should().Be("stack_overflow_test");
+        _ = accelerator.LastStackOverflowInfo.Should().NotBeNull();
+        _ = accelerator.LastStackOverflowInfo!.KernelName.Should().Be("stack_overflow_test");
     }
 
     #endregion
@@ -238,9 +238,9 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.MemoryCleanupCount.Should().BeGreaterThan(0);
-        accelerator.GarbageCollectionTriggered.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = accelerator.MemoryCleanupCount.Should().BeGreaterThan(0);
+        _ = accelerator.GarbageCollectionTriggered.Should().BeTrue();
     }
 
     [Fact]
@@ -259,8 +259,8 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.AlternativeTransferUsed.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = accelerator.AlternativeTransferUsed.Should().BeTrue();
     }
 
     [Fact]
@@ -276,18 +276,18 @@ public class ErrorHandlingTests : IDisposable
         var definition = new KernelDefinition("corruption_test", "__kernel void test() {}", "test");
 
         // Compile once to cache
-        await accelerator.CompileKernelAsync(definition);
+        _ = await accelerator.CompileKernelAsync(definition);
         
         // Enable corruption simulation
         accelerator.TriggerMemoryCorruption = true;
 
         // Act - Second compilation should detect corruption
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Memory corruption detected*");
 
         // Assert
-        accelerator.CacheInvalidatedDueToCorruption.Should().BeTrue();
+        _ = accelerator.CacheInvalidatedDueToCorruption.Should().BeTrue();
     }
 
     #endregion
@@ -315,13 +315,13 @@ public class ErrorHandlingTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.RetryDelays.Should().HaveCount(3);
+        _ = result.Should().NotBeNull();
+        _ = accelerator.RetryDelays.Should().HaveCount(3);
         
         // Verify exponential backoff (each delay should be roughly double the previous)
         for (var i = 1; i < accelerator.RetryDelays.Count; i++)
         {
-            accelerator.RetryDelays[i].Should().BeGreaterThan(accelerator.RetryDelays[i - 1]);
+            _ = accelerator.RetryDelays[i].Should().BeGreaterThan(accelerator.RetryDelays[i - 1]);
         }
     }
 
@@ -342,7 +342,7 @@ public class ErrorHandlingTests : IDisposable
         accelerator.SimulateTransientFailure = true;
         for (var i = 0; i < 3; i++)
         {
-            try { await accelerator.CompileKernelAsync(definition); }
+            try { _ = await accelerator.CompileKernelAsync(definition); }
             catch { /* Expected */ }
         }
 
@@ -350,7 +350,7 @@ public class ErrorHandlingTests : IDisposable
         await Task.Delay(150);
 
         // Assert circuit is half-open
-        accelerator.CircuitBreakerState.Should().Be(CircuitBreakerState.HalfOpen);
+        _ = accelerator.CircuitBreakerState.Should().Be(CircuitBreakerState.HalfOpen);
 
         // Enable success for recovery test
         accelerator.SimulateTransientFailure = false;
@@ -359,8 +359,8 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.CircuitBreakerState.Should().Be(CircuitBreakerState.Closed);
+        _ = result.Should().NotBeNull();
+        _ = accelerator.CircuitBreakerState.Should().Be(CircuitBreakerState.Closed);
     }
 
     [Fact]
@@ -379,9 +379,9 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.CpuFallbackActivated.Should().BeTrue();
-        accelerator.LastExecutionMode.Should().Be("CPU");
+        _ = result.Should().NotBeNull();
+        _ = accelerator.CpuFallbackActivated.Should().BeTrue();
+        _ = accelerator.LastExecutionMode.Should().Be("CPU");
     }
 
     [Fact]
@@ -395,7 +395,7 @@ public class ErrorHandlingTests : IDisposable
 
         // Create initial state
         var definition1 = new KernelDefinition("state_test_1", "__kernel void test1() {}", "test");
-        await accelerator.CompileKernelAsync(definition1);
+        _ = await accelerator.CompileKernelAsync(definition1);
         
         var initialStateChecksum = accelerator.CalculateStateChecksum();
 
@@ -405,7 +405,7 @@ public class ErrorHandlingTests : IDisposable
         
         try
         {
-            await accelerator.CompileKernelAsync(definition2);
+            _ = await accelerator.CompileKernelAsync(definition2);
         }
         catch
         {
@@ -417,8 +417,8 @@ public class ErrorHandlingTests : IDisposable
 
         // Assert
         var restoredStateChecksum = accelerator.CalculateStateChecksum();
-        restoredStateChecksum.Should().Be(initialStateChecksum);
-        accelerator.StateRestorationCount.Should().Be(1);
+        _ = restoredStateChecksum.Should().Be(initialStateChecksum);
+        _ = accelerator.StateRestorationCount.Should().Be(1);
     }
 
     #endregion
@@ -441,9 +441,9 @@ public class ErrorHandlingTests : IDisposable
         var exception = await act.Should().ThrowAsync<InvalidOperationException>();
 
         // Verify exception chain is preserved
-        exception.Which.InnerException.Should().NotBeNull();
-        exception.Which.InnerException.Should().BeOfType<ArgumentException>();
-        exception.Which.InnerException!.InnerException.Should().BeOfType<OutOfMemoryException>();
+        _ = exception.Which.InnerException.Should().NotBeNull();
+        _ = exception.Which.InnerException.Should().BeOfType<ArgumentException>();
+        _ = exception.Which.InnerException!.InnerException.Should().BeOfType<OutOfMemoryException>();
     }
 
     [Fact]
@@ -463,10 +463,10 @@ public class ErrorHandlingTests : IDisposable
         var exception = await act.Should().ThrowAsync<InvalidOperationException>();
 
         // Verify context is preserved
-        exception.Which.Data.Contains("KernelName").Should().BeTrue();
-        exception.Which.Data.Contains("AcceleratorType").Should().BeTrue();
-        exception.Which.Data.Contains("Timestamp").Should().BeTrue();
-        exception.Which.Data["KernelName"].Should().Be("context_test");
+        _ = exception.Which.Data.Contains("KernelName").Should().BeTrue();
+        _ = exception.Which.Data.Contains("AcceleratorType").Should().BeTrue();
+        _ = exception.Which.Data.Contains("Timestamp").Should().BeTrue();
+        _ = exception.Which.Data["KernelName"].Should().Be("context_test");
     }
 
     [Fact]
@@ -484,7 +484,7 @@ public class ErrorHandlingTests : IDisposable
         // Act
         try
         {
-            await accelerator.CompileKernelAsync(definition);
+            _ = await accelerator.CompileKernelAsync(definition);
         }
         catch
         {
@@ -492,11 +492,11 @@ public class ErrorHandlingTests : IDisposable
         }
 
         // Assert
-        accelerator.LastDiagnosticInfo.Should().NotBeNull();
-        accelerator.LastDiagnosticInfo.Should().NotBeNull();
-        accelerator.LastDiagnosticInfo!.ContainsKey("MemoryUsage").Should().BeTrue();
-        accelerator.LastDiagnosticInfo!.ContainsKey("ThreadCount").Should().BeTrue();
-        accelerator.LastDiagnosticInfo!.ContainsKey("SystemLoad").Should().BeTrue();
+        _ = accelerator.LastDiagnosticInfo.Should().NotBeNull();
+        _ = accelerator.LastDiagnosticInfo.Should().NotBeNull();
+        _ = accelerator.LastDiagnosticInfo!.ContainsKey("MemoryUsage").Should().BeTrue();
+        _ = accelerator.LastDiagnosticInfo!.ContainsKey("ThreadCount").Should().BeTrue();
+        _ = accelerator.LastDiagnosticInfo!.ContainsKey("SystemLoad").Should().BeTrue();
     }
 
     #endregion
@@ -536,9 +536,9 @@ public class ErrorHandlingTests : IDisposable
         var successCount = results.Count(r => r != null);
         var failureCount = results.Length - successCount;
 
-        successCount.Should().BeGreaterThan(0, "Some operations should succeed");
-        failureCount.Should().BeGreaterThan(0, "Some operations should fail");
-        accelerator.ConcurrentErrorCount.Should().Be(failureCount);
+        _ = successCount.Should().BeGreaterThan(0, "Some operations should succeed");
+        _ = failureCount.Should().BeGreaterThan(0, "Some operations should fail");
+        _ = accelerator.ConcurrentErrorCount.Should().Be(failureCount);
     }
 
     [Fact]
@@ -560,7 +560,7 @@ public class ErrorHandlingTests : IDisposable
             {
                 try
                 {
-                    await accelerator.CompileKernelAsync(definition);
+                    _ = await accelerator.CompileKernelAsync(definition);
                 }
                 catch
                 {
@@ -572,8 +572,8 @@ public class ErrorHandlingTests : IDisposable
         await Task.WhenAll(tasks);
 
         // Assert - Internal state should remain consistent
-        accelerator.InternalState.Should().NotBeNull();
-        accelerator.StateConsistencyViolations.Should().Be(0);
+        _ = accelerator.InternalState.Should().NotBeNull();
+        _ = accelerator.StateConsistencyViolations.Should().Be(0);
     }
 
     #endregion
@@ -595,11 +595,11 @@ public class ErrorHandlingTests : IDisposable
 
         // Act
         var act = async () => await accelerator.CompileKernelAsync(definition, cancellationToken: cts.Token);
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
 
         // Assert - Resources should be cleaned up
-        accelerator.ResourcesCleanedUpOnCancellation.Should().BeTrue();
-        accelerator.ActiveResourceCount.Should().Be(0);
+        _ = accelerator.ResourcesCleanedUpOnCancellation.Should().BeTrue();
+        _ = accelerator.ActiveResourceCount.Should().Be(0);
     }
 
     [Fact]
@@ -616,10 +616,10 @@ public class ErrorHandlingTests : IDisposable
 
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<TimeoutException>()
+        _ = await act.Should().ThrowAsync<TimeoutException>()
             .WithMessage("*Deadlock detected*");
 
-        accelerator.DeadlockDetected.Should().BeTrue();
+        _ = accelerator.DeadlockDetected.Should().BeTrue();
     }
 
     #endregion
@@ -639,10 +639,10 @@ public class ErrorHandlingTests : IDisposable
 
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Device is currently unavailable*");
 
-        accelerator.DeviceUnavailableDetected.Should().BeTrue();
+        _ = accelerator.DeviceUnavailableDetected.Should().BeTrue();
     }
 
     [Fact]
@@ -661,9 +661,9 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.ThermalThrottlingActivated.Should().BeTrue();
-        accelerator.PerformanceDegradationLevel.Should().BeGreaterThan(0);
+        _ = result.Should().NotBeNull();
+        _ = accelerator.ThermalThrottlingActivated.Should().BeTrue();
+        _ = accelerator.PerformanceDegradationLevel.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -682,10 +682,10 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.CompilerCrashDetected.Should().BeTrue();
-        accelerator.FallbackCompilerUsed.Should().BeTrue();
-        accelerator.LastCompilerUsed.Should().Be("FallbackCompiler");
+        _ = result.Should().NotBeNull();
+        _ = accelerator.CompilerCrashDetected.Should().BeTrue();
+        _ = accelerator.FallbackCompilerUsed.Should().BeTrue();
+        _ = accelerator.LastCompilerUsed.Should().Be("FallbackCompiler");
     }
 
     [Fact]
@@ -704,9 +704,9 @@ public class ErrorHandlingTests : IDisposable
         var exception = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*version mismatch*");
 
-        exception.Which.Data.Contains("RequiredVersion").Should().BeTrue();
-        exception.Which.Data.Contains("AvailableVersion").Should().BeTrue();
-        exception.Which.Data.Contains("IsBackwardCompatible").Should().BeTrue();
+        _ = exception.Which.Data.Contains("RequiredVersion").Should().BeTrue();
+        _ = exception.Which.Data.Contains("AvailableVersion").Should().BeTrue();
+        _ = exception.Which.Data.Contains("IsBackwardCompatible").Should().BeTrue();
     }
 
     [Fact]
@@ -727,12 +727,12 @@ public class ErrorHandlingTests : IDisposable
         // Act - Multiple operations to trigger leak detection
         foreach (var def in definitions)
         {
-            await accelerator.CompileKernelAsync(def);
+            _ = await accelerator.CompileKernelAsync(def);
         }
 
         // Assert
-        accelerator.MemoryLeakDetected.Should().BeTrue();
-        accelerator.ForcedGarbageCollections.Should().BeGreaterThan(0);
+        _ = accelerator.MemoryLeakDetected.Should().BeTrue();
+        _ = accelerator.ForcedGarbageCollections.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -752,10 +752,10 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.MemoryFragmentationDetected.Should().BeTrue();
-        accelerator.DefragmentationPerformed.Should().BeTrue();
-        accelerator.PostDefragmentationFragmentationLevel.Should().BeLessThan(0.3f);
+        _ = result.Should().NotBeNull();
+        _ = accelerator.MemoryFragmentationDetected.Should().BeTrue();
+        _ = accelerator.DefragmentationPerformed.Should().BeTrue();
+        _ = accelerator.PostDefragmentationFragmentationLevel.Should().BeLessThan(0.3f);
     }
 
     [Fact]
@@ -775,11 +775,11 @@ public class ErrorHandlingTests : IDisposable
         var exception = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Buffer overflow detected*");
 
-        exception.Which.Data.Contains("BufferSize").Should().BeTrue();
-        exception.Which.Data.Contains("AttemptedAccess").Should().BeTrue();
-        exception.Which.Data.Contains("ProtectionEnabled").Should().BeTrue();
+        _ = exception.Which.Data.Contains("BufferSize").Should().BeTrue();
+        _ = exception.Which.Data.Contains("AttemptedAccess").Should().BeTrue();
+        _ = exception.Which.Data.Contains("ProtectionEnabled").Should().BeTrue();
 
-        accelerator.BufferOverflowPrevented.Should().BeTrue();
+        _ = accelerator.BufferOverflowPrevented.Should().BeTrue();
     }
 
     [Fact]
@@ -798,10 +798,10 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.PrimaryPlanFailed.Should().BeTrue();
-        accelerator.BackupPlanActivated.Should().BeTrue();
-        accelerator.LastExecutionPlan.Should().Be("BackupPlan");
+        _ = result.Should().NotBeNull();
+        _ = accelerator.PrimaryPlanFailed.Should().BeTrue();
+        _ = accelerator.BackupPlanActivated.Should().BeTrue();
+        _ = accelerator.LastExecutionPlan.Should().Be("BackupPlan");
     }
 
     [Fact]
@@ -818,13 +818,13 @@ public class ErrorHandlingTests : IDisposable
         var definition = new KernelDefinition("health_test", "__kernel void test() {}", "test");
 
         // Act
-        await accelerator.CompileKernelAsync(definition);
+        _ = await accelerator.CompileKernelAsync(definition);
         await Task.Delay(200); // Allow health check to run
 
         // Assert
-        accelerator.HealthChecksPerformed.Should().BeGreaterThan(0);
-        accelerator.HealthDegradationDetected.Should().BeTrue();
-        accelerator.CurrentHealthScore.Should().BeLessThan(1.0f);
+        _ = accelerator.HealthChecksPerformed.Should().BeGreaterThan(0);
+        _ = accelerator.HealthDegradationDetected.Should().BeTrue();
+        _ = accelerator.CurrentHealthScore.Should().BeLessThan(1.0f);
     }
 
     [Fact]
@@ -844,11 +844,11 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.HealableErrorDetected.Should().BeTrue();
-        accelerator.SelfHealingActivated.Should().BeTrue();
-        accelerator.HealingAttemptsUsed.Should().BeGreaterThan(0);
-        accelerator.HealingSuccessful.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = accelerator.HealableErrorDetected.Should().BeTrue();
+        _ = accelerator.SelfHealingActivated.Should().BeTrue();
+        _ = accelerator.HealingAttemptsUsed.Should().BeGreaterThan(0);
+        _ = accelerator.HealingSuccessful.Should().BeTrue();
     }
 
     [Fact]
@@ -868,9 +868,9 @@ public class ErrorHandlingTests : IDisposable
         var exception = await act.Should().ThrowAsync<InvalidOperationException>();
 
         // Verify stack trace contains method names from the call chain
-        exception.Which.StackTrace.Should().Contain("CompileKernelCoreAsync");
-        exception.Which.StackTrace.Should().Contain("DeepMethodCall");
-        exception.Which.Data.Contains("OriginalStackTrace").Should().BeTrue();
+        _ = exception.Which.StackTrace.Should().Contain("CompileKernelCoreAsync");
+        _ = exception.Which.StackTrace.Should().Contain("DeepMethodCall");
+        _ = exception.Which.Data.Contains("OriginalStackTrace").Should().BeTrue();
     }
 
     [Fact]
@@ -898,7 +898,7 @@ public class ErrorHandlingTests : IDisposable
         {
             try
             {
-                await accelerator.CompileKernelAsync(def);
+                _ = await accelerator.CompileKernelAsync(def);
             }
             catch (Exception ex)
             {
@@ -907,14 +907,14 @@ public class ErrorHandlingTests : IDisposable
         }
 
         // Assert
-        exceptions.Should().HaveCount(2);
-        exceptions.Should().AllSatisfy(ex =>
+        _ = exceptions.Should().HaveCount(2);
+        _ = exceptions.Should().AllSatisfy(ex =>
         {
-            ex.Data.Contains("CorrelationId").Should().BeTrue();
-            ex.Data["CorrelationId"].Should().Be(correlationId);
+            _ = ex.Data.Contains("CorrelationId").Should().BeTrue();
+            _ = ex.Data["CorrelationId"].Should().Be(correlationId);
         });
 
-        accelerator.CorrelatedErrorsDetected.Should().BeTrue();
+        _ = accelerator.CorrelatedErrorsDetected.Should().BeTrue();
     }
 
     [Fact]
@@ -935,8 +935,8 @@ public class ErrorHandlingTests : IDisposable
             {
                 try
                 {
-                    await accelerator.CompileKernelAsync(definition);
-                    return true;
+                    var kernel = await accelerator.CompileKernelAsync(definition);
+                    return kernel != null;
                 }
                 catch
                 {
@@ -952,12 +952,12 @@ public class ErrorHandlingTests : IDisposable
         var failureCount = results.Length - successCount;
 
         // Some operations should succeed and some should fail
-        successCount.Should().BeGreaterThan(0);
-        failureCount.Should().BeGreaterThan(0);
+        _ = successCount.Should().BeGreaterThan(0);
+        _ = failureCount.Should().BeGreaterThan(0);
 
         // No thread safety violations should occur
-        accelerator.ThreadSafetyViolations.Should().Be(0);
-        accelerator.ConcurrentAccessErrors.Should().Be(0);
+        _ = accelerator.ThreadSafetyViolations.Should().Be(0);
+        _ = accelerator.ConcurrentAccessErrors.Should().Be(0);
     }
 
     [Fact]
@@ -979,9 +979,9 @@ public class ErrorHandlingTests : IDisposable
             .WithMessage("*nested async error*");
 
         // Verify nested context is preserved
-        exception.Which.Data.Contains("NestingLevel").Should().BeTrue();
-        exception.Which.Data.Contains("AsyncCallChain").Should().BeTrue();
-        exception.Which.Data["NestingLevel"].Should().Be(5);
+        _ = exception.Which.Data.Contains("NestingLevel").Should().BeTrue();
+        _ = exception.Which.Data.Contains("AsyncCallChain").Should().BeTrue();
+        _ = exception.Which.Data["NestingLevel"].Should().Be(5);
     }
 
     [Fact]
@@ -1000,9 +1000,9 @@ public class ErrorHandlingTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition).ConfigureAwait(false);
 
         // Assert
-        result.Should().NotBeNull();
-        accelerator.SyncContextDeadlockAvoided.Should().BeTrue();
-        accelerator.ConfigureAwaitUsedCorrectly.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = accelerator.SyncContextDeadlockAvoided.Should().BeTrue();
+        _ = accelerator.ConfigureAwaitUsedCorrectly.Should().BeTrue();
     }
 
     [Fact]
@@ -1016,21 +1016,21 @@ public class ErrorHandlingTests : IDisposable
 
         // Act & Assert - Various invalid inputs
         var act1 = () => accelerator.ValidateKernelParameters(null!);
-        act1.Should().Throw<ArgumentNullException>()
+        _ = act1.Should().Throw<ArgumentNullException>()
             .WithParameterName("parameters");
 
         var act2 = () => accelerator.ValidateKernelParameters(new Dictionary<string, object> 
         { 
             ["invalid@key"] = "value" 
         });
-        act2.Should().Throw<ArgumentException>()
+        _ = act2.Should().Throw<ArgumentException>()
             .WithMessage("*Invalid parameter key format*");
 
         var act3 = () => accelerator.ValidateMemorySize(-1);
-        act3.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act3.Should().Throw<ArgumentOutOfRangeException>()
             .WithParameterName("size");
 
-        accelerator.SynchronousValidationCount.Should().Be(3);
+        _ = accelerator.SynchronousValidationCount.Should().Be(3);
     }
 
     [Fact]
@@ -1046,11 +1046,11 @@ public class ErrorHandlingTests : IDisposable
 
         // Act & Assert
         var act = () => accelerator.AcquireExclusiveResource("test-resource");
-        act.Should().Throw<TimeoutException>()
+        _ = act.Should().Throw<TimeoutException>()
             .WithMessage("*Resource lock timeout*");
 
-        accelerator.ResourceContentionDetected.Should().BeTrue();
-        accelerator.LockTimeoutCount.Should().Be(1);
+        _ = accelerator.ResourceContentionDetected.Should().BeTrue();
+        _ = accelerator.LockTimeoutCount.Should().Be(1);
     }
 
     #endregion
@@ -1086,7 +1086,7 @@ public class ErrorHandlingTests : IDisposable
                 {
                     try
                     {
-                        accelerator.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(1));
+                        _ = accelerator.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(1));
                     }
                     catch
                     {
@@ -1285,7 +1285,7 @@ public class ErrorHandlingTests : IDisposable
             CompilationOptions options,
             CancellationToken cancellationToken)
         {
-            Interlocked.Increment(ref _activeResourceCount);
+            _ = Interlocked.Increment(ref _activeResourceCount);
 
             try
             {
@@ -1319,8 +1319,8 @@ public class ErrorHandlingTests : IDisposable
 
                 // Create successful result
                 var mockKernel = new Mock<ICompiledKernel>();
-                mockKernel.Setup(x => x.Id).Returns(Guid.NewGuid());
-                mockKernel.Setup(x => x.Name).Returns(definition.Name);
+                _ = mockKernel.Setup(x => x.Id).Returns(Guid.NewGuid());
+                _ = mockKernel.Setup(x => x.Name).Returns(definition.Name);
 
                 LastSuccessfulCompilation = DateTime.UtcNow;
                 return mockKernel.Object;
@@ -1338,7 +1338,7 @@ public class ErrorHandlingTests : IDisposable
             }
             finally
             {
-                Interlocked.Decrement(ref _activeResourceCount);
+                _ = Interlocked.Decrement(ref _activeResourceCount);
             }
         }
 
@@ -1529,7 +1529,7 @@ public class ErrorHandlingTests : IDisposable
             {
                 if (_random.NextDouble() < 0.3) // 30% failure rate
                 {
-                    Interlocked.Increment(ref _concurrentErrorCount);
+                    _ = Interlocked.Increment(ref _concurrentErrorCount);
                     throw new InvalidOperationException("Random concurrent error");
                 }
             }

@@ -192,7 +192,7 @@ public class AlgorithmBenchmarks
     [Benchmark]
     public void ParallelLinearTransformation()
     {
-        Parallel.For(0, DataSize, i =>
+        _ = Parallel.For(0, DataSize, i =>
         {
             _outputData[i] = _weights[i] * _inputData[i] + _bias[i];
         });
@@ -201,7 +201,7 @@ public class AlgorithmBenchmarks
     [Benchmark]
     public void ParallelReLU()
     {
-        Parallel.For(0, DataSize, i =>
+        _ = Parallel.For(0, DataSize, i =>
         {
             _outputData[i] = Math.Max(0, _inputData[i]);
         });

@@ -118,7 +118,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
             loadedPlugin.LastError = ex;
 
             // Remove from plugins collection on initialization failure
-            _plugins.TryRemove(plugin.Id, out _);
+            _ = _plugins.TryRemove(plugin.Id, out _);
 
             LogPluginInitializationFailed(plugin.Id, ex.Message);
             throw;
@@ -197,7 +197,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
             var assemblyPath = loadedPlugin.Metadata.AssemblyPath;
 
             // Unregister current plugin
-            await UnregisterPluginAsync(pluginId).ConfigureAwait(false);
+            _ = await UnregisterPluginAsync(pluginId).ConfigureAwait(false);
 
             // Small delay to allow for file system events
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);

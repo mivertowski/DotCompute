@@ -59,9 +59,9 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldBeApproximatelyEqualTo(this float[] actual, float[] expected, float tolerance = 1e-6f, string because = "")
     {
-        actual.Should().NotBeNull();
-        expected.Should().NotBeNull();
-        actual.Should().HaveCount(expected.Length);
+        _ = actual.Should().NotBeNull();
+        _ = expected.Should().NotBeNull();
+        _ = actual.Should().HaveCount(expected.Length);
         
         for (var i = 0; i < actual.Length; i++)
         {
@@ -77,9 +77,9 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldBeApproximatelyEqualTo(this double[] actual, double[] expected, double tolerance = 1e-12, string because = "")
     {
-        actual.Should().NotBeNull();
-        expected.Should().NotBeNull();
-        actual.Should().HaveCount(expected.Length);
+        _ = actual.Should().NotBeNull();
+        _ = expected.Should().NotBeNull();
+        _ = actual.Should().HaveCount(expected.Length);
         
         for (var i = 0; i < actual.Length; i++)
         {
@@ -95,7 +95,7 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldContainOnlyFiniteValues(this float[] array, string because = "")
     {
-        array.Should().NotBeNull();
+        _ = array.Should().NotBeNull();
         
         for (var i = 0; i < array.Length; i++)
         {
@@ -111,7 +111,7 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldContainOnlyFiniteValues(this double[] array, string because = "")
     {
-        array.Should().NotBeNull();
+        _ = array.Should().NotBeNull();
         
         for (var i = 0; i < array.Length; i++)
         {
@@ -131,12 +131,12 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldBeApproximatelyEqualTo(this float[] actual, float[] expected, int rows, int cols, float tolerance = 1e-6f, string because = "")
     {
-        actual.Should().NotBeNull();
-        expected.Should().NotBeNull();
+        _ = actual.Should().NotBeNull();
+        _ = expected.Should().NotBeNull();
         
         var expectedLength = rows * cols;
-        actual.Should().HaveCount(expectedLength);
-        expected.Should().HaveCount(expectedLength);
+        _ = actual.Should().HaveCount(expectedLength);
+        _ = expected.Should().HaveCount(expectedLength);
         
         for (var row = 0; row < rows; row++)
         {
@@ -223,7 +223,7 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldBeWithinBounds(this float[] array, float min, float max, string because = "")
     {
-        array.Should().NotBeNull();
+        _ = array.Should().NotBeNull();
         
         for (var i = 0; i < array.Length; i++)
         {
@@ -265,8 +265,8 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldHaveMeanApproximately(this float[] array, float expectedMean, float tolerance = 1e-6f, string because = "")
     {
-        array.Should().NotBeNull();
-        array.Should().NotBeEmpty();
+        _ = array.Should().NotBeNull();
+        _ = array.Should().NotBeEmpty();
         
         var actualMean = array.Average();
         if (Math.Abs(actualMean - expectedMean) > tolerance)
@@ -280,8 +280,8 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldHaveStandardDeviationApproximately(this float[] array, float expectedStdDev, float tolerance = 1e-6f, string because = "")
     {
-        array.Should().NotBeNull();
-        array.Should().NotBeEmpty();
+        _ = array.Should().NotBeNull();
+        _ = array.Should().NotBeEmpty();
         
         var mean = array.Average();
         var variance = array.Select(x => Math.Pow(x - mean, 2)).Average();
@@ -302,8 +302,8 @@ public static class CustomAssertions
     /// </summary>
     public static void ShouldHaveSparsityRatio(this float[] array, float expectedRatio, float tolerance = 0.01f, string because = "")
     {
-        array.Should().NotBeNull();
-        array.Should().NotBeEmpty();
+        _ = array.Should().NotBeNull();
+        _ = array.Should().NotBeEmpty();
         
         var zeroCount = array.Count(x => Math.Abs(x) < float.Epsilon);
         var actualRatio = (float)zeroCount / array.Length;

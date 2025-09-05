@@ -156,7 +156,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                 
                 if (error != CudaError.Success)
                 {
-                    cudaGraphDestroy(graph);
+                    _ = cudaGraphDestroy(graph);
                     throw new CudaException($"Failed to instantiate graph: {error}");
                 }
 
@@ -198,7 +198,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             }
             finally
             {
-                _graphCreationLock.Release();
+                _ = _graphCreationLock.Release();
             }
         }
 
@@ -294,7 +294,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                 if (error == CudaError.Success && updateResult == CudaGraphExecUpdateResult.Success)
                 {
                     // Update succeeded - replace graph but keep executable
-                    cudaGraphDestroy(instance.Graph);
+                    _ = cudaGraphDestroy(instance.Graph);
                     instance.Graph = newGraph;
                     instance.LastUpdatedAt = DateTimeOffset.UtcNow;
                     
@@ -308,10 +308,10 @@ namespace DotCompute.Backends.CUDA.Graphs
                     _logger.LogWarning(
                         "In-place update failed for graph {GraphName} (result: {UpdateResult}), recreating",
                         graphName, updateResult);
-                    
+
                     // Destroy old resources
-                    cudaGraphExecDestroy(instance.GraphExec);
-                    cudaGraphDestroy(instance.Graph);
+                    _ = cudaGraphExecDestroy(instance.GraphExec);
+                    _ = cudaGraphDestroy(instance.Graph);
                     
                     // Create new executable
                     error = cudaGraphInstantiate(
@@ -323,7 +323,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                     
                     if (error != CudaError.Success)
                     {
-                        cudaGraphDestroy(newGraph);
+                        _ = cudaGraphDestroy(newGraph);
                         throw new CudaException($"Failed to instantiate updated graph: {error}");
                     }
 
@@ -338,7 +338,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             }
             finally
             {
-                _graphCreationLock.Release();
+                _ = _graphCreationLock.Release();
             }
         }
 
@@ -372,7 +372,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                 
                 if (error != CudaError.Success)
                 {
-                    cudaGraphDestroy(clonedGraph);
+                    _ = cudaGraphDestroy(clonedGraph);
                     throw new CudaException($"Failed to instantiate cloned graph: {error}");
                 }
 
@@ -405,7 +405,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             }
             finally
             {
-                _graphCreationLock.Release();
+                _ = _graphCreationLock.Release();
             }
         }
 
@@ -539,9 +539,9 @@ namespace DotCompute.Backends.CUDA.Graphs
                 {
                     if (_graphs.TryRemove(name, out var instance))
                     {
-                        cudaGraphExecDestroy(instance.GraphExec);
-                        cudaGraphDestroy(instance.Graph);
-                        _statistics.TryRemove(name, out _);
+                        _ = cudaGraphExecDestroy(instance.GraphExec);
+                        _ = cudaGraphDestroy(instance.Graph);
+                        _ = _statistics.TryRemove(name, out _);
                         
                         _logger.LogInformation(
                             "Removed unused graph {GraphName} (last used: {LastUsed})",
@@ -577,9 +577,9 @@ namespace DotCompute.Backends.CUDA.Graphs
         {
             if (_graphs.TryRemove(graphName, out var instance))
             {
-                cudaGraphExecDestroy(instance.GraphExec);
-                cudaGraphDestroy(instance.Graph);
-                _statistics.TryRemove(graphName, out _);
+                _ = cudaGraphExecDestroy(instance.GraphExec);
+                _ = cudaGraphDestroy(instance.Graph);
+                _ = _statistics.TryRemove(graphName, out _);
                 
                 _logger.LogInformation("Removed graph {GraphName}", graphName);
                 return true;
@@ -604,8 +604,8 @@ namespace DotCompute.Backends.CUDA.Graphs
             {
                 try
                 {
-                    cudaGraphExecDestroy(instance.GraphExec);
-                    cudaGraphDestroy(instance.Graph);
+                    _ = cudaGraphExecDestroy(instance.GraphExec);
+                    _ = cudaGraphDestroy(instance.Graph);
                 }
                 catch (Exception ex)
                 {

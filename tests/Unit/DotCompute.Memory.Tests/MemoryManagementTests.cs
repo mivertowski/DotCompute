@@ -37,14 +37,14 @@ public class MemoryManagementTests
         
         // Act
         using var buffer = new UnifiedBuffer<float>(memoryManager, 1024);
-        
+
         // Assert
-        buffer.Length.Should().Be(1024);
-        buffer.SizeInBytes.Should().Be(1024 * sizeof(float));
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeFalse();
-        buffer.State.Should().Be(BufferState.HostOnly);
-        buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.Length.Should().Be(1024);
+        _ = buffer.SizeInBytes.Should().Be(1024 * sizeof(float));
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeFalse();
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     [Theory]
@@ -58,7 +58,7 @@ public class MemoryManagementTests
         
         // Act & Assert
         Action act = () => new UnifiedBuffer<float>(memoryManager, invalidLength);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class MemoryManagementTests
     {
         // Act & Assert
         Action act = () => new UnifiedBuffer<float>(null!, 1024);
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -79,11 +79,11 @@ public class MemoryManagementTests
         
         // Act
         using var buffer = new UnifiedBuffer<int>(memoryManager, 256);
-        
+
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
-        buffer.IsOnDevice.Should().BeFalse();
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnDevice.Should().BeFalse();
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
     }
 
     [Fact]
@@ -95,11 +95,11 @@ public class MemoryManagementTests
         
         // Act & Assert - Allocation within limits should succeed
         using var smallBuffer = new UnifiedBuffer<byte>(memoryManager, 512);
-        smallBuffer.Should().NotBeNull();
+        _ = smallBuffer.Should().NotBeNull();
         
         // Large allocation should fail
         var act = () => new UnifiedBuffer<byte>(memoryManager, 2048);
-        act.Should().Throw<InvalidOperationException>()
+        _ = act.Should().Throw<InvalidOperationException>()
             .WithMessage("*allocation exceeds maximum allowed size*");
         
         return Task.CompletedTask;
@@ -123,7 +123,7 @@ public class MemoryManagementTests
         
         // Assert - Should have fewer allocations due to pooling
         _output.WriteLine($"Total allocations: {allocationCount}");
-        allocationCount.Should().BeLessThanOrEqualTo(3, "memory pooling should reduce allocation count");
+        _ = allocationCount.Should().BeLessThanOrEqualTo(3, "memory pooling should reduce allocation count");
     }
 
     #endregion
@@ -145,10 +145,10 @@ public class MemoryManagementTests
         buffer.EnsureOnDevice();
         buffer.MarkDeviceDirty();
         buffer.EnsureOnHost();
-        
+
         // Assert
-        buffer.AsSpan().ToArray().Should().Equal(testData);
-        buffer.State.Should().Be(BufferState.Synchronized);
+        _ = buffer.AsSpan().ToArray().Should().Equal(testData);
+        _ = buffer.State.Should().Be(BufferState.Synchronized);
     }
 
     [Fact]
@@ -166,10 +166,10 @@ public class MemoryManagementTests
         await buffer.EnsureOnDeviceAsync();
         buffer.MarkDeviceDirty();
         await buffer.EnsureOnHostAsync();
-        
+
         // Assert
-        buffer.AsReadOnlySpan().ToArray().Should().Equal(testData);
-        buffer.IsDirty.Should().BeFalse();
+        _ = buffer.AsReadOnlySpan().ToArray().Should().Equal(testData);
+        _ = buffer.IsDirty.Should().BeFalse();
     }
 
     [Fact]
@@ -179,28 +179,28 @@ public class MemoryManagementTests
         // Arrange
         using var memoryManager = new TestUnifiedMemoryManager();
         using var buffer = new UnifiedBuffer<byte>(memoryManager, 16);
-        
+
         // Act & Assert - Initial state
-        buffer.IsDirty.Should().BeFalse();
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.IsDirty.Should().BeFalse();
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
         
         // Mark host dirty
         buffer.MarkHostDirty();
-        buffer.IsDirty.Should().BeFalse(); // HostOnly can't be dirty
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.IsDirty.Should().BeFalse(); // HostOnly can't be dirty
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
         
         // Transition to device and mark dirty
         buffer.EnsureOnDevice();
-        buffer.State.Should().Be(BufferState.Synchronized);
+        _ = buffer.State.Should().Be(BufferState.Synchronized);
         
         buffer.MarkDeviceDirty();
-        buffer.IsDirty.Should().BeTrue();
-        buffer.State.Should().Be(BufferState.DeviceDirty);
+        _ = buffer.IsDirty.Should().BeTrue();
+        _ = buffer.State.Should().Be(BufferState.DeviceDirty);
         
         // Synchronize
         buffer.Synchronize();
-        buffer.IsDirty.Should().BeFalse();
-        buffer.State.Should().Be(BufferState.Synchronized);
+        _ = buffer.IsDirty.Should().BeFalse();
+        _ = buffer.State.Should().Be(BufferState.Synchronized);
     }
 
     [Fact]
@@ -224,10 +224,10 @@ public class MemoryManagementTests
         }
         
         await Task.WhenAll(tasks);
-        
+
         // Assert - Buffer should not be corrupted
-        buffer.State.Should().Be(BufferState.Synchronized);
-        buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.State.Should().Be(BufferState.Synchronized);
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     #endregion
@@ -246,13 +246,13 @@ public class MemoryManagementTests
         
         // Act
         var slice = buffer.Slice(5, 10);
-        
+
         // Assert
-        slice.Length.Should().Be(10);
-        slice.Should().NotBeNull();
-        
+        _ = slice.Length.Should().Be(10);
+        _ = slice.Should().NotBeNull();
+
         // Verify slice references original buffer
-        slice.Should().BeSameAs(buffer, "current implementation returns self");
+        _ = slice.Should().BeSameAs(buffer, "current implementation returns self");
     }
 
     [Theory]
@@ -269,7 +269,7 @@ public class MemoryManagementTests
         
         // Act & Assert
         Action act = () => buffer.Slice(offset, length);
-        act.Should().Throw<ArgumentOutOfRangeException>(reason);
+        _ = act.Should().Throw<ArgumentOutOfRangeException>(reason);
     }
 
     [Fact]
@@ -282,9 +282,9 @@ public class MemoryManagementTests
         
         // Act
         var intView = buffer.AsType<int>();
-        
+
         // Assert
-        intView.Should().NotBeNull();
+        _ = intView.Should().NotBeNull();
         // Note: Implementation returns a view, specific assertions depend on actual implementation
     }
 
@@ -299,15 +299,15 @@ public class MemoryManagementTests
         // Act - Create overlapping slices
         var slice1 = buffer.Slice(0, 15);
         var slice2 = buffer.Slice(10, 10);
-        
+
         // Assert - Both slices should be valid
-        slice1.Length.Should().Be(15);
-        slice2.Length.Should().Be(10);
-        
+        _ = slice1.Length.Should().Be(15);
+        _ = slice2.Length.Should().Be(10);
+
         // Modifications to overlapping regions should be handled properly
         // This tests the implementation's ability to handle overlapping memory access
-        slice1.Should().NotBeNull();
-        slice2.Should().NotBeNull();
+        _ = slice1.Should().NotBeNull();
+        _ = slice2.Should().NotBeNull();
     }
 
     [Fact]
@@ -322,10 +322,10 @@ public class MemoryManagementTests
         var slice = buffer.Slice(0, 10);
         // In current implementation, slice is same as buffer, so disposal affects parent
         // This test documents the current behavior
-        
+
         // Assert
-        buffer.IsDisposed.Should().BeFalse();
-        slice.IsDisposed.Should().BeFalse();
+        _ = buffer.IsDisposed.Should().BeFalse();
+        _ = slice.IsDisposed.Should().BeFalse();
         
         return Task.CompletedTask;
     }
@@ -344,10 +344,10 @@ public class MemoryManagementTests
         
         // Act
         buffer.Dispose();
-        
+
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
-        buffer.State.Should().Be(BufferState.Uninitialized);
+        _ = buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.State.Should().Be(BufferState.Uninitialized);
     }
 
     [Fact]
@@ -360,10 +360,10 @@ public class MemoryManagementTests
         
         // Act
         await buffer.DisposeAsync();
-        
+
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
-        buffer.State.Should().Be(BufferState.Uninitialized);
+        _ = buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.State.Should().Be(BufferState.Uninitialized);
     }
 
     [Fact]
@@ -377,9 +377,9 @@ public class MemoryManagementTests
         // Act
         buffer.Dispose();
         buffer.Dispose(); // Second disposal
-        
+
         // Assert
-        buffer.IsDisposed.Should().BeTrue();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -396,11 +396,11 @@ public class MemoryManagementTests
         Action memoryAccess = () => buffer.AsMemory();
         Action ensureHost = () => buffer.EnsureOnHost();
         Action ensureDevice = () => buffer.EnsureOnDevice();
-        
-        spanAccess.Should().Throw<ObjectDisposedException>();
-        memoryAccess.Should().Throw<ObjectDisposedException>();
-        ensureHost.Should().Throw<ObjectDisposedException>();
-        ensureDevice.Should().Throw<ObjectDisposedException>();
+
+        _ = spanAccess.Should().Throw<ObjectDisposedException>();
+        _ = memoryAccess.Should().Throw<ObjectDisposedException>();
+        _ = ensureHost.Should().Throw<ObjectDisposedException>();
+        _ = ensureDevice.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -414,11 +414,11 @@ public class MemoryManagementTests
         using var owner1 = allocator.Allocate<int>(100);
         using var owner2 = allocator.AllocatePinned<float>(200);
         var stats = allocator.GetStatistics();
-        
+
         // Assert
-        stats.TotalAllocations.Should().Be(2);
-        stats.TotalAllocatedBytes.Should().Be(100 * sizeof(int) + 200 * sizeof(float));
-        stats.ActiveAllocations.Should().Be(2);
+        _ = stats.TotalAllocations.Should().Be(2);
+        _ = stats.TotalAllocatedBytes.Should().Be(100 * sizeof(int) + 200 * sizeof(float));
+        _ = stats.ActiveAllocations.Should().Be(2);
     }
 
     [Fact]
@@ -454,9 +454,9 @@ public class MemoryManagementTests
         // Check if objects were collected (indicating proper cleanup)
         var aliveCount = buffers.Count(wr => wr.IsAlive);
         _output.WriteLine($"Alive objects: {aliveCount} out of {buffers.Count}");
-        
+
         // Memory leak detection - should not grow excessively
-        memoryDiff.Should().BeLessThan(1024 * 1024, "memory should not leak significantly");
+        _ = memoryDiff.Should().BeLessThan(1024 * 1024, "memory should not leak significantly");
         
         return Task.CompletedTask;
     }
@@ -494,8 +494,8 @@ public class MemoryManagementTests
         
         _output.WriteLine($"Memory bandwidth: {throughputMBps:F2} MB/s");
         _output.WriteLine($"Total time: {stopwatch.ElapsedMilliseconds} ms");
-        
-        throughputMBps.Should().BeGreaterThan(100, "memory bandwidth should meet minimum threshold");
+
+        _ = throughputMBps.Should().BeGreaterThan(100, "memory bandwidth should meet minimum threshold");
     }
 
     [Fact]
@@ -521,8 +521,8 @@ public class MemoryManagementTests
         // Assert
         var avgAllocationTime = stopwatch.ElapsedMilliseconds / (double)allocationCount;
         _output.WriteLine($"Average allocation time: {avgAllocationTime:F3} ms");
-        
-        avgAllocationTime.Should().BeLessThan(0.1, "allocation should be fast");
+
+        _ = avgAllocationTime.Should().BeLessThan(0.1, "allocation should be fast");
         
         // Cleanup
         foreach (var owner in owners)
@@ -552,9 +552,9 @@ public class MemoryManagementTests
         var throughputMBps = size / (stopwatch.ElapsedTicks * 1000.0 / Stopwatch.Frequency) / (1024 * 1024);
         _output.WriteLine($"Copy throughput: {throughputMBps:F2} MB/s");
         _output.WriteLine($"Time: {stopwatch.ElapsedTicks * 1000.0 / Stopwatch.Frequency:F3} ms");
-        
-        destination.Should().Equal(source);
-        throughputMBps.Should().BeGreaterThan(1000, "vectorized copy should be fast");
+
+        _ = destination.Should().Equal(source);
+        _ = throughputMBps.Should().BeGreaterThan(1000, "vectorized copy should be fast");
     }
 
     [Fact]
@@ -576,9 +576,9 @@ public class MemoryManagementTests
         // Assert
         var throughputMBps = size / (stopwatch.ElapsedTicks * 1000.0 / Stopwatch.Frequency) / (1024 * 1024);
         _output.WriteLine($"Fill throughput: {throughputMBps:F2} MB/s");
-        
-        destination.Should().OnlyContain(b => b == fillValue);
-        throughputMBps.Should().BeGreaterThan(2000, "vectorized fill should be very fast");
+
+        _ = destination.Should().OnlyContain(b => b == fillValue);
+        _ = throughputMBps.Should().BeGreaterThan(2000, "vectorized fill should be very fast");
     }
 
     [Fact]
@@ -600,7 +600,7 @@ public class MemoryManagementTests
             fixed (int* ptr = aligned.Memory.Span)
             {
                 var address = new IntPtr(ptr);
-                ((long)address % 32).Should().Be(0, "memory should be 32-byte aligned");
+                _ = ((long)address % 32).Should().Be(0, "memory should be 32-byte aligned");
             }
         }
     }
@@ -677,7 +677,7 @@ public class MemoryManagementTests
 
         public void Free(IUnifiedMemoryBuffer buffer)
         {
-            _allocatedBuffers.Remove(buffer);
+            _ = _allocatedBuffers.Remove(buffer);
             buffer?.Dispose();
         }
 

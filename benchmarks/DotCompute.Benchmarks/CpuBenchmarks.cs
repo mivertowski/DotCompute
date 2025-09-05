@@ -154,7 +154,7 @@ public class CpuBenchmarks
     [Benchmark]
     public void ParallelScalarAddition()
     {
-        Parallel.For(0, DataSize, i =>
+        _ = Parallel.For(0, DataSize, i =>
         {
             _result[i] = _dataA[i] + _dataB[i];
         });
@@ -165,8 +165,8 @@ public class CpuBenchmarks
     {
         var vectorSize = Vector<float>.Count;
         var numVectors = DataSize / vectorSize;
-        
-        Parallel.For(0, numVectors, vectorIndex =>
+
+        _ = Parallel.For(0, numVectors, vectorIndex =>
         {
             var i = vectorIndex * vectorSize;
             var vecA = new Vector<float>(_dataA, i);

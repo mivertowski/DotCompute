@@ -224,7 +224,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
 
         // Clean up callbacks
 
-        _streamCallbacks.TryRemove(stream, out _);
+        _ = _streamCallbacks.TryRemove(stream, out _);
 
         // Return to pool if not full
         if (_streamPool.Count < _maxPoolSize)
@@ -341,8 +341,8 @@ public sealed class CudaStreamManagerProduction : IDisposable
             Description = description,
             AddedAt = DateTimeOffset.UtcNow
         };
-        
-        _streamCallbacks.TryAdd(stream, callbackInfo);
+
+        _ = _streamCallbacks.TryAdd(stream, callbackInfo);
 
         // Create GC handle to pass to native callback
         var handle = GCHandle.Alloc(callbackInfo);
@@ -364,7 +364,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         catch
         {
             handle.Free();
-            _streamCallbacks.TryRemove(stream, out _);
+            _ = _streamCallbacks.TryRemove(stream, out _);
             throw;
         }
     }
@@ -606,7 +606,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
                 // Clean up graph resources
                 if (_currentGraph != IntPtr.Zero)
                 {
-                    CudaRuntime.cudaGraphDestroy(_currentGraph);
+                    _ = CudaRuntime.cudaGraphDestroy(_currentGraph);
                 }
 
                 // Clean up streams

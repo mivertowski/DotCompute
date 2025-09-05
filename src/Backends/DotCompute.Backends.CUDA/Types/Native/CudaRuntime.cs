@@ -45,7 +45,10 @@ namespace DotCompute.Backends.CUDA.Native
                                 foreach (var name in new[] { "libcuda.so.1", "libcuda.so", "cuda" })
                                 {
                                     if (NativeLibrary.TryLoad(name, out var h))
+                                    {
                                         return h;
+                                    }
+
                                 }
                             }
                             return IntPtr.Zero;
@@ -194,6 +197,42 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaHostAlloc(ref IntPtr pHost, ulong size, uint flags);
+
+        // Page-locked Memory Registration
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaHostRegister(IntPtr ptr, nuint size, uint flags);
+
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaHostUnregister(IntPtr ptr);
+
+        // Device Attribute Query
+        [DllImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cudaDeviceGetAttribute(ref int value, CudaDeviceAttribute attr, int device);
+        
+        // ========================================
+        // CUDA JIT Linking and Compilation APIs
+        // ========================================
+        
+        // cuLink APIs for PTX to CUBIN compilation
+        [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkCreate_v2")]
+        internal static extern CudaError cuLinkCreate(uint numOptions, IntPtr options, IntPtr optionValues, ref IntPtr stateOut);
+        
+        [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkAddData_v2")]
+        internal static extern CudaError cuLinkAddData(IntPtr state, CUjitInputType type, IntPtr data, nuint size, 
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint numOptions, IntPtr options, IntPtr optionValues);
+        
+        [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkAddFile_v2")]
+        internal static extern CudaError cuLinkAddFile(IntPtr state, CUjitInputType type, 
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string path, uint numOptions, IntPtr options, IntPtr optionValues);
+        
+        [DllImport(CUDA_DRIVER_LIBRARY)]
+        internal static extern CudaError cuLinkComplete(IntPtr state, ref IntPtr cubinOut, ref nuint sizeOut);
+        
+        [DllImport(CUDA_DRIVER_LIBRARY)]
+        internal static extern CudaError cuLinkDestroy(IntPtr state);
 
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -456,6 +495,8 @@ namespace DotCompute.Backends.CUDA.Native
 
         // Add alias for cudaGraphDestroy used in other parts of the codebase
         public static CudaError cudaGraphDestroy(IntPtr hGraph) => cuGraphDestroy(hGraph);
+        public static CudaError cudaGraphExecDestroy(IntPtr hGraphExec) => cuGraphExecDestroy(hGraphExec);
+        public static CudaError cudaGraphCreate(ref IntPtr phGraph, uint flags) => cuGraphCreate(ref phGraph, flags);
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -468,16 +509,129 @@ namespace DotCompute.Backends.CUDA.Native
         internal static extern CudaError cuGraphAddKernelNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
             ref CudaKernelNodeParams nodeParams);
+            
+        public static CudaError cudaGraphAddKernelNode(
+            ref IntPtr phGraphNode, IntPtr hGraph, IntPtr pDependencies, nuint numDependencies,
+            ref CudaKernelNodeParams nodeParams)
+        {
+            IntPtr[]? deps = null;
+            if (pDependencies != IntPtr.Zero && numDependencies > 0)
+            {
+                deps = new IntPtr[numDependencies];
+                Marshal.Copy(pDependencies, deps, 0, (int)numDependencies);
+            }
+            return cuGraphAddKernelNode(ref phGraphNode, hGraph, deps ?? [], (ulong)numDependencies, ref nodeParams);
+        }
+        
+        [DllImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cuGraphAddMemcpyNode(
+            ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
+            ref CudaMemcpy3DParms copyParams);
+            
+        public static CudaError cudaGraphAddMemcpyNode(
+            ref IntPtr phGraphNode, IntPtr hGraph, IntPtr pDependencies, nuint numDependencies,
+            ref CudaMemcpy3DParms copyParams)
+        {
+            IntPtr[]? deps = null;
+            if (pDependencies != IntPtr.Zero && numDependencies > 0)
+            {
+                deps = new IntPtr[numDependencies];
+                Marshal.Copy(pDependencies, deps, 0, (int)numDependencies);
+            }
+            return cuGraphAddMemcpyNode(ref phGraphNode, hGraph, deps ?? [], (ulong)numDependencies, ref copyParams);
+        }
+
+        // Add missing CUDA Graph API methods
+        public static CudaError cuGraphAddMemsetNode(
+            out IntPtr pGraphNode, 
+            IntPtr graph, 
+            IntPtr pDependencies, 
+            nuint numDependencies,
+            ref CudaMemsetParams pMemsetParams)
+        {
+            return CudaRuntimeExtended.cuGraphAddMemsetNode(out pGraphNode, graph, pDependencies, numDependencies, ref pMemsetParams);
+        }
+
+        public static CudaError cudaGraphAddHostNode(
+            out IntPtr pGraphNode,
+            IntPtr graph,
+            IntPtr pDependencies,
+            nuint numDependencies,
+            ref CudaHostNodeParams pNodeParams)
+        {
+            return CudaRuntimeExtended.cudaGraphAddHostNode(out pGraphNode, graph, pDependencies, numDependencies, ref pNodeParams);
+        }
+
+        public static CudaError cuGraphAddEventRecordNode(
+            out IntPtr pGraphNode,
+            IntPtr graph,
+            IntPtr pDependencies,
+            nuint numDependencies,
+            IntPtr event_)
+        {
+            return CudaRuntimeExtended.cuGraphAddEventRecordNode(out pGraphNode, graph, pDependencies, numDependencies, event_);
+        }
+
+        public static CudaError cuGraphAddEventWaitNode(
+            out IntPtr pGraphNode,
+            IntPtr graph,
+            IntPtr pDependencies,
+            nuint numDependencies,
+            IntPtr event_)
+        {
+            return CudaRuntimeExtended.cuGraphAddEventWaitNode(out pGraphNode, graph, pDependencies, numDependencies, event_);
+        }
+
+        public static CudaError cuGraphAddChildGraphNode(
+            out IntPtr pGraphNode,
+            IntPtr graph,
+            IntPtr pDependencies,
+            nuint numDependencies,
+            IntPtr childGraph)
+        {
+            return CudaRuntimeExtended.cuGraphAddChildGraphNode(out pGraphNode, graph, pDependencies, numDependencies, childGraph);
+        }
+
+        public static CudaError cuGraphClone(
+            out IntPtr pGraphClone,
+            IntPtr originalGraph)
+        {
+            return CudaRuntimeExtended.cuGraphClone(out pGraphClone, originalGraph);
+        }
+        
+        [DllImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cuGraphAddMemsetNode(
+            ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
+            ref CudaMemsetParams memsetParams);
+            
+        public static CudaError cudaGraphAddMemsetNode(
+            ref IntPtr phGraphNode, IntPtr hGraph, IntPtr pDependencies, nuint numDependencies,
+            ref CudaMemsetParams memsetParams)
+        {
+            IntPtr[]? deps = null;
+            if (pDependencies != IntPtr.Zero && numDependencies > 0)
+            {
+                deps = new IntPtr[numDependencies];
+                Marshal.Copy(pDependencies, deps, 0, (int)numDependencies);
+            }
+            return cuGraphAddMemsetNode(ref phGraphNode, hGraph, deps ?? [], (ulong)numDependencies, ref memsetParams);
+        }
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphExecUpdate(
             IntPtr hGraphExec, IntPtr hGraph, ref IntPtr hErrorNode);
+        
+        public static CudaError cudaGraphExecUpdate(IntPtr hGraphExec, IntPtr hGraph, IntPtr hErrorNode, uint flags) => cuGraphExecUpdate(hGraphExec, hGraph, ref hErrorNode);
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphGetNodes(
-            IntPtr hGraph, IntPtr nodes, ref int numNodes);
+            IntPtr hGraph, IntPtr nodes, ref nuint numNodes);
+        
+        public static CudaError cudaGraphGetNodes(IntPtr hGraph, IntPtr nodes, ref nuint numNodes) => cuGraphGetNodes(hGraph, nodes, ref numNodes);
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]

@@ -115,7 +115,7 @@ public class RecoveryMetrics
     /// <param name="duration">The duration of the recovery.</param>
     public void RecordSuccess(TimeSpan duration)
     {
-        Interlocked.Increment(ref _successCount);
+        _ = Interlocked.Increment(ref _successCount);
         _attempts.Add(new RecoveryAttempt
         {
             Success = true,
@@ -126,7 +126,7 @@ public class RecoveryMetrics
         // Keep only last 1000 attempts to prevent unbounded growth
         while (_attempts.Count > 1000)
         {
-            _attempts.TryTake(out _);
+            _ = _attempts.TryTake(out _);
         }
     }
 
@@ -137,7 +137,7 @@ public class RecoveryMetrics
     /// <param name="error">The error that caused the failure.</param>
     public void RecordFailure(TimeSpan duration, Exception? error = null)
     {
-        Interlocked.Increment(ref _failureCount);
+        _ = Interlocked.Increment(ref _failureCount);
         _attempts.Add(new RecoveryAttempt
         {
             Success = false,
@@ -149,7 +149,7 @@ public class RecoveryMetrics
         // Keep only last 1000 attempts to prevent unbounded growth
         while (_attempts.Count > 1000)
         {
-            _attempts.TryTake(out _);
+            _ = _attempts.TryTake(out _);
         }
     }
 

@@ -1488,7 +1488,7 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
     
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
-        var newLength = (int)(SizeInBytes / Unsafe.SizeOf<TNew>());
+        _ = (int)(SizeInBytes / Unsafe.SizeOf<TNew>());
         // This is a simplified implementation - a real one would need proper offset handling
         return _parent.AsType<TNew>();
     }

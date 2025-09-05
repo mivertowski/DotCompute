@@ -233,7 +233,7 @@ public static class ComputeQueryableExtensions
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        if (source.Provider is ComputeQueryProvider computeProvider)
+        if (source.Provider is ComputeQueryProvider)
         {
             // Access the optimizer through the provider
             // This would require exposing it through the provider interface

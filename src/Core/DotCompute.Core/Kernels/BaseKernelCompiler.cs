@@ -107,12 +107,12 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
                 CacheHit = false,
                 Timestamp = DateTime.UtcNow
             };
-            _metricsCache.TryAdd(cacheKey, metrics);
+            _ = _metricsCache.TryAdd(cacheKey, metrics);
             
             // Cache the result if enabled
             if (EnableCaching)
             {
-                _compilationCache.TryAdd(cacheKey, compiledKernel);
+                _ = _compilationCache.TryAdd(cacheKey, compiledKernel);
             }
             
             _logger.LogInformation(

@@ -373,7 +373,7 @@ internal class MockMemoryManager : IUnifiedMemoryManager
     // Additional IUnifiedMemoryManager interface members
     public static ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        var sizeInBytes = count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        _ = count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         return ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(new MockMemoryBuffer<T>(count));
     }
 

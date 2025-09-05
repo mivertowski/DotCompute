@@ -106,8 +106,12 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(destination);
             
             if (destination.Length != _length)
+            {
+
                 throw new ArgumentException("Destination buffer must have the same length");
-            
+            }
+
+
             var sizeInBytes = SizeInBytes;
             var destMemory = destination.GetDeviceMemory();
             var result = CudaRuntime.cudaMemcpy(
@@ -125,8 +129,12 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(source);
             
             if (source.Length != _length)
+            {
+
                 throw new ArgumentException("Source buffer must have the same length");
-            
+            }
+
+
             var sizeInBytes = SizeInBytes;
             var srcMemory = source.GetDeviceMemory();
             var result = CudaRuntime.cudaMemcpy(
@@ -142,8 +150,12 @@ namespace DotCompute.Backends.CUDA.Memory
         public void CopyTo(Span<T> destination)
         {
             if (destination.Length != _length)
+            {
+
                 throw new ArgumentException("Destination span must have the same length");
-            
+            }
+
+
             AsReadOnlySpan().CopyTo(destination);
         }
 
@@ -151,8 +163,12 @@ namespace DotCompute.Backends.CUDA.Memory
         public void CopyFrom(ReadOnlySpan<T> source)
         {
             if (source.Length != _length)
+            {
+
                 throw new ArgumentException("Source span must have the same length");
-            
+            }
+
+
             source.CopyTo(AsSpan());
         }
 
@@ -177,8 +193,12 @@ namespace DotCompute.Backends.CUDA.Memory
             ThrowIfDisposed();
             
             if (offset < 0 || length < 0 || offset + length > _length)
+            {
+
                 throw new ArgumentOutOfRangeException("Invalid range");
-            
+            }
+
+
             EnsureOnHost();
             return new MappedMemory<T>(AsMemory().Slice(offset, length), null);
         }
@@ -217,8 +237,12 @@ namespace DotCompute.Backends.CUDA.Memory
             ThrowIfDisposed();
             
             if (offset < 0 || length < 0 || offset + length > _length)
+            {
+
                 throw new ArgumentOutOfRangeException("Invalid slice range");
-            
+            }
+
+
             var slicePtr = _devicePtr + (offset * Unsafe.SizeOf<T>());
             return new SimpleCudaUnifiedMemoryBuffer<T>(slicePtr, length, ownsMemory: false);
         }
@@ -279,8 +303,12 @@ namespace DotCompute.Backends.CUDA.Memory
         public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
         {
             if (source.Length != _length)
+            {
+
                 throw new ArgumentException("Source must have the same length");
-            
+            }
+
+
             return Task.Run(() =>
             {
                 source.Span.CopyTo(AsSpan());
@@ -291,8 +319,12 @@ namespace DotCompute.Backends.CUDA.Memory
         public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         {
             if (destination.Length != _length)
+            {
+
                 throw new ArgumentException("Destination must have the same length");
-            
+            }
+
+
             return Task.Run(() =>
             {
                 AsReadOnlySpan().CopyTo(destination.Span);
@@ -305,8 +337,12 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(destination);
             
             if (destination.Length != _length)
+            {
+
                 throw new ArgumentException("Destination buffer must have the same length");
-            
+            }
+
+
             return Task.Run(() => CopyTo(destination), cancellationToken).AsValueTask();
         }
 
@@ -316,11 +352,19 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(destination);
             
             if (sourceOffset < 0 || destinationOffset < 0 || length < 0)
+            {
+
                 throw new ArgumentOutOfRangeException("Offsets and length must be non-negative");
-                
+            }
+
+
             if (sourceOffset + length > _length || destinationOffset + length > destination.Length)
+            {
+
                 throw new ArgumentOutOfRangeException("Copy range exceeds buffer bounds");
-            
+            }
+
+
             return Task.Run(() =>
             {
                 unsafe
@@ -350,8 +394,12 @@ namespace DotCompute.Backends.CUDA.Memory
         public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
         {
             if (offset < 0 || length < 0 || offset + length > _length)
+            {
+
                 throw new ArgumentOutOfRangeException("Invalid fill range");
-            
+            }
+
+
             return Task.Run(() =>
             {
                 var span = AsSpan().Slice(offset, length);
@@ -411,7 +459,11 @@ namespace DotCompute.Backends.CUDA.Memory
             var totalSizeInBytes = _length * Unsafe.SizeOf<T>();
             
             if (destinationOffset + sourceSizeInBytes > totalSizeInBytes)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(destinationOffset));
+            }
+
 
             await Task.Run(() =>
             {
@@ -440,7 +492,11 @@ namespace DotCompute.Backends.CUDA.Memory
             var totalSizeInBytes = _length * Unsafe.SizeOf<T>();
             
             if (sourceOffset + destSizeInBytes > totalSizeInBytes)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(sourceOffset));
+            }
+
 
             await Task.Run(() =>
             {
@@ -511,7 +567,11 @@ namespace DotCompute.Backends.CUDA.Memory
             public override MemoryHandle Pin(int elementIndex = 0)
             {
                 if (elementIndex < 0 || elementIndex >= _length)
+                {
+
                     throw new ArgumentOutOfRangeException(nameof(elementIndex));
+                }
+
 
                 unsafe
                 {

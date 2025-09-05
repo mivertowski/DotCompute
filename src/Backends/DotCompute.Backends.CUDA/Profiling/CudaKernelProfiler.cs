@@ -7,6 +7,7 @@ using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Monitoring;
 using Microsoft.Extensions.Logging;
 
 using DotCompute.Abstractions.Kernels;
@@ -23,6 +24,8 @@ namespace DotCompute.Backends.CUDA.Advanced
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, KernelProfileData> _profileData;
         private readonly CudaDeviceProperties _deviceProps;
+        private readonly NvmlWrapper _nvml;
+        private readonly CuptiWrapper _cupti;
         private bool _disposed;
 
         public CudaKernelProfiler(CudaContext context, ILogger logger)
@@ -34,6 +37,13 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Get device properties for Ada-specific optimizations
             var result = CudaRuntime.cudaGetDeviceProperties(ref _deviceProps, context.DeviceId);
             CudaRuntime.CheckError(result, "getting device properties");
+            
+            // Initialize monitoring wrappers
+            _nvml = new NvmlWrapper(_logger);
+            _ = _nvml.Initialize();
+            
+            _cupti = new CuptiWrapper(_logger);
+            _ = _cupti.Initialize(context.DeviceId);
         }
 
         /// <summary>
@@ -81,8 +91,41 @@ namespace DotCompute.Backends.CUDA.Advanced
                 // Calculate statistics
                 var stats = CalculateStatistics(timings);
                 var occupancy = CalculateOccupancy(launchConfig);
-                var throughput = CalculateThroughput(stats.AverageTime, arguments);
-                var (bottlenecks, optimizationSuggestions) = AnalyzeBottlenecks(stats, occupancy);
+                
+                // Get real metrics from NVML and CUPTI
+                var gpuMetrics = _nvml.GetDeviceMetrics(_context.DeviceId);
+                var cuptiSession = _cupti.StartProfiling();
+                
+                KernelMetrics kernelMetrics;
+                if (cuptiSession != null)
+                {
+                    // Execute one more time with CUPTI profiling
+                    _ = await ExecuteKernelOnceAsync(functionHandle, arguments, launchConfig, startEvent, endEvent, cancellationToken);
+                    kernelMetrics = _cupti.CollectMetrics(cuptiSession);
+                }
+                else
+                {
+                    kernelMetrics = new KernelMetrics();
+                }
+                
+                // Use real metrics if available, fallback to calculated
+                var throughput = new ThroughputMetrics
+                {
+                    MemoryBandwidth = kernelMetrics.DramReadThroughput > 0 
+                        ? (kernelMetrics.DramReadThroughput + kernelMetrics.DramWriteThroughput) / 1024.0 // Convert to GB/s
+                        : CalculateThroughput(stats.AverageTime, arguments).MemoryBandwidth,
+                    ComputePerformance = kernelMetrics.FlopEfficiency > 0
+                        ? _deviceProps.MultiProcessorCount * (_deviceProps.ClockRate / 1000.0) * 128 * kernelMetrics.FlopEfficiency
+                        : CalculateThroughput(stats.AverageTime, arguments).ComputePerformance
+                };
+                
+                // Update occupancy with real metrics
+                if (kernelMetrics.AchievedOccupancy > 0)
+                {
+                    occupancy.TheoreticalOccupancy = kernelMetrics.AchievedOccupancy;
+                }
+                
+                var (bottlenecks, optimizationSuggestions) = AnalyzeBottlenecks(stats, occupancy, gpuMetrics, kernelMetrics);
 
                 // Store profile data for future analysis
                 var profileData = new KernelProfileData
@@ -263,25 +306,73 @@ namespace DotCompute.Backends.CUDA.Advanced
         }
 
         /// <summary>
-        /// Analyzes potential bottlenecks and generates optimization suggestions
+        /// Analyzes potential bottlenecks and generates optimization suggestions using real metrics
         /// </summary>
-        private (Core.Kernels.BottleneckAnalysis bottleneck, List<string> suggestions) AnalyzeBottlenecks(ProfilingStatistics stats, OccupancyMetrics occupancy)
+        private (Core.Kernels.BottleneckAnalysis bottleneck, List<string> suggestions) AnalyzeBottlenecks(
+            ProfilingStatistics stats, 
+            OccupancyMetrics occupancy,
+            GpuMetrics gpuMetrics,
+            KernelMetrics kernelMetrics)
         {
             var suggestions = new List<string>();
             var primaryBottleneck = Core.Kernels.BottleneckType.None;
             var severity = 0.0;
             var details = "No significant bottleneck detected";
 
-            if (occupancy.TheoreticalOccupancy < 0.5)
+            // Check for thermal throttling using real metrics
+            if (gpuMetrics.IsAvailable && gpuMetrics.IsThrottling)
             {
-                primaryBottleneck = Core.Kernels.BottleneckType.RegisterPressure; // Map occupancy issues to register pressure
-                severity = 1.0 - occupancy.TheoreticalOccupancy;
-                details = $"Low occupancy detected ({occupancy.TheoreticalOccupancy:P1}) - likely due to register pressure";
+                primaryBottleneck = Core.Kernels.BottleneckType.Throttling;
+                severity = 0.8;
+                details = $"GPU is throttling: {gpuMetrics.ThrottleReasons}";
+                suggestions.Add($"GPU throttling detected. Temperature: {gpuMetrics.Temperature}°C, Power: {gpuMetrics.PowerUsage:F1}W");
+            }
+            // Check for memory bandwidth bottleneck
+            else if (gpuMetrics.IsAvailable && gpuMetrics.MemoryBandwidthUtilization > 80)
+            {
+                primaryBottleneck = Core.Kernels.BottleneckType.MemoryBandwidth;
+                severity = gpuMetrics.MemoryBandwidthUtilization / 100.0;
+                details = $"High memory bandwidth utilization: {gpuMetrics.MemoryBandwidthUtilization}%";
+                suggestions.Add("Memory bandwidth saturated. Consider data compression or reducing memory accesses");
+            }
+            // Check for low SM efficiency
+            else if (kernelMetrics.SmEfficiency > 0 && kernelMetrics.SmEfficiency < 0.6)
+            {
+                primaryBottleneck = Core.Kernels.BottleneckType.Divergence;
+                severity = 1.0 - kernelMetrics.SmEfficiency;
+                details = $"Low SM efficiency: {kernelMetrics.SmEfficiency:P1}";
+                suggestions.Add("Low SM efficiency detected. Check for thread divergence and uncoalesced memory access");
+            }
+            // Check occupancy with real metrics
+            else if (kernelMetrics.AchievedOccupancy > 0 && kernelMetrics.AchievedOccupancy < 0.5)
+            {
+                primaryBottleneck = Core.Kernels.BottleneckType.RegisterPressure;
+                severity = 1.0 - kernelMetrics.AchievedOccupancy;
+                details = $"Low achieved occupancy: {kernelMetrics.AchievedOccupancy:P1}";
                 suggestions.Add("Low occupancy detected. Consider adjusting block size or reducing register/shared memory usage");
 
                 if (_deviceProps.Major == 8 && _deviceProps.Minor == 9)
                 {
                     suggestions.Add("For RTX 2000 Ada, try block sizes of 512 threads for optimal performance");
+                }
+            }
+
+            // Additional checks based on real GPU state
+            if (gpuMetrics.IsAvailable)
+            {
+                if (gpuMetrics.Temperature > 80)
+                {
+                    suggestions.Add($"High GPU temperature ({gpuMetrics.Temperature}°C). Consider improving cooling");
+                }
+                
+                if (gpuMetrics.MemoryUtilization > 90)
+                {
+                    suggestions.Add($"High memory usage ({gpuMetrics.MemoryUtilization:F1}%). Consider memory optimization");
+                }
+                
+                if (gpuMetrics.GpuUtilization < 50)
+                {
+                    suggestions.Add($"Low GPU utilization ({gpuMetrics.GpuUtilization}%). Consider increasing parallelism");
                 }
             }
 
@@ -357,6 +448,8 @@ namespace DotCompute.Backends.CUDA.Advanced
         {
             if (!_disposed)
             {
+                _nvml?.Dispose();
+                _cupti?.Dispose();
                 _profileData.Clear();
                 _disposed = true;
             }

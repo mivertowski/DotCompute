@@ -158,7 +158,8 @@ public class BufferPool
         lock (_lock)
         {
             // Buffer remains in pool for reuse
-            if (_buffers.TryGetValue(key, out var buffer))
+
+            if (_buffers.TryGetValue(key, out _))
             {
                 // Buffer remains available for reuse
             }

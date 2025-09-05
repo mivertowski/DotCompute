@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Execution.Graph;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -26,6 +27,7 @@ namespace DotCompute.Backends.CUDA
         private readonly CudaContext _context;
         private readonly Memory.CudaMemoryManager _memoryManager;
         private readonly CudaKernelCompiler _kernelCompiler;
+        private readonly CudaGraphManager? _graphManager;
 
         /// <summary>
         /// Gets the underlying CUDA device.
@@ -36,6 +38,16 @@ namespace DotCompute.Backends.CUDA
         /// Gets the device ID.
         /// </summary>
         public int DeviceId => _device.DeviceId;
+        
+        /// <summary>
+        /// Gets the CUDA-specific context.
+        /// </summary>
+        internal CudaContext CudaContext => _context;
+        
+        /// <summary>
+        /// Gets the graph manager for optimized kernel execution.
+        /// </summary>
+        public CudaGraphManager? GraphManager => _graphManager;
 
         public CudaAccelerator(int deviceId = 0, ILogger<CudaAccelerator>? logger = null)
             : base(
@@ -55,6 +67,12 @@ namespace DotCompute.Backends.CUDA
 #pragma warning disable IL2026, IL3050 // CudaKernelCompiler uses runtime code generation which is not trimming/AOT compatible
             _kernelCompiler = new CudaKernelCompiler(_context, actualLogger);
 #pragma warning restore IL2026, IL3050
+            
+            // Initialize graph manager for devices that support it
+            if (_device.ComputeCapability.Major >= 10) // CUDA graphs require compute capability 10.0+
+            {
+                _graphManager = new CudaGraphManager(_context, actualLogger as ILogger<CudaGraphManager> ?? NullLogger<CudaGraphManager>.Instance);
+            }
         }
 
         /// <inheritdoc/>
@@ -93,6 +111,7 @@ namespace DotCompute.Backends.CUDA
         protected override async ValueTask DisposeCoreAsync()
         {
             // Dispose CUDA-specific resources
+            _graphManager?.Dispose();
             await _kernelCompiler.DisposeAsync().ConfigureAwait(false);
             await _memoryManager.DisposeAsync().ConfigureAwait(false);
             _context.Dispose();

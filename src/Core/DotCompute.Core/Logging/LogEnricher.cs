@@ -282,9 +282,7 @@ public sealed class LogEnricher : IDisposable
     public void AddKernelContext(string kernelName, KernelCompilationInfo compilationInfo)
     {
         ThrowIfDisposed();
-
-
-        var kernelContext = new Abstractions.Execution.KernelExecutionContext
+        _ = new Abstractions.Execution.KernelExecutionContext
         {
             KernelName = kernelName
             // CompilationInfo = compilationInfo?.ToString() ?? string.Empty,
@@ -443,7 +441,7 @@ public sealed class LogEnricher : IDisposable
 
             // Thread information
 
-            logEntry.Properties["Performance.ThreadId"] = Thread.CurrentThread.ManagedThreadId;
+            logEntry.Properties["Performance.ThreadId"] = Environment.CurrentManagedThreadId;
             logEntry.Properties["Performance.IsThreadPoolThread"] = Thread.CurrentThread.IsThreadPoolThread;
 
 
@@ -538,7 +536,7 @@ public sealed class LogEnricher : IDisposable
 
         // Redact in properties
 
-        var keysToRedact = new List<string>();
+        _ = new List<string>();
         var redactedProperties = new Dictionary<string, object>();
 
 

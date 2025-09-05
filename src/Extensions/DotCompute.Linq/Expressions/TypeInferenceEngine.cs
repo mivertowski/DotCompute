@@ -866,7 +866,7 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
     {
         var leftType = node.Left.Type;
         var rightType = node.Right.Type;
-        var resultType = node.Type;
+        _ = node.Type;
 
         // Check if operand types need conversion to common type
         var commonType = GetCommonType(leftType, rightType);

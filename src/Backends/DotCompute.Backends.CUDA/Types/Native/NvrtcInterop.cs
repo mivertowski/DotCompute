@@ -110,12 +110,12 @@ namespace DotCompute.Backends.CUDA.Native
             
             try
             {
-                for (int i = 0; i < headers.Length; i++)
+                for (var i = 0; i < headers.Length; i++)
                 {
                     headerPtrs[i] = Marshal.StringToHGlobalAnsi(headers[i]);
                 }
                 
-                for (int i = 0; i < includeNames.Length; i++)
+                for (var i = 0; i < includeNames.Length; i++)
                 {
                     includePtrs[i] = Marshal.StringToHGlobalAnsi(includeNames[i]);
                 }
@@ -136,13 +136,19 @@ namespace DotCompute.Backends.CUDA.Native
                 foreach (var ptr in headerPtrs)
                 {
                     if (ptr != IntPtr.Zero)
+                    {
                         Marshal.FreeHGlobal(ptr);
+                    }
+
                 }
                 
                 foreach (var ptr in includePtrs)
                 {
                     if (ptr != IntPtr.Zero)
+                    {
                         Marshal.FreeHGlobal(ptr);
+                    }
+
                 }
             }
         }
@@ -162,7 +168,7 @@ namespace DotCompute.Backends.CUDA.Native
             
             try
             {
-                for (int i = 0; i < options.Length; i++)
+                for (var i = 0; i < options.Length; i++)
                 {
                     optionPtrs[i] = Marshal.StringToHGlobalAnsi(options[i]);
                 }
@@ -181,7 +187,11 @@ namespace DotCompute.Backends.CUDA.Native
                 foreach (var ptr in optionPtrs)
                 {
                     if (ptr != IntPtr.Zero)
+                    {
+
                         Marshal.FreeHGlobal(ptr);
+                    }
+
                 }
             }
         }

@@ -38,12 +38,12 @@ public class EnhancedBaseMemoryBufferTests
     {
         // Arrange & Act
         using var buffer = new TestMemoryBuffer<byte>(sizeInBytes);
-        
+
         // Assert
-        buffer.SizeInBytes.Should().Be(sizeInBytes);
-        buffer.Length.Should().Be(sizeInBytes);
-        buffer.IsDisposed.Should().BeFalse();
-        buffer.State.Should().Be(BufferState.Allocated);
+        _ = buffer.SizeInBytes.Should().Be(sizeInBytes);
+        _ = buffer.Length.Should().Be(sizeInBytes);
+        _ = buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.State.Should().Be(BufferState.Allocated);
     }
 
     [Theory]
@@ -56,11 +56,11 @@ public class EnhancedBaseMemoryBufferTests
     {
         // Arrange & Act
         using var buffer = new TestMemoryBuffer<byte>(sizeInBytes);
-        
+
         // Assert
-        buffer.SizeInBytes.Should().Be(sizeInBytes);
+        _ = buffer.SizeInBytes.Should().Be(sizeInBytes);
         // Verify size is aligned (should be multiple of element size)
-        (buffer.SizeInBytes % sizeof(byte)).Should().Be(0);
+        _ = (buffer.SizeInBytes % sizeof(byte)).Should().Be(0);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class EnhancedBaseMemoryBufferTests
         
         // Act & Assert
         Action act = () => new TestMemoryBuffer<byte>(unreasonableSize);
-        act.Should().Throw<ArgumentOutOfRangeException>()
+        _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*sizeInBytes*");
     }
 
@@ -90,32 +90,32 @@ public class EnhancedBaseMemoryBufferTests
         if (elementType == typeof(byte))
         {
             using var buffer = new TestMemoryBuffer<byte>(sizeInBytes);
-            buffer.Length.Should().Be(sizeInBytes / sizeof(byte));
+            _ = buffer.Length.Should().Be(sizeInBytes / sizeof(byte));
         }
         else if (elementType == typeof(short))
         {
             using var buffer = new TestMemoryBuffer<short>(sizeInBytes);
-            buffer.Length.Should().Be(sizeInBytes / sizeof(short));
+            _ = buffer.Length.Should().Be(sizeInBytes / sizeof(short));
         }
         else if (elementType == typeof(int))
         {
             using var buffer = new TestMemoryBuffer<int>(sizeInBytes);
-            buffer.Length.Should().Be(sizeInBytes / sizeof(int));
+            _ = buffer.Length.Should().Be(sizeInBytes / sizeof(int));
         }
         else if (elementType == typeof(long))
         {
             using var buffer = new TestMemoryBuffer<long>(sizeInBytes);
-            buffer.Length.Should().Be(sizeInBytes / sizeof(long));
+            _ = buffer.Length.Should().Be(sizeInBytes / sizeof(long));
         }
         else if (elementType == typeof(float))
         {
             using var buffer = new TestMemoryBuffer<float>(sizeInBytes);
-            buffer.Length.Should().Be(sizeInBytes / sizeof(float));
+            _ = buffer.Length.Should().Be(sizeInBytes / sizeof(float));
         }
         else if (elementType == typeof(double))
         {
             using var buffer = new TestMemoryBuffer<double>(sizeInBytes);
-            buffer.Length.Should().Be(sizeInBytes / sizeof(double));
+            _ = buffer.Length.Should().Be(sizeInBytes / sizeof(double));
         }
     }
 
@@ -131,7 +131,7 @@ public class EnhancedBaseMemoryBufferTests
         try
         {
             // Act - Allocate multiple buffers simultaneously
-            Parallel.For(0, allocationCount, i =>
+            _ = Parallel.For(0, allocationCount, i =>
             {
                 lock (buffers)
                 {
@@ -140,11 +140,11 @@ public class EnhancedBaseMemoryBufferTests
             });
 
             // Assert
-            buffers.Should().HaveCount(allocationCount);
-            buffers.Should().AllSatisfy(b => 
+            _ = buffers.Should().HaveCount(allocationCount);
+            _ = buffers.Should().AllSatisfy(b =>
             {
-                b.SizeInBytes.Should().Be(bufferSize);
-                b.IsDisposed.Should().BeFalse();
+                _ = b.SizeInBytes.Should().Be(bufferSize);
+                _ = b.IsDisposed.Should().BeFalse();
             });
         }
         finally
@@ -173,9 +173,9 @@ public class EnhancedBaseMemoryBufferTests
         
         // Act
         var act = async () => await buffer.CopyFromAsync(sourceData.AsMemory(), offset);
-        
+
         // Assert
-        await act.Should().NotThrowAsync();
+        _ = await act.Should().NotThrowAsync();
     }
 
     [Theory]
@@ -191,9 +191,9 @@ public class EnhancedBaseMemoryBufferTests
         
         // Act
         var act = async () => await buffer.CopyToAsync(destinationData.AsMemory(), offset);
-        
+
         // Assert
-        await act.Should().NotThrowAsync();
+        _ = await act.Should().NotThrowAsync();
     }
 
     [Fact]
@@ -208,9 +208,9 @@ public class EnhancedBaseMemoryBufferTests
         // Act - Simulate D2D copy
         await sourceBuffer.CopyFromAsync(testData, CancellationToken.None);
         var act = async () => await sourceBuffer.CopyToAsync(destBuffer.AsMemory(), CancellationToken.None);
-        
+
         // Assert
-        await act.Should().NotThrowAsync();
+        _ = await act.Should().NotThrowAsync();
     }
 
     [Theory]
@@ -229,9 +229,9 @@ public class EnhancedBaseMemoryBufferTests
         
         // Act
         await sourceBuffer.CopyToAsync(sourceOffset, destBuffer, 0, count, CancellationToken.None);
-        
+
         // Assert - Should complete without error
-        destBuffer.State.Should().Be(BufferState.Allocated);
+        _ = destBuffer.State.Should().Be(BufferState.Allocated);
     }
 
     [Fact]
@@ -252,7 +252,7 @@ public class EnhancedBaseMemoryBufferTests
         
         // Assert
         var act = async () => await Task.WhenAll(tasks);
-        await act.Should().NotThrowAsync();
+        _ = await act.Should().NotThrowAsync();
     }
 
     [Fact]
@@ -277,8 +277,8 @@ public class EnhancedBaseMemoryBufferTests
         
         // Assert
         _output.WriteLine($"Large copy (16MB) completed in {stopwatch.ElapsedMilliseconds} ms");
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000, "large copy should complete within reasonable time");
-        destBuffer.State.Should().Be(BufferState.Allocated);
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000, "large copy should complete within reasonable time");
+        _ = destBuffer.State.Should().Be(BufferState.Allocated);
     }
 
     #endregion
@@ -294,12 +294,12 @@ public class EnhancedBaseMemoryBufferTests
         
         // Act
         using var buffer = new TestDeviceBuffer<double>(1024, devicePointer);
-        
+
         // Assert
-        buffer.MemoryType.Should().Be(MemoryType.Device);
-        buffer.DevicePointer.Should().Be(devicePointer);
-        buffer.IsOnDevice.Should().BeTrue();
-        buffer.IsOnHost.Should().BeFalse();
+        _ = buffer.MemoryType.Should().Be(MemoryType.Device);
+        _ = buffer.DevicePointer.Should().Be(devicePointer);
+        _ = buffer.IsOnDevice.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeFalse();
     }
 
     [Fact]
@@ -308,10 +308,10 @@ public class EnhancedBaseMemoryBufferTests
     {
         // Arrange & Act
         using var buffer = new TestUnifiedBuffer<int>(1024);
-        
+
         // Assert
-        buffer.MemoryType.Should().Be(MemoryType.Unified);
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.MemoryType.Should().Be(MemoryType.Unified);
+        _ = buffer.IsOnHost.Should().BeTrue();
         // For unified memory, device access depends on implementation
     }
 
@@ -328,19 +328,19 @@ public class EnhancedBaseMemoryBufferTests
             case MemoryType.Host:
                 using (var buffer = new TestMemoryBuffer<float>(1024))
                 {
-                    buffer.MemoryType.Should().Be(MemoryType.Host);
+                    _ = buffer.MemoryType.Should().Be(MemoryType.Host);
                 }
                 break;
             case MemoryType.Device:
                 using (var buffer = new TestDeviceBuffer<float>(1024, new IntPtr(0x1000)))
                 {
-                    buffer.MemoryType.Should().Be(MemoryType.Device);
+                    _ = buffer.MemoryType.Should().Be(MemoryType.Device);
                 }
                 break;
             case MemoryType.Unified:
                 using (var buffer = new TestUnifiedBuffer<float>(1024))
                 {
-                    buffer.MemoryType.Should().Be(MemoryType.Unified);
+                    _ = buffer.MemoryType.Should().Be(MemoryType.Unified);
                 }
                 break;
         }
@@ -361,10 +361,10 @@ public class EnhancedBaseMemoryBufferTests
             buffer.Dispose();
             buffer.Reset();
         }
-        
+
         // Assert
-        returnCount.Should().Be(5);
-        buffer.IsDisposed.Should().BeFalse();
+        _ = returnCount.Should().Be(5);
+        _ = buffer.IsDisposed.Should().BeFalse();
     }
 
     [Fact]
@@ -380,14 +380,14 @@ public class EnhancedBaseMemoryBufferTests
         try
         {
             // Assert - Each buffer maintains its own characteristics
-            hostBuffer.MemoryType.Should().Be(MemoryType.Host);
-            deviceBuffer.MemoryType.Should().Be(MemoryType.Device);
-            unifiedBuffer.MemoryType.Should().Be(MemoryType.Unified);
-            pooledBuffer.MemoryType.Should().Be(MemoryType.Host);
+            _ = hostBuffer.MemoryType.Should().Be(MemoryType.Host);
+            _ = deviceBuffer.MemoryType.Should().Be(MemoryType.Device);
+            _ = unifiedBuffer.MemoryType.Should().Be(MemoryType.Unified);
+            _ = pooledBuffer.MemoryType.Should().Be(MemoryType.Host);
             
             // All should have same size but different memory locations
             var buffers = new IUnifiedMemoryBuffer<int>[] { hostBuffer, deviceBuffer, unifiedBuffer, pooledBuffer };
-            buffers.Should().AllSatisfy(b => b.SizeInBytes.Should().Be(1024));
+            _ = buffers.Should().AllSatisfy(b => b.SizeInBytes.Should().Be(1024));
         }
         finally
         {
@@ -410,10 +410,10 @@ public class EnhancedBaseMemoryBufferTests
         Action negativeSourceOffset = () => buffer.TestValidateCopyParameters(100, -10, 100, 0, 50);
         Action negativeDestOffset = () => buffer.TestValidateCopyParameters(100, 0, 100, -5, 50);
         Action negativeCount = () => buffer.TestValidateCopyParameters(100, 0, 100, 0, -1);
-        
-        negativeSourceOffset.Should().Throw<ArgumentOutOfRangeException>();
-        negativeDestOffset.Should().Throw<ArgumentOutOfRangeException>();
-        negativeCount.Should().Throw<ArgumentOutOfRangeException>();
+
+        _ = negativeSourceOffset.Should().Throw<ArgumentOutOfRangeException>();
+        _ = negativeDestOffset.Should().Throw<ArgumentOutOfRangeException>();
+        _ = negativeCount.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -433,15 +433,15 @@ public class EnhancedBaseMemoryBufferTests
         var copyFromTask = async () => await buffer.CopyFromAsync(new float[10], CancellationToken.None);
         var copyToTask = async () => await buffer.CopyToAsync(new float[10], CancellationToken.None);
         var fillTask = async () => await buffer.FillAsync(1.0f);
-        
-        spanAccess.Should().Throw<ObjectDisposedException>();
-        memoryAccess.Should().Throw<ObjectDisposedException>();
-        readOnlySpanAccess.Should().Throw<ObjectDisposedException>();
-        readOnlyMemoryAccess.Should().Throw<ObjectDisposedException>();
-        
-        await copyFromTask.Should().ThrowAsync<ObjectDisposedException>();
-        await copyToTask.Should().ThrowAsync<ObjectDisposedException>();
-        await fillTask.Should().ThrowAsync<ObjectDisposedException>();
+
+        _ = spanAccess.Should().Throw<ObjectDisposedException>();
+        _ = memoryAccess.Should().Throw<ObjectDisposedException>();
+        _ = readOnlySpanAccess.Should().Throw<ObjectDisposedException>();
+        _ = readOnlyMemoryAccess.Should().Throw<ObjectDisposedException>();
+
+        _ = await copyFromTask.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await copyToTask.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await fillTask.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -454,7 +454,7 @@ public class EnhancedBaseMemoryBufferTests
         
         // Act & Assert
         var act = async () => await smallBuffer.CopyFromAsync(largeData, CancellationToken.None);
-        act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _ = act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Theory]
@@ -469,7 +469,7 @@ public class EnhancedBaseMemoryBufferTests
         
         // Act & Assert
         Action act = () => buffer.TestValidateCopyParameters(sourceLength, offset, 1024, 0, count);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
@@ -491,12 +491,12 @@ public class EnhancedBaseMemoryBufferTests
                 var data = Enumerable.Range(1, 1024).Select(x => (long)x).ToArray();
                 await buffer.CopyFromAsync(data, CancellationToken.None);
             }
-            
+
             // Assert - All buffers should be in valid state
-            buffers.Should().AllSatisfy(b => 
+            _ = buffers.Should().AllSatisfy(b =>
             {
-                b.IsDisposed.Should().BeFalse();
-                b.State.Should().Be(BufferState.Allocated);
+                _ = b.IsDisposed.Should().BeFalse();
+                _ = b.State.Should().Be(BufferState.Allocated);
             });
         }
         finally
@@ -535,8 +535,8 @@ public class EnhancedBaseMemoryBufferTests
         
         // Assert - Should not crash or deadlock
         var act = async () => await Task.WhenAll(disposeTasks);
-        await act.Should().NotThrowAsync();
-        buffer.IsDisposed.Should().BeTrue();
+        _ = await act.Should().NotThrowAsync();
+        _ = buffer.IsDisposed.Should().BeTrue();
     }
 
     #endregion
@@ -570,7 +570,7 @@ public class EnhancedBaseMemoryBufferTests
         var throughputMBps = totalBytes / (stopwatch.ElapsedMilliseconds / 1000.0) / (1024 * 1024);
         
         _output.WriteLine($"Buffer size: {bufferSize}B, Throughput: {throughputMBps:F2} MB/s");
-        throughputMBps.Should().BeGreaterThan(50, "performance should be reasonable");
+        _ = throughputMBps.Should().BeGreaterThan(50, "performance should be reasonable");
     }
 
     [Fact]
@@ -596,8 +596,8 @@ public class EnhancedBaseMemoryBufferTests
             // Assert
             var avgAllocationTime = stopwatch.ElapsedMilliseconds / (double)allocationCount;
             _output.WriteLine($"Small buffer allocation avg: {avgAllocationTime:F4} ms");
-            
-            avgAllocationTime.Should().BeLessThan(0.1, "small buffer allocation should be very fast");
+
+            _ = avgAllocationTime.Should().BeLessThan(0.1, "small buffer allocation should be very fast");
         }
         finally
         {
@@ -635,7 +635,7 @@ public class EnhancedBaseMemoryBufferTests
             var throughputMBps = totalDataMB / (stopwatch.ElapsedMilliseconds / 1000.0);
             
             _output.WriteLine($"Parallel copy throughput: {throughputMBps:F2} MB/s");
-            throughputMBps.Should().BeGreaterThan(100, "parallel operations should scale well");
+            _ = throughputMBps.Should().BeGreaterThan(100, "parallel operations should scale well");
         }
         finally
         {
@@ -674,8 +674,8 @@ public class EnhancedBaseMemoryBufferTests
             var overheadPercentage = (double)overhead / expectedMinimum * 100;
             
             _output.WriteLine($"Memory overhead: {overheadPercentage:F1}%");
-            
-            overheadPercentage.Should().BeLessThan(200, "memory overhead should be reasonable");
+
+            _ = overheadPercentage.Should().BeLessThan(200, "memory overhead should be reasonable");
         }
         finally
         {
@@ -714,8 +714,8 @@ public class EnhancedBaseMemoryBufferTests
         // Assert
         var overhead = (double)(asyncStopwatch.ElapsedMilliseconds - syncStopwatch.ElapsedMilliseconds) / syncStopwatch.ElapsedMilliseconds * 100;
         _output.WriteLine($"Async overhead: {overhead:F1}%");
-        
-        overhead.Should().BeLessThan(300, "async overhead should be reasonable");
+
+        _ = overhead.Should().BeLessThan(300, "async overhead should be reasonable");
     }
 
     #endregion
@@ -739,7 +739,7 @@ public class EnhancedBaseMemoryBufferTests
         
         // Assert
         var span = buffer.AsSpan();
-        span.ToArray().Should().OnlyContain(x => x == pattern, $"all elements should be {pattern:X8}");
+        _ = span.ToArray().Should().OnlyContain(x => x == pattern, $"all elements should be {pattern:X8}");
     }
 
     [Fact]
@@ -759,9 +759,9 @@ public class EnhancedBaseMemoryBufferTests
         
         // Act - Zero the entire buffer
         await buffer.FillAsync(0UL);
-        
+
         // Assert
-        buffer.AsSpan().ToArray().Should().OnlyContain(x => x == 0UL, "all elements should be zero");
+        _ = buffer.AsSpan().ToArray().Should().OnlyContain(x => x == 0UL, "all elements should be zero");
     }
 
     [Theory]
@@ -788,19 +788,19 @@ public class EnhancedBaseMemoryBufferTests
         // Check region before fill
         for (var i = 0; i < offset; i++)
         {
-            span[i].Should().Be(initialValue, $"element at index {i} should remain unchanged");
+            _ = span[i].Should().Be(initialValue, $"element at index {i} should remain unchanged");
         }
         
         // Check filled region
         for (var i = offset; i < offset + count; i++)
         {
-            span[i].Should().Be(fillValue, $"element at index {i} should be filled");
+            _ = span[i].Should().Be(fillValue, $"element at index {i} should be filled");
         }
         
         // Check region after fill
         for (var i = offset + count; i < span.Length; i++)
         {
-            span[i].Should().Be(initialValue, $"element at index {i} should remain unchanged");
+            _ = span[i].Should().Be(initialValue, $"element at index {i} should remain unchanged");
         }
     }
 
@@ -846,10 +846,10 @@ public class EnhancedBaseMemoryBufferTests
                 corruptedIndices.Add(i);
             }
         }
-        
+
         // Assert
-        corruptedIndices.Should().Contain(new[] { 100, 500, 900 }, "all corrupted locations should be detected");
-        corruptedIndices.Should().HaveCount(3, "exactly 3 corruptions should be detected");
+        _ = corruptedIndices.Should().Contain(new[] { 100, 500, 900 }, "all corrupted locations should be detected");
+        _ = corruptedIndices.Should().HaveCount(3, "exactly 3 corruptions should be detected");
     }
 
     [Fact]
@@ -861,7 +861,7 @@ public class EnhancedBaseMemoryBufferTests
         
         // Assert - New buffer should be zero-initialized
         var span = buffer.AsSpan();
-        span.ToArray().Should().OnlyContain(x => x == 0.0, "new buffer should be zero-initialized");
+        _ = span.ToArray().Should().OnlyContain(x => x == 0.0, "new buffer should be zero-initialized");
     }
 
     [Theory]
@@ -899,7 +899,7 @@ public class EnhancedBaseMemoryBufferTests
             {
                 var expectedValue = pattern[i];
                 var actualValue = span[rep * patternSize + i];
-                actualValue.Should().Be(expectedValue, $"pattern should repeat correctly at position {rep * patternSize + i}");
+                _ = actualValue.Should().Be(expectedValue, $"pattern should repeat correctly at position {rep * patternSize + i}");
             }
         }
     }
@@ -922,7 +922,7 @@ public class EnhancedBaseMemoryBufferTests
         for (var i = 0; i < span.Length; i++)
         {
             var expectedValue = (byte)((i + (i / 64)) % 2);
-            span[i].Should().Be(expectedValue, $"chessboard pattern should be correct at index {i}");
+            _ = span[i].Should().Be(expectedValue, $"chessboard pattern should be correct at index {i}");
         }
     }
 
@@ -1075,7 +1075,7 @@ public class EnhancedBaseMemoryBufferTests
         public override void Dispose() => MarkDisposed();
         public override ValueTask DisposeAsync()
         {
-            MarkDisposed();
+            _ = MarkDisposed();
             return ValueTask.CompletedTask;
         }
 
@@ -1137,7 +1137,7 @@ public class EnhancedBaseMemoryBufferTests
         public override void Dispose() => MarkDisposed();
         public override ValueTask DisposeAsync()
         {
-            MarkDisposed();
+            _ = MarkDisposed();
             return ValueTask.CompletedTask;
         }
 

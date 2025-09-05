@@ -755,7 +755,7 @@ namespace DotCompute.Core.Memory.P2P
             _syncMonitorTimer?.Dispose();
 
             // Complete all active barriers and events
-            var activeTasks = new List<Task>();
+            _ = new List<Task>();
 
             foreach (var barrier in _barriers.Values)
             {

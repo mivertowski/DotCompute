@@ -43,13 +43,13 @@ public class BaseKernelCompilerTests : IDisposable
     public void Constructor_InitializesProperties_Correctly()
     {
         // Assert
-        _compiler.Name.Should().Be("TestCompiler");
-        _compiler.SupportedSourceTypes.Should().Contain(KernelLanguage.OpenCL);
-        _compiler.SupportedSourceTypes.Should().Contain(KernelLanguage.CUDA);
-        _compiler.Capabilities.Should().ContainKey("SupportsAsync");
-        _compiler.Capabilities.Should().ContainKey("SupportsCaching");
-        _compiler.Capabilities.Should().ContainKey("SupportsOptimization");
-        _compiler.Capabilities["SupportsAsync"].Should().Be(true);
+        _ = _compiler.Name.Should().Be("TestCompiler");
+        _ = _compiler.SupportedSourceTypes.Should().Contain(KernelLanguage.OpenCL);
+        _ = _compiler.SupportedSourceTypes.Should().Contain(KernelLanguage.CUDA);
+        _ = _compiler.Capabilities.Should().ContainKey("SupportsAsync");
+        _ = _compiler.Capabilities.Should().ContainKey("SupportsCaching");
+        _ = _compiler.Capabilities.Should().ContainKey("SupportsOptimization");
+        _ = _compiler.Capabilities["SupportsAsync"].Should().Be(true);
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class BaseKernelCompilerTests : IDisposable
     {
         // Act & Assert
         var act = () => new TestKernelCompiler(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     #endregion
@@ -77,10 +77,10 @@ public class BaseKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition, options);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be("cache_test");
-        _compiler.CompileKernelCoreCallCount.Should().Be(1);
-        _compiler.LastCacheHit.Should().BeFalse();
+        _ = result.Should().NotBeNull();
+        _ = result.Name.Should().Be("cache_test");
+        _ = _compiler.CompileKernelCoreCallCount.Should().Be(1);
+        _ = _compiler.LastCacheHit.Should().BeFalse();
         
         // Verify cache miss logging
         _mockLogger.Verify(
@@ -106,10 +106,10 @@ public class BaseKernelCompilerTests : IDisposable
         var result2 = await _compiler.CompileAsync(definition, options);
 
         // Assert
-        result1.Should().NotBeNull();
-        result2.Should().NotBeNull();
-        result1.Id.Should().Be(result2.Id, "cached kernels should have same ID");
-        _compiler.CompileKernelCoreCallCount.Should().Be(1, "should only compile once due to caching");
+        _ = result1.Should().NotBeNull();
+        _ = result2.Should().NotBeNull();
+        _ = result1.Id.Should().Be(result2.Id, "cached kernels should have same ID");
+        _ = _compiler.CompileKernelCoreCallCount.Should().Be(1, "should only compile once due to caching");
         
         // Verify cache hit logging
         _mockLogger.Verify(
@@ -136,10 +136,10 @@ public class BaseKernelCompilerTests : IDisposable
         var result2 = await _compiler.CompileAsync(definition, options2);
 
         // Assert
-        result1.Should().NotBeNull();
-        result2.Should().NotBeNull();
-        _compiler.CompileKernelCoreCallCount.Should().Be(2, "different optimization levels should create separate cache entries");
-        _compiler.GetCacheCount().Should().Be(2);
+        _ = result1.Should().NotBeNull();
+        _ = result2.Should().NotBeNull();
+        _ = _compiler.CompileKernelCoreCallCount.Should().Be(2, "different optimization levels should create separate cache entries");
+        _ = _compiler.GetCacheCount().Should().Be(2);
     }
 
     [Fact]
@@ -155,10 +155,10 @@ public class BaseKernelCompilerTests : IDisposable
         var key2 = _compiler.TestGenerateCacheKey(definition, options);
 
         // Assert
-        key1.Should().Be(key2);
-        key1.Should().Contain("test");
-        key1.Should().Contain("Default");
-        key1.Should().Contain("TestCompiler");
+        _ = key1.Should().Be(key2);
+        _ = key1.Should().Contain("test");
+        _ = key1.Should().Contain("Default");
+        _ = key1.Should().Contain("TestCompiler");
     }
 
     [Fact]
@@ -175,7 +175,7 @@ public class BaseKernelCompilerTests : IDisposable
         var key2 = _compiler.TestGenerateCacheKey(definition2, options);
 
         // Assert
-        key1.Should().NotBe(key2, "different code should produce different cache keys");
+        _ = key1.Should().NotBe(key2, "different code should produce different cache keys");
     }
 
     [Fact]
@@ -196,9 +196,9 @@ public class BaseKernelCompilerTests : IDisposable
         var results = await Task.WhenAll(tasks.Select(t => t.AsTask()));
 
         // Assert
-        results.Should().AllSatisfy(r => r.Should().NotBeNull());
-        results.Should().AllSatisfy(r => r.Id.Should().Be(results[0].Id, "all should get same cached result"));
-        compiler.CompileKernelCoreCallCount.Should().Be(1, "should only compile once despite concurrent requests");
+        _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
+        _ = results.Should().AllSatisfy(r => r.Id.Should().Be(results[0].Id, "all should get same cached result"));
+        _ = compiler.CompileKernelCoreCallCount.Should().Be(1, "should only compile once despite concurrent requests");
     }
 
     [Fact]
@@ -208,14 +208,14 @@ public class BaseKernelCompilerTests : IDisposable
         // Arrange
         var compiler = CreateTestCompiler();
         var definition = new KernelDefinition("clear_test", "__kernel void test() {}", "main");
-        await compiler.CompileAsync(definition);
-        compiler.GetCacheCount().Should().BeGreaterThan(0);
+        _ = await compiler.CompileAsync(definition);
+        _ = compiler.GetCacheCount().Should().BeGreaterThan(0);
 
         // Act
         compiler.ClearCache();
 
         // Assert
-        compiler.GetCacheCount().Should().Be(0);
+        _ = compiler.GetCacheCount().Should().Be(0);
         
         // Verify logging
         _mockLogger.Verify(
@@ -242,10 +242,10 @@ public class BaseKernelCompilerTests : IDisposable
         var result2 = await compiler.CompileAsync(definition);
 
         // Assert
-        result1.Should().NotBeNull();
-        result2.Should().NotBeNull();
-        compiler.CompileKernelCoreCallCount.Should().Be(2, "should compile twice when caching disabled");
-        compiler.GetCacheCount().Should().Be(0, "cache should be empty when disabled");
+        _ = result1.Should().NotBeNull();
+        _ = result2.Should().NotBeNull();
+        _ = compiler.CompileKernelCoreCallCount.Should().Be(2, "should compile twice when caching disabled");
+        _ = compiler.GetCacheCount().Should().Be(0, "cache should be empty when disabled");
     }
 
     #endregion
@@ -269,9 +269,9 @@ public class BaseKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition, options);
 
         // Assert
-        result.Should().NotBeNull();
-        _compiler.LastCompilationOptions.Should().NotBeNull();
-        _compiler.LastCompilationOptions.OptimizationLevel.Should().Be(level);
+        _ = result.Should().NotBeNull();
+        _ = _compiler.LastCompilationOptions.Should().NotBeNull();
+        _ = _compiler.LastCompilationOptions.OptimizationLevel.Should().Be(level);
     }
 
     [Fact]
@@ -285,10 +285,10 @@ public class BaseKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition, null);
 
         // Assert
-        result.Should().NotBeNull();
-        _compiler.LastCompilationOptions.Should().NotBeNull();
-        _compiler.LastCompilationOptions.OptimizationLevel.Should().Be(OptimizationLevel.Default);
-        _compiler.LastCompilationOptions.EnableDebugInfo.Should().BeFalse();
+        _ = result.Should().NotBeNull();
+        _ = _compiler.LastCompilationOptions.Should().NotBeNull();
+        _ = _compiler.LastCompilationOptions.OptimizationLevel.Should().Be(OptimizationLevel.Default);
+        _ = _compiler.LastCompilationOptions.EnableDebugInfo.Should().BeFalse();
     }
 
     [Fact]
@@ -300,14 +300,14 @@ public class BaseKernelCompilerTests : IDisposable
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
 
         // Act
-        await _compiler.CompileAsync(definition, options);
+        _ = await _compiler.CompileAsync(definition, options);
 
         // Assert
         var metrics = _compiler.GetMetrics();
-        metrics.Should().HaveCount(1);
+        _ = metrics.Should().HaveCount(1);
         var metric = metrics.Values.First();
-        metric.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
-        metric.KernelName.Should().Be("metrics_opt");
+        _ = metric.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
+        _ = metric.KernelName.Should().Be("metrics_opt");
     }
 
     [Fact]
@@ -322,9 +322,9 @@ public class BaseKernelCompilerTests : IDisposable
         var optimizedKernel = await _compiler.OptimizeAsync(originalKernel, OptimizationLevel.Maximum);
 
         // Assert
-        optimizedKernel.Should().NotBeNull();
-        _compiler.OptimizeKernelCoreCallCount.Should().Be(1);
-        _compiler.LastOptimizationLevel.Should().Be(OptimizationLevel.Maximum);
+        _ = optimizedKernel.Should().NotBeNull();
+        _ = _compiler.OptimizeKernelCoreCallCount.Should().Be(1);
+        _ = _compiler.LastOptimizationLevel.Should().Be(OptimizationLevel.Maximum);
         
         // Verify logging
         _mockLogger.Verify(
@@ -347,7 +347,7 @@ public class BaseKernelCompilerTests : IDisposable
     {
         // Act & Assert
         var act = async () => await _compiler.CompileAsync((KernelDefinition)null!, null);
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -359,7 +359,7 @@ public class BaseKernelCompilerTests : IDisposable
 
         // Act & Assert
         var act = async () => await _compiler.CompileAsync(definition);
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Kernel validation failed*")
             .WithMessage("*name cannot be empty*");
     }
@@ -373,7 +373,7 @@ public class BaseKernelCompilerTests : IDisposable
 
         // Act & Assert
         var act = async () => await _compiler.CompileAsync(definition);
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Kernel validation failed*")
             .WithMessage("*code cannot be null*");
     }
@@ -387,7 +387,7 @@ public class BaseKernelCompilerTests : IDisposable
 
         // Act & Assert
         var act = async () => await _compiler.CompileAsync(definition);
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Kernel validation failed*")
             .WithMessage("*code cannot be null or empty*");
     }
@@ -403,7 +403,7 @@ public class BaseKernelCompilerTests : IDisposable
 
         // Act & Assert
         var act = async () => await compiler.CompileAsync(definition);
-        await act.Should().ThrowAsync<KernelCompilationException>()
+        _ = await act.Should().ThrowAsync<KernelCompilationException>()
             .WithMessage("*Failed to compile kernel 'fail_test'*");
 
         // Verify error logging
@@ -429,7 +429,7 @@ public class BaseKernelCompilerTests : IDisposable
 
         // Act & Assert
         var act = async () => await compiler.CompileAsync(definition, cancellationToken: cts.Token);
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -443,9 +443,9 @@ public class BaseKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("name cannot be empty");
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Contain("name cannot be empty");
     }
 
     [Fact]
@@ -459,9 +459,9 @@ public class BaseKernelCompilerTests : IDisposable
         var result = await _compiler.ValidateAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("code cannot be null or empty");
+        _ = result.Should().NotBeNull();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Contain("code cannot be null or empty");
     }
 
     [Fact]
@@ -479,7 +479,7 @@ public class BaseKernelCompilerTests : IDisposable
 
         // Act & Assert
         var act = async () => await _compiler.CompileAsync(definition);
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Work dimensions must be between 1 and 3*");
     }
 
@@ -498,7 +498,7 @@ public class BaseKernelCompilerTests : IDisposable
 
         // Act & Assert
         var act = async () => await _compiler.CompileAsync(definition);
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Kernel must have at least one parameter*");
     }
 
@@ -519,9 +519,9 @@ public class BaseKernelCompilerTests : IDisposable
         var result = await compiler.CompileAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be("aot_test");
-        compiler.AotFallbackUsed.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = result.Name.Should().Be("aot_test");
+        _ = compiler.AotFallbackUsed.Should().BeTrue();
     }
 
     [Fact]
@@ -538,10 +538,10 @@ public class BaseKernelCompilerTests : IDisposable
         var key = compiler.TestGenerateCacheKey(definition, options);
 
         // Assert
-        key.Should().NotBeNullOrEmpty();
-        key.Should().Contain("aot_cache");
-        key.Should().Contain("Default");
-        compiler.StaticHashingUsed.Should().BeTrue();
+        _ = key.Should().NotBeNullOrEmpty();
+        _ = key.Should().Contain("aot_cache");
+        _ = key.Should().Contain("Default");
+        _ = compiler.StaticHashingUsed.Should().BeTrue();
     }
 
     [Fact]
@@ -557,9 +557,9 @@ public class BaseKernelCompilerTests : IDisposable
         var result = await compiler.CompileAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        compiler.AotFallbackUsed.Should().BeFalse();
-        compiler.RuntimeCompilationUsed.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = compiler.AotFallbackUsed.Should().BeFalse();
+        _ = compiler.RuntimeCompilationUsed.Should().BeTrue();
     }
 
     #endregion
@@ -581,14 +581,14 @@ public class BaseKernelCompilerTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
         var metrics = compiler.GetMetrics();
-        metrics.Should().HaveCount(1);
+        _ = metrics.Should().HaveCount(1);
         var metric = metrics.Values.First();
-        metric.CompilationTime.Should().BeGreaterThan(TimeSpan.FromMilliseconds(90));
-        metric.CompilationTime.Should().BeLessThan(stopwatch.Elapsed);
-        metric.CacheHit.Should().BeFalse();
-        metric.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        _ = metric.CompilationTime.Should().BeGreaterThan(TimeSpan.FromMilliseconds(90));
+        _ = metric.CompilationTime.Should().BeLessThan(stopwatch.Elapsed);
+        _ = metric.CacheHit.Should().BeFalse();
+        _ = metric.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -601,11 +601,11 @@ public class BaseKernelCompilerTests : IDisposable
         var definition = new KernelDefinition("metrics_log_test", "__kernel void test() {}", "main");
 
         // Act
-        await compiler.CompileAsync(definition);
+        _ = await compiler.CompileAsync(definition);
 
         // Assert
-        compiler.LogCompilationMetricsCallCount.Should().Be(1);
-        compiler.LastLoggedCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
+        _ = compiler.LogCompilationMetricsCallCount.Should().Be(1);
+        _ = compiler.LastLoggedCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
     }
 
     [Fact]
@@ -668,14 +668,14 @@ public class BaseKernelCompilerTests : IDisposable
         // Act
         foreach (var definition in definitions)
         {
-            await compiler.CompileAsync(definition);
+            _ = await compiler.CompileAsync(definition);
         }
 
         // Assert
         var metrics = compiler.GetMetrics();
-        metrics.Should().HaveCount(5);
-        metrics.Values.Should().AllSatisfy(m => m.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero));
-        metrics.Values.Should().AllSatisfy(m => m.CacheHit.Should().BeFalse());
+        _ = metrics.Should().HaveCount(5);
+        _ = metrics.Values.Should().AllSatisfy(m => m.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero));
+        _ = metrics.Values.Should().AllSatisfy(m => m.CacheHit.Should().BeFalse());
     }
 
     #endregion
@@ -704,9 +704,9 @@ public class BaseKernelCompilerTests : IDisposable
         await Task.WhenAll(compileTask.AsTask(), optimizeTask.Unwrap(), cacheTask.AsTask(), clearTask);
 
         // Assert
-        compiler.CompileKernelCoreCallCount.Should().BeGreaterThanOrEqualTo(2);
-        compiler.OptimizeKernelCoreCallCount.Should().Be(1);
-        compiler.MaxConcurrentCompilations.Should().BeGreaterThanOrEqualTo(1);
+        _ = compiler.CompileKernelCoreCallCount.Should().BeGreaterThanOrEqualTo(2);
+        _ = compiler.OptimizeKernelCoreCallCount.Should().Be(1);
+        _ = compiler.MaxConcurrentCompilations.Should().BeGreaterThanOrEqualTo(1);
     }
 
     [Fact]
@@ -727,15 +727,15 @@ public class BaseKernelCompilerTests : IDisposable
         }
         
         var results = await Task.WhenAll(tasks);
-        
+
         // Assert
-        results.Should().HaveCount(concurrentTasks);
-        results.Should().AllSatisfy(r => r.Should().NotBeNull());
-        compiler.CompileKernelCoreCallCount.Should().Be(concurrentTasks);
-        compiler.MaxConcurrentCompilations.Should().BeGreaterThan(1);
+        _ = results.Should().HaveCount(concurrentTasks);
+        _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
+        _ = compiler.CompileKernelCoreCallCount.Should().Be(concurrentTasks);
+        _ = compiler.MaxConcurrentCompilations.Should().BeGreaterThan(1);
         
         var uniqueIds = results.Select(r => r.Id).Distinct().Count();
-        uniqueIds.Should().Be(concurrentTasks, "each kernel should have unique ID");
+        _ = uniqueIds.Should().Be(concurrentTasks, "each kernel should have unique ID");
     }
 
     [Fact]
@@ -766,7 +766,7 @@ public class BaseKernelCompilerTests : IDisposable
         
         // Assert - Should not throw and all compilations should succeed
         var results = await Task.WhenAll(compileTasks);
-        results.Should().AllSatisfy(r => r.Should().NotBeNull());
+        _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
     }
 
     #endregion
@@ -786,22 +786,22 @@ public class BaseKernelCompilerTests : IDisposable
         
         // Act & measure
         var sw1 = Stopwatch.StartNew();
-        await compiler.CompileAsync(definition, noneOptions);
+        _ = await compiler.CompileAsync(definition, noneOptions);
         sw1.Stop();
         
         var sw2 = Stopwatch.StartNew();
-        await compiler.CompileAsync(new KernelDefinition("perf_test_max", "__kernel void test() {}", "main"), maxOptions);
+        _ = await compiler.CompileAsync(new KernelDefinition("perf_test_max", "__kernel void test() {}", "main"), maxOptions);
         sw2.Stop();
         
         // Assert
         var metrics = compiler.GetMetrics();
-        metrics.Should().HaveCount(2);
+        _ = metrics.Should().HaveCount(2);
         
         var noneMetric = metrics.Values.First(m => m.OptimizationLevel == OptimizationLevel.None);
         var maxMetric = metrics.Values.First(m => m.OptimizationLevel == OptimizationLevel.Maximum);
-        
-        noneMetric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
-        maxMetric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
+
+        _ = noneMetric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
+        _ = maxMetric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
     }
 
     [Fact]
@@ -821,25 +821,25 @@ public class BaseKernelCompilerTests : IDisposable
         
         // Act - First compilation (both should be similar)
         var sw1 = Stopwatch.StartNew();
-        await cachedCompiler.CompileAsync(definition);
+        _ = await cachedCompiler.CompileAsync(definition);
         sw1.Stop();
         
         var sw2 = Stopwatch.StartNew();
-        await nonCachedCompiler.CompileAsync(definition);
+        _ = await nonCachedCompiler.CompileAsync(definition);
         sw2.Stop();
         
         // Act - Second compilation (cached should be much faster)
         var sw3 = Stopwatch.StartNew();
-        await cachedCompiler.CompileAsync(definition);
+        _ = await cachedCompiler.CompileAsync(definition);
         sw3.Stop();
         
         var sw4 = Stopwatch.StartNew();
-        await nonCachedCompiler.CompileAsync(definition);
+        _ = await nonCachedCompiler.CompileAsync(definition);
         sw4.Stop();
-        
+
         // Assert
-        sw3.Elapsed.Should().BeLessThan(sw1.Elapsed.Divide(2), "cached compilation should be much faster");
-        sw4.Elapsed.Should().BeGreaterThan(sw3.Elapsed, "non-cached should still take full time");
+        _ = sw3.Elapsed.Should().BeLessThan(sw1.Elapsed.Divide(2), "cached compilation should be much faster");
+        _ = sw4.Elapsed.Should().BeGreaterThan(sw3.Elapsed, "non-cached should still take full time");
     }
 
     [Fact]
@@ -859,7 +859,7 @@ public class BaseKernelCompilerTests : IDisposable
         // Act
         foreach (var definition in definitions)
         {
-            await compiler.CompileAsync(definition);
+            _ = await compiler.CompileAsync(definition);
         }
         
         stopwatch.Stop();
@@ -867,16 +867,16 @@ public class BaseKernelCompilerTests : IDisposable
         
         // Assert
         var metrics = compiler.GetMetrics();
-        metrics.Should().HaveCount(10);
+        _ = metrics.Should().HaveCount(10);
         
         var totalCompilationTime = metrics.Values.Sum(m => m.CompilationTime.TotalMilliseconds);
         var memoryIncrease = finalMemory - initialMemory;
-        
-        totalCompilationTime.Should().BeGreaterThan(0);
-        memoryIncrease.Should().BeGreaterThan(0, "compilation should use memory");
-        
+
+        _ = totalCompilationTime.Should().BeGreaterThan(0);
+        _ = memoryIncrease.Should().BeGreaterThan(0, "compilation should use memory");
+
         // Verify performance characteristics
-        stopwatch.ElapsedMilliseconds.Should().BeGreaterThan((long)(totalCompilationTime * 0.5), "wall clock time should be reasonable");
+        _ = stopwatch.ElapsedMilliseconds.Should().BeGreaterThan((long)(totalCompilationTime * 0.5), "wall clock time should be reasonable");
     }
 
     #endregion
@@ -889,7 +889,7 @@ public class BaseKernelCompilerTests : IDisposable
     {
         // Act & Assert
         var act = async () => await _compiler.OptimizeAsync(null!, OptimizationLevel.Maximum);
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -909,7 +909,7 @@ public class BaseKernelCompilerTests : IDisposable
         // Act & Assert
         var act = async () => await _compiler.CompileAsync(definition);
         var exception = await act.Should().ThrowAsync<InvalidOperationException>();
-        exception.WithMessage("*name cannot be empty*");
+        _ = exception.WithMessage("*name cannot be empty*");
     }
 
     [Fact]
@@ -924,7 +924,7 @@ public class BaseKernelCompilerTests : IDisposable
         // Act & Assert
         var act = async () => await compiler.CompileAsync(definition);
         var exception = await act.Should().ThrowAsync<KernelCompilationException>();
-        exception.Which.InnerException.Should().BeOfType<InvalidOperationException>();
+        _ = exception.Which.InnerException.Should().BeOfType<InvalidOperationException>();
     }
 
     [Fact]
@@ -940,7 +940,7 @@ public class BaseKernelCompilerTests : IDisposable
         
         // Act & Assert
         var act = async () => await compiler.CompileAsync(definition);
-        await act.Should().ThrowAsync<KernelCompilationException>();
+        _ = await act.Should().ThrowAsync<KernelCompilationException>();
         
         // Verify error is logged
         _mockLogger.Verify(
@@ -968,7 +968,7 @@ public class BaseKernelCompilerTests : IDisposable
         };
         
         var validResult = _compiler.Validate(validDefinition);
-        validResult.IsValid.Should().BeTrue();
+        _ = validResult.IsValid.Should().BeTrue();
         
         // Test edge case work dimensions
         foreach (var workDim in new[] { 1, 2, 3 })
@@ -983,7 +983,7 @@ public class BaseKernelCompilerTests : IDisposable
             };
             
             var result = _compiler.Validate(edgeDefinition);
-            result.IsValid.Should().BeTrue($"work dimensions {workDim} should be valid");
+            _ = result.IsValid.Should().BeTrue($"work dimensions {workDim} should be valid");
         }
     }
 
@@ -1014,12 +1014,12 @@ public class BaseKernelCompilerTests : IDisposable
         
         // Act
         var result = await compiler.CompileAsync(definition);
-        
+
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be("complex_aot");
-        compiler.AotFallbackUsed.Should().BeTrue();
-        compiler.StaticHashingUsed.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = result.Name.Should().Be("complex_aot");
+        _ = compiler.AotFallbackUsed.Should().BeTrue();
+        _ = compiler.StaticHashingUsed.Should().BeTrue();
     }
 
     [Fact]
@@ -1039,14 +1039,14 @@ public class BaseKernelCompilerTests : IDisposable
         // Act
         var aotKey = aotCompiler.TestGenerateCacheKey(definition, options);
         var runtimeKey = runtimeCompiler.TestGenerateCacheKey(definition, options);
-        
+
         // Assert
-        aotKey.Should().NotBeNullOrEmpty();
-        runtimeKey.Should().NotBeNullOrEmpty();
-        
+        _ = aotKey.Should().NotBeNullOrEmpty();
+        _ = runtimeKey.Should().NotBeNullOrEmpty();
+
         // AOT should use simpler hashing strategy
-        aotCompiler.StaticHashingUsed.Should().BeTrue();
-        runtimeCompiler.StaticHashingUsed.Should().BeFalse();
+        _ = aotCompiler.StaticHashingUsed.Should().BeTrue();
+        _ = runtimeCompiler.StaticHashingUsed.Should().BeFalse();
     }
 
     [Fact]
@@ -1069,11 +1069,11 @@ public class BaseKernelCompilerTests : IDisposable
         // Act
         var validationResult = aotCompiler.TestValidateKernelDefinition(definition);
         var compilationResult = await aotCompiler.CompileAsync(definition);
-        
+
         // Assert
-        validationResult.IsValid.Should().BeTrue();
-        compilationResult.Should().NotBeNull();
-        aotCompiler.AotFallbackUsed.Should().BeTrue();
+        _ = validationResult.IsValid.Should().BeTrue();
+        _ = compilationResult.Should().NotBeNull();
+        _ = aotCompiler.AotFallbackUsed.Should().BeTrue();
     }
 
     #endregion
@@ -1097,21 +1097,21 @@ public class BaseKernelCompilerTests : IDisposable
         // Act
         foreach (var definition in definitions)
         {
-            await compiler.CompileAsync(definition);
+            _ = await compiler.CompileAsync(definition);
         }
         
         // Assert
         var finalMetrics = compiler.GetMetrics();
-        finalMetrics.Should().HaveCount(initialMetricsCount + 3);
+        _ = finalMetrics.Should().HaveCount(initialMetricsCount + 3);
         
         foreach (var metric in finalMetrics.Values)
         {
-            metric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
-            metric.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
-            metric.KernelName.Should().NotBeNullOrEmpty();
+            _ = metric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
+            _ = metric.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+            _ = metric.KernelName.Should().NotBeNullOrEmpty();
         }
-        
-        compiler.LogCompilationMetricsCallCount.Should().Be(3);
+
+        _ = compiler.LogCompilationMetricsCallCount.Should().Be(3);
     }
 
     [Fact]
@@ -1130,15 +1130,15 @@ public class BaseKernelCompilerTests : IDisposable
         
         var afterMemory = GC.GetTotalMemory(false);
         var memoryIncrease = afterMemory - beforeMemory;
-        
+
         // Assert
-        result.Should().NotBeNull();
-        memoryIncrease.Should().BeLessThan(100_000_000, "memory increase should be reasonable for large kernel");
+        _ = result.Should().NotBeNull();
+        _ = memoryIncrease.Should().BeLessThan(100_000_000, "memory increase should be reasonable for large kernel");
         
         // Verify the large kernel was handled properly
         var metrics = compiler.GetMetrics();
-        metrics.Should().HaveCount(1);
-        metrics.Values.First().KernelName.Should().Be("large_kernel");
+        _ = metrics.Should().HaveCount(1);
+        _ = metrics.Values.First().KernelName.Should().Be("large_kernel");
     }
 
     [Fact]
@@ -1155,22 +1155,22 @@ public class BaseKernelCompilerTests : IDisposable
         
         // Act
         var tasks = definitions.Select(d => compiler.CompileAsync(d).AsTask()).ToArray();
-        await Task.WhenAll(tasks);
+        _ = await Task.WhenAll(tasks);
         
         // Clear cache and compile again to test metrics persistence
         compiler.ClearCache();
-        await compiler.CompileAsync(definitions[0]);
+        _ = await compiler.CompileAsync(definitions[0]);
         
         // Assert
         var metrics = compiler.GetMetrics();
-        metrics.Should().HaveCount(0, "metrics should be cleared with cache");
-        
+        _ = metrics.Should().HaveCount(0, "metrics should be cleared with cache");
+
         // Compile once more to verify new metrics
-        await compiler.CompileAsync(new KernelDefinition("metrics3", "__kernel void test3() {}", "main"));
+        _ = await compiler.CompileAsync(new KernelDefinition("metrics3", "__kernel void test3() {}", "main"));
         
         var newMetrics = compiler.GetMetrics();
-        newMetrics.Should().HaveCount(1);
-        newMetrics.Values.First().KernelName.Should().Be("metrics3");
+        _ = newMetrics.Should().HaveCount(1);
+        _ = newMetrics.Values.First().KernelName.Should().Be("metrics3");
     }
 
     #endregion
@@ -1258,13 +1258,13 @@ public class BaseKernelCompilerTests : IDisposable
             var maxConcurrent = _maxConcurrentCompilations;
             while (current > maxConcurrent)
             {
-                Interlocked.CompareExchange(ref _maxConcurrentCompilations, current, maxConcurrent);
+                _ = Interlocked.CompareExchange(ref _maxConcurrentCompilations, current, maxConcurrent);
                 maxConcurrent = _maxConcurrentCompilations;
             }
 
             try
             {
-                Interlocked.Increment(ref _compileCallCount);
+                _ = Interlocked.Increment(ref _compileCallCount);
                 LastCompilationOptions = options;
 
                 if (CompilationDelay > TimeSpan.Zero)
@@ -1288,8 +1288,8 @@ public class BaseKernelCompilerTests : IDisposable
                 }
 
                 var mockKernel = new Mock<ICompiledKernel>();
-                mockKernel.Setup(x => x.Id).Returns(Guid.NewGuid());
-                mockKernel.Setup(x => x.Name).Returns(definition.Name);
+                _ = mockKernel.Setup(x => x.Id).Returns(Guid.NewGuid());
+                _ = mockKernel.Setup(x => x.Name).Returns(definition.Name);
                 
                 if (EnableMetricsLogging)
                 {
@@ -1301,7 +1301,7 @@ public class BaseKernelCompilerTests : IDisposable
             }
             finally
             {
-                Interlocked.Decrement(ref _concurrentCompilations);
+                _ = Interlocked.Decrement(ref _concurrentCompilations);
             }
         }
 
@@ -1310,7 +1310,7 @@ public class BaseKernelCompilerTests : IDisposable
             OptimizationLevel level,
             CancellationToken cancellationToken)
         {
-            Interlocked.Increment(ref _optimizeCallCount);
+            _ = Interlocked.Increment(ref _optimizeCallCount);
             LastOptimizationLevel = level;
             return ValueTask.FromResult(kernel);
         }
@@ -1338,7 +1338,7 @@ public class BaseKernelCompilerTests : IDisposable
 
         public void TestLogCompilationMetrics(string kernelName, TimeSpan compilationTime, long? byteCodeSize)
         {
-            Interlocked.Increment(ref _logMetricsCallCount);
+            _ = Interlocked.Increment(ref _logMetricsCallCount);
             LastLoggedCompilationTime = compilationTime;
             LogCompilationMetrics(kernelName, compilationTime, byteCodeSize);
         }

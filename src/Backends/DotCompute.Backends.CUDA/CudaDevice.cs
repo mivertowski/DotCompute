@@ -16,9 +16,15 @@ namespace DotCompute.Backends.CUDA
     /// <summary>
     /// Represents a CUDA-capable GPU device with enhanced device detection capabilities.
     /// Provides detailed hardware information and capabilities for RTX 2000 Ada Generation and other CUDA devices.
+    /// Requires CUDA 13.0+ and compute capability 7.5 or higher (Turing architecture minimum).
     /// </summary>
     public sealed class CudaDevice : IDisposable
     {
+        // CUDA 13.0 minimum requirements
+        private const int MinimumComputeCapabilityMajor = 7;
+        private const int MinimumComputeCapabilityMinor = 5;
+        private const string MinimumArchitecture = "Turing";
+        
         private readonly ILogger _logger;
         private readonly int _deviceId;
         private readonly CudaDeviceProperties _deviceProperties;
@@ -195,7 +201,7 @@ namespace DotCompute.Backends.CUDA
         /// <param name="deviceId">The CUDA device ID.</param>
         /// <param name="logger">Optional logger instance.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when deviceId is negative.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when device properties cannot be retrieved.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when device properties cannot be retrieved or device doesn't meet CUDA 13.0 requirements.</exception>
         public CudaDevice(int deviceId, ILogger? logger = null)
         {
             if (deviceId < 0)
@@ -216,6 +222,18 @@ namespace DotCompute.Backends.CUDA
                 throw new InvalidOperationException($"Failed to get CUDA device properties: {error}");
             }
 
+            // Verify CUDA 13.0 minimum requirements
+            if (!IsCuda13Compatible())
+            {
+                var architecture = GetArchitectureGeneration();
+                var errorMsg = $"Device {Name} (CC {ComputeCapabilityMajor}.{ComputeCapabilityMinor}, {architecture}) " +
+                              $"is not compatible with CUDA 13.0. Minimum requirement: CC {MinimumComputeCapabilityMajor}.{MinimumComputeCapabilityMinor} ({MinimumArchitecture}). " +
+                              "Supported architectures: Turing (sm_75), Ampere (sm_80/86), Ada Lovelace (sm_89), Hopper (sm_90).";
+                
+                _logger.LogError(errorMsg);
+                throw new InvalidOperationException(errorMsg);
+            }
+
             // Build capabilities dictionary
             _capabilities = BuildCapabilities();
 
@@ -225,8 +243,8 @@ namespace DotCompute.Backends.CUDA
             _logger.LogInformation("Device {DeviceId} ManagedMemory field value: {ManagedMemory}, SupportsManagedMemory: {Supports}",
                 deviceId, _deviceProperties.ManagedMemory, SupportsManagedMemory);
 
-            _logger.LogInformation("Initialized CUDA device {DeviceId}: {DeviceName} (CC {Major}.{Minor})",
-                _deviceId, Name, ComputeCapabilityMajor, ComputeCapabilityMinor);
+            _logger.LogInformation("Initialized CUDA 13.0-compatible device {DeviceId}: {DeviceName} (CC {Major}.{Minor}, {Architecture})",
+                _deviceId, Name, ComputeCapabilityMajor, ComputeCapabilityMinor, GetArchitectureGeneration());
         }
 
         /// <summary>
@@ -339,6 +357,17 @@ namespace DotCompute.Backends.CUDA
         }
 
         /// <summary>
+        /// Checks if this device is compatible with CUDA 13.0 requirements.
+        /// </summary>
+        /// <returns>True if the device meets CUDA 13.0 minimum requirements.</returns>
+        public bool IsCuda13Compatible()
+        {
+            // CUDA 13.0 drops support for Maxwell (sm_5x), Pascal (sm_6x), and Volta (sm_70, sm_72)
+            // Minimum supported: Turing (sm_75) and newer
+            return SupportsComputeCapability(MinimumComputeCapabilityMajor, MinimumComputeCapabilityMinor);
+        }
+
+        /// <summary>
         /// Gets the estimated CUDA cores count for this device.
         /// Note: This is an approximation based on architecture and SM count.
         /// </summary>
@@ -346,15 +375,16 @@ namespace DotCompute.Backends.CUDA
         public int GetEstimatedCudaCores()
         {
             // CUDA cores per SM varies by architecture
+            // Only CUDA 13.0+ supported architectures included
             var coresPerSM = ComputeCapabilityMajor switch
             {
-                3 => 192, // Kepler
-                5 => 128, // Maxwell
-                6 => ComputeCapabilityMinor == 0 ? 64 : 128, // Pascal
-                7 => ComputeCapabilityMinor == 0 ? 64 : 128, // Volta/Turing
-                8 => ComputeCapabilityMinor == 6 ? 128 : 64, // Ampere
-                9 => 128, // Ada Lovelace/Hopper
-                _ => 128  // Default assumption
+                7 when ComputeCapabilityMinor >= 5 => 64,  // Turing (sm_75)
+                8 when ComputeCapabilityMinor == 0 => 64,  // Ampere GA100 (sm_80)
+                8 when ComputeCapabilityMinor == 6 => 128, // Ampere GA10x (sm_86)
+                8 when ComputeCapabilityMinor == 7 => 128, // Ampere GA10x (sm_87)
+                8 when ComputeCapabilityMinor == 9 => 128, // Ada Lovelace (sm_89)
+                9 when ComputeCapabilityMinor == 0 => 128, // Hopper (sm_90)
+                _ => 128  // Default for future architectures
             };
 
             return StreamingMultiprocessorCount * coresPerSM;
@@ -411,15 +441,14 @@ namespace DotCompute.Backends.CUDA
         {
             return ComputeCapabilityMajor switch
             {
-                3 => "Kepler",
-                5 => "Maxwell",
-                6 => "Pascal",
-                7 => ComputeCapabilityMinor == 0 ? "Volta" : "Turing",
-                8 => ComputeCapabilityMinor == 0 ? "Ampere" :
-                     ComputeCapabilityMinor == 6 ? "Ampere" :
-                     ComputeCapabilityMinor == 9 ? "Ada Lovelace" : "Ampere",
-                9 => ComputeCapabilityMinor == 0 ? "Hopper" : "Ada Lovelace",
-                _ => "Unknown"
+                // Only CUDA 13.0+ supported architectures
+                7 when ComputeCapabilityMinor == 5 => "Turing",
+                8 when ComputeCapabilityMinor == 0 => "Ampere (GA100)",
+                8 when ComputeCapabilityMinor == 6 => "Ampere (GA10x)",
+                8 when ComputeCapabilityMinor == 7 => "Ampere (GA10x)",
+                8 when ComputeCapabilityMinor == 9 => "Ada Lovelace",
+                9 when ComputeCapabilityMinor == 0 => "Hopper",
+                _ => $"Unknown (CC {ComputeCapabilityMajor}.{ComputeCapabilityMinor})"
             };
         }
 
@@ -477,7 +506,17 @@ namespace DotCompute.Backends.CUDA
                 ["SupportsBFloat16"] = ComputeCapabilityMajor >= 8,
                 ["SupportsCooperativeGroups"] = ComputeCapabilityMajor >= 6,
                 ["SupportsDynamicParallelism"] = ComputeCapabilityMajor >= 3 && ComputeCapabilityMinor >= 5,
-                ["SupportsUnifiedMemory"] = SupportsManagedMemory
+                ["SupportsUnifiedMemory"] = SupportsManagedMemory,
+                
+                // CUDA 13.0 specific features
+                ["IsCuda13Compatible"] = IsCuda13Compatible(),
+                ["SupportsSharedMemoryRegisterSpilling"] = ComputeCapabilityMajor >= 7 && ComputeCapabilityMinor >= 5,
+                ["SupportsTileBasedProgramming"] = ComputeCapabilityMajor >= 8,
+                ["SupportsAsyncCopyOperations"] = ComputeCapabilityMajor >= 8,
+                ["SupportsL2CacheResidencyControl"] = ComputeCapabilityMajor >= 8,
+                ["SupportsGraphOptimizationV2"] = ComputeCapabilityMajor >= 8,
+                ["SupportsInt4TensorCores"] = ComputeCapabilityMajor >= 8 && ComputeCapabilityMinor >= 9,
+                ["SupportsFP8TensorCores"] = ComputeCapabilityMajor >= 9
             };
 
             return capabilities;
@@ -521,7 +560,12 @@ namespace DotCompute.Backends.CUDA
         public async Task<IUnifiedMemoryBuffer> AllocateAsync(ulong sizeInBytes)
         {
             if (Memory == null)
+            {
+
                 throw new InvalidOperationException("Memory manager has not been initialized for this device");
+            }
+
+
             return await Memory.AllocateAsync((long)sizeInBytes).ConfigureAwait(false);
         }
 

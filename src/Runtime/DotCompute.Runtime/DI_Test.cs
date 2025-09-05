@@ -92,7 +92,7 @@ public static class ConfigurationTest
         };
 
         // Test plugin options
-        var pluginOptions = new DotComputePluginOptions
+        _ = new DotComputePluginOptions
         {
             EnablePlugins = true,
             PluginDirectories = ["./plugins"],
@@ -107,7 +107,7 @@ public static class ConfigurationTest
         };
 
         // Test advanced memory options
-        var memoryOptions = new AdvancedMemoryOptions
+        _ = new AdvancedMemoryOptions
         {
             EnableUnifiedMemory = true,
             EnableP2PTransfers = true,
@@ -119,7 +119,7 @@ public static class ConfigurationTest
         };
 
         // Test performance options
-        var performanceOptions = new PerformanceMonitoringOptions
+        _ = new PerformanceMonitoringOptions
         {
             EnableMonitoring = true,
             CollectionIntervalSeconds = 10,
@@ -131,7 +131,7 @@ public static class ConfigurationTest
 
         // Test validator
         var validator = new RuntimeOptionsValidator();
-        var result = validator.Validate(null, runtimeOptions);
+        _ = validator.Validate(null, runtimeOptions);
 
         // Configuration objects should be constructible
         // This validates that all properties and types are correct

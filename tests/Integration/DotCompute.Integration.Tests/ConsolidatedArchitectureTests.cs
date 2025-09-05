@@ -166,9 +166,9 @@ public class ConsolidatedArchitectureTests : TestBase, IAsyncLifetime
     {
         // Arrange
         using var buffer = new TestMemoryBuffer<float>(100 * sizeof(float), _accelerator!);
-        
+
         // Act & Assert - Should throw for invalid copy parameters
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
             buffer.TestValidateCopyParameters(100, 50, 100, 0, 60));
     }
 

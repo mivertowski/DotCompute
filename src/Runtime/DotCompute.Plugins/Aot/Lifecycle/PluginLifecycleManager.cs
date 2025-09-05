@@ -100,10 +100,10 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
                 try
                 {
                     _logger.LogInformation("Unloading plugin {PluginId} ({PluginName})", pluginId, plugin.Name);
-                    
+
                     // Remove from management tracking first
-                    _managedPlugins.Remove(pluginId);
-                    _discoveryService.UnregisterLoadedPlugin(pluginId);
+                    _ = _managedPlugins.Remove(pluginId);
+                    _ = _discoveryService.UnregisterLoadedPlugin(pluginId);
 
                     // Dispose the plugin
                     plugin.Dispose();
@@ -176,10 +176,10 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
             try
             {
                 _logger.LogInformation("Unloading plugin {PluginId} ({PluginName})", pluginId, plugin.Name);
-                
+
                 // Remove from management tracking first
-                _managedPlugins.Remove(pluginId);
-                _discoveryService.UnregisterLoadedPlugin(pluginId);
+                _ = _managedPlugins.Remove(pluginId);
+                _ = _discoveryService.UnregisterLoadedPlugin(pluginId);
 
                 // Dispose the plugin
                 plugin.Dispose();
@@ -265,7 +265,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
             var removed = _managedPlugins.Remove(pluginId);
             if (removed)
             {
-                _discoveryService.UnregisterLoadedPlugin(pluginId);
+                _ = _discoveryService.UnregisterLoadedPlugin(pluginId);
                 _logger.LogInformation("Unregistered plugin {PluginId} from lifecycle management (without disposal)", pluginId);
             }
             else

@@ -283,7 +283,7 @@ namespace DotCompute.Core.Compute
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(definition);
-            options ??= new CompilationOptions();
+            _ = options ?? new CompilationOptions();
 
             _logger.LogDebug("Compiling CPU kernel: {KernelName}", definition.Name);
 

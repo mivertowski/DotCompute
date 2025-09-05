@@ -71,7 +71,7 @@ public class ExpressionFallbackKernel : Interfaces.IKernel
         if (_compiledFunc != null && parameters.Count > 0)
         {
             var args = parameters.Values.ToArray();
-            await Task.Run(() => _compiledFunc(args), cancellationToken);
+            _ = await Task.Run(() => _compiledFunc(args), cancellationToken);
         }
         else
         {

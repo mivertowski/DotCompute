@@ -120,9 +120,17 @@ namespace DotCompute.Core.Extensions
             {
                 var result = method.Invoke(stream, null);
                 if (result is ValueTask valueTask)
+                {
                     return valueTask;
+                }
+
+
                 if (result is Task task)
+                {
+
                     return new ValueTask(task);
+                }
+
             }
             
             // For other stream types, return completed task
@@ -145,13 +153,31 @@ namespace DotCompute.Core.Extensions
             {
                 var result = method.Invoke(stream, null);
                 if (result is ValueTask<object?> valueTask)
+                {
                     return valueTask;
+                }
+
+
                 if (result is Task<object?> task)
+                {
+
                     return new ValueTask<object?>(task);
+                }
+
+
                 if (result is ValueTask<object> valueTaskNonNull)
+                {
+
                     return new ValueTask<object?>(valueTaskNonNull.AsTask().ContinueWith(t => (object?)t.Result));
+                }
+
+
                 if (result is Task<object> taskNonNull)
+                {
+
                     return new ValueTask<object?>(taskNonNull.ContinueWith(t => (object?)t.Result));
+                }
+
             }
             
             // For other stream types, return null

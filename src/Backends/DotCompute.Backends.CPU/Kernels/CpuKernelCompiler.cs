@@ -519,8 +519,7 @@ internal static partial class CpuKernelCompiler
             entryPoint: original.EntryPoint ?? "main",
             dependencies: []
         );
-
-        var compilationOptions = new CompilationOptions
+        _ = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false,

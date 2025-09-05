@@ -104,7 +104,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 1024 * 1024; // 1M elements
             
@@ -131,7 +131,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Compile kernel
             var kernelDef = new KernelDefinition("vectorAdd", VectorAddKernel, "vectorAdd");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
-            kernel.Should().NotBeNull();
+            _ = kernel.Should().NotBeNull();
             
             // Configure launch parameters
             const int blockSize = 256;
@@ -154,7 +154,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             for (var i = 0; i < Math.Min(1000, elementCount); i++) // Check first 1000 elements
             {
                 var expected = hostA[i] + hostB[i];
-                hostResult[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
+                _ = hostResult[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
             }
             
             var throughput = (elementCount * 3 * sizeof(float)) / (stopwatch.Elapsed.TotalSeconds * 1024 * 1024 * 1024);
@@ -172,7 +172,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int matrixSize = 128; // 128x128 matrices - reduced for stability testing
             const int elementCount = matrixSize * matrixSize;
@@ -239,7 +239,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                     }
                     
                     var actual = hostResult[row * matrixSize + col];
-                    actual.Should().BeApproximately(expected, 0.001f, 
+                    _ = actual.Should().BeApproximately(expected, 0.001f,
+
                         $"at position ({row}, {col})");
                 }
             }
@@ -259,7 +260,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 1024 * 256; // Multiple blocks
             const int blockSize = 256;
@@ -305,7 +306,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             for (var i = 0; i < gridSize; i++)
             {
                 var expectedSum = Math.Min(blockSize, elementCount - i * blockSize);
-                hostOutput[i].Should().BeApproximately(expectedSum, 0.0001f, $"block {i}");
+                _ = hostOutput[i].Should().BeApproximately(expectedSum, 0.0001f, $"block {i}");
             }
             
             var totalSum = 0.0f;
@@ -313,8 +314,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 totalSum += blockSum;
             }
-            
-            totalSum.Should().BeApproximately(elementCount, 0.0001f);
+
+            _ = totalSum.Should().BeApproximately(elementCount, 0.0001f);
             
             Output.WriteLine($"Shared Memory Reduction Performance:");
             Output.WriteLine($"  Elements: {elementCount:N0}");
@@ -329,7 +330,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             // Check if dynamic parallelism is supported (compute capability >= 3.5)
             var computeCapability = accelerator.Info.ComputeCapability;
@@ -383,8 +384,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                     elementsProcessed++;
                 }
             }
-            
-            elementsProcessed.Should().BeGreaterThan(0, "Some elements should have been processed by child kernels");
+
+            _ = elementsProcessed.Should().BeGreaterThan(0, "Some elements should have been processed by child kernels");
             
             Output.WriteLine($"Dynamic Parallelism Test:");
             Output.WriteLine($"  Compute Capability: {computeCapability.Major}.{computeCapability.Minor}");
@@ -398,7 +399,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int iterations = 10;
             const int elementCount = 1024 * 1024;
@@ -454,10 +455,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Min Time: {minTime:F2} ms");
             Output.WriteLine($"  Max Time: {maxTime:F2} ms");
             Output.WriteLine($"  Average Throughput: {throughput:F2} GB/s");
-            
+
             // Performance should be reasonable for modern GPUs
-            averageTime.Should().BeLessThan(10.0, "Kernel execution should be fast");
-            throughput.Should().BeGreaterThan(10.0, "Memory throughput should be reasonable");
+            _ = averageTime.Should().BeLessThan(10.0, "Kernel execution should be fast");
+            _ = throughput.Should().BeGreaterThan(10.0, "Memory throughput should be reasonable");
         }
 
         [SkippableFact]
@@ -466,7 +467,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             var deviceInfo = accelerator.Info;
             
@@ -484,11 +485,11 @@ namespace DotCompute.Hardware.Cuda.Tests
                     var maxGridSize = Math.Min(gridSize, 65535); // CUDA grid dimension limit
                     
                     Output.WriteLine($"Block Size: {blockSize}, Grid Size: {maxGridSize}");
-                    
-                    blockSize.Should().BeGreaterThan(0);
-                    blockSize.Should().BeLessThanOrEqualTo(deviceInfo.MaxThreadsPerBlock);
-                    maxGridSize.Should().BeGreaterThan(0);
-                    maxGridSize.Should().BeLessThanOrEqualTo(65535);
+
+                    _ = blockSize.Should().BeGreaterThan(0);
+                    _ = blockSize.Should().BeLessThanOrEqualTo(deviceInfo.MaxThreadsPerBlock);
+                    _ = maxGridSize.Should().BeGreaterThan(0);
+                    _ = maxGridSize.Should().BeLessThanOrEqualTo(65535);
                 }
             }
             

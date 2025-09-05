@@ -174,16 +174,17 @@ namespace DotCompute.Core.Execution.Scheduling
                 throw new ArgumentException("At least one device must be provided", nameof(devices));
             }
 
-            var assignments = new Dictionary<int, IAccelerator>();
+            _ = new Dictionary<int, IAccelerator>();
 
-            assignments = options.LayerAssignment switch
+            var assignments = options.LayerAssignment switch
             {
                 LayerAssignmentStrategy.Sequential => await AssignLayersSequentiallyAsync(layers, devices, cancellationToken),
                 LayerAssignmentStrategy.Interleaved => await AssignLayersInterleavedAsync(layers, devices, cancellationToken),
                 LayerAssignmentStrategy.Automatic => await AssignLayersAutomaticallyAsync(layers, devices, cancellationToken),
                 _ => await AssignLayersSequentiallyAsync(layers, devices, cancellationToken),
             };
-            
+
+
             _logger.LogInformation("Assigned {LayerCount} layers across {DeviceCount} devices using {Strategy} strategy",
                 layers.Count, devices.Length, options.LayerAssignment);
 

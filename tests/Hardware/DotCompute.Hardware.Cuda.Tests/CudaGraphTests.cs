@@ -60,7 +60,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 1024;
             
@@ -87,7 +87,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Create graph
             var graph = accelerator.CreateGraph();
-            graph.Should().NotBeNull();
+            _ = graph.Should().NotBeNull();
             
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
@@ -96,13 +96,13 @@ namespace DotCompute.Hardware.Cuda.Tests
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
             };
-            
+
             // Add kernel to graph
-            graph.AddKernel(kernel, launchConfig, deviceA, deviceB, deviceC, elementCount);
+            _ = graph.AddKernel(kernel, launchConfig, deviceA, deviceB, deviceC, elementCount);
             
             // Instantiate graph
             var executableGraph = graph.Instantiate();
-            executableGraph.Should().NotBeNull();
+            _ = executableGraph.Should().NotBeNull();
             
             // Execute graph
             await executableGraph.LaunchAsync(null);
@@ -113,7 +113,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             for (var i = 0; i < Math.Min(100, elementCount); i++)
             {
-                result[i].Should().BeApproximately(hostA[i] + hostB[i], 0.0001f, $"at index {i}");
+                _ = result[i].Should().BeApproximately(hostA[i] + hostB[i], 0.0001f, $"at index {i}");
             }
             
             Output.WriteLine($"Graph creation and execution successful");
@@ -128,7 +128,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 2048;
             
@@ -154,7 +154,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Create and start graph capture
             var stream = accelerator.CreateStream();
-            stream.BeginCapture();
+            _ = stream.BeginCapture();
             
             // Execute operations in capture mode
             await kernel.LaunchAsync(launchConfig, stream, deviceData, 2.0f, elementCount);
@@ -162,7 +162,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // End capture
             var capturedGraph = stream.EndCapture();
-            capturedGraph.Should().NotBeNull();
+            _ = capturedGraph.Should().NotBeNull();
             
             // Execute the captured graph
             var executableGraph = capturedGraph.Instantiate();
@@ -175,7 +175,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             for (var i = 0; i < Math.Min(100, elementCount); i++)
             {
                 var expected = hostData[i] * 2.0f * 1.5f;
-                result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
+                _ = result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
             }
             
             Output.WriteLine($"Graph capture test successful");
@@ -190,7 +190,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 1024;
             
@@ -227,13 +227,13 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             // Create graph with multiple operations
             var graph = accelerator.CreateGraph();
-            
+
             // Step 1: Multiply A and B, store in C
-            graph.AddKernel(multiplyKernel, launchConfig, deviceA, deviceB, deviceC, elementCount);
+            _ = graph.AddKernel(multiplyKernel, launchConfig, deviceA, deviceB, deviceC, elementCount);
             
             // Step 2: Scale C by 2.0, store in D  
             graph.AddMemoryCopy(deviceC, deviceD, elementCount * sizeof(float));
-            graph.AddKernel(scaleKernel, launchConfig, deviceD, 2.0f, elementCount);
+            _ = graph.AddKernel(scaleKernel, launchConfig, deviceD, 2.0f, elementCount);
             
             var executableGraph = graph.Instantiate();
             
@@ -249,7 +249,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             for (var i = 0; i < Math.Min(100, elementCount); i++)
             {
                 var expected = hostA[i] * hostB[i] * 2.0f;
-                result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
+                _ = result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
             }
             
             Output.WriteLine($"Multi-kernel graph execution successful");
@@ -264,7 +264,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 1024;
             const int iterations = 100;
@@ -303,7 +303,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Create graph with multiple operations for realistic comparison
             // CUDA graphs benefit from capturing multiple kernels, not single ones
             var stream = accelerator.CreateStream();
-            stream.BeginCapture();
+            _ = stream.BeginCapture();
             
             // Capture 10 kernel launches in the graph to demonstrate the benefit
             const int kernelsPerGraph = 10;
@@ -335,9 +335,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Individual Launch Avg: {avgIndividualTime:F2} μs");
             Output.WriteLine($"  Graph Launch Avg: {avgGraphTime:F2} μs");
             Output.WriteLine($"  Speedup: {speedup:F2}x");
-            
+
             // Graph execution should be at least as fast, often faster due to reduced overhead
-            avgGraphTime.Should().BeLessThanOrEqualTo(avgIndividualTime * 1.1, 
+            _ = avgGraphTime.Should().BeLessThanOrEqualTo(avgIndividualTime * 1.1,
+
                 "Graph execution should not be significantly slower than individual launches");
         }
 
@@ -348,7 +349,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 1024;
             
@@ -402,7 +403,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             for (var i = 0; i < Math.Min(100, elementCount); i++)
             {
                 var expected = hostInput[i] * 3.0f; // input + (input * 2.0)
-                result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
+                _ = result[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
             }
             
             Output.WriteLine($"Graph with dependencies executed correctly");
@@ -416,7 +417,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await SupportsGraphs(), "CUDA graphs not supported");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 1024;
             
@@ -453,8 +454,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             for (var i = 0; i < elementCount; i++)
             {
-                result1[i].Should().BeApproximately(hostData[i], 0.0001f, $"dst1 at index {i}");
-                result2[i].Should().BeApproximately(hostData[i], 0.0001f, $"dst2 at index {i}");
+                _ = result1[i].Should().BeApproximately(hostData[i], 0.0001f, $"dst1 at index {i}");
+                _ = result2[i].Should().BeApproximately(hostData[i], 0.0001f, $"dst2 at index {i}");
             }
             
             Output.WriteLine($"Graph memory operations successful");
@@ -470,7 +471,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(await SupportsGraphUpdate(), "CUDA graph update not supported");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 512;
             
@@ -504,8 +505,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Verify initial results (scaled by 2.0)
             var result1 = new float[elementCount];
             await deviceData.ReadAsync(result1.AsSpan(), 0);
-            
-            result1[0].Should().BeApproximately(hostData[0] * 2.0f, 0.0001f);
+
+            _ = result1[0].Should().BeApproximately(hostData[0] * 2.0f, 0.0001f);
             
             // Update graph to use scale factor 3.0
             try
@@ -518,8 +519,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                 
                 var result2 = new float[elementCount];
                 await deviceData.ReadAsync(result2.AsSpan(), 0);
-                
-                result2[0].Should().BeApproximately(hostData[0] * 3.0f, 0.0001f);
+
+                _ = result2[0].Should().BeApproximately(hostData[0] * 3.0f, 0.0001f);
                 
                 Output.WriteLine($"Graph update successful");
                 Output.WriteLine($"  Original scale: 2.0, result: {result1[0]:F2}");
@@ -544,7 +545,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                await using var accelerator = factory.CreateDefaultAccelerator();
+                await using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 // CUDA graphs require compute capability 3.5+ and CUDA 10.0+
                 var cc = accelerator.Info.ComputeCapability;
@@ -569,7 +570,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                await using var accelerator = factory.CreateDefaultAccelerator();
+                await using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 // Graph updates require CUDA 11.1+
                 // For now, assume supported if graphs are supported

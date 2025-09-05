@@ -248,7 +248,8 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
     /// </summary>
     public bool UnregisterMemoryPool(string poolId)
     {
-        if (_memoryPools.TryRemove(poolId, out var poolState))
+
+        if (_memoryPools.TryRemove(poolId, out _))
         {
             Logger.LogDebug("Unregistered memory pool {PoolId}", poolId);
             return true;
@@ -450,8 +451,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
     {
         Logger.LogInformation("Performing GPU memory defragmentation for pool {PoolId}", poolId);
 
-
-        if (_memoryPools.TryGetValue(poolId, out var poolState))
+        if (_memoryPools.TryGetValue(poolId, out _))
         {
             // TODO: Implement defragmentation for memory pool
             // await poolState.PerformDefragmentationAsync(cancellationToken);

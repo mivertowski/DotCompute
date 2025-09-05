@@ -46,12 +46,12 @@ public static class CodeFormatter
             var trimmedLine = line.TrimEnd();
             if (!string.IsNullOrWhiteSpace(trimmedLine))
             {
-                sb.Append(indent);
-                sb.AppendLine(trimmedLine);
+                _ = sb.Append(indent);
+                _ = sb.AppendLine(trimmedLine);
             }
             else if (sb.Length > 0)
             {
-                sb.AppendLine();
+                _ = sb.AppendLine();
             }
         }
         
@@ -103,42 +103,42 @@ public static class CodeFormatter
         style ??= _defaultStyle;
         
         var sb = new StringBuilder();
-        sb.Append(accessModifier);
+        _ = sb.Append(accessModifier);
         
         if (isStatic)
         {
-            sb.Append(" static");
+            _ = sb.Append(" static");
         }
 
-        sb.Append(' ');
-        sb.Append(returnType);
-        sb.Append(' ');
-        sb.Append(methodName);
-        sb.Append('(');
+        _ = sb.Append(' ');
+        _ = sb.Append(returnType);
+        _ = sb.Append(' ');
+        _ = sb.Append(methodName);
+        _ = sb.Append('(');
         
         // Handle long parameter lists
         if (parameters.Length > style.MaxLineLength - sb.Length - 2)
         {
-            sb.AppendLine();
+            _ = sb.AppendLine();
             var paramArray = parameters.Split(',');
             for (var i = 0; i < paramArray.Length; i++)
             {
-                sb.Append(GetIndentation(1, style));
-                sb.Append(paramArray[i].Trim());
+                _ = sb.Append(GetIndentation(1, style));
+                _ = sb.Append(paramArray[i].Trim());
                 if (i < paramArray.Length - 1)
                 {
-                    sb.Append(',');
+                    _ = sb.Append(',');
                 }
 
-                sb.AppendLine();
+                _ = sb.AppendLine();
             }
         }
         else
         {
-            sb.Append(parameters);
+            _ = sb.Append(parameters);
         }
-        
-        sb.Append(')');
+
+        _ = sb.Append(')');
         return sb.ToString();
     }
     
@@ -214,7 +214,7 @@ public static class CodeFormatter
 
         var sb = new StringBuilder();
         var currentLine = new StringBuilder();
-        var indent = GetIndentation(indentLevel, style);
+        _ = GetIndentation(indentLevel, style);
         var continuationIndent = GetIndentation(indentLevel + 1, style);
         var words = line.Split(' ');
         
@@ -222,23 +222,23 @@ public static class CodeFormatter
         {
             if (currentLine.Length + word.Length + 1 > style.MaxLineLength && currentLine.Length > 0)
             {
-                sb.AppendLine(currentLine.ToString());
-                currentLine.Clear();
-                currentLine.Append(continuationIndent);
+                _ = sb.AppendLine(currentLine.ToString());
+                _ = currentLine.Clear();
+                _ = currentLine.Append(continuationIndent);
             }
             
             if (currentLine.Length > 0 && !currentLine.ToString().EndsWith(" "))
             {
-                currentLine.Append(' ');
+                _ = currentLine.Append(' ');
             }
 
 
-            currentLine.Append(word);
+            _ = currentLine.Append(word);
         }
         
         if (currentLine.Length > 0)
         {
-            sb.Append(currentLine);
+            _ = sb.Append(currentLine);
         }
 
 
@@ -284,9 +284,9 @@ public static class CodeFormatter
                 var wrappedLines = wrappedLine.Split('\n');
                 foreach (var wrapped in wrappedLines)
                 {
-                    sb.Append(indent);
-                    sb.Append(prefix);
-                    sb.AppendLine(wrapped.Trim());
+                    _ = sb.Append(indent);
+                    _ = sb.Append(prefix);
+                    _ = sb.AppendLine(wrapped.Trim());
                 }
             }
         }
@@ -323,49 +323,49 @@ public static class CodeFormatter
 
         var sb = new StringBuilder();
         var indent = GetIndentation(indentLevel, style);
-        
+
         // Summary
-        sb.Append(indent);
-        sb.AppendLine("/// <summary>");
+        _ = sb.Append(indent);
+        _ = sb.AppendLine("/// <summary>");
         foreach (var line in summary.Split('\n'))
         {
-            sb.Append(indent);
-            sb.Append("/// ");
-            sb.AppendLine(line.Trim());
+            _ = sb.Append(indent);
+            _ = sb.Append("/// ");
+            _ = sb.AppendLine(line.Trim());
         }
-        sb.Append(indent);
-        sb.AppendLine("/// </summary>");
+        _ = sb.Append(indent);
+        _ = sb.AppendLine("/// </summary>");
         
         // Parameters
         if (parameters != null && parameters.Length > 0)
         {
             foreach (var (name, description) in parameters)
             {
-                sb.Append(indent);
-                sb.AppendLine($"/// <param name=\"{name}\">{description}</param>");
+                _ = sb.Append(indent);
+                _ = sb.AppendLine($"/// <param name=\"{name}\">{description}</param>");
             }
         }
         
         // Returns
         if (!string.IsNullOrEmpty(returns))
         {
-            sb.Append(indent);
-            sb.AppendLine($"/// <returns>{returns}</returns>");
+            _ = sb.Append(indent);
+            _ = sb.AppendLine($"/// <returns>{returns}</returns>");
         }
         
         // Remarks
         if (!string.IsNullOrEmpty(remarks) && style.Comments.DetailLevel >= CommentDetailLevel.Normal)
         {
-            sb.Append(indent);
-            sb.AppendLine("/// <remarks>");
+            _ = sb.Append(indent);
+            _ = sb.AppendLine("/// <remarks>");
             foreach (var line in remarks!.Split('\n'))
             {
-                sb.Append(indent);
-                sb.Append("/// ");
-                sb.AppendLine(line.Trim());
+                _ = sb.Append(indent);
+                _ = sb.Append("/// ");
+                _ = sb.AppendLine(line.Trim());
             }
-            sb.Append(indent);
-            sb.AppendLine("/// </remarks>");
+            _ = sb.Append(indent);
+            _ = sb.AppendLine("/// </remarks>");
         }
         
         return sb.ToString();
@@ -379,17 +379,17 @@ public static class CodeFormatter
     public static string GenerateHeader(params string[] usings)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("// <auto-generated/>");
-        sb.AppendLine("#nullable enable");
-        sb.AppendLine("#pragma warning disable CS8019 // Unnecessary using directive");
-        sb.AppendLine();
+        _ = sb.AppendLine("// <auto-generated/>");
+        _ = sb.AppendLine("#nullable enable");
+        _ = sb.AppendLine("#pragma warning disable CS8019 // Unnecessary using directive");
+        _ = sb.AppendLine();
 
         foreach (var usingDirective in usings)
         {
-            sb.AppendLine($"using {usingDirective};");
+            _ = sb.AppendLine($"using {usingDirective};");
         }
 
-        sb.AppendLine();
+        _ = sb.AppendLine();
         return sb.ToString();
     }
 
@@ -405,16 +405,16 @@ public static class CodeFormatter
         style ??= _defaultStyle;
         
         var sb = new StringBuilder();
-        sb.Append($"namespace {namespaceName}");
+        _ = sb.Append($"namespace {namespaceName}");
         
         if (style.BraceStyle == BraceStyle.NextLine)
         {
-            sb.AppendLine();
-            sb.AppendLine("{");
+            _ = sb.AppendLine();
+            _ = sb.AppendLine("{");
         }
         else
         {
-            sb.AppendLine(" {");
+            _ = sb.AppendLine(" {");
         }
         
         return sb.ToString();
@@ -427,7 +427,7 @@ public static class CodeFormatter
     /// <returns>The namespace closing brace.</returns>
     public static string EndNamespace(CodeStyle? style = null)
     {
-        style ??= _defaultStyle;
+        _ = style ?? _defaultStyle;
         return "}";
     }
 

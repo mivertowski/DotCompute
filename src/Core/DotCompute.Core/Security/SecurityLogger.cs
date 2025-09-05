@@ -493,7 +493,7 @@ public sealed class SecurityLogger : IDisposable
             SessionMetadata = new Dictionary<string, object>(_sessionMetadata),
             SecurityContext = new SecurityContext
             {
-                ThreadId = Thread.CurrentThread.ManagedThreadId,
+                ThreadId = Environment.CurrentManagedThreadId,
                 IsSecurityCritical = IsSecurityCriticalContext(),
                 IntegrityLevel = GetCurrentIntegrityLevel(),
                 ExecutionContext = GetExecutionContextInfo()

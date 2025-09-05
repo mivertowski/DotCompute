@@ -157,10 +157,10 @@ namespace DotCompute.Backends.CUDA.Profiling
                 // Enable kernel profiling
                 if (config.ProfileKernels)
                 {
-                    cuptiActivityEnable(CuptiActivityKind.Kernel);
-                    cuptiActivityEnable(CuptiActivityKind.ConcurrentKernel);
-                    
-                    cuptiEnableCallback(
+                    _ = cuptiActivityEnable(CuptiActivityKind.Kernel);
+                    _ = cuptiActivityEnable(CuptiActivityKind.ConcurrentKernel);
+
+                    _ = cuptiEnableCallback(
                         1,
                         _cuptiSubscriber,
                         CuptiCallbackDomain.Runtime,
@@ -170,11 +170,11 @@ namespace DotCompute.Backends.CUDA.Profiling
                 // Enable memory profiling
                 if (config.ProfileMemory)
                 {
-                    cuptiActivityEnable(CuptiActivityKind.Memcpy);
-                    cuptiActivityEnable(CuptiActivityKind.Memset);
-                    cuptiActivityEnable(CuptiActivityKind.Memory);
-                    
-                    cuptiEnableCallback(
+                    _ = cuptiActivityEnable(CuptiActivityKind.Memcpy);
+                    _ = cuptiActivityEnable(CuptiActivityKind.Memset);
+                    _ = cuptiActivityEnable(CuptiActivityKind.Memory);
+
+                    _ = cuptiEnableCallback(
                         1,
                         _cuptiSubscriber,
                         CuptiCallbackDomain.Runtime,
@@ -184,15 +184,15 @@ namespace DotCompute.Backends.CUDA.Profiling
                 // Enable API profiling
                 if (config.ProfileApi)
                 {
-                    cuptiActivityEnable(CuptiActivityKind.RuntimeApi);
-                    cuptiActivityEnable(CuptiActivityKind.DriverApi);
+                    _ = cuptiActivityEnable(CuptiActivityKind.RuntimeApi);
+                    _ = cuptiActivityEnable(CuptiActivityKind.DriverApi);
                 }
 
                 // Enable metrics collection
                 if (config.CollectMetrics)
                 {
-                    cuptiActivityEnable(CuptiActivityKind.Metric);
-                    cuptiActivityEnable(CuptiActivityKind.MetricInstance);
+                    _ = cuptiActivityEnable(CuptiActivityKind.Metric);
+                    _ = cuptiActivityEnable(CuptiActivityKind.MetricInstance);
                 }
 
                 _isProfilingActive = true;
@@ -200,7 +200,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
             finally
             {
-                _profilingLock.Release();
+                _ = _profilingLock.Release();
             }
         }
 
@@ -219,28 +219,28 @@ namespace DotCompute.Backends.CUDA.Profiling
                 }
 
                 _logger.LogInformation("Stopping profiling session");
-                
+
                 // Flush all pending activities
-                cuptiActivityFlushAll(0);
+                _ = cuptiActivityFlushAll(0);
                 
                 // Process remaining events
                 ProcessQueuedEvents();
-                
+
                 // Disable all activities
-                cuptiActivityDisable(CuptiActivityKind.Kernel);
-                cuptiActivityDisable(CuptiActivityKind.ConcurrentKernel);
-                cuptiActivityDisable(CuptiActivityKind.Memcpy);
-                cuptiActivityDisable(CuptiActivityKind.Memset);
-                cuptiActivityDisable(CuptiActivityKind.Memory);
-                cuptiActivityDisable(CuptiActivityKind.RuntimeApi);
-                cuptiActivityDisable(CuptiActivityKind.DriverApi);
-                cuptiActivityDisable(CuptiActivityKind.Metric);
-                cuptiActivityDisable(CuptiActivityKind.MetricInstance);
+                _ = cuptiActivityDisable(CuptiActivityKind.Kernel);
+                _ = cuptiActivityDisable(CuptiActivityKind.ConcurrentKernel);
+                _ = cuptiActivityDisable(CuptiActivityKind.Memcpy);
+                _ = cuptiActivityDisable(CuptiActivityKind.Memset);
+                _ = cuptiActivityDisable(CuptiActivityKind.Memory);
+                _ = cuptiActivityDisable(CuptiActivityKind.RuntimeApi);
+                _ = cuptiActivityDisable(CuptiActivityKind.DriverApi);
+                _ = cuptiActivityDisable(CuptiActivityKind.Metric);
+                _ = cuptiActivityDisable(CuptiActivityKind.MetricInstance);
                 
                 // Unsubscribe from callbacks
                 if (_cuptiSubscriber != IntPtr.Zero)
                 {
-                    cuptiUnsubscribe(_cuptiSubscriber);
+                    _ = cuptiUnsubscribe(_cuptiSubscriber);
                     _cuptiSubscriber = IntPtr.Zero;
                 }
 
@@ -258,7 +258,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
             finally
             {
-                _profilingLock.Release();
+                _ = _profilingLock.Release();
             }
         }
 
@@ -689,17 +689,17 @@ namespace DotCompute.Backends.CUDA.Profiling
 
             if (_isProfilingActive)
             {
-                StopProfilingAsync().Wait(TimeSpan.FromSeconds(5));
+                _ = StopProfilingAsync().Wait(TimeSpan.FromSeconds(5));
             }
 
             if (_cuptiSubscriber != IntPtr.Zero)
             {
-                cuptiUnsubscribe(_cuptiSubscriber);
+                _ = cuptiUnsubscribe(_cuptiSubscriber);
             }
 
             try
             {
-                nvmlShutdown();
+                _ = nvmlShutdown();
             }
             catch { }
 

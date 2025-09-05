@@ -249,11 +249,11 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     public virtual void Free(IUnifiedMemoryBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(buffer);
-        
-        if (_activeBuffers.TryRemove(buffer, out var weakRef))
+
+        if (_activeBuffers.TryRemove(buffer, out _))
         {
             var size = buffer.SizeInBytes;
-            Interlocked.Add(ref _totalAllocatedBytes, -size);
+            _ = Interlocked.Add(ref _totalAllocatedBytes, -size);
             _logger.LogDebug("Freed buffer of {Size} bytes", size);
         }
         
@@ -278,10 +278,10 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     /// </summary>
     protected virtual void TrackBuffer(IUnifiedMemoryBuffer buffer, long sizeInBytes)
     {
-        _activeBuffers.TryAdd(buffer, new WeakReference<IUnifiedMemoryBuffer>(buffer));
+        _ = _activeBuffers.TryAdd(buffer, new WeakReference<IUnifiedMemoryBuffer>(buffer));
         
         var newTotal = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
-        Interlocked.Increment(ref _allocationCount);
+        _ = Interlocked.Increment(ref _allocationCount);
         
         // Update peak if necessary
         long currentPeak;
@@ -312,7 +312,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         
         foreach (var buffer in toRemove)
         {
-            _activeBuffers.TryRemove(buffer, out _);
+            _ = _activeBuffers.TryRemove(buffer, out _);
         }
         
         if (toRemove.Count > 0)

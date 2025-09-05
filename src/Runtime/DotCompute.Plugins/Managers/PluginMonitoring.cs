@@ -421,8 +421,7 @@ internal class PluginMetricsCollector : IDisposable
         {
             var pluginId = plugin.LoadedPluginInfo?.Manifest.Id ?? "Unknown";
 
-
-            if (_metricsStates.TryGetValue(pluginId, out var metricsState))
+            if (_metricsStates.TryGetValue(pluginId, out _))
             {
                 var metrics = await CollectPluginMetricsAsync(pluginId, plugin);
                 if (metrics != null)

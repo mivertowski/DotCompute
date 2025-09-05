@@ -230,7 +230,7 @@ public sealed class LinqToGpuKernelCompiler
 
     private string GenerateCudaKernel(Expression body, ParameterExpression parameter, Type elementType)
     {
-        var sb = new StringBuilder();
+        _ = new StringBuilder();
 
         // Analyze expression to determine kernel type
         if (body is MethodCallExpression methodCall)
@@ -285,14 +285,14 @@ public sealed class LinqToGpuKernelCompiler
     private string GenerateReductionKernel(MethodCallExpression methodCall, Type elementType)
     {
         var operation = methodCall.Method.Name.ToLowerInvariant();
-        var cudaType = GetCudaType(elementType);
+        _ = GetCudaType(elementType);
 
         return CompileAggregate<float>(null!, operation);
     }
 
     private static string GenerateSortKernel(MethodCallExpression methodCall, Type elementType)
     {
-        var lambda = methodCall.Arguments.Count > 1
+        _ = methodCall.Arguments.Count > 1
             ? (LambdaExpression)((UnaryExpression)methodCall.Arguments[1]).Operand
             : null;
 

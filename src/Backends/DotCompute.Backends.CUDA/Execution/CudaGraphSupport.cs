@@ -380,7 +380,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
                     // Verify node count - NodeCount is computed from the nodes collection
                     var nodeCount = graph.NodeCount;
-                    result = CudaRuntime.cuGraphGetNodes(capturedGraph, IntPtr.Zero, ref nodeCount);
+                    var nodeCountNuint = (nuint)nodeCount;
+                    result = CudaRuntime.cuGraphGetNodes(capturedGraph, IntPtr.Zero, ref nodeCountNuint);
+                    nodeCount = (int)nodeCountNuint;
                     CudaRuntime.CheckError(result, "getting graph node count");
                     
                     // Log verification of node count consistency

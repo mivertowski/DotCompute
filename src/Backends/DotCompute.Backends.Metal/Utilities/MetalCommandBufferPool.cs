@@ -43,10 +43,9 @@ public sealed class MetalCommandBufferPool : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
-        IntPtr buffer;
 
         // Try to get a buffer from the pool first
-        if (_availableBuffers.TryDequeue(out buffer))
+        if (_availableBuffers.TryDequeue(out var buffer))
         {
             _ = Interlocked.Decrement(ref _currentPoolSize);
             _logger.LogTrace("Reused command buffer from pool: {Buffer:X}", buffer.ToInt64());

@@ -551,8 +551,8 @@ namespace DotCompute.Backends.CUDA.Types
                     SizeInBytes = sizeInBytes,
                     AllocatedAt = DateTime.UtcNow
                 };
-                
-                _allocations.TryAdd(devicePtr, info);
+
+                _ = _allocations.TryAdd(devicePtr, info);
                 TotalAllocatedBytes += sizeInBytes;
                 UsedMemory += sizeInBytes;
             }

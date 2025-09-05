@@ -47,11 +47,11 @@ public class CpuKernelCompilerTests : IDisposable
         
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be("simple_add");
-        compiledKernel.Id.Should().NotBe(Guid.Empty);
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be("simple_add");
+        _ = compiledKernel.Id.Should().NotBe(Guid.Empty);
         
         await compiledKernel.DisposeAsync();
     }
@@ -68,15 +68,15 @@ public class CpuKernelCompilerTests : IDisposable
         
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be($"optimized_kernel_{level}");
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be($"optimized_kernel_{level}");
         
         // Verify optimization metadata if available
         if (definition.Metadata?.ContainsKey("CompilationTime") == true)
         {
-            definition.Metadata["CompilationTime"].Should().BeOfType<TimeSpan>();
+            _ = definition.Metadata["CompilationTime"].Should().BeOfType<TimeSpan>();
         }
         
         await compiledKernel.DisposeAsync();
@@ -91,16 +91,16 @@ public class CpuKernelCompilerTests : IDisposable
         
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be("vector_operation");
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be("vector_operation");
         
         // Check if SIMD capabilities were utilized
         if (definition.Metadata?.ContainsKey("SimdCapabilities") == true)
         {
             var simdCapabilities = definition.Metadata["SimdCapabilities"];
-            simdCapabilities.Should().NotBeNull();
+            _ = simdCapabilities.Should().NotBeNull();
         }
         
         await compiledKernel.DisposeAsync();
@@ -115,10 +115,10 @@ public class CpuKernelCompilerTests : IDisposable
         
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be("complex_branching");
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be("complex_branching");
         
         await compiledKernel.DisposeAsync();
     }
@@ -132,10 +132,10 @@ public class CpuKernelCompilerTests : IDisposable
         
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be("memory_intensive");
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be("memory_intensive");
         
         await compiledKernel.DisposeAsync();
     }
@@ -157,7 +157,7 @@ public class CpuKernelCompilerTests : IDisposable
         
         // Act & Assert
         Func<Task> act = async () => await CpuKernelCompiler.CompileAsync(context);
-        await act.Should().ThrowAsync<KernelCompilationException>();
+        _ = await act.Should().ThrowAsync<KernelCompilationException>();
     }
     
     [Fact]
@@ -166,7 +166,7 @@ public class CpuKernelCompilerTests : IDisposable
     {
         // Act & Assert
         Func<Task> act = async () => await CpuKernelCompiler.CompileAsync(null!);
-        await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
     
     [Theory]
@@ -181,10 +181,10 @@ public class CpuKernelCompilerTests : IDisposable
         
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be($"kernel_{dimensions}d");
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be($"kernel_{dimensions}d");
         
         await compiledKernel.DisposeAsync();
     }
@@ -201,10 +201,10 @@ public class CpuKernelCompilerTests : IDisposable
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
         stopwatch.Stop();
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000); // Should compile within 10 seconds
+        _ = compiledKernel.Should().NotBeNull();
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000); // Should compile within 10 seconds
         
         await compiledKernel.DisposeAsync();
     }
@@ -223,14 +223,14 @@ public class CpuKernelCompilerTests : IDisposable
         // Act
         var compilationTasks = contexts.Select(c => CpuKernelCompiler.CompileAsync(c).AsTask()).ToArray();
         var compiledKernels = await Task.WhenAll(compilationTasks);
-        
+
         // Assert
-        compiledKernels.Should().HaveCount(5);
-        compiledKernels.Should().OnlyContain(k => k != null);
+        _ = compiledKernels.Should().HaveCount(5);
+        _ = compiledKernels.Should().OnlyContain(k => k != null);
         
         for (var i = 0; i < 5; i++)
         {
-            compiledKernels[i].Name.Should().Be($"concurrent_{i}");
+            _ = compiledKernels[i].Name.Should().Be($"concurrent_{i}");
         }
         
         // Cleanup
@@ -242,20 +242,20 @@ public class CpuKernelCompilerTests : IDisposable
     {
         // Arrange
         var definition = CreateSimpleKernelDefinition("debug_kernel", 3, 1);
-        var options = new CompilationOptions
+        _ = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.None,
             EnableDebugInfo = true,
-            AdditionalFlags = new List<string> { "debug", "symbols" }
+            AdditionalFlags = ["debug", "symbols"]
         };
         var context = CreateCompilationContext(definition, OptimizationLevel.None);
         
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be("debug_kernel");
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be("debug_kernel");
         
         await compiledKernel.DisposeAsync();
     }
@@ -269,10 +269,10 @@ public class CpuKernelCompilerTests : IDisposable
         
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be("aot_kernel");
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be("aot_kernel");
         
         await compiledKernel.DisposeAsync();
     }
@@ -286,10 +286,10 @@ public class CpuKernelCompilerTests : IDisposable
         
         // Act
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
-        
+
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Name.Should().Be("jit_kernel");
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be("jit_kernel");
         
         await compiledKernel.DisposeAsync();
     }

@@ -78,7 +78,7 @@ public sealed class CudaDeviceManager : IDisposable
                 try
                 {
                     var deviceInfo = GetDeviceInfo(deviceId);
-                    _devices.TryAdd(deviceId, deviceInfo);
+                    _ = _devices.TryAdd(deviceId, deviceInfo);
                     
                     _logger.LogInformation(
                         "Device {Id}: {Name} - Compute {Major}.{Minor}, {Memory:N0} MB, {Cores} SMs",
@@ -210,7 +210,7 @@ public sealed class CudaDeviceManager : IDisposable
                     if (result == CudaError.Success)
                     {
                         var canAccessP2P = canAccess != 0;
-                        _p2pCapabilities.TryAdd((device1, device2), canAccessP2P);
+                        _ = _p2pCapabilities.TryAdd((device1, device2), canAccessP2P);
                         
                         if (canAccessP2P)
                         {

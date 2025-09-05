@@ -95,6 +95,31 @@ namespace DotCompute.Backends.CUDA.Compilation
             CudaLaunchConfig? config = null,
             CancellationToken cancellationToken = default)
         {
+            await LaunchKernelInternalAsync(function, arguments, config, false, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Launches a CUDA cooperative kernel for grid-wide synchronization (CUDA 13.0+)
+        /// </summary>
+        public async Task LaunchCooperativeKernelAsync(
+            IntPtr function,
+            KernelArguments arguments,
+            CudaLaunchConfig? config = null,
+            CancellationToken cancellationToken = default)
+        {
+            await LaunchKernelInternalAsync(function, arguments, config, true, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Internal kernel launch implementation supporting both regular and cooperative launches
+        /// </summary>
+        private async Task LaunchKernelInternalAsync(
+            IntPtr function,
+            KernelArguments arguments,
+            CudaLaunchConfig? config,
+            bool useCooperativeLaunch,
+            CancellationToken cancellationToken)
+        {
             _context.MakeCurrent();
 
             // Use provided config or calculate optimal one
@@ -140,7 +165,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                         function.ToInt64(), _context.Stream.ToInt64());
                     
                     // Log first few argument pointers for debugging
-                    for (int i = 0; i < Math.Min(5, argPointers.Count); i++)
+                    for (var i = 0; i < Math.Min(5, argPointers.Count); i++)
                     {
                         unsafe
                         {
@@ -156,16 +181,39 @@ namespace DotCompute.Backends.CUDA.Compilation
                     }
 
                     // Launch the kernel
-                    var result = CudaRuntime.cuLaunchKernel(
-                        function,
-                        launchConfig.GridX, launchConfig.GridY, launchConfig.GridZ,
-                        launchConfig.BlockX, launchConfig.BlockY, launchConfig.BlockZ,
-                        launchConfig.SharedMemoryBytes,
-                        _context.Stream,
-                        argPtrsHandle.AddrOfPinnedObject(),
-                        IntPtr.Zero);
+                    CudaError result;
+                    
+                    if (useCooperativeLaunch)
+                    {
+                        // Check if device supports cooperative launches
+                        if (_deviceProps.Major < 6)
+                        {
+                            throw new NotSupportedException($"Cooperative kernel launches require compute capability 6.0+, but device has {_deviceProps.Major}.{_deviceProps.Minor}");
+                        }
 
-                    CudaRuntime.CheckError(result, "Kernel launch");
+                        _logger.LogDebug("Launching cooperative kernel for grid-wide synchronization");
+                        
+                        result = CudaRuntime.cuLaunchCooperativeKernel(
+                            function,
+                            launchConfig.GridX, launchConfig.GridY, launchConfig.GridZ,
+                            launchConfig.BlockX, launchConfig.BlockY, launchConfig.BlockZ,
+                            launchConfig.SharedMemoryBytes,
+                            _context.Stream,
+                            argPtrsHandle.AddrOfPinnedObject());
+                    }
+                    else
+                    {
+                        result = CudaRuntime.cuLaunchKernel(
+                            function,
+                            launchConfig.GridX, launchConfig.GridY, launchConfig.GridZ,
+                            launchConfig.BlockX, launchConfig.BlockY, launchConfig.BlockZ,
+                            launchConfig.SharedMemoryBytes,
+                            _context.Stream,
+                            argPtrsHandle.AddrOfPinnedObject(),
+                            IntPtr.Zero);
+                    }
+
+                    CudaRuntime.CheckError(result, useCooperativeLaunch ? "Cooperative kernel launch" : "Kernel launch");
 
                     // Synchronize asynchronously
                     await Task.Run(_context.Synchronize, cancellationToken).ConfigureAwait(false);
@@ -222,7 +270,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             // Use a multiple of warp size for optimal performance
             var warpSize = _deviceProps.WarpSize;
             var maxThreadsPerBlock = _deviceProps.MaxThreadsPerBlock;
-            var multiprocessorCount = _deviceProps.MultiProcessorCount;
+            _ = _deviceProps.MultiProcessorCount;
             var major = _deviceProps.Major;
             var minor = _deviceProps.Minor;
 
@@ -544,28 +592,45 @@ namespace DotCompute.Backends.CUDA.Compilation
         {
             // ILGPU rule: All parameter types must be value types
             if (!type.IsValueType)
+            {
                 return false;
-                
+            }
+
             // Primitive types are always valid
+
             if (type.IsPrimitive)
+            {
                 return true;
-                
+            }
+
             // Enums are valid (they're value types with primitive underlying types)
+
             if (type.IsEnum)
+            {
                 return true;
-                
+            }
+
             // Check for common valid struct types
+
             if (type == typeof(IntPtr) || type == typeof(UIntPtr))
+            {
+
                 return true;
-                
+            }
+
             // Generic types need special handling - memory buffers are passed as views/pointers
+
             if (type.IsGenericType)
             {
-                var genericDef = type.GetGenericTypeDefinition();
+                _ = type.GetGenericTypeDefinition();
                 // Allow memory buffer types - they'll be converted to device pointers
                 if (type.FullName?.Contains("MemoryBuffer") == true || 
                     type.FullName?.Contains("ArrayView") == true)
+                {
+
                     return true;
+                }
+
             }
                 
             // For other structs, check if they're likely blittable
@@ -578,22 +643,38 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// </summary>
         private static bool CanPinDirectly(object value)
         {
-            if (value == null) return false;
+            if (value == null)
+            {
+                return false;
+            }
 
             var type = value.GetType();
             
             // Primitive types can be pinned
-            if (type.IsPrimitive) return true;
-            
+            if (type.IsPrimitive)
+            {
+                return true;
+            }
+
             // IntPtr and UIntPtr can be pinned
-            if (type == typeof(IntPtr) || type == typeof(UIntPtr)) return true;
-            
+            if (type == typeof(IntPtr) || type == typeof(UIntPtr))
+            {
+                return true;
+            }
+
             // Enums can be pinned
-            if (type.IsEnum) return true;
-            
+            if (type.IsEnum)
+            {
+                return true;
+            }
+
             // Value types without references can be pinned
-            if (type.IsValueType && IsBlittableType(type)) return true;
-            
+            if (type.IsValueType && IsBlittableType(type))
+            {
+                return true;
+            }
+
+
             return false;
         }
 
@@ -602,23 +683,43 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// </summary>
         private static bool IsBlittableType(Type type)
         {
-            if (type.IsPrimitive) return true;
-            if (type == typeof(IntPtr) || type == typeof(UIntPtr)) return true;
-            if (type.IsEnum) return true;
-            
+            if (type.IsPrimitive)
+            {
+                return true;
+            }
+
+
+            if (type == typeof(IntPtr) || type == typeof(UIntPtr))
+            {
+                return true;
+            }
+
+
+            if (type.IsEnum)
+            {
+                return true;
+            }
+
+
             if (type.IsValueType)
             {
                 // Common blittable structs
                 if (type == typeof(Guid) || 
                     type == typeof(DateTime) || 
-                    type == typeof(decimal)) return false; // These have special layouts
-                
+                    type == typeof(decimal))
+                {
+                    return false; // These have special layouts
+                }
+
                 // Check if all fields are blittable
                 var fields = type.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
                 foreach (var field in fields)
                 {
                     if (!IsBlittableType(field.FieldType))
+                    {
                         return false;
+                    }
+
                 }
                 return true;
             }

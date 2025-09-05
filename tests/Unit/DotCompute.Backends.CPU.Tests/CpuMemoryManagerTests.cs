@@ -31,11 +31,11 @@ public class CpuMemoryManagerTests : IDisposable
     public void Constructor_WithDefaultPolicy_InitializesSuccessfully()
     {
         // Arrange & Act - memory manager created in constructor
-        
+
         // Assert
-        _memoryManager.Should().NotBeNull();
-        _memoryManager.Topology.Should().NotBeNull();
-        _memoryManager.IsDisposed.Should().BeFalse();
+        _ = _memoryManager.Should().NotBeNull();
+        _ = _memoryManager.Topology.Should().NotBeNull();
+        _ = _memoryManager.IsDisposed.Should().BeFalse();
     }
     
     [Fact]
@@ -51,10 +51,10 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Act
         using var memoryManager = new CpuMemoryManager(_logger, customPolicy);
-        
+
         // Assert
-        memoryManager.Should().NotBeNull();
-        memoryManager.Topology.Should().NotBeNull();
+        _ = memoryManager.Should().NotBeNull();
+        _ = memoryManager.Topology.Should().NotBeNull();
     }
     
     [Fact]
@@ -62,11 +62,11 @@ public class CpuMemoryManagerTests : IDisposable
     {
         // Act
         var topology = _memoryManager.Topology;
-        
+
         // Assert
-        topology.Should().NotBeNull();
-        topology.NodeCount.Should().BeGreaterThan(0);
-        topology.TotalMemoryBytes.Should().BeGreaterThan(0);
+        _ = topology.Should().NotBeNull();
+        _ = topology.NodeCount.Should().BeGreaterThan(0);
+        _ = topology.TotalMemoryBytes.Should().BeGreaterThan(0);
     }
     
     [Theory]
@@ -80,12 +80,12 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Act
         var buffer = await _memoryManager.AllocateAsync(sizeInBytes, options);
-        
+
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.SizeInBytes.Should().Be(sizeInBytes);
-        buffer.IsDisposed.Should().BeFalse();
-        buffer.Options.Should().Be(options);
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.SizeInBytes.Should().Be(sizeInBytes);
+        _ = buffer.IsDisposed.Should().BeFalse();
+        _ = buffer.Options.Should().Be(options);
         
         // Cleanup
         await buffer.DisposeAsync();
@@ -106,10 +106,10 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Act
         var buffer = await _memoryManager.AllocateAsync(1024, options, numaPolicy);
-        
+
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.SizeInBytes.Should().Be(1024);
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.SizeInBytes.Should().Be(1024);
         
         // Cleanup
         await buffer.DisposeAsync();
@@ -128,10 +128,10 @@ public class CpuMemoryManagerTests : IDisposable
         var buffer2 = await _memoryManager.AllocateAsync(2048, options);
         
         var afterAllocation = _memoryManager.CurrentAllocatedMemory;
-        
+
         // Assert
-        afterAllocation.Should().BeGreaterThan(initialAllocated);
-        (afterAllocation - initialAllocated).Should().BeGreaterThanOrEqualTo(3072); // At least 1024 + 2048
+        _ = afterAllocation.Should().BeGreaterThan(initialAllocated);
+        _ = (afterAllocation - initialAllocated).Should().BeGreaterThanOrEqualTo(3072); // At least 1024 + 2048
         
         // Cleanup
         await buffer1.DisposeAsync();
@@ -148,11 +148,11 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Act
         var view = _memoryManager.CreateView(buffer, 256, 512);
-        
+
         // Assert
-        view.Should().NotBeNull();
-        view.SizeInBytes.Should().Be(512);
-        view.IsDisposed.Should().BeFalse();
+        _ = view.Should().NotBeNull();
+        _ = view.SizeInBytes.Should().Be(512);
+        _ = view.IsDisposed.Should().BeFalse();
         
         // Cleanup
         await view.DisposeAsync();
@@ -164,10 +164,10 @@ public class CpuMemoryManagerTests : IDisposable
     {
         // Arrange
         var mockBuffer = new Mock<IUnifiedMemoryBuffer>();
-        mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
-        
+        _ = mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
+
         // Act & Assert
-        _memoryManager.Invoking(mm => mm.CreateView(mockBuffer.Object, 0, 512))
+        _ = _memoryManager.Invoking(mm => mm.CreateView(mockBuffer.Object, 0, 512))
             .Should().Throw<ArgumentException>();
     }
     
@@ -176,9 +176,9 @@ public class CpuMemoryManagerTests : IDisposable
     {
         // Act
         var maxSize = _memoryManager.MaxAllocationSize;
-        
+
         // Assert
-        maxSize.Should().Be(long.MaxValue);
+        _ = maxSize.Should().Be(long.MaxValue);
     }
     
     [Fact]
@@ -186,9 +186,9 @@ public class CpuMemoryManagerTests : IDisposable
     {
         // Act
         var availableMemory = _memoryManager.TotalAvailableMemory;
-        
+
         // Assert
-        availableMemory.Should().BeGreaterThan(0);
+        _ = availableMemory.Should().BeGreaterThan(0);
     }
     
     [Fact]
@@ -196,10 +196,10 @@ public class CpuMemoryManagerTests : IDisposable
     {
         // Act
         var accelerator = _memoryManager.Accelerator;
-        
+
         // Assert
-        accelerator.Should().NotBeNull();
-        accelerator.Type.Should().Be(AcceleratorType.CPU);
+        _ = accelerator.Should().NotBeNull();
+        _ = accelerator.Type.Should().Be(AcceleratorType.CPU);
     }
     
     [Fact]
@@ -207,13 +207,13 @@ public class CpuMemoryManagerTests : IDisposable
     {
         // Act
         var statistics = _memoryManager.Statistics;
-        
+
         // Assert
-        statistics.Should().NotBeNull();
-        statistics.TotalAllocated.Should().BeGreaterThanOrEqualTo(0);
-        statistics.TotalFreed.Should().BeGreaterThanOrEqualTo(0);
-        statistics.ActiveBuffers.Should().BeGreaterThanOrEqualTo(0);
-        statistics.PeakMemoryUsage.Should().BeGreaterThanOrEqualTo(0);
+        _ = statistics.Should().NotBeNull();
+        _ = statistics.TotalAllocated.Should().BeGreaterThanOrEqualTo(0);
+        _ = statistics.TotalFreed.Should().BeGreaterThanOrEqualTo(0);
+        _ = statistics.ActiveBuffers.Should().BeGreaterThanOrEqualTo(0);
+        _ = statistics.PeakMemoryUsage.Should().BeGreaterThanOrEqualTo(0);
     }
     
     [Fact]
@@ -230,8 +230,8 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Assert
         var afterFree = _memoryManager.Statistics;
-        afterFree.TotalFreed.Should().BeGreaterThan(beforeFree.TotalFreed);
-        afterFree.ActiveBuffers.Should().BeLessThan(beforeFree.ActiveBuffers);
+        _ = afterFree.TotalFreed.Should().BeGreaterThan(beforeFree.TotalFreed);
+        _ = afterFree.ActiveBuffers.Should().BeLessThan(beforeFree.ActiveBuffers);
     }
     
     [Fact]
@@ -245,7 +245,7 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Assert
         var afterGC = GC.CollectionCount(0);
-        afterGC.Should().BeGreaterThan(beforeGC);
+        _ = afterGC.Should().BeGreaterThan(beforeGC);
     }
     
     [Fact]
@@ -256,9 +256,9 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Assert
         var statistics = _memoryManager.Statistics;
-        statistics.TotalAllocated.Should().Be(0);
-        statistics.ActiveBuffers.Should().Be(0);
-        statistics.TotalFreed.Should().Be(0);
+        _ = statistics.TotalAllocated.Should().Be(0);
+        _ = statistics.ActiveBuffers.Should().Be(0);
+        _ = statistics.TotalFreed.Should().Be(0);
     }
     
     [Fact]
@@ -270,7 +270,7 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Act & Assert
         Func<Task> act = async () => await _memoryManager.AllocateAsync(0, options);
-        await act.Should().ThrowExactlyAsync<ArgumentException>();
+        _ = await act.Should().ThrowExactlyAsync<ArgumentException>();
     }
     
     [Fact]
@@ -282,7 +282,7 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Act & Assert
         Func<Task> act = async () => await _memoryManager.AllocateAsync(-1024, options);
-        await act.Should().ThrowExactlyAsync<ArgumentException>();
+        _ = await act.Should().ThrowExactlyAsync<ArgumentException>();
     }
     
     [Fact]
@@ -293,9 +293,9 @@ public class CpuMemoryManagerTests : IDisposable
         var options = MemoryOptions.HostVisible;
         
         var buffer = await _memoryManager.AllocateAsync(1024, options);
-        
+
         // Act & Assert
-        _memoryManager.Invoking(mm => mm.CreateView(buffer, 512, 1024))
+        _ = _memoryManager.Invoking(mm => mm.CreateView(buffer, 512, 1024))
             .Should().Throw<ArgumentOutOfRangeException>();
         
         // Cleanup
@@ -315,13 +315,13 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Act
         var buffers = await Task.WhenAll(allocationTasks);
-        
+
         // Assert
-        buffers.Should().HaveCount(10);
-        buffers.Should().OnlyContain(b => b != null && b.SizeInBytes == 1024);
-        
+        _ = buffers.Should().HaveCount(10);
+        _ = buffers.Should().OnlyContain(b => b != null && b.SizeInBytes == 1024);
+
         // Verify all buffers are different instances
-        buffers.Distinct().Should().HaveCount(10);
+        _ = buffers.Distinct().Should().HaveCount(10);
         
         // Cleanup
         await Task.WhenAll(buffers.Select(b => b.DisposeAsync().AsTask()));
@@ -345,10 +345,10 @@ public class CpuMemoryManagerTests : IDisposable
         }
         
         stopwatch.Stop();
-        
+
         // Assert
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); // Should complete within 5 seconds
-        buffers.Should().HaveCount(100);
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); // Should complete within 5 seconds
+        _ = buffers.Should().HaveCount(100);
         
         // Cleanup
         await Task.WhenAll(buffers.Select(b => b.DisposeAsync().AsTask()));
@@ -386,10 +386,10 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Act
         var buffer = await _memoryManager.AllocateAsync(1024, options);
-        
+
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.Options.IsPinned().Should().BeTrue();
+        _ = buffer.Should().NotBeNull();
+        _ = buffer.Options.IsPinned().Should().BeTrue();
         
         // Cleanup
         await buffer.DisposeAsync();

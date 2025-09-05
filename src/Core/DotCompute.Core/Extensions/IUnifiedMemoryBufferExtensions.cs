@@ -130,8 +130,12 @@ namespace DotCompute.Core.Extensions
             Span<T> destination, int offset) where T : unmanaged
         {
             if (offset < 0)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            
+            }
+
+
             unsafe
             {
                 var span = buffer.AsSpan();
@@ -175,10 +179,14 @@ namespace DotCompute.Core.Extensions
             Memory<T> destination, int offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
             if (offset < 0)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            
+            }
+
             // Note: This is a simplified synchronous implementation for test compatibility
             // In a real implementation, this would perform actual async memory operations
+
             unsafe
             {
                 var span = buffer.AsSpan();
@@ -227,8 +235,12 @@ namespace DotCompute.Core.Extensions
             ReadOnlySpan<T> data, int offset) where T : unmanaged
         {
             if (offset < 0)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            
+            }
+
+
             unsafe
             {
                 var span = buffer.AsSpan();
@@ -272,10 +284,14 @@ namespace DotCompute.Core.Extensions
             ReadOnlyMemory<T> data, int offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
             if (offset < 0)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            
+            }
+
             // Note: This is a simplified synchronous implementation for test compatibility
             // In a real implementation, this would perform actual async memory operations
+
             unsafe
             {
                 var span = buffer.AsSpan();
@@ -300,9 +316,13 @@ namespace DotCompute.Core.Extensions
             T[] data, CancellationToken cancellationToken = default) where T : unmanaged
         {
             if (data == null)
+            {
+
                 throw new ArgumentNullException(nameof(data));
-            
+            }
+
             // Simulate async write operation
+
             await Task.Yield();
             
             // Note: This is a simplified implementation for test compatibility

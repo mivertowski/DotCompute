@@ -23,9 +23,9 @@ public class SimdOperationsTests
     {
         // Act
         var isSupported = SimdCapabilities.IsSupported;
-        
+
         // Assert
-        isSupported.Should().Be(Vector.IsHardwareAccelerated);
+        _ = isSupported.Should().Be(Vector.IsHardwareAccelerated);
     }
     
     [Fact]
@@ -33,10 +33,10 @@ public class SimdOperationsTests
     {
         // Act
         var vectorWidth = SimdCapabilities.PreferredVectorWidth;
-        
+
         // Assert
-        vectorWidth.Should().BeGreaterThan(0);
-        vectorWidth.Should().BeOneOf(64, 128, 256, 512);
+        _ = vectorWidth.Should().BeGreaterThan(0);
+        _ = vectorWidth.Should().BeOneOf(64, 128, 256, 512);
     }
     
     [Fact]
@@ -44,16 +44,16 @@ public class SimdOperationsTests
     {
         // Act
         var summary = SimdCapabilities.GetSummary();
-        
+
         // Assert
-        summary.Should().NotBeNull();
-        summary.IsHardwareAccelerated.Should().Be(Vector.IsHardwareAccelerated);
-        summary.PreferredVectorWidth.Should().BeGreaterThan(0);
-        summary.SupportedInstructionSets.Should().NotBeNull();
+        _ = summary.Should().NotBeNull();
+        _ = summary.IsHardwareAccelerated.Should().Be(Vector.IsHardwareAccelerated);
+        _ = summary.PreferredVectorWidth.Should().BeGreaterThan(0);
+        _ = summary.SupportedInstructionSets.Should().NotBeNull();
         
         if (Vector.IsHardwareAccelerated)
         {
-            summary.SupportedInstructionSets.Should().NotBeEmpty();
+            _ = summary.SupportedInstructionSets.Should().NotBeEmpty();
         }
     }
     
@@ -62,14 +62,14 @@ public class SimdOperationsTests
     public void X86SimdInfo_SSE_Detection_ReturnsCorrectValues()
     {
         Skip.IfNot(Environment.Is64BitProcess && (Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Unix));
-        
+
         // Act & Assert
-        X86SimdInfo.HasSse.Should().Be(Sse.IsSupported);
-        X86SimdInfo.HasSse2.Should().Be(Sse2.IsSupported);
-        X86SimdInfo.HasSse3.Should().Be(Sse3.IsSupported);
-        X86SimdInfo.HasSsse3.Should().Be(Ssse3.IsSupported);
-        X86SimdInfo.HasSse41.Should().Be(Sse41.IsSupported);
-        X86SimdInfo.HasSse42.Should().Be(Sse42.IsSupported);
+        _ = X86SimdInfo.HasSse.Should().Be(Sse.IsSupported);
+        _ = X86SimdInfo.HasSse2.Should().Be(Sse2.IsSupported);
+        _ = X86SimdInfo.HasSse3.Should().Be(Sse3.IsSupported);
+        _ = X86SimdInfo.HasSsse3.Should().Be(Ssse3.IsSupported);
+        _ = X86SimdInfo.HasSse41.Should().Be(Sse41.IsSupported);
+        _ = X86SimdInfo.HasSse42.Should().Be(Sse42.IsSupported);
     }
     
     [SkippableFactAttribute]
@@ -77,12 +77,12 @@ public class SimdOperationsTests
     public void X86SimdInfo_AVX_Detection_ReturnsCorrectValues()
     {
         Skip.IfNot(Environment.Is64BitProcess && (Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Unix));
-        
+
         // Act & Assert
-        X86SimdInfo.HasAvx.Should().Be(Avx.IsSupported);
-        X86SimdInfo.HasAvx2.Should().Be(Avx2.IsSupported);
-        X86SimdInfo.HasAvx512F.Should().Be(Avx512F.IsSupported);
-        X86SimdInfo.HasAvx512BW.Should().Be(Avx512BW.IsSupported);
+        _ = X86SimdInfo.HasAvx.Should().Be(Avx.IsSupported);
+        _ = X86SimdInfo.HasAvx2.Should().Be(Avx2.IsSupported);
+        _ = X86SimdInfo.HasAvx512F.Should().Be(Avx512F.IsSupported);
+        _ = X86SimdInfo.HasAvx512BW.Should().Be(Avx512BW.IsSupported);
     }
     
     [SkippableFactAttribute]
@@ -90,13 +90,13 @@ public class SimdOperationsTests
     public void X86SimdInfo_AdditionalInstructions_Detection_ReturnsCorrectValues()
     {
         Skip.IfNot(Environment.Is64BitProcess && (Environment.OSVersion.Platform == PlatformID.Win32NT || Environment.OSVersion.Platform == PlatformID.Unix));
-        
+
         // Act & Assert
-        X86SimdInfo.HasFma.Should().Be(Fma.IsSupported);
-        X86SimdInfo.HasBmi1.Should().Be(Bmi1.IsSupported);
-        X86SimdInfo.HasBmi2.Should().Be(Bmi2.IsSupported);
-        X86SimdInfo.HasPopcnt.Should().Be(Popcnt.IsSupported);
-        X86SimdInfo.HasLzcnt.Should().Be(Lzcnt.IsSupported);
+        _ = X86SimdInfo.HasFma.Should().Be(Fma.IsSupported);
+        _ = X86SimdInfo.HasBmi1.Should().Be(Bmi1.IsSupported);
+        _ = X86SimdInfo.HasBmi2.Should().Be(Bmi2.IsSupported);
+        _ = X86SimdInfo.HasPopcnt.Should().Be(Popcnt.IsSupported);
+        _ = X86SimdInfo.HasLzcnt.Should().Be(Lzcnt.IsSupported);
     }
     
     [Fact]
@@ -108,19 +108,19 @@ public class SimdOperationsTests
         // Assert
         if (Avx512F.IsSupported)
         {
-            maxWidth.Should().Be(512);
+            _ = maxWidth.Should().Be(512);
         }
         else if (Avx.IsSupported)
         {
-            maxWidth.Should().Be(256);
+            _ = maxWidth.Should().Be(256);
         }
         else if (Sse.IsSupported)
         {
-            maxWidth.Should().Be(128);
+            _ = maxWidth.Should().Be(128);
         }
         else
         {
-            maxWidth.Should().Be(0);
+            _ = maxWidth.Should().Be(0);
         }
     }
     
@@ -129,10 +129,10 @@ public class SimdOperationsTests
     public void ArmSimdInfo_NEON_Detection_ReturnsCorrectValues()
     {
         Skip.IfNot(Environment.Is64BitProcess && Environment.OSVersion.Platform == PlatformID.Unix);
-        
+
         // Act & Assert
-        ArmSimdInfo.HasNeon.Should().Be(AdvSimd.IsSupported);
-        ArmSimdInfo.HasNeonArm64.Should().Be(AdvSimd.Arm64.IsSupported);
+        _ = ArmSimdInfo.HasNeon.Should().Be(AdvSimd.IsSupported);
+        _ = ArmSimdInfo.HasNeonArm64.Should().Be(AdvSimd.Arm64.IsSupported);
     }
     
     [SkippableFactAttribute]
@@ -140,14 +140,14 @@ public class SimdOperationsTests
     public void ArmSimdInfo_AdditionalInstructions_Detection_ReturnsCorrectValues()
     {
         Skip.IfNot(Environment.Is64BitProcess && Environment.OSVersion.Platform == PlatformID.Unix);
-        
+
         // Act & Assert
-        ArmSimdInfo.HasCrc32.Should().Be(Crc32.IsSupported);
-        ArmSimdInfo.HasAes.Should().Be(global::System.Runtime.Intrinsics.Arm.Aes.IsSupported);
-        ArmSimdInfo.HasSha1.Should().Be(Sha1.IsSupported);
-        ArmSimdInfo.HasSha256.Should().Be(Sha256.IsSupported);
-        ArmSimdInfo.HasDp.Should().Be(Dp.IsSupported);
-        ArmSimdInfo.HasRdm.Should().Be(Rdm.IsSupported);
+        _ = ArmSimdInfo.HasCrc32.Should().Be(Crc32.IsSupported);
+        _ = ArmSimdInfo.HasAes.Should().Be(global::System.Runtime.Intrinsics.Arm.Aes.IsSupported);
+        _ = ArmSimdInfo.HasSha1.Should().Be(Sha1.IsSupported);
+        _ = ArmSimdInfo.HasSha256.Should().Be(Sha256.IsSupported);
+        _ = ArmSimdInfo.HasDp.Should().Be(Dp.IsSupported);
+        _ = ArmSimdInfo.HasRdm.Should().Be(Rdm.IsSupported);
     }
     
     [Fact]
@@ -159,11 +159,11 @@ public class SimdOperationsTests
         // Assert
         if (AdvSimd.IsSupported)
         {
-            maxWidth.Should().Be(128);
+            _ = maxWidth.Should().Be(128);
         }
         else
         {
-            maxWidth.Should().Be(0);
+            _ = maxWidth.Should().Be(0);
         }
     }
     
@@ -172,12 +172,12 @@ public class SimdOperationsTests
     {
         // Arrange
         var summary = SimdCapabilities.GetSummary();
-        
+
         // Act & Assert
-        summary.SupportsSse2.Should().Be(summary.SupportedInstructionSets.Contains("SSE2"));
-        summary.SupportsAvx2.Should().Be(summary.SupportedInstructionSets.Contains("AVX2"));
-        summary.SupportsAvx512.Should().Be(summary.SupportedInstructionSets.Contains("AVX512F"));
-        summary.SupportsAdvSimd.Should().Be(summary.SupportedInstructionSets.Contains("NEON"));
+        _ = summary.SupportsSse2.Should().Be(summary.SupportedInstructionSets.Contains("SSE2"));
+        _ = summary.SupportsAvx2.Should().Be(summary.SupportedInstructionSets.Contains("AVX2"));
+        _ = summary.SupportsAvx512.Should().Be(summary.SupportedInstructionSets.Contains("AVX512F"));
+        _ = summary.SupportsAdvSimd.Should().Be(summary.SupportedInstructionSets.Contains("NEON"));
     }
     
     [Fact]
@@ -188,18 +188,18 @@ public class SimdOperationsTests
         
         // Act
         var stringRepresentation = summary.ToString();
-        
+
         // Assert
-        stringRepresentation.Should().NotBeNullOrWhiteSpace();
+        _ = stringRepresentation.Should().NotBeNullOrWhiteSpace();
         
         if (summary.IsHardwareAccelerated)
         {
-            stringRepresentation.Should().Contain("SIMD");
-            stringRepresentation.Should().Contain(summary.PreferredVectorWidth.ToString());
+            _ = stringRepresentation.Should().Contain("SIMD");
+            _ = stringRepresentation.Should().Contain(summary.PreferredVectorWidth.ToString());
         }
         else
         {
-            stringRepresentation.Should().Contain("No SIMD support");
+            _ = stringRepresentation.Should().Contain("No SIMD support");
         }
     }
     
@@ -224,9 +224,9 @@ public class SimdOperationsTests
         
         // Act
         PerformVectorAddition(a, b, result);
-        
+
         // Assert
-        result.Should().Equal(expected);
+        _ = result.Should().Equal(expected);
     }
     
     [Theory]
@@ -250,9 +250,9 @@ public class SimdOperationsTests
         
         // Act
         PerformVectorMultiplication(a, b, result);
-        
+
         // Assert
-        result.Should().Equal(expected);
+        _ = result.Should().Equal(expected);
     }
     
     [Fact]
@@ -284,14 +284,14 @@ public class SimdOperationsTests
         var vectorStopwatch = System.Diagnostics.Stopwatch.StartNew();
         PerformVectorAddition(a, b, vectorResult);
         vectorStopwatch.Stop();
-        
+
         // Assert
-        vectorResult.Should().Equal(scalarResult);
+        _ = vectorResult.Should().Equal(scalarResult);
         
         // Performance assertion - SIMD should be faster if hardware accelerated
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
-            vectorStopwatch.ElapsedMilliseconds.Should().BeLessThanOrEqualTo(scalarStopwatch.ElapsedMilliseconds);
+            _ = vectorStopwatch.ElapsedMilliseconds.Should().BeLessThanOrEqualTo(scalarStopwatch.ElapsedMilliseconds);
         }
     }
     
@@ -306,9 +306,9 @@ public class SimdOperationsTests
         
         // Act - Force scalar path
         PerformScalarAddition(a, b, result);
-        
+
         // Assert
-        result.Should().Equal(expected);
+        _ = result.Should().Equal(expected);
     }
     
     [Theory]
@@ -321,9 +321,9 @@ public class SimdOperationsTests
         
         // Act
         PerformVectorAbs(input, result);
-        
+
         // Assert
-        result.Should().BeEquivalentTo(expected, options => options
+        _ = result.Should().BeEquivalentTo(expected, options => options
             .Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
             .WhenTypeIs<float>());
     }
@@ -338,9 +338,9 @@ public class SimdOperationsTests
         
         // Act
         PerformVectorSqrt(input, result);
-        
+
         // Assert
-        result.Should().BeEquivalentTo(expected, options => options
+        _ = result.Should().BeEquivalentTo(expected, options => options
             .Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
             .WhenTypeIs<float>());
     }
@@ -353,15 +353,15 @@ public class SimdOperationsTests
         float[]? nullArray = null;
         var validArray = new float[] { 1.0f, 2.0f, 3.0f, 4.0f };
         var result = new float[4];
-        
+
         // Act & Assert
-        FluentActions.Invoking(() => PerformVectorAddition(nullArray!, validArray, result))
+        _ = FluentActions.Invoking(() => PerformVectorAddition(nullArray!, validArray, result))
             .Should().Throw<ArgumentNullException>();
-        
-        FluentActions.Invoking(() => PerformVectorAddition(validArray, nullArray!, result))
+
+        _ = FluentActions.Invoking(() => PerformVectorAddition(validArray, nullArray!, result))
             .Should().Throw<ArgumentNullException>();
-        
-        FluentActions.Invoking(() => PerformVectorAddition(validArray, validArray, nullArray!))
+
+        _ = FluentActions.Invoking(() => PerformVectorAddition(validArray, validArray, nullArray!))
             .Should().Throw<ArgumentNullException>();
     }
     
@@ -373,9 +373,9 @@ public class SimdOperationsTests
         var shortArray = new float[] { 1.0f, 2.0f };
         var longArray = new float[] { 1.0f, 2.0f, 3.0f, 4.0f };
         var result = new float[2];
-        
+
         // Act & Assert
-        FluentActions.Invoking(() => PerformVectorAddition(shortArray, longArray, result))
+        _ = FluentActions.Invoking(() => PerformVectorAddition(shortArray, longArray, result))
             .Should().Throw<ArgumentException>();
     }
     
@@ -407,7 +407,7 @@ public class SimdOperationsTests
         // Assert
         foreach (var result in results)
         {
-            result.Should().Equal(expected);
+            _ = result.Should().Equal(expected);
         }
     }
     

@@ -78,7 +78,7 @@ namespace DotCompute.Backends.CUDA.Memory
             CudaRuntime.CheckError(result, "allocating device memory");
 
             _allocations[devicePtr] = sizeInBytes;
-            Interlocked.Add(ref _totalAllocated, sizeInBytes);
+            _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
             _logger.LogDebug("Allocated {Size} bytes at {Address:X}", sizeInBytes, devicePtr);
 
@@ -100,7 +100,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 CudaRuntime.CheckError(result, "allocating device memory");
 
                 _allocations[devicePtr] = sizeInBytes;
-                Interlocked.Add(ref _totalAllocated, sizeInBytes);
+                _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
                 _logger.LogDebug("Allocated {Size} bytes at {Address:X}", sizeInBytes, devicePtr);
 
@@ -126,7 +126,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 CudaRuntime.CheckError(result, "allocating device memory");
 
                 _allocations[devicePtr] = sizeInBytes;
-                Interlocked.Add(ref _totalAllocated, sizeInBytes);
+                _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
                 _logger.LogDebug("Allocated {Size} bytes at {Address:X} for type {Type}", sizeInBytes, devicePtr, typeof(T).Name);
 
@@ -144,7 +144,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaFree(devicePtr);
                 if (result == CudaError.Success)
                 {
-                    Interlocked.Add(ref _totalAllocated, -size);
+                    _ = Interlocked.Add(ref _totalAllocated, -size);
                     _logger.LogDebug("Freed {Size} bytes at {Address:X}", size, devicePtr);
                 }
                 else
@@ -207,7 +207,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
             
             _allocations.Clear();
-            Interlocked.Exchange(ref _totalAllocated, 0);
+            _ = Interlocked.Exchange(ref _totalAllocated, 0);
             
             // Re-initialize memory info
             InitializeMemoryInfo();

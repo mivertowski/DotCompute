@@ -875,8 +875,10 @@ public sealed class PerformanceProfiler : IDisposable
 
     private static int GetThreadPoolMetrics()
     {
-        ThreadPool.GetAvailableThreads(out var workerThreads, out var completionPortThreads);
-        ThreadPool.GetMaxThreads(out var maxWorkerThreads, out var maxCompletionPortThreads);
+
+        ThreadPool.GetAvailableThreads(out var workerThreads, out _);
+
+        ThreadPool.GetMaxThreads(out var maxWorkerThreads, out _);
         return maxWorkerThreads - workerThreads;
     }
 

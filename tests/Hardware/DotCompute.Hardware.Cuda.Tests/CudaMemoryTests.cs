@@ -34,7 +34,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             // Test various allocation sizes
             var sizes = new[] { 1024, 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024 };
@@ -43,10 +43,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 var elementCount = (int)(sizeBytes / sizeof(float));
                 await using var buffer = await accelerator.Memory.AllocateAsync<float>((int)elementCount);
-                
-                buffer.Should().NotBeNull();
-                buffer.SizeInBytes.Should().Be(sizeBytes);
-                buffer.ElementCount().Should().Be(elementCount);
+
+                _ = buffer.Should().NotBeNull();
+                _ = buffer.SizeInBytes.Should().Be(sizeBytes);
+                _ = buffer.ElementCount().Should().Be(elementCount);
                 
                 Output.WriteLine($"Successfully allocated {sizeBytes / (1024 * 1024):F1} MB");
             }
@@ -58,7 +58,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             var deviceInfo = accelerator.Info;
             var availableMemory = deviceInfo.AvailableMemory;
@@ -68,9 +68,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             var elementCount = (long)(targetSize / sizeof(float));
             
             await using var buffer = await accelerator.Memory.AllocateAsync<float>((int)elementCount);
-            
-            buffer.Should().NotBeNull();
-            buffer.SizeInBytes.Should().Be(elementCount * sizeof(float));
+
+            _ = buffer.Should().NotBeNull();
+            _ = buffer.SizeInBytes.Should().Be(elementCount * sizeof(float));
             
             Output.WriteLine($"Large allocation test:");
             Output.WriteLine($"  Available Memory: {availableMemory / (1024 * 1024 * 1024.0):F2} GB");
@@ -83,7 +83,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             var transferSizes = new[] { 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024 };
             
@@ -111,10 +111,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine($"H2D Transfer - Size: {sizeBytes / (1024 * 1024):F1} MB, " +
                                $"Time: {stopwatch.Elapsed.TotalMilliseconds:F2} ms, " +
                                $"Rate: {transferRateGBps:F2} GB/s");
-                
+
                 // Verify reasonable transfer rate (should be > 1 GB/s for modern GPUs)
-                transferRateGBps.Should().BeGreaterThan(1.0, "Host-to-Device transfer should be reasonably fast");
-                stopwatch.Elapsed.TotalSeconds.Should().BeLessThan(1.0, "Transfer should complete quickly");
+                _ = transferRateGBps.Should().BeGreaterThan(1.0, "Host-to-Device transfer should be reasonably fast");
+                _ = stopwatch.Elapsed.TotalSeconds.Should().BeLessThan(1.0, "Transfer should complete quickly");
             }
         }
 
@@ -124,7 +124,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             var transferSizes = new[] { 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024 };
             
@@ -160,10 +160,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // Verify data integrity
                 for (var i = 0; i < Math.Min(1000, elementCount); i++)
                 {
-                    resultData[i].Should().BeApproximately(hostData[i], 0.0001f, $"at index {i}");
+                    _ = resultData[i].Should().BeApproximately(hostData[i], 0.0001f, $"at index {i}");
                 }
-                
-                transferRateGBps.Should().BeGreaterThan(1.0, "Device-to-Host transfer should be reasonably fast");
+
+                _ = transferRateGBps.Should().BeGreaterThan(1.0, "Device-to-Host transfer should be reasonably fast");
             }
         }
 
@@ -173,7 +173,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 1024 * 1024; // 1M elements
             
@@ -214,8 +214,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Verify data integrity
             for (var i = 0; i < Math.Min(1000, elementCount); i++)
             {
-                resultDataA[i].Should().BeApproximately(hostDataA[i], 0.0001f);
-                resultDataB[i].Should().BeApproximately(hostDataB[i], 0.0001f);
+                _ = resultDataA[i].Should().BeApproximately(hostDataA[i], 0.0001f);
+                _ = resultDataB[i].Should().BeApproximately(hostDataB[i], 0.0001f);
             }
             
             var totalBytes = elementCount * sizeof(float) * 4; // 2 uploads + 2 downloads
@@ -224,11 +224,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Bidirectional Transfer:");
             Output.WriteLine($"  Total Time: {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
             Output.WriteLine($"  Total Throughput: {throughputGBps:F2} GB/s");
-            
+
             // Note: Unified memory without pinning typically achieves ~1-2 GB/s
             // For higher performance (10-20+ GB/s), pinned memory is required
             // Adjusting expectation to be realistic for unified memory
-            throughputGBps.Should().BeGreaterThan(1.0, 
+            _ = throughputGBps.Should().BeGreaterThan(1.0,
                 "Concurrent transfers with unified memory should achieve at least 1 GB/s throughput. " +
                 "For >2 GB/s, pinned memory allocation would be required.");
         }
@@ -239,7 +239,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             if (!accelerator.Info.SupportsUnifiedMemory())
             {
@@ -271,7 +271,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Verify data integrity
             for (var i = 0; i < elementCount; i++)
             {
-                resultData[i].Should().BeApproximately(testData[i], 0.0001f, $"at index {i}");
+                _ = resultData[i].Should().BeApproximately(testData[i], 0.0001f, $"at index {i}");
             }
             
             Output.WriteLine($"Unified Memory Test:");
@@ -286,7 +286,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             var deviceInfo = accelerator.Info;
             var expectedBandwidth = deviceInfo.MemoryBandwidthGBps();
@@ -296,8 +296,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Memory Size: {deviceInfo.GlobalMemoryBytes() / (1024.0 * 1024.0 * 1024.0):F2} GB");
             Output.WriteLine($"  Memory Clock: {deviceInfo.MemoryClockRate() / 1000.0:F0} MHz");
             Output.WriteLine($"  Expected Bandwidth: {expectedBandwidth:F0} GB/s");
-            
-            expectedBandwidth.Should().BeGreaterThan(100, "Modern GPUs should have substantial memory bandwidth");
+
+            _ = expectedBandwidth.Should().BeGreaterThan(100, "Modern GPUs should have substantial memory bandwidth");
         }
 
         [SkippableFact]
@@ -306,7 +306,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             // Use bandwidth testing kernel
             const string bandwidthKernel = @"
@@ -371,9 +371,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Min Time: {minTime * 1000:F2} ms");
             Output.WriteLine($"  Effective Bandwidth: {effectiveBandwidthGBps:F1} GB/s");
             Output.WriteLine($"  Peak Bandwidth: {peakBandwidthGBps:F1} GB/s");
-            
-            effectiveBandwidthGBps.Should().BeGreaterThan(50, "Effective bandwidth should be substantial");
-            peakBandwidthGBps.Should().BeGreaterThan(effectiveBandwidthGBps, "Peak should be better than average");
+
+            _ = effectiveBandwidthGBps.Should().BeGreaterThan(50, "Effective bandwidth should be substantial");
+            _ = peakBandwidthGBps.Should().BeGreaterThan(effectiveBandwidthGBps, "Peak should be better than average");
         }
 
         [SkippableFact]
@@ -382,7 +382,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             // Test different buffer sizes for alignment
             var sizes = new[] { 1024, 2048, 4096, 8192, 16384, 32768 };
@@ -390,9 +390,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             foreach (var size in sizes)
             {
                 await using var buffer = await accelerator.Memory.AllocateAsync<float>(size);
-                
-                buffer.Should().NotBeNull();
-                buffer.ElementCount().Should().Be(size);
+
+                _ = buffer.Should().NotBeNull();
+                _ = buffer.ElementCount().Should().Be(size);
                 
                 // Check if size is properly aligned
                 var isAligned256 = CudaMemoryAlignment.IsAligned(buffer.SizeInBytes, 256);
@@ -409,7 +409,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             // Get initial statistics
             var initialStats = accelerator.GetMemoryStatistics();
@@ -426,10 +426,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Get statistics after allocation
             var afterAllocStats = accelerator.GetMemoryStatistics();
             Output.WriteLine($"[DEBUG] After - Used: {afterAllocStats.UsedMemoryBytes}, Allocations: {afterAllocStats.AllocationCount}");
-            
+
             // Verify statistics changed
-            afterAllocStats.UsedMemoryBytes.Should().BeGreaterThan(initialStats.UsedMemoryBytes);
-            afterAllocStats.AllocationCount.Should().BeGreaterThanOrEqualTo(initialStats.AllocationCount);
+            _ = afterAllocStats.UsedMemoryBytes.Should().BeGreaterThan(initialStats.UsedMemoryBytes);
+            _ = afterAllocStats.AllocationCount.Should().BeGreaterThanOrEqualTo(initialStats.AllocationCount);
             
             Output.WriteLine($"Memory Statistics:");
             Output.WriteLine($"  Initial Used: {initialStats.UsedMemoryBytes / (1024 * 1024):F1} MB");
@@ -444,7 +444,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             var factory = new CudaAcceleratorFactory();
-            await using var accelerator = factory.CreateDefaultAccelerator();
+            await using var accelerator = factory.CreateProductionAccelerator(0);
             
             const int elementCount = 4 * 1024 * 1024; // 4M elements
             const int iterations = 5;
@@ -502,16 +502,16 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine($"  Regular Memory: {regularBandwidth:F2} GB/s");
                 Output.WriteLine($"  Pinned Memory: {pinnedBandwidth:F2} GB/s");
                 Output.WriteLine($"  Improvement: {pinnedBandwidth / regularBandwidth:F2}x");
-                
-                pinnedBandwidth.Should().BeGreaterThanOrEqualTo(regularBandwidth, "Pinned memory should not be slower");
+
+                _ = pinnedBandwidth.Should().BeGreaterThanOrEqualTo(regularBandwidth, "Pinned memory should not be slower");
             }
             catch (NotSupportedException)
             {
                 Output.WriteLine("Pinned memory not supported on this device");
                 Output.WriteLine($"Regular Memory Bandwidth: {regularBandwidth:F2} GB/s");
             }
-            
-            regularBandwidth.Should().BeGreaterThan(1.0, "Regular memory transfers should achieve reasonable bandwidth");
+
+            _ = regularBandwidth.Should().BeGreaterThan(1.0, "Regular memory transfers should achieve reasonable bandwidth");
         }
     }
 }

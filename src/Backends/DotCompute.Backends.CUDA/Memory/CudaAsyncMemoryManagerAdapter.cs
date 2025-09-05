@@ -92,7 +92,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 // Track allocation
                 if (_bufferSizes.TryAdd(buffer, sizeInBytes))
                 {
-                    Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
+                    _ = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
                 }
                 else
                 {
@@ -106,13 +106,17 @@ namespace DotCompute.Backends.CUDA.Memory
         public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
         {
             if (buffer == null)
+            {
+
                 return ValueTask.CompletedTask;
-                
+            }
+
+
             return new ValueTask(Task.Run(() =>
             {
                 if (_bufferSizes.TryRemove(buffer, out var size))
                 {
-                    Interlocked.Add(ref _totalAllocatedBytes, -size);
+                    _ = Interlocked.Add(ref _totalAllocatedBytes, -size);
                 }
                 
                 buffer.Dispose();
@@ -129,9 +133,13 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(buffer);
             
             if (offset < 0 || count < 0 || offset + count > buffer.Length)
+            {
+
                 throw new ArgumentOutOfRangeException("Invalid view range");
-            
+            }
+
             // Create a view without allocating new memory
+
             unsafe
             {
                 var deviceMemory = buffer.GetDeviceMemory();
@@ -152,8 +160,12 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(destination);
             
             if (source.Length != destination.Length)
+            {
+
                 throw new ArgumentException("Source and destination buffers must have the same length");
-                
+            }
+
+
             return new ValueTask(Task.Run(() =>
             {
                 var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
@@ -177,8 +189,12 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(destination);
             
             if (source.Length != destination.Length)
+            {
+
                 throw new ArgumentException("Source and destination must have the same length");
-                
+            }
+
+
             return new ValueTask(Task.Run(() =>
             {
                 unsafe
@@ -206,8 +222,12 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(source);
             
             if (source.Length != destination.Length)
+            {
+
                 throw new ArgumentException("Source and destination must have the same length");
-                
+            }
+
+
             return new ValueTask(Task.Run(() =>
             {
                 unsafe
@@ -285,7 +305,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 // Track allocation
                 if (_bufferSizes.TryAdd(buffer, sizeInBytes))
                 {
-                    Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
+                    _ = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
                 }
                 
                 return (IUnifiedMemoryBuffer)buffer;
@@ -307,11 +327,19 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(destination);
             
             if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
+            {
+
                 throw new ArgumentOutOfRangeException("Offsets and count must be non-negative");
-                
+            }
+
+
             if (sourceOffset + count > source.Length || destinationOffset + count > destination.Length)
+            {
+
                 throw new ArgumentOutOfRangeException("Copy range exceeds buffer bounds");
-                
+            }
+
+
             return new ValueTask(Task.Run(() =>
             {
                 unsafe
@@ -339,11 +367,14 @@ namespace DotCompute.Backends.CUDA.Memory
         public void Free(IUnifiedMemoryBuffer buffer)
         {
             if (buffer == null)
+            {
                 return;
-                
+            }
+
+
             if (_bufferSizes.TryRemove(buffer, out var size))
             {
-                Interlocked.Add(ref _totalAllocatedBytes, -size);
+                _ = Interlocked.Add(ref _totalAllocatedBytes, -size);
             }
             
             buffer.Dispose();

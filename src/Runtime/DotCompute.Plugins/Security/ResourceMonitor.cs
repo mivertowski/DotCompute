@@ -372,7 +372,7 @@ internal class PluginResourceTracker : IDisposable
         {
             // This is a simplified implementation
             // In practice, you'd need to track threads associated with the plugin's load context
-            return Thread.CurrentThread.ManagedThreadId > 0 ? 1 : 0;
+            return Environment.CurrentManagedThreadId > 0 ? 1 : 0;
         }
         catch
         {

@@ -41,7 +41,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         NumaMemoryPolicy? policy,
         CancellationToken cancellationToken = default)
     {
-        policy ??= _defaultPolicy;
+        _ = policy ?? _defaultPolicy;
         
         // TODO: Production - Implement NUMA-aware allocation
         // Missing: NUMA node selection based on policy
@@ -162,8 +162,8 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     /// <inheritdoc/>
     protected override ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(long sizeInBytes, MemoryOptions options, CancellationToken cancellationToken)
     {
-        Interlocked.Add(ref _currentAllocated, sizeInBytes);
-        Interlocked.Increment(ref _activeBuffers);
+        _ = Interlocked.Add(ref _currentAllocated, sizeInBytes);
+        _ = Interlocked.Increment(ref _activeBuffers);
         _peakMemoryUsage = Math.Max(_peakMemoryUsage, _currentAllocated);
         
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this, 0, _defaultPolicy);
@@ -175,9 +175,9 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     {
         if (buffer is CpuMemoryBuffer cpuBuffer)
         {
-            Interlocked.Add(ref _totalFreed, cpuBuffer.SizeInBytes);
-            Interlocked.Add(ref _currentAllocated, -cpuBuffer.SizeInBytes);
-            Interlocked.Decrement(ref _activeBuffers);
+            _ = Interlocked.Add(ref _totalFreed, cpuBuffer.SizeInBytes);
+            _ = Interlocked.Add(ref _currentAllocated, -cpuBuffer.SizeInBytes);
+            _ = Interlocked.Decrement(ref _activeBuffers);
         }
         return ValueTask.CompletedTask;
     }

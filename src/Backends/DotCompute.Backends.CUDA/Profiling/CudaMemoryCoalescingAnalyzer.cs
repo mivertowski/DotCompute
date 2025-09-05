@@ -286,9 +286,9 @@ namespace DotCompute.Backends.CUDA.Analysis
             for (var i = 0; i < profileRuns; i++)
             {
                 var runMetrics = new MemoryMetrics();
-                
+
                 // Get memory info before
-                cudaMemGetInfo(out var freeBefore, out var totalBefore);
+                _ = cudaMemGetInfo(out var freeBefore, out var totalBefore);
                 var startTime = Stopwatch.GetTimestamp();
                 
                 // Execute kernel
@@ -296,7 +296,7 @@ namespace DotCompute.Backends.CUDA.Analysis
                 
                 // Get memory info after
                 var elapsed = Stopwatch.GetElapsedTime(startTime);
-                cudaMemGetInfo(out var freeAfter, out var totalAfter);
+                _ = cudaMemGetInfo(out var freeAfter, out var totalAfter);
                 
                 runMetrics.ExecutionTime = elapsed;
                 runMetrics.MemoryUsed = (long)(freeBefore - freeAfter);
@@ -387,8 +387,9 @@ namespace DotCompute.Backends.CUDA.Analysis
             var sectorSize = 32;
             
             var sectorsNeeded = (accessInfo.AccessSize + sectorSize - 1) / sectorSize;
-            var actualTransferSize = sectorsNeeded * sectorSize;
-            
+            _ = sectorsNeeded * sectorSize;
+
+
             var isAligned = (accessInfo.BaseAddress % cacheLine) == 0;
             var isSequential = accessInfo.Stride == 1;
             var isUniform = accessInfo.Stride == 0;
@@ -699,8 +700,8 @@ namespace DotCompute.Backends.CUDA.Analysis
 
         private static async Task<int> GetComputeCapabilityAsync(int deviceId)
         {
-            cudaDeviceGetAttribute(out var major, CudaDeviceAttribute.ComputeCapabilityMajor, deviceId);
-            cudaDeviceGetAttribute(out var minor, CudaDeviceAttribute.ComputeCapabilityMinor, deviceId);
+            _ = cudaDeviceGetAttribute(out var major, CudaDeviceAttribute.ComputeCapabilityMajor, deviceId);
+            _ = cudaDeviceGetAttribute(out var minor, CudaDeviceAttribute.ComputeCapabilityMinor, deviceId);
             
             await Task.CompletedTask;
             return major * 10 + minor;

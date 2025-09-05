@@ -60,7 +60,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
                 
                 // Try to create an accelerator to verify everything works
-                await using var accelerator = factory.CreateDefaultAccelerator();
+                await using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 return accelerator != null;
             }
@@ -83,7 +83,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                await using var accelerator = factory.CreateDefaultAccelerator();
+                await using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 var deviceInfo = accelerator.Info;
                 return deviceInfo.IsRTX2000Ada() && 
@@ -110,7 +110,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                await using var accelerator = factory.CreateDefaultAccelerator();
+                await using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 var cc = accelerator.Info.ComputeCapability;
                 return cc.Major > majorMin || (cc.Major == majorMin && cc.Minor >= minorMin);
@@ -134,7 +134,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                await using var accelerator = factory.CreateDefaultAccelerator();
+                await using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 var info = accelerator.Info;
                 return $"{info.Name} (CC {info.ComputeCapability?.Major}.{info.ComputeCapability?.Minor}, " +
@@ -330,7 +330,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                await using var accelerator = factory.CreateDefaultAccelerator();
+                await using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 var info = accelerator.Info;
                 

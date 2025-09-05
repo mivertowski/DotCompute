@@ -231,13 +231,13 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 // Remove dependencies to the deleted node
                 foreach (var node in remainingNodes)
                 {
-                    node.Dependencies.RemoveAll(dep => dep.Id == nodeId);
+                    _ = node.Dependencies.RemoveAll(dep => dep.Id == nodeId);
                 }
 
                 // Clear and repopulate the concurrent bag
                 while (!_nodes.IsEmpty)
                 {
-                    _nodes.TryTake(out _);
+                    _ = _nodes.TryTake(out _);
                 }
 
                 foreach (var node in remainingNodes)
@@ -301,7 +301,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
                 while (!_nodes.IsEmpty)
                 {
-                    _nodes.TryTake(out _);
+                    _ = _nodes.TryTake(out _);
                 }
             }
         }

@@ -26,12 +26,12 @@ public class ArgumentPassingDebugTest : CudaTestBase
         
         const int size = 1024;
         var factory = new CudaAcceleratorFactory();
-        await using var accelerator = factory.CreateDefaultAccelerator();
+        await using var accelerator = factory.CreateProductionAccelerator(0);
         
         // Create test data
         var inputData = Enumerable.Range(0, size).Select(i => (float)i).ToArray();
         var expectedOutput = new float[size];
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             expectedOutput[i] = inputData[i] * 2.0f + 5.0f;
         }
@@ -94,8 +94,9 @@ public class ArgumentPassingDebugTest : CudaTestBase
         
         // Debug output
         Output.WriteLine($"First 10 results: {string.Join(", ", results.Take(10).Select(x => x.ToString("F2")))}");
-        
-        results.Should().BeEquivalentTo(expectedOutput, options => 
+
+        _ = results.Should().BeEquivalentTo(expectedOutput, options =>
+
             options.Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
                    .WhenTypeIs<float>());
         
@@ -111,7 +112,7 @@ public class ArgumentPassingDebugTest : CudaTestBase
         const int elementCount = size * size;
         
         var factory = new CudaAcceleratorFactory();
-        await using var accelerator = factory.CreateDefaultAccelerator();
+        await using var accelerator = factory.CreateProductionAccelerator(0);
         
         // Create simple identity copy kernel
         const string copyKernel = @"
@@ -173,8 +174,9 @@ public class ArgumentPassingDebugTest : CudaTestBase
         // Verify results
         var results = new float[elementCount];
         await outputBuffer.CopyToAsync(results);
-        
-        results.Should().BeEquivalentTo(inputData, options => 
+
+        _ = results.Should().BeEquivalentTo(inputData, options =>
+
             options.Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
                    .WhenTypeIs<float>());
         

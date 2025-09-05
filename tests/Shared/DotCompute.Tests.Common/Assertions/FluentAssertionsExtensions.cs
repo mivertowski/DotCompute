@@ -21,17 +21,18 @@ public static class FluentAssertionsExtensions
     public static void ShouldBeApproximatelyEqualTo(this IEnumerable<float> subject, IEnumerable<float> expected, 
         float tolerance, string because = "", params object[] becauseArgs)
     {
-        subject.Should().NotBeNull();
-        expected.Should().NotBeNull();
+        _ = subject.Should().NotBeNull();
+        _ = expected.Should().NotBeNull();
         
         var subjectArray = subject.ToArray();
         var expectedArray = expected.ToArray();
-        
-        subjectArray.Should().HaveCount(expectedArray.Length, because, becauseArgs);
+
+        _ = subjectArray.Should().HaveCount(expectedArray.Length, because, becauseArgs);
         
         for (var i = 0; i < subjectArray.Length; i++)
         {
-            subjectArray[i].Should().BeApproximately(expectedArray[i], tolerance, 
+            _ = subjectArray[i].Should().BeApproximately(expectedArray[i], tolerance,
+
                 $"element at index {i} should be approximately equal {because}", becauseArgs);
         }
     }
@@ -42,17 +43,18 @@ public static class FluentAssertionsExtensions
     public static void ShouldBeApproximatelyEqualTo(this IEnumerable<double> subject, IEnumerable<double> expected, 
         double tolerance, string because = "", params object[] becauseArgs)
     {
-        subject.Should().NotBeNull();
-        expected.Should().NotBeNull();
+        _ = subject.Should().NotBeNull();
+        _ = expected.Should().NotBeNull();
         
         var subjectArray = subject.ToArray();
         var expectedArray = expected.ToArray();
-        
-        subjectArray.Should().HaveCount(expectedArray.Length, because, becauseArgs);
+
+        _ = subjectArray.Should().HaveCount(expectedArray.Length, because, becauseArgs);
         
         for (var i = 0; i < subjectArray.Length; i++)
         {
-            subjectArray[i].Should().BeApproximately(expectedArray[i], tolerance, 
+            _ = subjectArray[i].Should().BeApproximately(expectedArray[i], tolerance,
+
                 $"element at index {i} should be approximately equal {because}", becauseArgs);
         }
     }
@@ -63,17 +65,17 @@ public static class FluentAssertionsExtensions
     public static void ShouldContainOnlyFiniteValues<T>(this IEnumerable<T> subject, string because = "", params object[] becauseArgs)
         where T : IComparable<T>
     {
-        subject.Should().NotBeNull();
+        _ = subject.Should().NotBeNull();
         
         if (typeof(T) == typeof(float))
         {
             var floats = subject.Cast<float>();
-            floats.Should().Match(values => values.All(v => float.IsFinite(v)), because, becauseArgs);
+            _ = floats.Should().Match(values => values.All(v => float.IsFinite(v)), because, becauseArgs);
         }
         else if (typeof(T) == typeof(double))
         {
             var doubles = subject.Cast<double>();
-            doubles.Should().Match(values => values.All(v => double.IsFinite(v)), because, becauseArgs);
+            _ = doubles.Should().Match(values => values.All(v => double.IsFinite(v)), because, becauseArgs);
         }
         // For other types, assume they are finite by nature
     }
@@ -96,8 +98,8 @@ public static class FluentAssertionsExtensions
     /// </summary>
     public static void ShouldBeWithinTimeLimit(this double executionTimeMs, double maxTimeMs, string because = "", params object[] becauseArgs)
     {
-        executionTimeMs.Should().BeLessThanOrEqualTo(maxTimeMs, because, becauseArgs);
-        executionTimeMs.Should().BeGreaterThan(0, "because execution should take some measurable time");
+        _ = executionTimeMs.Should().BeLessThanOrEqualTo(maxTimeMs, because, becauseArgs);
+        _ = executionTimeMs.Should().BeGreaterThan(0, "because execution should take some measurable time");
     }
 
 
@@ -120,8 +122,8 @@ public static class FluentAssertionsExtensions
     /// </summary>
     public static void ShouldAllSatisfy<T>(this IEnumerable<T> subject, Func<T, bool> predicate, string because = "", params object[] becauseArgs)
     {
-        subject.Should().NotBeNull();
-        subject.Should().Match(items => items.All(predicate), because, becauseArgs);
+        _ = subject.Should().NotBeNull();
+        _ = subject.Should().Match(items => items.All(predicate), because, becauseArgs);
     }
 
     /// <summary>
@@ -130,18 +132,18 @@ public static class FluentAssertionsExtensions
     public static void ShouldContainValidData<T>(this IEnumerable<T> subject, string because = "", params object[] becauseArgs)
         where T : unmanaged
     {
-        subject.Should().NotBeNull(because, becauseArgs);
-        subject.Should().NotBeEmpty(because, becauseArgs);
+        _ = subject.Should().NotBeNull(because, becauseArgs);
+        _ = subject.Should().NotBeEmpty(because, becauseArgs);
         
         if (typeof(T) == typeof(float))
         {
             var floats = subject.Cast<float>();
-            floats.Should().Match(buffer => buffer.All(value => !float.IsInfinity(value) && !float.IsNaN(value)), because, becauseArgs);
+            _ = floats.Should().Match(buffer => buffer.All(value => !float.IsInfinity(value) && !float.IsNaN(value)), because, becauseArgs);
         }
         else if (typeof(T) == typeof(double))
         {
             var doubles = subject.Cast<double>();
-            doubles.Should().Match(buffer => buffer.All(value => !double.IsInfinity(value) && !double.IsNaN(value)), because, becauseArgs);
+            _ = doubles.Should().Match(buffer => buffer.All(value => !double.IsInfinity(value) && !double.IsNaN(value)), because, becauseArgs);
         }
     }
 
@@ -151,9 +153,9 @@ public static class FluentAssertionsExtensions
     public static void ShouldMeetPerformanceThreshold(this double actualThroughput, double expectedMinThroughput, 
         string unit = "ops/sec", string because = "", params object[] becauseArgs)
     {
-        actualThroughput.Should().BeGreaterThanOrEqualTo(expectedMinThroughput, 
+        _ = actualThroughput.Should().BeGreaterThanOrEqualTo(expectedMinThroughput,
             $"because performance should achieve at least {expectedMinThroughput:F2} {unit} {because}", becauseArgs);
-        actualThroughput.Should().BeGreaterThan(0, "because throughput should be positive");
+        _ = actualThroughput.Should().BeGreaterThan(0, "because throughput should be positive");
     }
 
     /// <summary>
@@ -162,11 +164,11 @@ public static class FluentAssertionsExtensions
     public static void ShouldBeNumericallyStable<T>(this IEnumerable<T> subject, string because = "", params object[] becauseArgs)
         where T : IComparable<T>
     {
-        subject.Should().NotBeNull();
+        _ = subject.Should().NotBeNull();
         subject.ShouldContainOnlyFiniteValues(because, becauseArgs);
         
         var array = subject.ToArray();
-        array.Should().NotBeEmpty("because stable computation should produce results");
+        _ = array.Should().NotBeEmpty("because stable computation should produce results");
         
         // Additional stability checks could be added here
         // e.g., checking for reasonable value ranges, no sudden spikes, etc.
@@ -178,8 +180,8 @@ public static class FluentAssertionsExtensions
     public static void ShouldBeWithinMemoryBounds(this long actualMemoryBytes, long maxMemoryBytes, 
         string because = "", params object[] becauseArgs)
     {
-        actualMemoryBytes.Should().BeLessThanOrEqualTo(maxMemoryBytes, because, becauseArgs);
-        actualMemoryBytes.Should().BeGreaterThanOrEqualTo(0, "because memory usage should be non-negative");
+        _ = actualMemoryBytes.Should().BeLessThanOrEqualTo(maxMemoryBytes, because, becauseArgs);
+        _ = actualMemoryBytes.Should().BeGreaterThanOrEqualTo(0, "because memory usage should be non-negative");
     }
 
     /// <summary>
@@ -208,8 +210,8 @@ public static class FluentAssertionsExtensions
                 // Recovery failed - recovered remains false
             }
         }
-        
-        recovered.Should().BeTrue($"because the system should recover gracefully from {typeof(TException).Name} {because}", becauseArgs);
+
+        _ = recovered.Should().BeTrue($"because the system should recover gracefully from {typeof(TException).Name} {because}", becauseArgs);
     }
     
     /// <summary>
@@ -236,8 +238,8 @@ public static class FluentAssertionsExtensions
         // Measure final memory
         var finalMemory = GC.GetTotalMemory(true);
         var memoryIncrease = finalMemory - initialMemory;
-        
+
         // Assert memory increase is within bounds
-        memoryIncrease.Should().BeLessThanOrEqualTo(maxMemoryIncrease, because, becauseArgs);
+        _ = memoryIncrease.Should().BeLessThanOrEqualTo(maxMemoryIncrease, because, becauseArgs);
     }
 }

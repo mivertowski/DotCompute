@@ -37,8 +37,7 @@ kernel void vectorAdd(
             entryPoint: "vectorAdd",
             dependencies: []
         );
-
-        var compilationOptions = new CompilationOptions
+        _ = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
@@ -96,8 +95,7 @@ kernel void matrixMultiply(
             entryPoint: "matrixMultiply",
             dependencies: []
         );
-
-        var compilationOptions = new CompilationOptions
+        _ = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
@@ -171,8 +169,7 @@ kernel void reduction{operation}(
             entryPoint: kernelName,
             dependencies: []
         );
-
-        var compilationOptions = new CompilationOptions
+        _ = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
@@ -252,8 +249,7 @@ kernel void convolution2D(
             entryPoint: "convolution2D",
             dependencies: []
         );
-
-        var compilationOptions = new CompilationOptions
+        _ = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
@@ -310,8 +306,7 @@ kernel void activation{activation}(
             entryPoint: kernelName,
             dependencies: []
         );
-
-        var compilationOptions = new CompilationOptions
+        _ = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
@@ -356,8 +351,7 @@ kernel void {operation}(
             entryPoint: operation,
             dependencies: []
         );
-
-        var compilationOptions = new CompilationOptions
+        _ = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false

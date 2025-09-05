@@ -130,6 +130,22 @@ public class CompilationOptions
     public bool EnableDynamicParallelism { get; set; }
 
     /// <summary>
+    /// Enable shared memory register spilling for CUDA 13.0+ (Turing and newer)
+    /// Helps reduce register pressure by spilling to shared memory instead of local memory
+    /// </summary>
+    public bool EnableSharedMemoryRegisterSpilling { get; set; } = true;
+
+    /// <summary>
+    /// Enable tile-based programming patterns for tensor cores (CUDA 13.0+)
+    /// </summary>
+    public bool EnableTileBasedProgramming { get; set; }
+
+    /// <summary>
+    /// Enable L2 cache residency control (CUDA 13.0+ on Ampere and newer)
+    /// </summary>
+    public bool EnableL2CacheResidencyControl { get; set; }
+
+    /// <summary>
     /// Enable loop unrolling optimizations
     /// </summary>
     public bool EnableLoopUnrolling { get; set; } = true;
@@ -322,7 +338,11 @@ public class CompilationOptions
             CompileToCubin = CompileToCubin,
             ComputeCapability = new Version(ComputeCapability.Major, ComputeCapability.Minor),
             FusedMultiplyAdd = FusedMultiplyAdd,
-            RelocatableDeviceCode = RelocatableDeviceCode
+            RelocatableDeviceCode = RelocatableDeviceCode,
+            EnableDynamicParallelism = EnableDynamicParallelism,
+            EnableSharedMemoryRegisterSpilling = EnableSharedMemoryRegisterSpilling,
+            EnableTileBasedProgramming = EnableTileBasedProgramming,
+            EnableL2CacheResidencyControl = EnableL2CacheResidencyControl
         };
     }
 

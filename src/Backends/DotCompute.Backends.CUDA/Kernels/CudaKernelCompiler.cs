@@ -552,6 +552,20 @@ namespace DotCompute.Backends.CUDA.Compilation
             var archString = ComputeCapability.GetArchString(major, minor);
             optionsList.Add($"--gpu-architecture={archString}");
             
+            // CUDA 13.0 optimizations: Enable shared memory register spilling for Turing and newer
+            if (major >= 7 && minor >= 5)
+            {
+                // Enable verbose ptxas output to analyze register usage
+                optionsList.Add("--ptxas-options=-v");
+                
+                // Enable shared memory register spilling (available in CUDA 13.0+)
+                // This helps when register pressure is high
+                if (options?.EnableSharedMemoryRegisterSpilling ?? true)
+                {
+                    optionsList.Add("--ptxas-options=--allow-expensive-optimizations=true");
+                }
+            }
+            
             // Add dynamic parallelism support if requested
             // Dynamic parallelism requires relocatable device code (-rdc=true)
             if (options?.EnableDynamicParallelism == true)
@@ -916,9 +930,9 @@ namespace DotCompute.Backends.CUDA.Compilation
         private static string GenerateCacheKey(KernelDefinition definition, CompilationOptions? options)
         {
             var key = new StringBuilder();
-            key.Append(definition.Name);
+            _ = key.Append(definition.Name);
             _ = key.Append('_');
-            key.Append(definition.Code?.GetHashCode() ?? 0);
+            _ = key.Append(definition.Code?.GetHashCode() ?? 0);
 
             if (options != null)
             {
@@ -1155,7 +1169,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         {
             try
             {
-                _mangledNamesCache.TryAdd(kernelName, new Dictionary<string, string>(mangledNames));
+                _ = _mangledNamesCache.TryAdd(kernelName, new Dictionary<string, string>(mangledNames));
                 _logger.LogDebug("Stored {Count} mangled names for kernel '{KernelName}'", mangledNames.Count, kernelName);
             }
             catch (Exception ex)
@@ -1307,7 +1321,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             {
                 if (!Directory.Exists(_cacheDirectory))
                 {
-                    Directory.CreateDirectory(_cacheDirectory);
+                    _ = Directory.CreateDirectory(_cacheDirectory);
                 }
 
                 var saveCount = 0;

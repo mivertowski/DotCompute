@@ -385,7 +385,7 @@ public static class AdvancedIntegration
 
         A /= alpha2 * alpha;
         B /= alpha2 * alpha;
-        C /= alpha2 * alpha;
+        _ = alpha2 * alpha;
 
         // Apply Filon's quadrature
         var sum = 0.0f;

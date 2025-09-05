@@ -400,6 +400,48 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cuGraphAddMemsetNode(
+            out nint pGraphNode,
+            nint graph,
+            nint pDependencies,
+            nuint numDependencies,
+            ref CudaMemsetParams pMemsetParams);
+
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cuGraphAddEventRecordNode(
+            out nint pGraphNode,
+            nint graph,
+            nint pDependencies,
+            nuint numDependencies,
+            nint event_);
+
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cuGraphAddEventWaitNode(
+            out nint pGraphNode,
+            nint graph,
+            nint pDependencies,
+            nuint numDependencies,
+            nint event_);
+
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cuGraphAddChildGraphNode(
+            out nint pGraphNode,
+            nint graph,
+            nint pDependencies,
+            nuint numDependencies,
+            nint childGraph);
+
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static extern CudaError cuGraphClone(
+            out nint pGraphClone,
+            nint originalGraph);
+
+        [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaGraphHostNodeSetParams(
             nint node,
             ref CudaHostNodeParams pNodeParams);

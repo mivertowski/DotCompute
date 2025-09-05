@@ -31,11 +31,24 @@ namespace DotCompute.Core.Extensions
             {
                 // Prefer the most specific available memory properties
                 if (stats.AvailableMemoryBytes > 0)
+                {
+
                     return stats.AvailableMemoryBytes;
+                }
+
+
                 if (stats.AvailableMemory > 0)
+                {
                     return stats.AvailableMemory;
+                }
+
+
                 if (stats.TotalAvailable > 0)
+                {
+
                     return stats.TotalAvailable;
+                }
+
             }
 
             // Fallback to calculating from interface properties
@@ -69,19 +82,35 @@ namespace DotCompute.Core.Extensions
             {
                 // Prefer the most specific total memory properties
                 if (stats.TotalMemoryBytes > 0)
+                {
                     return stats.TotalMemoryBytes;
+                }
+
+
                 if (stats.TotalCapacity > 0)
+                {
                     return stats.TotalCapacity;
+                }
+
+
                 if (stats.TotalAllocated > 0)
+                {
+
                     return stats.TotalAllocated;
+                }
+
             }
 
             // Fallback to interface property
             if (manager.TotalAvailableMemory > 0)
+            {
+
                 return manager.TotalAvailableMemory;
+            }
 
             // If no statistics or interface properties are available, return 0
             // This is safer than throwing an exception for production systems
+
             return 0;
         }
 
@@ -102,19 +131,35 @@ namespace DotCompute.Core.Extensions
             {
                 // Prefer the most specific used memory properties
                 if (stats.UsedMemoryBytes > 0)
+                {
                     return stats.UsedMemoryBytes;
+                }
+
+
                 if (stats.CurrentUsed > 0)
+                {
                     return stats.CurrentUsed;
+                }
+
+
                 if (stats.CurrentUsage > 0)
+                {
+
                     return stats.CurrentUsage;
+                }
+
             }
 
             // Fallback to interface property
             if (manager.CurrentAllocatedMemory > 0)
+            {
+
                 return manager.CurrentAllocatedMemory;
+            }
 
             // If no statistics or interface properties are available, return 0
             // This is safer than throwing an exception for production systems
+
             return 0;
         }
 
@@ -136,7 +181,11 @@ namespace DotCompute.Core.Extensions
             var usedMemory = manager.GetUsedMemory();
 
             if (totalMemory <= 0)
+            {
+
                 return 0.0;
+            }
+
 
             return Math.Min(100.0, Math.Max(0.0, (double)usedMemory / totalMemory * 100.0));
         }
@@ -153,7 +202,11 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentNullException.ThrowIfNull(manager);
             if (pressureThreshold < 0.0 || pressureThreshold > 100.0)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(pressureThreshold), "Pressure threshold must be between 0 and 100.");
+            }
+
 
             return manager.GetMemoryUtilizationPercentage() > pressureThreshold;
         }
@@ -191,7 +244,11 @@ namespace DotCompute.Core.Extensions
         private static string FormatBytes(long bytes)
         {
             if (bytes < 0)
+            {
+
                 return "0 B";
+            }
+
 
             string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
             var order = 0;
@@ -233,7 +290,11 @@ namespace DotCompute.Core.Extensions
                 var genericMethod = method.MakeGenericMethod(typeof(T));
                 var result = genericMethod.Invoke(memoryManager, new object[] { count, cancellationToken });
                 if (result is ValueTask<IUnifiedMemoryBuffer<T>> valueTask)
+                {
+
                     return valueTask;
+                }
+
             }
             
             // Fall back to regular allocation with unified memory flag
@@ -263,7 +324,11 @@ namespace DotCompute.Core.Extensions
                 var genericMethod = method.MakeGenericMethod(typeof(T));
                 var result = genericMethod.Invoke(memoryManager, new object[] { count, cancellationToken });
                 if (result is ValueTask<IUnifiedMemoryBuffer<T>> valueTask)
+                {
+
                     return valueTask;
+                }
+
             }
             
             // Fall back to regular allocation with pinned memory flag

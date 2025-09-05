@@ -1,118 +1,89 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System;
 using System.Runtime.InteropServices;
 
 namespace DotCompute.Backends.CUDA.Types.Native
 {
     /// <summary>
-    /// Native CUDA graph API types and structures - extension methods
+    /// CUDA host function delegate.
     /// </summary>
-    public static partial class CudaGraphExtensions
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void CudaHostFn(IntPtr userData);
+
+    /// <summary>
+    /// CUDA memory range attributes.
+    /// </summary>
+    public struct CudaMemRangeAttribute
     {
-        private const string CUDA_DRIVER_LIBRARY = "cuda";
-
-        #region Graph Memory Operations
-
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuGraphAddMemcpyNode(
-            ref nint phGraphNode,
-            nint hGraph,
-            nint[] dependencies,
-            nuint numDependencies,
-            ref CudaMemcpy3DParams copyParams,
-            nint ctx);
-
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuGraphAddMemsetNode(
-            ref nint phGraphNode,
-            nint hGraph,
-            nint[] dependencies,
-            nuint numDependencies,
-            ref CudaMemsetParams memsetParams,
-            nint ctx);
-
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuGraphAddEventRecordNode(
-            ref nint phGraphNode,
-            nint hGraph,
-            nint[] dependencies,
-            nuint numDependencies,
-            nint hEvent);
-
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuGraphAddEventWaitNode(
-            ref nint phGraphNode,
-            nint hGraph,
-            nint[] dependencies,
-            nuint numDependencies,
-            nint hEvent);
-
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuGraphAddChildGraphNode(
-            ref nint phGraphNode,
-            nint hGraph,
-            nint[] dependencies,
-            nuint numDependencies,
-            nint childGraph);
-
-        [LibraryImport(CUDA_DRIVER_LIBRARY)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static partial CudaError cuGraphClone(ref nint phGraphClone, nint originalGraph);
-
-        [DllImport(CUDA_DRIVER_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaGraphAddHostNode(
-            out nint phGraphNode,
-            nint hGraph,
-            nint dependencies,
-            nuint numDependencies,
-            ref CudaHostNodeParams nodeParams);
-
-        #endregion
+        public IntPtr Data;
+        public nuint DataSize;
+        public uint Attribute;
+        public IntPtr DevPtr;
+        public nuint Count;
     }
 
     /// <summary>
-    /// CUDA kernel node parameters for graph API
+    /// CUDA host node parameters for graph API.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CudaHostNodeParams
+    {
+        public CudaHostFn fn;
+        public IntPtr userData;
+    }
+
+    /// <summary>
+    /// CUDA kernel node parameters for graph API.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct CudaKernelNodeParams
     {
-        public nint func;
-        public uint gridDimX;
-        public uint gridDimY;
-        public uint gridDimZ;
-        public uint blockDimX;
-        public uint blockDimY;
-        public uint blockDimZ;
-        public uint sharedMemBytes;
-        public nint kernelParams;
-        public nint extra;
+        public IntPtr func;                    // Kernel function
+        public uint gridDimX;                  // Grid dimensions X
+        public uint gridDimY;                  // Grid dimensions Y
+        public uint gridDimZ;                  // Grid dimensions Z
+        public uint blockDimX;                 // Block dimensions X
+        public uint blockDimY;                 // Block dimensions Y
+        public uint blockDimZ;                 // Block dimensions Z
+        public uint sharedMemBytes;            // Dynamic shared memory size
+        public IntPtr kernelParams;            // Kernel parameters
+        public IntPtr extra;                   // Extra options
     }
 
     /// <summary>
-    /// 3D memory copy parameters
+    /// CUDA memory copy parameters for 3D operations.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct CudaMemcpy3DParams
+    public struct CudaMemcpy3DParms
     {
-        public nint srcArray;
-        public CudaPos srcPos;
-        public CudaMemcpy3DPeer srcPtr;
-        public nint dstArray;
-        public CudaPos dstPos;
-        public CudaMemcpy3DPeer dstPtr;
-        public CudaExtent3D extent;
-        public CudaMemcpyKind kind;
+        public IntPtr srcArray;               // Source memory array
+        public CudaPos srcPos;                // Source position
+        public IntPtr srcPtr;                 // Source pointer
+        public IntPtr dstArray;               // Destination memory array
+        public CudaPos dstPos;                // Destination position
+        public IntPtr dstPtr;                 // Destination pointer
+        public CudaExtent extent;              // Copy extent
+        public CudaMemcpyKind kind;           // Copy kind
     }
 
     /// <summary>
-    /// 3D position
+    /// CUDA memory set parameters.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CudaMemsetParams
+    {
+        public IntPtr dst;                    // Destination pointer
+        public nuint pitch;                   // Pitch in bytes
+        public uint value;                    // Value to set
+        public uint elementSize;              // Element size (1, 2, or 4 bytes)
+        public nuint width;                   // Width in elements
+        public nuint height;                  // Height in elements
+    }
+
+    /// <summary>
+    /// 3D position for CUDA operations.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct CudaPos
@@ -122,63 +93,15 @@ namespace DotCompute.Backends.CUDA.Types.Native
         public nuint z;
     }
 
-    /// <summary>
-    /// 3D memory copy peer
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct CudaMemcpy3DPeer
-    {
-        public nint ptr;
-        public nuint pitch;
-        public nuint height;
-        public nuint xsize;
-    }
+    // CudaExtent is defined in CudaRuntimeExtended.cs
+
+    // CudaMemcpyKind is defined in CudaMemcpyKind.cs
 
     /// <summary>
-    /// 3D extent
+    /// CUDA memory advise flags for unified memory.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct CudaExtent3D
+    public enum CudaMemoryAdvise
     {
-        public nuint width;
-        public nuint height;
-        public nuint depth;
-    }
-
-    /// <summary>
-    /// Memory set parameters
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct CudaMemsetParams
-    {
-        public nint dst;
-        public uint value;
-        public uint elementSize;
-        public nuint width;
-        public nuint height;
-        public nuint pitch;
-    }
-
-    /// <summary>
-    /// Memory range attribute
-    /// </summary>
-    public enum CudaMemRangeAttribute : uint
-    {
-        ReadMostly = 1,
-        PreferredLocation = 2,
-        AccessedBy = 3,
-        LastPrefetchLocation = 4,
-        PreferredLocationType = 5,
-        PreferredLocationId = 6,
-        LastAccessedBy = 7
-    }
-
-    /// <summary>
-    /// Memory advise enum
-    /// </summary>
-    public enum CudaMemoryAdvise : uint
-    {
-        Unset = 0,
         SetReadMostly = 1,
         UnsetReadMostly = 2,
         SetPreferredLocation = 3,
@@ -188,18 +111,57 @@ namespace DotCompute.Backends.CUDA.Types.Native
     }
 
     /// <summary>
-    /// Host function pointer for callbacks
+    /// CUDA stream capture modes.
     /// </summary>
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void CudaHostFn(nint userData);
+    public enum CudaStreamCaptureMode
+    {
+        Global = 0,
+        ThreadLocal = 1,
+        Relaxed = 2
+    }
 
     /// <summary>
-    /// Host node parameters for graph API
+    /// CUDA graph instantiate flags.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct CudaHostNodeParams
+    [Flags]
+    public enum CudaGraphInstantiateFlags : uint
     {
-        public nint fn;
-        public nint userData;
+        None = 0x00,
+        AutoFreeOnLaunch = 0x01,
+        Upload = 0x02,
+        DeviceLaunch = 0x04,
+        UseNodePriority = 0x08
+    }
+
+    // CudaGraphExecUpdateResult is defined in CudaRuntimeExtended.cs
+
+    /// <summary>
+    /// CUDA graph node type.
+    /// </summary>
+    public enum CudaGraphNodeType
+    {
+        Kernel = 0x00,
+        Memcpy = 0x01,
+        Memset = 0x02,
+        Host = 0x03,
+        Graph = 0x04,
+        Empty = 0x05,
+        WaitEvent = 0x06,
+        EventRecord = 0x07,
+        ExtSemasignal = 0x08,
+        ExtSemawait = 0x09,
+        MemAlloc = 0x0a,
+        MemFree = 0x0b,
+        BatchMemOp = 0x0c,
+        Conditional = 0x0d
+    }
+
+    /// <summary>
+    /// CUDA graph dependency type.
+    /// </summary>
+    public enum CudaGraphDependencyType
+    {
+        Default = 0,
+        Programmatic = 1
     }
 }
