@@ -1,185 +1,138 @@
 # DotCompute
 
-[![CI/CD](https://github.com/mivertowski/DotCompute/actions/workflows/main.yml/badge.svg)](https://github.com/mivertowski/DotCompute/actions/workflows/main.yml)
-[![CodeQL](https://github.com/mivertowski/DotCompute/actions/workflows/codeql.yml/badge.svg)](https://github.com/mivertowski/DotCompute/actions/workflows/codeql.yml)
-[![codecov](https://codecov.io/gh/mivertowski/DotCompute/branch/main/graph/badge.svg)](https://codecov.io/gh/mivertowski/DotCompute)
+[![NuGet](https://img.shields.io/nuget/v/DotCompute.Core.svg)](https://www.nuget.org/packages/DotCompute.Core/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/9.0)
-[![Native AOT](https://img.shields.io/badge/Native%20AOT-Ready-brightgreen)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot)
-[![NuGet](https://img.shields.io/nuget/v/DotCompute.Core.svg)](https://www.nuget.org/packages/DotCompute.Core/)
 
-**A native AOT-first universal compute framework for .NET 9+**
+An experimental compute acceleration framework for .NET 9+ with Native AOT support. DotCompute provides a unified API for CPU SIMD vectorization and CUDA GPU acceleration.
 
-DotCompute is a high-performance, cross-platform compute framework designed from the ground up for .NET 9's Native AOT compilation. It provides a unified API for compute acceleration across multiple backends with production-ready CPU and CUDA support.
+## ⚠️ Alpha Software Notice
 
-## 🚀 Quick Start
+This is an early alpha release (v0.1.0-alpha) intended for evaluation and experimentation only. The API is unstable and will change. Not recommended for production use.
+
+## Overview
+
+DotCompute aims to provide compute acceleration capabilities for .NET applications through:
+- CPU SIMD vectorization using AVX2/AVX512 instruction sets
+- CUDA GPU acceleration for NVIDIA hardware
+- Native AOT compilation support for reduced startup times
+- Unified memory management across compute devices
+
+## Current Status
+
+### Implemented Features
+- ✅ Basic CPU backend with SIMD support
+- ✅ Partial CUDA backend implementation
+- ✅ Native AOT compilation compatibility
+- ✅ Memory pooling and management
+- ✅ Basic kernel compilation pipeline
+
+### Known Limitations
+- CUDA support is incomplete and may have compatibility issues
+- Limited to NVIDIA GPUs (no AMD/Intel GPU support)
+- Metal and ROCm backends are not implemented
+- API is subject to breaking changes
+- Performance optimizations are ongoing
+
+## Installation
 
 ```bash
-# Install DotCompute
-dotnet add package DotCompute.Core --version 0.1.0-alpha.1
-dotnet add package DotCompute.Backends.CPU --version 0.1.0-alpha.1   # Production Ready
-dotnet add package DotCompute.Backends.CUDA --version 0.1.0-alpha.1  # Production Ready
+dotnet add package DotCompute.Core --version 0.1.0-alpha
+dotnet add package DotCompute.Backends.CPU --version 0.1.0-alpha
+dotnet add package DotCompute.Backends.CUDA --version 0.1.0-alpha
 ```
+
+## Basic Usage
 
 ```csharp
-using DotCompute;
+using DotCompute.Core;
+using DotCompute.Backends.CPU;
 
-// Define a kernel
-[Kernel("VectorAdd")]
-public static void VectorAdd(
-    KernelContext ctx,
-    ReadOnlySpan<float> a,
-    ReadOnlySpan<float> b,
-    Span<float> result)
+// Create an accelerator
+var accelerator = new CpuAccelerator();
+
+// Define a simple kernel
+var kernel = new KernelDefinition
 {
-    var i = ctx.GlobalId.X;
-    if (i < result.Length)
-        result[i] = a[i] + b[i];
-}
+    Name = "VectorAdd",
+    Code = @"
+        void VectorAdd(float* a, float* b, float* result, int length) {
+            int idx = blockIdx.x * blockDim.x + threadIdx.x;
+            if (idx < length) {
+                result[idx] = a[idx] + b[idx];
+            }
+        }"
+};
 
-// Execute with automatic backend selection
-var services = new ServiceCollection()
-    .AddDotCompute()
-    .AddCpuBackend()
-    .AddCudaBackend()  // Automatic GPU detection
-    .BuildServiceProvider();
-
-var compute = services.GetRequiredService<IComputeService>();
-var result = await compute.ExecuteAsync("VectorAdd", new { a, b, length = 1000 });
+// Compile and execute (simplified example)
+var compiledKernel = await accelerator.CompileKernelAsync(kernel);
+await compiledKernel.ExecuteAsync(parameters);
 ```
 
-## ✨ Key Features
+## Requirements
 
-### 🎯 **Native AOT First**
-- **Zero Runtime Codegen**: All kernels compiled at build time
-- **Single File Deployment**: Self-contained executables under 10MB
-- **Sub-10ms Startup**: Instant application launch (3ms achieved)
-- **Memory Efficient**: < 1MB framework overhead (0.8MB achieved)
+### System Requirements
+- .NET 9.0 SDK or later
+- C# 13.0 language features
+- 64-bit operating system (Windows, Linux, macOS)
 
-### ⚡ **Production Performance**
-- **CPU Backend**: SIMD vectorization with AVX512/AVX2/NEON support (8-23x speedup)
-- **CUDA Backend**: Complete GPU acceleration with RTX 2000 Ada support
-- **Memory Pooling**: 90%+ allocation reduction through intelligent reuse
-- **Zero-Copy Operations**: Direct memory access with unified buffers
+### For CUDA Support
+- NVIDIA GPU with Compute Capability 5.0 or higher
+- CUDA Toolkit 12.0 or later
+- Compatible NVIDIA drivers
 
-### 🌐 **Backend Support**
-- **CPU**: ✅ **Production Ready** - Multi-threaded with SIMD vectorization
-- **CUDA**: ✅ **Production Ready** - Complete implementation with P2P transfers
-- **Metal**: ❌ **Not Implemented** - Placeholder only (planned for future)
-- **ROCm**: ❌ **Not Implemented** - Placeholder only (AMD GPU support planned)
+## Building from Source
 
-### 🔒 **Enterprise Security**
-- **Code Validation**: Comprehensive security scanning for kernels
-- **Buffer Protection**: Runtime bounds checking and overflow prevention
-- **Injection Prevention**: SQL/Command injection detection
-- **Plugin Security**: Authenticode signing and malware scanning
+```bash
+# Clone the repository
+git clone https://github.com/mivertowski/DotCompute.git
+cd DotCompute
 
-## 📊 Performance Benchmarks
+# Build the solution
+dotnet build DotCompute.sln --configuration Release
 
-| Operation | DotCompute | Scalar C# | Speedup | Platform |
-|-----------|------------|-----------|---------|----------|
-| Vector Addition (1M) | 187K ticks | 4.33M ticks | **23x faster** | Intel Core Ultra 7 165H |
-| Matrix Multiply (512×512) | 89ms | 2,340ms | **26x faster** | AVX512 + Multi-threading |
-| Memory Allocation | Pooled | Standard | **93% reduction** | Memory reuse |
-| Startup Time | 3ms | N/A | Sub-10ms | Native AOT |
+# Run tests (CPU only)
+dotnet test --filter "Category!=Hardware"
 
-## 🏗️ Architecture
+# Run all tests (requires NVIDIA GPU)
+dotnet test
+```
 
-DotCompute follows a modular architecture with clear separation of concerns:
+## Architecture
 
-- **Core Layer**: Abstract interfaces and unified API
-- **Backend Layer**: CPU, CUDA, and future GPU implementations
-- **Memory Layer**: Unified memory management with pooling
-- **Plugin Layer**: Hot-reload capable extension system
-- **Runtime Layer**: Service registration and dependency injection
+DotCompute uses a modular architecture with clear separation between:
+- **Core**: Abstract interfaces and kernel definitions
+- **Backends**: Device-specific implementations (CPU, CUDA)
+- **Memory**: Unified memory management system
+- **Runtime**: Service orchestration and plugin management
 
-## 📦 Package Structure
+## Performance Expectations
 
-| Package | Description | Status |
-|---------|-------------|---------|
-| `DotCompute.Core` | Core abstractions and runtime | ✅ Production Ready |
-| `DotCompute.Backends.CPU` | CPU vectorization backend | ✅ Production Ready |
-| `DotCompute.Backends.CUDA` | NVIDIA CUDA backend | ✅ Production Ready |
-| `DotCompute.Memory` | Unified memory system | ✅ Production Ready |
-| `DotCompute.Plugins` | Plugin system | ✅ Production Ready |
-| `DotCompute.Generators` | Source generators | ✅ Production Ready |
-| `DotCompute.Algorithms` | Algorithm library | 🚧 Basic Implementation |
-| `DotCompute.Linq` | LINQ query provider | 🚧 CPU Fallback Working |
-| `DotCompute.Runtime` | Runtime orchestration | 🚧 Service Stubs |
+Performance characteristics are highly workload and hardware dependent:
+- CPU SIMD can provide 2-8x speedup for vectorizable operations
+- GPU acceleration benefits are most pronounced for large parallel workloads
+- Native AOT reduces startup time but may impact peak performance
 
-## 🚀 Getting Started
+## Contributing
 
-### Prerequisites
-- **.NET 9.0 SDK** or later
-- **Visual Studio 2022 17.8+** or VS Code with C# extension
-- **For CUDA**: CUDA Toolkit 12.0+ and NVIDIA GPU with Compute Capability 5.0+
+This is an experimental project. Bug reports and feature discussions are welcome through GitHub issues. Please note that as an alpha release, many features are incomplete or subject to change.
 
-### Installation & Usage
+## License
 
-See our comprehensive guides:
-- **[Getting Started](docs/GETTING_STARTED.md)** - Step-by-step tutorial
-- **[API Reference](docs/API.md)** - Complete API documentation
-- **[Architecture](docs/ARCHITECTURE.md)** - System design overview
-- **[Performance](docs/PERFORMANCE.md)** - Optimization and benchmarks
-- **[Development](docs/DEVELOPMENT.md)** - Contributing guidelines
+Copyright (c) 2025 Michael Ivertowski
 
-## 🧪 Testing & Quality
+Licensed under the MIT License. See [LICENSE](LICENSE) file for details.
 
-- **19,000+ lines** of comprehensive test code
-- **~75% code coverage** with proper measurement
-- **Professional test organization**: Unit/Integration/Hardware/Shared
-- **Hardware test suites**: Real GPU validation
-- **920+ security tests**: Comprehensive validation
-- **CI/CD pipeline**: Multi-platform automation
+## Disclaimer
 
-## 📈 Current Status
+This software is provided "as is" without warranty of any kind. Use at your own risk. Not suitable for production workloads.
 
-### ✅ Production Ready
-- CPU compute with 8-23x SIMD acceleration
-- CUDA compute with complete GPU support
-- Memory management with pooling and P2P transfers
-- Plugin system with hot-reload capability
-- Native AOT compatibility with sub-10ms startup
+## Contact
 
-### 🚧 In Development
-- Metal backend for Apple Silicon
-- ROCm backend for AMD GPUs
-- LINQ provider GPU compilation
-- Advanced algorithm libraries
-
-### ⚠️ Known Limitations
-- Metal backend contains stubs only
-- ROCm backend is placeholder
-- Hardware testing requires NVIDIA GPU
-- Cross-platform GPU limited to NVIDIA currently
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Development Guide](docs/DEVELOPMENT.md) for details on:
-- Development setup
-- Coding standards
-- Testing requirements
-- Pull request process
-
-## 🔒 Security
-
-DotCompute implements comprehensive security measures. Report vulnerabilities to: security@dotcompute.dev
-
-See our [Security Policy](docs/SECURITY.md) for details.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔗 Links
-
-- **[Documentation](docs/)** - Complete documentation
-- **[NuGet Packages](https://www.nuget.org/packages?q=DotCompute)** - Official packages
-- **[GitHub Issues](../../issues)** - Bug reports and features
-- **[Releases](../../releases)** - Version history
+- **Author**: Michael Ivertowski
+- **Repository**: [https://github.com/mivertowski/DotCompute](https://github.com/mivertowski/DotCompute)
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
 
 ---
 
-**Built with ❤️ for the .NET community**
-
-*DotCompute - Production-ready GPU acceleration for .NET*
+**Note**: This is experimental alpha software under active development. Features, performance, and stability are not guaranteed.

@@ -82,11 +82,5 @@ internal abstract class OptimizedKernelBase : ICompiledKernel
     /// </summary>
     /// <exception cref="ObjectDisposedException">Thrown when the kernel has been disposed.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected void ThrowIfDisposed()
-    {
-        if (Disposed)
-        {
-            throw new ObjectDisposedException(GetType().Name);
-        }
-    }
+    protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(Disposed, this);
 }

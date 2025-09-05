@@ -111,74 +111,242 @@ namespace DotCompute.Backends.CUDA.Compilation
                 {
                     var ptxPtr = handle.AddrOfPinnedObject();
 
-                    // CRITICAL FIX: Try module loading with JIT options for CUDA 13.0 compatibility
+                    // CRITICAL FIX: Enhanced module loading for CUDA 13.0 compatibility
+                    // Try progressive fallback strategy for optimal compatibility
                     CudaError result;
+                    var loadingStrategy = "unknown";
                     
-                    // First attempt: Try cuModuleLoadDataEx with JIT options for better compatibility
-                    if (!TryLoadModuleWithJitOptions(ptxPtr, out result))
+                    // Strategy 1: JIT options with fallback configurations
+                    if (TryLoadModuleWithJitOptions(ptxPtr, out result))
                     {
-                        _logger.LogDebug("JIT module loading failed with error {Result}, falling back to standard loading", result);
-                        
-                        // Fallback: Standard module loading
-                        result = CudaRuntime.cuModuleLoadData(ref _module, ptxPtr);
+                        loadingStrategy = "JIT optimized";
                     }
-                    
-                    CudaRuntime.CheckError(result, "Module load");
-
-                    // Try to get the mangled function name for proper symbol resolution
-                    var actualEntryPoint = _entryPoint;
-                    var mangledName = Compilation.CudaKernelCompiler.GetMangledFunctionName(Name, _entryPoint);
-                    if (!string.IsNullOrEmpty(mangledName))
-                    {
-                        actualEntryPoint = mangledName;
-                        _logger.LogDebug("Using mangled function name '{MangledName}' for kernel '{Name}' entry point '{EntryPoint}'",
-                            mangledName, Name, _entryPoint);
-                    }
+                    // Strategy 2: Standard module loading (cuModuleLoadData)
                     else
                     {
-                        _logger.LogDebug("No mangled name found for '{EntryPoint}', using original name for kernel '{Name}'",
-                            _entryPoint, Name);
+                        _logger.LogInformation("JIT module loading failed with {Result}, using standard loading for kernel '{Name}'", 
+                            result, Name);
+                        
+                        result = CudaRuntime.cuModuleLoadData(ref _module, ptxPtr);
+                        if (result == CudaError.Success)
+                        {
+                            loadingStrategy = "standard";
+                        }
                     }
+                    
+                    // Check if any loading strategy succeeded
+                    if (result != CudaError.Success)
+                    {
+                        // Enhanced error reporting for CUDA 13.0 troubleshooting
+                        var computeCapability = CudaCapabilityManager.GetTargetComputeCapability();
+                        var ptxVersion = CudaCapabilityManager.GetCompatiblePtxVersion(computeCapability);
+                        
+                        var errorDetails = $"CUDA module loading failed for kernel '{Name}' with error: {result}. " +
+                            $"Target compute capability: sm_{computeCapability.major}{computeCapability.minor}, " +
+                            $"PTX version: {ptxVersion}, " +
+                            $"PTX size: {_ptxData.Length} bytes";
+                            
+                        throw new InvalidOperationException(errorDetails);
+                    }
+                    
+                    _logger.LogInformation("CUDA module loaded successfully using '{Strategy}' strategy for kernel '{Name}'", 
+                        loadingStrategy, Name);
 
-                    // Get function handle using the appropriate name (mangled or original)
-                    result = CudaRuntime.cuModuleGetFunction(ref _function, _module, actualEntryPoint);
-                    CudaRuntime.CheckError(result, "Get function");
-
-                    _logger.LogDebug("Successfully loaded CUDA module for kernel '{Name}' with entry point '{EntryPoint}' -> '{ActualEntryPoint}'",
-                        Name, _entryPoint, actualEntryPoint);
+                    // Enhanced function symbol resolution with multiple fallback strategies
+                    if (!TryResolveKernelFunction())
+                    {
+                        throw new InvalidOperationException(
+                            $"Failed to resolve kernel function for '{Name}' with entry point '{_entryPoint}'");
+                    }
                 }
                 finally
                 {
                     handle.Free();
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not InvalidOperationException)
             {
-                // Enhanced error message with debugging information
-                var errorMessage = $"Failed to load CUDA module for kernel '{Name}' with entry point '{_entryPoint}'";
-                var allMangledNames = Compilation.CudaKernelCompiler.GetAllMangledNames(Name);
-                if (allMangledNames != null && allMangledNames.Count > 0)
-                {
-                    var mangledNamesStr = string.Join(", ", allMangledNames.Select(kvp => $"{kvp.Key} -> {kvp.Value}"));
-                    errorMessage += $". Available mangled names: {mangledNamesStr}";
-                }
-                
-                // Add CUDA 13.0 specific troubleshooting information
-                errorMessage += $". Note: CUDA 13.0 may require PTX compilation instead of CUBIN for newer architectures.";
-                
+                // Enhanced error message with comprehensive debugging information
+                var errorMessage = BuildDetailedErrorMessage(ex);
                 throw new InvalidOperationException(errorMessage, ex);
             }
         }
 
         /// <summary>
+        /// Attempts to resolve the kernel function using multiple naming strategies
+        /// </summary>
+        private bool TryResolveKernelFunction()
+        {
+            // Strategy 1: Try mangled name first (most reliable for C++ kernels)
+            var mangledName = Compilation.CudaKernelCompiler.GetMangledFunctionName(Name, _entryPoint);
+            if (!string.IsNullOrEmpty(mangledName))
+            {
+                var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, mangledName);
+                if (result == CudaError.Success)
+                {
+                    _logger.LogInformation("Resolved kernel function using mangled name '{MangledName}' for '{Name}'", 
+                        mangledName, Name);
+                    return true;
+                }
+                
+                _logger.LogDebug("Failed to resolve using mangled name '{MangledName}': {Result}", mangledName, result);
+            }
+
+            // Strategy 2: Try original entry point name
+            var originalResult = CudaRuntime.cuModuleGetFunction(ref _function, _module, _entryPoint);
+            if (originalResult == CudaError.Success)
+            {
+                _logger.LogInformation("Resolved kernel function using original name '{EntryPoint}' for '{Name}'", 
+                    _entryPoint, Name);
+                return true;
+            }
+            
+            _logger.LogDebug("Failed to resolve using original name '{EntryPoint}': {Result}", _entryPoint, originalResult);
+
+            // Strategy 3: Try common naming variations for CUDA kernels
+            var namingVariations = new[]
+            {
+                $"_Z{_entryPoint.Length}{_entryPoint}v", // Simple mangling pattern
+                $"extern_{_entryPoint}",                 // extern "C" prefix
+                _entryPoint.Replace("kernel_", ""),      // Remove kernel_ prefix
+                _entryPoint + "_kernel"                  // Add kernel suffix
+            };
+
+            foreach (var variation in namingVariations)
+            {
+                var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, variation);
+                if (result == CudaError.Success)
+                {
+                    _logger.LogInformation("Resolved kernel function using naming variation '{Variation}' for '{Name}'", 
+                        variation, Name);
+                    return true;
+                }
+                
+                _logger.LogDebug("Naming variation '{Variation}' failed: {Result}", variation, result);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Builds detailed error message with comprehensive debugging information
+        /// </summary>
+        private string BuildDetailedErrorMessage(Exception originalException)
+        {
+            var errorMessage = $"Failed to load CUDA module for kernel '{Name}' with entry point '{_entryPoint}': {originalException.Message}";
+            
+            try
+            {
+                // Add available mangled names information
+                var allMangledNames = Compilation.CudaKernelCompiler.GetAllMangledNames(Name);
+                if (allMangledNames != null && allMangledNames.Count > 0)
+                {
+                    var mangledNamesStr = string.Join(", ", allMangledNames.Select(kvp => $"{kvp.Key} -> {kvp.Value}"));
+                    errorMessage += $"\nAvailable mangled names: {mangledNamesStr}";
+                }
+
+                // Add compute capability information
+                var computeCapability = CudaCapabilityManager.GetTargetComputeCapability();
+                var ptxVersion = CudaCapabilityManager.GetCompatiblePtxVersion(computeCapability);
+                errorMessage += $"\nCompute capability: sm_{computeCapability.major}{computeCapability.minor}";
+                errorMessage += $"\nPTX version: {ptxVersion}";
+                errorMessage += $"\nModule size: {_ptxData.Length} bytes";
+
+                // Add CUDA 13.0 specific troubleshooting guidance
+                errorMessage += "\nCUDA 13.0 Troubleshooting:";
+                errorMessage += "\n- Ensure PTX compilation is used for Ada Lovelace (sm_89) architectures";
+                errorMessage += "\n- Verify driver compatibility (CUDA 13.0 + driver 581.15)";
+                errorMessage += "\n- Check that kernel functions use extern \"C\" linkage";
+                errorMessage += "\n- Consider using conservative PTX versions for better compatibility";
+            }
+            catch
+            {
+                // If we can't get debugging info, just return basic error message
+                errorMessage += "\n(Unable to gather additional debugging information)";
+            }
+            
+            return errorMessage;
+        }
+
+        /// <summary>
         /// Attempts to load module with JIT options for better CUDA 13.0 compatibility
+        /// Uses progressive fallback strategy with different optimization levels
         /// </summary>
         private bool TryLoadModuleWithJitOptions(IntPtr ptxPtr, out CudaError result)
         {
+            // Try multiple JIT configurations in order of preference for CUDA 13.0
+            var jitConfigurations = new[]
+            {
+                // Configuration 1: Optimal for CUDA 13.0 with RTX 2000 Ada
+                new JitConfiguration
+                {
+                    OptimizationLevel = 3, // O3 - maximum optimization for Ada architecture
+                    GenerateDebugInfo = 0,
+                    GenerateLineInfo = 1,  // Line info helps with debugging without perf cost
+                    LogVerbose = 0,
+                    MaxRegisters = 64,     // Optimal for Ada Lovelace
+                    Description = "Ada Lovelace optimized"
+                },
+                
+                // Configuration 2: Conservative fallback
+                new JitConfiguration
+                {
+                    OptimizationLevel = 2, // O2 - balanced optimization
+                    GenerateDebugInfo = 0,
+                    GenerateLineInfo = 0,
+                    LogVerbose = 0,
+                    MaxRegisters = 32,     // Conservative register usage
+                    Description = "Conservative balanced"
+                },
+                
+                // Configuration 3: Minimal safe options
+                new JitConfiguration
+                {
+                    OptimizationLevel = 1, // O1 - minimal optimization
+                    GenerateDebugInfo = 0,
+                    GenerateLineInfo = 0,
+                    LogVerbose = 0,
+                    MaxRegisters = 0,      // Let compiler decide
+                    Description = "Minimal safe"
+                }
+            };
+
+            foreach (var config in jitConfigurations)
+            {
+                if (TryLoadWithSpecificJitConfig(ptxPtr, config, out result))
+                {
+                    return true;
+                }
+                
+                _logger.LogDebug("JIT configuration '{Description}' failed with {Result}, trying next", 
+                    config.Description, result);
+            }
+
+            result = CudaError.Unknown;
+            return false;
+        }
+
+        /// <summary>
+        /// JIT configuration for CUDA module loading
+        /// </summary>
+        private class JitConfiguration
+        {
+            public int OptimizationLevel { get; init; }
+            public int GenerateDebugInfo { get; init; }
+            public int GenerateLineInfo { get; init; }
+            public int LogVerbose { get; init; }
+            public int MaxRegisters { get; init; }
+            public string Description { get; init; } = string.Empty;
+        }
+
+        /// <summary>
+        /// Attempts to load module with a specific JIT configuration
+        /// </summary>
+        private bool TryLoadWithSpecificJitConfig(IntPtr ptxPtr, JitConfiguration config, out CudaError result)
+        {
             try
             {
-                // Setup JIT options for enhanced compatibility
-                var jitOptions = new[]
+                var jitOptions = new List<CUjit_option>
                 {
                     CUjit_option.CU_JIT_OPTIMIZATION_LEVEL,
                     CUjit_option.CU_JIT_GENERATE_DEBUG_INFO,
@@ -186,31 +354,43 @@ namespace DotCompute.Backends.CUDA.Compilation
                     CUjit_option.CU_JIT_LOG_VERBOSE
                 };
 
-                // Conservative JIT options values for CUDA 13.0 compatibility
-                var jitOptionValues = new IntPtr[]
+                var jitOptionValues = new List<IntPtr>
                 {
-                    new IntPtr(2), // O2 optimization level
-                    new IntPtr(0), // No debug info by default
-                    new IntPtr(0), // No line info by default
-                    new IntPtr(0)  // No verbose logging by default
+                    new IntPtr(config.OptimizationLevel),
+                    new IntPtr(config.GenerateDebugInfo),
+                    new IntPtr(config.GenerateLineInfo),
+                    new IntPtr(config.LogVerbose)
                 };
 
+                // Add max registers option if specified
+                if (config.MaxRegisters > 0)
+                {
+                    jitOptions.Add(CUjit_option.CU_JIT_MAX_REGISTERS);
+                    jitOptionValues.Add(new IntPtr(config.MaxRegisters));
+                }
+
                 // Pin the options arrays
-                var optionsHandle = GCHandle.Alloc(jitOptions, GCHandleType.Pinned);
-                var valuesHandle = GCHandle.Alloc(jitOptionValues, GCHandleType.Pinned);
+                var optionsArray = jitOptions.ToArray();
+                var valuesArray = jitOptionValues.ToArray();
+                var optionsHandle = GCHandle.Alloc(optionsArray, GCHandleType.Pinned);
+                var valuesHandle = GCHandle.Alloc(valuesArray, GCHandleType.Pinned);
 
                 try
                 {
                     result = CudaRuntime.cuModuleLoadDataEx(
                         ref _module,
                         ptxPtr,
-                        (uint)jitOptions.Length,
+                        (uint)optionsArray.Length,
                         optionsHandle.AddrOfPinnedObject(),
                         valuesHandle.AddrOfPinnedObject());
 
                     if (result == CudaError.Success)
                     {
-                        _logger.LogDebug("Successfully loaded module using JIT options for kernel '{Name}'", Name);
+                        _logger.LogInformation(
+                            "Successfully loaded module using JIT configuration '{Description}' " +
+                            "(O{OptLevel}, {MaxRegs} max registers) for kernel '{Name}'", 
+                            config.Description, config.OptimizationLevel, 
+                            config.MaxRegisters > 0 ? config.MaxRegisters.ToString() : "auto", Name);
                         return true;
                     }
                     
@@ -222,8 +402,10 @@ namespace DotCompute.Backends.CUDA.Compilation
                     valuesHandle.Free();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogDebug(ex, "Exception during JIT configuration '{Description}' for kernel '{Name}'", 
+                    config.Description, Name);
                 result = CudaError.Unknown;
                 return false;
             }

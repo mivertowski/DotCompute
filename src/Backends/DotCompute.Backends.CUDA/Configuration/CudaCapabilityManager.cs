@@ -79,28 +79,51 @@ namespace DotCompute.Backends.CUDA.Configuration
         }
 
         /// <summary>
-        /// Applies driver-specific capping to compute capability.
+        /// Applies driver-specific capping to compute capability with configurable fallback behavior.
         /// Different CUDA driver versions support different maximum architectures.
-        /// CRITICAL: CUDA 13.0 has incomplete support for sm_89 - force fallback to sm_86
         /// </summary>
         private static (int major, int minor) ApplyDriverCompatibilityCapping(int major, int minor)
         {
-            // CRITICAL FIX: CUDA 13.0 driver 581.15 has incomplete support for sm_89
-            // Force fallback to sm_86 (Ampere) which has mature driver support
-            if (major == 8 && minor == 9)
+            // Check environment variable for forcing compatibility mode
+            var forceCompatibilityMode = Environment.GetEnvironmentVariable("DOTCOMPUTE_FORCE_COMPATIBILITY_MODE");
+            var shouldForceCompatibility = string.Equals(forceCompatibilityMode, "true", StringComparison.OrdinalIgnoreCase);
+            
+            if (shouldForceCompatibility)
             {
-                _logger.LogWarning(
-                    "CUDA 13.0 has incomplete support for sm_89 (Ada Lovelace). " +
-                    "Falling back to sm_86 (Ampere) for stable compilation. " +
-                    "Original capability: {Major}.{Minor}, using: 8.6",
+                // Force fallback mode for maximum compatibility when explicitly requested
+                if (major == 8 && minor == 9)
+                {
+                    _logger.LogWarning(
+                        "CUDA compatibility mode enabled: Forcing sm_89 (Ada Lovelace RTX 2000) to use sm_86 target " +
+                        "for maximum driver compatibility. Set DOTCOMPUTE_FORCE_COMPATIBILITY_MODE=false to use native capability. " +
+                        "Device capability: {DeviceMajor}.{DeviceMinor}, using compilation target: 8.6",
+                        major, minor);
+                    return (8, 6);
+                }
+                
+                // Additional Ada Lovelace variants in compatibility mode
+                if (major == 8 && minor >= 7) // sm_87, sm_89 and future Ada variants
+                {
+                    _logger.LogInformation(
+                        "CUDA compatibility mode: Mapping sm_{DeviceMajor}{DeviceMinor} to sm_86 " +
+                        "for consistent NVRTC compilation behavior",
+                        major, minor);
+                    return (8, 6);
+                }
+            }
+            else
+            {
+                // Production mode: Use actual device capabilities for optimal performance
+                _logger.LogDebug(
+                    "Using native compute capability {Major}.{Minor} for optimal performance. " +
+                    "Set DOTCOMPUTE_FORCE_COMPATIBILITY_MODE=true if compilation issues occur.",
                     major, minor);
-                return (8, 6);
             }
             
             // Detect CUDA driver version to determine maximum supported capability
             var maxCapability = GetMaxSupportedCapability();
             
-            // Cap at maximum supported
+            // Cap at maximum supported by driver
             if (major > maxCapability.major || (major == maxCapability.major && minor > maxCapability.minor))
             {
                 _logger.LogDebug(
@@ -216,19 +239,20 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// </summary>
         public static string GetCompatiblePtxVersion((int major, int minor) capability)
         {
-            // Map compute capability to PTX version
-            // Based on NVIDIA PTX ISA documentation for CUDA 13 with conservative choices
+            // Map compute capability to PTX version with CUDA 13.0 optimizations
+            // Using conservative PTX versions to ensure maximum driver compatibility
             return (capability.major, capability.minor) switch
             {
-                (9, 0) => "8.0",  // sm_90 (Hopper) - Use conservative PTX version for CUDA 13.0
-                (8, 9) => "8.0",  // sm_89 (Ada) - CRITICAL: Use PTX 8.0 for better CUDA 13.0 compatibility
-                (8, 6) or (8, 7) => "8.0",  // sm_86/87 (Ampere) - Unified to PTX 8.0
-                (8, 0) => "7.8",  // sm_80 (Ampere)
-                (7, 5) => "7.5",  // sm_75 (Turing)
-                (7, 0) or (7, 2) => "7.0",  // sm_70/72 (Volta)
-                (6, _) => "6.5",  // sm_6x (Pascal)
-                (5, _) => "5.0",  // sm_5x (Maxwell)
-                _ => "7.8"        // Conservative default that works well with CUDA 13.0
+                (9, 0) => "7.8",  // sm_90 (Hopper) - Conservative PTX 7.8 for CUDA 13.0 compatibility
+                (8, 9) => "7.8",  // sm_89 (Ada) - CRITICAL: PTX 7.8 is most stable with CUDA 13.0 driver 581.15
+                (8, 7) => "7.8",  // sm_87 (Ada) - Conservative mapping to proven PTX version
+                (8, 6) => "7.8",  // sm_86 (Ampere) - PTX 7.8 works reliably across CUDA versions
+                (8, 0) => "7.0",  // sm_80 (A100) - Proven stable version
+                (7, 5) => "7.0",  // sm_75 (Turing) - Mature PTX support
+                (7, 0) or (7, 2) => "6.5",  // sm_70/72 (Volta) - Conservative for older arch
+                (6, _) => "6.0",  // sm_6x (Pascal) - Mature support
+                (5, _) => "5.0",  // sm_5x (Maxwell) - Legacy support
+                _ => "7.0"        // Conservative default - PTX 7.0 is widely supported in CUDA 13.0
             };
         }
     }

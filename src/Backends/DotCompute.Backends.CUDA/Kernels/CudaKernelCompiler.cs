@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
@@ -784,29 +785,45 @@ namespace DotCompute.Backends.CUDA.Compilation
             {
                 var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
                 
-                // CRITICAL FIX: CUDA 13.0 has compilation issues with CUBIN for sm_89
-                // Use PTX instead for better driver compatibility
-                if (major == 8 && minor >= 6) // Ampere and Ada architectures
+                // CRITICAL FIX: CUDA 13.0 driver 581.15 has better PTX JIT stability than CUBIN
+                // Force PTX for all modern architectures (Ampere and newer) for production reliability
+                if (major >= 8) // All Ampere and Ada architectures (sm_80, sm_86, sm_89, etc.)
                 {
-                    _logger.LogInformation("Using PTX compilation for compute capability {Major}.{Minor} " +
-                        "to ensure CUDA 13.0 driver compatibility", major, minor);
-                    return false; // Use PTX instead of CUBIN
+                    _logger.LogInformation("CUDA 13.0 optimization: Using PTX compilation for compute " +
+                        "capability {Major}.{Minor} to leverage driver's advanced JIT compiler for " +
+                        "better performance and stability", major, minor);
+                    return false; // Use PTX for Ampere/Ada - better CUDA 13.0 support
                 }
                 
-                // For older architectures (Turing and earlier), CUBIN is stable
-                if (major >= 7 && major < 8) // Turing (sm_75)
+                // Turing architecture: PTX is also more reliable with CUDA 13.0
+                if (major == 7 && minor >= 5) // Turing (sm_75)
                 {
-                    _logger.LogDebug("Using CUBIN compilation for compute capability {Major}.{Minor}", major, minor);
+                    _logger.LogInformation("Using PTX compilation for Turing architecture (sm_{Major}{Minor}) " +
+                        "for CUDA 13.0 compatibility", major, minor);
+                    return false; // Prefer PTX for Turing as well
+                }
+                
+                // For older architectures (Volta and earlier), CUBIN is stable and well-tested
+                if (major == 7 && minor < 5) // Volta (sm_70, sm_72)
+                {
+                    _logger.LogDebug("Using CUBIN compilation for Volta architecture {Major}.{Minor}", major, minor);
                     return true;
                 }
                 
-                // CUBIN is generally supported on compute capability 3.5 and above for older archs
-                return major > 3 || (major == 3 && minor >= 5);
+                // Pascal and older - CUBIN is mature
+                if (major <= 6)
+                {
+                    _logger.LogDebug("Using CUBIN compilation for legacy architecture {Major}.{Minor}", major, minor);
+                    return major > 3 || (major == 3 && minor >= 5);
+                }
+                
+                // Default to PTX for any unhandled cases - safest option
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to determine CUBIN compatibility, falling back to PTX");
-                return false; // Default to PTX on error
+                _logger.LogWarning(ex, "Failed to determine compilation target, defaulting to PTX for safety");
+                return false; // Default to PTX on error - most compatible
             }
         }
 
@@ -1436,25 +1453,64 @@ namespace DotCompute.Backends.CUDA.Compilation
         }
 
         /// <summary>
-        /// Adds CUDA include paths for NVRTC compilation
+        /// Adds comprehensive CUDA include paths for NVRTC compilation.
+        /// Includes CUDA 13.0 STL headers, cooperative groups, and standard libraries.
         /// </summary>
         private void AddCudaIncludePaths(List<string> optionsList)
         {
-            // Add CUDA 13.0 include paths - order matters for header resolution
-            var cudaIncludePaths = new[]
+            // Detect CUDA installation dynamically
+            var cudaInstallPath = DetectCudaInstallation();
+            
+            if (!string.IsNullOrEmpty(cudaInstallPath))
+            {
+                _logger.LogDebug("Detected CUDA installation at: {CudaPath}", cudaInstallPath);
+                
+                // Add CUDA primary include paths (order is critical for header resolution)
+                var cudaIncludePaths = new[]
+                {
+                    Path.Combine(cudaInstallPath, "include"),
+                    Path.Combine(cudaInstallPath, "include", "cccl"), // CCCL root for cuda/std/* headers
+                    Path.Combine(cudaInstallPath, "include", "cccl", "cuda"),
+                    Path.Combine(cudaInstallPath, "include", "cccl", "cuda", "std"),
+                    Path.Combine(cudaInstallPath, "include", "cooperative_groups"),
+                    Path.Combine(cudaInstallPath, "include", "cub"),
+                    Path.Combine(cudaInstallPath, "include", "thrust"),
+                    Path.Combine(cudaInstallPath, "targets", "x86_64-linux", "include"),
+                };
+
+                foreach (var includePath in cudaIncludePaths)
+                {
+                    if (System.IO.Directory.Exists(includePath))
+                    {
+                        optionsList.Add($"--include-path={includePath}");
+                        _logger.LogDebug("Added CUDA include path: {Path}", includePath);
+                    }
+                }
+            }
+            
+            // Fallback paths for system-wide CUDA installations
+            var fallbackPaths = new[]
             {
                 "/usr/local/cuda-13.0/include",
+                "/usr/local/cuda-13.0/include/cccl",
+                "/usr/local/cuda-13.0/include/cccl/cuda",
+                "/usr/local/cuda-13.0/include/cccl/cuda/std",
+                "/usr/local/cuda-13.0/include/cooperative_groups",
                 "/usr/local/cuda-13.0/targets/x86_64-linux/include", 
-                "/usr/local/cuda/include", // Fallback
-                "/usr/include/cuda", // System fallback
+                "/usr/local/cuda/include",
+                "/usr/local/cuda/include/cccl",
+                "/usr/local/cuda/include/cccl/cuda",
+                "/usr/local/cuda/include/cccl/cuda/std",
+                "/usr/local/cuda/include/cooperative_groups",
+                "/usr/include/cuda",
             };
 
-            foreach (var includePath in cudaIncludePaths)
+            foreach (var includePath in fallbackPaths)
             {
                 if (System.IO.Directory.Exists(includePath))
                 {
                     optionsList.Add($"--include-path={includePath}");
-                    _logger.LogDebug("Added CUDA include path: {Path}", includePath);
+                    _logger.LogDebug("Added fallback CUDA include path: {Path}", includePath);
                 }
             }
 
@@ -1462,6 +1518,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             var cppIncludePaths = new[]
             {
                 "/usr/include/c++/11", // GCC 11
+                "/usr/include/c++/12", // GCC 12
                 "/usr/include/c++/9",  // GCC 9 fallback
                 "/usr/include",
             };
@@ -1471,9 +1528,70 @@ namespace DotCompute.Backends.CUDA.Compilation
                 if (System.IO.Directory.Exists(includePath))
                 {
                     optionsList.Add($"--include-path={includePath}");
-                    break; // Only add one C++ include path
+                    _logger.LogDebug("Added C++ include path: {Path}", includePath);
+                    break; // Only add one C++ include path to avoid conflicts
                 }
             }
+            
+            // Add NVRTC-specific compiler directives for better header compatibility
+            optionsList.Add("--std=c++17"); // Enable C++17 for CUDA STL compatibility
+            optionsList.Add("--disable-warnings"); // Reduce noise from system headers
+        }
+        
+        /// <summary>
+        /// Detects the CUDA installation path on the system.
+        /// </summary>
+        private static string DetectCudaInstallation()
+        {
+            // First check if CUDA_PATH environment variable is set
+            var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
+            if (!string.IsNullOrEmpty(cudaPath) && Directory.Exists(cudaPath))
+            {
+                return cudaPath;
+            }
+
+            // Check standard Linux locations
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                // Check /usr/local/cuda symlink first (points to default version)
+                if (Directory.Exists("/usr/local/cuda"))
+                {
+                    return "/usr/local/cuda";
+                }
+
+                // Look for versioned installations (newest first)
+                var cudaDirs = Directory.Exists("/usr/local") 
+                    ? Directory.GetDirectories("/usr/local", "cuda-*")
+                        .OrderByDescending(d => d)
+                        .Where(d => Directory.Exists(Path.Combine(d, "include")))
+                        .ToArray()
+                    : Array.Empty<string>();
+                
+                if (cudaDirs.Length > 0)
+                {
+                    return cudaDirs[0];
+                }
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // Check Program Files for NVIDIA installations
+                var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                var nvidiPath = Path.Combine(programFiles, "NVIDIA GPU Computing Toolkit", "CUDA");
+                
+                if (Directory.Exists(nvidiPath))
+                {
+                    var versions = Directory.GetDirectories(nvidiPath, "v*")
+                        .OrderByDescending(d => d)
+                        .Where(d => Directory.Exists(Path.Combine(d, "include")))
+                        .ToArray();
+                    if (versions.Length > 0)
+                    {
+                        return versions[0];
+                    }
+                }
+            }
+
+            return string.Empty;
         }
     }
 }

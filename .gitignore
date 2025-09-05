@@ -817,3 +817,4 @@ fix_validation_types.sh
 reorganize_files.sh
 test_new_properties.cs
 CLAUDE.md
+RELEASE_INSTRUCTIONS.md

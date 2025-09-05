@@ -27,21 +27,21 @@
     <!-- NuGet package properties -->
     <Authors>Michael Ivertowski</Authors>
     <Company>DotCompute</Company>
-    <Product>DotCompute - Universal Compute Framework</Product>
-    <Description>A high-performance, Native AOT-compatible universal compute framework for .NET 9+ with CPU and GPU acceleration support.</Description>
+    <Product>DotCompute</Product>
+    <Description>An experimental compute acceleration framework for .NET 9+ with Native AOT support. Provides CPU SIMD vectorization and CUDA GPU acceleration through a unified API.</Description>
     <Copyright>Copyright (c) 2025 Michael Ivertowski. All rights reserved.</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/mivertowski/DotCompute</PackageProjectUrl>
     <RepositoryUrl>https://github.com/mivertowski/DotCompute.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageTags>compute;gpu;cuda;opencl;metal;simd;native-aot;performance;parallel;dotnet</PackageTags>
-    <PackageReleaseNotes>Alpha Release v0.1.0-alpha.1: Production-ready CPU backend with 23x speedups, 90% complete CUDA backend, comprehensive testing with 90% coverage.</PackageReleaseNotes>
+    <PackageTags>compute;gpu;cuda;simd;native-aot;performance;parallel;dotnet;experimental;alpha</PackageTags>
+    <PackageReleaseNotes>Initial alpha release v0.1.0-alpha: Experimental compute framework with CPU SIMD support and partial CUDA implementation. Not recommended for production use.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     
     <!-- Versioning -->
     <VersionPrefix>0.1.0</VersionPrefix>
-    <VersionSuffix>alpha.1</VersionSuffix>
+    <VersionSuffix>alpha</VersionSuffix>
     
     <!-- Strong naming - Disabled for development -->
     <SignAssembly>false</SignAssembly>
@@ -55,8 +55,9 @@
     <!-- Source Link -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <IncludeSymbols>false</IncludeSymbols>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
     
     <!-- Test filtering and coverage configuration -->
     <IsTestProject Condition="$(MSBuildProjectName.EndsWith('.Tests')) Or $(MSBuildProjectName.Contains('.Test.'))">true</IsTestProject>

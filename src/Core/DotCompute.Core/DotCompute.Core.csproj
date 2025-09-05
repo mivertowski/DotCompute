@@ -25,9 +25,16 @@
   <PropertyGroup>
     <AssemblyName>DotCompute.Core</AssemblyName>
     <RootNamespace>DotCompute.Core</RootNamespace>
-    <Description>Core abstractions and interfaces for DotCompute - a native AOT-first universal compute framework</Description>
-    <PackageTags>dotcompute;compute;gpu;cuda;opencl;metal;aot;kernel</PackageTags>
+    <PackageId>DotCompute.Core</PackageId>
+    <IsPackable>true</IsPackable>
+    <Description>Core runtime and abstractions for DotCompute compute acceleration framework. Provides kernel execution, accelerator management, and service orchestration.</Description>
+    <PackageTags>dotcompute;compute;kernel;accelerator;parallel;native-aot;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
@@ -64,6 +71,13 @@
     <InternalsVisibleTo Include="DotCompute.Backends.CPU" />
     <InternalsVisibleTo Include="DotCompute.Plugins" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Disable debug symbols for packaging -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
 
 
   <ItemGroup>

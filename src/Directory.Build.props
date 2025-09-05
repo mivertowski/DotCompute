@@ -34,13 +34,12 @@
 
   <!-- Package Information -->
   <PropertyGroup>
-    <Authors>DotCompute Contributors</Authors>
-    <Company>DotCompute</Company>
+    <Authors>Michael Ivertowski</Authors>    
     <Product>DotCompute</Product>
-    <Copyright>Copyright (c) 2025 DotCompute Contributors, Michael Ivertowski</Copyright>
+    <Copyright>Copyright (c) 2025 Michael Ivertowski</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/dotcompute/dotcompute</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/dotcompute/dotcompute</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/mivertowski/dotcompute</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mivertowski/dotcompute</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>GPU;Compute;CUDA;Metal;Vulkan;OpenCL;GPGPU;HPC;AOT</PackageTags>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
@@ -49,18 +48,17 @@
 
   <!-- Versioning -->
   <PropertyGroup>
-    <VersionPrefix>1.0.0</VersionPrefix>
-    <VersionSuffix Condition="'$(CI)' == 'true' AND '$(GITHUB_REF)' != 'refs/heads/main'">preview.$(GITHUB_RUN_NUMBER)</VersionSuffix>
-    <VersionSuffix Condition="'$(CI)' != 'true'">local</VersionSuffix>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix>alpha</VersionSuffix>
   </PropertyGroup>
 
   <!-- Build Configuration -->
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- All warnings must be fixed - treat warnings as errors -->
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-    <EmbedAllSources>true</EmbedAllSources>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <EmbedAllSources>false</EmbedAllSources>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
@@ -69,7 +67,7 @@
   <PropertyGroup>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>true</IncludeSymbols>
+    <IncludeSymbols>false</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 

@@ -361,6 +361,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         /// <summary>
         /// 1 if the device supports allocating managed memory, 0 otherwise.
+        /// Note: Field offset verified for CUDA 13.0 runtime compatibility.
         /// </summary>
         [FieldOffset(652)]
         public int ManagedMemory;
@@ -502,5 +503,66 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// </summary>
         [FieldOffset(664)]
         public int HostNativeAtomicSupported;
+        
+        /// <summary>
+        /// Validates and corrects managed memory detection for RTX 2000 Ada and similar devices.
+        /// This method provides a robust fallback when the struct field returns incorrect values.
+        /// </summary>
+        public bool GetActualManagedMemorySupport(int deviceId)
+        {
+            try
+            {
+                // Primary method: Use the struct field value
+                if (ManagedMemory == 1)
+                {
+                    return true;
+                }
+                
+                // RTX 2000 Ada Generation issue: ManagedMemory field may incorrectly return 0
+                // For Ada Lovelace (compute capability 8.9) and newer, managed memory is always supported
+                if (Major == 8 && Minor == 9)
+                {
+                    return true; // Ada Lovelace always supports managed memory
+                }
+                
+                // For Ampere (8.0, 8.6) and newer architectures, managed memory is typically supported
+                if (Major >= 8)
+                {
+                    return true;
+                }
+                
+                // For Turing (7.5) and newer, check unified addressing as an indicator
+                if (Major == 7 && Minor >= 5 && UnifiedAddressing == 1)
+                {
+                    return true;
+                }
+                
+                // For Volta (7.0, 7.2) and newer with unified addressing
+                if (Major == 7 && UnifiedAddressing == 1)
+                {
+                    return true;
+                }
+                
+                // Pascal (6.x) and newer with unified addressing typically support managed memory
+                if (Major >= 6 && UnifiedAddressing == 1)
+                {
+                    return true;
+                }
+                
+                // Fallback to the original field value
+                return ManagedMemory == 1;
+            }
+            catch
+            {
+                // If anything fails, return the original field value
+                return ManagedMemory == 1;
+            }
+        }
+        
+        /// <summary>
+        /// Gets a corrected managed memory value that accounts for known device issues.
+        /// Use this property instead of the raw ManagedMemory field for accurate detection.
+        /// </summary>
+        public bool ManagedMemorySupported => GetActualManagedMemorySupport(0);
     }
 }

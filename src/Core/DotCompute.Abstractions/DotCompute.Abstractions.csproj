@@ -55,4 +55,15 @@
     <Compile Remove="tests/**" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <PackageId>DotCompute.Abstractions</PackageId>
+    <IsPackable>true</IsPackable>
+    <Description>Core abstractions and interfaces for DotCompute compute acceleration framework. Contains accelerator interfaces, kernel definitions, and memory abstractions.</Description>
+    <PackageTags>dotcompute;abstractions;interfaces;kernel;accelerator;memory</PackageTags>
+    <!-- Disable debug symbols for packaging -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+
 </Project>
