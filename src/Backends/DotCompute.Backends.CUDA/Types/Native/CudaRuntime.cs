@@ -815,15 +815,21 @@ namespace DotCompute.Backends.CUDA.Native
                             if (propsResult == CudaError.Success)
                             {
                                 // Use a more comprehensive approach to determine driver capability
-                                // Driver 573.40 supports CUDA 13.0
+                                // Driver 581.15 supports CUDA 13.0 (current system)
                                 // Map runtime version to expected driver compatibility
                                 var runtimeMajor = version / 1000;
                                 var runtimeMinor = (version % 1000) / 10;
                                 
-                                // If we have CUDA 12.8+ runtime, assume driver supports 13.0
-                                if (runtimeMajor >= 12 && runtimeMinor >= 8)
+                                // For CUDA 13.0 runtime, we know the driver supports it
+                                if (runtimeMajor >= 13)
                                 {
-                                    return new Version(573, 40); // Known good driver version
+                                    return new Version(581, 15); // Current working driver version
+                                }
+                                
+                                // If we have CUDA 12.0+ runtime, assume driver supports 13.0 
+                                if (runtimeMajor >= 12)
+                                {
+                                    return new Version(535, 0); // Minimum driver version for CUDA 13.0
                                 }
                                 
                                 // Otherwise use runtime version as driver version

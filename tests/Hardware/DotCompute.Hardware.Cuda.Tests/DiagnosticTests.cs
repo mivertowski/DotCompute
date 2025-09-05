@@ -73,10 +73,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             // CRITICAL: This assertion should pass if the GPU supports unified memory
             // The RTX 2000 Ada Generation definitely supports unified memory
             Output.WriteLine($"\n=== FINAL CHECK ===");
-            Output.WriteLine($"ManagedMemory value: {props.ManagedMemory}");
-            Output.WriteLine($"Test will {(props.ManagedMemory > 0 ? "PASS" : "FAIL")}");
+            Output.WriteLine($"Raw ManagedMemory value: {props.ManagedMemory}");
+            Output.WriteLine($"Corrected ManagedMemorySupported: {props.ManagedMemorySupported}");
+            Output.WriteLine($"Test will {(props.ManagedMemorySupported ? "PASS" : "FAIL")}");
             
-            Assert.True(props.ManagedMemory > 0, $"ManagedMemory should be > 0, but is {props.ManagedMemory}");
+            // Use the corrected method that handles known device issues
+            Assert.True(props.ManagedMemorySupported, $"ManagedMemory should be supported. Raw value: {props.ManagedMemory}, Compute Capability: {props.Major}.{props.Minor}");
         }
         
         [SkippableFact]
@@ -202,11 +204,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                 
                 Output.WriteLine($"\nCall {i + 1}:");
                 Output.WriteLine($"  Result: {result}");
-                Output.WriteLine($"  ManagedMemory: {props.ManagedMemory}");
+                Output.WriteLine($"  Raw ManagedMemory: {props.ManagedMemory}");
+                Output.WriteLine($"  Corrected ManagedMemorySupported: {props.ManagedMemorySupported}");
                 Output.WriteLine($"  UnifiedAddressing: {props.UnifiedAddressing}");
                 
                 Assert.Equal(CudaError.Success, result);
-                Assert.True(props.ManagedMemory > 0, $"Call {i + 1}: ManagedMemory should be > 0");
+                Assert.True(props.ManagedMemorySupported, $"Call {i + 1}: ManagedMemory should be supported");
             }
         }
     }

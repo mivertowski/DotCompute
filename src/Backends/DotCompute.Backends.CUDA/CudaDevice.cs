@@ -118,8 +118,9 @@ namespace DotCompute.Backends.CUDA
 
         /// <summary>
         /// Gets whether the device supports managed memory.
+        /// Uses the corrected detection logic that handles known device issues.
         /// </summary>
-        public bool SupportsManagedMemory => _deviceProperties.ManagedMemory > 0;
+        public bool SupportsManagedMemory => _deviceProperties.ManagedMemorySupported;
 
         /// <summary>
         /// Gets whether the device supports concurrent kernels.

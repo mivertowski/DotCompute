@@ -104,7 +104,8 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
             return new KernelDefinition
             {
                 Name = name,
-                Code = code
+                Code = code,
+                EntryPoint = name  // Set entry point to match the kernel name
             };
         }
 
