@@ -1121,4 +1121,6 @@ public class AdaptiveKernelConfig
 
 #endregion
 
-} // namespace DotCompute.Algorithms}
+} // class LinearAlgebraKernels
+
+} // namespace DotCompute.Algorithms

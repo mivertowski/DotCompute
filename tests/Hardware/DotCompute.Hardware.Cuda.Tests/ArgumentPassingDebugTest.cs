@@ -22,7 +22,7 @@ public class ArgumentPassingDebugTest : CudaTestBase
     [SkippableFact]
     public async Task Simple_Argument_Passing_Should_Work()
     {
-        Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
+        Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
         
         const int size = 1024;
         var factory = new CudaAcceleratorFactory();
@@ -106,7 +106,7 @@ public class ArgumentPassingDebugTest : CudaTestBase
     [SkippableFact]
     public async Task Matrix_Style_Arguments_Should_Work()
     {
-        Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
+        Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
         
         const int size = 64; // Small 64x64 matrix
         const int elementCount = size * size;

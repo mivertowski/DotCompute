@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace DotCompute.Tools.coverage-enhancement
+namespace DotCompute.Tools.CoverageEnhancement
 {
 
 /// <summary>

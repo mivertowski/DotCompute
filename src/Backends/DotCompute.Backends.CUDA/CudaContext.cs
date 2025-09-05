@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Backends.CUDA.Initialization;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 
@@ -30,6 +31,13 @@ namespace DotCompute.Backends.CUDA
 
         private void Initialize()
         {
+            // Ensure CUDA runtime is properly initialized
+            if (!CudaInitializer.EnsureInitialized())
+            {
+                var errorMsg = CudaInitializer.InitializationErrorMessage ?? "Unknown CUDA initialization error";
+                throw new AcceleratorException($"Failed to initialize CUDA runtime: {errorMsg}");
+            }
+
             // Initialize CUDA driver API if not already done
             var initResult = CudaRuntime.cuInit(0);
             // CUDA_ERROR_ALREADY_INITIALIZED = 4 for driver API

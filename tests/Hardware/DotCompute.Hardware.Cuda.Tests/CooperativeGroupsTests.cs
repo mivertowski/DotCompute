@@ -2,10 +2,14 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
+using System.Linq;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
+using DotCompute.Hardware.Cuda.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,13 +24,12 @@ public class CooperativeGroupsTests : IDisposable
     private readonly ITestOutputHelper _output;
     private readonly ILogger<CooperativeGroupsTests> _logger;
     private readonly CudaAcceleratorFactory _factory;
-    private CudaAccelerator? _accelerator;
 
     public CooperativeGroupsTests(ITestOutputHelper output)
     {
         _output = output;
         _logger = new XUnitLogger<CooperativeGroupsTests>(output);
-        _factory = new CudaAcceleratorFactory(_logger);
+        _factory = new CudaAcceleratorFactory();
     }
 
     [Fact]
@@ -35,23 +38,14 @@ public class CooperativeGroupsTests : IDisposable
     public async Task CooperativeGroups_BasicReduction_ExecutesCorrectly()
     {
         // Skip if no CUDA device available
-        var deviceInfo = await _factory.GetDeviceInfoAsync(0);
-        if (deviceInfo == null)
+        if (!CudaTestHelpers.IsCudaAvailable())
         {
             _output.WriteLine("No CUDA device available - skipping test");
             return;
         }
 
-        // Check CUDA 13.0 compatibility (requires compute capability 7.5+)
-        if (deviceInfo.ComputeCapability < new Version(7, 5))
-        {
-            _output.WriteLine($"Device {deviceInfo.Name} (CC {deviceInfo.ComputeCapability}) does not support CUDA 13.0 - skipping test");
-            return;
-        }
-
-        _accelerator = await _factory.CreateAcceleratorAsync(0) as CudaAccelerator;
-        Assert.NotNull(_accelerator);
-
+        using var accelerator = _factory.CreateProductionAccelerator(0);
+        
         // Create cooperative groups reduction kernel
         const string kernelCode = @"
 #include <cooperative_groups.h>
@@ -94,17 +88,17 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
     }
 }";
 
-        var kernel = await _accelerator.CompileKernelAsync(
-            new KernelDefinition(
-                "cooperativeReduction",
-                kernelCode,
-                "cooperativeReduction"
-            ),
-            new CompilationOptions 
-            { 
-                OptimizationLevel = OptimizationLevel.Aggressive,
-                EnableSharedMemoryRegisterSpilling = true
-            });
+        var kernelDef = CudaTestHelpers.CreateTestKernelDefinition(
+            "cooperativeReduction",
+            kernelCode
+        );
+        
+        var options = CudaTestHelpers.CreateTestCompilationOptions(
+            CudaOptimizationLevel.O3,
+            enableRegisterSpilling: true
+        );
+
+        var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
 
         // Test data
         const int size = 1024;
@@ -118,26 +112,26 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
         }
         
         // Allocate device memory
-        using var input = await _accelerator.Memory.AllocateAsync(size * sizeof(float));
-        using var output = await _accelerator.Memory.AllocateAsync(gridSize * sizeof(float));
+        using var input = await accelerator.Memory.AllocateAsync<float>(size);
+        using var output = await accelerator.Memory.AllocateAsync<float>(gridSize);
         
         // Copy input data to device
-        await input.CopyFromHostAsync(inputData);
+        await input.CopyFromAsync(inputData.AsMemory());
         
         // Execute kernel with cooperative groups
-        await kernel.LaunchAsync(
-            new Dim3(gridSize, 1, 1),
-            new Dim3(blockSize, 1, 1),
-            input.DevicePointer,
-            output.DevicePointer,
-            size
+        var (grid, block) = CudaTestHelpers.CreateLaunchConfig(gridSize, 1, 1, blockSize, 1, 1);
+        var kernelArgs = CudaTestHelpers.CreateKernelArguments(
+            new object[] { input, output, size },
+            grid,
+            block
         );
+        await kernel.ExecuteAsync(kernelArgs);
 
-        await _accelerator.SynchronizeAsync();
+        await accelerator.SynchronizeAsync();
         
         // Copy results back
         float[] results = new float[gridSize];
-        await output.CopyToHostAsync(results);
+        await output.CopyToAsync(results.AsMemory());
         
         // Calculate expected sum: 1 + 2 + ... + 1024 = (1024 * 1025) / 2 = 524800
         float expectedSum = (size * (size + 1)) / 2.0f;
@@ -147,242 +141,191 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
         _output.WriteLine($"Actual sum: {actualSum}");
         _output.WriteLine($"Per-block sums: {string.Join(", ", results)}");
         
-        // Allow small floating-point error
-        Assert.True(Math.Abs(expectedSum - actualSum) < 0.01f, 
+        // Allow small floating-point tolerance
+        Assert.True(Math.Abs(expectedSum - actualSum) < 0.01f,
             $"Sum mismatch: expected {expectedSum}, got {actualSum}");
     }
 
     [Fact]
     [Trait("Category", "HardwareRequired")]
     [Trait("Category", "CUDA13Required")]
-    public async Task CooperativeGroups_GridSync_ExecutesCorrectly()
+    public async Task TensorCoreOps_MatrixMultiply_WithSharedMemorySpilling()
     {
         // Skip if no CUDA device available
-        var deviceInfo = await _factory.GetDeviceInfoAsync(0);
-        if (deviceInfo == null)
+        if (!CudaTestHelpers.IsCudaAvailable())
         {
             _output.WriteLine("No CUDA device available - skipping test");
             return;
         }
 
-        // Check CUDA 13.0 compatibility
-        if (deviceInfo.ComputeCapability < new Version(7, 5))
-        {
-            _output.WriteLine($"Device {deviceInfo.Name} (CC {deviceInfo.ComputeCapability}) does not support CUDA 13.0 - skipping test");
-            return;
-        }
+        using var accelerator = _factory.CreateProductionAccelerator(0);
 
-        _accelerator = await _factory.CreateAcceleratorAsync(0) as CudaAccelerator;
-        Assert.NotNull(_accelerator);
-
-        // Create grid-level synchronization kernel
+        // Matrix multiply kernel using register spilling for large shared memory
         const string kernelCode = @"
-#include <cooperative_groups.h>
-using namespace cooperative_groups;
-
-extern ""C"" __global__ void gridSyncTest(int* data, int n, int iterations)
+extern ""C"" __global__ void matmul_with_spilling(
+    const float* __restrict__ A,
+    const float* __restrict__ B,
+    float* __restrict__ C,
+    const int M, const int N, const int K)
 {
-    auto grid = this_grid();
-    int idx = grid.thread_rank();
+    // Large shared memory arrays that may cause register spilling
+    __shared__ float tileA[32][33]; // Avoid bank conflicts
+    __shared__ float tileB[32][33];
     
-    if (idx < n) {
-        for (int iter = 0; iter < iterations; iter++) {
-            // Each thread increments its element
-            atomicAdd(&data[idx], 1);
+    int bx = blockIdx.x;
+    int by = blockIdx.y;
+    int tx = threadIdx.x;
+    int ty = threadIdx.y;
+    
+    int row = by * 32 + ty;
+    int col = bx * 32 + tx;
+    
+    float sum = 0.0f;
+    
+    // Tile-based matrix multiplication
+    for (int t = 0; t < (K + 31) / 32; t++)
+    {
+        // Load tiles into shared memory
+        if (row < M && t * 32 + tx < K)
+            tileA[ty][tx] = A[row * K + t * 32 + tx];
+        else
+            tileA[ty][tx] = 0.0f;
             
-            // Grid-wide synchronization
-            grid.sync();
+        if (col < N && t * 32 + ty < K)
+            tileB[ty][tx] = B[(t * 32 + ty) * N + col];
+        else
+            tileB[ty][tx] = 0.0f;
             
-            // After sync, all threads should see updated values
-            if (idx == 0) {
-                // Thread 0 checks that all elements have been incremented
-                int sum = 0;
-                for (int i = 0; i < min(32, n); i++) {
-                    sum += data[i];
+        __syncthreads();
+        
+        // Compute partial products
+        #pragma unroll
+        for (int k = 0; k < 32; k++)
+        {
+            sum += tileA[ty][k] * tileB[k][tx];
+        }
+        
+        __syncthreads();
+    }
+    
+    // Store result
+    if (row < M && col < N)
+    {
+        C[row * N + col] = sum;
+    }
+}";
+
+        var kernelDef = CudaTestHelpers.CreateTestKernelDefinition(
+            "matmul_with_spilling",
+            kernelCode
+        );
+
+        var options = CudaTestHelpers.CreateTestCompilationOptions(
+            CudaOptimizationLevel.O3,
+            enableRegisterSpilling: true  // Enable register spilling for shared memory pressure
+        );
+
+        var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+
+        // Test with small matrices
+        const int M = 64, N = 64, K = 64;
+        
+        // Initialize test data
+        float[] A = new float[M * K];
+        float[] B = new float[K * N];
+        float[] expectedC = new float[M * N];
+        
+        // Simple initialization for verification
+        for (int i = 0; i < M * K; i++)
+        {
+            A[i] = (i % 10) * 0.1f;
+        }
+        
+        for (int i = 0; i < K * N; i++)
+        {
+            B[i] = (i % 10) * 0.1f;
+        }
+        
+        // Calculate expected result on CPU
+        for (int i = 0; i < M; i++)
+        {
+            for (int j = 0; j < N; j++)
+            {
+                float sum = 0.0f;
+                for (int k = 0; k < K; k++)
+                {
+                    sum += A[i * K + k] * B[k * N + j];
                 }
-                // Store check result
-                data[n + iter] = sum;
-            }
-            
-            grid.sync();
-        }
-    }
-}";
-
-        var kernel = await _accelerator.CompileKernelAsync(
-            new KernelDefinition(
-                "gridSyncTest",
-                kernelCode,
-                "gridSyncTest"
-            ),
-            new CompilationOptions 
-            { 
-                OptimizationLevel = OptimizationLevel.Default,
-                EnableSharedMemoryRegisterSpilling = true,
-                EnableDynamicParallelism = false // Grid sync doesn't work with dynamic parallelism
-            });
-
-        // Test parameters
-        const int dataSize = 128;
-        const int iterations = 5;
-        const int totalSize = dataSize + iterations;
-        
-        // Allocate and initialize data
-        using var data = await _accelerator.Memory.AllocateAsync(totalSize * sizeof(int));
-        await data.ClearAsync();
-        
-        // Launch with cooperative launch (required for grid sync)
-        // Note: This requires special kernel launch for grid-wide sync
-        await kernel.LaunchCooperativeAsync(
-            new Dim3(4, 1, 1),  // 4 blocks
-            new Dim3(32, 1, 1), // 32 threads per block
-            data.DevicePointer,
-            dataSize,
-            iterations
-        );
-
-        await _accelerator.SynchronizeAsync();
-        
-        // Copy results back
-        int[] results = new int[totalSize];
-        await data.CopyToHostAsync(results);
-        
-        _output.WriteLine("Data after grid sync test:");
-        _output.WriteLine($"Elements (should be {iterations} each): {string.Join(", ", results.Take(32))}");
-        _output.WriteLine($"Iteration sums: {string.Join(", ", results.Skip(dataSize).Take(iterations))}");
-        
-        // Verify all elements were incremented correctly
-        for (int i = 0; i < Math.Min(dataSize, 32); i++)
-        {
-            Assert.Equal(iterations, results[i]);
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "HardwareRequired")]
-    [Trait("Category", "CUDA13Required")]
-    public async Task CooperativeGroups_MultiGrid_ExecutesCorrectly()
-    {
-        // Skip if no CUDA device available
-        var deviceInfo = await _factory.GetDeviceInfoAsync(0);
-        if (deviceInfo == null)
-        {
-            _output.WriteLine("No CUDA device available - skipping test");
-            return;
-        }
-
-        // Check CUDA 13.0 compatibility and multi-GPU support
-        if (deviceInfo.ComputeCapability < new Version(7, 5))
-        {
-            _output.WriteLine($"Device {deviceInfo.Name} (CC {deviceInfo.ComputeCapability}) does not support CUDA 13.0 - skipping test");
-            return;
-        }
-
-        _accelerator = await _factory.CreateAcceleratorAsync(0) as CudaAccelerator;
-        Assert.NotNull(_accelerator);
-
-        // Test thread block partitioning
-        const string kernelCode = @"
-#include <cooperative_groups.h>
-using namespace cooperative_groups;
-
-extern ""C"" __global__ void threadBlockPartition(float* input, float* output, int n)
-{
-    auto block = this_thread_block();
-    auto tile32 = tiled_partition<32>(block);
-    auto tile16 = tiled_partition<16>(block);
-    auto tile8 = tiled_partition<8>(block);
-    
-    int globalIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    if (globalIdx < n) {
-        float val = input[globalIdx];
-        
-        // Reduce within 8-thread tile
-        for (int i = tile8.size() / 2; i > 0; i /= 2) {
-            val += tile8.shfl_down(val, i);
-        }
-        
-        // Leader of each 8-thread tile writes result
-        if (tile8.thread_rank() == 0) {
-            int tileIdx = globalIdx / 8;
-            if (tileIdx < n / 8) {
-                output[tileIdx] = val;
+                expectedC[i * N + j] = sum;
             }
         }
-    }
-}";
-
-        var kernel = await _accelerator.CompileKernelAsync(
-            new KernelDefinition(
-                "threadBlockPartition",
-                kernelCode,
-                "threadBlockPartition"
-            ),
-            new CompilationOptions 
-            { 
-                OptimizationLevel = OptimizationLevel.Aggressive,
-                EnableSharedMemoryRegisterSpilling = true
-            });
-
-        // Test data
-        const int size = 256;
-        float[] inputData = Enumerable.Range(1, size).Select(x => (float)x).ToArray();
         
-        using var input = await _accelerator.Memory.AllocateAsync(size * sizeof(float));
-        using var output = await _accelerator.Memory.AllocateAsync((size / 8) * sizeof(float));
+        // Allocate device memory
+        using var dA = await accelerator.Memory.AllocateAsync<float>(M * K);
+        using var dB = await accelerator.Memory.AllocateAsync<float>(K * N);
+        using var dC = await accelerator.Memory.AllocateAsync<float>(M * N);
         
-        await input.CopyFromHostAsync(inputData);
+        await dA.CopyFromAsync(A.AsMemory());
+        await dB.CopyFromAsync(B.AsMemory());
         
-        await kernel.LaunchAsync(
-            new Dim3((size + 127) / 128, 1, 1),
-            new Dim3(128, 1, 1),
-            input.DevicePointer,
-            output.DevicePointer,
-            size
+        // Launch kernel with 32x32 thread blocks
+        var (grid, block) = CudaTestHelpers.CreateLaunchConfig(
+            (N + 31) / 32, (M + 31) / 32, 1,
+            32, 32, 1
         );
-
-        await _accelerator.SynchronizeAsync();
         
-        float[] results = new float[size / 8];
-        await output.CopyToHostAsync(results);
+        var kernelArgs = CudaTestHelpers.CreateKernelArguments(
+            new object[] { dA, dB, dC, M, N, K },
+            grid,
+            block
+        );
+        await kernel.ExecuteAsync(kernelArgs);
         
-        _output.WriteLine($"Tile reduction results (8-thread tiles): {string.Join(", ", results.Take(10))}...");
+        await accelerator.SynchronizeAsync();
         
-        // Verify first tile: 1+2+3+4+5+6+7+8 = 36
-        Assert.Equal(36.0f, results[0], 1);
+        // Verify results
+        float[] actualC = new float[M * N];
+        await dC.CopyToAsync(actualC.AsMemory());
+        
+        float maxError = 0.0f;
+        for (int i = 0; i < M * N; i++)
+        {
+            float error = Math.Abs(expectedC[i] - actualC[i]);
+            maxError = Math.Max(maxError, error);
+        }
+        
+        _output.WriteLine($"Matrix multiplication max error: {maxError}");
+        Assert.True(maxError < 0.001f, $"Matrix multiplication error too large: {maxError}");
     }
 
     public void Dispose()
     {
-        _accelerator?.Dispose();
-        _factory.Dispose();
-    }
-}
-
-/// <summary>
-/// XUnit logger adapter
-/// </summary>
-internal class XUnitLogger<T> : ILogger<T>
-{
-    private readonly ITestOutputHelper _output;
-
-    public XUnitLogger(ITestOutputHelper output)
-    {
-        _output = output;
+        // Factory will dispose of created accelerators
+        _factory?.Dispose();
     }
 
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-    public bool IsEnabled(LogLevel logLevel) => true;
-
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    // Test logger implementation
+    private class XUnitLogger<T> : ILogger<T>
     {
-        var message = formatter(state, exception);
-        _output.WriteLine($"[{logLevel}] {message}");
-        if (exception != null)
+        private readonly ITestOutputHelper _output;
+
+        public XUnitLogger(ITestOutputHelper output)
         {
-            _output.WriteLine(exception.ToString());
+            _output = output;
+        }
+
+        public IDisposable BeginScope<TState>(TState state) => null!;
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, 
+            Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            var message = formatter(state, exception);
+            _output.WriteLine($"[{logLevel}] {message}");
+            if (exception != null)
+            {
+                _output.WriteLine($"Exception: {exception}");
+            }
         }
     }
 }

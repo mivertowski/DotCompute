@@ -1,272 +1,207 @@
-# Claude Code Configuration - SPARC Development Environment
+# CLAUDE.md
 
-## 🚨 CRITICAL: CONCURRENT EXECUTION & FILE MANAGEMENT
-
-**ABSOLUTE RULES**:
-1. ALL operations MUST be concurrent/parallel in a single message
-2. **NEVER save working files, text/mds and tests to the root folder**
-3. ALWAYS organize files in appropriate subdirectories
-
-### ⚡ GOLDEN RULE: "1 MESSAGE = ALL RELATED OPERATIONS"
-
-**MANDATORY PATTERNS:**
-- **TodoWrite**: ALWAYS batch ALL todos in ONE call (5-10+ todos minimum)
-- **Task tool**: ALWAYS spawn ALL agents in ONE message with full instructions
-- **File operations**: ALWAYS batch ALL reads/writes/edits in ONE message
-- **Bash commands**: ALWAYS batch ALL terminal operations in ONE message
-- **Memory operations**: ALWAYS batch ALL memory store/retrieve in ONE message
-
-### 📁 File Organization Rules
-
-**NEVER save to root folder. Use these directories:**
-- `/src` - Source code files
-- `/tests` - Test files
-- `/docs` - Documentation and markdown files
-- `/config` - Configuration files
-- `/scripts` - Utility scripts
-- `/examples` - Example code
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Completion) methodology with Claude-Flow orchestration for systematic Test-Driven Development.
+DotCompute is a high-performance, Native AOT-compatible universal compute framework for .NET 9+ with production-ready CPU and CUDA acceleration. The system is designed for sub-10ms startup times and provides 8-23x speedup through SIMD vectorization.
 
-## SPARC Commands
-
-### Core Commands
-- `npx claude-flow sparc modes` - List available modes
-- `npx claude-flow sparc run <mode> "<task>"` - Execute specific mode
-- `npx claude-flow sparc tdd "<feature>"` - Run complete TDD workflow
-- `npx claude-flow sparc info <mode>` - Get mode details
-
-### Batchtools Commands
-- `npx claude-flow sparc batch <modes> "<task>"` - Parallel execution
-- `npx claude-flow sparc pipeline "<task>"` - Full pipeline processing
-- `npx claude-flow sparc concurrent <mode> "<tasks-file>"` - Multi-task processing
-
-### Build Commands
-- `npm run build` - Build project
-- `npm run test` - Run tests
-- `npm run lint` - Linting
-- `npm run typecheck` - Type checking
-
-## SPARC Workflow Phases
-
-1. **Specification** - Requirements analysis (`sparc run spec-pseudocode`)
-2. **Pseudocode** - Algorithm design (`sparc run spec-pseudocode`)
-3. **Architecture** - System design (`sparc run architect`)
-4. **Refinement** - TDD implementation (`sparc tdd`)
-5. **Completion** - Integration (`sparc run integration`)
-
-## Code Style & Best Practices
-
-- **Modular Design**: Files under 500 lines
-- **Environment Safety**: Never hardcode secrets
-- **Test-First**: Write tests before implementation
-- **Clean Architecture**: Separate concerns
-- **Documentation**: Keep updated
-
-## 🚀 Available Agents (54 Total)
-
-### Core Development
-`coder`, `reviewer`, `tester`, `planner`, `researcher`
-
-### Swarm Coordination
-`hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`, `collective-intelligence-coordinator`, `swarm-memory-manager`
-
-### Consensus & Distributed
-`byzantine-coordinator`, `raft-manager`, `gossip-coordinator`, `consensus-builder`, `crdt-synchronizer`, `quorum-manager`, `security-manager`
-
-### Performance & Optimization
-`perf-analyzer`, `performance-benchmarker`, `task-orchestrator`, `memory-coordinator`, `smart-agent`
-
-### GitHub & Repository
-`github-modes`, `pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`, `workflow-automation`, `project-board-sync`, `repo-architect`, `multi-repo-swarm`
-
-### SPARC Methodology
-`sparc-coord`, `sparc-coder`, `specification`, `pseudocode`, `architecture`, `refinement`
-
-### Specialized Development
-`backend-dev`, `mobile-dev`, `ml-developer`, `cicd-engineer`, `api-docs`, `system-architect`, `code-analyzer`, `base-template-generator`
-
-### Testing & Validation
-`tdd-london-swarm`, `production-validator`
-
-### Migration & Planning
-`migration-planner`, `swarm-init`
-
-## 🎯 Claude Code vs MCP Tools
-
-### Claude Code Handles ALL:
-- File operations (Read, Write, Edit, MultiEdit, Glob, Grep)
-- Code generation and programming
-- Bash commands and system operations
-- Implementation work
-- Project navigation and analysis
-- TodoWrite and task management
-- Git operations
-- Package management
-- Testing and debugging
-
-### MCP Tools ONLY:
-- Coordination and planning
-- Memory management
-- Neural features
-- Performance tracking
-- Swarm orchestration
-- GitHub integration
-
-**KEY**: MCP coordinates, Claude Code executes.
-
-## 🚀 Quick Setup
+## Essential Build Commands
 
 ```bash
-# Add Claude Flow MCP server
-claude mcp add claude-flow npx claude-flow@alpha mcp start
+# Build the solution
+dotnet build DotCompute.sln --configuration Release
+
+# Run all tests
+dotnet test DotCompute.sln --configuration Release
+
+# Run specific test category
+dotnet test --filter "Category=Unit" --configuration Release
+dotnet test --filter "Category=Hardware" --configuration Release  # Requires NVIDIA GPU
+
+# Run CUDA-specific tests
+dotnet test tests/Hardware/DotCompute.Hardware.Cuda.Tests/DotCompute.Hardware.Cuda.Tests.csproj
+
+# Clean build artifacts
+dotnet clean DotCompute.sln
+
+# Generate code coverage
+./scripts/run-coverage.sh
+
+# Run hardware tests with detailed output
+./scripts/run-hardware-tests.sh
 ```
 
-## MCP Tool Categories
+## Critical System Information
 
-### Coordination
-`swarm_init`, `agent_spawn`, `task_orchestrate`
+### CUDA Configuration
+- **System has CUDA 13.0 installed** at `/usr/local/cuda` (symlink to `/usr/local/cuda-13.0`)
+- **GPU**: NVIDIA RTX 2000 Ada Generation (Compute Capability 8.9)
+- **Driver Version**: 581.15
+- **All CUDA capability detection must use**: `DotCompute.Backends.CUDA.Configuration.CudaCapabilityManager`
 
-### Monitoring
-`swarm_status`, `agent_list`, `agent_metrics`, `task_status`, `task_results`
+### Architecture Overview
 
-### Memory & Neural
-`memory_usage`, `neural_status`, `neural_train`, `neural_patterns`
+The codebase follows a **modular, layered architecture**:
 
-### GitHub Integration
-`github_swarm`, `repo_analyze`, `pr_enhance`, `issue_triage`, `code_review`
-
-### System
-`benchmark_run`, `features_detect`, `swarm_monitor`
-
-## 📋 Agent Coordination Protocol
-
-### Every Agent MUST:
-
-**1️⃣ BEFORE Work:**
-```bash
-npx claude-flow@alpha hooks pre-task --description "[task]"
-npx claude-flow@alpha hooks session-restore --session-id "swarm-[id]"
+```
+DotCompute/
+├── src/
+│   ├── Core/                    # Core abstractions and interfaces
+│   │   ├── DotCompute.Core/     # Main runtime and kernel execution
+│   │   ├── DotCompute.Abstractions/  # Interface definitions
+│   │   └── DotCompute.Memory/   # Unified memory management
+│   ├── Backends/                # Compute backend implementations
+│   │   ├── DotCompute.Backends.CPU/   # ✅ Production: SIMD vectorization
+│   │   ├── DotCompute.Backends.CUDA/  # ✅ Production: NVIDIA GPU support
+│   │   ├── DotCompute.Backends.Metal/ # ❌ Stubs only
+│   │   └── DotCompute.Backends.ROCm/  # ❌ Placeholder
+│   ├── Extensions/              # Extension libraries
+│   │   ├── DotCompute.Algorithms/     # Algorithm implementations
+│   │   └── DotCompute.Linq/           # LINQ provider
+│   └── Runtime/                 # Runtime services
+│       ├── DotCompute.Plugins/        # Plugin system
+│       └── DotCompute.Generators/     # Source generators
+└── tests/
+    ├── Unit/                    # Unit tests for individual components
+    ├── Integration/             # Integration tests
+    ├── Hardware/                # Hardware-specific tests (GPU required)
+    └── Shared/                  # Shared test utilities
 ```
 
-**2️⃣ DURING Work:**
-```bash
-npx claude-flow@alpha hooks post-edit --file "[file]" --memory-key "swarm/[agent]/[step]"
-npx claude-flow@alpha hooks notify --message "[what was done]"
-```
+### Key Architectural Components
 
-**3️⃣ AFTER Work:**
-```bash
-npx claude-flow@alpha hooks post-task --task-id "[task]"
-npx claude-flow@alpha hooks session-end --export-metrics true
-```
+1. **Kernel System** (`src/Core/DotCompute.Core/Kernels/`)
+   - `KernelDefinition`: Metadata for compute kernels
+   - `IKernelCompiler`: Interface for backend-specific compilation
+   - `ICompiledKernel`: Represents compiled kernel ready for execution
 
-## 🎯 Concurrent Execution Examples
+2. **Memory Management** (`src/Core/DotCompute.Memory/`)
+   - `UnifiedBuffer<T>`: Zero-copy memory buffer across devices
+   - `MemoryPool`: Pooled memory allocation (90% reduction)
+   - `P2PManager`: Peer-to-peer GPU memory transfers
 
-### ✅ CORRECT (Single Message):
-```javascript
-[BatchTool]:
-  // Initialize swarm
-  mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 6 }
-  mcp__claude-flow__agent_spawn { type: "researcher" }
-  mcp__claude-flow__agent_spawn { type: "coder" }
-  mcp__claude-flow__agent_spawn { type: "tester" }
-  
-  // Spawn agents with Task tool
-  Task("Research agent: Analyze requirements...")
-  Task("Coder agent: Implement features...")
-  Task("Tester agent: Create test suite...")
-  
-  // Batch todos
-  TodoWrite { todos: [
-    {id: "1", content: "Research", status: "in_progress", priority: "high"},
-    {id: "2", content: "Design", status: "pending", priority: "high"},
-    {id: "3", content: "Implement", status: "pending", priority: "high"},
-    {id: "4", content: "Test", status: "pending", priority: "medium"},
-    {id: "5", content: "Document", status: "pending", priority: "low"}
-  ]}
-  
-  // File operations
-  Bash "mkdir -p app/{src,tests,docs}"
-  Write "app/src/index.js"
-  Write "app/tests/index.test.js"
-  Write "app/docs/README.md"
-```
+3. **Backend Abstraction** (`src/Core/DotCompute.Abstractions/`)
+   - `IAccelerator`: Common interface for all compute backends
+   - `IComputeService`: High-level compute orchestration
+   - `CompilationOptions`: Kernel compilation settings
 
-### ❌ WRONG (Multiple Messages):
-```javascript
-Message 1: mcp__claude-flow__swarm_init
-Message 2: Task("agent 1")
-Message 3: TodoWrite { todos: [single todo] }
-Message 4: Write "file.js"
-// This breaks parallel coordination!
-```
+4. **CUDA Backend** (`src/Backends/DotCompute.Backends.CUDA/`)
+   - `CudaCapabilityManager`: Centralized compute capability detection
+   - `CudaKernelCompiler`: NVRTC-based kernel compilation
+   - `CudaAccelerator`: CUDA-specific accelerator implementation
+   - `CudaRuntime`: P/Invoke wrappers for CUDA API
 
-## Performance Benefits
+5. **CPU Backend** (`src/Backends/DotCompute.Backends.CPU/`)
+   - `SimdProcessor`: SIMD vectorization (AVX512/AVX2/NEON)
+   - `CpuAccelerator`: Multi-threaded CPU execution
+   - `VectorizedOperations`: Hardware-accelerated operations
 
-- **84.8% SWE-Bench solve rate**
-- **32.3% token reduction**
-- **2.8-4.4x speed improvement**
-- **27+ neural models**
+## Development Guidelines
 
-## Hooks Integration
+### Native AOT Compatibility
+- All code must be Native AOT compatible
+- No runtime code generation
+- Use source generators for compile-time code generation
+- Avoid reflection except where marked with proper attributes
 
-### Pre-Operation
-- Auto-assign agents by file type
-- Validate commands for safety
-- Prepare resources automatically
-- Optimize topology by complexity
-- Cache searches
+### Memory Safety
+- Always use `UnifiedBuffer<T>` for cross-device memory
+- Implement proper `IDisposable` patterns
+- Use memory pooling for frequent allocations
+- Validate buffer bounds in kernel code
 
-### Post-Operation
-- Auto-format code
-- Train neural patterns
-- Update memory
-- Analyze performance
-- Track token usage
+### Testing Requirements
+- Unit tests required for all public APIs
+- Hardware tests must check for device availability
+- Use `[SkippableFact]` for tests requiring specific hardware
+- Maintain ~75% code coverage target
 
-### Session Management
-- Generate summaries
-- Persist state
-- Track metrics
-- Restore context
-- Export workflows
+### CUDA Development
+- Always use `CudaCapabilityManager.GetTargetComputeCapability()` for capability detection
+- Support dynamic CUDA version detection (don't hardcode paths)
+- Use CUBIN compilation for modern GPUs (compute capability >= 7.0)
+- Handle both PTX and CUBIN compilation paths
 
-## Advanced Features (v2.0.0)
+## Common Development Tasks
 
-- 🚀 Automatic Topology Selection
-- ⚡ Parallel Execution (2.8-4.4x speed)
-- 🧠 Neural Training
-- 📊 Bottleneck Analysis
-- 🤖 Smart Auto-Spawning
-- 🛡️ Self-Healing Workflows
-- 💾 Cross-Session Memory
-- 🔗 GitHub Integration
+### Adding a New Kernel
+1. Define kernel in `KernelDefinition` format
+2. Implement CPU version using SIMD intrinsics
+3. Implement CUDA version in CUDA C
+4. Add unit tests in appropriate test project
+5. Add hardware tests if GPU-specific
 
-## Integration Tips
+### Debugging CUDA Issues
+1. Check compute capability: `CudaCapabilityManager.GetTargetComputeCapability()`
+2. Verify CUDA installation: `/usr/local/cuda/bin/nvcc --version`
+3. Check kernel compilation logs in `CudaKernelCompiler`
+4. Use `cuda-memcheck` for memory errors
+5. Enable debug compilation with `GenerateDebugInfo = true`
 
-1. Start with basic swarm init
-2. Scale agents gradually
-3. Use memory for context
-4. Monitor progress regularly
-5. Train patterns from success
-6. Enable hooks automation
-7. Use GitHub tools first
+### Performance Optimization
+1. Profile with BenchmarkDotNet (`benchmarks/` directory)
+2. Use SIMD intrinsics for CPU backend
+3. Optimize memory access patterns for GPU
+4. Leverage memory pooling for allocations
+5. Use P2P transfers for multi-GPU scenarios
 
-## Support
+## Important Files and Locations
 
-- Documentation: https://github.com/ruvnet/claude-flow
-- Issues: https://github.com/ruvnet/claude-flow/issues
+- **Solution File**: `DotCompute.sln`
+- **Build Configuration**: `Directory.Build.props`, `Directory.Build.targets`
+- **Package Versions**: `Directory.Packages.props`
+- **Test Scripts**: `scripts/` directory (various shell scripts)
+- **Documentation**: `docs/` directory (architecture, API, guides)
+- **Benchmarks**: `benchmarks/` directory
+- **Examples**: `samples/` directory
 
----
+## Known Issues and Limitations
 
-Remember: **Claude Flow coordinates, Claude Code creates!**
+1. **Metal Backend**: Contains stubs only, not implemented
+2. **ROCm Backend**: Placeholder, not implemented
+3. **CUDA Tests**: Some tests may fail with "device kernel image is invalid" on CUDA 13
+4. **Hardware Tests**: Require NVIDIA GPU with Compute Capability 5.0+
+5. **Cross-Platform GPU**: Currently limited to NVIDIA GPUs only
 
-# important-instruction-reminders
-Do what has been asked; nothing more, nothing less.
-NEVER create files unless they're absolutely necessary for achieving your goal.
-ALWAYS prefer editing an existing file to creating a new one.
-NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
-Never save working files, text/mds and tests to the root folder.
+## Production-Ready Components
+
+✅ **Fully Production Ready:**
+- CPU Backend with SIMD vectorization (8-23x speedup)
+- CUDA Backend with complete GPU support
+- Memory Management with pooling and P2P
+- Plugin System with hot-reload
+- Native AOT compilation support
+
+🚧 **Basic Implementation:**
+- Algorithm libraries (basic operations only)
+- LINQ provider (CPU fallback working)
+- Runtime orchestration (service stubs)
+
+## Critical Implementation Details
+
+### CUDA Kernel Compilation Flow
+1. Source code → NVRTC compilation → PTX/CUBIN
+2. Architecture selection via `CudaCapabilityManager`
+3. Caching in `CudaKernelCache` for performance
+4. Module loading with `cuModuleLoadDataEx`
+
+### Memory Management Strategy
+1. Unified buffers abstract device-specific memory
+2. Memory pool reduces allocations by 90%+
+3. P2P manager handles GPU-to-GPU transfers
+4. Pinned memory for CPU-GPU transfers
+
+### Backend Selection Priority
+1. CUDA (if NVIDIA GPU available)
+2. CPU with SIMD (always available)
+3. Future: Metal (macOS), ROCm (AMD GPU)
+
+## Environment Requirements
+
+- **.NET 9.0 SDK** or later
+- **C# 13** language features
+- **Visual Studio 2022 17.8+** or VS Code
+- **CUDA Toolkit 12.0+** for GPU support
+- **cmake** for native components
+- **NVIDIA GPU** with Compute Capability 5.0+ for CUDA tests

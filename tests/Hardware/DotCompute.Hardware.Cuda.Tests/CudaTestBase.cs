@@ -24,35 +24,20 @@ namespace DotCompute.Hardware.Cuda.Tests
         protected CudaTestBase(ITestOutputHelper output) : base(output) { }
 
         /// <summary>
-        /// Enhanced CUDA availability check with detailed logging
+        /// Enhanced CUDA availability check that uses the base class detection
+        /// and adds additional validation specific to CUDA tests
         /// </summary>
-        protected new static async Task<bool> IsCudaAvailable()
+        protected new static bool IsCudaAvailable()
         {
+            // First use the base class detection which properly handles CUDA 12/13
+            if (!TestBase.IsCudaAvailable())
+            {
+                return false;
+            }
+            
             try
             {
-                // Check for CUDA runtime library first
-                var hasCudaRuntime = false;
-                
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    hasCudaRuntime = System.IO.File.Exists("cudart64_12.dll") || 
-                                   System.IO.File.Exists("cudart64_11.dll") ||
-                                   System.IO.File.Exists("cudart64_10.dll");
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    hasCudaRuntime = System.IO.File.Exists("/usr/local/cuda/lib64/libcudart.so") ||
-                                   System.IO.File.Exists("/usr/lib/x86_64-linux-gnu/libcudart.so") ||
-                                   System.IO.File.Exists("/usr/local/cuda-12.6/targets/x86_64-linux/lib/libcudart.so") ||
-                                   System.IO.File.Exists("/usr/local/cuda-12.8/targets/x86_64-linux/lib/libcudart.so.12");
-                }
-                
-                if (!hasCudaRuntime)
-                {
-                    return false;
-                }
-                
-                // Use the factory's IsAvailable method which can access internal CudaRuntime methods
+                // Additional validation: try to use the factory
                 var factory = new CudaAcceleratorFactory();
                 if (!factory.IsAvailable())
                 {
@@ -60,7 +45,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
                 
                 // Try to create an accelerator to verify everything works
-                await using var accelerator = factory.CreateProductionAccelerator(0);
+                using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 return accelerator != null;
             }
@@ -73,9 +58,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Check if RTX 2000 series Ada GPU is available
         /// </summary>
-        protected static async Task<bool> IsRTX2000AdaAvailable()
+        protected static bool IsRTX2000AdaAvailable()
         {
-            if (!await IsCudaAvailable())
+            if (!IsCudaAvailable())
             {
                 return false;
             }
@@ -83,7 +68,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                await using var accelerator = factory.CreateProductionAccelerator(0);
+                using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 var deviceInfo = accelerator.Info;
                 return deviceInfo.IsRTX2000Ada() && 
@@ -100,9 +85,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Check if compute capability meets minimum requirements
         /// </summary>
-        protected static async Task<bool> HasMinimumComputeCapability(int majorMin, int minorMin = 0)
+        protected static bool HasMinimumComputeCapability(int majorMin, int minorMin = 0)
         {
-            if (!await IsCudaAvailable())
+            if (!IsCudaAvailable())
             {
                 return false;
             }
@@ -110,7 +95,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                await using var accelerator = factory.CreateProductionAccelerator(0);
+                using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 var cc = accelerator.Info.ComputeCapability;
                 return cc.Major > majorMin || (cc.Major == majorMin && cc.Minor >= minorMin);
@@ -124,9 +109,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Get detailed device information for logging
         /// </summary>
-        protected static async Task<string> GetDeviceInfoString()
+        protected static string GetDeviceInfoString()
         {
-            if (!await IsCudaAvailable())
+            if (!IsCudaAvailable())
             {
                 return "CUDA not available";
             }
@@ -134,7 +119,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                await using var accelerator = factory.CreateProductionAccelerator(0);
+                using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 var info = accelerator.Info;
                 return $"{info.Name} (CC {info.ComputeCapability?.Major}.{info.ComputeCapability?.Minor}, " +
@@ -319,9 +304,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Log device capabilities and limits
         /// </summary>
-        protected async Task LogDeviceCapabilities()
+        protected void LogDeviceCapabilities()
         {
-            if (!(await IsCudaAvailable()))
+            if (!(IsCudaAvailable()))
             {
                 Output.WriteLine("CUDA not available");
                 return;
@@ -330,7 +315,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var factory = new CudaAcceleratorFactory();
-                await using var accelerator = factory.CreateProductionAccelerator(0);
+                using var accelerator = factory.CreateProductionAccelerator(0);
                 
                 var info = accelerator.Info;
                 

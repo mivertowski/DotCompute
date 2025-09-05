@@ -317,36 +317,42 @@ public static class SimdTypeMapper
     /// <summary>
     /// Checks if AVX2 is supported on the current hardware.
     /// </summary>
-    private static bool IsAvx2Supported() =>
+    private static bool IsAvx2Supported()
+    {
 #if NET7_0_OR_GREATER
         return global::System.Runtime.Intrinsics.X86.Avx2.IsSupported;
 #else
-        false;
+        return false;
 #endif
+    }
 
 
 
     /// <summary>
     /// Checks if AVX-512 is supported on the current hardware.
     /// </summary>
-    private static bool IsAvx512Supported() =>
+    private static bool IsAvx512Supported()
+    {
 #if NET8_0_OR_GREATER
         return global::System.Runtime.Intrinsics.X86.Avx512F.IsSupported;
 #else
-        false;
+        return false;
 #endif
+    }
 
 
 
     /// <summary>
     /// Checks if SSE is supported on the current hardware.
     /// </summary>
-    private static bool IsSseSupported() =>
+    private static bool IsSseSupported()
+    {
 #if NET7_0_OR_GREATER
         return global::System.Runtime.Intrinsics.X86.Sse.IsSupported;
 #else
-        false;
+        return false;
 #endif
+    }
 
 
 

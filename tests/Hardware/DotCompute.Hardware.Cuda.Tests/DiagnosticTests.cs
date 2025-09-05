@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Factory;
+using DotCompute.Backends.CUDA.Initialization;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Tests.Common;
@@ -25,6 +26,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
             Output.WriteLine("=== Direct Device Properties Test ===");
+            
+            // Ensure CUDA is properly initialized first
+            if (!CudaInitializer.EnsureInitialized())
+            {
+                Output.WriteLine($"CUDA initialization failed: {CudaInitializer.InitializationErrorMessage}");
+                Skip.If(true, $"CUDA initialization failed: {CudaInitializer.InitializationErrorMessage}");
+            }
+            
+            Output.WriteLine("CUDA runtime initialized successfully");
             
             // Test 1: Direct P/Invoke
             var props = new CudaDeviceProperties();
@@ -74,6 +84,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             
+            // Ensure CUDA is initialized
+            CudaInitializer.EnsureInitialized();
+            
             Output.WriteLine("=== CudaDevice Class Test ===");
             
             var device = new DotCompute.Backends.CUDA.CudaDevice(0);
@@ -102,6 +115,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Diagnose_Accelerator_Creation()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            
+            // Ensure CUDA is initialized
+            CudaInitializer.EnsureInitialized();
             
             Output.WriteLine("=== Accelerator Creation Test ===");
             
@@ -173,6 +189,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         public void Diagnose_Multiple_Calls_Consistency()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
+            
+            // Ensure CUDA is initialized
+            CudaInitializer.EnsureInitialized();
             
             Output.WriteLine("=== Multiple Calls Consistency Test ===");
             

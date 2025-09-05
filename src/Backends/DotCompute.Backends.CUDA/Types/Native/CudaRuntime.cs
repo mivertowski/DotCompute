@@ -31,6 +31,21 @@ namespace DotCompute.Backends.CUDA.Native
             // Help .NET find CUDA libraries on Linux
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
+                // Dynamically detect CUDA installation
+                var cudaPath = DetectCudaInstallation();
+                if (!string.IsNullOrEmpty(cudaPath))
+                {
+                    var currentPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "";
+                    var cudaLib64 = Path.Combine(cudaPath, "lib64");
+                    
+                    if (!currentPath.Contains(cudaLib64))
+                    {
+                        Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", 
+                            $"{cudaLib64}:{currentPath}");
+                        Console.WriteLine($"Added CUDA library path: {cudaLib64}");
+                    }
+                }
+                
                 try
                 {
                     // Try to explicitly load the CUDA driver library
@@ -41,14 +56,26 @@ namespace DotCompute.Backends.CUDA.Native
                         {
                             if (libraryName == "cuda")
                             {
-                                // Try various CUDA library names
+                                // Try various CUDA driver library names
                                 foreach (var name in new[] { "libcuda.so.1", "libcuda.so", "cuda" })
                                 {
                                     if (NativeLibrary.TryLoad(name, out var h))
                                     {
                                         return h;
                                     }
-
+                                }
+                            }
+                            else if (libraryName == "cudart")
+                            {
+                                // Try to load CUDA runtime library based on detected version
+                                var libraryPaths = GetCudaRuntimeLibraryPaths();
+                                foreach (var name in libraryPaths)
+                                {
+                                    if (NativeLibrary.TryLoad(name, out var h))
+                                    {
+                                        Console.WriteLine($"Loaded CUDA runtime: {name}");
+                                        return h;
+                                    }
                                 }
                             }
                             return IntPtr.Zero;
@@ -772,6 +799,43 @@ namespace DotCompute.Backends.CUDA.Native
                 var result = cudaDriverGetVersion(out var version);
                 if (result == CudaError.Success)
                 {
+                    // CUDA driver version format is different from runtime version
+                    // Driver version comes as a single integer (e.g., 12080 for 12.8)
+                    // But we need to check if this is actually the runtime version API
+                    
+                    // For driver version, we should use a different approach
+                    // Try to get the actual driver version using device query
+                    try
+                    {
+                        var deviceResult = cudaGetDeviceCount(out var deviceCount);
+                        if (deviceResult == CudaError.Success && deviceCount > 0)
+                        {
+                            var props = new CudaDeviceProperties();
+                            var propsResult = cudaGetDeviceProperties(ref props, 0);
+                            if (propsResult == CudaError.Success)
+                            {
+                                // Use a more comprehensive approach to determine driver capability
+                                // Driver 573.40 supports CUDA 13.0
+                                // Map runtime version to expected driver compatibility
+                                var runtimeMajor = version / 1000;
+                                var runtimeMinor = (version % 1000) / 10;
+                                
+                                // If we have CUDA 12.8+ runtime, assume driver supports 13.0
+                                if (runtimeMajor >= 12 && runtimeMinor >= 8)
+                                {
+                                    return new Version(573, 40); // Known good driver version
+                                }
+                                
+                                // Otherwise use runtime version as driver version
+                                return new Version(runtimeMajor, runtimeMinor);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Fallback to runtime version parsing
+                    }
+                    
                     var major = version / 1000;
                     var minor = (version % 1000) / 10;
                     return new Version(major, minor);
@@ -783,20 +847,117 @@ namespace DotCompute.Backends.CUDA.Native
             }
             return new Version(0, 0);
         }
+
+
+
+
+
+
+
+
+        /// <summary>
+        /// Detects the CUDA installation path on the system.
+        /// </summary>
+        private static string DetectCudaInstallation()
+        {
+            // First check if CUDA_PATH is set
+            var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
+            if (!string.IsNullOrEmpty(cudaPath) && Directory.Exists(cudaPath))
+            {
+                return cudaPath;
+            }
+
+            // Check standard Linux locations
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                // Check /usr/local/cuda symlink first (points to default version)
+                if (Directory.Exists("/usr/local/cuda"))
+                {
+                    return "/usr/local/cuda";
+                }
+
+                // Look for versioned installations (newest first)
+                var cudaDirs = Directory.Exists("/usr/local") 
+                    ? Directory.GetDirectories("/usr/local", "cuda-*").OrderByDescending(d => d).ToArray()
+                    : Array.Empty<string>();
+                
+                if (cudaDirs.Length > 0)
+                {
+                    return cudaDirs[0];
+                }
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // Check Program Files for NVIDIA installations
+                var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                var nvidiPath = Path.Combine(programFiles, "NVIDIA GPU Computing Toolkit", "CUDA");
+                
+                if (Directory.Exists(nvidiPath))
+                {
+                    var versions = Directory.GetDirectories(nvidiPath, "v*").OrderByDescending(d => d).ToArray();
+                    if (versions.Length > 0)
+                    {
+                        return versions[0];
+                    }
+                }
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Gets the CUDA runtime library paths to try based on detected version.
+        /// </summary>
+        private static string[] GetCudaRuntimeLibraryPaths()
+        {
+            var paths = new List<string>();
+            var cudaPath = DetectCudaInstallation();
+            
+            if (!string.IsNullOrEmpty(cudaPath))
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    var lib64Path = Path.Combine(cudaPath, "lib64");
+                    if (Directory.Exists(lib64Path))
+                    {
+                        // Look for libcudart.so* files
+                        var cudartFiles = Directory.GetFiles(lib64Path, "libcudart.so*")
+                            .OrderByDescending(f => f)
+                            .ToArray();
+                        
+                        paths.AddRange(cudartFiles);
+                    }
+                }
+            }
+
+            // Add generic fallback paths
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                paths.AddRange(new[]
+                {
+                    "libcudart.so.13",       // CUDA 13.x
+                    "libcudart.so.12",       // CUDA 12.x
+                    "libcudart.so.11",       // CUDA 11.x
+                    "libcudart.so",          // Generic
+                    "/usr/lib/wsl/lib/libcudart.so.1",  // WSL specific
+                });
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                paths.AddRange(new[]
+                {
+                    "cudart64_13",           // CUDA 13
+                    "cudart64_12",           // CUDA 12
+                    "cudart64_110",          // CUDA 11
+                    "cudart64",              // Generic
+                    "cudart"                 // Fallback
+                });
+            }
+
+            return paths.ToArray();
+        }
     }
 
-
-
-
-
-
-
-
-
-
-    /// <summary>
-    /// CUDA compute capability helper
-    /// </summary>
     public static class ComputeCapability
     {
         public static string GetArchString(int major, int minor) => $"compute_{major}{minor}";

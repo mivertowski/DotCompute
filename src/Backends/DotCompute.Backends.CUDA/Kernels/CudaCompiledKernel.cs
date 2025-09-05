@@ -7,6 +7,8 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Native.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Extensions;
 using Microsoft.Extensions.Logging;
 
@@ -109,8 +111,18 @@ namespace DotCompute.Backends.CUDA.Compilation
                 {
                     var ptxPtr = handle.AddrOfPinnedObject();
 
-                    // Load module from PTX
-                    var result = CudaRuntime.cuModuleLoadData(ref _module, ptxPtr);
+                    // CRITICAL FIX: Try module loading with JIT options for CUDA 13.0 compatibility
+                    CudaError result;
+                    
+                    // First attempt: Try cuModuleLoadDataEx with JIT options for better compatibility
+                    if (!TryLoadModuleWithJitOptions(ptxPtr, out result))
+                    {
+                        _logger.LogDebug("JIT module loading failed with error {Result}, falling back to standard loading", result);
+                        
+                        // Fallback: Standard module loading
+                        result = CudaRuntime.cuModuleLoadData(ref _module, ptxPtr);
+                    }
+                    
                     CudaRuntime.CheckError(result, "Module load");
 
                     // Try to get the mangled function name for proper symbol resolution
@@ -151,7 +163,69 @@ namespace DotCompute.Backends.CUDA.Compilation
                     errorMessage += $". Available mangled names: {mangledNamesStr}";
                 }
                 
+                // Add CUDA 13.0 specific troubleshooting information
+                errorMessage += $". Note: CUDA 13.0 may require PTX compilation instead of CUBIN for newer architectures.";
+                
                 throw new InvalidOperationException(errorMessage, ex);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to load module with JIT options for better CUDA 13.0 compatibility
+        /// </summary>
+        private bool TryLoadModuleWithJitOptions(IntPtr ptxPtr, out CudaError result)
+        {
+            try
+            {
+                // Setup JIT options for enhanced compatibility
+                var jitOptions = new[]
+                {
+                    CUjit_option.CU_JIT_OPTIMIZATION_LEVEL,
+                    CUjit_option.CU_JIT_GENERATE_DEBUG_INFO,
+                    CUjit_option.CU_JIT_GENERATE_LINE_INFO,
+                    CUjit_option.CU_JIT_LOG_VERBOSE
+                };
+
+                // Conservative JIT options values for CUDA 13.0 compatibility
+                var jitOptionValues = new IntPtr[]
+                {
+                    new IntPtr(2), // O2 optimization level
+                    new IntPtr(0), // No debug info by default
+                    new IntPtr(0), // No line info by default
+                    new IntPtr(0)  // No verbose logging by default
+                };
+
+                // Pin the options arrays
+                var optionsHandle = GCHandle.Alloc(jitOptions, GCHandleType.Pinned);
+                var valuesHandle = GCHandle.Alloc(jitOptionValues, GCHandleType.Pinned);
+
+                try
+                {
+                    result = CudaRuntime.cuModuleLoadDataEx(
+                        ref _module,
+                        ptxPtr,
+                        (uint)jitOptions.Length,
+                        optionsHandle.AddrOfPinnedObject(),
+                        valuesHandle.AddrOfPinnedObject());
+
+                    if (result == CudaError.Success)
+                    {
+                        _logger.LogDebug("Successfully loaded module using JIT options for kernel '{Name}'", Name);
+                        return true;
+                    }
+                    
+                    return false;
+                }
+                finally
+                {
+                    optionsHandle.Free();
+                    valuesHandle.Free();
+                }
+            }
+            catch
+            {
+                result = CudaError.Unknown;
+                return false;
             }
         }
 

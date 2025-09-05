@@ -20,7 +20,7 @@ public class SimpleKernelDebugTest : CudaTestBase
     [SkippableFact]
     public async Task Simplest_Kernel_Should_Set_Values()
     {
-        Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
+        Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
         
         const int size = 256;
         var factory = new CudaAcceleratorFactory();
@@ -79,7 +79,7 @@ public class SimpleKernelDebugTest : CudaTestBase
     [SkippableFact]
     public async Task Kernel_With_Input_Should_Double_Values()
     {
-        Skip.IfNot(await IsCudaAvailable(), "CUDA hardware not available");
+        Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
         
         const int size = 256;
         var factory = new CudaAcceleratorFactory();

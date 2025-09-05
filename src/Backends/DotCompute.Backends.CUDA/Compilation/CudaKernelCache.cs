@@ -12,6 +12,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Native.Exceptions;
@@ -149,7 +150,7 @@ public sealed class CudaKernelCache : IDisposable
     public async Task<CompiledKernel> GetOrCompileKernelAsync(
         string sourceCode,
         string kernelName,
-        CompilationOptions options,
+        DotCompute.Abstractions.CompilationOptions options,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -195,7 +196,7 @@ public sealed class CudaKernelCache : IDisposable
     private async Task<CompiledKernel> CompileKernelAsync(
         string sourceCode,
         string kernelName,
-        CompilationOptions options,
+        DotCompute.Abstractions.CompilationOptions options,
         CancellationToken cancellationToken)
     {
         var startTime = DateTimeOffset.UtcNow;
@@ -246,7 +247,7 @@ public sealed class CudaKernelCache : IDisposable
     private async Task<string> CompileToPtxAsync(
         string sourceCode,
         string kernelName,
-        CompilationOptions options,
+        DotCompute.Abstractions.CompilationOptions options,
         CancellationToken cancellationToken)
     {
         return await Task.Run(() =>
@@ -299,7 +300,7 @@ public sealed class CudaKernelCache : IDisposable
     /// </summary>
     private async Task<byte[]> CompilePtxToCubinAsync(
         string ptx,
-        CompilationOptions options,
+        DotCompute.Abstractions.CompilationOptions options,
         CancellationToken cancellationToken)
     {
         return await Task.Run(() =>
@@ -423,12 +424,16 @@ public sealed class CudaKernelCache : IDisposable
     /// <summary>
     /// Builds NVRTC compilation options.
     /// </summary>
-    private static string[] BuildNvrtcOptions(CompilationOptions options)
+    private static string[] BuildNvrtcOptions(DotCompute.Abstractions.CompilationOptions options)
     {
+        // Use the centralized capability manager for consistent architecture selection
+        var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
+        var archString = CudaCapabilityManager.GetArchitectureString((major, minor));
+        
         var nvrtcOptions = new List<string>
         {
-            // Compute capability
-            $"--gpu-architecture=compute_{options.ComputeCapability.Major}{options.ComputeCapability.Minor}",
+            // Compute capability from centralized manager
+            $"--gpu-architecture={archString}",
 
             // Optimization level
             options.OptimizationLevel switch
@@ -493,7 +498,7 @@ public sealed class CudaKernelCache : IDisposable
     private static string GenerateCacheKey(
         string sourceCode,
         string kernelName,
-        CompilationOptions options)
+        DotCompute.Abstractions.CompilationOptions options)
     {
         using var sha256 = SHA256.Create();
         

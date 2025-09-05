@@ -1375,4 +1375,6 @@ public enum LinearSystemSolver
     ConjugateGradient
 }
 
-#endregion}
+#endregion
+
+} // namespace DotCompute.Extensions.Algorithms.LinearAlgebra
