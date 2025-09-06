@@ -312,8 +312,8 @@ public class SimdOperationsTests
     }
     
     [Theory]
-    [InlineData(new float[] { 1.0f, 2.0f, 3.0f, 4.0f }, new float[] { 1.0f, 4.0f, 9.0f, 16.0f })]
-    [InlineData(new float[] { -1.0f, -2.0f, 3.0f, -4.0f }, new float[] { 1.0f, 4.0f, 9.0f, 16.0f })]
+    [InlineData(new float[] { 1.0f, 2.0f, 3.0f, 4.0f }, new float[] { 1.0f, 2.0f, 3.0f, 4.0f })]
+    [InlineData(new float[] { -1.0f, -2.0f, 3.0f, -4.0f }, new float[] { 1.0f, 2.0f, 3.0f, 4.0f })]
     public void VectorOperations_AbsoluteValue_ProducesCorrectResults(float[] input, float[] expected)
     {
         // Arrange

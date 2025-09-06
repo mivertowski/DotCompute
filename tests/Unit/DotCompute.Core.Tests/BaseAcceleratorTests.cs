@@ -716,10 +716,15 @@ public class BaseAcceleratorTests : IDisposable
     {
         // Arrange
         var memoryManager = new Mock<IUnifiedMemoryManager>();
-        _ = memoryManager.SetupSequence(m => m.GetAvailableMemory())
-            .Throws(new OutOfMemoryException("Memory pressure"))
-            .Throws(new OutOfMemoryException("Memory pressure"))
-            .Returns(1024 * 1024 * 500); // 500MB available
+        var callCount = 0;
+        _ = memoryManager.Setup(m => m.TotalAvailableMemory).Returns(() =>
+        {
+            callCount++;
+            if (callCount <= 2)
+                throw new OutOfMemoryException("Memory pressure");
+            return 1024L * 1024 * 500; // 500MB available
+        });
+        _ = memoryManager.Setup(m => m.CurrentAllocatedMemory).Returns(0);
         
         var accelerator = CreateTestAccelerator(memoryManager: memoryManager.Object);
         var definition = new KernelDefinition("memory_test", "__kernel void test() {}", "test");
@@ -1084,12 +1089,21 @@ public class BaseAcceleratorTests : IDisposable
         var memoryManager = new Mock<IUnifiedMemoryManager>();
 
         // Simulate gradually decreasing available memory
-        _ = memoryManager.SetupSequence(m => m.GetAvailableMemory())
-            .Returns(1024 * 1024 * 1024) // 1GB
-            .Returns(512 * 1024 * 1024)  // 512MB
-            .Returns(256 * 1024 * 1024)  // 256MB
-            .Returns(128 * 1024 * 1024)  // 128MB
-            .Throws(new OutOfMemoryException("Insufficient memory"));
+        var memoryCallCount = 0;
+        var memoryValues = new long[] 
+        { 
+            1024L * 1024 * 1024, // 1GB
+            512L * 1024 * 1024,  // 512MB
+            256L * 1024 * 1024,  // 256MB
+            128L * 1024 * 1024   // 128MB
+        };
+        _ = memoryManager.Setup(m => m.TotalAvailableMemory).Returns(() =>
+        {
+            if (memoryCallCount >= memoryValues.Length)
+                throw new OutOfMemoryException("Insufficient memory");
+            return memoryValues[Math.Min(memoryCallCount++, memoryValues.Length - 1)];
+        });
+        _ = memoryManager.Setup(m => m.CurrentAllocatedMemory).Returns(0);
         
         var results = new List<ICompiledKernel>();
         var exceptions = new List<Exception>();
@@ -1137,8 +1151,9 @@ public class BaseAcceleratorTests : IDisposable
         currentMemoryUsage = 100 * 1024 * 1024; // 100MB allocated
 
         // Assert
-        _ = accelerator.Memory.GetUsedMemory().Should().Be(100 * 1024 * 1024);
-        _ = accelerator.Memory.GetAvailableMemory().Should().Be(1024 * 1024 * 1024 - 100 * 1024 * 1024);
+        _ = accelerator.Memory.CurrentAllocatedMemory.Should().Be(100L * 1024 * 1024);
+        var availableMemory = accelerator.Memory.TotalAvailableMemory - accelerator.Memory.CurrentAllocatedMemory;
+        _ = availableMemory.Should().Be(1024L * 1024 * 1024 - 100L * 1024 * 1024);
         _ = accelerator.Info.TotalMemory.Should().Be(1024 * 1024 * 1024);
     }
     
@@ -1150,8 +1165,9 @@ public class BaseAcceleratorTests : IDisposable
         var memoryManager = new Mock<IUnifiedMemoryManager>();
         var gcCollected = false;
 
-        _ = memoryManager.Setup(m => m.GetAvailableMemory())
-            .Returns(10 * 1024 * 1024) // Low available memory
+        _ = memoryManager.Setup(m => m.TotalAvailableMemory).Returns(1024L * 1024 * 1024);
+        _ = memoryManager.Setup(m => m.CurrentAllocatedMemory)
+            .Returns(1024L * 1024 * 1024 - 10L * 1024 * 1024) // Low available memory
             .Callback(() =>
             {
                 if (!gcCollected)
@@ -1171,7 +1187,7 @@ public class BaseAcceleratorTests : IDisposable
         // Assert
         _ = result.Should().NotBeNull();
         _ = gcCollected.Should().BeTrue("garbage collection should have been triggered");
-        memoryManager.Verify(m => m.GetAvailableMemory(), Times.AtLeastOnce);
+        memoryManager.Verify(m => m.TotalAvailableMemory, Times.AtLeastOnce);
     }
     
     [Fact]
@@ -1183,7 +1199,8 @@ public class BaseAcceleratorTests : IDisposable
         var allocationSize = 0L;
 
         _ = memoryManager.Setup(m => m.GetUsedMemory()).Returns(() => allocationSize);
-        _ = memoryManager.Setup(m => m.GetAvailableMemory()).Returns(() => 1024 * 1024 * 1024 - allocationSize);
+        _ = memoryManager.Setup(m => m.TotalAvailableMemory).Returns(1024L * 1024 * 1024);
+        _ = memoryManager.Setup(m => m.CurrentAllocatedMemory).Returns(() => allocationSize);
         
         var accelerator = CreateTestAccelerator(memoryManager: memoryManager.Object);
         
@@ -1201,7 +1218,7 @@ public class BaseAcceleratorTests : IDisposable
         // Assert
         _ = result.Should().NotBeNull();
         memoryManager.Verify(m => m.GetUsedMemory(), Times.AtLeastOnce);
-        memoryManager.Verify(m => m.GetAvailableMemory(), Times.AtLeastOnce);
+        memoryManager.Verify(m => m.TotalAvailableMemory, Times.AtLeastOnce);
     }
     
     [Fact]
@@ -1212,8 +1229,9 @@ public class BaseAcceleratorTests : IDisposable
         var memoryManager = new Mock<IUnifiedMemoryManager>();
         var fragmentationLevel = 0.0;
 
-        _ = memoryManager.Setup(m => m.GetAvailableMemory())
-            .Returns(() => (long)(1024 * 1024 * 1024 * (1.0 - fragmentationLevel)));
+        _ = memoryManager.Setup(m => m.TotalAvailableMemory).Returns(1024L * 1024 * 1024);
+        _ = memoryManager.Setup(m => m.CurrentAllocatedMemory)
+            .Returns(() => (long)(1024L * 1024 * 1024 * fragmentationLevel));
         
         var accelerator = CreateTestAccelerator(memoryManager: memoryManager.Object);
         accelerator.EnableMetricsTracking = true;

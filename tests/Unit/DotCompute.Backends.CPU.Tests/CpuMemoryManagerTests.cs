@@ -270,7 +270,7 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Act & Assert
         Func<Task> act = async () => await _memoryManager.AllocateAsync(0, options);
-        _ = await act.Should().ThrowExactlyAsync<ArgumentException>();
+        _ = await act.Should().ThrowExactlyAsync<ArgumentOutOfRangeException>();
     }
     
     [Fact]
@@ -282,7 +282,7 @@ public class CpuMemoryManagerTests : IDisposable
         
         // Act & Assert
         Func<Task> act = async () => await _memoryManager.AllocateAsync(-1024, options);
-        _ = await act.Should().ThrowExactlyAsync<ArgumentException>();
+        _ = await act.Should().ThrowExactlyAsync<ArgumentOutOfRangeException>();
     }
     
     [Fact]
