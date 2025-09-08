@@ -101,7 +101,7 @@ public static class CustomAssertions
         {
             if (!float.IsFinite(array[i]))
             {
-                throw new AssertionException($"Array contains non-finite value {array[i]} at index {i}{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+                throw new InvalidOperationException($"Array contains non-finite values: {array[i]} at index {i}{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
             }
         }
     }
@@ -117,7 +117,7 @@ public static class CustomAssertions
         {
             if (!double.IsFinite(array[i]))
             {
-                throw new AssertionException($"Array contains non-finite value {array[i]} at index {i}{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
+                throw new InvalidOperationException($"Array contains non-finite values: {array[i]} at index {i}{(string.IsNullOrEmpty(because) ? "" : " because " + because)}");
             }
         }
     }

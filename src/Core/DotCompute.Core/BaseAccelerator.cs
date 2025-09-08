@@ -72,6 +72,7 @@ public abstract class BaseAccelerator : IAccelerator
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
+        ValidateKernelDefinition(definition);
         
         // Use AcceleratorUtilities for consistent compilation pattern
         return AcceleratorUtilities.CompileKernelWithLoggingAsync(
@@ -126,8 +127,16 @@ public abstract class BaseAccelerator : IAccelerator
     protected virtual void ValidateKernelDefinition(KernelDefinition definition)
     {
         ArgumentNullException.ThrowIfNull(definition);
-        ArgumentException.ThrowIfNullOrWhiteSpace(definition.Name);
-        ArgumentException.ThrowIfNullOrWhiteSpace(definition.Source);
+        
+        if (string.IsNullOrWhiteSpace(definition.Name))
+        {
+            throw new InvalidOperationException("Kernel validation failed: Kernel name cannot be empty");
+        }
+        
+        if (string.IsNullOrWhiteSpace(definition.Source))
+        {
+            throw new InvalidOperationException("Kernel validation failed: Kernel source cannot be empty");
+        }
         
         // Parameters might be stored in metadata or parsed from source
         // For now, we'll skip this validation as it depends on the specific kernel format

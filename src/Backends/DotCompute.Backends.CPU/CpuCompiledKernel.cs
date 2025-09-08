@@ -79,7 +79,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
 
     public string Source => _definition.Code != null ? "[Bytecode]" : "[Unknown]";
 
-    public string EntryPoint => _definition.Name;
+    public string EntryPoint => _definition.EntryPoint;
 
     public bool IsValid => _disposed == 0;
 

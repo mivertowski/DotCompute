@@ -23,6 +23,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<string, ICompiledKernel> _compilationCache;
     private readonly ConcurrentDictionary<string, CompilationMetrics> _metricsCache;
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<ICompiledKernel>> _compilationTasks;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseKernelCompiler"/> class.
@@ -33,6 +34,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         _logger = logger;
         _compilationCache = new ConcurrentDictionary<string, ICompiledKernel>();
         _metricsCache = new ConcurrentDictionary<string, CompilationMetrics>();
+        _compilationTasks = new ConcurrentDictionary<string, TaskCompletionSource<ICompiledKernel>>();
     }
     
     /// <summary>
@@ -85,6 +87,22 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             return cachedKernel;
         }
         
+        // Check if compilation is already in progress for this kernel
+        if (EnableCaching)
+        {
+            var tcs = new TaskCompletionSource<ICompiledKernel>();
+            if (!_compilationTasks.TryAdd(cacheKey, tcs))
+            {
+                // Another thread is already compiling this kernel, wait for it
+                if (_compilationTasks.TryGetValue(cacheKey, out var existingTcs))
+                {
+                    _logger.LogDebug("{CompilerName}: Waiting for concurrent compilation of kernel '{KernelName}'", 
+                        CompilerName, definition.Name);
+                    return await existingTcs.Task.ConfigureAwait(false);
+                }
+            }
+        }
+        
         _logger.LogDebug("{CompilerName}: Starting compilation of kernel '{KernelName}'", 
             CompilerName, definition.Name);
         
@@ -113,6 +131,12 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             if (EnableCaching)
             {
                 _ = _compilationCache.TryAdd(cacheKey, compiledKernel);
+                
+                // Signal waiting threads
+                if (_compilationTasks.TryRemove(cacheKey, out var tcs))
+                {
+                    tcs.SetResult(compiledKernel);
+                }
             }
             
             _logger.LogInformation(
@@ -121,8 +145,19 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             
             return compiledKernel;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex)
         {
+            // Remove the task on failure and propagate the exception
+            if (EnableCaching && _compilationTasks.TryRemove(cacheKey, out var tcs))
+            {
+                tcs.SetException(ex);
+            }
+            
+            if (ex is OperationCanceledException)
+            {
+                throw;
+            }
+            
             _logger.LogError(ex, "{CompilerName}: Failed to compile kernel '{KernelName}'", 
                 CompilerName, definition.Name);
             throw new KernelCompilationException($"Failed to compile kernel '{definition.Name}'", ex);
@@ -222,6 +257,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     {
         _compilationCache.Clear();
         _metricsCache.Clear();
+        _compilationTasks.Clear();
         _logger.LogDebug("{CompilerName}: Compilation cache cleared", CompilerName);
     }
 

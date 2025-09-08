@@ -85,6 +85,13 @@ public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanag
         _memoryManager = memoryManager;
         Length = length;
         SizeInBytes = length * Unsafe.SizeOf<T>();
+        
+        // Check allocation limits
+        if (memoryManager.MaxAllocationSize > 0 && SizeInBytes > memoryManager.MaxAllocationSize)
+        {
+            throw new InvalidOperationException($"Requested allocation of {SizeInBytes} bytes exceeds maximum allowed size of {memoryManager.MaxAllocationSize} bytes");
+        }
+        
         _state = BufferState.Uninitialized;
         _deviceMemory = DeviceMemory.Invalid;
 

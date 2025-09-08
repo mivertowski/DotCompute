@@ -117,13 +117,13 @@ public sealed class CpuAccelerator : BaseAccelerator
             var localType = (LocalKernelType)kernelInfo.Type;
             return localType switch
             {
-                LocalKernelType.VectorAdd => new Optimized.OptimizedVectorAddKernel(kernelInfo.Name, options, _logger),
-                LocalKernelType.VectorScale => new Optimized.OptimizedVectorScaleKernel(kernelInfo.Name, options, _logger),
-                LocalKernelType.MatrixMultiply => new Optimized.OptimizedMatrixMultiplyKernel(kernelInfo.Name, options, _logger),
-                LocalKernelType.Reduction => new Optimized.OptimizedReductionKernel(kernelInfo.Name, options, _logger),
-                LocalKernelType.MemoryIntensive => new Optimized.OptimizedMemoryKernel(kernelInfo.Name, options, _logger),
-                LocalKernelType.ComputeIntensive => new Optimized.OptimizedComputeKernel(kernelInfo.Name, options, _logger),
-                _ => new Optimized.GenericOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger)
+                LocalKernelType.VectorAdd => new Optimized.OptimizedVectorAddKernel(definition.Name, options, _logger),
+                LocalKernelType.VectorScale => new Optimized.OptimizedVectorScaleKernel(definition.Name, options, _logger),
+                LocalKernelType.MatrixMultiply => new Optimized.OptimizedMatrixMultiplyKernel(definition.Name, options, _logger),
+                LocalKernelType.Reduction => new Optimized.OptimizedReductionKernel(definition.Name, options, _logger),
+                LocalKernelType.MemoryIntensive => new Optimized.OptimizedMemoryKernel(definition.Name, options, _logger),
+                LocalKernelType.ComputeIntensive => new Optimized.OptimizedComputeKernel(definition.Name, options, _logger),
+                _ => new Optimized.GenericOptimizedKernel(definition.Name, kernelInfo, options, _logger)
             };
         }
         catch (Exception ex)

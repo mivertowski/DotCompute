@@ -365,10 +365,10 @@ internal class PlaceholderKernel : IKernel
     /// Gets information about the kernel parameters.
     /// </summary>
     /// <returns>The kernel parameter information.</returns>
-    public static IReadOnlyList<DotCompute.Abstractions.KernelParameter> GetParameterInfo()
+    public static IReadOnlyList<DotCompute.Abstractions.Kernels.KernelParameter> GetParameterInfo()
         // Return empty list as placeholder doesn't have parameters
 
-        => Array.Empty<DotCompute.Abstractions.KernelParameter>();
+        => Array.Empty<DotCompute.Abstractions.Kernels.KernelParameter>();
 
     /// <summary>
     /// Disposes the kernel.

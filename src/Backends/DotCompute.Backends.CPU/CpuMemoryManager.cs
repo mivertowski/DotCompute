@@ -57,6 +57,11 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         MemoryOptions options,
         CancellationToken cancellationToken)
     {
+        // Track allocation
+        _ = Interlocked.Add(ref _currentAllocated, sizeInBytes);
+        _ = Interlocked.Increment(ref _activeBuffers);
+        _peakMemoryUsage = Math.Max(_peakMemoryUsage, _currentAllocated);
+        
         // Determine optimal NUMA node for allocation
         var preferredNode = DetermineOptimalNode(_defaultPolicy, sizeInBytes);
         

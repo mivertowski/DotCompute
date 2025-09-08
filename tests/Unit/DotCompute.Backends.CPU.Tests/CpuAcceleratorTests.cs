@@ -175,7 +175,8 @@ public class CpuAcceleratorTests : IDisposable
         
         // Act & Assert
         Func<Task> act = async () => await _accelerator.CompileKernelAsync(invalidKernel, options);
-        _ = await act.Should().ThrowExactlyAsync<Exception>();
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Kernel*validation*failed*");
     }
     
     [Theory]
@@ -280,15 +281,20 @@ public class CpuAcceleratorTests : IDisposable
     
     [Fact]
     [Trait("Category", TestCategories.ErrorHandling)]
-    public async Task CompileKernelAsync_WithNullOptions_ThrowsArgumentNullException()
+    public async Task CompileKernelAsync_WithNullOptions_UsesDefaultOptions()
     {
         // Arrange
         var kernelDefinition = new KernelDefinition("test", "test code", "test");
         CompilationOptions? nullOptions = null;
         
-        // Act & Assert
-        Func<Task> act = async () => await _accelerator.CompileKernelAsync(kernelDefinition, nullOptions!);
-        _ = await act.Should().ThrowExactlyAsync<ArgumentNullException>();
+        // Act
+        var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, nullOptions);
+        
+        // Assert
+        _ = compiledKernel.Should().NotBeNull();
+        _ = compiledKernel.Name.Should().Be("test");
+        
+        await compiledKernel.DisposeAsync();
     }
     
     [Fact]

@@ -434,8 +434,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                 {
                     _logger.LogDebug("Found launch configuration in arguments metadata: {Config}", launchConfigObj);
                     
-                    // Check if it's a LaunchConfiguration type from abstractions
-                    if (launchConfigObj is LaunchConfiguration launchConfig)
+                    // Check if it's a KernelLaunchConfiguration type from abstractions
+                    if (launchConfigObj is KernelLaunchConfiguration launchConfig)
                     {
                         // Convert LaunchConfiguration to CudaLaunchConfig
                         config = new CudaLaunchConfig(
@@ -452,14 +452,11 @@ namespace DotCompute.Backends.CUDA.Compilation
                             config.Value.BlockX, config.Value.BlockY, config.Value.BlockZ,
                             config.Value.SharedMemoryBytes);
                     }
-                    else if (launchConfigObj is CudaLaunchConfig cudaConfig)
+                    // Note: Direct CudaLaunchConfig matching removed since we use KernelLaunchConfiguration
+                    else
                     {
-                        // Already a CudaLaunchConfig
-                        config = cudaConfig;
-                        _logger.LogDebug("Using CudaLaunchConfig directly: Grid({GridX},{GridY},{GridZ}) Block({BlockX},{BlockY},{BlockZ}) SharedMem={SharedMem}",
-                            config.Value.GridX, config.Value.GridY, config.Value.GridZ,
-                            config.Value.BlockX, config.Value.BlockY, config.Value.BlockZ,
-                            config.Value.SharedMemoryBytes);
+                        _logger.LogWarning("Unknown launch configuration type: {Type}", launchConfigObj.GetType());
+                        config = null;
                     }
                 }
 

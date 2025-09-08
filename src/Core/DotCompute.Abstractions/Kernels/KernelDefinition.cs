@@ -62,15 +62,12 @@ public class KernelDefinition
     /// <param name="name">The unique name for the kernel.</param>
     /// <param name="source">The kernel source code.</param>
     /// <param name="entryPoint">The entry point function name. If null, defaults to "main".</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="source"/> is null.</exception>
     [SetsRequiredMembers]
-    public KernelDefinition(string name, string source, string? entryPoint = null)
+    public KernelDefinition(string name, string? source, string? entryPoint = null)
     {
-        ArgumentNullException.ThrowIfNull(name);
-        ArgumentNullException.ThrowIfNull(source);
-
-
-        Name = name;
+        // Allow null/empty values to be passed - validation should happen separately
+        // This allows tests to create invalid definitions for validation testing
+        Name = name ?? string.Empty;
         Source = source;
         EntryPoint = entryPoint ?? "main";
     }

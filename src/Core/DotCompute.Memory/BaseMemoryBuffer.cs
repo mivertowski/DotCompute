@@ -24,6 +24,13 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
         
+        // Check for unreasonably large allocations (>1TB)
+        const long maxReasonableSize = 1L << 40; // 1TB
+        if (sizeInBytes > maxReasonableSize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sizeInBytes), $"Size {sizeInBytes} exceeds maximum reasonable allocation of {maxReasonableSize} bytes");
+        }
+        
         _elementSize = Unsafe.SizeOf<T>();
         SizeInBytes = sizeInBytes;
         Length = (int)(sizeInBytes / _elementSize);
@@ -182,12 +189,32 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     {
         ThrowIfDisposed();
         
-        ArgumentOutOfRangeException.ThrowIfNegative(sourceOffset);
-        ArgumentOutOfRangeException.ThrowIfNegative(destinationOffset);
+        ArgumentOutOfRangeException.ThrowIfNegative(sourceOffset, nameof(sourceOffset));
+        ArgumentOutOfRangeException.ThrowIfNegative(destinationOffset, nameof(destinationOffset));
         
-        if (count < 0)
+        if (count < -1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(count), "Count cannot be less than -1");
+        }
+        
+        if (count == -1)
         {
             count = Math.Min(sourceLength - sourceOffset, destinationLength - destinationOffset);
+        }
+        else
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(count, nameof(count));
+        }
+        
+        // Check for integer overflow
+        if (sourceOffset > long.MaxValue - count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(count), "Source offset + count would overflow");
+        }
+        
+        if (destinationOffset > long.MaxValue - count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(count), "Destination offset + count would overflow");
         }
         
         if (sourceOffset + count > sourceLength)

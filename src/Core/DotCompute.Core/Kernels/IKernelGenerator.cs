@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution;
 

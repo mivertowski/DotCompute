@@ -2,8 +2,35 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Abstractions.Kernels;
+
+/// <summary>
+/// Represents kernel launch configuration for advanced kernel execution.
+/// </summary>
+public class KernelLaunchConfiguration
+{
+    /// <summary>
+    /// Gets or sets the grid dimensions (blocks per grid).
+    /// </summary>
+    public (uint X, uint Y, uint Z) GridSize { get; set; } = (1, 1, 1);
+
+    /// <summary>
+    /// Gets or sets the block dimensions (threads per block).
+    /// </summary>
+    public (uint X, uint Y, uint Z) BlockSize { get; set; } = (256, 1, 1);
+
+    /// <summary>
+    /// Gets or sets the shared memory size in bytes.
+    /// </summary>
+    public uint SharedMemoryBytes { get; set; } = 0;
+
+    /// <summary>
+    /// Gets or sets the CUDA stream to use (0 for default stream).
+    /// </summary>
+    public IntPtr Stream { get; set; } = IntPtr.Zero;
+}
 
 /// <summary>
 /// Represents kernel execution arguments that are passed to a compute kernel during execution.
@@ -12,6 +39,8 @@ namespace DotCompute.Abstractions.Kernels;
 public class KernelArguments : IEnumerable<object?>
 {
     private readonly List<object?> _arguments;
+    private readonly List<IUnifiedMemoryBuffer> _buffers;
+    private readonly List<object> _scalarArguments;
 
     /// <summary>
     /// Gets the number of arguments currently stored in this instance.
@@ -33,6 +62,8 @@ public class KernelArguments : IEnumerable<object?>
     public KernelArguments()
     {
         _arguments = [];
+        _buffers = [];
+        _scalarArguments = [];
     }
 
 
@@ -50,9 +81,10 @@ public class KernelArguments : IEnumerable<object?>
         }
 
         _arguments = new List<object?>(capacity);
+        _buffers = [];
+        _scalarArguments = [];
 
         // Pre-fill with null values to match the expected capacity
-
         for (var i = 0; i < capacity; i++)
         {
             _arguments.Add(null);
@@ -69,6 +101,8 @@ public class KernelArguments : IEnumerable<object?>
     {
         ArgumentNullException.ThrowIfNull(arguments);
         _arguments = [.. arguments];
+        _buffers = [];
+        _scalarArguments = [];
     }
 
     /// <summary>
@@ -145,6 +179,59 @@ public class KernelArguments : IEnumerable<object?>
     /// </summary>
     /// <value>A read-only list containing all arguments.</value>
     public IReadOnlyList<object?> Arguments => _arguments.AsReadOnly();
+
+    /// <summary>
+    /// Gets or sets the buffer arguments for kernel execution.
+    /// </summary>
+    /// <value>A collection of memory buffers to be passed to the kernel.</value>
+    public IEnumerable<IUnifiedMemoryBuffer> Buffers
+    {
+        get => _buffers;
+        set
+        {
+            _buffers.Clear();
+            if (value != null)
+            {
+                _buffers.AddRange(value);
+                // Sync buffers to main arguments list
+                SyncArgumentsFromBuffersAndScalars();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the scalar arguments for kernel execution.
+    /// </summary>
+    /// <value>A collection of scalar values to be passed to the kernel.</value>
+    public IEnumerable<object> ScalarArguments
+    {
+        get => _scalarArguments;
+        set
+        {
+            _scalarArguments.Clear();
+            if (value != null)
+            {
+                _scalarArguments.AddRange(value);
+                // Sync scalars to main arguments list
+                SyncArgumentsFromBuffersAndScalars();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the kernel launch configuration including shared memory settings.
+    /// </summary>
+    /// <value>The launch configuration for advanced kernel execution features.</value>
+    public KernelLaunchConfiguration? LaunchConfiguration { get; set; }
+
+    /// <summary>
+    /// Gets the launch configuration for backend-specific kernel execution.
+    /// </summary>
+    /// <returns>The launch configuration or null if not set.</returns>
+    public KernelLaunchConfiguration? GetLaunchConfiguration()
+    {
+        return LaunchConfiguration;
+    }
 
 
     /// <summary>
@@ -233,9 +320,79 @@ public class KernelArguments : IEnumerable<object?>
     public static KernelArguments Create(params object?[] arguments) => [.. arguments];
 
     /// <summary>
+    /// Creates a new <see cref="KernelArguments"/> instance with separate buffers and scalar arguments.
+    /// </summary>
+    /// <param name="buffers">The buffer arguments.</param>
+    /// <param name="scalars">The scalar arguments.</param>
+    /// <returns>A new KernelArguments instance.</returns>
+    public static KernelArguments Create(IEnumerable<IUnifiedMemoryBuffer> buffers, IEnumerable<object> scalars)
+    {
+        var args = new KernelArguments();
+        if (buffers != null)
+        {
+            args.Buffers = buffers;
+        }
+        if (scalars != null)
+        {
+            args.ScalarArguments = scalars;
+        }
+        return args;
+    }
+
+    /// <summary>
     /// Removes all arguments from this instance, resetting the Count to zero.
     /// </summary>
-    public void Clear() => _arguments.Clear();
+    public void Clear()
+    {
+        _arguments.Clear();
+        _buffers.Clear();
+        _scalarArguments.Clear();
+    }
+
+    /// <summary>
+    /// Synchronizes the main arguments list with buffers and scalar arguments.
+    /// This ensures backward compatibility with the indexed access pattern.
+    /// </summary>
+    private void SyncArgumentsFromBuffersAndScalars()
+    {
+        _arguments.Clear();
+        
+        // Add buffers first
+        foreach (var buffer in _buffers)
+        {
+            _arguments.Add(buffer);
+        }
+        
+        // Add scalar arguments
+        foreach (var scalar in _scalarArguments)
+        {
+            _arguments.Add(scalar);
+        }
+    }
+
+    /// <summary>
+    /// Adds a buffer argument to the kernel arguments.
+    /// </summary>
+    /// <param name="buffer">The memory buffer to add.</param>
+    /// <exception cref="ArgumentNullException">Thrown when buffer is null.</exception>
+    public void AddBuffer(IUnifiedMemoryBuffer buffer)
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        _buffers.Add(buffer);
+        SyncArgumentsFromBuffersAndScalars();
+    }
+
+    /// <summary>
+    /// Adds a scalar argument to the kernel arguments.
+    /// </summary>
+    /// <param name="scalar">The scalar value to add.</param>
+    /// <exception cref="ArgumentNullException">Thrown when scalar is null.</exception>
+    public void AddScalar(object scalar)
+    {
+        ArgumentNullException.ThrowIfNull(scalar);
+        _scalarArguments.Add(scalar);
+        SyncArgumentsFromBuffersAndScalars();
+    }
 
     /// <summary>
     /// Returns an enumerator that iterates through the arguments.

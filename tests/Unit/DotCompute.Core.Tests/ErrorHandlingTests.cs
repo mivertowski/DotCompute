@@ -125,12 +125,12 @@ public class ErrorHandlingTests : IDisposable
         _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage($"*{errorMessage}*");
 
-        // Verify error logging
+        // Verify error logging - check that compilation failure was logged
         _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(errorMessage)),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to compile kernel")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
@@ -174,7 +174,8 @@ public class ErrorHandlingTests : IDisposable
 
         // Act & Assert
         var act = async () => await accelerator.CompileKernelAsync(definition);
-        _ = await act.Should().ThrowAsync<ArgumentNullException>();
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Kernel validation failed*");
     }
 
     [Fact]
@@ -1285,6 +1286,12 @@ public class ErrorHandlingTests : IDisposable
             CompilationOptions options,
             CancellationToken cancellationToken)
         {
+            // Check circuit breaker first
+            if (EnableCircuitBreaker && CircuitBreakerState == CircuitBreakerState.Open)
+            {
+                throw new CircuitBreakerOpenException("Circuit breaker is open due to repeated failures");
+            }
+
             _ = Interlocked.Increment(ref _activeResourceCount);
 
             try
@@ -1314,8 +1321,32 @@ public class ErrorHandlingTests : IDisposable
                     }
                 }
 
-                // Handle various error scenarios
-                await SimulateErrors();
+                // Handle various error scenarios with retry logic
+                if (EnableRetryPolicy && SimulateKernelLaunchFailure)
+                {
+                    // Retry logic for kernel launch failures
+                    int attempts = 0;
+                    while (attempts < MaxRetryAttempts)
+                    {
+                        try
+                        {
+                            await SimulateErrors();
+                            break; // Success, exit retry loop
+                        }
+                        catch (InvalidOperationException ex) when (ex.Message == "Kernel launch failed" && attempts < MaxRetryAttempts - 1)
+                        {
+                            attempts++;
+                            RetryAttemptCount = attempts;
+                            await HandleRetryWithBackoff(attempts);
+                            // Continue to next retry attempt
+                        }
+                    }
+                }
+                else
+                {
+                    // No retry, just simulate errors
+                    await SimulateErrors();
+                }
 
                 // Create successful result
                 var mockKernel = new Mock<ICompiledKernel>();

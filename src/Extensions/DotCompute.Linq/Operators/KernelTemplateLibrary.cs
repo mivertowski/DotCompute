@@ -264,8 +264,8 @@ public class MapKernelTemplate : IKernelTemplate
         {
             Name = param.Name,
             Type = param.Type,
-            IsInput = param.Direction is ParameterDirection.In or ParameterDirection.InOut,
-            IsOutput = param.Direction is ParameterDirection.Out or ParameterDirection.InOut
+            IsInput = param.Direction is Parameters.ParameterDirection.In or Parameters.ParameterDirection.InOut,
+            IsOutput = param.Direction is Parameters.ParameterDirection.Out or Parameters.ParameterDirection.InOut
         };
     }
 }
@@ -300,8 +300,8 @@ public class FilterKernelTemplate : IKernelTemplate
         {
             Name = param.Name,
             Type = param.Type,
-            IsInput = param.Direction is ParameterDirection.In or ParameterDirection.InOut,
-            IsOutput = param.Direction is ParameterDirection.Out or ParameterDirection.InOut
+            IsInput = param.Direction is Parameters.ParameterDirection.In or Parameters.ParameterDirection.InOut,
+            IsOutput = param.Direction is Parameters.ParameterDirection.Out or Parameters.ParameterDirection.InOut
         };
     }
 }
@@ -336,8 +336,8 @@ public class ReduceKernelTemplate : IKernelTemplate
         {
             Name = param.Name,
             Type = param.Type,
-            IsInput = param.Direction is ParameterDirection.In or ParameterDirection.InOut,
-            IsOutput = param.Direction is ParameterDirection.Out or ParameterDirection.InOut
+            IsInput = param.Direction is Parameters.ParameterDirection.In or Parameters.ParameterDirection.InOut,
+            IsOutput = param.Direction is Parameters.ParameterDirection.Out or Parameters.ParameterDirection.InOut
         };
     }
 }
@@ -372,8 +372,8 @@ public class SortKernelTemplate : IKernelTemplate
         {
             Name = param.Name,
             Type = param.Type,
-            IsInput = param.Direction is ParameterDirection.In or ParameterDirection.InOut,
-            IsOutput = param.Direction is ParameterDirection.Out or ParameterDirection.InOut
+            IsInput = param.Direction is Parameters.ParameterDirection.In or Parameters.ParameterDirection.InOut,
+            IsOutput = param.Direction is Parameters.ParameterDirection.Out or Parameters.ParameterDirection.InOut
         };
     }
 }

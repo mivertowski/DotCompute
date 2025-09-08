@@ -38,25 +38,25 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     
     public override Span<T> AsSpan() 
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         return _memory.Span;
     }
     
     public override ReadOnlySpan<T> AsReadOnlySpan() 
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         return _memory.Span;
     }
     
     public override Memory<T> AsMemory() 
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         return _memory;
     }
     
     public override ReadOnlyMemory<T> AsReadOnlyMemory() 
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         return _memory;
     }
     
@@ -91,7 +91,7 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     
     public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         cancellationToken.ThrowIfCancellationRequested();
         
         if (source.Length > Length)
@@ -103,7 +103,7 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     
     public override ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         cancellationToken.ThrowIfCancellationRequested();
         
         if (destination.Length < Length)
@@ -115,7 +115,7 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     
     public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         cancellationToken.ThrowIfCancellationRequested();
         
         ValidateCopyParameters(source.Length, 0, Length, offset, source.Length);
@@ -125,7 +125,7 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     
     public override ValueTask CopyToAsync(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         cancellationToken.ThrowIfCancellationRequested();
         
         ValidateCopyParameters(Length, offset, destination.Length, 0, destination.Length);
@@ -141,12 +141,14 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     
     public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         _memory.Span.Fill(value);
         return ValueTask.CompletedTask;
     }
     
     public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         _memory.Span.Slice(offset, count).Fill(value);
         return ValueTask.CompletedTask;
     }
@@ -471,7 +473,6 @@ internal sealed unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T
 internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanaged
 {
     private readonly Memory<T> _memory;
-    private bool _isDisposed;
 
     public TestPooledBuffer(long sizeInBytes, Action<BasePooledBuffer<T>>? returnAction) 
         : base(sizeInBytes, returnAction)
@@ -481,7 +482,6 @@ internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmana
 
     public override IntPtr DevicePointer => IntPtr.Zero;
     public override MemoryType MemoryType => MemoryType.Host;
-    public override bool IsDisposed => _isDisposed;
     public override bool IsOnHost => true;
     public override bool IsOnDevice => false;
     public override bool IsDirty => false;
@@ -547,12 +547,14 @@ internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmana
     
     public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         _memory.Span.Fill(value);
         return ValueTask.CompletedTask;
     }
     
     public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
         _memory.Span.Slice(offset, count).Fill(value);
         return ValueTask.CompletedTask;
     }
@@ -578,12 +580,15 @@ internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmana
     // BasePooledBuffer already provides implementation for Dispose and DisposeAsync
     // We need to override DisposeCore for cleanup
 
-    protected override void DisposeCore() => _isDisposed = true;
+    protected override void DisposeCore()
+    {
+        // Cleanup logic if needed
+    }
 
 
     protected override ValueTask DisposeCoreAsync()
     {
-        _isDisposed = true;
+        // Async cleanup logic if needed
         return ValueTask.CompletedTask;
     }
 }

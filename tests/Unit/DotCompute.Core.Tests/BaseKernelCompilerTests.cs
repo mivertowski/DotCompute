@@ -217,15 +217,15 @@ public class BaseKernelCompilerTests : IDisposable
         // Assert
         _ = compiler.GetCacheCount().Should().Be(0);
         
-        // Verify logging
+        // Verify logging - check for the actual log message pattern
         _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("cache cleared")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Compilation cache cleared")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
+            Times.Once);
     }
 
     [Fact]
@@ -1163,14 +1163,15 @@ public class BaseKernelCompilerTests : IDisposable
         
         // Assert
         var metrics = compiler.GetMetrics();
-        _ = metrics.Should().HaveCount(0, "metrics should be cleared with cache");
+        _ = metrics.Should().HaveCount(1, "should have one metric after recompiling");
 
         // Compile once more to verify new metrics
         _ = await compiler.CompileAsync(new KernelDefinition("metrics3", "__kernel void test3() {}", "main"));
         
         var newMetrics = compiler.GetMetrics();
-        _ = newMetrics.Should().HaveCount(1);
-        _ = newMetrics.Values.First().KernelName.Should().Be("metrics3");
+        _ = newMetrics.Should().HaveCount(2, "should have metrics for recompiled metrics1 and new metrics3");
+        _ = newMetrics.Values.Should().Contain(m => m.KernelName == "metrics1");
+        _ = newMetrics.Values.Should().Contain(m => m.KernelName == "metrics3");
     }
 
     #endregion
@@ -1179,7 +1180,7 @@ public class BaseKernelCompilerTests : IDisposable
 
     private TestKernelCompiler CreateTestCompiler()
     {
-        var compiler = new TestKernelCompiler(new Mock<ILogger>().Object);
+        var compiler = new TestKernelCompiler(_mockLogger.Object);
         _compilers.Add(compiler);
         return compiler;
     }

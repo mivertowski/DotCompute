@@ -92,6 +92,6 @@ public class BaseUnifiedBufferTests
         _ = span.Length.Should().BeGreaterThan(0);
         _ = readOnlySpan.Length.Should().BeGreaterThan(0);
         _ = memory.Should().NotBeNull();
-        _ = devicePtr.Should().Be(IntPtr.Zero); // Test implementation returns Zero
+        _ = devicePtr.Should().NotBe(IntPtr.Zero); // Unified buffer has valid device pointer
     }
 }

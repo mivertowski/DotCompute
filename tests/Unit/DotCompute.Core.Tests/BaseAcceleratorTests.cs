@@ -775,7 +775,8 @@ public class BaseAcceleratorTests : IDisposable
         {
             // Assert - Should throw for invalid names
             var act = async () => await _accelerator.CompileKernelAsync(definition);
-            _ = await act.Should().ThrowAsync<ArgumentException>();
+            _ = await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*Kernel validation failed*");
         }
         else
         {
@@ -1685,7 +1686,7 @@ public class BaseAcceleratorTests : IDisposable
         private int _activeSyncs;
 
         public TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger)
-            : base(info, AcceleratorType.CPU, memory, new AcceleratorContext(IntPtr.Zero, 0), logger)
+            : base(info, Enum.Parse<AcceleratorType>(info.DeviceType), memory, new AcceleratorContext(IntPtr.Zero, 0), logger)
         {
         }
         

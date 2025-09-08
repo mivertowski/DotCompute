@@ -187,8 +187,8 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
         return _generatedKernel.Parameters.Select(p => new Parameters.KernelParameter(
             p.Name, 
             p.Type, 
-            p.IsInput && p.IsOutput ? ParameterDirection.InOut :
-                       p.IsOutput ? ParameterDirection.Out : ParameterDirection.In
+            p.IsInput && p.IsOutput ? Parameters.ParameterDirection.InOut :
+                       p.IsOutput ? Parameters.ParameterDirection.Out : Parameters.ParameterDirection.In
         )).ToArray();
     }
 
