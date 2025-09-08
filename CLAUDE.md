@@ -42,30 +42,42 @@ dotnet clean DotCompute.sln
 
 ### Architecture Overview
 
-The codebase follows a **modular, layered architecture**:
+The codebase follows a **comprehensive, production-grade architecture** with four integrated layers:
 
 ```
 DotCompute/
 ├── src/
-│   ├── Core/                    # Core abstractions and interfaces
-│   │   ├── DotCompute.Core/     # Main runtime and kernel execution
+│   ├── Core/                    # Core abstractions and runtime
+│   │   ├── DotCompute.Core/     # Main runtime, orchestration, optimization
+│   │   │   ├── Debugging/       # ✅ Cross-backend validation system
+│   │   │   ├── Optimization/    # ✅ Adaptive backend selection with ML
+│   │   │   ├── Telemetry/       # ✅ Performance profiling infrastructure
+│   │   │   └── Pipelines/       # ✅ Execution pipeline management
 │   │   ├── DotCompute.Abstractions/  # Interface definitions
-│   │   └── DotCompute.Memory/   # Unified memory management
+│   │   │   ├── Debugging/       # ✅ IKernelDebugService interface
+│   │   │   └── Interfaces/      # ✅ IComputeOrchestrator, IKernel
+│   │   └── DotCompute.Memory/   # Unified memory with pooling
 │   ├── Backends/                # Compute backend implementations
-│   │   ├── DotCompute.Backends.CPU/   # ✅ Production: SIMD vectorization
-│   │   ├── DotCompute.Backends.CUDA/  # ✅ Production: NVIDIA GPU support
+│   │   ├── DotCompute.Backends.CPU/   # ✅ Production: AVX2/AVX512 SIMD
+│   │   ├── DotCompute.Backends.CUDA/  # ✅ Production: NVIDIA GPU (CC 5.0+)
 │   │   ├── DotCompute.Backends.Metal/ # ❌ Stubs only
 │   │   └── DotCompute.Backends.ROCm/  # ❌ Placeholder
 │   ├── Extensions/              # Extension libraries
 │   │   ├── DotCompute.Algorithms/     # Algorithm implementations
-│   │   └── DotCompute.Linq/           # LINQ provider
-│   └── Runtime/                 # Runtime services
-│       ├── DotCompute.Plugins/        # Plugin system
-│       └── DotCompute.Generators/     # Source generators
+│   │   └── DotCompute.Linq/           # LINQ provider with kernels
+│   └── Runtime/                 # Runtime services and code generation
+│       ├── DotCompute.Runtime/  # ✅ Service orchestration, discovery
+│       │   └── Services/        # ✅ KernelExecutionService, discovery
+│       ├── DotCompute.Generators/     # ✅ Source generators & analyzers
+│       │   ├── Analyzers/       # ✅ 12 diagnostic rules (DC001-DC012)
+│       │   ├── CodeFixes/       # ✅ 5 automated IDE fixes
+│       │   ├── Kernel/          # ✅ Kernel source generation
+│       │   └── Examples/        # ✅ Analyzer demonstrations
+│       └── DotCompute.Plugins/  # Plugin system with hot-reload
 └── tests/
-    ├── Unit/                    # Unit tests for individual components
+    ├── Unit/                    # Unit tests for components
     ├── Integration/             # Integration tests
-    ├── Hardware/                # Hardware-specific tests (GPU required)
+    ├── Hardware/                # Hardware-specific tests (GPU)
     └── Shared/                  # Shared test utilities
 ```
 
@@ -97,6 +109,29 @@ DotCompute/
    - `CpuAccelerator`: Multi-threaded CPU execution
    - `VectorizedOperations`: Hardware-accelerated operations
 
+6. **Runtime Integration** (`src/Core/DotCompute.Core/Interfaces/`)
+   - `IComputeOrchestrator`: Universal kernel execution interface
+   - `KernelExecutionService`: Runtime orchestration service
+   - `GeneratedKernelDiscoveryService`: Automatic kernel registration
+
+7. **Debugging System** (`src/Core/DotCompute.Core/Debugging/`)
+   - `IKernelDebugService`: Cross-backend validation interface
+   - `KernelDebugService`: Production debugging implementation
+   - `DebugIntegratedOrchestrator`: Transparent debug wrapper
+   - Multiple profiles: Development, Testing, Production
+
+8. **Optimization Engine** (`src/Core/DotCompute.Core/Optimization/`)
+   - `AdaptiveBackendSelector`: ML-powered backend selection
+   - `PerformanceOptimizedOrchestrator`: Performance-driven execution
+   - `WorkloadCharacteristics`: Workload pattern analysis
+   - Multiple optimization strategies: Conservative, Balanced, Aggressive
+
+9. **Source Generators & Analyzers** (`src/Runtime/DotCompute.Generators/`)
+   - `KernelSourceGenerator`: Generates kernel wrappers from [Kernel] attributes
+   - `DotComputeKernelAnalyzer`: 12 diagnostic rules for kernel quality
+   - `KernelCodeFixProvider`: 5 automated code fixes
+   - Real-time IDE integration with Visual Studio and VS Code
+
 ## Development Guidelines
 
 ### Native AOT Compatibility
@@ -125,7 +160,15 @@ DotCompute/
 
 ## Common Development Tasks
 
-### Adding a New Kernel
+### Adding a New Kernel (Modern Approach v0.2.0+)
+1. Add `[Kernel]` attribute to static method in C#
+2. Use `Kernel.ThreadId.X/Y/Z` for threading model
+3. Ensure bounds checking with `if (idx < length)`
+4. Source generator creates wrapper automatically
+5. IDE analyzers provide real-time feedback
+6. System automatically optimizes for CPU/GPU
+
+### Adding a New Kernel (Legacy Approach)
 1. Define kernel in `KernelDefinition` format
 2. Implement CPU version using SIMD intrinsics
 3. Implement CUDA version in CUDA C
@@ -166,17 +209,23 @@ DotCompute/
 
 ## Production-Ready Components
 
-✅ **Fully Production Ready:**
+✅ **Fully Production Ready (v0.2.0):**
 - CPU Backend with SIMD vectorization (8-23x speedup)
 - CUDA Backend with complete GPU support
 - Memory Management with pooling and P2P
 - Plugin System with hot-reload
 - Native AOT compilation support
+- Source Generator with [Kernel] attribute support
+- Roslyn Analyzers with 12 diagnostic rules
+- Cross-Backend Debugging with validation
+- Adaptive Backend Selection with ML
+- Performance Profiling with hardware counters
+- Runtime Orchestration with DI integration
 
 🚧 **Basic Implementation:**
 - Algorithm libraries (basic operations only)
 - LINQ provider (CPU fallback working)
-- Runtime orchestration (service stubs)
+- Metal and ROCm backends (stubs only)
 
 ## Critical Implementation Details
 
@@ -205,3 +254,60 @@ DotCompute/
 - **CUDA Toolkit 12.0+** for GPU support
 - **cmake** for native components
 - **NVIDIA GPU** with Compute Capability 5.0+ for CUDA tests
+
+## New Features in v0.2.0-alpha
+
+### Phase 1: Generator ↔ Runtime Integration
+- `IComputeOrchestrator` interface for universal kernel execution
+- `KernelExecutionService` for runtime orchestration
+- `GeneratedKernelDiscoveryService` for automatic kernel registration
+- Dependency injection integration with Microsoft.Extensions.DependencyInjection
+
+### Phase 2: Roslyn Analyzer Integration
+- 12 diagnostic rules (DC001-DC012) for kernel code quality
+- 5 automated code fixes in IDE
+- Real-time feedback in Visual Studio and VS Code
+- Comprehensive examples in `AnalyzerDemo.cs`
+
+### Phase 3: Enhanced Debugging Service
+- `IKernelDebugService` with 8 debugging methods
+- Cross-backend validation (CPU vs GPU)
+- Performance analysis and profiling
+- Determinism testing and memory pattern analysis
+- Multiple debugging profiles (Development, Testing, Production)
+
+### Phase 4: Production Optimizations
+- `AdaptiveBackendSelector` with machine learning capabilities
+- `PerformanceOptimizedOrchestrator` for intelligent execution
+- Workload pattern recognition and analysis
+- Real-time performance monitoring
+- Multiple optimization profiles (Conservative, Balanced, Aggressive, ML-optimized)
+
+### Usage Examples
+
+#### Modern Kernel Definition
+```csharp
+[Kernel]
+public static void VectorAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+{
+    int idx = Kernel.ThreadId.X;
+    if (idx < result.Length)
+    {
+        result[idx] = a[idx] + b[idx];
+    }
+}
+```
+
+#### Service Configuration
+```csharp
+services.AddDotComputeRuntime();
+services.AddProductionOptimization();  // Intelligent backend selection
+services.AddProductionDebugging();     // Cross-backend validation
+```
+
+### Key Benefits
+- **Universal Execution**: Write once in C#, run optimally on CPU or GPU
+- **IDE Integration**: Real-time feedback and automated improvements
+- **Production Ready**: Comprehensive debugging and optimization
+- **Intelligent**: ML-powered backend selection learns from execution patterns
+- **Observable**: Detailed performance metrics and profiling

@@ -246,32 +246,29 @@ public static class TestDataGenerator
         /// <summary>
         /// Gets an array containing various floating-point edge cases.
         /// </summary>
-        public static float[] FloatEdgeCases =>
-        [
+        public static float[] FloatEdgeCases => [
             0.0f, -0.0f, 1.0f, -1.0f,
             float.Epsilon, -float.Epsilon,
             float.MinValue, float.MaxValue,
             float.PositiveInfinity, float.NegativeInfinity,
             float.NaN
         ];
-        
+
         /// <summary>
         /// Gets an array containing various double-precision edge cases.
         /// </summary>
-        public static double[] DoubleEdgeCases =>
-        [
+        public static double[] DoubleEdgeCases => [
             0.0, -0.0, 1.0, -1.0,
             double.Epsilon, -double.Epsilon,
             double.MinValue, double.MaxValue,
             double.PositiveInfinity, double.NegativeInfinity,
             double.NaN
         ];
-        
+
         /// <summary>
         /// Gets an array containing integer edge cases.
         /// </summary>
-        public static int[] IntEdgeCases =>
-        [
+        public static int[] IntEdgeCases => [
             0, 1, -1, int.MinValue, int.MaxValue
         ];
     }

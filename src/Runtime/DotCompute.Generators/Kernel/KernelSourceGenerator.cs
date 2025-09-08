@@ -1141,6 +1141,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine("using System.Threading.Tasks;");
         _ = source.AppendLine("using DotCompute.Core.Memory;");
         _ = source.AppendLine("using DotCompute.Abstractions;");
+        _ = source.AppendLine("using DotCompute.Runtime.Services;");
+        _ = source.AppendLine("using Microsoft.Extensions.DependencyInjection;");
         _ = source.AppendLine("using DotCompute.Generated;");
         _ = source.AppendLine();
         
@@ -1175,7 +1177,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
     private static void GenerateAsyncKernelExecutionMethod(StringBuilder source, KernelMethodInfo method)
     {
         _ = source.AppendLine("        /// <summary>");
-        _ = source.AppendLine($"        /// Executes the {method.Name} kernel on the optimal available backend.");
+        _ = source.AppendLine($"        /// Executes the {method.Name} kernel using the DotCompute runtime orchestrator.");
+        _ = source.AppendLine("        /// Automatically selects the optimal backend and handles all marshaling.");
         _ = source.AppendLine("        /// </summary>");
         
         var paramList = string.Join(", ", method.Parameters.Select(p => $"UnifiedBuffer<{ExtractBaseType(p.Type)}> {p.Name}"));
@@ -1184,23 +1187,65 @@ public class KernelSourceGenerator : IIncrementalGenerator
             paramList += ", int length";
         }
         
-        _ = source.AppendLine($"        public static async Task ExecuteAsync({paramList}, IAccelerator? preferredAccelerator = null)");
+        _ = source.AppendLine($"        public static async Task ExecuteAsync({paramList}, IServiceProvider? serviceProvider = null)");
         _ = source.AppendLine("        {");
-        _ = source.AppendLine("            var accelerator = preferredAccelerator ?? SelectOptimalBackend();");
+        _ = source.AppendLine("            // Get the compute orchestrator from DI container");
+        _ = source.AppendLine("            var orchestrator = serviceProvider?.GetService<IComputeOrchestrator>");
+        _ = source.AppendLine("                ?? throw new InvalidOperationException(\"IComputeOrchestrator service not registered. Call services.AddDotComputeRuntime() during startup.\");");
         _ = source.AppendLine();
-        _ = source.AppendLine("            switch (accelerator.Type)");
-        _ = source.AppendLine("            {");
+        _ = source.AppendLine("            // Prepare arguments for kernel execution");
+        _ = source.AppendLine("            var buffers = new IUnifiedMemoryBuffer[] {");
         
-        foreach (var backend in method.Backends)
+        foreach (var param in method.Parameters.Where(p => p.IsBuffer))
         {
-            _ = source.AppendLine($"                case AcceleratorType.{backend}:");
-            _ = source.AppendLine($"                    await Execute{backend}Async({string.Join(", ", method.Parameters.Select(p => p.Name))}, length, accelerator);");
-            _ = source.AppendLine("                    break;");
+            _ = source.AppendLine($"                {param.Name},");
         }
         
-        _ = source.AppendLine("                default:");
-        _ = source.AppendLine($"                    throw new NotSupportedException($\"Backend {{accelerator.Type}} is not supported for kernel {method.Name}\");");
-        _ = source.AppendLine("            }");
+        _ = source.AppendLine("            };");
+        _ = source.AppendLine();
+        _ = source.AppendLine("            var scalarArgs = new object[] {");
+        
+        foreach (var param in method.Parameters.Where(p => !p.IsBuffer))
+        {
+            _ = source.AppendLine($"                {param.Name},");
+        }
+        
+        if (!method.Parameters.Any(p => p.Name == "length" && p.Type == "int"))
+        {
+            _ = source.AppendLine("                length,");
+        }
+        
+        _ = source.AppendLine("            };");
+        _ = source.AppendLine();
+        _ = source.AppendLine($"            // Execute kernel through orchestrator");
+        _ = source.AppendLine($"            await orchestrator.ExecuteWithBuffersAsync<object>(\"{method.ContainingType}.{method.Name}\", buffers, scalarArgs);");
+        _ = source.AppendLine("        }");
+        _ = source.AppendLine();
+        
+        // Generate overload with explicit accelerator
+        _ = source.AppendLine("        /// <summary>");
+        _ = source.AppendLine($"        /// Executes the {method.Name} kernel on a specific accelerator.");
+        _ = source.AppendLine("        /// </summary>");
+        _ = source.AppendLine($"        public static async Task ExecuteAsync({paramList}, IAccelerator accelerator, IServiceProvider? serviceProvider = null)");
+        _ = source.AppendLine("        {");
+        _ = source.AppendLine("            var orchestrator = serviceProvider?.GetService<IComputeOrchestrator>");
+        _ = source.AppendLine("                ?? throw new InvalidOperationException(\"IComputeOrchestrator service not registered.\");");
+        _ = source.AppendLine();
+        _ = source.AppendLine("            var allArgs = new object[] {");
+        
+        foreach (var param in method.Parameters)
+        {
+            _ = source.AppendLine($"                {param.Name},");
+        }
+        
+        if (!method.Parameters.Any(p => p.Name == "length" && p.Type == "int"))
+        {
+            _ = source.AppendLine("                length,");
+        }
+        
+        _ = source.AppendLine("            };");
+        _ = source.AppendLine();
+        _ = source.AppendLine($"            await orchestrator.ExecuteAsync<object>(\"{method.ContainingType}.{method.Name}\", accelerator, allArgs);");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
     }
