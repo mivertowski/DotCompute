@@ -26,6 +26,12 @@ public sealed class CudaErrorHandler : IDisposable
     private volatile bool _gpuAvailable = true;
     private DateTimeOffset _lastSuccessfulOperation = DateTimeOffset.UtcNow;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaErrorHandler"/> class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
+    /// <exception cref="System.ArgumentNullException">logger</exception>
     public CudaErrorHandler(
         ILogger<CudaErrorHandler> logger,
         ErrorRecoveryOptions? options = null)
@@ -492,8 +498,28 @@ public sealed class CudaErrorHandler : IDisposable
     /// </summary>
     public sealed class ErrorStatistics
     {
+        /// <summary>
+        /// Gets or sets the count.
+        /// </summary>
+        /// <value>
+        /// The count.
+        /// </value>
         public int Count { get; set; }
+
+        /// <summary>
+        /// Gets the first occurrence.
+        /// </summary>
+        /// <value>
+        /// The first occurrence.
+        /// </value>
         public DateTimeOffset FirstOccurrence { get; init; }
+
+        /// <summary>
+        /// Gets or sets the last occurrence.
+        /// </summary>
+        /// <value>
+        /// The last occurrence.
+        /// </value>
         public DateTimeOffset LastOccurrence { get; set; }
     }
 }
@@ -503,14 +529,68 @@ public sealed class CudaErrorHandler : IDisposable
 /// </summary>
 public sealed class ErrorRecoveryOptions
 {
+    /// <summary>
+    /// Gets the maximum retry attempts.
+    /// </summary>
+    /// <value>
+    /// The maximum retry attempts.
+    /// </value>
     public int MaxRetryAttempts { get; init; } = 3;
+
+    /// <summary>
+    /// Gets the maximum retry delay ms.
+    /// </summary>
+    /// <value>
+    /// The maximum retry delay ms.
+    /// </value>
     public int MaxRetryDelayMs { get; init; } = 5000;
+
+    /// <summary>
+    /// Gets the memory retry attempts.
+    /// </summary>
+    /// <value>
+    /// The memory retry attempts.
+    /// </value>
     public int MemoryRetryAttempts { get; init; } = 2;
+
+    /// <summary>
+    /// Gets the circuit breaker threshold.
+    /// </summary>
+    /// <value>
+    /// The circuit breaker threshold.
+    /// </value>
     public int CircuitBreakerThreshold { get; init; } = 5;
+
+    /// <summary>
+    /// Gets the circuit breaker duration seconds.
+    /// </summary>
+    /// <value>
+    /// The circuit breaker duration seconds.
+    /// </value>
     public int CircuitBreakerDurationSeconds { get; init; } = 30;
+
+    /// <summary>
+    /// Gets a value indicating whether [enable cpu fallback].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [enable cpu fallback]; otherwise, <c>false</c>.
+    /// </value>
     public bool EnableCpuFallback { get; init; } = true;
+
+    /// <summary>
+    /// Gets a value indicating whether [allow device reset].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [allow device reset]; otherwise, <c>false</c>.
+    /// </value>
     public bool AllowDeviceReset { get; init; }
 
+    /// <summary>
+    /// Gets a value indicating whether [enable diagnostic logging].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [enable diagnostic logging]; otherwise, <c>false</c>.
+    /// </value>
     public bool EnableDiagnosticLogging { get; init; } = true;
 }
 
@@ -519,8 +599,22 @@ public sealed class ErrorRecoveryOptions
 /// </summary>
 public sealed class CudaUnavailableException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaUnavailableException"/> class.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
     public CudaUnavailableException(string message) : base(message) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaUnavailableException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="inner">The inner.</param>
     public CudaUnavailableException(string message, Exception inner) : base(message, inner) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaUnavailableException"/> class.
+    /// </summary>
     public CudaUnavailableException()
     {
     }
@@ -531,8 +625,22 @@ public sealed class CudaUnavailableException : Exception
 /// </summary>
 public sealed class CudaOperationException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaOperationException"/> class.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
     public CudaOperationException(string message) : base(message) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaOperationException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="inner">The inner.</param>
     public CudaOperationException(string message, Exception inner) : base(message, inner) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaOperationException"/> class.
+    /// </summary>
     public CudaOperationException()
     {
     }
@@ -543,8 +651,22 @@ public sealed class CudaOperationException : Exception
 /// </summary>
 public sealed class CudaDeviceException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaDeviceException"/> class.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
     public CudaDeviceException(string message) : base(message) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaDeviceException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="inner">The inner.</param>
     public CudaDeviceException(string message, Exception inner) : base(message, inner) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaDeviceException"/> class.
+    /// </summary>
     public CudaDeviceException()
     {
     }
@@ -555,10 +677,24 @@ public sealed class CudaDeviceException : Exception
 /// </summary>
 public sealed class CpuFallbackRequiredException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
     public CpuFallbackRequiredException(string message) : base(message) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
+    /// </summary>
     public CpuFallbackRequiredException()
     {
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
+    /// </summary>
+    /// <param name="message">The error message that explains the reason for the exception.</param>
+    /// <param name="innerException">The exception that is the cause of the current exception, or a null reference (<see langword="Nothing" /> in Visual Basic) if no inner exception is specified.</param>
     public CpuFallbackRequiredException(string message, Exception innerException) : base(message, innerException)
     {
     }

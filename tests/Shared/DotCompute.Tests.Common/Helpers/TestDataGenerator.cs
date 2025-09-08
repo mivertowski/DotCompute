@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -223,7 +220,7 @@ public static class TestDataGenerator
         /// <summary>
         /// Common sizes for performance testing.
         /// </summary>
-        public static readonly int[] CommonSizes = { 1024, 4096, 16384, 65536, 262144, 1048576 };
+        public static readonly int[] CommonSizes = [1024, 4096, 16384, 65536, 262144, 1048576];
 
         /// <summary>
         /// Generates performance test data for the specified size.
@@ -249,34 +246,34 @@ public static class TestDataGenerator
         /// <summary>
         /// Gets an array containing various floating-point edge cases.
         /// </summary>
-        public static float[] FloatEdgeCases => new[]
-        {
+        public static float[] FloatEdgeCases =>
+        [
             0.0f, -0.0f, 1.0f, -1.0f,
             float.Epsilon, -float.Epsilon,
             float.MinValue, float.MaxValue,
             float.PositiveInfinity, float.NegativeInfinity,
             float.NaN
-        };
+        ];
         
         /// <summary>
         /// Gets an array containing various double-precision edge cases.
         /// </summary>
-        public static double[] DoubleEdgeCases => new[]
-        {
+        public static double[] DoubleEdgeCases =>
+        [
             0.0, -0.0, 1.0, -1.0,
             double.Epsilon, -double.Epsilon,
             double.MinValue, double.MaxValue,
             double.PositiveInfinity, double.NegativeInfinity,
             double.NaN
-        };
+        ];
         
         /// <summary>
         /// Gets an array containing integer edge cases.
         /// </summary>
-        public static int[] IntEdgeCases => new[]
-        {
+        public static int[] IntEdgeCases =>
+        [
             0, 1, -1, int.MinValue, int.MaxValue
-        };
+        ];
     }
     
     #endregion

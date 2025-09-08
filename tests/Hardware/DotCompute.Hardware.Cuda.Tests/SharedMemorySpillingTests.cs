@@ -1,18 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
-using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Backends.CUDA.Configuration;
-using DotCompute.Backends.CUDA.Profiling;
 using DotCompute.Hardware.Cuda.Tests.TestHelpers;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -178,7 +170,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 var (grid, block) = CudaTestHelpers.CreateLaunchConfig(dataSize / 256, 1, 1, 256, 1, 1);
                 var kernelArgs = CudaTestHelpers.CreateKernelArguments(
-                    new object[] { inputBuffer, outputBuffer, dataSize },
+                    [inputBuffer, outputBuffer, dataSize],
                     grid,
                     block
                 );
@@ -202,7 +194,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 var (grid, block) = CudaTestHelpers.CreateLaunchConfig(dataSize / 256, 1, 1, 256, 1, 1);
                 var kernelArgs = CudaTestHelpers.CreateKernelArguments(
-                    new object[] { inputBuffer, outputBuffer, dataSize },
+                    [inputBuffer, outputBuffer, dataSize],
                     grid,
                     block
                 );

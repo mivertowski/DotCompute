@@ -18,8 +18,6 @@
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
     <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Generators\DotCompute.Generators.csproj" />
-    <ProjectReference Include="..\..\Shared\DotCompute.Testing.Shared\DotCompute.Testing.Shared.csproj" />
-    <ProjectReference Include="..\..\Shared\DotCompute.Testing.Utilities\DotCompute.Testing.Utilities.csproj" />
   </ItemGroup>
 
 </Project>

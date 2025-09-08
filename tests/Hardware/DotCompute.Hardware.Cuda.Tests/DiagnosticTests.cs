@@ -1,13 +1,7 @@
-using System;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Initialization;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Tests.Common;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {

@@ -317,5 +317,12 @@ public abstract class BaseCompiledKernel : ICompiledKernel
         // Default implementation - derived classes can override
     }
 
+    /// <summary>
+    /// Executes the kernel with given arguments.
+    /// </summary>
+    /// <param name="arguments"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
     public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 }

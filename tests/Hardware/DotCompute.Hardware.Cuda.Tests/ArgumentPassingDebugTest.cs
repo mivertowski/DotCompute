@@ -1,17 +1,8 @@
-using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
-using DotCompute.Tests.Common.Helpers;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests;
 

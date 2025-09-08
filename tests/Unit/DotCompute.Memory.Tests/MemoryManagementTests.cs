@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
 using FluentAssertions;
 using System.Buffers;
 using System.Diagnostics;
@@ -394,8 +393,8 @@ public class MemoryManagementTests
         // Act & Assert
         Action spanAccess = () => buffer.AsSpan();
         Action memoryAccess = () => buffer.AsMemory();
-        Action ensureHost = () => buffer.EnsureOnHost();
-        Action ensureDevice = () => buffer.EnsureOnDevice();
+        Action ensureHost = buffer.EnsureOnHost;
+        Action ensureDevice = buffer.EnsureOnDevice;
 
         _ = spanAccess.Should().Throw<ObjectDisposedException>();
         _ = memoryAccess.Should().Throw<ObjectDisposedException>();
