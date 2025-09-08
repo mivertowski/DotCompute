@@ -1,18 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.InteropServices;
-using System.Linq;
-using DotCompute.Abstractions;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.CUDA;
-using DotCompute.Backends.CUDA.Compilation;
-using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Hardware.Cuda.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests;
 
@@ -121,7 +112,7 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
         // Execute kernel with cooperative groups
         var (grid, block) = CudaTestHelpers.CreateLaunchConfig(gridSize, 1, 1, blockSize, 1, 1);
         var kernelArgs = CudaTestHelpers.CreateKernelArguments(
-            new object[] { input, output, size },
+            [input, output, size],
             grid,
             block
         );
@@ -224,7 +215,7 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
         );
         
         var kernelArgs = CudaTestHelpers.CreateKernelArguments(
-            new object[] { dOutput, size },
+            [dOutput, size],
             grid,
             block
         );

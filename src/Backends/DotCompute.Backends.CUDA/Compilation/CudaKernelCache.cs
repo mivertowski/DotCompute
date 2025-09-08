@@ -41,6 +41,12 @@ public sealed class CudaKernelCache : IDisposable
     private long _currentCacheSize;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaKernelCache"/> class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The configuration.</param>
+    /// <exception cref="System.ArgumentNullException">logger</exception>
     public CudaKernelCache(
         ILogger<CudaKernelCache> logger,
         KernelCacheConfig? config = null)
@@ -896,6 +902,9 @@ public sealed class CudaKernelCache : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         if (!_disposed)

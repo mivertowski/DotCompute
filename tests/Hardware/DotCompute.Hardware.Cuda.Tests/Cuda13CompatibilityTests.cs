@@ -1,16 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Text;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
-using Xunit.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {

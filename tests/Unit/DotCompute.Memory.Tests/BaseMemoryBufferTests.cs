@@ -1,13 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
 using FluentAssertions;
 using DotCompute.Memory.Tests.TestHelpers;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -324,7 +321,7 @@ public class BaseMemoryBufferTests
         buffer.Dispose();
         
         // Act & Assert
-        var act = () => buffer.TestThrowIfDisposed();
+        var act = buffer.TestThrowIfDisposed;
         _ = act.Should().Throw<ObjectDisposedException>()
             .Which.ObjectName.Should().Contain("TestMemoryBuffer");
     }

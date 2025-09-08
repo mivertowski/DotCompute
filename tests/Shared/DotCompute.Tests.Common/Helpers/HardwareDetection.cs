@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 #if WINDOWS
 using System.Management;
 #endif
@@ -17,7 +12,7 @@ namespace DotCompute.Tests.Common.Helpers;
 /// </summary>
 public static class HardwareDetection
 {
-    private static readonly Lazy<HardwareInfo> _hardwareInfo = new(() => DetectHardware());
+    private static readonly Lazy<HardwareInfo> _hardwareInfo = new(DetectHardware);
     
     /// <summary>
     /// Gets cached hardware information.
@@ -276,20 +271,125 @@ public static class HardwareDetection
     /// </summary>
     public class HardwareInfo
     {
+        /// <summary>
+        /// Gets a value indicating whether [cuda available].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [cuda available]; otherwise, <c>false</c>.
+        /// </value>
         public bool CudaAvailable { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether [open cl available].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [open cl available]; otherwise, <c>false</c>.
+        /// </value>
         public bool OpenCLAvailable { get; init; }
+
+        /// <summary>
+        /// Gets the cuda device count.
+        /// </summary>
+        /// <value>
+        /// The cuda device count.
+        /// </value>
         public int CudaDeviceCount { get; init; }
+
+        /// <summary>
+        /// Gets the open cl device count.
+        /// </summary>
+        /// <value>
+        /// The open cl device count.
+        /// </value>
         public int OpenCLDeviceCount { get; init; }
+
+        /// <summary>
+        /// Gets the logical cores.
+        /// </summary>
+        /// <value>
+        /// The logical cores.
+        /// </value>
         public int LogicalCores { get; init; }
+
+        /// <summary>
+        /// Gets the physical cores.
+        /// </summary>
+        /// <value>
+        /// The physical cores.
+        /// </value>
         public int PhysicalCores { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether [avx supported].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [avx supported]; otherwise, <c>false</c>.
+        /// </value>
         public bool AvxSupported { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether [avx2 supported].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [avx2 supported]; otherwise, <c>false</c>.
+        /// </value>
         public bool Avx2Supported { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether [avx512 supported].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [avx512 supported]; otherwise, <c>false</c>.
+        /// </value>
         public bool Avx512Supported { get; init; }
+
+        /// <summary>
+        /// Gets the total memory.
+        /// </summary>
+        /// <value>
+        /// The total memory.
+        /// </value>
         public long TotalMemory { get; init; }
+
+        /// <summary>
+        /// Gets the available memory.
+        /// </summary>
+        /// <value>
+        /// The available memory.
+        /// </value>
         public long AvailableMemory { get; init; }
+
+        /// <summary>
+        /// Gets the platform.
+        /// </summary>
+        /// <value>
+        /// The platform.
+        /// </value>
         public string Platform { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Gets the architecture.
+        /// </summary>
+        /// <value>
+        /// The architecture.
+        /// </value>
         public string Architecture { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Gets the gpu names.
+        /// </summary>
+        /// <value>
+        /// The gpu names.
+        /// </value>
         public List<string> GpuNames { get; init; } = [];
+
+
+        /// <summary>
+        /// Gets the name of the cpu.
+        /// </summary>
+        /// <value>
+        /// The name of the cpu.
+        /// </value>
         public string CpuName { get; init; } = string.Empty;
     }
     
@@ -599,7 +699,7 @@ public static class HardwareDetection
             var totalLine = memInfo.Split('\n').FirstOrDefault(line => line.StartsWith("MemTotal:", StringComparison.OrdinalIgnoreCase));
             if (totalLine != null)
             {
-                var parts = totalLine.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                var parts = totalLine.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
                 {
                     return kb * 1024; // Convert from KB to bytes
@@ -646,7 +746,7 @@ public static class HardwareDetection
             var availableLine = memInfo.Split('\n').FirstOrDefault(line => line.StartsWith("MemAvailable:", StringComparison.OrdinalIgnoreCase));
             if (availableLine != null)
             {
-                var parts = availableLine.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                var parts = availableLine.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
                 {
                     return kb * 1024; // Convert from KB to bytes

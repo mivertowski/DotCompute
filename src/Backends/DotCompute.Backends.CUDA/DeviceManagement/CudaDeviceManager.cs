@@ -25,6 +25,11 @@ public sealed class CudaDeviceManager : IDisposable
     private int _currentDevice = -1;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaDeviceManager"/> class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <exception cref="System.ArgumentNullException">logger</exception>
     public CudaDeviceManager(ILogger<CudaDeviceManager> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -521,6 +526,9 @@ public sealed class CudaDeviceManager : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         if (!_disposed)
@@ -557,13 +565,68 @@ public sealed class CudaDeviceManager : IDisposable
 /// </summary>
 public sealed class DeviceSelectionCriteria
 {
+    /// <summary>
+    /// Gets a value indicating whether [prefer large memory].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [prefer large memory]; otherwise, <c>false</c>.
+    /// </value>
     public bool PreferLargeMemory { get; init; } = true;
+
+    /// <summary>
+    /// Gets a value indicating whether [prefer discrete].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [prefer discrete]; otherwise, <c>false</c>.
+    /// </value>
     public bool PreferDiscrete { get; init; } = true;
+
+    /// <summary>
+    /// Gets a value indicating whether [require tensor cores].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [require tensor cores]; otherwise, <c>false</c>.
+    /// </value>
     public bool RequireTensorCores { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether [require unified memory].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [require unified memory]; otherwise, <c>false</c>.
+    /// </value>
     public bool RequireUnifiedMemory { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether [require p2 p].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [require p2 p]; otherwise, <c>false</c>.
+    /// </value>
     public bool RequireP2P { get; init; }
+
+    /// <summary>
+    /// Gets the minimum compute capability major.
+    /// </summary>
+    /// <value>
+    /// The minimum compute capability major.
+    /// </value>
     public int MinComputeCapabilityMajor { get; init; } = 3;
+
+    /// <summary>
+    /// Gets the minimum compute capability minor.
+    /// </summary>
+    /// <value>
+    /// The minimum compute capability minor.
+    /// </value>
     public int MinComputeCapabilityMinor { get; init; } = 5;
+
+    /// <summary>
+    /// Gets the minimum memory bytes.
+    /// </summary>
+    /// <value>
+    /// The minimum memory bytes.
+    /// </value>
     public long MinMemoryBytes { get; init; }
     
     /// <summary>

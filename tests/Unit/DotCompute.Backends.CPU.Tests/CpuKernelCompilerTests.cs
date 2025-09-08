@@ -8,9 +8,6 @@ using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Tests.Common;
-using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace DotCompute.Backends.CPU.Tests;
 

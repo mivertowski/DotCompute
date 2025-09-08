@@ -1,23 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Factory;
 // using DotCompute.Backends.CUDA.Kernels; // Not needed
-using DotCompute.Backends.CUDA.Memory;
-using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Hardware.Cuda.Tests.TestHelpers;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -177,7 +165,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                     var (grid, block) = CudaTestHelpers.CreateLaunchConfig(4, 1, 1, 256, 1, 1);
                     
                     var kernelArgs = CudaTestHelpers.CreateKernelArguments(
-                        new object[] { buffer, 1024 },
+                        [buffer, 1024],
                         grid,
                         block
                     );
@@ -251,7 +239,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             for (var iter = 0; iter < iterations; iter++)
             {
                 var kernelArgs = CudaTestHelpers.CreateKernelArguments(
-                    new object[] { buffer, dataSize },
+                    [buffer, dataSize],
                     grid,
                     block
                 );
@@ -376,7 +364,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                         var (grid, block) = CudaTestHelpers.CreateLaunchConfig(4, 1, 1, 256, 1, 1);
                         
                         var kernelArgs = CudaTestHelpers.CreateKernelArguments(
-                            new object[] { buffer, 1000 },
+                            [buffer, 1000],
                             grid,
                             block
                         );

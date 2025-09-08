@@ -2,11 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
 using DotCompute.Backends.CPU.Intrinsics;
-using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Tests.Common;
 
 namespace DotCompute.Backends.CPU.Tests;

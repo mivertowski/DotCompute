@@ -1,23 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.CUDA;
-using DotCompute.Backends.CUDA.Configuration;
-using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Backends.CUDA.Monitoring;
-using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Profiling;
-using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Backends.CUDA.Advanced;
-using Microsoft.Extensions.Logging;
-using Xunit;
-using Xunit.Abstractions;
-
 namespace DotCompute.Hardware.Cuda.Tests
 {
     /* Temporarily disabled - requires refactoring for ProductionCudaAccelerator pattern

@@ -26,6 +26,16 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         private const int MaxErrorHistorySize = 1000;
         private const int MaxRetryAttempts = 3;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CudaErrorRecovery"/> class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
+        /// <exception cref="System.ArgumentNullException">
+        /// context
+        /// or
+        /// logger
+        /// </exception>
         public CudaErrorRecovery(CudaContext context, ILogger<CudaErrorRecovery> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -520,6 +530,9 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             }
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             if (!_disposed)
@@ -533,63 +546,297 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         }
     }
 
-    // Supporting types
+    // Supporting types    
+    /// <summary>
+    /// 
+    /// </summary>
     public enum CudaErrorStrategy
     {
+        /// <summary>
+        /// The log and throw
+        /// </summary>
         LogAndThrow,
+        /// <summary>
+        /// The log and continue
+        /// </summary>
         LogAndContinue,
+        /// <summary>
+        /// The retry once
+        /// </summary>
         RetryOnce,
+        /// <summary>
+        /// The retry with delay
+        /// </summary>
         RetryWithDelay,
+        /// <summary>
+        /// The retry with gc
+        /// </summary>
         RetryWithGC,
+        /// <summary>
+        /// The reset context
+        /// </summary>
         ResetContext
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public sealed class CudaErrorEvent
     {
+        /// <summary>
+        /// Gets or sets the error.
+        /// </summary>
+        /// <value>
+        /// The error.
+        /// </value>
         public CudaError Error { get; set; }
+
+        /// <summary>
+        /// Gets or sets the operation.
+        /// </summary>
+        /// <value>
+        /// The operation.
+        /// </value>
         public string Operation { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the context.
+        /// </summary>
+        /// <value>
+        /// The context.
+        /// </value>
         public object? Context { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>
+        /// The timestamp.
+        /// </value>
         public DateTimeOffset Timestamp { get; set; }
+
+        /// <summary>
+        /// Gets or sets the thread identifier.
+        /// </summary>
+        /// <value>
+        /// The thread identifier.
+        /// </value>
         public int ThreadId { get; set; }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public sealed class CudaErrorRecoveryResult
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="CudaErrorRecoveryResult"/> is success.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if success; otherwise, <c>false</c>.
+        /// </value>
         public bool Success { get; set; }
+
+        /// <summary>
+        /// Gets or sets the strategy.
+        /// </summary>
+        /// <value>
+        /// The strategy.
+        /// </value>
         public CudaErrorStrategy Strategy { get; set; }
+
+        /// <summary>
+        /// Gets or sets the recovery message.
+        /// </summary>
+        /// <value>
+        /// The recovery message.
+        /// </value>
         public string? RecoveryMessage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>
+        /// The error message.
+        /// </value>
         public string? ErrorMessage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the retry attempt.
+        /// </summary>
+        /// <value>
+        /// The retry attempt.
+        /// </value>
         public int RetryAttempt { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [requires manual intervention].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [requires manual intervention]; otherwise, <c>false</c>.
+        /// </value>
         public bool RequiresManualIntervention { get; set; }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public sealed class CudaHealthCheckResult
     {
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>
+        /// The timestamp.
+        /// </value>
         public DateTimeOffset Timestamp { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [device available].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [device available]; otherwise, <c>false</c>.
+        /// </value>
         public bool DeviceAvailable { get; set; }
+
+        /// <summary>
+        /// Gets or sets the memory status.
+        /// </summary>
+        /// <value>
+        /// The memory status.
+        /// </value>
         public CudaMemoryStatus MemoryStatus { get; set; } = new();
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [context valid].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [context valid]; otherwise, <c>false</c>.
+        /// </value>
         public bool ContextValid { get; set; }
+
+        /// <summary>
+        /// Gets or sets the error rate.
+        /// </summary>
+        /// <value>
+        /// The error rate.
+        /// </value>
         public double ErrorRate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the overall health.
+        /// </summary>
+        /// <value>
+        /// The overall health.
+        /// </value>
         public double OverallHealth { get; set; }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public sealed class CudaMemoryStatus
     {
+        /// <summary>
+        /// Gets or sets the total bytes.
+        /// </summary>
+        /// <value>
+        /// The total bytes.
+        /// </value>
         public ulong TotalBytes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the free bytes.
+        /// </summary>
+        /// <value>
+        /// The free bytes.
+        /// </value>
         public ulong FreeBytes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the used bytes.
+        /// </summary>
+        /// <value>
+        /// The used bytes.
+        /// </value>
         public ulong UsedBytes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the utilization percentage.
+        /// </summary>
+        /// <value>
+        /// The utilization percentage.
+        /// </value>
         public double UtilizationPercentage { get; set; }
+
+        /// <summary>
+        /// Returns true if ... is valid.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is valid; otherwise, <c>false</c>.
+        /// </value>
         public bool IsValid { get; set; } = true;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public sealed class CudaErrorStatistics
     {
+        /// <summary>
+        /// Gets or sets the total errors.
+        /// </summary>
+        /// <value>
+        /// The total errors.
+        /// </value>
         public int TotalErrors { get; set; }
+
+        /// <summary>
+        /// Gets or sets the recent errors.
+        /// </summary>
+        /// <value>
+        /// The recent errors.
+        /// </value>
         public int RecentErrors { get; set; }
+
+        /// <summary>
+        /// Gets or sets the error rate.
+        /// </summary>
+        /// <value>
+        /// The error rate.
+        /// </value>
         public double ErrorRate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the most common errors.
+        /// </summary>
+        /// <value>
+        /// The most common errors.
+        /// </value>
         public List<KeyValuePair<CudaError, int>> MostCommonErrors { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the problematic operations.
+        /// </summary>
+        /// <value>
+        /// The problematic operations.
+        /// </value>
         public List<KeyValuePair<string, int>> ProblematicOperations { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the last error.
+        /// </summary>
+        /// <value>
+        /// The last error.
+        /// </value>
         public CudaErrorEvent? LastError { get; set; }
+
+        /// <summary>
+        /// Gets or sets the recovery success rate.
+        /// </summary>
+        /// <value>
+        /// The recovery success rate.
+        /// </value>
         public double RecoverySuccessRate { get; set; }
     }
 }

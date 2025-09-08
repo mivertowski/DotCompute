@@ -1,22 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Backends.CUDA.Types;
-using DotCompute.Backends.CUDA.Execution.Graph;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
-using DotCompute.Tests.Common;
 using DotCompute.Core.Extensions;
 using DotCompute.Hardware.Cuda.Tests.Helpers;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {

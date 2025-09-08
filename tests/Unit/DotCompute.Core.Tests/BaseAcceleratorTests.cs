@@ -7,7 +7,6 @@ using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
-using DotCompute.Core;
 using DotCompute.Core.Extensions;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -388,7 +387,7 @@ public class BaseAcceleratorTests : IDisposable
         _accelerator.SimulateDispose();
         
         // Act & Assert
-        var act = () => _accelerator.TestThrowIfDisposed();
+        var act = _accelerator.TestThrowIfDisposed;
         _ = act.Should().Throw<ObjectDisposedException>();
     }
     

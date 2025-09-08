@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Memory;
 using FluentAssertions;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
