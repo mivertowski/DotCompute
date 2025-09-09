@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
+using DotCompute.Runtime.Logging;
 using DotCompute.Runtime.Services.Interfaces;
 using DotCompute.Runtime.Services.Performance.Results;
 using Microsoft.Extensions.Logging;
@@ -40,8 +41,7 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
         var session = new ProfilingSession(sessionName, this);
         _activeSessions[session.InternalSessionId] = session;
         
-        _logger.LogDebug("Started profiling session {SessionId}: {SessionName}", 
-            session.InternalSessionId, sessionName);
+        _logger.ProfilingSessionStarted(session.InternalSessionId, sessionName);
         
         return session;
     }
@@ -152,8 +152,7 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
                 throw new NotSupportedException($"Export format {format} is not yet supported");
         }
 
-        _logger.LogInformation("Exported {Count} profiling sessions to {Path}", 
-            sessions.Count, outputPath);
+        _logger.ProfilingDataExported(sessions.Count, outputPath);
         
         return outputPath;
     }
@@ -177,7 +176,7 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
             }
         }
 
-        _logger.LogInformation("Cleaned up {Count} old profiling sessions", removedCount);
+        _logger.ProfilingDataCleaned(removedCount);
         return Task.FromResult(removedCount);
     }
 
@@ -201,7 +200,7 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
                     });
             }
             
-            _logger.LogDebug("Completed profiling session {SessionId}", session.InternalSessionId);
+            _logger.ProfilingSessionCompleted(session.InternalSessionId);
         }
     }
 

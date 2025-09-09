@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Runtime.Logging;
 using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -30,7 +31,7 @@ public class DefaultKernelCompiler : IKernelCompiler
     public void RegisterBackendCompiler(string backendType, IKernelCompiler compiler)
     {
         _backendCompilers[backendType] = compiler ?? throw new ArgumentNullException(nameof(compiler));
-        _logger.LogInformation("Registered compiler for backend: {BackendType}", backendType);
+        _logger.CompilerRegistered(backendType);
     }
 
     /// <inheritdoc />
@@ -44,33 +45,24 @@ public class DefaultKernelCompiler : IKernelCompiler
         // Try to get backend-specific compiler
         if (_backendCompilers.TryGetValue(backendType, out var backendCompiler))
         {
-            _logger.LogDebug("Using {BackendType} compiler for kernel {KernelName}", 
-                backendType, kernelDefinition.Name);
+            _logger.CompilerSelected(backendType, kernelDefinition.Name);
             return await backendCompiler.CompileAsync(kernelDefinition, accelerator, cancellationToken);
         }
 
-        // Fallback: Use accelerator's built-in compilation if available
-        if (accelerator is IAcceleratorWithCompilation compilingAccelerator)
+        // Fallback: Use accelerator's built-in compilation
+        _logger.CompilerSelected("built-in", kernelDefinition.Name);
+        
+        var compilationOptions = new CompilationOptions
         {
-            _logger.LogDebug("Using accelerator's built-in compiler for kernel {KernelName}", 
-                kernelDefinition.Name);
-            
-            var compilationOptions = new CompilationOptions
-            {
-                OptimizationLevel = OptimizationLevel.Release,
-                EnableDebugInfo = false,
-                TargetArchitecture = accelerator.Info.DeviceType
-            };
+            OptimizationLevel = OptimizationLevel.Release,
+            EnableDebugInfo = false,
+            TargetArchitecture = accelerator.Info.DeviceType
+        };
 
-            return await compilingAccelerator.CompileKernelAsync(
-                kernelDefinition, 
-                compilationOptions, 
-                cancellationToken);
-        }
-
-        throw new NotSupportedException(
-            $"No compiler available for backend type: {backendType}. " +
-            $"Register a backend-specific compiler or use an accelerator with built-in compilation support.");
+        return await accelerator.CompileKernelAsync(
+            kernelDefinition, 
+            compilationOptions, 
+            cancellationToken);
     }
 
     /// <inheritdoc />
@@ -84,8 +76,8 @@ public class DefaultKernelCompiler : IKernelCompiler
             return await backendCompiler.CanCompileAsync(kernelDefinition, accelerator);
         }
 
-        // Check if accelerator supports compilation
-        return accelerator is IAcceleratorWithCompilation;
+        // All accelerators support compilation through the IAccelerator interface
+        return true;
     }
 
     /// <inheritdoc />
@@ -132,24 +124,10 @@ public class DefaultKernelCompiler : IKernelCompiler
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to compile kernel {KernelName}", kernelDef.Name);
+                _logger.KernelCompilationFailed(kernelDef.Name, ex.Message, ex);
             }
         }
 
         return results;
     }
-}
-
-/// <summary>
-/// Interface for accelerators that support kernel compilation.
-/// </summary>
-public interface IAcceleratorWithCompilation : IAccelerator
-{
-    /// <summary>
-    /// Compiles a kernel definition into executable code.
-    /// </summary>
-    ValueTask<ICompiledKernel> CompileKernelAsync(
-        KernelDefinition kernelDefinition,
-        CompilationOptions compilationOptions,
-        CancellationToken cancellationToken = default);
 }

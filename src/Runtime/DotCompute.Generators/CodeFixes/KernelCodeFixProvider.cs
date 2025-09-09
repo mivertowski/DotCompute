@@ -72,8 +72,10 @@ public class KernelCodeFixProvider : CodeFixProvider
         }
     }
 
+    #pragma warning disable CS1998 // Async method lacks 'await' operators
     private static async Task RegisterMakeStaticFixAsync(CodeFixContext context, SyntaxNode root, Diagnostic diagnostic)
     {
+    #pragma warning restore CS1998
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not MethodDeclarationSyntax methodDecl)
         {
@@ -95,8 +97,10 @@ public class KernelCodeFixProvider : CodeFixProvider
         context.RegisterCodeFix(action, diagnostic);
     }
 
+    #pragma warning disable CS1998 // Async method lacks 'await' operators
     private static async Task RegisterParameterTypeFixAsync(CodeFixContext context, SyntaxNode root, Diagnostic diagnostic)
     {
+    #pragma warning restore CS1998
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node.FirstAncestorOrSelf<ParameterSyntax>() is not ParameterSyntax parameter)
         {
@@ -116,8 +120,10 @@ public class KernelCodeFixProvider : CodeFixProvider
         }
     }
 
+    #pragma warning disable CS1998 // Async method lacks 'await' operators
     private static async Task RegisterAddKernelAttributeFixAsync(CodeFixContext context, SyntaxNode root, Diagnostic diagnostic)
     {
+    #pragma warning restore CS1998
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not MethodDeclarationSyntax methodDecl)
         {
@@ -133,8 +139,10 @@ public class KernelCodeFixProvider : CodeFixProvider
         context.RegisterCodeFix(action, diagnostic);
     }
 
+    #pragma warning disable CS1998 // Async method lacks 'await' operators
     private static async Task RegisterFixThreadingModelAsync(CodeFixContext context, SyntaxNode root, Diagnostic diagnostic)
     {
+    #pragma warning restore CS1998
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not MethodDeclarationSyntax methodDecl)
         {
@@ -150,8 +158,10 @@ public class KernelCodeFixProvider : CodeFixProvider
         context.RegisterCodeFix(action, diagnostic);
     }
 
+    #pragma warning disable CS1998 // Async method lacks 'await' operators
     private static async Task RegisterAddBoundsCheckFixAsync(CodeFixContext context, SyntaxNode root, Diagnostic diagnostic)
     {
+    #pragma warning restore CS1998
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not MethodDeclarationSyntax methodDecl)
         {

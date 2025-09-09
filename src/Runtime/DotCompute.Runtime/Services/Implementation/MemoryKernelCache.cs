@@ -6,6 +6,8 @@ using System.Security.Cryptography;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Runtime.Logging;
+using DotCompute.Runtime.Services.Configuration;
 using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -91,7 +93,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
                 entry.UpdateLastAccess();
                 IncrementHitCount(entry.CompilationTime);
                 
-                _logger.LogDebug("Cache hit for key: {CacheKey}", cacheKey);
+                _logger.CacheHit(cacheKey);
                 return Task.FromResult<ICompiledKernel?>(entry.CompiledKernel);
             }
             
@@ -100,7 +102,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         }
 
         IncrementMissCount();
-        _logger.LogDebug("Cache miss for key: {CacheKey}", cacheKey);
+        _logger.CacheMiss(cacheKey);
         return Task.FromResult<ICompiledKernel?>(null);
     }
 
@@ -125,7 +127,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         };
 
         _cache[cacheKey] = entry;
-        _logger.LogDebug("Cached kernel with key: {CacheKey}", cacheKey);
+        _logger.CacheStored(cacheKey);
         
         return Task.CompletedTask;
     }
@@ -137,7 +139,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         
         if (removed)
         {
-            _logger.LogDebug("Invalidated cache entry: {CacheKey}", cacheKey);
+            _logger.CacheInvalidated(cacheKey);
         }
         
         return Task.FromResult(removed);
@@ -149,7 +151,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         var count = _cache.Count;
         _cache.Clear();
         
-        _logger.LogInformation("Cleared {Count} cache entries", count);
+        _logger.CacheCleared(count);
         return Task.FromResult(count);
     }
 
@@ -199,8 +201,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
                     // Check if already cached
                     if (!_cache.ContainsKey(cacheKey))
                     {
-                        _logger.LogDebug("Kernel {KernelName} needs pre-warming for {AcceleratorType}", 
-                            kernel.Name, accelerator.Info.DeviceType);
+                        _logger.CachePrewarmNeeded(kernel.Name, accelerator.Info.DeviceType);
                         // Note: Actual pre-warming would require compilation which should be done by the service layer
                     }
                     else
@@ -210,7 +211,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to pre-warm kernel {KernelName}", kernel.Name);
+                    _logger.CachePrewarmFailed(kernel.Name, ex);
                 }
             }
         }
@@ -229,7 +230,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         if (!string.IsNullOrEmpty(lruEntry.Key))
         {
             _cache.TryRemove(lruEntry.Key, out _);
-            _logger.LogDebug("Evicted LRU cache entry: {CacheKey}", lruEntry.Key);
+            _logger.CacheEvicted(lruEntry.Key);
         }
     }
 
@@ -247,7 +248,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
         if (expiredKeys.Count > 0)
         {
-            _logger.LogDebug("Cleaned up {Count} expired cache entries", expiredKeys.Count);
+            _logger.CacheExpiredCleaned(expiredKeys.Count);
         }
     }
 
@@ -310,30 +311,4 @@ public class MemoryKernelCache : IKernelCache, IDisposable
             LastAccessedAt = DateTime.UtcNow;
         }
     }
-}
-
-/// <summary>
-/// Options for configuring the memory kernel cache.
-/// </summary>
-public class MemoryCacheOptions
-{
-    /// <summary>
-    /// Maximum number of cache entries to maintain.
-    /// </summary>
-    public int MaxEntries { get; set; } = 1000;
-
-    /// <summary>
-    /// Default expiration time for cache entries.
-    /// </summary>
-    public TimeSpan? DefaultExpiration { get; set; } = TimeSpan.FromHours(24);
-
-    /// <summary>
-    /// Whether to enable cache statistics tracking.
-    /// </summary>
-    public bool EnableStatistics { get; set; } = true;
-
-    /// <summary>
-    /// Interval for cleaning up expired entries.
-    /// </summary>
-    public TimeSpan CleanupInterval { get; set; } = TimeSpan.FromMinutes(5);
 }

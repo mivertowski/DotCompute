@@ -107,12 +107,13 @@ public static class AnalyzerDemo
         }
 
         // DC006: Too many local variables (register spilling)
-
+        #pragma warning disable CS0219 // Variable is assigned but never used
         float var1 = 1.0f, var2 = 2.0f, var3 = 3.0f, var4 = 4.0f;
         float var5 = 5.0f, var6 = 6.0f, var7 = 7.0f, var8 = 8.0f;
         float var9 = 9.0f, var10 = 10.0f, var11 = 11.0f, var12 = 12.0f;
         float var13 = 13.0f, var14 = 14.0f, var15 = 15.0f, var16 = 16.0f;
         float var17 = 17.0f, var18 = 18.0f;  // ← DC006: > 16 variables
+        #pragma warning restore CS0219
     }
 
     private static float CalculateComplexValue(float a, float b) => a * b + a - b;
