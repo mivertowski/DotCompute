@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Telemetry;
 
@@ -52,7 +53,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             _options.OptimizationStrategy);
     }
 
-    public async Task<T?> ExecuteAsync<T>(string kernelName, params object[] args)
+    public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
     {
         return await ExecuteWithOptimizationAsync<T>(kernelName, args);
     }
@@ -604,6 +605,37 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         
         // Basic validation - just check if kernel exists and args are not null
         return !string.IsNullOrEmpty(kernelName) && args != null;
+    }
+
+    public async Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args)
+    {
+        // Use preferred backend if specified
+        return await ExecuteWithOptimizationAsync<T>(kernelName, args);
+    }
+
+    public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
+    {
+        // Execute on specific accelerator
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _baseOrchestrator.ExecuteAsync<T>(kernelName, accelerator, args);
+    }
+
+    public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _baseOrchestrator.ExecuteWithBuffersAsync<T>(kernelName, buffers, scalarArgs);
+    }
+
+    public async Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        await _baseOrchestrator.PrecompileKernelAsync(kernelName, accelerator);
+    }
+
+    public async Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _baseOrchestrator.GetSupportedAcceleratorsAsync(kernelName);
     }
 
     public void Dispose()

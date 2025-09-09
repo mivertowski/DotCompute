@@ -14,7 +14,6 @@ using Microsoft.Extensions.Options;
 using Optimized = DotCompute.Backends.CPU.Kernels.Optimized;
 using LocalKernelType = DotCompute.Backends.CPU.Kernels.Types.KernelType;
 
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -27,6 +26,22 @@ public sealed class CpuAccelerator : BaseAccelerator
     private readonly CpuAcceleratorOptions _options;
     private readonly CpuThreadPool _threadPool;
     private readonly ILogger<CpuAccelerator> _logger;
+
+    #region LoggerMessage Delegates
+    
+    private static readonly Action<ILogger, string, int, Exception?> LogOptimizedKernelCompiled =
+        LoggerMessage.Define<string, int>(
+            LogLevel.Debug,
+            new EventId(2001, nameof(LogOptimizedKernelCompiled)),
+            "Successfully compiled optimized kernel '{KernelName}' with {VectorWidth}-bit vectorization");
+    
+    private static readonly Action<ILogger, string, Exception?> LogOptimizedKernelFallback =
+        LoggerMessage.Define<string>(
+            LogLevel.Debug,
+            new EventId(2002, nameof(LogOptimizedKernelFallback)),
+            "Failed to create optimized kernel for {KernelName}, falling back to standard compilation");
+    
+    #endregion
 
     public CpuAccelerator(
         IOptions<CpuAcceleratorOptions> options,
@@ -64,8 +79,7 @@ public sealed class CpuAccelerator : BaseAccelerator
             var optimizedKernel = TryCreateOptimizedKernel(definition, options);
             if (optimizedKernel != null)
             {
-                _logger.LogDebug("Successfully compiled optimized kernel '{KernelName}' with {VectorWidth}-bit vectorization",
-                    definition.Name, SimdCapabilities.PreferredVectorWidth);
+                LogOptimizedKernelCompiled(_logger, definition.Name, SimdCapabilities.PreferredVectorWidth, null);
                 return optimizedKernel;
             }
         }
@@ -130,7 +144,7 @@ public sealed class CpuAccelerator : BaseAccelerator
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to create optimized kernel for {KernelName}, falling back to standard compilation", definition.Name);
+            LogOptimizedKernelFallback(_logger, definition.Name, ex);
             return null;
         }
     }

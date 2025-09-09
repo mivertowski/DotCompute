@@ -7,8 +7,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Debugging;
 
@@ -36,7 +38,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         _options = options ?? new DebugExecutionOptions();
     }
 
-    public async Task<T?> ExecuteAsync<T>(string kernelName, params object[] args)
+    public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -63,7 +65,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         await ExecuteWithDebugHooksAsync<object>(kernelName, args);
     }
 
-    public async Task<T?> ExecuteWithBuffersAsync<T>(string kernelName, object[] buffers, params object[] scalarArgs)
+    public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -81,6 +83,42 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _baseOrchestrator.GetOptimalAcceleratorAsync(kernelName);
+    }
+
+    public async Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (!_options.EnableDebugHooks)
+        {
+            return await _baseOrchestrator.ExecuteAsync<T>(kernelName, preferredBackend, args);
+        }
+
+        return await ExecuteWithDebugHooksAsync<T>(kernelName, args);
+    }
+
+    public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (!_options.EnableDebugHooks)
+        {
+            return await _baseOrchestrator.ExecuteAsync<T>(kernelName, accelerator, args);
+        }
+
+        return await ExecuteWithDebugHooksAsync<T>(kernelName, args);
+    }
+
+    public async Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        await _baseOrchestrator.PrecompileKernelAsync(kernelName, accelerator);
+    }
+
+    public async Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _baseOrchestrator.GetSupportedAcceleratorsAsync(kernelName);
     }
 
     private async Task<T?> ExecuteWithDebugHooksAsync<T>(string kernelName, object[] args)

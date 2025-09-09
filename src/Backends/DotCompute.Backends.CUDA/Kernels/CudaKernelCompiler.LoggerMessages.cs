@@ -322,5 +322,149 @@ namespace DotCompute.Backends.CUDA.Compilation
             Level = LogLevel.Warning,
             Message = "Failed to extract function names from CUDA source")]
         private static partial void LogFailedToExtractFunctionNames(ILogger logger, Exception ex);
+
+        [LoggerMessage(
+            EventId = 1052,
+            Level = LogLevel.Debug,
+            Message = "Registered name expression for kernel function: {FunctionName}")]
+        private static partial void LogRegisteredNameExpression(ILogger logger, string functionName);
+
+        [LoggerMessage(
+            EventId = 1053,
+            Level = LogLevel.Debug,
+            Message = "NVRTC Option: {Option}")]
+        private static partial void LogNvrtcOption(ILogger logger, string option);
+
+        [LoggerMessage(
+            EventId = 1054,
+            Level = LogLevel.Debug,
+            Message = "Retrieved mangled name for '{FunctionName}': '{MangledName}'")]
+        private static partial void LogRetrievedMangledName(ILogger logger, string functionName, string mangledName);
+
+        [LoggerMessage(
+            EventId = 1055,
+            Level = LogLevel.Debug,
+            Message = "NVRTC compilation using architecture: {ArchString}")]
+        private static partial void LogNvrtcArchitecture(ILogger logger, string archString);
+
+        [LoggerMessage(
+            EventId = 1056,
+            Level = LogLevel.Debug,
+            Message = "Enabled relocatable device code for dynamic parallelism support")]
+        private static partial void LogEnabledRelocatableCode(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 1057,
+            Level = LogLevel.Debug,
+            Message = "Registered name expression for CUBIN kernel function: {FunctionName}")]
+        private static partial void LogRegisteredCubinNameExpression(ILogger logger, string functionName);
+
+        [LoggerMessage(
+            EventId = 1058,
+            Level = LogLevel.Debug,
+            Message = "Retrieved CUBIN mangled name for '{FunctionName}': '{MangledName}'")]
+        private static partial void LogRetrievedCubinMangledName(ILogger logger, string functionName, string mangledName);
+
+        [LoggerMessage(
+            EventId = 1059,
+            Level = LogLevel.Debug,
+            Message = "Enabled relocatable device code for dynamic parallelism support (CUBIN)")]
+        private static partial void LogEnabledRelocatableCodeCubin(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 1060,
+            Level = LogLevel.Information,
+            Message = "CUDA 13.0 optimization: Using PTX compilation for compute capability {Major}.{Minor} to leverage driver's advanced JIT compiler for better performance and stability")]
+        private static partial void LogCudaOptimizationPtx(ILogger logger, int major, int minor);
+
+        [LoggerMessage(
+            EventId = 1061,
+            Level = LogLevel.Information,
+            Message = "Using PTX compilation for Turing architecture (sm_{Major}{Minor}) for CUDA 13.0 compatibility")]
+        private static partial void LogTuringPtxCompilation(ILogger logger, int major, int minor);
+
+        [LoggerMessage(
+            EventId = 1062,
+            Level = LogLevel.Debug,
+            Message = "Using CUBIN compilation for Volta architecture {Major}.{Minor}")]
+        private static partial void LogVoltaCubinCompilation(ILogger logger, int major, int minor);
+
+        [LoggerMessage(
+            EventId = 1063,
+            Level = LogLevel.Debug,
+            Message = "Using CUBIN compilation for legacy architecture {Major}.{Minor}")]
+        private static partial void LogLegacyCubinCompilation(ILogger logger, int major, int minor);
+
+        [LoggerMessage(
+            EventId = 1064,
+            Level = LogLevel.Warning,
+            Message = "Failed to determine compilation target, defaulting to PTX for safety")]
+        private static partial void LogFailedToDetermineCompilationTarget(ILogger logger, Exception ex);
+
+        [LoggerMessage(
+            EventId = 1065,
+            Level = LogLevel.Debug,
+            Message = "Stored {Count} mangled names for kernel '{KernelName}'")]
+        private static partial void LogStoredMangledNames(ILogger logger, int count, string kernelName);
+
+        [LoggerMessage(
+            EventId = 1066,
+            Level = LogLevel.Warning,
+            Message = "Failed to store mangled names for kernel '{KernelName}'")]
+        private static partial void LogFailedToStoreMangledNames(ILogger logger, Exception ex, string kernelName);
+
+        [LoggerMessage(
+            EventId = 1067,
+            Level = LogLevel.Debug,
+            Message = "Saved {SaveCount} kernel cache entries to persistent storage")]
+        private static partial void LogSavedKernelCacheEntries(ILogger logger, int saveCount);
+
+        [LoggerMessage(
+            EventId = 1068,
+            Level = LogLevel.Warning,
+            Message = "Failed to save persistent kernel cache")]
+        private static partial void LogFailedToSavePersistentCache(ILogger logger, Exception ex);
+
+        [LoggerMessage(
+            EventId = 1069,
+            Level = LogLevel.Trace,
+            Message = "Saved kernel cache entry: {FileName}")]
+        private static partial void LogSavedKernelCacheEntry(ILogger logger, string fileName);
+
+        [LoggerMessage(
+            EventId = 1070,
+            Level = LogLevel.Warning,
+            Message = "Failed to save kernel cache entry: {CacheKey}")]
+        private static partial void LogFailedToSaveKernelCacheEntry(ILogger logger, Exception ex, string cacheKey);
+
+        [LoggerMessage(
+            EventId = 1071,
+            Level = LogLevel.Warning,
+            Message = "Failed to extract kernel binary data for {KernelName}")]
+        private static partial void LogFailedToExtractKernelBinaryData(ILogger logger, Exception ex, string kernelName);
+
+        [LoggerMessage(
+            EventId = 1072,
+            Level = LogLevel.Debug,
+            Message = "Detected CUDA installation at: {CudaPath}")]
+        private static partial void LogDetectedCudaInstallation(ILogger logger, string cudaPath);
+
+        [LoggerMessage(
+            EventId = 1073,
+            Level = LogLevel.Debug,
+            Message = "Added CUDA include path: {Path}")]
+        private static partial void LogAddedCudaIncludePath(ILogger logger, string path);
+
+        [LoggerMessage(
+            EventId = 1074,
+            Level = LogLevel.Debug,
+            Message = "Added fallback CUDA include path: {Path}")]
+        private static partial void LogAddedFallbackCudaIncludePath(ILogger logger, string path);
+
+        [LoggerMessage(
+            EventId = 1075,
+            Level = LogLevel.Debug,
+            Message = "Added C++ include path: {Path}")]
+        private static partial void LogAddedCppIncludePath(ILogger logger, string path);
     }
 }

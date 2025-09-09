@@ -15,7 +15,6 @@ namespace DotCompute.Runtime.Services;
 /// Production-grade kernel execution service that bridges generated kernel code with runtime infrastructure.
 /// Provides automatic backend selection, caching, and optimization.
 /// </summary>
-[SuppressMessage("Performance", "CA1848:Use the LoggerMessage delegates", Justification = "Service layer logging")]
 public class KernelExecutionService : IComputeOrchestrator, IDisposable
 {
     private readonly AcceleratorRuntime _runtime;
@@ -26,6 +25,76 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
     private readonly Dictionary<string, KernelRegistrationInfo> _kernelRegistry;
     private readonly SemaphoreSlim _disposeLock = new(1, 1);
     private bool _disposed;
+
+    #region LoggerMessage Delegates
+    
+    private static readonly Action<ILogger, string, string, Exception?> LogKernelRegistered =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Debug,
+            new EventId(1001, nameof(LogKernelRegistered)),
+            "Registered kernel: {KernelName} with backends: {Backends}");
+    
+    private static readonly Action<ILogger, int, Exception?> LogKernelsRegistered =
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(1002, nameof(LogKernelsRegistered)),
+            "Registered {Count} kernels from generated registry");
+    
+    private static readonly Action<ILogger, string, Exception?> LogKernelExecutionError =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(1003, nameof(LogKernelExecutionError)),
+            "Failed to execute kernel {KernelName}");
+    
+    private static readonly Action<ILogger, string, string, Exception?> LogPreferredBackendFallback =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Warning,
+            new EventId(1004, nameof(LogPreferredBackendFallback)),
+            "Preferred backend {Backend} not available for kernel {KernelName}, falling back to optimal selection");
+    
+    private static readonly Action<ILogger, string, string, Exception?> LogCompilingKernel =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Debug,
+            new EventId(1005, nameof(LogCompilingKernel)),
+            "Compiling kernel {KernelName} for accelerator {AcceleratorType}");
+    
+    private static readonly Action<ILogger, string, string, Exception?> LogKernelExecutionFailed =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Error,
+            new EventId(1006, nameof(LogKernelExecutionFailed)),
+            "Kernel execution failed for {KernelName} on {AcceleratorType}");
+    
+    private static readonly Action<ILogger, string, Exception?> LogNoSuitableAccelerators =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(1007, nameof(LogNoSuitableAccelerators)),
+            "No suitable accelerators found for kernel {KernelName}");
+    
+    private static readonly Action<ILogger, string?, string, Exception?> LogSelectedAccelerator =
+        LoggerMessage.Define<string?, string>(
+            LogLevel.Debug,
+            new EventId(1008, nameof(LogSelectedAccelerator)),
+            "Selected {AcceleratorType} for kernel {KernelName}");
+    
+    private static readonly Action<ILogger, string, string, Exception?> LogPrecompilingKernel =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Debug,
+            new EventId(1009, nameof(LogPrecompilingKernel)),
+            "Pre-compiling kernel {KernelName} for {AcceleratorType}");
+    
+    private static readonly Action<ILogger, string, int, Exception?> LogPrecompiledKernel =
+        LoggerMessage.Define<string, int>(
+            LogLevel.Information,
+            new EventId(1010, nameof(LogPrecompiledKernel)),
+            "Pre-compiled kernel {KernelName} for {Count} accelerators");
+    
+    private static readonly Action<ILogger, Exception?> LogNoArgumentsWarning =
+        LoggerMessage.Define(
+            LogLevel.Warning,
+            new EventId(1011, nameof(LogNoArgumentsWarning)),
+            "No arguments provided - verify this is expected for the kernel");
+    
+    #endregion
 
     public KernelExecutionService(
         AcceleratorRuntime runtime,
@@ -52,12 +121,10 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         foreach (var registration in kernelRegistrations)
         {
             _kernelRegistry[registration.FullName] = registration;
-            _logger.LogDebug("Registered kernel: {KernelName} with backends: {Backends}",
-
-                registration.FullName, string.Join(", ", registration.SupportedBackends));
+            LogKernelRegistered(_logger, registration.FullName, string.Join(", ", registration.SupportedBackends), null);
         }
 
-        _logger.LogInformation("Registered {Count} kernels from generated registry", _kernelRegistry.Count);
+        LogKernelsRegistered(_logger, _kernelRegistry.Count, null);
     }
 
     /// <inheritdoc />
@@ -75,7 +142,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute kernel {KernelName}", kernelName);
+            LogKernelExecutionError(_logger, kernelName, ex);
             throw;
         }
     }
@@ -89,9 +156,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
 
         if (accelerators.Count == 0)
         {
-            _logger.LogWarning("Preferred backend {Backend} not available for kernel {KernelName}, falling back to optimal selection",
-
-                preferredBackend, kernelName);
+            LogPreferredBackendFallback(_logger, preferredBackend, kernelName, null);
             return await ExecuteAsync<T>(kernelName, args);
         }
 
@@ -127,9 +192,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
 
         if (compiledKernel == null)
         {
-            _logger.LogDebug("Compiling kernel {KernelName} for accelerator {AcceleratorType}",
-
-                kernelName, accelerator.Info.DeviceType);
+            LogCompilingKernel(_logger, kernelName, accelerator.Info.DeviceType, null);
 
             var kernelDefinition = CreateKernelDefinition(registration);
             compiledKernel = await _compiler.CompileAsync(kernelDefinition, accelerator);
@@ -153,9 +216,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Kernel execution failed for {KernelName} on {AcceleratorType}",
-
-                kernelName, accelerator.Info.DeviceType);
+            LogKernelExecutionFailed(_logger, kernelName, accelerator.Info.DeviceType, ex);
             throw;
         }
     }
@@ -188,7 +249,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
 
         if (availableAccelerators.Count == 0)
         {
-            _logger.LogWarning("No suitable accelerators found for kernel {KernelName}", kernelName);
+            LogNoSuitableAccelerators(_logger, kernelName, null);
             return null;
         }
 
@@ -198,9 +259,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
             .ThenBy(GetAcceleratorLoad)
             .FirstOrDefault();
 
-        _logger.LogDebug("Selected {AcceleratorType} for kernel {KernelName}",
-
-            optimalAccelerator?.Info.DeviceType, kernelName);
+        LogSelectedAccelerator(_logger, optimalAccelerator?.Info.DeviceType, kernelName, null);
 
         return optimalAccelerator;
     }
@@ -226,9 +285,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
 
             if (cached == null)
             {
-                _logger.LogDebug("Pre-compiling kernel {KernelName} for {AcceleratorType}",
-
-                    kernelName, acc.Info.DeviceType);
+                LogPrecompilingKernel(_logger, kernelName, acc.Info.DeviceType, null);
 
                 var kernelDefinition = CreateKernelDefinition(registration);
                 var compiled = await _compiler.CompileAsync(kernelDefinition, acc);
@@ -237,9 +294,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         });
 
         await Task.WhenAll(precompileTasks);
-        _logger.LogInformation("Pre-compiled kernel {KernelName} for {Count} accelerators",
-
-            kernelName, acceleratorsToPrecompile.Count());
+        LogPrecompiledKernel(_logger, kernelName, acceleratorsToPrecompile.Count(), null);
     }
 
     /// <inheritdoc />
@@ -269,10 +324,10 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         if (args == null || args.Length == 0)
         {
             // Might be valid for some kernels, so just return true with a warning logged
-            _logger.LogWarning("No arguments provided - verify this is expected for the kernel");
+            LogNoArgumentsWarning(_logger, null);
         }
 
-        // Additional validation logic would be implemented based on kernel metadata
+        // Additional validation logic would be implemented based on kernel metadata TODO
 
         return await Task.FromResult(true);
     }
@@ -284,7 +339,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
             Name = registration.Name,
             FullName = registration.FullName,
             // Source and other properties would be populated from the registration
-            // This would integrate with the generated kernel source code
+            // This would integrate with the generated kernel source code TODO
             Source = GetKernelSource(registration),
             EntryPoint = registration.Name,
             Language = KernelLanguage.CSharp // Default, would be determined by target backend
@@ -294,7 +349,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
     private static string GetKernelSource(KernelRegistrationInfo registration)
     {
         // This would retrieve the generated kernel source for the target backend
-        // Implementation would depend on how the generator stores the source code
+        // Implementation would depend on how the generator stores the source code TODO
         return $"// Generated kernel source for {registration.FullName}";
     }
 

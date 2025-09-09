@@ -427,7 +427,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     if (result == NvrtcResult.Success)
                     {
                         registeredFunctionNames.Add(funcName);
-                        _logger.LogDebug("Registered name expression for kernel function: {FunctionName}", funcName);
+                        LogRegisteredNameExpression(_logger, funcName);
                     }
                     else
                     {
@@ -444,7 +444,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 foreach (var option in compilationOptions)
                 {
-                    _logger.LogDebug("NVRTC Option: {Option}", option);
+                    LogNvrtcOption(_logger, option);
                 }
 
                 // Compile the program
@@ -490,7 +490,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     if (!string.IsNullOrEmpty(mangledName))
                     {
                         mangledNames[funcName] = mangledName;
-                        _logger.LogDebug("Retrieved mangled name for '{FunctionName}': '{MangledName}'", funcName, mangledName);
+                        LogRetrievedMangledName(_logger, funcName, mangledName);
                     }
                     else
                     {
@@ -567,7 +567,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
             var archString = CudaCapabilityManager.GetArchitectureString((major, minor));
             optionsList.Add($"--gpu-architecture={archString}");
-            _logger.LogDebug("NVRTC compilation using architecture: {ArchString}", archString);
+            LogNvrtcArchitecture(_logger, archString);
 
             // Use absolutely minimal NVRTC options - most options are not supported by NVRTC
             // Only use options that are documented to work with NVRTC
@@ -594,7 +594,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             if (options?.EnableDynamicParallelism == true)
             {
                 optionsList.Add("--relocatable-device-code=true");
-                _logger.LogDebug("Enabled relocatable device code for dynamic parallelism support");
+                LogEnabledRelocatableCode(_logger);
             }
 
             // Add debug info if requested
@@ -654,7 +654,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     if (result == NvrtcResult.Success)
                     {
                         registeredFunctionNames.Add(funcName);
-                        _logger.LogDebug("Registered name expression for CUBIN kernel function: {FunctionName}", funcName);
+                        LogRegisteredCubinNameExpression(_logger, funcName);
                     }
                     else
                     {
@@ -702,7 +702,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     if (!string.IsNullOrEmpty(mangledName))
                     {
                         mangledNames[funcName] = mangledName;
-                        _logger.LogDebug("Retrieved CUBIN mangled name for '{FunctionName}': '{MangledName}'", funcName, mangledName);
+                        LogRetrievedCubinMangledName(_logger, funcName, mangledName);
                     }
                     else
                     {
@@ -768,7 +768,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             if (options?.EnableDynamicParallelism == true)
             {
                 optionsList.Add("--relocatable-device-code=true");
-                _logger.LogDebug("Enabled relocatable device code for dynamic parallelism support (CUBIN)");
+                LogEnabledRelocatableCodeCubin(_logger);
             }
 
             // Add debug info if requested
@@ -803,9 +803,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 if (major >= 8) // All Ampere and Ada architectures (sm_80, sm_86, sm_89, etc.)
                 {
-                    _logger.LogInformation("CUDA 13.0 optimization: Using PTX compilation for compute " +
-                        "capability {Major}.{Minor} to leverage driver's advanced JIT compiler for " +
-                        "better performance and stability", major, minor);
+                    LogCudaOptimizationPtx(_logger, major, minor);
                     return false; // Use PTX for Ampere/Ada - better CUDA 13.0 support
                 }
 
@@ -813,8 +811,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 if (major == 7 && minor >= 5) // Turing (sm_75)
                 {
-                    _logger.LogInformation("Using PTX compilation for Turing architecture (sm_{Major}{Minor}) " +
-                        "for CUDA 13.0 compatibility", major, minor);
+                    LogTuringPtxCompilation(_logger, major, minor);
                     return false; // Prefer PTX for Turing as well
                 }
 
@@ -822,7 +819,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 if (major == 7 && minor < 5) // Volta (sm_70, sm_72)
                 {
-                    _logger.LogDebug("Using CUBIN compilation for Volta architecture {Major}.{Minor}", major, minor);
+                    LogVoltaCubinCompilation(_logger, major, minor);
                     return true;
                 }
 
@@ -830,7 +827,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 if (major <= 6)
                 {
-                    _logger.LogDebug("Using CUBIN compilation for legacy architecture {Major}.{Minor}", major, minor);
+                    LogLegacyCubinCompilation(_logger, major, minor);
                     return major > 3 || (major == 3 && minor >= 5);
                 }
 
@@ -840,7 +837,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to determine compilation target, defaulting to PTX for safety");
+                LogFailedToDetermineCompilationTarget(_logger, ex);
                 return false; // Default to PTX on error - most compatible
             }
         }
@@ -1220,11 +1217,11 @@ namespace DotCompute.Backends.CUDA.Compilation
             try
             {
                 _ = _mangledNamesCache.TryAdd(kernelName, new Dictionary<string, string>(mangledNames));
-                _logger.LogDebug("Stored {Count} mangled names for kernel '{KernelName}'", mangledNames.Count, kernelName);
+                LogStoredMangledNames(_logger, mangledNames.Count, kernelName);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to store mangled names for kernel '{KernelName}'", kernelName);
+                LogFailedToStoreMangledNames(_logger, ex, kernelName);
             }
         }
 
@@ -1402,12 +1399,12 @@ namespace DotCompute.Backends.CUDA.Compilation
                 if (saveTasks.Count > 0)
                 {
                     await Task.WhenAll(saveTasks).ConfigureAwait(false);
-                    _logger.LogDebug("Saved {SaveCount} kernel cache entries to persistent storage", saveCount);
+                    LogSavedKernelCacheEntries(_logger, saveCount);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to save persistent kernel cache");
+                LogFailedToSavePersistentCache(_logger, ex);
             }
         }
 
@@ -1443,12 +1440,12 @@ namespace DotCompute.Backends.CUDA.Compilation
                     var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata, _jsonOptions);
                     await File.WriteAllTextAsync(metadataFile, metadataJson).ConfigureAwait(false);
 
-                    _logger.LogTrace("Saved kernel cache entry: {FileName}", fileName);
+                    LogSavedKernelCacheEntry(_logger, fileName);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to save kernel cache entry: {CacheKey}", cacheKey);
+                LogFailedToSaveKernelCacheEntry(_logger, ex, cacheKey);
             }
         }
 
@@ -1470,7 +1467,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to extract kernel binary data for {KernelName}", compiledKernel.Name);
+                LogFailedToExtractKernelBinaryData(_logger, ex, compiledKernel.Name);
                 return null;
             }
         }
@@ -1487,7 +1484,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
             if (!string.IsNullOrEmpty(cudaInstallPath))
             {
-                _logger.LogDebug("Detected CUDA installation at: {CudaPath}", cudaInstallPath);
+                LogDetectedCudaInstallation(_logger, cudaInstallPath);
 
                 // Add CUDA primary include paths (order is critical for header resolution)
 
@@ -1508,7 +1505,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     if (System.IO.Directory.Exists(includePath))
                     {
                         optionsList.Add($"--include-path={includePath}");
-                        _logger.LogDebug("Added CUDA include path: {Path}", includePath);
+                        LogAddedCudaIncludePath(_logger, includePath);
                     }
                 }
             }
@@ -1537,7 +1534,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 if (System.IO.Directory.Exists(includePath))
                 {
                     optionsList.Add($"--include-path={includePath}");
-                    _logger.LogDebug("Added fallback CUDA include path: {Path}", includePath);
+                    LogAddedFallbackCudaIncludePath(_logger, includePath);
                 }
             }
 
@@ -1555,7 +1552,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 if (System.IO.Directory.Exists(includePath))
                 {
                     optionsList.Add($"--include-path={includePath}");
-                    _logger.LogDebug("Added C++ include path: {Path}", includePath);
+                    LogAddedCppIncludePath(_logger, includePath);
                     break; // Only add one C++ include path to avoid conflicts
                 }
             }

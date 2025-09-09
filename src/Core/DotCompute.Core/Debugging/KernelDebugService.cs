@@ -662,9 +662,9 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         return differences.Count == 0;
     }
 
-    private static List<ValidationIssue> AnalyzePerformanceCharacteristics(KernelExecutionResult[] results)
+    private static List<DotCompute.Abstractions.Debugging.ValidationIssue> AnalyzePerformanceCharacteristics(KernelExecutionResult[] results)
     {
-        var issues = new List<ValidationIssue>();
+        var issues = new List<DotCompute.Abstractions.Debugging.ValidationIssue>();
 
 
         if (results.Length < 2)
@@ -684,7 +684,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             var fastBackend = results.First(r => r.ExecutionTime.TotalMilliseconds == minTime).BackendType;
 
 
-            issues.Add(new ValidationIssue
+            issues.Add(new DotCompute.Abstractions.Debugging.ValidationIssue
             {
                 Severity = ValidationSeverity.Warning,
                 Message = $"Significant performance difference detected: {ratio:F1}x slower on {slowBackend} vs {fastBackend}",
