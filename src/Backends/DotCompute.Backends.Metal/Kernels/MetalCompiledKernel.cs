@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Memory;
+using DotCompute.Backends.Metal.Logging;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
 namespace DotCompute.Backends.Metal.Kernels;
@@ -53,7 +54,7 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
 
         ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
-        _logger.LogTrace("Executing Metal kernel: {Name}", Name);
+        _logger.KernelExecuting(Name);
 
         // Get command buffer from pool or create new one
         IntPtr commandBuffer;
@@ -90,8 +91,7 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
                 // Calculate dispatch dimensions
                 var (gridSize, threadgroupSize) = CalculateDispatchDimensions(arguments);
 
-                _logger.LogTrace(
-                    "Dispatching kernel with grid size: ({GridX}, {GridY}, {GridZ}), threadgroup size: ({ThreadX}, {ThreadY}, {ThreadZ})",
+                _logger.KernelDispatch(
                     gridSize.width, gridSize.height, gridSize.depth,
                     threadgroupSize.width, threadgroupSize.height, threadgroupSize.depth);
 
@@ -113,13 +113,13 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
                 if (status == MetalCommandBufferStatus.Completed)
                 {
                     _ = tcs.TrySetResult(true);
-                    _logger.LogTrace("Metal kernel execution completed: {Name}", Name);
+                    _logger.KernelExecutionCompleted(Name);
                 }
                 else
                 {
                     var error = new InvalidOperationException($"Metal kernel execution failed with status: {status}");
                     _ = tcs.TrySetException(error);
-                    _logger.LogError(error, "Metal kernel execution failed: {Name}", Name);
+                    _logger.KernelExecutionFailed(error, Name);
                 }
             });
 
@@ -220,8 +220,7 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
         var threadgroupSize = CalculateOptimalThreadgroupSize();
         var gridSize = CalculateOptimalGridSize(arguments, threadgroupSize);
 
-        _logger.LogTrace(
-            "Calculated dispatch dimensions - Grid: ({GridX}, {GridY}, {GridZ}), Threadgroup: ({ThreadX}, {ThreadY}, {ThreadZ})",
+        _logger.KernelCalculatedDispatch(
             gridSize.width, gridSize.height, gridSize.depth,
             threadgroupSize.width, threadgroupSize.height, threadgroupSize.depth);
 

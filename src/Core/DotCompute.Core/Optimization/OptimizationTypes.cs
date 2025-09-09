@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using DotCompute.Abstractions;
+using DotCompute.Core.Telemetry.System;
 
 namespace DotCompute.Core.Optimization;
 
@@ -456,18 +457,6 @@ public class WorkloadAnalysis
     public bool HasSufficientHistory { get; set; }
 }
 
-/// <summary>
-/// System performance snapshot for real-time decision making.
-/// </summary>
-public class SystemPerformanceSnapshot
-{
-    public DateTimeOffset Timestamp { get; set; }
-    public double CpuUsage { get; set; }
-    public double MemoryUsage { get; set; }
-    public double GpuUsage { get; set; }
-    public long MemoryAvailable { get; set; }
-    public int ActiveThreads { get; set; }
-}
 
 /// <summary>
 /// Comprehensive performance insights for monitoring and debugging.

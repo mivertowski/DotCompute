@@ -12,6 +12,7 @@ using DotCompute.Abstractions.Types;
 using ValidationResult = DotCompute.Abstractions.Validation.UnifiedValidationResult;
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.Metal.Logging;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
 namespace DotCompute.Backends.Metal.Kernels;
@@ -82,12 +83,12 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
             // Check cache
             if (_libraryCache.TryGetValue(codeHash, out var cachedLibrary))
             {
-                _logger.LogDebug("Using cached Metal library for kernel: {Name}", definition.Name);
+                _logger.CompilerUsingCache(definition.Name);
                 return CreateCompiledKernel(definition, cachedLibrary, stopwatch.Elapsed);
             }
 
             // Compile Metal code
-            _logger.LogDebug("Compiling Metal kernel: {Name}", definition.Name);
+            _logger.CompilerCompilingKernel(definition.Name);
             var library = await CompileMetalCodeAsync(metalCode, definition.Name, options, cancellationToken).ConfigureAwait(false);
 
             // Cache the compiled library
@@ -201,7 +202,7 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
                     throw new InvalidOperationException($"Metal compilation failed: {errorMessage}");
                 }
 
-                _logger.LogDebug("Successfully compiled Metal kernel: {Name}", kernelName);
+                _logger.CompilerKernelCompiled(kernelName);
                 return library;
             }
             finally
@@ -302,13 +303,13 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
         if (options.FastMath || enableFastMath)
         {
             MetalNative.SetCompileOptionsFastMath(compileOptions, true);
-            _logger.LogTrace("Enabled fast math optimizations for kernel: {KernelName}", kernelName);
+            _logger.FastMathOptimization(kernelName);
         }
 
         // Additional optimization hints could be set here based on the options
         if (options.OptimizationLevel == OptimizationLevel.Maximum)
         {
-            _logger.LogTrace("Maximum optimization level requested for kernel: {KernelName}", kernelName);
+            _logger.MaxOptimizationRequested(kernelName);
             // Metal doesn't expose many additional optimization flags through the public API
             // but we can log this for debugging purposes
         }

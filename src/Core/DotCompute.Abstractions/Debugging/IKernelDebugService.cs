@@ -123,7 +123,7 @@ public class KernelValidationResult
 /// <summary>
 /// Result of executing a kernel on a specific backend.
 /// </summary>
-public class KernelExecutionResult
+public record KernelExecutionResult
 {
     public string KernelName { get; init; } = string.Empty;
     public string BackendType { get; init; } = string.Empty;

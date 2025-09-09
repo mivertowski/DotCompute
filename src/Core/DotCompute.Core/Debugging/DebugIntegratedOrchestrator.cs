@@ -48,22 +48,10 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             return await _baseOrchestrator.ExecuteAsync<T>(kernelName, args);
         }
 
-        return await ExecuteWithDebugHooksAsync<T>(kernelName, args);
+        var result = await ExecuteWithDebugHooksAsync<T>(kernelName, args);
+        return result!;
     }
 
-    public async Task ExecuteAsync(string kernelName, params object[] args)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-
-        if (!_options.EnableDebugHooks)
-        {
-            await _baseOrchestrator.ExecuteAsync(kernelName, args);
-            return;
-        }
-
-        await ExecuteWithDebugHooksAsync<object>(kernelName, args);
-    }
 
     public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
     {
@@ -76,7 +64,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
 
         var allArgs = buffers.Concat(scalarArgs).ToArray();
-        return await ExecuteWithDebugHooksAsync<T>(kernelName, allArgs);
+        var result = await ExecuteWithDebugHooksAsync<T>(kernelName, allArgs);
+        return result!;
     }
 
     public async Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
@@ -94,7 +83,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             return await _baseOrchestrator.ExecuteAsync<T>(kernelName, preferredBackend, args);
         }
 
-        return await ExecuteWithDebugHooksAsync<T>(kernelName, args);
+        var result = await ExecuteWithDebugHooksAsync<T>(kernelName, args);
+        return result!;
     }
 
     public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
@@ -106,7 +96,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             return await _baseOrchestrator.ExecuteAsync<T>(kernelName, accelerator, args);
         }
 
-        return await ExecuteWithDebugHooksAsync<T>(kernelName, args);
+        var result = await ExecuteWithDebugHooksAsync<T>(kernelName, args);
+        return result!;
     }
 
     public async Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
@@ -306,8 +297,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
 
             if (!validationResult.IsValid)
             {
-                var criticalIssues = validationResult.Issues.Where(i => i.Severity == ValidationSeverity.Critical);
-                var errorIssues = validationResult.Issues.Where(i => i.Severity == ValidationSeverity.Error);
+                var criticalIssues = validationResult.Issues.Where(i => i.Severity == DotCompute.Abstractions.Debugging.ValidationSeverity.Critical);
+                var errorIssues = validationResult.Issues.Where(i => i.Severity == DotCompute.Abstractions.Debugging.ValidationSeverity.Error);
 
 
                 if (criticalIssues.Any())
@@ -439,8 +430,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
 
 
-        _baseOrchestrator?.Dispose();
-        _debugService?.Dispose();
+        (_baseOrchestrator as IDisposable)?.Dispose();
+        (_debugService as IDisposable)?.Dispose();
 
 
         _disposed = true;

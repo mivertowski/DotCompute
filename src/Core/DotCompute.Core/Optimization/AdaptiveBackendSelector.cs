@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Abstractions;
 using DotCompute.Core.Telemetry;
+using DotCompute.Core.Telemetry.System;
 using DotCompute.Core.Pipelines;
 
 namespace DotCompute.Core.Optimization;
@@ -511,7 +512,7 @@ public class AdaptiveBackendSelector : IDisposable
         var reliabilityConfidence = stats.ReliabilityScore;
 
 
-        return (sampleConfidence + consistencyConfidence + reliabilityConfidence) / 3.0f;
+        return (float)((sampleConfidence + consistencyConfidence + reliabilityConfidence) / 3.0f);
     }
 
     private double CalculateRealtimeScore(

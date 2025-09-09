@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using DotCompute.Core.Telemetry.System;
+using DotCompute.Core.Telemetry.Options;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -161,13 +163,6 @@ public sealed class PerformanceProfilerOptions
     public bool AllowOrphanedRecords { get; set; }
 }
 
-public sealed class ProfileOptions
-{
-    public TimeSpan? AutoStopAfter { get; set; }
-    public bool EnableDetailedMemoryProfiling { get; set; } = true;
-    public bool EnableKernelProfiling { get; set; } = true;
-    public bool EnableSystemProfiling { get; set; } = true;
-}
 
 public sealed class ActiveProfile
 {
@@ -347,20 +342,6 @@ public sealed class MemorySegmentStats
     public int OperationCount { get; set; }
     public long TotalBytes { get; set; }
     public double AverageBandwidth { get; set; }
-}
-
-public sealed class SystemPerformanceSnapshot
-{
-    public DateTimeOffset Timestamp { get; set; }
-    public int ActiveProfiles { get; set; }
-    public double ProcessorUsage { get; set; }
-    public long MemoryUsage { get; set; }
-    public int ThreadCount { get; set; }
-    public int ThreadPoolWorkItems { get; set; }
-    public int Gen0Collections { get; set; }
-    public int Gen1Collections { get; set; }
-    public int Gen2Collections { get; set; }
-    public Dictionary<string, double> HardwareCounters { get; set; } = [];
 }
 
 public sealed class ProfileSample

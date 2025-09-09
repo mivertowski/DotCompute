@@ -78,4 +78,24 @@ public sealed class SystemPerformanceSnapshot
     /// </summary>
     /// <value>A dictionary mapping hardware counter names to their values.</value>
     public Dictionary<string, double> HardwareCounters { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the CPU usage percentage (alias for ProcessorUsage).
+    /// </summary>
+    public double CpuUsage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the available memory in bytes.
+    /// </summary>
+    public long MemoryAvailable { get; set; }
+
+    /// <summary>
+    /// Gets or sets the GPU usage percentage.
+    /// </summary>
+    public double GpuUsage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of active threads.
+    /// </summary>
+    public int ActiveThreads { get; set; }
 }

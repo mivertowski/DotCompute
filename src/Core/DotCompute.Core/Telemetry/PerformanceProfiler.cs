@@ -3,6 +3,8 @@ using System.Diagnostics;
 using global::System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DotCompute.Core.Telemetry.System;
+using ProfileOptions = DotCompute.Core.Telemetry.Options.ProfileOptions;
 
 namespace DotCompute.Core.Telemetry;
 

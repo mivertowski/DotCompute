@@ -37,7 +37,7 @@ public static class DebugExample
 
                 // Add logging
                 services.AddLogging(builder => builder
-                    .SetMinimumLevel(LogLevel.Debug)
+                    .SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug)
                     .AddConsole());
             })
             .Build();

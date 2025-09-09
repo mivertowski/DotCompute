@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using global::System.Runtime.InteropServices;
+using DotCompute.Core.Telemetry.System;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -250,6 +251,30 @@ namespace DotCompute.Core.Pipelines
                 public TimeSpan StartCpuTotal;
                 public long StartAllocatedBytes;
             }
+        }
+
+        /// <summary>
+        /// Gets a comprehensive system performance snapshot.
+        /// </summary>
+        public static SystemPerformanceSnapshot GetSystemPerformanceSnapshot()
+        {
+            var memStats = GetMemoryStats();
+            var threadStats = GetThreadPoolStats();
+            
+            return new SystemPerformanceSnapshot
+            {
+                Timestamp = DateTimeOffset.UtcNow,
+                ProcessorUsage = GetCpuUtilization(),
+                MemoryUsage = memStats.workingSet,
+                CpuUsage = GetCpuUtilization(),
+                MemoryAvailable = GC.GetTotalMemory(false),
+                ThreadCount = threadStats.workerThreads,
+                ThreadPoolWorkItems = threadStats.workerThreads - threadStats.availableWorkerThreads,
+                Gen0Collections = GC.CollectionCount(0),
+                Gen1Collections = GC.CollectionCount(1),
+                Gen2Collections = GC.CollectionCount(2),
+                HardwareCounters = new Dictionary<string, double>()
+            };
         }
     }
 }

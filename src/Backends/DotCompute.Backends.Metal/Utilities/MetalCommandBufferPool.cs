@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.Metal.Logging;
 
 namespace DotCompute.Backends.Metal.Utilities;
 
@@ -32,7 +33,7 @@ public sealed class MetalCommandBufferPool : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _maxPoolSize = maxPoolSize;
 
-        _logger.LogDebug("Created Metal command buffer pool with max size: {MaxSize}", maxPoolSize);
+        _logger.CommandBufferPoolCreated(maxPoolSize);
     }
 
     /// <summary>
@@ -48,7 +49,7 @@ public sealed class MetalCommandBufferPool : IDisposable
         if (_availableBuffers.TryDequeue(out var buffer))
         {
             _ = Interlocked.Decrement(ref _currentPoolSize);
-            _logger.LogTrace("Reused command buffer from pool: {Buffer:X}", buffer.ToInt64());
+            _logger.CommandBufferReused(buffer.ToInt64());
         }
         else
         {
@@ -58,7 +59,7 @@ public sealed class MetalCommandBufferPool : IDisposable
             {
                 throw new InvalidOperationException("Failed to create Metal command buffer");
             }
-            _logger.LogTrace("Created new command buffer: {Buffer:X}", buffer.ToInt64());
+            _logger.CommandBufferCreated(buffer.ToInt64());
         }
 
         // Track the active buffer
@@ -70,7 +71,7 @@ public sealed class MetalCommandBufferPool : IDisposable
 
         if (!_activeBuffers.TryAdd(buffer, info))
         {
-            _logger.LogWarning("Failed to track active command buffer: {Buffer:X}", buffer.ToInt64());
+            _logger.CommandBufferTrackingFailed(buffer.ToInt64());
         }
 
         return buffer;
@@ -90,7 +91,7 @@ public sealed class MetalCommandBufferPool : IDisposable
         // Remove from active tracking
         if (!_activeBuffers.TryRemove(buffer, out var info))
         {
-            _logger.LogWarning("Attempted to return untracked command buffer: {Buffer:X}", buffer.ToInt64());
+            _logger.CommandBufferUntracked(buffer.ToInt64());
         }
 
         // Check if we should return to pool or dispose
@@ -100,13 +101,13 @@ public sealed class MetalCommandBufferPool : IDisposable
             // Return to pool for reuse
             _availableBuffers.Enqueue(buffer);
             _ = Interlocked.Increment(ref _currentPoolSize);
-            _logger.LogTrace("Returned command buffer to pool: {Buffer:X}", buffer.ToInt64());
+            _logger.CommandBufferReturned(buffer.ToInt64());
         }
         else
         {
             // Pool is full or buffer is stale, dispose it
             MetalNative.ReleaseCommandBuffer(buffer);
-            _logger.LogTrace("Disposed command buffer: {Buffer:X}", buffer.ToInt64());
+            _logger.CommandBufferDisposed(buffer.ToInt64());
         }
     }
 
@@ -137,7 +138,7 @@ public sealed class MetalCommandBufferPool : IDisposable
 
         if (cleaned > 0)
         {
-            _logger.LogDebug("Cleaned up {Count} stale command buffers from pool", cleaned);
+            _logger.CommandBufferPoolCleanup(cleaned);
         }
 
         // Clean up long-running active buffers (potential leaks)
@@ -150,8 +151,7 @@ public sealed class MetalCommandBufferPool : IDisposable
         {
             if (_activeBuffers.TryRemove(bufferPtr, out _))
             {
-                _logger.LogWarning("Found stale active command buffer (age: {Age}), disposing: {Buffer:X}",
-
+                _logger.StaleActiveCommandBuffer(
                     DateTime.UtcNow - bufferInfo.CreatedAt, bufferPtr.ToInt64());
                 MetalNative.ReleaseCommandBuffer(bufferPtr);
             }
@@ -191,7 +191,7 @@ public sealed class MetalCommandBufferPool : IDisposable
             return;
         }
 
-        _logger.LogDebug("Disposing Metal command buffer pool");
+        _logger.CommandBufferPoolDisposing();
 
         // Dispose all available buffers
         while (_availableBuffers.TryDequeue(out var buffer))
@@ -208,7 +208,7 @@ public sealed class MetalCommandBufferPool : IDisposable
             }
         }
 
-        _logger.LogDebug("Disposed Metal command buffer pool");
+        _logger.CommandBufferPoolDisposed();
     }
 
     /// <summary>

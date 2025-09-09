@@ -39,4 +39,18 @@ public sealed class ProfileOptions
     /// </summary>
     /// <value>true if system profiling is enabled; otherwise, false.</value>
     public bool EnableSystemProfiling { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether detailed metrics are enabled.
+    /// When enabled, collects fine-grained performance metrics.
+    /// Default value is true.
+    /// </summary>
+    public bool EnableDetailedMetrics { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the sampling interval in milliseconds.
+    /// Determines how frequently performance data is sampled.
+    /// Default value is 100ms.
+    /// </summary>
+    public int SampleIntervalMs { get; set; } = 100;
 }

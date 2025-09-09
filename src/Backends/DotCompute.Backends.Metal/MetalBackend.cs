@@ -8,6 +8,7 @@ using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.Metal.Logging;
 namespace DotCompute.Backends.Metal;
 
 
@@ -178,7 +179,7 @@ public sealed partial class MetalBackend : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to compile Metal function: {FunctionName}", functionName);
+            _logger.MetalFunctionCompilationFailed(ex, functionName);
             return IntPtr.Zero;
         }
     }
@@ -203,17 +204,17 @@ public sealed partial class MetalBackend : IDisposable
         {
             // This is a simplified approach - in production, we'd maintain a proper mapping
             // between function handles and compiled kernels
-            _logger.LogTrace("Executing compute shader with {BufferCount} buffers", buffers.Length);
+            _logger.ComputeShaderExecuting(buffers.Length);
 
             // For now, we'll just complete successfully
             // In a full implementation, we'd retrieve the compiled kernel from the function handle
             await Task.CompletedTask.ConfigureAwait(false);
 
-            _logger.LogTrace("Compute shader execution completed");
+            _logger.ComputeShaderExecutionCompleted();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute compute shader");
+            _logger.ComputeShaderExecutionFailed(ex);
             throw;
         }
     }
@@ -238,7 +239,7 @@ public sealed partial class MetalBackend : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create command queue");
+            _logger.CommandQueueCreationFailed(ex);
             return IntPtr.Zero;
         }
     }
@@ -247,9 +248,7 @@ public sealed partial class MetalBackend : IDisposable
     {
         if (!IsAvailable())
         {
-#pragma warning disable CA1848 // Use the LoggerMessage delegates
-            _logger.LogWarning("Metal is not available on this platform");
-#pragma warning restore CA1848
+            _logger.MetalNotAvailable();
             return;
         }
 
@@ -275,9 +274,7 @@ public sealed partial class MetalBackend : IDisposable
                     var device = MetalNative.CreateDeviceAtIndex(deviceIndex);
                     if (device == IntPtr.Zero)
                     {
-#pragma warning disable CA1848 // Use the LoggerMessage delegates
-                        _logger.LogWarning("Failed to create Metal device at index {DeviceIndex}", deviceIndex);
-#pragma warning restore CA1848
+                        _logger.FailedToCreateDevice(deviceIndex);
                         continue;
                     }
 

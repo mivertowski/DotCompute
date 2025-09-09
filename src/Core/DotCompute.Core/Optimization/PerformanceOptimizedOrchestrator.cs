@@ -55,13 +55,10 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
     public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
     {
-        return await ExecuteWithOptimizationAsync<T>(kernelName, args);
+        var result = await ExecuteWithOptimizationAsync<T>(kernelName, args);
+        return result!;
     }
 
-    public async Task ExecuteAsync(string kernelName, params object[] args)
-    {
-        await ExecuteWithOptimizationAsync<object>(kernelName, args);
-    }
 
     public async Task<T?> ExecuteWithBuffersAsync<T>(string kernelName, object[] buffers, params object[] scalarArgs)
     {
@@ -297,7 +294,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         // Start performance profiling
 
-        var profileOptions = new ProfileOptions
+        var profileOptions = new DotCompute.Core.Telemetry.Options.ProfileOptions
         {
             EnableDetailedMetrics = _options.EnableDetailedProfiling,
             SampleIntervalMs = _options.ProfilingSampleIntervalMs
@@ -326,7 +323,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
             // Record kernel execution in profiler
 
-            var executionMetrics = new KernelExecutionMetrics
+            var executionMetrics = new DotCompute.Core.Telemetry.KernelExecutionMetrics
             {
                 StartTime = DateTimeOffset.UtcNow - executionStopwatch.Elapsed,
                 EndTime = DateTimeOffset.UtcNow,
@@ -341,7 +338,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
                 SharedMemoryUsed = allocatedBytes / 1024,
                 WarpEfficiency = 0.9f,
                 BranchDivergence = 0.1f,
-                MemoryLatency = TimeSpan.FromMicroseconds(100),
+                MemoryLatency = 100.0, // microseconds
                 PowerConsumption = 150.0f,
                 InstructionThroughput = 1000000
             };
@@ -610,7 +607,8 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
     public async Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args)
     {
         // Use preferred backend if specified
-        return await ExecuteWithOptimizationAsync<T>(kernelName, args);
+        var result = await ExecuteWithOptimizationAsync<T>(kernelName, args);
+        return result!;
     }
 
     public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
@@ -646,7 +644,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
 
 
-        _baseOrchestrator?.Dispose();
+        (_baseOrchestrator as IDisposable)?.Dispose();
         _backendSelector?.Dispose();
 
 
@@ -698,37 +696,4 @@ public enum OptimizationStrategy
     Balanced,      // Balance performance and reliability
     Aggressive,    // Maximize performance
     Adaptive       // Adapt strategy based on workload
-}
-
-/// <summary>
-/// Kernel execution metrics for performance profiling.
-/// </summary>
-public class KernelExecutionMetrics
-{
-    public DateTimeOffset StartTime { get; set; }
-    public DateTimeOffset EndTime { get; set; }
-    public TimeSpan ExecutionTime { get; set; }
-    public double ThroughputOpsPerSecond { get; set; }
-    public float OccupancyPercentage { get; set; }
-    public double InstructionThroughput { get; set; }
-    public double MemoryBandwidthGBPerSecond { get; set; }
-    public float CacheHitRate { get; set; }
-    public float MemoryCoalescingEfficiency { get; set; }
-    public int ComputeUnitsUsed { get; set; }
-    public int RegistersPerThread { get; set; }
-    public long SharedMemoryUsed { get; set; }
-    public float WarpEfficiency { get; set; }
-    public float BranchDivergence { get; set; }
-    public TimeSpan MemoryLatency { get; set; }
-    public float PowerConsumption { get; set; }
-}
-
-/// <summary>
-/// Profile options for performance monitoring.
-/// </summary>
-public class ProfileOptions
-{
-    public bool EnableDetailedMetrics { get; set; } = true;
-    public int SampleIntervalMs { get; set; } = 100;
-    public TimeSpan? AutoStopAfter { get; set; }
 }

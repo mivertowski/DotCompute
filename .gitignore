@@ -820,3 +820,6 @@ CLAUDE.md
 RELEASE_INSTRUCTIONS.md
 test_disposed.cs
 tests/Unit/DotCompute.Memory.Tests/test_buffer.csx
+scripts/convert-logger-calls.sh
+scripts/convert-to-logger-delegates.ps1
+scripts/convert-to-logger-delegates.sh

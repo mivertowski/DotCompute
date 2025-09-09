@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Types;
+using DotCompute.Core.Telemetry.Options;
 
 namespace DotCompute.Core.Telemetry;
 
