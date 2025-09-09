@@ -3,6 +3,7 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using DotCompute.Runtime.Logging;
 using System.Collections.Concurrent;
 using System.Reflection;
 
@@ -38,7 +39,7 @@ public class PluginServiceProvider : IPluginServiceProvider, IDisposable
 
         return _pluginScopes.GetOrAdd(pluginId, id =>
         {
-            _logger.LogDebug("Creating service scope for plugin {PluginId}", id);
+            _logger.LogDebugMessage("Creating service scope for plugin {id}");
             var scope = _rootServiceProvider.CreateScope();
 
             // If plugin has custom services, create a custom provider
@@ -74,7 +75,7 @@ public class PluginServiceProvider : IPluginServiceProvider, IDisposable
             return existing;
         });
 
-        _logger.LogDebug("Registered {Count} services for plugin {PluginId}", services.Count, pluginId);
+        _logger.LogDebugMessage("Registered {Count} services for plugin {services.Count, pluginId}");
     }
 
     public T? GetPluginService<T>(string pluginId) where T : class => (T?)GetPluginService(pluginId, typeof(T));
@@ -136,7 +137,7 @@ public class PluginServiceProvider : IPluginServiceProvider, IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
 
-        _logger.LogDebug("Disposing services for plugin {PluginId}", pluginId);
+        _logger.LogDebugMessage("Disposing services for plugin {pluginId}");
 
         // Dispose custom provider
         if (_pluginProviders.TryRemove(pluginId, out var provider))
@@ -187,7 +188,7 @@ public class PluginServiceProvider : IPluginServiceProvider, IDisposable
             return;
         }
 
-        _logger.LogDebug("Disposing PluginServiceProvider");
+        _logger.LogDebugMessage("Disposing PluginServiceProvider");
 
         // Dispose all plugin providers
         foreach (var provider in _pluginProviders.Values)
@@ -336,7 +337,7 @@ public class PluginDependencyResolver : IPluginDependencyResolver
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating dependencies for plugin {PluginType}", pluginType.Name);
+            _logger.LogErrorMessage(ex, $"Error validating dependencies for plugin {pluginType.Name}");
             return PluginDependencyValidationResult.Failure(new[] { ex.Message }, missingDependencies);
         }
     }

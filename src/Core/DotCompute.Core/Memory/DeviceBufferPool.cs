@@ -6,6 +6,7 @@ using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory
 {
@@ -50,8 +51,7 @@ namespace DotCompute.Core.Memory
                 TimeSpan.FromMilliseconds(CleanupIntervalMs),
                 TimeSpan.FromMilliseconds(CleanupIntervalMs));
 
-            _logger.LogDebug("Created buffer pool for device {DeviceName} with P2P bandwidth {BandwidthGBps:F1} GB/s",
-                device.Info.Name, deviceCapabilities.P2PBandwidthGBps);
+            _logger.LogDebugMessage($"Created buffer pool for device {device.Info.Name} with P2P bandwidth {deviceCapabilities.P2PBandwidthGBps} GB/s");
         }
 
         /// <summary>
@@ -109,8 +109,7 @@ namespace DotCompute.Core.Memory
                     _statistics.AllocationFailures++;
                 }
 
-                _logger.LogError(ex, "Failed to allocate buffer of {SizeBytes} bytes on {Device}",
-                    sizeInBytes, _device.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to allocate buffer of {sizeInBytes} bytes on {_device.Info.Name}");
                 throw;
             }
         }
@@ -154,8 +153,7 @@ namespace DotCompute.Core.Memory
                     _statistics.AllocationFailures++;
                 }
 
-                _logger.LogError(ex, "Failed to allocate streaming buffer of {SizeBytes} bytes on {Device}",
-                    sizeInBytes, _device.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to allocate streaming buffer of {sizeInBytes} bytes on {_device.Info.Name}");
                 throw;
             }
         }
@@ -198,8 +196,7 @@ namespace DotCompute.Core.Memory
                     _statistics.AllocationFailures++;
                 }
 
-                _logger.LogError(ex, "Failed to allocate memory-mapped buffer of {SizeBytes} bytes on {Device}",
-                    sizeInBytes, _device.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to allocate memory-mapped buffer of {sizeInBytes} bytes on {_device.Info.Name}");
                 throw;
             }
         }
@@ -342,8 +339,7 @@ namespace DotCompute.Core.Memory
 
                 if (cleanupCount > 0)
                 {
-                    _logger.LogDebug("Pool cleanup completed on {Device}: {Count} buffers released, {Bytes} bytes freed",
-                        _device.Info.Name, cleanupCount, releasedBytes);
+                    _logger.LogDebugMessage($"Pool cleanup completed on {_device.Info.Name}: {cleanupCount} buffers released, {releasedBytes} bytes freed");
                 }
             }
             catch (Exception ex)
@@ -479,8 +475,7 @@ namespace DotCompute.Core.Memory
 
             _sizeBasedPools.Clear();
 
-            _logger.LogDebug("Disposed buffer pool on {Device}: {Count} buffers disposed",
-                _device.Info.Name, disposeCount);
+            _logger.LogDebugMessage($"Disposed buffer pool on {_device.Info.Name}: {disposeCount} buffers disposed");
         }
 
         /// <summary>

@@ -4,6 +4,7 @@
 using DotCompute.Core.Recovery.Models;
 using DotCompute.Core.Recovery.Statistics;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Recovery;
 
@@ -39,7 +40,7 @@ public class PluginRecoveryManager : IDisposable
 
         try
         {
-            _logger.LogInformation("Attempting recovery for plugin {PluginId}", context.PluginId);
+            _logger.LogInfoMessage("Attempting recovery for plugin {context.PluginId}");
 
             // Basic recovery logic - would be expanded with real implementation
 
@@ -50,7 +51,7 @@ public class PluginRecoveryManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to recover plugin {PluginId}", context.PluginId);
+            _logger.LogErrorMessage(ex, $"Failed to recover plugin {context.PluginId}");
             return false;
         }
     }
@@ -76,9 +77,7 @@ public class PluginRecoveryManager : IDisposable
 
         try
         {
-            _logger.LogInformation("Recovering from error {ErrorType} for plugin {PluginId}",
-
-                error.GetType().Name, context.PluginId);
+            _logger.LogInfoMessage($"Recovering from error {error.GetType().Name} for plugin {context.PluginId}");
 
             var success = await AttemptRecoveryAsync(context, cancellationToken);
 
@@ -89,7 +88,7 @@ public class PluginRecoveryManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Plugin recovery failed for {PluginId}", context.PluginId);
+            _logger.LogErrorMessage(ex, $"Plugin recovery failed for {context.PluginId}");
             return new RecoveryResult { Success = false, Message = "Plugin recovery exception", Exception = ex };
         }
     }

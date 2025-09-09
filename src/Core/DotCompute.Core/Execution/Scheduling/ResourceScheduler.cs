@@ -7,6 +7,7 @@ using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Plans;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Execution.Scheduling
@@ -88,8 +89,7 @@ namespace DotCompute.Core.Execution.Scheduling
                 throw new InvalidOperationException("No suitable devices available for execution");
             }
 
-            _logger.LogInformation("Selected {SelectedCount} optimal devices from {AvailableCount} available",
-                selectedDevices.Length, availableDevices.Length);
+            _logger.LogInfoMessage($"Selected {selectedDevices.Length} optimal devices from {availableDevices.Length} available");
 
             return selectedDevices;
         }
@@ -133,8 +133,7 @@ namespace DotCompute.Core.Execution.Scheduling
             };
 
 
-            _logger.LogInformation("Distributed {TotalElements} elements across {DeviceCount} devices using {Strategy} strategy",
-                totalElements, devices.Length, strategy);
+            _logger.LogInfoMessage($"Distributed {totalElements} elements across {devices.Length} devices using {strategy} strategy");
 
             return new WorkloadDistribution
             {
@@ -187,8 +186,7 @@ namespace DotCompute.Core.Execution.Scheduling
             };
 
 
-            _logger.LogInformation("Assigned {LayerCount} layers across {DeviceCount} devices using {Strategy} strategy",
-                layers.Count, devices.Length, options.LayerAssignment);
+            _logger.LogInfoMessage($"Assigned {layers.Count} layers across {devices.Length} devices using {options.LayerAssignment} strategy");
 
             return assignments;
         }
@@ -234,8 +232,7 @@ namespace DotCompute.Core.Execution.Scheduling
                 assignments[stages[i].Name] = devices[deviceIndex];
             }
 
-            _logger.LogInformation("Assigned {StageCount} pipeline stages across {DeviceCount} devices",
-                stages.Count, devices.Length);
+            _logger.LogInfoMessage($"Assigned {stages.Count} pipeline stages across {devices.Length} devices");
 
             return assignments;
         }

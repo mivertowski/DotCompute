@@ -10,6 +10,7 @@ using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Wrapper.BLAS.Enums;
 using DotCompute.Backends.CUDA.Wrapper.BLAS.Models;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Wrapper.BLAS;
 
@@ -159,7 +160,7 @@ public sealed class CuBLASWrapper : IDisposable
         if (_device.ComputeCapabilityMajor >= 7)
         {
             _ = cublasSetMathMode(_cublasHandle, CublasMath.TensorOpMath);
-            _logger.LogInformation("Tensor Core acceleration enabled for BLAS operations");
+            _logger.LogInfoMessage("Tensor Core acceleration enabled for BLAS operations");
         }
     }
 
@@ -652,7 +653,7 @@ public sealed class CuBLASWrapper : IDisposable
 
         if (flops > 0)
         {
-            _logger.LogDebug("BLAS operation {Operation} completed with {Flops:N0} FLOPS", operation, flops);
+            _logger.LogDebugMessage("BLAS operation {Operation} completed with {operation, flops} FLOPS");
         }
     }
 
@@ -662,7 +663,7 @@ public sealed class CuBLASWrapper : IDisposable
         // This would be implemented with a custom CUDA kernel or cuSOLVER
         // For now, using a placeholder implementation TODO
         await Task.Delay(1, cancellationToken).ConfigureAwait(false);
-        _logger.LogDebug("LU decomposition kernel executed for {N}x{N} matrix", n, n);
+        _logger.LogDebugMessage("LU decomposition kernel executed for {N}x{n, n} matrix");
     }
 
     private async Task PerformCholeskyDecompositionKernelAsync(IUnifiedMemoryBuffer L, int n, bool upper,
@@ -670,7 +671,7 @@ public sealed class CuBLASWrapper : IDisposable
     {
         // This would be implemented with a custom CUDA kernel or cuSOLVER TODO
         await Task.Delay(1, cancellationToken).ConfigureAwait(false);
-        _logger.LogDebug("Cholesky decomposition kernel executed for {N}x{N} matrix", n, n);
+        _logger.LogDebugMessage("Cholesky decomposition kernel executed for {N}x{n, n} matrix");
     }
 
     private async Task PerformQRDecompositionKernelAsync(IUnifiedMemoryBuffer A, IUnifiedMemoryBuffer Q, IUnifiedMemoryBuffer R,
@@ -678,7 +679,7 @@ public sealed class CuBLASWrapper : IDisposable
     {
         // This would be implemented with a custom CUDA kernel or cuSOLVER TODO
         await Task.Delay(1, cancellationToken).ConfigureAwait(false);
-        _logger.LogDebug("QR decomposition kernel executed for {M}x{N} matrix", m, n);
+        _logger.LogDebugMessage("QR decomposition kernel executed for {M}x{m, n} matrix");
     }
 
     #endregion

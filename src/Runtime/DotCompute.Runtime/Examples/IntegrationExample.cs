@@ -25,12 +25,7 @@ public static class IntegrationExample
             .ConfigureServices((context, services) =>
             {
                 // Add DotCompute runtime services
-                services.AddDotComputeRuntime(options =>
-                {
-                    options.EnableAutoDiscovery = true;
-                    options.MaxAccelerators = 8;
-                    options.EnableDebugLogging = true;
-                });
+                services.AddDotComputeRuntime(context.Configuration);
 
                 // Add logging
                 services.AddLogging(builder =>
@@ -53,8 +48,9 @@ public static class IntegrationExample
     /// </summary>
     public static async Task ExecuteExampleKernelAsync(IServiceProvider serviceProvider)
     {
-        var orchestrator = serviceProvider.GetRequiredService<IComputeOrchestrator>();
-        var logger = serviceProvider.GetRequiredService<ILogger<IntegrationExample>>();
+        var orchestrator = serviceProvider.GetRequiredService<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>();
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger("IntegrationExample");
 
         try
         {
@@ -151,12 +147,11 @@ public static class ExampleKernels
 
         // The generated code would internally call:
 
-        var orchestrator = serviceProvider.GetRequiredService<IComputeOrchestrator>();
+        var orchestrator = serviceProvider.GetRequiredService<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>();
 
         // This demonstrates the integration pattern:
 
-        await orchestrator.ExecuteAsync<object>("MyNamespace.VectorAdd",
-
+        await orchestrator.ExecuteAsync<object>("MyNamespace.VectorAdd"
             /* inputA, inputB, output, length */);
     }
 }

@@ -11,6 +11,7 @@ using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Extensions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
@@ -125,9 +126,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     // Strategy 2: Standard module loading (cuModuleLoadData)
                     else
                     {
-                        _logger.LogInformation("JIT module loading failed with {Result}, using standard loading for kernel '{Name}'",
-
-                            result, Name);
+                        _logger.LogInfoMessage($"JIT module loading failed with {result}, using standard loading for kernel '{Name}'");
 
 
                         result = CudaRuntime.cuModuleLoadData(ref _module, ptxPtr);
@@ -156,9 +155,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     }
 
 
-                    _logger.LogInformation("CUDA module loaded successfully using '{Strategy}' strategy for kernel '{Name}'",
-
-                        loadingStrategy, Name);
+                    _logger.LogInfoMessage($"CUDA module loaded successfully using '{loadingStrategy}' strategy for kernel '{Name}'");
 
                     // Enhanced function symbol resolution with multiple fallback strategies
                     if (!TryResolveKernelFunction())
@@ -192,28 +189,24 @@ namespace DotCompute.Backends.CUDA.Compilation
                 var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, mangledName);
                 if (result == CudaError.Success)
                 {
-                    _logger.LogInformation("Resolved kernel function using mangled name '{MangledName}' for '{Name}'",
-
-                        mangledName, Name);
+                    _logger.LogInfoMessage($"Resolved kernel function using mangled name '{mangledName}' for '{Name}'");
                     return true;
                 }
 
 
-                _logger.LogDebug("Failed to resolve using mangled name '{MangledName}': {Result}", mangledName, result);
+                _logger.LogDebugMessage("");
             }
 
             // Strategy 2: Try original entry point name
             var originalResult = CudaRuntime.cuModuleGetFunction(ref _function, _module, _entryPoint);
             if (originalResult == CudaError.Success)
             {
-                _logger.LogInformation("Resolved kernel function using original name '{EntryPoint}' for '{Name}'",
-
-                    _entryPoint, Name);
+                _logger.LogInfoMessage($"Resolved kernel function using original name '{_entryPoint}' for '{Name}'");
                 return true;
             }
 
 
-            _logger.LogDebug("Failed to resolve using original name '{EntryPoint}': {Result}", _entryPoint, originalResult);
+            _logger.LogDebugMessage("");
 
             // Strategy 3: Try common naming variations for CUDA kernels
             var namingVariations = new[]
@@ -229,14 +222,12 @@ namespace DotCompute.Backends.CUDA.Compilation
                 var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, variation);
                 if (result == CudaError.Success)
                 {
-                    _logger.LogInformation("Resolved kernel function using naming variation '{Variation}' for '{Name}'",
-
-                        variation, Name);
+                    _logger.LogInfoMessage($"Resolved kernel function using naming variation '{variation}' for '{Name}'");
                     return true;
                 }
 
 
-                _logger.LogDebug("Naming variation '{Variation}' failed: {Result}", variation, result);
+                _logger.LogDebugMessage("");
             }
 
             return false;
@@ -335,9 +326,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 }
 
 
-                _logger.LogDebug("JIT configuration '{Description}' failed with {Result}, trying next",
-
-                    config.Description, result);
+                _logger.LogDebugMessage($"JIT configuration '{config.Description}' failed with {result}, trying next");
             }
 
             result = CudaError.Unknown;
@@ -446,7 +435,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
             try
             {
-                _logger.LogDebug("Executing CUDA kernel '{Name}' with {ArgCount} arguments", Name, arguments.Arguments.Count);
+                _logger.LogDebugMessage(" arguments");
 
                 // Try to extract launch configuration from arguments metadata
                 CudaLaunchConfig? config = null;
@@ -455,7 +444,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 if (launchConfigObj != null)
                 {
-                    _logger.LogDebug("Found launch configuration in arguments metadata: {Config}", launchConfigObj);
+                    _logger.LogDebugMessage("");
 
                     // Check if it's a KernelLaunchConfiguration type from abstractions
 
@@ -476,15 +465,12 @@ namespace DotCompute.Backends.CUDA.Compilation
                             (uint)launchConfig.SharedMemoryBytes);
 
 
-                        _logger.LogDebug("Converted LaunchConfiguration to CudaLaunchConfig: Grid({GridX},{GridY},{GridZ}) Block({BlockX},{BlockY},{BlockZ}) SharedMem={SharedMem}",
-                            config.Value.GridX, config.Value.GridY, config.Value.GridZ,
-                            config.Value.BlockX, config.Value.BlockY, config.Value.BlockZ,
-                            config.Value.SharedMemoryBytes);
+                        _logger.LogDebugMessage($"Converted LaunchConfiguration to CudaLaunchConfig: Grid({config.Value.GridX},{config.Value.GridY},{config.Value.GridZ}) Block({config.Value.BlockX},{config.Value.BlockY},{config.Value.BlockZ}) SharedMem={config.Value.SharedMemoryBytes}");
                     }
                     // Note: Direct CudaLaunchConfig matching removed since we use KernelLaunchConfiguration
                     else
                     {
-                        _logger.LogWarning("Unknown launch configuration type: {Type}", launchConfigObj.GetType());
+                        _logger.LogWarningMessage($"");
                         config = null;
                     }
                 }
@@ -492,11 +478,11 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // Use the advanced launcher for optimal performance
                 await _launcher.LaunchKernelAsync(_function, arguments, config, cancellationToken).ConfigureAwait(false);
 
-                _logger.LogDebug("Successfully executed CUDA kernel '{Name}'", Name);
+                _logger.LogDebugMessage("'");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute CUDA kernel '{Name}'", Name);
+                _logger.LogErrorMessage("'");
                 throw new InvalidOperationException($"Failed to execute CUDA kernel '{Name}'", ex);
             }
         }
@@ -524,15 +510,15 @@ namespace DotCompute.Backends.CUDA.Compilation
 
             try
             {
-                _logger.LogDebug("Executing CUDA kernel '{Name}' with custom configuration", Name);
+                _logger.LogDebugMessage("' with custom configuration");
 
                 await _launcher.LaunchKernelAsync(_function, arguments, config, cancellationToken).ConfigureAwait(false);
 
-                _logger.LogDebug("Successfully executed CUDA kernel '{Name}' with custom config", Name);
+                _logger.LogDebugMessage("' with custom config");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute CUDA kernel '{Name}' with custom config", Name);
+                _logger.LogErrorMessage("' with custom config");
                 throw new InvalidOperationException($"Failed to execute CUDA kernel '{Name}' with custom config", ex);
             }
         }
@@ -572,7 +558,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during CUDA compiled kernel disposal");
+                _logger.LogErrorMessage(ex, "Error during CUDA compiled kernel disposal");
             }
         }
 
@@ -603,7 +589,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error unloading CUDA module");
+                    _logger.LogErrorMessage(ex, "Error unloading CUDA module");
                 }
             }
 

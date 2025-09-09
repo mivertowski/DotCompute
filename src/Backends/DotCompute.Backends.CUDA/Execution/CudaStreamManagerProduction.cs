@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution;
 
@@ -80,12 +81,11 @@ public sealed class CudaStreamManagerProduction : IDisposable
 
         if (result == CudaError.Success && _lowestPriority != _highestPriority)
         {
-            _logger.LogInformation("Stream priorities supported: [{Lowest}, {Highest}]",
-                _lowestPriority, _highestPriority);
+            _logger.LogInfoMessage($"Stream priorities supported: [{_lowestPriority}, {_highestPriority}]");
         }
         else
         {
-            _logger.LogInformation("Stream priorities not supported on this device");
+            _logger.LogInfoMessage("Stream priorities not supported on this device");
             _lowestPriority = 0;
             _highestPriority = 0;
         }
@@ -96,7 +96,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
     /// </summary>
     private void InitializeStreamPool()
     {
-        _logger.LogDebug("Initializing stream pool with {Size} streams", _maxPoolSize / 2);
+        _logger.LogDebugMessage(" streams");
 
         // Pre-allocate half the max pool size
 
@@ -154,7 +154,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         // Try to get from pool first
         if (priority == StreamPriority.Normal && _streamPool.TryTake(out var pooledStream))
         {
-            _logger.LogDebug("Reusing stream from pool");
+            _logger.LogDebugMessage("Reusing stream from pool");
             return pooledStream;
         }
 
@@ -185,8 +185,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         CudaRuntime.CheckError(result, "creating stream");
 
 
-        _logger.LogDebug("Created new stream with priority {Priority}, flags {Flags}",
-            priority, flags);
+        _logger.LogDebugMessage($"Created new stream with priority {priority}, flags {flags}");
 
 
         return stream;
@@ -236,7 +235,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         if (_streamPool.Count < _maxPoolSize)
         {
             _streamPool.Add(stream);
-            _logger.LogDebug("Returned stream to pool (pool size: {Size})", _streamPool.Count);
+            _logger.LogDebugMessage(")");
         }
         else
         {
@@ -281,11 +280,11 @@ public sealed class CudaStreamManagerProduction : IDisposable
                     CudaRuntime.CheckError(result, $"synchronizing named stream '{streamInfo.Name}'");
 
 
-                    _logger.LogDebug("Synchronized stream '{StreamName}'", streamInfo.Name);
+                    _logger.LogDebugMessage("'");
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    _logger.LogError(ex, "Failed to synchronize stream '{StreamName}'", streamInfo.Name);
+                    _logger.LogErrorMessage("Failed to execute kernel launch");
                     throw;
                 }
             }
@@ -323,11 +322,11 @@ public sealed class CudaStreamManagerProduction : IDisposable
                     CudaRuntime.CheckError(result, "synchronizing graph capture stream");
 
 
-                    _logger.LogDebug("Synchronized graph capture stream");
+                    _logger.LogDebugMessage("Synchronized graph capture stream");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to synchronize graph capture stream");
+                    _logger.LogErrorMessage(ex, "Failed to synchronize graph capture stream");
                     throw;
                 }
             }
@@ -338,7 +337,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
             CudaRuntime.CheckError(deviceResult, "synchronizing device");
 
 
-            _logger.LogDebug("Successfully synchronized all streams and device");
+            _logger.LogDebugMessage("Successfully synchronized all streams and device");
 
 
         }, cancellationToken).ConfigureAwait(false);
@@ -380,7 +379,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
             CudaRuntime.CheckError(result, "adding stream callback");
 
 
-            _logger.LogDebug("Added callback to stream: {Description}", description);
+            _logger.LogDebugMessage("");
         }
         catch
         {
@@ -445,7 +444,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         _isCapturing = true;
 
 
-        _logger.LogInformation("Started graph capture on stream with mode {Mode}", mode);
+        _logger.LogInfoMessage("");
     }
 
     /// <summary>
@@ -473,7 +472,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         _captureStream = IntPtr.Zero;
 
 
-        _logger.LogInformation("Completed graph capture");
+        _logger.LogInfoMessage("Completed graph capture");
 
 
         return graph;
@@ -493,7 +492,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         CudaRuntime.CheckError(result, "instantiating graph");
 
 
-        _logger.LogDebug("Created executable graph instance");
+        _logger.LogDebugMessage("Created executable graph instance");
 
 
         return graphExec;
@@ -511,7 +510,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         CudaRuntime.CheckError(result, "launching graph");
 
 
-        _logger.LogDebug("Launched graph on stream");
+        _logger.LogDebugMessage("Launched graph on stream");
     }
 
     /// <summary>
@@ -597,7 +596,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
             var result = CudaRuntime.cudaStreamDestroy(stream);
             if (result != CudaError.Success)
             {
-                _logger.LogWarning("Failed to destroy stream: {Error}", result);
+                _logger.LogWarningMessage("");
             }
         }
         catch (Exception ex)

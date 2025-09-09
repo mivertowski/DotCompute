@@ -4,6 +4,7 @@
 using System.Text.RegularExpressions;
 using DotCompute.Core.Compute.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Compute.Parsing
 {
@@ -37,7 +38,7 @@ namespace DotCompute.Core.Compute.Parsing
         /// <returns>Parsed kernel information including type and parameters.</returns>
         public KernelInfo ParseKernel(string kernelSource, string entryPoint)
         {
-            _logger.LogDebug("Parsing kernel: {EntryPoint}", entryPoint);
+            _logger.LogDebugMessage("Parsing kernel: {entryPoint}");
 
             var kernelType = DetectKernelType(kernelSource);
             var parameters = ExtractParameters(kernelSource);

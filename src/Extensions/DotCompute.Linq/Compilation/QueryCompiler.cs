@@ -15,6 +15,7 @@ using KernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 using ParameterDirection = DotCompute.Linq.Operators.Parameters.ParameterDirection;
 using DotCompute.Linq.Compilation.Execution;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Compilation;
 
 
@@ -48,7 +49,7 @@ public class QueryCompiler : IQueryCompiler
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        _logger.LogDebug("Compiling expression of type {ExpressionType}", context.Expression.NodeType);
+        _logger.LogDebugMessage("Compiling expression of type {context.Expression.NodeType}");
 
         // Validate the expression
         var validationResult = Validate(context.Expression);
@@ -100,7 +101,7 @@ public class QueryCompiler : IQueryCompiler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Expression validation failed with exception");
+            _logger.LogErrorMessage(ex, "Expression validation failed with exception");
             errors.Add(new ValidationIssue("VALIDATION_ERROR", ex.Message, ValidationSeverity.Error));
         }
 
@@ -147,7 +148,7 @@ public class QueryCompiler : IQueryCompiler
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            _logger.LogDebug("Visiting method call: {MethodName}", node.Method.Name);
+            _logger.LogDebugMessage("Visiting method call: {node.Method.Name}");
 
             // Handle LINQ operators
             if (node.Method.DeclaringType == typeof(Queryable) || node.Method.DeclaringType == typeof(Enumerable))
@@ -169,7 +170,7 @@ public class QueryCompiler : IQueryCompiler
                     case "ThenByDescending":
                         return VisitOrderBy(node);
                     default:
-                        _logger.LogWarning("Unsupported LINQ method: {Method}", node.Method.Name);
+                        _logger.LogWarningMessage("Unsupported LINQ method: {node.Method.Name}");
                         break;
                 }
             }

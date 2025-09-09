@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -138,7 +139,7 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
         _cleanupTimer = new Timer(PerformCleanup, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
 
-        _logger.LogInformation("Memory pool service initialized");
+        _logger.LogInfoMessage("Memory pool service initialized");
     }
 
     /// <summary>
@@ -317,7 +318,7 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
 
             if (totalCleaned > 0)
             {
-                _logger.LogDebug("Pool maintenance cleaned {Count} buffers, freed {Bytes} bytes", totalCleaned, bytesFreed);
+                _logger.LogDebugMessage("Pool maintenance cleaned {Count} buffers, freed {totalCleaned, bytesFreed} bytes");
             }
         }, cancellationToken);
     }
@@ -380,7 +381,7 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
 
         _disposed = true;
 
-        _logger.LogInformation("Disposing memory pool service with {ActiveBuffers} active buffers", _activeBuffers.Count);
+        _logger.LogInfoMessage("Disposing memory pool service with {_activeBuffers.Count} active buffers");
 
         // Dispose cleanup timer
         _cleanupTimer?.Dispose();
@@ -420,7 +421,7 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
         _sizePools.Clear();
         _activeBuffers.Clear();
 
-        _logger.LogInformation("Memory pool service disposed");
+        _logger.LogInfoMessage("Memory pool service disposed");
     }
 }
 
@@ -629,9 +630,7 @@ internal sealed class AcceleratorMemoryPool : IMemoryPool, IDisposable
             await buffer.DisposeAsync();
         }
 
-        _logger.LogDebug("Defragmented memory pool for accelerator {AcceleratorId}, disposed {Count} unused buffers",
-
-            AcceleratorId, toDispose.Count);
+        _logger.LogDebugMessage($"Defragmented memory pool for accelerator {AcceleratorId}, disposed {toDispose.Count} unused buffers");
     }
 
     public MemoryPoolStatistics GetStatistics()
@@ -684,6 +683,6 @@ internal sealed class AcceleratorMemoryPool : IMemoryPool, IDisposable
         }
 
         _activeBuffers.Clear();
-        _logger.LogDebug("Disposed memory pool for accelerator {AcceleratorId}", AcceleratorId);
+        _logger.LogDebugMessage("Disposed memory pool for accelerator {AcceleratorId}");
     }
 }

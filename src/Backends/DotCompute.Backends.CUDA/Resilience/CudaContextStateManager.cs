@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Resilience
 {
@@ -100,9 +101,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 _ = Interlocked.Increment(ref _activeAllocations);
 
 
-                _logger.LogDebug("Registered memory allocation: {Ptr:X} ({Size} bytes, {Type})",
-
-                    ptr.ToInt64(), size, type);
+                _logger.LogDebugMessage($"Registered memory allocation: {ptr.ToInt64()} ({size} bytes, {type})");
             }
         }
 
@@ -117,9 +116,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 _ = Interlocked.Decrement(ref _activeAllocations);
 
 
-                _logger.LogDebug("Unregistered memory allocation: {Ptr:X} ({Size} bytes)",
-
-                    ptr.ToInt64(), info.Size);
+                _logger.LogDebugMessage($"Unregistered memory allocation: {ptr.ToInt64()} ({info.Size} bytes)");
             }
         }
 
@@ -144,9 +141,7 @@ namespace DotCompute.Backends.CUDA.Resilience
 
             if (_activeStreams.TryAdd(stream, info))
             {
-                _logger.LogDebug("Registered CUDA stream: {Stream:X} (Priority: {Priority})",
-
-                    stream.ToInt64(), priority);
+                _logger.LogDebugMessage($"Registered CUDA stream: {stream.ToInt64()} (Priority: {priority})");
             }
         }
 
@@ -157,7 +152,7 @@ namespace DotCompute.Backends.CUDA.Resilience
         {
             if (_activeStreams.TryRemove(stream, out _))
             {
-                _logger.LogDebug("Unregistered CUDA stream: {Stream:X}", stream.ToInt64());
+                _logger.LogDebugMessage($"Unregistered CUDA stream: {stream.ToInt64()}");
             }
         }
 
@@ -175,8 +170,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             };
 
             _compiledKernels[name] = info;
-            _logger.LogDebug("Registered kernel: {KernelName} (PTX: {PtxSize} bytes, CUBIN: {CubinSize} bytes)",
-                name, ptxCode.Length, cubinCode?.Length ?? 0);
+            _logger.LogDebugMessage($"Registered kernel: {name} (PTX: {ptxCode.Length} bytes, CUBIN: {cubinCode?.Length ?? 0} bytes)");
         }
 
         /// <summary>
@@ -205,11 +199,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 _lastSnapshot = snapshot;
 
 
-                _logger.LogInformation("Created context snapshot {SnapshotId} with {AllocCount} allocations, " +
-                    "{StreamCount} streams, {KernelCount} kernels",
-                    snapshot.SnapshotId, snapshot.MemoryAllocations.Count,
-
-                    snapshot.ActiveStreams.Count, snapshot.CompiledKernels.Count);
+                _logger.LogInfoMessage($"Created context snapshot with {snapshot.ActiveStreams.Count} streams, {snapshot.CompiledKernels.Count} kernels, {snapshot.MemoryAllocations.Count} allocations");
 
                 return snapshot;
             }
@@ -224,7 +214,7 @@ namespace DotCompute.Backends.CUDA.Resilience
         /// </summary>
         public async Task PrepareForRecoveryAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogWarning("Preparing context for recovery - cleaning up resources");
+            _logger.LogWarningMessage("Preparing context for recovery - cleaning up resources");
 
             // Create snapshot before cleanup
             _ = await CreateSnapshotAsync(cancellationToken);
@@ -237,9 +227,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                     var result = CudaRuntime.cudaStreamSynchronize(stream.Stream);
                     if (result != CudaError.Success)
                     {
-                        _logger.LogWarning("Failed to synchronize stream {Stream:X}: {Error}",
-
-                            stream.Stream.ToInt64(), result);
+                        _logger.LogWarningMessage($"Failed to synchronize stream {stream.Stream.ToInt64()}: {result}");
                     }
                 }
                 catch (Exception ex)
@@ -271,9 +259,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                     var result = CudaRuntime.cudaStreamDestroy(stream);
                     if (result != CudaError.Success)
                     {
-                        _logger.LogWarning("Failed to destroy stream {Stream:X}: {Error}",
-
-                            stream.ToInt64(), result);
+                        _logger.LogWarningMessage($"Failed to destroy stream {stream.ToInt64()}: {result}");
                     }
                 }
                 catch (Exception ex)
@@ -288,7 +274,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             _activeEvents.Clear();
 
 
-            _logger.LogInformation("Context prepared for recovery - resources cleaned up");
+            _logger.LogInfoMessage("Context prepared for recovery - resources cleaned up");
         }
 
         /// <summary>
@@ -312,7 +298,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 };
             }
 
-            _logger.LogInformation("Restoring context from snapshot {SnapshotId}", snapshot.SnapshotId);
+            _logger.LogInfoMessage("Restoring context from snapshot {snapshot.SnapshotId}");
 
             var result = new RestoreResult { Success = true };
             var errors = new List<string>();
@@ -372,14 +358,12 @@ namespace DotCompute.Backends.CUDA.Resilience
                 result.Errors = errors;
 
 
-                _logger.LogWarning("Context restoration completed with errors: {Errors}",
-
-                    string.Join("; ", errors));
+                _logger.LogWarningMessage($"Context restoration completed with errors: {string.Join("; ", errors)}");
             }
             else
             {
                 result.Message = "Context successfully restored";
-                _logger.LogInformation("Context successfully restored from snapshot");
+                _logger.LogInfoMessage("Context successfully restored from snapshot");
             }
 
             _ = Interlocked.Increment(ref _recoveryCount);
@@ -394,9 +378,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             int attemptNumber = 1,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogWarning("Performing progressive recovery for error {Error}, attempt {Attempt}",
-
-                error, attemptNumber);
+            _logger.LogWarningMessage($"Performing progressive recovery for error {error}, attempt {attemptNumber}");
 
             var strategy = DetermineRecoveryStrategy(error, attemptNumber);
 
@@ -457,7 +439,7 @@ namespace DotCompute.Backends.CUDA.Resilience
 
         private async Task<RecoveryResult> RecoverWithStreamSyncAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Attempting recovery with stream synchronization");
+            _logger.LogInfoMessage("Attempting recovery with stream synchronization");
 
 
             foreach (var stream in _activeStreams.Values)
@@ -465,7 +447,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 var result = CudaRuntime.cudaStreamSynchronize(stream.Stream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Stream sync failed: {Error}", result);
+                    _logger.LogWarningMessage("Stream sync failed: {result}");
                     return new RecoveryResult
                     {
 
@@ -494,7 +476,7 @@ namespace DotCompute.Backends.CUDA.Resilience
 
         private async Task<RecoveryResult> RecoverWithMemoryCleanupAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Attempting recovery with memory cleanup");
+            _logger.LogInfoMessage("Attempting recovery with memory cleanup");
 
             // Free least recently used allocations
 
@@ -532,7 +514,7 @@ namespace DotCompute.Backends.CUDA.Resilience
 
         private async Task<RecoveryResult> RecoverWithContextResetAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Attempting recovery with context reset");
+            _logger.LogInfoMessage("Attempting recovery with context reset");
 
 
             await PrepareForRecoveryAsync(cancellationToken);
@@ -553,7 +535,7 @@ namespace DotCompute.Backends.CUDA.Resilience
 
         private async Task<RecoveryResult> RecoverWithDeviceResetAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Attempting recovery with device reset");
+            _logger.LogInfoMessage("Attempting recovery with device reset");
 
 
             await PrepareForRecoveryAsync(cancellationToken);
@@ -643,7 +625,7 @@ namespace DotCompute.Backends.CUDA.Resilience
             _stateLock?.Dispose();
             _disposed = true;
 
-            _logger.LogInformation("Context state manager disposed. Recovery count: {Count}", _recoveryCount);
+            _logger.LogInfoMessage("Context state manager disposed. Recovery count: {_recoveryCount}");
         }
     }
 

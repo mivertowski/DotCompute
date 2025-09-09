@@ -3,8 +3,10 @@
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Runtime.Logging;
 
 namespace DotCompute.Runtime.Services;
 
@@ -13,7 +15,7 @@ namespace DotCompute.Runtime.Services;
 /// This bridges generated kernel code with the runtime infrastructure.
 /// </summary>
 [SuppressMessage("Performance", "CA1848:Use the LoggerMessage delegates", Justification = "Service layer logging")]
-public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposable
+public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfaces.IComputeOrchestrator, IDisposable
 {
     private readonly AcceleratorRuntime _runtime;
     private readonly ILogger<KernelExecutionServiceSimplified> _logger;
@@ -37,12 +39,10 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
         foreach (var registration in kernelRegistrations)
         {
             _kernelRegistry[registration.FullName] = registration;
-            _logger.LogDebug("Registered kernel: {KernelName} with backends: {Backends}",
-
-                registration.FullName, string.Join(", ", registration.SupportedBackends));
+            _logger.LogDebugMessage($"Registered kernel: {registration.FullName} with backends: {string.Join(", ", registration.SupportedBackends)}");
         }
 
-        _logger.LogInformation("Registered {Count} kernels from generated registry", _kernelRegistry.Count);
+        _logger.LogInfoMessage("Registered {_kernelRegistry.Count} kernels from generated registry");
     }
 
     /// <inheritdoc />
@@ -68,9 +68,7 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
 
         if (accelerators.Count == 0)
         {
-            _logger.LogWarning("Preferred backend {Backend} not available, falling back to optimal selection",
-
-                preferredBackend);
+            _logger.LogWarningMessage($"Preferred backend {preferredBackend} not available, falling back to optimal selection");
             return await ExecuteAsync<T>(kernelName, args);
         }
 
@@ -93,9 +91,7 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
             throw new ArgumentException($"Kernel not found: {kernelName}", nameof(kernelName));
         }
 
-        _logger.LogInformation("Executing kernel {KernelName} on {AcceleratorType} (placeholder implementation)",
-
-            kernelName, accelerator.Info.DeviceType);
+        _logger.LogInfoMessage($"Executing kernel {kernelName} on {accelerator.Info.DeviceType} (placeholder implementation)");
 
         // This is a placeholder implementation that demonstrates the integration pattern
         // The actual implementation would:
@@ -107,9 +103,7 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
         await Task.Delay(10); // Simulate async work
 
 
-        _logger.LogDebug("Kernel {KernelName} execution completed on {AcceleratorType}",
-
-            kernelName, accelerator.Info.DeviceType);
+        _logger.LogDebugMessage($"Kernel {kernelName} execution completed on {accelerator.Info.DeviceType}");
 
         return default!; // Placeholder return
     }
@@ -131,6 +125,7 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
     /// <inheritdoc />
     public async Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
     {
+        await Task.CompletedTask; // Make async
         if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
         {
             return null;
@@ -142,7 +137,7 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
 
         if (availableAccelerators.Count == 0)
         {
-            _logger.LogWarning("No suitable accelerators found for kernel {KernelName}", kernelName);
+            _logger.LogWarningMessage("No suitable accelerators found for kernel {kernelName}");
             return null;
         }
 
@@ -151,9 +146,7 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
             .OrderBy(a => GetBackendPriority(a.Info.DeviceType))
             .FirstOrDefault();
 
-        _logger.LogDebug("Selected {AcceleratorType} for kernel {KernelName}",
-
-            optimalAccelerator?.Info.DeviceType, kernelName);
+        _logger.LogDebugMessage($"Selected {optimalAccelerator?.Info.DeviceType} for kernel {kernelName}");
 
         return optimalAccelerator;
     }
@@ -161,13 +154,14 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
     /// <inheritdoc />
     public async Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
     {
-        _logger.LogInformation("Pre-compilation requested for kernel {KernelName} (placeholder implementation)", kernelName);
+        _logger.LogInfoMessage("Pre-compilation requested for kernel {kernelName} (placeholder implementation)");
         await Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
     {
+        await Task.CompletedTask; // Make async
         if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
         {
             return Array.Empty<IAccelerator>();
@@ -181,20 +175,21 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
     }
 
     /// <inheritdoc />
-    public async Task<KernelValidationResult> ValidateKernelArgsAsync(string kernelName, params object[] args)
+    public async Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args)
     {
         if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
         {
-            return KernelValidationResult.Failure([$"Kernel not found: {kernelName}"]);
+            return false;
         }
 
         // Basic validation - actual implementation would validate argument types, counts, etc.
         if (args == null || args.Length == 0)
         {
-            return KernelValidationResult.Success();
+            return true;
         }
 
-        return KernelValidationResult.Success();
+        await Task.CompletedTask; // Make properly async
+        return true;
     }
 
     private static string MapDeviceTypeToBackend(string deviceType)

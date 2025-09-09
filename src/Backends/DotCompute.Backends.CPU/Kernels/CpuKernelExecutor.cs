@@ -11,6 +11,7 @@ using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CPU.Logging;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -54,8 +55,7 @@ internal sealed class CpuKernelExecutor
             var totalWorkItems = CalculateTotalWorkItems(arguments);
             var strategy = DetermineExecutionStrategy(totalWorkItems, executionPlan);
 
-            _logger.LogDebug("Executing kernel '{KernelName}' with {WorkItems} items using {Strategy}",
-                definition.Name, totalWorkItems, strategy);
+            _logger.LogDebugMessage($"Executing kernel '{definition.Name}' with {totalWorkItems} items using {strategy}");
 
             switch (strategy)
             {
@@ -82,12 +82,11 @@ internal sealed class CpuKernelExecutor
             stopwatch.Stop();
             UpdatePerformanceMetrics(stopwatch.Elapsed.TotalMilliseconds);
 
-            _logger.LogDebug("Kernel '{KernelName}' executed in {ElapsedMs}ms",
-                definition.Name, stopwatch.ElapsedMilliseconds);
+            _logger.LogDebugMessage($"Kernel '{definition.Name}' executed in {stopwatch.ElapsedMilliseconds}ms");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute kernel '{KernelName}'", definition.Name);
+            _logger.LogErrorMessage(ex, $"Failed to execute kernel '{definition.Name}'");
             throw;
         }
     }

@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Xml;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Security;
 
@@ -64,7 +65,7 @@ public sealed class SecurityLogger : IDisposable
         InitializeSessionMetadata();
 
 
-        _logger.LogInformation("SecurityLogger initialized: AuditPath={AuditPath}", _auditLogPath);
+        _logger.LogInfoMessage("SecurityLogger initialized: AuditPath={_auditLogPath}");
 
         // Log security logger startup
 
@@ -433,15 +434,14 @@ public sealed class SecurityLogger : IDisposable
             exportResult.IsSuccessful = true;
 
 
-            _logger.LogInformation("Audit log export completed: Path={ExportPath}, Records={RecordCount}",
-                exportPath, filteredEntries.Count);
+            _logger.LogInfoMessage($"Audit log export completed: Path={exportPath}, Records={filteredEntries.Count}");
 
 
             return exportResult;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting audit logs");
+            _logger.LogErrorMessage(ex, "Error exporting audit logs");
             return new AuditExportResult
             {
                 StartDate = startDate,
@@ -608,7 +608,7 @@ public sealed class SecurityLogger : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error flushing audit logs");
+                _logger.LogErrorMessage(ex, "Error flushing audit logs");
             }
         });
     }
@@ -707,7 +707,7 @@ public sealed class SecurityLogger : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during audit log integrity check");
+                _logger.LogErrorMessage(ex, "Error during audit log integrity check");
             }
         });
     }
@@ -806,7 +806,7 @@ public sealed class SecurityLogger : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error reading audit logs for export");
+            _logger.LogErrorMessage(ex, "Error reading audit logs for export");
             throw;
         }
 
@@ -834,7 +834,7 @@ public sealed class SecurityLogger : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to export audit entries to {ExportPath}", exportPath);
+            _logger.LogErrorMessage(ex, $"Failed to export audit entries to {exportPath}");
             throw;
         }
     }
@@ -963,7 +963,7 @@ public sealed class SecurityLogger : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error flushing audit logs during disposal");
+            _logger.LogErrorMessage(ex, "Error flushing audit logs during disposal");
         }
 
         _auditFlushTimer?.Dispose();
@@ -975,8 +975,7 @@ public sealed class SecurityLogger : IDisposable
             "Security logging system shutting down",
             SecurityLevel.Informational);
 
-        _logger.LogInformation("SecurityLogger disposed. Final metrics: Events={TotalEvents}, Violations={TotalViolations}",
-            _metrics.TotalSecurityEvents, _metrics.TotalSecurityViolations);
+        _logger.LogInfoMessage($"SecurityLogger disposed. Final metrics: Events={_metrics.TotalSecurityEvents}, Violations={_metrics.TotalSecurityViolations}");
     }
 }
 

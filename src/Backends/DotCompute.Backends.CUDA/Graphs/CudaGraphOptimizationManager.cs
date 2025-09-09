@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Graphs
 {
@@ -91,7 +92,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                 TimeSpan.FromMinutes(5));
 
 
-            _logger.LogInformation("CUDA Graph Optimization Manager initialized");
+            _logger.LogInfoMessage("CUDA Graph Optimization Manager initialized");
         }
 
         /// <summary>
@@ -109,7 +110,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             await _graphCreationLock.WaitAsync();
             try
             {
-                _logger.LogDebug("Beginning graph capture for {GraphName}", graphName);
+                _logger.LogDebugMessage("Beginning graph capture for {graphName}");
 
                 // Start capture
 
@@ -132,10 +133,10 @@ namespace DotCompute.Backends.CUDA.Graphs
                     // Execute the operations to be captured
                     await operations();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // Abort capture on error
-                    _logger.LogError(ex, "Error during graph capture for {GraphName}", graphName);
+                    _logger.LogErrorMessage("Error during graph capture operations");
                     throw;
                 }
 
@@ -279,7 +280,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             await _graphCreationLock.WaitAsync();
             try
             {
-                _logger.LogDebug("Updating graph {GraphName}", graphName);
+                _logger.LogDebugMessage("Updating graph {graphName}");
 
                 // Capture new graph
 
@@ -313,7 +314,7 @@ namespace DotCompute.Backends.CUDA.Graphs
 
 
                     _statistics[graphName].UpdateCount++;
-                    _logger.LogInformation("Successfully updated graph {GraphName} in-place", graphName);
+                    _logger.LogInfoMessage("Successfully updated graph {graphName} in-place");
                     return true;
                 }
                 else
@@ -438,7 +439,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             var error = cudaGraphGetNodes(graph, IntPtr.Zero, out var nodeCount);
             if (error != CudaError.Success && error != CudaError.InvalidValue)
             {
-                _logger.LogWarning("Failed to get graph node count: {Error}", error);
+                _logger.LogWarningMessage("Failed to get graph node count: {error}");
                 return analysis;
             }
             analysis.NodeCount = (int)nodeCount;
@@ -447,7 +448,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             error = cudaGraphGetEdges(graph, IntPtr.Zero, IntPtr.Zero, out var edgeCount);
             if (error != CudaError.Success && error != CudaError.InvalidValue)
             {
-                _logger.LogWarning("Failed to get graph edge count: {Error}", error);
+                _logger.LogWarningMessage("Failed to get graph edge count: {error}");
                 return analysis;
             }
             analysis.EdgeCount = (int)edgeCount;
@@ -494,16 +495,16 @@ namespace DotCompute.Backends.CUDA.Graphs
 
                 if (error == CudaError.Success)
                 {
-                    _logger.LogInformation("Exported graph visualization to {DotFile}", dotFile);
+                    _logger.LogInfoMessage("Exported graph visualization to {dotFile}");
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to export graph visualization: {Error}", error);
+                    _logger.LogWarningMessage("Failed to export graph visualization: {error}");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error exporting graph visualization");
+                _logger.LogErrorMessage(ex, "Error exporting graph visualization");
             }
 
             await Task.CompletedTask;
@@ -578,7 +579,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during graph optimization");
+                _logger.LogErrorMessage(ex, "Error during graph optimization");
             }
         }
 
@@ -604,7 +605,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                 _ = _statistics.TryRemove(graphName, out _);
 
 
-                _logger.LogInformation("Removed graph {GraphName}", graphName);
+                _logger.LogInfoMessage("Removed graph {graphName}");
                 return true;
             }
 
@@ -630,9 +631,9 @@ namespace DotCompute.Backends.CUDA.Graphs
                     _ = cudaGraphExecDestroy(instance.GraphExec);
                     _ = cudaGraphDestroy(instance.Graph);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    _logger.LogError(ex, "Error disposing graph {GraphName}", instance.Name);
+                    _logger.LogErrorMessage("Error disposing graph instance");
                 }
             }
 

@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Backends.CUDA
@@ -244,11 +245,9 @@ namespace DotCompute.Backends.CUDA
 
             // Log managed memory support for debugging
 
-            _logger.LogInformation("Device {DeviceId} ManagedMemory field value: {ManagedMemory}, SupportsManagedMemory: {Supports}",
-                deviceId, _deviceProperties.ManagedMemory, SupportsManagedMemory);
+            _logger.LogInfoMessage($"Device {deviceId} ManagedMemory field value: {_deviceProperties.ManagedMemory}, SupportsManagedMemory: {SupportsManagedMemory}");
 
-            _logger.LogInformation("Initialized CUDA 13.0-compatible device {DeviceId}: {DeviceName} (CC {Major}.{Minor}, {Architecture})",
-                _deviceId, Name, ComputeCapabilityMajor, ComputeCapabilityMinor, GetArchitectureGeneration());
+            _logger.LogInfoMessage($"Initialized CUDA 13.0-compatible device {_deviceId}: {Name} (CC {ComputeCapabilityMajor}.{ComputeCapabilityMinor}, {GetArchitectureGeneration()})");
         }
 
         /// <summary>
@@ -584,7 +583,7 @@ namespace DotCompute.Backends.CUDA
             if (!_disposed)
             {
                 _disposed = true;
-                _logger.LogDebug("Disposed CUDA device {DeviceId}", _deviceId);
+                _logger.LogDebugMessage("Disposed CUDA device {_deviceId}");
             }
         }
     }

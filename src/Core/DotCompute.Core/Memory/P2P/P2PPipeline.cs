@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -56,8 +57,7 @@ namespace DotCompute.Core.Memory.P2P
             using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _pipelineCts.Token);
             var token = combinedCts.Token;
 
-            _logger.LogDebug("Starting pipelined P2P transfer: {TotalSize} bytes, {ChunkSize} byte chunks, {PipelineDepth} depth",
-                _sourceBuffer.SizeInBytes, _chunkSize, _pipelineDepth);
+            _logger.LogDebugMessage($"Starting pipelined P2P transfer: {_sourceBuffer.SizeInBytes} bytes, {_chunkSize} byte chunks, {_pipelineDepth} depth");
 
             var elementSize = Unsafe.SizeOf<T>();
             var elementsPerChunk = _chunkSize / elementSize;
@@ -98,7 +98,7 @@ namespace DotCompute.Core.Memory.P2P
 
                             if (t.IsFaulted && t.Exception != null)
                             {
-                                _logger.LogError(t.Exception, "Pipeline chunk transfer failed: chunk {ChunkIndex}", chunkIndex);
+                                _logger.LogErrorMessage(t.Exception, $"Pipeline chunk transfer failed: chunk {chunkIndex}");
                             }
 
                             return t;
@@ -124,22 +124,21 @@ namespace DotCompute.Core.Memory.P2P
                 var totalDuration = DateTimeOffset.UtcNow - startTime;
                 var throughputGBps = (_sourceBuffer.SizeInBytes / (1024.0 * 1024.0 * 1024.0)) / totalDuration.TotalSeconds;
 
-                _logger.LogDebug("Pipelined P2P transfer completed: {Duration:F1}ms, {ThroughputGBps:F2} GB/s, {ChunkCount} chunks",
-                    totalDuration.TotalMilliseconds, throughputGBps, totalChunks);
+                _logger.LogDebugMessage($"Pipelined P2P transfer completed: {totalDuration.TotalMilliseconds}ms, {throughputGBps} GB/s, {totalChunks} chunks");
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogWarning("Pipelined P2P transfer cancelled by user");
+                _logger.LogWarningMessage("Pipelined P2P transfer cancelled by user");
                 throw;
             }
             catch (OperationCanceledException)
             {
-                _logger.LogWarning("Pipelined P2P transfer cancelled internally");
+                _logger.LogWarningMessage("Pipelined P2P transfer cancelled internally");
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Pipelined P2P transfer failed");
+                _logger.LogErrorMessage(ex, "Pipelined P2P transfer failed");
                 throw;
             }
         }
@@ -212,7 +211,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to copy chunk {ChunkIndex} to staging buffer", stage.ChunkIndex);
+                _logger.LogErrorMessage(ex, $"Failed to copy chunk {stage.ChunkIndex} to staging buffer");
                 throw;
             }
         }
@@ -240,7 +239,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to copy chunk {ChunkIndex} from staging buffer", stage.ChunkIndex);
+                _logger.LogErrorMessage(ex, $"Failed to copy chunk {stage.ChunkIndex} from staging buffer");
                 throw;
             }
         }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Abstractions;
 using DotCompute.Core.Telemetry;
@@ -58,8 +59,7 @@ public class AdaptiveBackendSelector : IDisposable
         _performanceUpdateTimer = new Timer(UpdateBackendPerformanceStates, null,
             TimeSpan.Zero, TimeSpan.FromSeconds(_options.PerformanceUpdateIntervalSeconds));
 
-        _logger.LogInformation("Adaptive backend selector initialized with learning enabled: {LearningEnabled}",
-            _options.EnableLearning);
+        _logger.LogInfoMessage($"Adaptive backend selector initialized with learning enabled: {_options.EnableLearning}");
     }
 
     /// <summary>
@@ -113,8 +113,7 @@ public class AdaptiveBackendSelector : IDisposable
         var selection = await ApplyOptimalSelectionStrategyAsync(
             backends, workloadAnalysis, workloadSignature, constraints);
 
-        _logger.LogDebug("Selected backend {Backend} for {Kernel} with {Confidence:P1} confidence using {Strategy}",
-            selection.BackendId, kernelName, selection.ConfidenceScore, selection.SelectionStrategy);
+        _logger.LogDebugMessage($"Selected backend {selection.BackendId} for {kernelName} with {selection.ConfidenceScore} confidence using {selection.SelectionStrategy}");
 
         return selection;
     }

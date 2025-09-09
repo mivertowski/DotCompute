@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Monitoring
 {
@@ -50,7 +51,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 var result = cuptiActivityInitialize();
                 if (result != CuptiResult.Success)
                 {
-                    _logger.LogWarning("Failed to initialize CUPTI: {Error}", result);
+                    _logger.LogWarningMessage("Failed to initialize CUPTI: {result}");
                     return false;
                 }
 
@@ -58,7 +59,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 result = cuptiSubscribe(ref _subscriber, IntPtr.Zero, IntPtr.Zero);
                 if (result != CuptiResult.Success)
                 {
-                    _logger.LogWarning("Failed to subscribe to CUPTI: {Error}", result);
+                    _logger.LogWarningMessage("Failed to subscribe to CUPTI: {result}");
                     return false;
                 }
 
@@ -69,21 +70,19 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 DiscoverMetrics(deviceId);
 
                 _initialized = true;
-                _logger.LogInformation("CUPTI initialized successfully with {MetricCount} metrics available",
-
-                    _availableMetrics.Count);
+                _logger.LogInfoMessage($"CUPTI initialized successfully with {_availableMetrics.Count} metrics available");
 
 
                 return true;
             }
             catch (DllNotFoundException)
             {
-                _logger.LogWarning("CUPTI library not found. Detailed kernel metrics will not be available.");
+                _logger.LogWarningMessage("CUPTI library not found. Detailed kernel metrics will not be available.");
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error initializing CUPTI");
+                _logger.LogErrorMessage(ex, "Error initializing CUPTI");
                 return false;
             }
         }
@@ -167,7 +166,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error collecting CUPTI metrics");
+                _logger.LogErrorMessage(ex, "Error collecting CUPTI metrics");
             }
 
             return metrics;
@@ -244,7 +243,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
         private void EnableMetric(CuptiMetric metric)
         {
             // In real implementation, enable specific metric collection
-            _logger.LogDebug("Enabling metric: {MetricName}", metric.Name);
+            _logger.LogDebugMessage("Enabling metric: {metric.Name}");
         }
 
         private static double ReadMetricValue(CuptiMetric metric)
@@ -314,7 +313,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                     _ = cuptiFinalize();
 
 
-                    _logger.LogInformation("CUPTI shutdown completed");
+                    _logger.LogInfoMessage("CUPTI shutdown completed");
                 }
                 catch (Exception ex)
                 {

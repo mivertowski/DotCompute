@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -44,7 +45,7 @@ namespace DotCompute.Core.Memory.P2P
             _transferSemaphore = new SemaphoreSlim(MaxConcurrentTransfers, MaxConcurrentTransfers);
             _statistics = new P2PTransferStatistics();
 
-            _logger.LogInformation("P2P Transfer Manager initialized with {MaxTransfers} concurrent transfers", MaxConcurrentTransfers);
+            _logger.LogInfoMessage("P2P Transfer Manager initialized with {MaxConcurrentTransfers} concurrent transfers");
         }
 
         /// <summary>
@@ -61,7 +62,7 @@ namespace DotCompute.Core.Memory.P2P
             }
 
 
-            _logger.LogInformation("Initializing P2P topology for {DeviceCount} devices", devices.Length);
+            _logger.LogInfoMessage("Initializing P2P topology for {devices.Length} devices");
 
             var initResult = new P2PInitializationResult();
             var detectedPairs = new List<P2PDevicePair>();
@@ -96,14 +97,12 @@ namespace DotCompute.Core.Memory.P2P
                         if (capability.IsSupported)
                         {
                             initResult.SuccessfulConnections++;
-                            _logger.LogDebug("P2P enabled: {Device1} <-> {Device2} ({ConnectionType}, {BandwidthGBps:F1} GB/s)",
-                                device1.Info.Name, device2.Info.Name, capability.ConnectionType, capability.EstimatedBandwidthGBps);
+                            _logger.LogDebugMessage($"P2P enabled: {device1.Info.Name} <-> {device2.Info.Name} ({capability.ConnectionType}, {capability.EstimatedBandwidthGBps} GB/s)");
                         }
                         else
                         {
                             initResult.FailedConnections++;
-                            _logger.LogDebug("P2P not available: {Device1} <-> {Device2} ({Reason})",
-                                device1.Info.Name, device2.Info.Name, capability.LimitationReason);
+                            _logger.LogDebugMessage($"P2P not available: {device1.Info.Name} <-> {device2.Info.Name} ({capability.LimitationReason})");
                         }
                     }
                 }
@@ -118,14 +117,13 @@ namespace DotCompute.Core.Memory.P2P
                 initResult.DevicePairs = detectedPairs;
                 initResult.IsSuccessful = initResult.SuccessfulConnections > 0;
 
-                _logger.LogInformation("P2P topology initialization completed: {Success}/{Total} connections, {Failed} failed",
-                    initResult.SuccessfulConnections, initResult.TotalDevices * (initResult.TotalDevices - 1) / 2, initResult.FailedConnections);
+                _logger.LogInfoMessage($"P2P topology initialization completed: {initResult.SuccessfulConnections}/{initResult.TotalDevices * (initResult.TotalDevices - 1) / 2} connections, {initResult.FailedConnections} failed");
 
                 return initResult;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "P2P topology initialization failed");
+                _logger.LogErrorMessage(ex, "P2P topology initialization failed");
                 initResult.IsSuccessful = false;
                 initResult.ErrorMessage = ex.Message;
                 return initResult;
@@ -176,9 +174,7 @@ namespace DotCompute.Core.Memory.P2P
                     session.TransferPlan = transferPlan;
                     session.Status = P2PTransferStatus.Planned;
 
-                    _logger.LogDebug("P2P transfer planned: {Source} -> {Destination}, Strategy: {Strategy}, Estimated: {EstimatedTimeMs}ms",
-                        sourceBuffer.Accelerator.Info.Name, destinationBuffer.Accelerator.Info.Name,
-                        transferPlan.Strategy, transferPlan.EstimatedTransferTimeMs);
+                    _logger.LogDebugMessage($"P2P transfer planned: {sourceBuffer.Accelerator.Info.Name} -> {destinationBuffer.Accelerator.Info.Name}, Strategy: {transferPlan.Strategy}, Estimated: {transferPlan.EstimatedTransferTimeMs}ms");
 
                     // Phase 2: Pre-transfer validation (for large transfers)
                     if (options.EnableValidation && transferSize > ValidationThresholdGB * 1024 * 1024 * 1024)
@@ -253,8 +249,7 @@ namespace DotCompute.Core.Memory.P2P
                     // Update statistics
                     UpdateTransferStatistics(transferSize, transferDuration, throughputGBps, transferPlan.Strategy);
 
-                    _logger.LogInformation("P2P transfer completed: {TransferSize} bytes in {Duration}ms ({ThroughputGBps:F2} GB/s)",
-                        transferSize, transferDuration.TotalMilliseconds, throughputGBps);
+                    _logger.LogInfoMessage($"P2P transfer completed: {transferSize} bytes in {transferDuration.TotalMilliseconds}ms ({throughputGBps} GB/s)");
 
                     return new P2PTransferResult
                     {
@@ -270,9 +265,7 @@ namespace DotCompute.Core.Memory.P2P
                 {
                     session.Status = P2PTransferStatus.Failed;
                     session.ErrorMessage = ex.Message;
-                    _logger.LogError(ex, "P2P transfer failed: {Source} -> {Destination}",
-
-                        sourceBuffer.Accelerator.Info.Name, destinationBuffer.Accelerator.Info.Name);
+                    _logger.LogErrorMessage(ex, $"P2P transfer failed: {sourceBuffer.Accelerator.Info.Name} -> {destinationBuffer.Accelerator.Info.Name}");
 
                     return new P2PTransferResult
                     {
@@ -349,7 +342,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "P2P scatter operation failed");
+                _logger.LogErrorMessage(ex, "P2P scatter operation failed");
                 scatterResult.IsSuccessful = false;
                 scatterResult.ErrorMessage = ex.Message;
                 return scatterResult;
@@ -411,7 +404,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "P2P gather operation failed");
+                _logger.LogErrorMessage(ex, "P2P gather operation failed");
                 gatherResult.IsSuccessful = false;
                 gatherResult.ErrorMessage = ex.Message;
                 return gatherResult;
@@ -635,7 +628,7 @@ namespace DotCompute.Core.Memory.P2P
             _activeSessions.Clear();
             _transferSemaphore.Dispose();
 
-            _logger.LogInformation("P2P Transfer Manager disposed");
+            _logger.LogInfoMessage("P2P Transfer Manager disposed");
         }
     }
 

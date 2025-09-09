@@ -10,6 +10,7 @@ using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -46,7 +47,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             _metricsTimer = new Timer(UpdateMetrics, null,
                 TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
 
-            _logger.LogDebug("Cooperative Groups Manager initialized");
+            _logger.LogDebugMessage("Cooperative Groups Manager initialized");
         }
 
         /// <summary>
@@ -113,7 +114,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error optimizing kernel for cooperative groups");
+                _logger.LogErrorMessage(ex, "Error optimizing kernel for cooperative groups");
                 return new CudaOptimizationResult
                 {
                     Success = false,
@@ -190,7 +191,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error launching cooperative kernel {KernelId}", cooperativeKernel.Id);
+                _logger.LogErrorMessage("");
                 return new CudaCooperativeLaunchResult
                 {
                     Success = false,
@@ -246,7 +247,7 @@ namespace DotCompute.Backends.CUDA.Advanced
 
                 if (oldKernels.Count > 0)
                 {
-                    _logger.LogDebug("Cleaned up {Count} unused cooperative kernels", oldKernels.Count);
+                    _logger.LogDebugMessage(" unused cooperative kernels");
                 }
             }
             catch (Exception ex)

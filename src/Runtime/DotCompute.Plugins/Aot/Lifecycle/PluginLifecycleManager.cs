@@ -4,6 +4,7 @@
 using DotCompute.Plugins.Aot.Discovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Aot.Lifecycle;
 
@@ -32,7 +33,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
         _managedPlugins = [];
 
 
-        _logger.LogDebug("PluginLifecycleManager initialized");
+        _logger.LogDebugMessage("PluginLifecycleManager initialized");
     }
 
     /// <summary>
@@ -66,8 +67,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
             _discoveryService.RegisterLoadedPlugin(plugin);
 
 
-            _logger.LogInformation("Registered plugin {PluginId} ({PluginName}) for lifecycle management",
-                plugin.Id, plugin.Name);
+            _logger.LogInfoMessage($"Registered plugin {plugin.Id} ({plugin.Name}) for lifecycle management");
 
             try
             {
@@ -101,7 +101,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
             {
                 try
                 {
-                    _logger.LogInformation("Unloading plugin {PluginId} ({PluginName})", pluginId, plugin.Name);
+                    _logger.LogInfoMessage("Unloading plugin {PluginId} ({pluginId, plugin.Name})");
 
                     // Remove from management tracking first
                     _ = _managedPlugins.Remove(pluginId);
@@ -111,7 +111,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
                     plugin.Dispose();
 
 
-                    _logger.LogInformation("Successfully unloaded plugin {PluginId}", pluginId);
+                    _logger.LogInfoMessage("Successfully unloaded plugin {pluginId}");
 
                     try
                     {
@@ -126,7 +126,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to unload plugin {PluginId}", pluginId);
+                    _logger.LogErrorMessage(ex, $"Failed to unload plugin {pluginId}");
 
 
                     try
@@ -142,7 +142,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
                 }
             }
 
-            _logger.LogWarning("Plugin {PluginId} not found for unloading", pluginId);
+            _logger.LogWarningMessage("Plugin {pluginId} not found for unloading");
             return false;
         }
     }
@@ -179,7 +179,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
 
             try
             {
-                _logger.LogInformation("Unloading plugin {PluginId} ({PluginName})", pluginId, plugin.Name);
+                _logger.LogInfoMessage("Unloading plugin {PluginId} ({pluginId, plugin.Name})");
 
                 // Remove from management tracking first
                 _ = _managedPlugins.Remove(pluginId);
@@ -189,7 +189,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
                 plugin.Dispose();
 
 
-                _logger.LogInformation("Successfully unloaded plugin {PluginId}", pluginId);
+                _logger.LogInfoMessage("Successfully unloaded plugin {pluginId}");
 
                 try
                 {
@@ -205,7 +205,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
             catch (Exception ex)
             {
                 errorMessage = $"Failed to unload plugin {pluginId}: {ex.Message}";
-                _logger.LogError(ex, "Failed to unload plugin {PluginId}", pluginId);
+                _logger.LogErrorMessage(ex, $"Failed to unload plugin {pluginId}");
 
 
                 try
@@ -235,7 +235,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
             var pluginIds = _managedPlugins.Keys.ToList();
             var unloadedCount = 0;
 
-            _logger.LogInformation("Unloading {PluginCount} plugins", pluginIds.Count);
+            _logger.LogInfoMessage("Unloading {pluginIds.Count} plugins");
 
             foreach (var pluginId in pluginIds)
             {
@@ -245,9 +245,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
                 }
             }
 
-            _logger.LogInformation("Successfully unloaded {UnloadedCount} of {TotalCount} plugins",
-
-                unloadedCount, pluginIds.Count);
+            _logger.LogInfoMessage($"Successfully unloaded {unloadedCount} of {pluginIds.Count} plugins");
 
             return unloadedCount;
         }
@@ -273,11 +271,11 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
             if (removed)
             {
                 _ = _discoveryService.UnregisterLoadedPlugin(pluginId);
-                _logger.LogInformation("Unregistered plugin {PluginId} from lifecycle management (without disposal)", pluginId);
+                _logger.LogInfoMessage("Unregistered plugin {pluginId} from lifecycle management (without disposal)");
             }
             else
             {
-                _logger.LogDebug("Plugin {PluginId} not found for unregistration", pluginId);
+                _logger.LogDebugMessage("Plugin {pluginId} not found for unregistration");
             }
             return removed;
         }
@@ -298,7 +296,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
         lock (_lock)
         {
             var totalPlugins = _managedPlugins.Count;
-            _logger.LogInformation("Disposing PluginLifecycleManager and unloading {PluginCount} plugins", totalPlugins);
+            _logger.LogInfoMessage("Disposing PluginLifecycleManager and unloading {totalPlugins} plugins");
 
             foreach (var plugin in _managedPlugins.Values.ToList())
             {
@@ -308,13 +306,13 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error disposing plugin {PluginId} during lifecycle manager disposal", plugin.Id);
+                    _logger.LogErrorMessage(ex, $"Error disposing plugin {plugin.Id} during lifecycle manager disposal");
                 }
             }
 
             _managedPlugins.Clear();
         }
 
-        _logger.LogInformation("PluginLifecycleManager disposed");
+        _logger.LogInfoMessage("PluginLifecycleManager disposed");
     }
 }

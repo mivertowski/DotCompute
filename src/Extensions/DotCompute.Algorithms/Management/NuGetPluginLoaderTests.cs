@@ -6,6 +6,7 @@ using System.Text;
 using System.Xml.Linq;
 using DotCompute.Algorithms.Types.Security;
 using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Logging;
 using NuGet.Packaging.Core;
 using NuGet.Versioning;
 
@@ -129,7 +130,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// <returns>A task representing the test.</returns>
     public async Task TestLocalPackageLoadingAsync()
     {
-        _logger.LogInformation("Starting local package loading test");
+        _logger.LogInfoMessage("Starting local package loading test");
 
         var options = new NuGetPluginLoaderOptions
         {
@@ -142,34 +143,26 @@ public sealed class NuGetPluginLoaderTests : IDisposable
 
         // Create a test package
         var packagePath = CreateTestPackage("TestAlgorithms", "1.0.0");
-        _logger.LogInformation("Created test package at: {PackagePath}", packagePath);
+        _logger.LogInfoMessage("Created test package at: {packagePath}");
 
         // Load the package
         var result = await loader.LoadPackageAsync(packagePath, "net9.0");
 
         // Verify results
-        _logger.LogInformation("Package loaded - ID: {PackageId}, Version: {Version}, LoadTime: {LoadTime:F2}ms, Assemblies: {AssemblyCount}, Dependencies: {DependencyCount}, FromCache: {FromCache}, Size: {TotalSize} bytes",
-            result.PackageIdentity.Id,
-            result.PackageIdentity.Version,
-            result.LoadTime.TotalMilliseconds,
-            result.LoadedAssemblyPaths.Length,
-            result.ResolvedDependencies.Length,
-            result.FromCache,
-            result.TotalSize);
+        _logger.LogInfoMessage($"Package loaded - ID: {result.PackageIdentity.Id}, Version: {result.PackageIdentity.Version}, LoadTime: {result.LoadTime.TotalMilliseconds}ms, Assemblies: {result.LoadedAssemblyPaths.Length}, Dependencies: {result.ResolvedDependencies.Length}, FromCache: {result.FromCache}, Size: {result.TotalSize} bytes");
 
         foreach (var assemblyPath in result.LoadedAssemblyPaths)
         {
             var exists = File.Exists(assemblyPath);
             var size = exists ? new FileInfo(assemblyPath).Length : 0;
-            _logger.LogInformation("Assembly loaded - Path: {AssemblyPath}, Exists: {Exists}, Size: {Size} bytes",
-                assemblyPath, exists, size);
+            _logger.LogInfoMessage($"Assembly loaded - Path: {assemblyPath}, Exists: {exists}, Size: {size} bytes");
         }
 
         // Test loading same package again (should come from cache)
         var cachedResult = await loader.LoadPackageAsync(packagePath, "net9.0");
-        _logger.LogInformation("Second load from cache result: {FromCache}", cachedResult.FromCache);
+        _logger.LogInfoMessage("Second load from cache result: {cachedResult.FromCache}");
 
-        _logger.LogInformation("Local package loading test completed successfully");
+        _logger.LogInfoMessage("Local package loading test completed successfully");
     }
 
     /// <summary>
@@ -178,7 +171,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// <returns>A task representing the test.</returns>
     public async Task TestPackageManifestParsingAsync()
     {
-        _logger.LogInformation("Starting package manifest parsing test");
+        _logger.LogInfoMessage("Starting package manifest parsing test");
 
         var options = new NuGetPluginLoaderOptions
         {
@@ -193,17 +186,15 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         
         var result = await loader.LoadPackageAsync(packagePath, "net9.0");
 
-        _logger.LogInformation("Package manifest parsed - ID: {PackageId}, Version: {Version}, Dependencies: {DependencyCount}",
-            result.PackageIdentity.Id, result.PackageIdentity.Version, result.ResolvedDependencies.Length);
+        _logger.LogInfoMessage($"Package manifest parsed - ID: {result.PackageIdentity.Id}, Version: {result.PackageIdentity.Version}, Dependencies: {result.ResolvedDependencies.Length}");
         
         foreach (var dependency in result.ResolvedDependencies)
         {
             var frameworks = dependency.TargetFrameworks?.Length > 0 ? string.Join(", ", dependency.TargetFrameworks) : "None";
-            _logger.LogInformation("Dependency found - ID: {DependencyId}, VersionRange: {VersionRange}, Frameworks: {Frameworks}",
-                dependency.Id, dependency.VersionRange, frameworks);
+            _logger.LogInfoMessage($"Dependency found - ID: {dependency.Id}, VersionRange: {dependency.VersionRange}, Frameworks: {frameworks}");
         }
 
-        _logger.LogInformation("Package manifest parsing test completed successfully");
+        _logger.LogInfoMessage("Package manifest parsing test completed successfully");
     }
 
     /// <summary>
@@ -212,7 +203,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// <returns>A task representing the test.</returns>
     public async Task TestFrameworkCompatibilityAsync()
     {
-        _logger.LogInformation("Starting framework compatibility test");
+        _logger.LogInfoMessage("Starting framework compatibility test");
 
         var options = new NuGetPluginLoaderOptions
         {
@@ -231,14 +222,14 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         {
             try
             {
-                _logger.LogInformation("Testing framework compatibility: {Framework}", framework);
+                _logger.LogInfoMessage("Testing framework compatibility: {framework}");
                 var result = await loader.LoadPackageAsync(packagePath, framework);
                 
-                _logger.LogInformation("Framework {Framework} supported - {AssemblyCount} assemblies found", framework, result.LoadedAssemblyPaths.Length);
+                _logger.LogInfoMessage("Framework {Framework} supported - {framework, result.LoadedAssemblyPaths.Length} assemblies found");
                 foreach (var assembly in result.LoadedAssemblyPaths)
                 {
                     var relativePath = Path.GetRelativePath(result.CachePath!, assembly);
-                    _logger.LogInformation("Assembly path for {Framework}: {RelativePath}", framework, relativePath);
+                    _logger.LogInfoMessage("Assembly path for {Framework}: {framework, relativePath}");
                 }
             }
             catch (Exception ex)
@@ -247,7 +238,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
             }
         }
 
-        _logger.LogInformation("Framework compatibility test completed successfully");
+        _logger.LogInfoMessage("Framework compatibility test completed successfully");
     }
 
     /// <summary>
@@ -256,7 +247,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// <returns>A task representing the test.</returns>
     public async Task TestPackageCachingAsync()
     {
-        _logger.LogInformation("Starting package caching test");
+        _logger.LogInfoMessage("Starting package caching test");
 
         var options = new NuGetPluginLoaderOptions
         {
@@ -275,32 +266,31 @@ public sealed class NuGetPluginLoaderTests : IDisposable
             CreateTestPackage("CacheTest3", "1.0.0")
         };
 
-        _logger.LogInformation("Loading {PackageCount} packages into cache", packages.Length);
+        _logger.LogInfoMessage("Loading {packages.Length} packages into cache");
         foreach (var package in packages)
         {
             var result = await loader.LoadPackageAsync(package, "net9.0");
-            _logger.LogInformation("Package loaded into cache - ID: {PackageId}, FromCache: {FromCache}", result.PackageIdentity.Id, result.FromCache);
+            _logger.LogInfoMessage("Package loaded into cache - ID: {PackageId}, FromCache: {result.PackageIdentity.Id, result.FromCache}");
         }
 
         // Check cached packages
         var cachedPackages = loader.GetCachedPackages();
-        _logger.LogInformation("Cache contains {CachedPackageCount} packages", cachedPackages.Length);
+        _logger.LogInfoMessage("Cache contains {cachedPackages.Length} packages");
 
         foreach (var cached in cachedPackages)
         {
-            _logger.LogInformation("Cached package - ID: {PackageId}, Version: {Version}, Age: {CacheAge}, Assemblies: {AssemblyCount}, Size: {PackageSize} bytes, SecurityValidated: {IsSecurityValidated}",
-                cached.Identity.Id, cached.Identity.Version, cached.CacheAge, cached.AssemblyCount, cached.PackageSize, cached.IsSecurityValidated);
+            _logger.LogInfoMessage($"Cached package - ID: {cached.Identity.Id}, Version: {cached.Identity.Version}, Age: {cached.CacheAge}, Assemblies: {cached.AssemblyCount}, Size: {cached.PackageSize} bytes, SecurityValidated: {cached.IsSecurityValidated}");
         }
 
         // Test cache clearing
-        _logger.LogInformation("Testing cache clearing - removing packages older than 1 second");
+        _logger.LogInfoMessage("Testing cache clearing - removing packages older than 1 second");
         await Task.Delay(1100); // Wait a bit
         await loader.ClearCacheAsync(TimeSpan.FromSeconds(1));
 
         var remainingCached = loader.GetCachedPackages();
-        _logger.LogInformation("Cache cleared - remaining packages: {RemainingCount}", remainingCached.Length);
+        _logger.LogInfoMessage("Cache cleared - remaining packages: {remainingCached.Length}");
 
-        _logger.LogInformation("Package caching test completed successfully");
+        _logger.LogInfoMessage("Package caching test completed successfully");
     }
 
     /// <summary>
@@ -309,7 +299,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// <returns>A task representing the test.</returns>
     public async Task TestSecurityValidationAsync()
     {
-        _logger.LogInformation("Starting security validation test");
+        _logger.LogInfoMessage("Starting security validation test");
 
         var options = new NuGetPluginLoaderOptions
         {
@@ -328,12 +318,11 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         try
         {
             var result = await loader.LoadPackageAsync(packagePath, "net9.0");
-            _logger.LogInformation("Package loaded with security validation - Result: {SecurityResult}, Warnings: {WarningCount}",
-                result.SecurityValidationResult ?? "No security issues", result.Warnings.Length);
+            _logger.LogInfoMessage($"Package loaded with security validation - Result: {result.SecurityValidationResult ?? "No security issues"}, Warnings: {result.Warnings.Length}");
             
             foreach (var warning in result.Warnings)
             {
-                _logger.LogWarning("Security warning: {Warning}", warning);
+                _logger.LogWarningMessage("Security warning: {warning}");
             }
         }
         catch (Exception ex)
@@ -365,14 +354,14 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         try
         {
             await loader.LoadPackageAsync(largePackagePath, "net9.0");
-            _logger.LogInformation("Large package loaded (size validation may have been skipped)");
+            _logger.LogInfoMessage("Large package loaded (size validation may have been skipped)");
         }
         catch (Exception ex)
         {
             _logger.LogInformation(ex, "Large package rejected as expected: {ErrorMessage}", ex.Message);
         }
 
-        _logger.LogInformation("Security validation test completed successfully");
+        _logger.LogInfoMessage("Security validation test completed successfully");
     }
 
     /// <summary>
@@ -381,7 +370,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// <returns>A task representing the test.</returns>
     public async Task TestPackageUpdatesAsync()
     {
-        _logger.LogInformation("Starting package updates test");
+        _logger.LogInfoMessage("Starting package updates test");
 
         var options = new NuGetPluginLoaderOptions
         {
@@ -396,14 +385,14 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var v2Path = CreateTestPackage("UpdatablePackage", "2.0.0");
 
         // Load version 1.0.0
-        _logger.LogInformation("Loading package version 1.0.0");
+        _logger.LogInfoMessage("Loading package version 1.0.0");
         var result1 = await loader.LoadPackageAsync(v1Path, "net9.0");
-        _logger.LogInformation("Loaded package: {PackageId} v{Version}", result1.PackageIdentity.Id, result1.PackageIdentity.Version);
+        _logger.LogInfoMessage("Loaded package: {PackageId} v{result1.PackageIdentity.Id, result1.PackageIdentity.Version}");
 
         // Load version 2.0.0 (simulating update)
-        _logger.LogInformation("Loading package version 2.0.0");
+        _logger.LogInfoMessage("Loading package version 2.0.0");
         var result2 = await loader.LoadPackageAsync(v2Path, "net9.0");
-        _logger.LogInformation("Loaded package: {PackageId} v{Version}", result2.PackageIdentity.Id, result2.PackageIdentity.Version);
+        _logger.LogInfoMessage("Loaded package: {PackageId} v{result2.PackageIdentity.Id, result2.PackageIdentity.Version}");
 
         // Check that both versions are cached separately
         var cachedPackages = loader.GetCachedPackages();
@@ -411,24 +400,24 @@ public sealed class NuGetPluginLoaderTests : IDisposable
             .Where(p => p.Identity.Id == "UpdatablePackage")
             .ToArray();
 
-        _logger.LogInformation("Cached versions of UpdatablePackage: {VersionCount}", updatablePackages.Length);
+        _logger.LogInfoMessage("Cached versions of UpdatablePackage: {updatablePackages.Length}");
         foreach (var cached in updatablePackages)
         {
-            _logger.LogInformation("Cached version: {Version}", cached.Identity.Version);
+            _logger.LogInfoMessage("Cached version: {cached.Identity.Version}");
         }
 
         // Test update functionality (would require remote package resolution in real implementation)
         try
         {
             var updateResult = await loader.UpdatePackageAsync("UpdatablePackage", "net9.0");
-            _logger.LogInformation("Package updated to version: {Version}", updateResult.PackageIdentity.Version);
+            _logger.LogInfoMessage("Package updated to version: {updateResult.PackageIdentity.Version}");
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Update failed (expected for local packages): {ErrorMessage}", ex.Message);
         }
 
-        _logger.LogInformation("Package updates test completed successfully");
+        _logger.LogInfoMessage("Package updates test completed successfully");
     }
 
     /// <summary>
@@ -437,7 +426,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// <returns>A task representing the test.</returns>
     public async Task TestErrorHandlingAsync()
     {
-        _logger.LogInformation("Starting error handling test");
+        _logger.LogInfoMessage("Starting error handling test");
 
         var options = new NuGetPluginLoaderOptions
         {
@@ -455,11 +444,11 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         }
         catch (FileNotFoundException ex)
         {
-            _logger.LogInformation("✓ Correctly handled non-existent package file: {ExceptionType}", ex.GetType().Name);
+            _logger.LogInfoMessage($"✓ Correctly handled non-existent package file: {).Name}");
         }
         catch (Exception ex)
         {
-            _logger.LogInformation("✓ Handled non-existent package: {ExceptionType}", ex.GetType().Name);
+            _logger.LogInfoMessage($"✓ Handled non-existent package: {).Name}");
         }
 
         // Test invalid package format
@@ -473,7 +462,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogInformation("✓ Correctly handled invalid package format: {ExceptionType}", ex.GetType().Name);
+            _logger.LogInfoMessage($"✓ Correctly handled invalid package format: {).Name}");
         }
 
         // Test empty package
@@ -491,7 +480,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogInformation("✓ Correctly handled empty package: {ExceptionType}", ex.GetType().Name);
+            _logger.LogInfoMessage($"✓ Correctly handled empty package: {).Name}");
         }
 
         // Test invalid target framework
@@ -500,14 +489,14 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         try
         {
             var result = await loader.LoadPackageAsync(validPackagePath, "invalid-framework");
-            _logger.LogInformation("Loaded with invalid framework (may be handled gracefully): {AssemblyCount} assemblies", result.LoadedAssemblyPaths.Length);
+            _logger.LogInfoMessage("Loaded with invalid framework (may be handled gracefully): {result.LoadedAssemblyPaths.Length} assemblies");
         }
         catch (Exception ex)
         {
-            _logger.LogInformation("✓ Correctly handled invalid framework: {ExceptionType}", ex.GetType().Name);
+            _logger.LogInfoMessage($"✓ Correctly handled invalid framework: {).Name}");
         }
 
-        _logger.LogInformation("Error handling test completed successfully");
+        _logger.LogInfoMessage("Error handling test completed successfully");
     }
 
     /// <summary>
@@ -516,7 +505,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// <returns>A task representing all test execution.</returns>
     public async Task RunAllTestsAsync()
     {
-        _logger.LogInformation("Starting NuGet Plugin Loader Tests suite");
+        _logger.LogInfoMessage("Starting NuGet Plugin Loader Tests suite");
 
         try
         {
@@ -528,12 +517,12 @@ public sealed class NuGetPluginLoaderTests : IDisposable
             await TestPackageUpdatesAsync();
             await TestErrorHandlingAsync();
 
-            _logger.LogInformation("All tests completed successfully - Test artifacts created in: {TestDirectory}", _testCacheDirectory);
-            _logger.LogInformation("The NuGet plugin loader implementation is working correctly");
+            _logger.LogInfoMessage("All tests completed successfully - Test artifacts created in: {_testCacheDirectory}");
+            _logger.LogInfoMessage("The NuGet plugin loader implementation is working correctly");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Test suite failed: {ErrorMessage}", ex.Message);
+            _logger.LogErrorMessage(ex, $"Test suite failed: {ex.Message}");
             throw;
         }
     }
@@ -544,7 +533,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// <returns>A task representing the performance test.</returns>
     public async Task RunPerformanceTestsAsync()
     {
-        _logger.LogInformation("Starting performance tests");
+        _logger.LogInfoMessage("Starting performance tests");
 
         var options = new NuGetPluginLoaderOptions
         {
@@ -563,22 +552,22 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         // Sequential loading
-        _logger.LogInformation("Starting sequential loading test");
+        _logger.LogInfoMessage("Starting sequential loading test");
         foreach (var package in packages.Take(5))
         {
             var result = await loader.LoadPackageAsync(package, "net9.0");
-            _logger.LogInformation("Sequential load - Package: {PackageId}, Time: {LoadTime:F2}ms", result.PackageIdentity.Id, result.LoadTime.TotalMilliseconds);
+            _logger.LogInfoMessage("Sequential load - Package: {PackageId}, Time: {result.PackageIdentity.Id, result.LoadTime.TotalMilliseconds}ms");
         }
 
         var sequentialTime = stopwatch.Elapsed;
-        _logger.LogInformation("Sequential loading total time: {TotalTime:F2}ms", sequentialTime.TotalMilliseconds);
+        _logger.LogInfoMessage("Sequential loading total time: {sequentialTime.TotalMilliseconds}ms");
 
         // Clear cache for fair comparison
         await loader.ClearCacheAsync();
         stopwatch.Restart();
 
         // Concurrent loading
-        _logger.LogInformation("Starting concurrent loading test");
+        _logger.LogInfoMessage("Starting concurrent loading test");
         var concurrentTasks = packages.Skip(5).Take(5)
             .Select(async package =>
             {
@@ -591,13 +580,12 @@ public sealed class NuGetPluginLoaderTests : IDisposable
 
         foreach (var result in concurrentResults)
         {
-            _logger.LogInformation("Concurrent load - Package: {PackageId}, Time: {LoadTime:F2}ms", result.PackageIdentity.Id, result.LoadTime.TotalMilliseconds);
+            _logger.LogInfoMessage("Concurrent load - Package: {PackageId}, Time: {result.PackageIdentity.Id, result.LoadTime.TotalMilliseconds}ms");
         }
 
-        _logger.LogInformation("Performance test results - Sequential: {SequentialTime:F2}ms, Concurrent: {ConcurrentTime:F2}ms, Improvement: {Improvement:F2}x",
-            sequentialTime.TotalMilliseconds, concurrentTime.TotalMilliseconds, sequentialTime.TotalMilliseconds / concurrentTime.TotalMilliseconds);
+        _logger.LogInfoMessage($"Performance test results - Sequential: {sequentialTime.TotalMilliseconds}ms, Concurrent: {concurrentTime.TotalMilliseconds}ms, Improvement: {sequentialTime.TotalMilliseconds / concurrentTime.TotalMilliseconds}x");
 
-        _logger.LogInformation("Performance tests completed successfully");
+        _logger.LogInfoMessage("Performance tests completed successfully");
     }
 
     /// <summary>

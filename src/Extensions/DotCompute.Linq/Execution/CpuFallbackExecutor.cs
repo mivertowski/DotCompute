@@ -11,6 +11,7 @@ using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Compilation.Plans;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Execution;
 
@@ -38,8 +39,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
 
         _vectorSize = _hasAvx512 ? 16 : (_hasAvx2 ? 8 : (_hasNeon ? 4 : Vector<float>.Count));
 
-        _logger.LogInformation("CPU fallback executor initialized with SIMD support: AVX512={AVX512}, AVX2={AVX2}, NEON={NEON}, VectorSize={VectorSize}",
-            _hasAvx512, _hasAvx2, _hasNeon, _vectorSize);
+        _logger.LogInfoMessage($"CPU fallback executor initialized with SIMD support: AVX512={_hasAvx512}, AVX2={_hasAvx2}, NEON={_hasNeon}, VectorSize={_vectorSize}");
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     /// </summary>
     public object? Execute(ExecutionContext context)
     {
-        _logger.LogDebug("Executing compute plan on CPU");
+        _logger.LogDebugMessage("Executing compute plan on CPU");
 
         try
         {
@@ -61,7 +61,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "CPU execution failed");
+            _logger.LogErrorMessage(ex, "CPU execution failed");
             throw;
         }
     }
@@ -71,7 +71,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     /// </summary>
     public async Task<object?> ExecuteAsync(ExecutionContext context, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Executing compute plan on CPU asynchronously");
+        _logger.LogDebugMessage("Executing compute plan on CPU asynchronously");
 
         try
         {
@@ -84,7 +84,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "CPU execution failed");
+            _logger.LogErrorMessage(ex, "CPU execution failed");
             throw;
         }
     }
@@ -103,17 +103,17 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     /// </summary>
     public async Task<T> ExecuteAsync<T>(Expression expression, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Executing expression on CPU: {ExpressionType}", expression.NodeType);
+        _logger.LogDebugMessage("Executing expression on CPU: {expression.NodeType}");
 
         try
         {
             var result = await Task.Run(() => ExecuteExpression<T>(expression), cancellationToken).ConfigureAwait(false);
-            _logger.LogDebug("CPU execution completed successfully");
+            _logger.LogDebugMessage("CPU execution completed successfully");
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "CPU execution failed for expression type: {ExpressionType}", expression.NodeType);
+            _logger.LogErrorMessage(ex, $"CPU execution failed for expression type: {expression.NodeType}");
             throw;
         }
     }

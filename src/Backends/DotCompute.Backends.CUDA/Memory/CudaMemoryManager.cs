@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Memory
 {
@@ -84,7 +85,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _allocations[devicePtr] = sizeInBytes;
             _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-            _logger.LogDebug("Allocated {Size} bytes at {Address:X}", sizeInBytes, devicePtr);
+            _logger.LogDebugMessage(" bytes at {Address:X}");
 
             return new CudaMemoryBuffer<T>(devicePtr, count, _context);
         }
@@ -107,7 +108,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 _allocations[devicePtr] = sizeInBytes;
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                _logger.LogDebug("Allocated {Size} bytes at {Address:X}", sizeInBytes, devicePtr);
+                _logger.LogDebugMessage(" bytes at {Address:X}");
 
                 // Return a non-generic buffer that implements IUnifiedMemoryBuffer
                 return new CudaMemoryBuffer(_device, devicePtr, sizeInBytes);
@@ -174,9 +175,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 _allocations[devicePtr] = sizeInBytes;
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                _logger.LogDebug("Allocated {Size} bytes at {Address:X} for type {Type} with options {Options}",
-
-                    sizeInBytes, devicePtr, typeof(T).Name, options);
+                _logger.LogDebugMessage($"Allocated {sizeInBytes} bytes at {devicePtr} for type {typeof(T).Name} with options {options}");
 
                 return (IUnifiedMemoryBuffer<T>)new CudaMemoryBuffer<T>(devicePtr, count, _context);
             }, cancellationToken);
@@ -200,9 +199,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 _allocations[unifiedPtr] = sizeInBytes;
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                _logger.LogDebug("Allocated {Size} bytes unified memory at {Address:X} for type {Type}",
-
-                    sizeInBytes, unifiedPtr, typeof(T).Name);
+                _logger.LogDebugMessage($"Allocated {sizeInBytes} bytes unified memory at {unifiedPtr} for type {typeof(T).Name}");
 
                 return (IUnifiedMemoryBuffer<T>)new SimpleCudaUnifiedMemoryBuffer<T>(unifiedPtr, (int)count, true);
             }, cancellationToken);
@@ -219,11 +216,11 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (result == CudaError.Success)
                 {
                     _ = Interlocked.Add(ref _totalAllocated, -size);
-                    _logger.LogDebug("Freed {Size} bytes at {Address:X}", size, devicePtr);
+                    _logger.LogDebugMessage(" bytes at {Address:X}");
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to free memory at {Address:X}: {Error}", devicePtr, result);
+                    _logger.LogWarningMessage("");
                 }
             }
         }
@@ -247,13 +244,11 @@ namespace DotCompute.Backends.CUDA.Memory
                     _totalMemory = (long)total;
                     // Set max allocation size to 90% of total memory to leave room for other operations
                     _maxAllocationSize = (long)(total * 0.9);
-                    _logger.LogDebug("Initialized CUDA memory info - Total: {Total:N0} bytes, Max allocation: {Max:N0} bytes",
-
-                        _totalMemory, _maxAllocationSize);
+                    _logger.LogDebugMessage($"Initialized CUDA memory info - Total: {_totalMemory} bytes, Max allocation: {_maxAllocationSize} bytes");
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to query CUDA memory info: {Error}", result);
+                    _logger.LogWarningMessage("");
                     // Fallback values
                     _totalMemory = 8L * 1024 * 1024 * 1024; // 8GB default
                     _maxAllocationSize = _totalMemory / 2;
@@ -291,7 +286,7 @@ namespace DotCompute.Backends.CUDA.Memory
             InitializeMemoryInfo();
 
 
-            _logger.LogInformation("CUDA memory manager reset completed");
+            _logger.LogInfoMessage("CUDA memory manager reset completed");
         }
 
         /// <summary>

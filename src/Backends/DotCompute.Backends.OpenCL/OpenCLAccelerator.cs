@@ -156,11 +156,11 @@ public sealed class OpenCLAccelerator : IAccelerator
 
         if (_context != null)
         {
-            _logger.LogDebug("OpenCL accelerator already initialized");
+            _logger.LogDebugMessage("OpenCL accelerator already initialized");
             return;
         }
 
-        _logger.LogInformation("Initializing OpenCL accelerator");
+        _logger.LogInfoMessage("Initializing OpenCL accelerator");
 
         await Task.Run(() =>
         {
@@ -186,13 +186,11 @@ public sealed class OpenCLAccelerator : IAccelerator
                     // Create memory manager
                     _memoryManager = new OpenCLMemoryManager(this, _context, _loggerFactory.CreateLogger<OpenCLMemoryManager>());
                     
-                    _logger.LogInformation("OpenCL accelerator initialized successfully with device: {DeviceName}",
-                        _selectedDevice.Name);
+                    _logger.LogInfoMessage($"OpenCL accelerator initialized successfully with device: {_selectedDevice.Name}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to initialize OpenCL context for device: {DeviceName}",
-                        _selectedDevice.Name);
+                    _logger.LogErrorMessage(ex, $"Failed to initialize OpenCL context for device: {_selectedDevice.Name}");
                     throw;
                 }
             }
@@ -215,8 +213,7 @@ public sealed class OpenCLAccelerator : IAccelerator
         ThrowIfDisposed();
         await EnsureInitializedAsync(cancellationToken);
 
-        _logger.LogDebug("Allocating OpenCL buffer: type={Type}, elements={Count}",
-            typeof(T).Name, elementCount);
+        _logger.LogDebugMessage($"Allocating OpenCL buffer: type={typeof(T).Name}, elements={elementCount}");
 
         // Convert nuint to int for the memory manager
         var count = (int)elementCount;
@@ -247,8 +244,7 @@ public sealed class OpenCLAccelerator : IAccelerator
         if (string.IsNullOrWhiteSpace(definition.EntryPoint))
             throw new ArgumentException("Entry point cannot be null or empty", nameof(definition));
 
-        _logger.LogDebug("Compiling OpenCL kernel: {EntryPoint} ({SourceLength} chars)",
-            definition.EntryPoint, definition.Source.Length);
+        _logger.LogDebugMessage($"Compiling OpenCL kernel: {definition.EntryPoint} ({definition.Source.Length} chars)");
 
         return await Task.Run(() =>
         {
@@ -291,7 +287,7 @@ public sealed class OpenCLAccelerator : IAccelerator
         
         if (_context == null)
         {
-            _logger.LogDebug("Synchronize called on uninitialized accelerator");
+            _logger.LogDebugMessage("Synchronize called on uninitialized accelerator");
             return ValueTask.CompletedTask;
         }
 
@@ -388,7 +384,7 @@ public sealed class OpenCLAccelerator : IAccelerator
         {
             if (_disposed) return;
 
-            _logger.LogInformation("Disposing OpenCL accelerator: {AcceleratorName}", Name);
+            _logger.LogInfoMessage("Disposing OpenCL accelerator: {Name}");
 
             try
             {

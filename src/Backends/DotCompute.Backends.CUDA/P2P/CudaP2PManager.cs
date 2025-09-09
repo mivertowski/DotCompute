@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.P2P
@@ -39,7 +40,7 @@ namespace DotCompute.Backends.CUDA.P2P
             _monitoringTimer = new Timer(MonitorConnections, null,
                 TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
 
-            _logger.LogInformation("CUDA P2P Manager initialized for multi-GPU operations");
+            _logger.LogInfoMessage("CUDA P2P Manager initialized for multi-GPU operations");
         }
 
         /// <summary>
@@ -90,8 +91,7 @@ namespace DotCompute.Backends.CUDA.P2P
                                 _connections[(srcDevice, dstDevice)] = connection;
                                 topology.Connections.Add(connection);
 
-                                _logger.LogDebug("P2P connection available: {Source} -> {Destination} ({Bandwidth:F2} GB/s)",
-                                    srcDevice, dstDevice, connection.BandwidthGBps);
+                                _logger.LogDebugMessage($"P2P connection available: {srcDevice} -> {dstDevice} ({connection.BandwidthGBps} GB/s)");
                             }
                         }
                     }
@@ -100,8 +100,7 @@ namespace DotCompute.Backends.CUDA.P2P
                 topology.IsFullyConnected = IsTopologyFullyConnected(topology);
                 topology.OptimalTransferPaths = CalculateOptimalPaths(topology);
 
-                _logger.LogInformation("Discovered P2P topology: {DeviceCount} devices, {ConnectionCount} connections, fully connected: {FullyConnected}",
-                    deviceCount, topology.Connections.Count, topology.IsFullyConnected);
+                _logger.LogInfoMessage($"Discovered P2P topology: {deviceCount} devices, {topology.Connections.Count} connections, fully connected: {topology.IsFullyConnected}");
 
                 return topology;
             }
@@ -167,15 +166,13 @@ namespace DotCompute.Backends.CUDA.P2P
                 connection.IsEnabled = true;
                 connection.EnabledAt = DateTimeOffset.UtcNow;
 
-                _logger.LogInformation("Enabled P2P access: {Source} -> {Destination}",
-                    sourceDevice, destinationDevice);
+                _logger.LogInfoMessage($"Enabled P2P access: {sourceDevice} -> {destinationDevice}");
 
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to enable P2P access: {Source} -> {Destination}",
-                    sourceDevice, destinationDevice);
+                _logger.LogErrorMessage(ex, $"Failed to enable P2P access: {sourceDevice} -> {destinationDevice}");
                 return false;
             }
         }
@@ -207,15 +204,13 @@ namespace DotCompute.Backends.CUDA.P2P
                 connection.IsEnabled = false;
                 connection.DisabledAt = DateTimeOffset.UtcNow;
 
-                _logger.LogInformation("Disabled P2P access: {Source} -> {Destination}",
-                    sourceDevice, destinationDevice);
+                _logger.LogInfoMessage($"Disabled P2P access: {sourceDevice} -> {destinationDevice}");
 
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to disable P2P access: {Source} -> {Destination}",
-                    sourceDevice, destinationDevice);
+                _logger.LogErrorMessage(ex, $"Failed to disable P2P access: {sourceDevice} -> {destinationDevice}");
                 return false;
             }
         }
@@ -296,8 +291,7 @@ namespace DotCompute.Backends.CUDA.P2P
                     connection.AverageBandwidthGBps = (connection.AverageBandwidthGBps * (connection.TransferCount - 1) + bandwidthGBps) / connection.TransferCount;
                 }
 
-                _logger.LogDebug("P2P transfer completed: {Source} -> {Destination}, {Size} bytes, {Bandwidth:F2} GB/s",
-                    sourceDevice, destinationDevice, sizeBytes, bandwidthGBps);
+                _logger.LogDebugMessage($"P2P transfer completed: {sourceDevice} -> {destinationDevice}, {sizeBytes} bytes, {bandwidthGBps} GB/s");
 
                 return new CudaP2PTransferResult
                 {
@@ -314,8 +308,7 @@ namespace DotCompute.Backends.CUDA.P2P
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "P2P transfer failed: {Source} -> {Destination}, {Size} bytes",
-                    sourceDevice, destinationDevice, sizeBytes);
+                _logger.LogErrorMessage(ex, $"P2P transfer failed: {sourceDevice} -> {destinationDevice}, {sizeBytes} bytes");
 
                 return new CudaP2PTransferResult
                 {
@@ -373,8 +366,7 @@ namespace DotCompute.Backends.CUDA.P2P
             // Calculate optimal transfer order
             strategy.TransferOrder = CalculateOptimalTransferOrder(strategy.Placements, topology);
 
-            _logger.LogInformation("Optimized data placement for {ChunkCount} chunks across {DeviceCount} devices",
-                chunks.Count, topology.DeviceCount);
+            _logger.LogInfoMessage($"Optimized data placement for {chunks.Count} chunks across {topology.DeviceCount} devices");
 
             return strategy;
         }
@@ -418,7 +410,7 @@ namespace DotCompute.Backends.CUDA.P2P
             // Initialize CUDA and discover devices
             var deviceCount = GetDeviceCount();
 
-            _logger.LogDebug("Initializing P2P manager with {DeviceCount} devices", deviceCount);
+            _logger.LogDebugMessage("Initializing P2P manager with {deviceCount} devices");
         }
 
         private static int GetDeviceCount()
@@ -582,8 +574,7 @@ namespace DotCompute.Backends.CUDA.P2P
             try
             {
                 var stats = GetStatistics();
-                _logger.LogDebug("P2P Status: {Enabled}/{Total} connections enabled, {Transfers} transfers, {Bandwidth:F2} GB/s avg",
-                    stats.EnabledConnections, stats.TotalConnections, stats.TotalTransfers, stats.AverageBandwidthGBps);
+                _logger.LogDebugMessage($"P2P Status: {stats.EnabledConnections}/{stats.TotalConnections} connections enabled, {stats.TotalTransfers} transfers, {stats.AverageBandwidthGBps} GB/s avg");
             }
             catch (Exception ex)
             {
@@ -626,7 +617,7 @@ namespace DotCompute.Backends.CUDA.P2P
                 _connectionSemaphore?.Dispose();
                 _disposed = true;
 
-                _logger.LogInformation("CUDA P2P Manager disposed");
+                _logger.LogInfoMessage("CUDA P2P Manager disposed");
             }
         }
     }

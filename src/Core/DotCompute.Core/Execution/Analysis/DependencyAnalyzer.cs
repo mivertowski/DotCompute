@@ -6,6 +6,7 @@ using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Pipeline;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Execution.Analysis
@@ -80,7 +81,7 @@ namespace DotCompute.Core.Execution.Analysis
                 graph.AddDependency(i, i + 1, DependencyType.Control);
             }
 
-            _logger.LogInformation("Analyzed data dependencies: {DependencyCount} dependencies found", graph.TotalDependencies);
+            _logger.LogInfoMessage("Analyzed data dependencies: {graph.TotalDependencies} dependencies found");
             return graph;
         }
 
@@ -116,8 +117,7 @@ namespace DotCompute.Core.Execution.Analysis
                 await AnalyzeTensorDependenciesAsync(layer, layers, graph, cancellationToken);
             }
 
-            _logger.LogInformation("Analyzed layer dependencies for {LayerCount} layers: {DependencyCount} dependencies",
-                layers.Count, graph.TotalDependencies);
+            _logger.LogInfoMessage($"Analyzed layer dependencies for {layers.Count} layers: {graph.TotalDependencies} dependencies");
             return graph;
         }
 
@@ -162,8 +162,7 @@ namespace DotCompute.Core.Execution.Analysis
                 }
             }
 
-            _logger.LogInformation("Analyzed stage dependencies for {StageCount} stages: {DependencyCount} dependencies",
-                stages.Count, graph.TotalDependencies);
+            _logger.LogInfoMessage($"Analyzed stage dependencies for {stages.Count} stages: {graph.TotalDependencies} dependencies");
             return graph;
         }
 

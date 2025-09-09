@@ -10,6 +10,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Execution;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Operators.Compilation;
 
@@ -66,7 +67,7 @@ internal class CpuFallbackKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
         DotCompute.Abstractions.CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogWarning("Using CPU fallback compiler for kernel {KernelName}", definition.Name);
+        _logger.LogWarningMessage("Using CPU fallback compiler for kernel {definition.Name}");
 
         // Create a simple CPU-executable kernel
         var compiledKernel = new CpuFallbackCompiledKernel(definition, _logger);
@@ -118,7 +119,7 @@ internal class CpuFallbackKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
         CancellationToken cancellationToken = default)
     {
         // CPU fallback doesn't support optimization, return the same kernel
-        _logger.LogDebug("CPU fallback compiler does not support optimization");
+        _logger.LogDebugMessage("CPU fallback compiler does not support optimization");
         return ValueTask.FromResult(kernel);
     }
 }

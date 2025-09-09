@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using DotCompute.Linq.Operators.Execution;
 using DotCompute.Linq.Operators.Models;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Operators.Mocks;
 
@@ -56,7 +57,8 @@ internal class MockCompiledKernel : ICompiledKernel
             throw new ObjectDisposedException(nameof(MockCompiledKernel));
         }
 
-        _logger.LogDebug("Executing mock kernel {KernelName} (execution #{Count})", _name, ++_executionCount);
+        _executionCount++;
+        _logger.LogDebugMessage($"Executing mock kernel {_name} (execution #{_executionCount})");
 
         // Simulate some async work
         await Task.Delay(10, cancellationToken).ConfigureAwait(false);
@@ -70,13 +72,13 @@ internal class MockCompiledKernel : ICompiledKernel
                 totalWork *= dimension;
             }
 
-            _logger.LogDebug("Mock kernel {KernelName} processed {WorkItems} work items", _name, totalWork);
+            _logger.LogDebugMessage("Mock kernel {KernelName} processed {_name, totalWork} work items");
         }
 
         // Simulate handling arguments
         if (parameters.Arguments != null)
         {
-            _logger.LogDebug("Mock kernel {KernelName} received {ArgCount} arguments", _name, parameters.Arguments.Count);
+            _logger.LogDebugMessage("Mock kernel {KernelName} received {_name, parameters.Arguments.Count} arguments");
         }
     }
 
@@ -88,7 +90,7 @@ internal class MockCompiledKernel : ICompiledKernel
         if (!_disposed)
         {
             _disposed = true;
-            _logger.LogDebug("Disposed mock kernel {KernelName} after {Count} executions", _name, _executionCount);
+            _logger.LogDebugMessage($"Disposed mock kernel {_name} after {_executionCount} executions");
         }
     }
 }

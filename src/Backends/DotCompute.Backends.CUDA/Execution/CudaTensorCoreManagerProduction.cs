@@ -12,6 +12,7 @@ using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Advanced;
 
@@ -161,7 +162,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     {
         if (!_tensorCoresAvailable)
         {
-            _logger.LogWarning("Tensor cores not available on this device");
+            _logger.LogWarningMessage("Tensor cores not available on this device");
             return;
         }
 
@@ -281,7 +282,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Tensor core operation failed");
+            _logger.LogErrorMessage(ex, "Tensor core operation failed");
             throw new TensorCoreException("Tensor core matrix multiplication failed", ex);
         }
     }
@@ -350,13 +351,13 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         // Check cache first
         if (_kernelCache.TryGetValue(kernelKey, out var cached))
         {
-            _logger.LogDebug("Using cached tensor core kernel: {Key}", kernelKey);
+            _logger.LogDebugMessage("");
             return cached;
         }
 
         // Compile new kernel
 
-        _logger.LogInformation("Compiling tensor core kernel: {Key}", kernelKey);
+        _logger.LogInfoMessage("");
 
 
         var kernel = await Task.Run(() =>

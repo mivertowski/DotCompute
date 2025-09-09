@@ -6,6 +6,7 @@ using System.Diagnostics;
 using global::System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Core.Recovery.Types;
 using DotCompute.Core.Recovery.Memory;
 
@@ -38,7 +39,7 @@ public class MemoryPressureMonitor : IDisposable
         _monitoringTimer = new Timer(UpdateMemoryPressure, null, interval, interval);
 
 
-        _logger.LogInformation("Memory pressure monitor initialized with {Interval}s update interval", interval.TotalSeconds);
+        _logger.LogInfoMessage("Memory pressure monitor initialized with {interval.TotalSeconds}s update interval");
     }
 
     /// <summary>
@@ -73,14 +74,12 @@ public class MemoryPressureMonitor : IDisposable
 
             if (_currentPressure.Level >= MemoryPressureLevel.High)
             {
-                _logger.LogWarning("High memory pressure detected: {Level} ({Ratio:P1})",
-
-                    _currentPressure.Level, _currentPressure.PressureRatio);
+                _logger.LogWarningMessage($"High memory pressure detected: {_currentPressure.Level} ({_currentPressure.PressureRatio})");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating memory pressure information");
+            _logger.LogErrorMessage(ex, "Error updating memory pressure information");
         }
     }
 
@@ -183,7 +182,7 @@ public class MemoryPressureMonitor : IDisposable
         {
             _monitoringTimer?.Dispose();
             _disposed = true;
-            _logger.LogInformation("Memory pressure monitor disposed");
+            _logger.LogInfoMessage("Memory pressure monitor disposed");
         }
     }
 }

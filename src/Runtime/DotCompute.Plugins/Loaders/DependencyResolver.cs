@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 using DotCompute.Plugins.Loaders.NuGet.Types;
 
 namespace DotCompute.Plugins.Loaders;
@@ -33,7 +34,7 @@ public class DependencyResolver
         await _resolutionSemaphore.WaitAsync(cancellationToken);
         try
         {
-            _logger.LogInformation("Resolving dependencies for plugin: {PluginId}", manifest.Id);
+            _logger.LogInfoMessage("Resolving dependencies for plugin: {manifest.Id}");
 
             var graph = new DependencyGraph { RootPlugin = manifest };
             var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -49,14 +50,13 @@ public class DependencyResolver
 
             graph.IsResolved = graph.Errors.Count == 0;
 
-            _logger.LogInformation("Dependency resolution completed for plugin: {PluginId}. Resolved: {IsResolved}, Dependencies: {Count}",
-                manifest.Id, graph.IsResolved, graph.Dependencies.Count);
+            _logger.LogInfoMessage($"Dependency resolution completed for plugin: {manifest.Id}. Resolved: {graph.IsResolved}, Dependencies: {graph.Dependencies.Count}");
 
             return graph;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to resolve dependencies for plugin: {PluginId}", manifest.Id);
+            _logger.LogErrorMessage(ex, $"Failed to resolve dependencies for plugin: {manifest.Id}");
             return new DependencyGraph
             {
 
@@ -156,7 +156,7 @@ public class DependencyResolver
 
         CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Resolving dependency: {DependencyId} {VersionRange}", dependency.Id, dependency.VersionRange);
+        _logger.LogDebugMessage("Resolving dependency: {DependencyId} {dependency.Id, dependency.VersionRange}");
 
         // Check cache first
         var cacheKey = $"{dependency.Id}|{dependency.VersionRange}";
@@ -169,7 +169,7 @@ public class DependencyResolver
         var availableVersions = await FindAvailableVersionsAsync(dependency, cancellationToken);
         if (availableVersions.Count == 0)
         {
-            _logger.LogWarning("No versions found for dependency: {DependencyId}", dependency.Id);
+            _logger.LogWarningMessage("No versions found for dependency: {dependency.Id}");
             return null;
         }
 
@@ -177,7 +177,7 @@ public class DependencyResolver
         var bestVersion = SelectBestVersion(dependency.VersionRange, availableVersions);
         if (bestVersion == null)
         {
-            _logger.LogWarning("No compatible version found for dependency: {DependencyId} {VersionRange}", dependency.Id, dependency.VersionRange);
+            _logger.LogWarningMessage("No compatible version found for dependency: {DependencyId} {dependency.Id, dependency.VersionRange}");
             return null;
         }
 
@@ -401,9 +401,7 @@ public class DependencyResolver
             var versions = group.Select(d => d.Version).Distinct().ToList();
             if (versions.Count > 1)
             {
-                _logger.LogWarning("Version conflict detected for package: {PackageId}. Versions: {Versions}",
-
-                    group.Key, string.Join(", ", versions));
+                _logger.LogWarningMessage($"Version conflict detected for package: {group.Key}. Versions: {string.Join(", ", versions)}");
 
                 // Apply conflict resolution strategy
                 switch (_settings.ConflictResolutionStrategy)
@@ -440,9 +438,7 @@ public class DependencyResolver
             _ = graph.Dependencies.Remove(dependency);
         }
 
-        _logger.LogInformation("Resolved version conflict for {PackageId} using highest version: {Version}",
-
-            highestVersion.Id, highestVersion.Version);
+        _logger.LogInfoMessage($"Resolved version conflict for {highestVersion.Id} using highest version: {highestVersion.Version}");
     }
 
     /// <summary>
@@ -460,9 +456,7 @@ public class DependencyResolver
             _ = graph.Dependencies.Remove(dependency);
         }
 
-        _logger.LogInformation("Resolved version conflict for {PackageId} using lowest version: {Version}",
-
-            lowestVersion.Id, lowestVersion.Version);
+        _logger.LogInfoMessage($"Resolved version conflict for {lowestVersion.Id} using lowest version: {lowestVersion.Version}");
     }
 
     /// <summary>

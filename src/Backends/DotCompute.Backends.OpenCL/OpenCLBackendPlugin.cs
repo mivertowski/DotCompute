@@ -98,7 +98,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
     /// <param name="configuration">The configuration for the plugin.</param>
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
-        _logger.LogDebug("Configuring OpenCL backend services");
+        _logger.LogDebugMessage("Configuring OpenCL backend services");
 
         // Register OpenCL backend services
         services.AddSingleton<OpenCLDeviceManager>();
@@ -109,7 +109,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
         services.AddSingleton<ILogger<OpenCLDeviceManager>>(provider => 
             provider.GetRequiredService<ILogger<OpenCLDeviceManager>>());
 
-        _logger.LogDebug("OpenCL backend services configured successfully");
+        _logger.LogDebugMessage("OpenCL backend services configured successfully");
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
     /// <returns>A task representing the asynchronous initialization operation.</returns>
     public async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Initializing OpenCL backend plugin");
+        _logger.LogInfoMessage("Initializing OpenCL backend plugin");
 
         await Task.Run(() =>
         {
@@ -145,20 +145,20 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
                             _health = PluginHealth.Healthy;
                             
                             var deviceCount = deviceManager.AllDevices.Count();
-                            _logger.LogInformation("OpenCL backend initialized successfully with {DeviceCount} devices", deviceCount);
+                            _logger.LogInfoMessage("OpenCL backend initialized successfully with {deviceCount} devices");
                         }
                         else
                         {
                             _state = PluginState.Failed;
                             _health = PluginHealth.Unhealthy;
-                            _logger.LogWarning("OpenCL runtime available but no compatible devices found");
+                            _logger.LogWarningMessage("OpenCL runtime available but no compatible devices found");
                         }
                     }
                     else
                     {
                         _state = PluginState.Failed;
                         _health = PluginHealth.Unhealthy;
-                        _logger.LogWarning("OpenCL runtime not available on this system");
+                        _logger.LogWarningMessage("OpenCL runtime not available on this system");
                     }
 
                     // Notify state changes
@@ -176,7 +176,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
                     _state = PluginState.Failed;
                     _health = PluginHealth.Unhealthy;
                     
-                    _logger.LogError(ex, "Failed to initialize OpenCL backend plugin");
+                    _logger.LogErrorMessage(ex, "Failed to initialize OpenCL backend plugin");
                     
                     ErrorOccurred?.Invoke(this, new PluginErrorEventArgs(ex, "Initialization failed"));
                     StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
@@ -197,14 +197,14 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
         {
             if (_health != PluginHealth.Healthy)
             {
-                _logger.LogWarning("Cannot start OpenCL backend plugin - health status: {Health}", _health);
+                _logger.LogWarningMessage("Cannot start OpenCL backend plugin - health status: {_health}");
                 return Task.CompletedTask;
             }
 
             var oldState = _state;
             _state = PluginState.Running;
             
-            _logger.LogInformation("OpenCL backend plugin started successfully");
+            _logger.LogInfoMessage("OpenCL backend plugin started successfully");
             StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
         }
         
@@ -223,7 +223,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
             var oldState = _state;
             _state = PluginState.Stopped;
             
-            _logger.LogInformation("OpenCL backend plugin stopped");
+            _logger.LogInfoMessage("OpenCL backend plugin stopped");
             StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
         }
         
@@ -286,7 +286,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
         {
             result.IsValid = false;
             result.Errors.Add($"Validation failed: {ex.Message}");
-            _logger.LogError(ex, "OpenCL backend plugin validation failed");
+            _logger.LogErrorMessage(ex, "OpenCL backend plugin validation failed");
         }
 
         return result;
@@ -338,7 +338,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
     /// <returns>A completed task.</returns>
     public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("OpenCL backend configuration updated");
+        _logger.LogInfoMessage("OpenCL backend configuration updated");
         
         // In a full implementation, we might want to:
         // - Update preferred device selection
@@ -393,7 +393,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
         {
             if (_disposed) return;
 
-            _logger.LogDebug("Disposing OpenCL backend plugin");
+            _logger.LogDebugMessage("Disposing OpenCL backend plugin");
 
             var oldState = _state;
             _state = PluginState.Stopped;

@@ -296,8 +296,7 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         }
         _buffer = _context.CreateBuffer(flags, sizeInBytes);
 
-        _logger.LogDebug("Created OpenCL buffer: type={Type}, elements={Count}, size={Size} bytes",
-            typeof(T).Name, elementCount, sizeInBytes);
+        _logger.LogDebugMessage($"Created OpenCL buffer: type={typeof(T).Name}, elements={elementCount}, size={sizeInBytes} bytes");
     }
 
     /// <summary>
@@ -545,8 +544,7 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         {
             if (_disposed) return;
 
-            _logger.LogDebug("Disposing OpenCL buffer: type={Type}, elements={Count}",
-                typeof(T).Name, _elementCount);
+            _logger.LogDebugMessage($"Disposing OpenCL buffer: type={typeof(T).Name}, elements={_elementCount}");
 
             OpenCLContext.ReleaseObject(_buffer.Handle, OpenCLRuntime.clReleaseMemObject, "memory buffer");
             _disposed = true;

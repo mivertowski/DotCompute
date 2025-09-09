@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Loaders
 {
@@ -32,7 +33,7 @@ namespace DotCompute.Plugins.Loaders
                 throw new ArgumentException("Package ID cannot be null or empty", nameof(packageId));
             }
 
-            _logger.LogInformation("Resolving dependencies for package {PackageId} version {Version}", packageId, version);
+            _logger.LogInfoMessage("Resolving dependencies for package {PackageId} version {packageId, version}");
 
             // For now, just cache the package and return success
             _packageCache[packageId] = version;

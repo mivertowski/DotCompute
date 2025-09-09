@@ -4,6 +4,7 @@
 using DotCompute.Plugins.Aot.Registry;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Aot.Registration;
 
@@ -29,7 +30,7 @@ public sealed class PluginRegistrationService : IPluginRegistration
         _factories = [];
 
 
-        _logger.LogDebug("PluginRegistrationService initialized");
+        _logger.LogDebugMessage("PluginRegistrationService initialized");
     }
 
     /// <summary>
@@ -95,11 +96,11 @@ public sealed class PluginRegistrationService : IPluginRegistration
             var removed = _factories.Remove(pluginTypeName);
             if (removed)
             {
-                _logger.LogInformation("Unregistered plugin factory for {PluginType}", pluginTypeName);
+                _logger.LogInfoMessage("Unregistered plugin factory for {pluginTypeName}");
             }
             else
             {
-                _logger.LogDebug("No factory found to unregister for {PluginType}", pluginTypeName);
+                _logger.LogDebugMessage("No factory found to unregister for {pluginTypeName}");
             }
             return removed;
         }
@@ -177,6 +178,6 @@ public sealed class PluginRegistrationService : IPluginRegistration
             _factories.Clear();
         }
 
-        _logger.LogInformation("PluginRegistrationService disposed");
+        _logger.LogInfoMessage("PluginRegistrationService disposed");
     }
 }

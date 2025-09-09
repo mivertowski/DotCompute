@@ -195,7 +195,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
     {
         try
         {
-            _logger.LogDebug("Starting GPU execution for expression: {ExpressionType}", expression.NodeType);
+            _logger.LogDebugMessage("Starting GPU execution for expression: {expression.NodeType}");
 
             // Check if expression can be compiled
             if (!_expressionCompiler.CanCompileExpression(expression))
@@ -206,8 +206,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
 
             // Get resource estimation
             var estimate = _expressionCompiler.EstimateResources(expression);
-            _logger.LogDebug("Resource estimate - Memory: {Memory} bytes, Compilation time: {CompilationTime}",
-                estimate.EstimatedMemoryUsage, estimate.EstimatedCompilationTime);
+            _logger.LogDebugMessage($"Resource estimate - Memory: {estimate.EstimatedMemoryUsage} bytes, Compilation time: {estimate.EstimatedCompilationTime}");
 
             // Compile expression to kernel
             var compilationOptions = new Compilation.CompilationOptions
@@ -235,7 +234,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
                 // Extract results
                 var result = ExtractExecutionResult(parameters, expression);
 
-                _logger.LogDebug("Successfully executed GPU kernel for expression: {ExpressionType}", expression.NodeType);
+                _logger.LogDebugMessage("Successfully executed GPU kernel for expression: {expression.NodeType}");
                 return result;
             }
             finally
@@ -245,7 +244,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "GPU execution failed for expression: {ExpressionType}", expression.NodeType);
+            _logger.LogErrorMessage(ex, $"GPU execution failed for expression: {expression.NodeType}");
             LogGPUExecutionFailed(ex.Message);
             return ExecuteOnCPU(expression);
         }
@@ -363,7 +362,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
             _ = Array.CreateInstance(expectedType, 1);
 
             // This would need to be implemented based on the actual memory buffer type
-            // For now, return a default value
+            // For now, return a default value TODO
             return expectedType.IsValueType ? Activator.CreateInstance(expectedType) : null;
         }
 
@@ -377,7 +376,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
         if (buffer is IUnifiedMemoryBuffer)
         {
             // This would need proper implementation to read from device memory
-            // For now, return empty array of the expected type
+            // For now, return empty array of the expected type TODO
             return Array.CreateInstance(expectedType, 0);
         }
 

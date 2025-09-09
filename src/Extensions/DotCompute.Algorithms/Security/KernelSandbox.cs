@@ -6,6 +6,7 @@ using System.Diagnostics;
 using global::System.Runtime.InteropServices;
 using System.Security;
 using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Logging;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -34,9 +35,7 @@ public sealed class KernelSandbox : IDisposable
             TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
 
 
-        _logger.LogInformation("KernelSandbox initialized with configuration: {Configuration}",
-
-            _configuration.ToString());
+        _logger.LogInfoMessage($"KernelSandbox initialized with configuration: {_configuration.ToString()}");
     }
 
     /// <summary>
@@ -67,9 +66,7 @@ public sealed class KernelSandbox : IDisposable
         await _creationLock.WaitAsync(cancellationToken);
         try
         {
-            _logger.LogInformation("Creating sandbox for kernel: {KernelName}, SandboxId: {SandboxId}",
-
-                kernelName, sandboxId);
+            _logger.LogInfoMessage($"Creating sandbox for kernel: {kernelName}, SandboxId: {sandboxId}");
 
             var sandbox = await CreateSandboxInstanceAsync(sandboxId, kernelName, cancellationToken);
             _ = _activeSandboxes.TryAdd(sandboxId, sandbox);
@@ -123,9 +120,7 @@ public sealed class KernelSandbox : IDisposable
         }
 
 
-        _logger.LogDebug("Sandbox instance created: {SandboxId} in directory: {WorkingDirectory}",
-
-            sandboxId, sandbox.WorkingDirectory);
+        _logger.LogDebugMessage($"Sandbox instance created: {sandboxId} in directory: {sandbox.WorkingDirectory}");
 
 
         return sandbox;
@@ -147,7 +142,7 @@ public sealed class KernelSandbox : IDisposable
 
         try
         {
-            _logger.LogInformation("Executing kernel in sandbox: {SandboxId}", sandbox.Id);
+            _logger.LogInfoMessage("Executing kernel in sandbox: {sandbox.Id}");
 
             // Start resource monitoring
 
@@ -170,35 +165,33 @@ public sealed class KernelSandbox : IDisposable
             result.Success = true;
 
 
-            _logger.LogInformation("Kernel execution completed successfully in sandbox: {SandboxId}, Duration: {Duration}ms",
-
-                sandbox.Id, result.ExecutionTime.TotalMilliseconds);
+            _logger.LogInfoMessage($"Kernel execution completed successfully in sandbox: {sandbox.Id}, Duration: {result.ExecutionTime.TotalMilliseconds}ms");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             result.Success = false;
             result.ErrorMessage = "Execution was cancelled";
-            _logger.LogWarning("Kernel execution cancelled in sandbox: {SandboxId}", sandbox.Id);
+            _logger.LogWarningMessage("Kernel execution cancelled in sandbox: {sandbox.Id}");
         }
         catch (TimeoutException)
         {
             result.Success = false;
             result.ErrorMessage = "Execution timed out";
             result.SecurityViolations.Add("Execution timeout exceeded");
-            _logger.LogWarning("Kernel execution timed out in sandbox: {SandboxId}", sandbox.Id);
+            _logger.LogWarningMessage("Kernel execution timed out in sandbox: {sandbox.Id}");
         }
         catch (SecurityException ex)
         {
             result.Success = false;
             result.ErrorMessage = $"Security violation: {ex.Message}";
             result.SecurityViolations.Add(ex.Message);
-            _logger.LogError(ex, "Security violation in sandbox: {SandboxId}", sandbox.Id);
+            _logger.LogErrorMessage(ex, $"Security violation in sandbox: {sandbox.Id}");
         }
         catch (Exception ex)
         {
             result.Success = false;
             result.ErrorMessage = $"Execution error: {ex.Message}";
-            _logger.LogError(ex, "Error executing kernel in sandbox: {SandboxId}", sandbox.Id);
+            _logger.LogErrorMessage(ex, $"Error executing kernel in sandbox: {sandbox.Id}");
         }
         finally
         {
@@ -311,7 +304,7 @@ public sealed class KernelSandbox : IDisposable
         await Task.Delay(500, cancellationToken);
 
 
-        _logger.LogDebug("Kernel executed successfully in restricted environment");
+        _logger.LogDebugMessage("Kernel executed successfully in restricted environment");
     }
 
     /// <summary>
@@ -339,7 +332,7 @@ public sealed class KernelSandbox : IDisposable
         // Validate buffer operations have bounds checking
         if (kernelCode.Contains("[]") && !kernelCode.Contains("bounds"))
         {
-            _logger.LogWarning("Array access detected without explicit bounds checking");
+            _logger.LogWarningMessage("Array access detected without explicit bounds checking");
         }
     }
 
@@ -358,7 +351,7 @@ public sealed class KernelSandbox : IDisposable
         {
             // Setup job object for resource limits (Windows-specific)
             // This would use P/Invoke to Windows APIs
-            _logger.LogDebug("Windows isolation configured for sandbox: {SandboxId}", sandbox.Id);
+            _logger.LogDebugMessage("Windows isolation configured for sandbox: {sandbox.Id}");
         }, cancellationToken);
     }
 
@@ -376,7 +369,7 @@ public sealed class KernelSandbox : IDisposable
         await Task.Run(() =>
         {
             // Setup Linux namespaces for isolation
-            _logger.LogDebug("Linux isolation configured for sandbox: {SandboxId}", sandbox.Id);
+            _logger.LogDebugMessage("Linux isolation configured for sandbox: {sandbox.Id}");
         }, cancellationToken);
     }
 
@@ -424,7 +417,7 @@ public sealed class KernelSandbox : IDisposable
 
         try
         {
-            _logger.LogDebug("Destroying sandbox instance: {SandboxId}", sandboxId);
+            _logger.LogDebugMessage("Destroying sandbox instance: {sandboxId}");
 
             // Stop resource monitoring
 
@@ -466,11 +459,11 @@ public sealed class KernelSandbox : IDisposable
             }
 
 
-            _logger.LogDebug("Sandbox instance destroyed: {SandboxId}", sandboxId);
+            _logger.LogDebugMessage("Sandbox instance destroyed: {sandboxId}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error destroying sandbox instance: {SandboxId}", sandboxId);
+            _logger.LogErrorMessage(ex, $"Error destroying sandbox instance: {sandboxId}");
         }
     }
 
@@ -493,7 +486,7 @@ public sealed class KernelSandbox : IDisposable
 
             foreach (var expired in expiredSandboxes)
             {
-                _logger.LogWarning("Sandbox exceeded maximum lifetime, terminating: {SandboxId}", expired.Id);
+                _logger.LogWarningMessage("Sandbox exceeded maximum lifetime, terminating: {expired.Id}");
                 _ = Task.Run(() => DestroySandboxInstanceAsync(expired.Id));
             }
 
@@ -505,16 +498,14 @@ public sealed class KernelSandbox : IDisposable
                     var usage = sandbox.ResourceMonitor.GetCurrentUsage();
                     if (usage.MemoryUsage > _configuration.MaxMemoryUsage * 0.9) // 90% threshold
                     {
-                        _logger.LogWarning("Sandbox approaching memory limit: {SandboxId}, Usage: {MemoryUsage} bytes",
-
-                            sandbox.Id, usage.MemoryUsage);
+                        _logger.LogWarningMessage($"Sandbox approaching memory limit: {sandbox.Id}, Usage: {usage.MemoryUsage} bytes");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error monitoring sandboxes");
+            _logger.LogErrorMessage(ex, "Error monitoring sandboxes");
         }
     }
 
@@ -545,11 +536,11 @@ public sealed class KernelSandbox : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error disposing sandboxes");
+            _logger.LogErrorMessage(ex, "Error disposing sandboxes");
         }
 
 
-        _logger.LogInformation("KernelSandbox disposed");
+        _logger.LogInfoMessage("KernelSandbox disposed");
     }
 }
 
@@ -693,7 +684,7 @@ internal sealed class SandboxResourceMonitor : IDisposable
 
 
         _ = _monitoringTimer.Change(TimeSpan.Zero, TimeSpan.FromMilliseconds(500));
-        _logger.LogDebug("Resource monitoring started");
+        _logger.LogDebugMessage("Resource monitoring started");
     }
 
     public void StopMonitoring()
@@ -705,7 +696,7 @@ internal sealed class SandboxResourceMonitor : IDisposable
 
 
         _ = _monitoringTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-        _logger.LogDebug("Resource monitoring stopped");
+        _logger.LogDebugMessage("Resource monitoring stopped");
     }
 
     public ResourceUsage GetCurrentUsage() => _currentUsage;

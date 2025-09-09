@@ -11,6 +11,7 @@ using DotCompute.Core.Kernels.Compilation;
 using DotCompute.Core.Kernels.Validation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Kernels;
 
@@ -88,9 +89,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         var cacheKey = GenerateCacheKey(definition, options);
         if (EnableCaching && _compilationCache.TryGetValue(cacheKey, out var cachedKernel))
         {
-            _logger.LogDebug("{CompilerName}: Using cached compilation for kernel '{KernelName}'",
-
-                CompilerName, definition.Name);
+            _logger.LogDebugMessage($"{CompilerName}: Using cached compilation for kernel '{definition.Name}'");
             return cachedKernel;
         }
 
@@ -104,18 +103,14 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
                 // Another thread is already compiling this kernel, wait for it
                 if (_compilationTasks.TryGetValue(cacheKey, out var existingTcs))
                 {
-                    _logger.LogDebug("{CompilerName}: Waiting for concurrent compilation of kernel '{KernelName}'",
-
-                        CompilerName, definition.Name);
+                    _logger.LogDebugMessage($"{CompilerName}: Waiting for concurrent compilation of kernel '{definition.Name}'");
                     return await existingTcs.Task.ConfigureAwait(false);
                 }
             }
         }
 
 
-        _logger.LogDebug("{CompilerName}: Starting compilation of kernel '{KernelName}'",
-
-            CompilerName, definition.Name);
+        _logger.LogDebugMessage($"{CompilerName}: Starting compilation of kernel '{definition.Name}'");
 
 
         var stopwatch = Stopwatch.StartNew();
@@ -179,9 +174,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             }
 
 
-            _logger.LogError(ex, "{CompilerName}: Failed to compile kernel '{KernelName}'",
-
-                CompilerName, definition.Name);
+            _logger.LogErrorMessage(ex, $"{CompilerName}: Failed to compile kernel '{definition.Name}'");
             throw new KernelCompilationException($"Failed to compile kernel '{definition.Name}'", ex);
         }
     }
@@ -291,7 +284,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         _compilationCache.Clear();
         _metricsCache.Clear();
         _compilationTasks.Clear();
-        _logger.LogDebug("{CompilerName}: Compilation cache cleared", CompilerName);
+        _logger.LogDebugMessage("{CompilerName}: Compilation cache cleared");
     }
 
 
@@ -376,9 +369,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         ArgumentNullException.ThrowIfNull(kernel);
 
 
-        _logger.LogDebug("{CompilerName}: Optimizing kernel '{KernelName}' at level {Level}",
-
-            CompilerName, kernel.Name, level);
+        _logger.LogDebugMessage($"{CompilerName}: Optimizing kernel '{kernel.Name}' at level {level}");
 
         // Base implementation returns the same kernel
         // Derived classes should override for actual optimization

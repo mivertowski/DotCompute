@@ -101,4 +101,26 @@ internal static partial class LoggerMessages
         Level = LogLevel.Error,
         Message = "CPU backend error in {Component}: {ErrorMessage}")]
     public static partial void CpuError(this ILogger logger, string component, string errorMessage, Exception? exception = null);
+
+    // Generic Messages for common logging patterns
+    [LoggerMessage(EventId = 47000, Level = LogLevel.Information, Message = "{Message}")]
+    public static partial void LogInfoMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 47001, Level = LogLevel.Debug, Message = "{Message}")]
+    public static partial void LogDebugMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 47002, Level = LogLevel.Warning, Message = "{Message}")]
+    public static partial void LogWarningMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 47003, Level = LogLevel.Error, Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 47004, Level = LogLevel.Error, Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, Exception ex, string message);
+
+    [LoggerMessage(EventId = 47005, Level = LogLevel.Trace, Message = "{Message}")]
+    public static partial void LogTraceMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 47006, Level = LogLevel.Critical, Message = "{Message}")]
+    public static partial void LogCriticalMessage(this ILogger logger, string message);
 }

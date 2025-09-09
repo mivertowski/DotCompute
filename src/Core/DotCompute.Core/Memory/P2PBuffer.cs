@@ -4,6 +4,7 @@
 using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Memory;
 
 using System;
@@ -113,7 +114,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to copy from host to P2P buffer on {Device}", _accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to copy from host to P2P buffer on {_accelerator.Info.Name}");
                 throw;
             }
         }
@@ -141,7 +142,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to copy from host memory to P2P buffer on {Device}", _accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to copy from host memory to P2P buffer on {_accelerator.Info.Name}");
                 throw;
             }
         }
@@ -177,7 +178,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to copy from P2P buffer to host on {Device}", _accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to copy from P2P buffer to host on {_accelerator.Info.Name}");
                 throw;
             }
         }
@@ -205,7 +206,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to copy from P2P buffer to host memory on {Device}", _accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to copy from P2P buffer to host memory on {_accelerator.Info.Name}");
                 throw;
             }
         }
@@ -239,7 +240,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to copy from memory buffer to P2P buffer on {Device}", _accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to copy from memory buffer to P2P buffer on {_accelerator.Info.Name}");
                 throw;
             }
         }
@@ -274,7 +275,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to copy from P2P buffer to memory buffer on {Device}", _accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to copy from P2P buffer to memory buffer on {_accelerator.Info.Name}");
                 throw;
             }
         }
@@ -349,7 +350,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fill P2P buffer on {Device}", _accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to fill P2P buffer on {_accelerator.Info.Name}");
                 throw;
             }
         }
@@ -381,7 +382,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fill P2P buffer range on {Device}", _accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to fill P2P buffer range on {_accelerator.Info.Name}");
                 throw;
             }
         }
@@ -588,8 +589,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Direct P2P copy failed from {Source} to {Target}, falling back to host-mediated",
-                    _accelerator.Info.Name, destination._accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"Direct P2P copy failed from {_accelerator.Info.Name} to {destination._accelerator.Info.Name}, falling back to host-mediated");
 
                 // Fallback to host-mediated copy
                 await HostMediatedCopyAsync(destination, cancellationToken);
@@ -649,7 +649,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Direct P2P range copy failed, falling back to host-mediated");
+                _logger.LogErrorMessage(ex, "Direct P2P range copy failed, falling back to host-mediated");
                 await HostMediatedRangeCopyAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);
             }
         }

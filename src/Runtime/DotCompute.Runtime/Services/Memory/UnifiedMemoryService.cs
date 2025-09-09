@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using DotCompute.Runtime.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -37,8 +38,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
             throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
         }
 
-        _logger.LogDebug("Allocating {SizeMB}MB of unified memory for accelerators: {AcceleratorIds}",
-            sizeInBytes / 1024 / 1024, string.Join(", ", acceleratorIds));
+        _logger.LogDebugMessage($"Allocating {sizeInBytes / 1024 / 1024}MB of unified memory for accelerators: {string.Join(", ", acceleratorIds)}");
 
         // Create a unified memory buffer (mock implementation)
         var buffer = new RuntimeUnifiedMemoryBuffer(sizeInBytes);
@@ -56,8 +56,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceAcceleratorId);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetAcceleratorId);
 
-        _logger.LogDebug("Migrating memory buffer from {SourceId} to {TargetId}",
-            sourceAcceleratorId, targetAcceleratorId);
+        _logger.LogDebugMessage($"Migrating memory buffer from {sourceAcceleratorId} to {targetAcceleratorId}");
 
         if (_bufferAccelerators.TryGetValue(buffer, out var accelerators))
         {
@@ -75,8 +74,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentNullException.ThrowIfNull(acceleratorIds);
 
-        _logger.LogDebug("Synchronizing memory coherence for buffer across {AcceleratorCount} accelerators",
-            acceleratorIds.Length);
+        _logger.LogDebugMessage($"Synchronizing memory coherence for buffer across {acceleratorIds.Length} accelerators");
 
         _coherenceStatus[buffer] = MemoryCoherenceStatus.Synchronizing;
         await Task.Delay(5); // Simulate synchronization time

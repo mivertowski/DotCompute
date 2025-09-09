@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using global::System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 using DotCompute.Plugins.Loaders.NuGet.Types;
 using DotCompute.Plugins.Loaders.NuGet.Results;
 
@@ -35,7 +36,7 @@ public class CompatibilityChecker
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(result);
 
-        _logger.LogInformation("Performing compatibility validation for plugin: {PluginId}", manifest.Id);
+        _logger.LogInfoMessage("Performing compatibility validation for plugin: {manifest.Id}");
 
         try
         {
@@ -67,12 +68,11 @@ public class CompatibilityChecker
             result.Errors.AddRange(compatibilityResult.CompatibilityErrors);
             result.Warnings.AddRange(compatibilityResult.CompatibilityWarnings);
 
-            _logger.LogInformation("Compatibility validation completed for plugin: {PluginId}. Compatible: {IsCompatible}",
-                manifest.Id, compatibilityResult.IsCompatible);
+            _logger.LogInfoMessage($"Compatibility validation completed for plugin: {manifest.Id}. Compatible: {compatibilityResult.IsCompatible}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Compatibility validation failed for plugin: {PluginId}", manifest.Id);
+            _logger.LogErrorMessage(ex, $"Compatibility validation failed for plugin: {manifest.Id}");
             result.Errors.Add($"Compatibility validation error: {ex.Message}");
         }
     }
@@ -273,7 +273,7 @@ public class CompatibilityChecker
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to analyze assembly: {AssemblyPath}", manifest.AssemblyPath);
+            _logger.LogErrorMessage(ex, $"Failed to analyze assembly: {manifest.AssemblyPath}");
             result.CompatibilityErrors.Add($"Assembly analysis failed: {ex.Message}");
         }
     }
@@ -302,7 +302,7 @@ public class CompatibilityChecker
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to check compatibility for dependency: {DependencyId}", dependency.Id);
+                _logger.LogErrorMessage(ex, $"Failed to check compatibility for dependency: {dependency.Id}");
                 result.CompatibilityWarnings.Add($"Could not verify compatibility for dependency: {dependency.Id}");
             }
         }

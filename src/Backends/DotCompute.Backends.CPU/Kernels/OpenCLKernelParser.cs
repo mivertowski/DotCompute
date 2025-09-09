@@ -4,6 +4,7 @@
 using System.Text.RegularExpressions;
 using DotCompute.Backends.CPU.Kernels.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CPU.Logging;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -28,7 +29,7 @@ internal partial class OpenCLKernelParser(ILogger logger)
 
     public KernelInfo ParseKernel(string kernelSource, string entryPoint)
     {
-        _logger.LogDebug("Parsing kernel: {EntryPoint}", entryPoint);
+        _logger.LogDebugMessage("Parsing kernel: {entryPoint}");
 
         var kernelType = DetectKernelType(kernelSource);
         var parameters = ExtractParameters(kernelSource);

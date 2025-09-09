@@ -3,6 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Memory;
 using DotCompute.Runtime.Services.Interfaces;
@@ -15,7 +16,7 @@ namespace DotCompute.Runtime.Services;
 /// Production-grade kernel execution service that bridges generated kernel code with runtime infrastructure.
 /// Provides automatic backend selection, caching, and optimization.
 /// </summary>
-public class KernelExecutionService : IComputeOrchestrator, IDisposable
+public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComputeOrchestrator, IDisposable
 {
     private readonly AcceleratorRuntime _runtime;
     private readonly ILogger<KernelExecutionService> _logger;
@@ -208,11 +209,11 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         try
         {
             var kernelArgs = await MarshalArgumentsAsync(registration, accelerator, args);
-            var result = await compiledKernel.ExecuteAsync(kernelArgs);
+            await compiledKernel.ExecuteAsync(kernelArgs);
 
             // Handle result conversion if needed
-
-            return await ConvertResultAsync<T>(result, accelerator);
+            // For now, return default since ExecuteAsync returns void
+            return await ConvertResultAsync<T>(default!, accelerator);
         }
         catch (Exception ex)
         {
@@ -238,6 +239,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
     /// <inheritdoc />
     public async Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
     {
+        await Task.CompletedTask; // Make async
         if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
         {
             return null;
@@ -300,6 +302,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
     /// <inheritdoc />
     public async Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
     {
+        await Task.CompletedTask; // Make async
         if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
         {
             return Array.Empty<IAccelerator>();
@@ -336,13 +339,15 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
     {
         return new KernelDefinition
         {
-            Name = registration.Name,
-            FullName = registration.FullName,
+            Name = registration.FullName ?? registration.Name,
             // Source and other properties would be populated from the registration
             // This would integrate with the generated kernel source code TODO
             Source = GetKernelSource(registration),
             EntryPoint = registration.Name,
-            Language = KernelLanguage.CSharp // Default, would be determined by target backend
+            Metadata = new Dictionary<string, object>
+            {
+                ["Language"] = "CSharp" // Default, would be determined by target backend
+            }
         };
     }
 
@@ -388,12 +393,14 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
     {
         // Implementation would create a unified buffer from the array
         // This is a placeholder - actual implementation would depend on the memory system TODO
+        await Task.CompletedTask; // Make async
         throw new NotImplementedException("Array to UnifiedBuffer conversion not yet implemented");
     }
 
     private static async Task<T> ConvertResultAsync<T>(object result, IAccelerator accelerator)
     {
         // Handle result type conversion
+        await Task.CompletedTask; // Make async
         if (result is T directResult)
         {
             return directResult;

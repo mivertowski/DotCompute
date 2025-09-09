@@ -8,6 +8,7 @@ using global::System.Runtime.Loader;
 using DotCompute.Core.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 using CorePluginHealthStatus = DotCompute.Core.Recovery.PluginHealthStatus;
 
 namespace DotCompute.Plugins.Recovery;
@@ -953,7 +954,7 @@ public sealed class IsolatedPluginContainer : IDisposable, IAsyncDisposable
 
 
         StartTime = DateTimeOffset.UtcNow;
-        _logger.LogInformation("Created isolated container for plugin {PluginId}", pluginId);
+        _logger.LogInfoMessage("Created isolated container for plugin {pluginId}");
     }
 
 
@@ -975,7 +976,7 @@ public sealed class IsolatedPluginContainer : IDisposable, IAsyncDisposable
         }
 
 
-        _logger.LogInformation("Initializing isolated container for plugin {PluginId}", _pluginId);
+        _logger.LogInfoMessage("Initializing isolated container for plugin {_pluginId}");
 
 
         try
@@ -993,11 +994,11 @@ public sealed class IsolatedPluginContainer : IDisposable, IAsyncDisposable
             _initialized = true;
 
 
-            _logger.LogInformation("Successfully initialized isolated container for plugin {PluginId}", _pluginId);
+            _logger.LogInfoMessage("Successfully initialized isolated container for plugin {_pluginId}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initialize isolated container for plugin {PluginId}", _pluginId);
+            _logger.LogErrorMessage(ex, $"Failed to initialize isolated container for plugin {_pluginId}");
             throw;
         }
     }
@@ -1041,17 +1042,17 @@ public sealed class IsolatedPluginContainer : IDisposable, IAsyncDisposable
             var result = await operation(_plugin, timeoutCts.Token);
 
 
-            _logger.LogDebug("Operation completed successfully in container {PluginId}", _pluginId);
+            _logger.LogDebugMessage("Operation completed successfully in container {_pluginId}");
             return result;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            _logger.LogWarning("Operation cancelled in container {PluginId}", _pluginId);
+            _logger.LogWarningMessage("Operation cancelled in container {_pluginId}");
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Operation failed in container {PluginId}", _pluginId);
+            _logger.LogErrorMessage(ex, $"Operation failed in container {_pluginId}");
             throw;
         }
         finally
@@ -1072,7 +1073,7 @@ public sealed class IsolatedPluginContainer : IDisposable, IAsyncDisposable
         }
 
 
-        _logger.LogInformation("Shutting down isolated container for plugin {PluginId}", _pluginId);
+        _logger.LogInfoMessage("Shutting down isolated container for plugin {_pluginId}");
 
 
         IsActive = false;
@@ -1100,11 +1101,11 @@ public sealed class IsolatedPluginContainer : IDisposable, IAsyncDisposable
             _loadContext?.Unload();
 
 
-            _logger.LogInformation("Successfully shut down isolated container for plugin {PluginId}", _pluginId);
+            _logger.LogInfoMessage("Successfully shut down isolated container for plugin {_pluginId}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during container shutdown for plugin {PluginId}", _pluginId);
+            _logger.LogErrorMessage(ex, $"Error during container shutdown for plugin {_pluginId}");
         }
         finally
         {

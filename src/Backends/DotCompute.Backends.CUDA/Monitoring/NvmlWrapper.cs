@@ -5,6 +5,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Monitoring
 {
@@ -46,14 +47,14 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 if (result == NvmlReturn.Success)
                 {
                     _initialized = true;
-                    _logger.LogInformation("NVML initialized successfully");
+                    _logger.LogInfoMessage("NVML initialized successfully");
 
                     // Log NVML version
 
                     var versionBuffer = new StringBuilder(256);
                     if (nvmlSystemGetNVMLVersion(versionBuffer, (uint)versionBuffer.Capacity) == NvmlReturn.Success)
                     {
-                        _logger.LogInformation("NVML Version: {Version}", versionBuffer.ToString());
+                        _logger.LogInfoMessage($"NVML Version: {versionBuffer}");
                     }
 
 
@@ -61,18 +62,18 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to initialize NVML: {Error}", result);
+                    _logger.LogWarningMessage("Failed to initialize NVML: {result}");
                     return false;
                 }
             }
             catch (DllNotFoundException)
             {
-                _logger.LogWarning("NVML library not found. GPU metrics will not be available.");
+                _logger.LogWarningMessage("NVML library not found. GPU metrics will not be available.");
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error initializing NVML");
+                _logger.LogErrorMessage(ex, "Error initializing NVML");
                 return false;
             }
         }
@@ -100,7 +101,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 var result = nvmlDeviceGetHandleByIndex((uint)deviceIndex, ref device);
                 if (result != NvmlReturn.Success)
                 {
-                    _logger.LogWarning("Failed to get device handle for index {Index}: {Error}", deviceIndex, result);
+                    _logger.LogWarningMessage("Failed to get device handle for index {Index}: {deviceIndex, result}");
                     metrics.IsAvailable = false;
                     return metrics;
                 }
@@ -188,9 +189,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
                 return metrics;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting device metrics for index {Index}", deviceIndex);
+                _logger.LogErrorMessage("Failed to get GPU metrics");
                 metrics.IsAvailable = false;
                 return metrics;
             }
@@ -267,7 +268,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 try
                 {
                     _ = nvmlShutdown();
-                    _logger.LogInformation("NVML shutdown completed");
+                    _logger.LogInfoMessage("NVML shutdown completed");
                 }
                 catch (Exception ex)
                 {

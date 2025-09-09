@@ -54,7 +54,7 @@ public class DefaultKernelCompiler : IKernelCompiler
         
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Release,
+            OptimizationLevel = OptimizationLevel.Full,
             EnableDebugInfo = false,
             TargetArchitecture = accelerator.Info.DeviceType
         };
@@ -93,7 +93,7 @@ public class DefaultKernelCompiler : IKernelCompiler
         // Return default options
         return new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Release,
+            OptimizationLevel = OptimizationLevel.Full,
             EnableDebugInfo = false,
             TargetArchitecture = accelerator.Info.DeviceType
         };

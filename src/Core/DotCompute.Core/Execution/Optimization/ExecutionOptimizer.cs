@@ -3,6 +3,7 @@
 
 using DotCompute.Core.Execution.Plans;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Execution.Optimization
@@ -43,7 +44,7 @@ namespace DotCompute.Core.Execution.Optimization
             ArgumentNullException.ThrowIfNull(plan);
 
 
-            _logger.LogInformation("Optimizing data parallel execution plan for {DeviceCount} devices", plan.Devices.Length);
+            _logger.LogInfoMessage("Optimizing data parallel execution plan for {plan.Devices.Length} devices");
 
             // 1. Optimize memory allocation patterns
             await OptimizeMemoryAllocationAsync(plan, cancellationToken);
@@ -54,7 +55,7 @@ namespace DotCompute.Core.Execution.Optimization
             // 3. Apply device-specific optimizations
             await ApplyDeviceSpecificOptimizationsAsync(plan, cancellationToken);
 
-            _logger.LogDebug("Data parallel plan optimization completed");
+            _logger.LogDebugMessage("Data parallel plan optimization completed");
         }
 
         /// <summary>
@@ -72,7 +73,7 @@ namespace DotCompute.Core.Execution.Optimization
             ArgumentNullException.ThrowIfNull(plan);
 
 
-            _logger.LogInformation("Optimizing model parallel execution plan for {LayerCount} layers", plan.ModelLayers.Length);
+            _logger.LogInfoMessage("Optimizing model parallel execution plan for {plan.ModelLayers.Length} layers");
 
             // 1. Optimize layer placement for minimal communication
             await OptimizeLayerPlacementAsync(plan, cancellationToken);
@@ -83,7 +84,7 @@ namespace DotCompute.Core.Execution.Optimization
             // 3. Apply gradient checkpointing optimizations
             await ApplyGradientCheckpointingAsync(plan, cancellationToken);
 
-            _logger.LogDebug("Model parallel plan optimization completed");
+            _logger.LogDebugMessage("Model parallel plan optimization completed");
         }
 
         /// <summary>
@@ -101,7 +102,7 @@ namespace DotCompute.Core.Execution.Optimization
             ArgumentNullException.ThrowIfNull(plan);
 
 
-            _logger.LogInformation("Optimizing pipeline execution plan for {StageCount} stages", plan.Stages.Length);
+            _logger.LogInfoMessage("Optimizing pipeline execution plan for {plan.Stages.Length} stages");
 
             // 1. Optimize microbatch sizing
             await OptimizeMicrobatchSizeAsync(plan, cancellationToken);
@@ -112,7 +113,7 @@ namespace DotCompute.Core.Execution.Optimization
             // 3. Balance pipeline stages
             await BalancePipelineStagesAsync(plan, cancellationToken);
 
-            _logger.LogDebug("Pipeline plan optimization completed");
+            _logger.LogDebugMessage("Pipeline plan optimization completed");
         }
 
         #region Private Optimization Methods

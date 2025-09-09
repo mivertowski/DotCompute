@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using global::System.Runtime.Loader;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Logging;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -48,7 +49,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
         lock (_lockObject)
         {
-            _logger.LogDebug("Creating restricted permission set for: {AssemblyPath}, Zone: {SecurityZone}", assemblyPath, securityZone);
+            _logger.LogDebugMessage("Creating restricted permission set for: {AssemblyPath}, Zone: {assemblyPath, securityZone}");
 
             var permissionSet = new SecurityPermissionSet();
 
@@ -83,8 +84,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
             _ = _assemblyPermissions.TryAdd(assemblyPath, permissionSet);
             _ = _assemblyZones.TryAdd(assemblyPath, securityZone);
 
-            _logger.LogInformation("Created restricted permission set for: {AssemblyPath}, Permissions: {PermissionCount}",
-                assemblyPath, permissionSet.Permissions.Count);
+            _logger.LogInfoMessage($"Created restricted permission set for: {assemblyPath}, Permissions: {permissionSet.Permissions.Count}");
 
             return permissionSet;
         }
@@ -105,7 +105,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
         try
         {
-            _logger.LogDebug("Applying permission restrictions to load context: {ContextName}", loadContext.Name);
+            _logger.LogDebugMessage("Applying permission restrictions to load context: {loadContext.Name}");
 
             // Note: .NET Core/.NET 5+ doesn't support traditional CAS like .NET Framework
             // However, we can implement similar functionality through other means:
@@ -122,11 +122,11 @@ public sealed class CodeAccessSecurityManager : IDisposable
             // 4. Set up resource usage limits
             SetupResourceLimits(loadContext, assemblyPath);
 
-            _logger.LogInformation("Applied permission restrictions to: {AssemblyPath}", assemblyPath);
+            _logger.LogInfoMessage("Applied permission restrictions to: {assemblyPath}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to apply permission restrictions to: {AssemblyPath}", assemblyPath);
+            _logger.LogErrorMessage(ex, $"Failed to apply permission restrictions to: {assemblyPath}");
             throw;
         }
     }
@@ -145,8 +145,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
         if (!_assemblyPermissions.TryGetValue(assemblyPath, out var permissionSet))
         {
-            _logger.LogWarning("No permission set found for assembly: {AssemblyPath}, denying operation: {Operation}",
-                assemblyPath, operation);
+            _logger.LogWarningMessage($"No permission set found for assembly: {assemblyPath}, denying operation: {operation}");
             return false;
         }
 
@@ -181,7 +180,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
         if (removed)
         {
-            _logger.LogInformation("Removed permission restrictions for: {AssemblyPath}", assemblyPath);
+            _logger.LogInfoMessage("Removed permission restrictions for: {assemblyPath}");
         }
 
         return removed;
@@ -214,11 +213,11 @@ public sealed class CodeAccessSecurityManager : IDisposable
             var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(configPath, json, cancellationToken);
 
-            _logger.LogInformation("Saved Code Access Security configuration to: {ConfigPath}", configPath);
+            _logger.LogInfoMessage("Saved Code Access Security configuration to: {configPath}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save configuration to: {ConfigPath}", configPath);
+            _logger.LogErrorMessage(ex, $"Failed to save configuration to: {configPath}");
             throw;
         }
     }
@@ -235,7 +234,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
         if (!File.Exists(configPath))
         {
-            _logger.LogWarning("Configuration file not found: {ConfigPath}", configPath);
+            _logger.LogWarningMessage("Configuration file not found: {configPath}");
             return;
         }
 
@@ -247,17 +246,17 @@ public sealed class CodeAccessSecurityManager : IDisposable
             if (config != null)
             {
                 ApplyConfiguration(config);
-                _logger.LogInformation("Loaded Code Access Security configuration from: {ConfigPath}", configPath);
+                _logger.LogInfoMessage("Loaded Code Access Security configuration from: {configPath}");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load configuration from: {ConfigPath}", configPath);
+            _logger.LogErrorMessage(ex, $"Failed to load configuration from: {configPath}");
             throw;
         }
     }
 
-    private void InitializeDefaultPermissionSets() => _logger.LogDebug("Initializing default permission sets");
+    private void InitializeDefaultPermissionSets() => _logger.LogDebugMessage("Initializing default permission sets");
 
     private static void AddTrustedPermissions(SecurityPermissionSet permissionSet)
     {
@@ -353,7 +352,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
         // 2. Custom file I/O interceptors
         // 3. Process monitoring
 
-        _logger.LogDebug("Setting up file system restrictions for: {AssemblyPath}", assemblyPath);
+        _logger.LogDebugMessage("Setting up file system restrictions for: {assemblyPath}");
     }
 
     private void SetupNetworkRestrictions(AssemblyLoadContext loadContext, string assemblyPath)
@@ -368,7 +367,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
         // 2. Network monitoring
         // 3. Firewall integration
 
-        _logger.LogDebug("Setting up network restrictions for: {AssemblyPath}", assemblyPath);
+        _logger.LogDebugMessage("Setting up network restrictions for: {assemblyPath}");
     }
 
     private void SetupReflectionRestrictions(AssemblyLoadContext loadContext, string assemblyPath)
@@ -383,7 +382,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
         // 2. Type loading monitoring
         // 3. Dynamic method creation tracking
 
-        _logger.LogDebug("Setting up reflection restrictions for: {AssemblyPath}", assemblyPath);
+        _logger.LogDebugMessage("Setting up reflection restrictions for: {assemblyPath}");
     }
 
     private void SetupResourceLimits(AssemblyLoadContext loadContext, string assemblyPath)
@@ -394,7 +393,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
 
 
-        => _logger.LogDebug("Setting up resource limits for: {AssemblyPath}", assemblyPath);
+        => _logger.LogDebugMessage("Setting up resource limits for: {assemblyPath}");
 
     private bool ValidateOperation(SecurityPermissionSet permissionSet, SecurityOperation operation, string? target)
     {
@@ -412,7 +411,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating operation: {Operation}", operation);
+            _logger.LogErrorMessage(ex, $"Error validating operation: {operation}");
             return false;
         }
     }

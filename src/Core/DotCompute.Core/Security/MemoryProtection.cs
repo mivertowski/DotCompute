@@ -7,6 +7,7 @@ using global::System.Runtime.InteropServices;
 using System.Security;
 using global::System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Security;
 
@@ -32,13 +33,9 @@ public sealed class MemoryProtection : IDisposable
         // Start integrity monitoring
 
         _integrityCheckTimer = new Timer(PerformIntegrityCheck, null,
-
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
 
-
-        _logger.LogInformation("MemoryProtection initialized with configuration: {Configuration}",
-
-            _configuration.ToString());
+        _logger.MemoryProtectionInitialized(_configuration.ToString());
     }
 
     /// <summary>
@@ -72,8 +69,7 @@ public sealed class MemoryProtection : IDisposable
         await _allocationLock.WaitAsync();
         try
         {
-            _logger.LogDebug("Allocating protected memory: Size={Size}, Alignment={Alignment}, Executable={CanExecute}, Id={Identifier}",
-                size, alignment, canExecute, identifier);
+            _logger.LogDebugMessage($"Allocating protected memory: Size={size}, Alignment={alignment}, Executable={canExecute}, Id={identifier}");
 
             // Calculate total size with guard pages
             var guardPageSize = (nuint)Environment.SystemPageSize;
@@ -127,8 +123,7 @@ public sealed class MemoryProtection : IDisposable
                 Region = region
             };
 
-            _logger.LogInformation("Protected memory allocated: Address={Address:X}, Size={Size}, Id={Identifier}",
-                userDataPtr.ToInt64(), size, region.Identifier);
+            _logger.ProtectedMemoryAllocated(userDataPtr, (long)size, region.Identifier);
 
             return allocation;
         }
@@ -214,7 +209,7 @@ public sealed class MemoryProtection : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error reading memory at address: {Address:X}", readAddress.ToInt64());
+            _logger.LogErrorMessage(ex, $"Error reading memory at address: {readAddress.ToInt64():X}");
             throw new AccessViolationException($"Failed to read memory at address {readAddress:X}", ex);
         }
     }
@@ -294,7 +289,7 @@ public sealed class MemoryProtection : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error writing memory at address: {Address:X}", writeAddress.ToInt64());
+            _logger.LogErrorMessage(ex, $"Error writing memory at address: {writeAddress.ToInt64():X}");
             throw new AccessViolationException($"Failed to write memory at address {writeAddress:X}", ex);
         }
     }
@@ -317,12 +312,11 @@ public sealed class MemoryProtection : IDisposable
         await _allocationLock.WaitAsync();
         try
         {
-            _logger.LogDebug("Freeing protected memory: Address={Address:X}, Size={Size}, Id={Identifier}",
-                allocation.Address.ToInt64(), allocation.Size, allocation.Identifier);
+            _logger.LogDebugMessage($"Freeing protected memory: Address={allocation.Address.ToInt64()}, Size={allocation.Size}, Id={allocation.Identifier}");
 
             if (!_protectedRegions.TryRemove(allocation.Region.BaseAddress, out var region))
             {
-                _logger.LogWarning("Attempted to free unknown memory region: {Address:X}", allocation.Address.ToInt64());
+                _logger.LogWarningMessage("Attempted to free unknown memory region: {allocation.Address.ToInt64()}");
                 return;
             }
 
@@ -331,7 +325,7 @@ public sealed class MemoryProtection : IDisposable
             // Verify integrity one final time
             if (_configuration.EnableIntegrityChecking && !VerifyCanaryValues(region))
             {
-                _logger.LogWarning("Memory corruption detected during deallocation: {Identifier}", region.Identifier);
+                _logger.LogWarningMessage("Memory corruption detected during deallocation: {region.Identifier}");
             }
 
             // Secure memory wiping
@@ -343,8 +337,7 @@ public sealed class MemoryProtection : IDisposable
             // Free the memory
             FreeRawMemory(region.BaseAddress, region.TotalSize);
 
-            _logger.LogInformation("Protected memory freed: Address={Address:X}, Size={Size}, Id={Identifier}",
-                allocation.Address.ToInt64(), allocation.Size, allocation.Identifier);
+            _logger.ProtectedMemoryFreed(allocation.Address, (long)allocation.Size, allocation.Identifier);
         }
         finally
         {
@@ -372,7 +365,7 @@ public sealed class MemoryProtection : IDisposable
         {
             if (!_allocations.TryGetValue(address, out var metadata))
             {
-                _logger.LogWarning("Access to unprotected memory detected: {Address:X}", address.ToInt64());
+                _logger.LogWarningMessage("Access to unprotected memory detected: {address.ToInt64()}");
                 return false;
             }
 
@@ -382,16 +375,14 @@ public sealed class MemoryProtection : IDisposable
 
             if (size > region.Size)
             {
-                _logger.LogWarning("Potential buffer overflow detected: {Address:X}, RequestedSize={Size}, AllocatedSize={AllocatedSize}",
-                    address.ToInt64(), size, region.Size);
+                _logger.LogWarningMessage($"Potential buffer overflow detected: {address.ToInt64()}, RequestedSize={size}, AllocatedSize={region.Size}");
                 return false;
             }
 
             // Check for suspicious access patterns
             if (DetectSuspiciousAccessPattern(metadata, operation))
             {
-                _logger.LogWarning("Suspicious memory access pattern detected: {Address:X}, Operation={Operation}",
-                    address.ToInt64(), operation);
+                _logger.LogWarningMessage($"Suspicious memory access pattern detected: {address.ToInt64()}, Operation={operation}");
                 return false;
             }
 
@@ -399,7 +390,7 @@ public sealed class MemoryProtection : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating memory access: {Address:X}", address.ToInt64());
+            _logger.LogErrorMessage(ex, $"Error validating memory access: {address.ToInt64():X}");
             return false;
         }
     }
@@ -440,7 +431,7 @@ public sealed class MemoryProtection : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to allocate raw memory: Size={Size}, Executable={CanExecute}", size, canExecute);
+            _logger.LogErrorMessage(ex, $"Failed to allocate raw memory: Size={size}, Executable={canExecute}");
             return IntPtr.Zero;
         }
     }
@@ -508,7 +499,7 @@ public sealed class MemoryProtection : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to setup guard pages");
+            _logger.LogErrorMessage(ex, "Failed to setup guard pages");
             throw new SecurityException("Failed to configure memory protection", ex);
         }
     }
@@ -621,7 +612,7 @@ public sealed class MemoryProtection : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error freeing raw memory: {Address:X}", address.ToInt64());
+            _logger.LogErrorMessage(ex, $"Error freeing raw memory: {address.ToInt64():X}");
         }
     }
 
@@ -762,8 +753,7 @@ public sealed class MemoryProtection : IDisposable
         _protectedRegions.Clear();
         _allocations.Clear();
 
-        _logger.LogInformation("MemoryProtection disposed. Final statistics: Allocations={AllocationsFreed}, Violations={Violations}",
-            _protectedRegions.Count, _violationCount);
+        _logger.LogInfoMessage("MemoryProtection disposed. Final statistics: Allocations={_allocations.Count}, Violations={_violationCount}");
     }
 }
 

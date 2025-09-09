@@ -6,6 +6,7 @@ using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions.Kernels;
 
@@ -40,7 +41,7 @@ namespace DotCompute.Core.Compute
         /// </returns>
         public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Discovering CPU accelerators");
+            _logger.LogInfoMessage("Discovering CPU accelerators");
 
             var cpuInfo = new AcceleratorInfo(
                 AcceleratorType.CPU,
@@ -285,12 +286,12 @@ namespace DotCompute.Core.Compute
             ArgumentNullException.ThrowIfNull(definition);
             _ = options ?? new CompilationOptions();
 
-            _logger.LogDebug("Compiling CPU kernel: {KernelName}", definition.Name);
+            _logger.LogDebugMessage("Compiling CPU kernel: {definition.Name}");
 
             // Create a compiled kernel that does basic execution
             var compiledKernel = new CpuCompiledKernel(definition.Name, definition);
 
-            _logger.LogInformation("Successfully compiled CPU kernel: {KernelName}", definition.Name);
+            _logger.LogInfoMessage("Successfully compiled CPU kernel: {definition.Name}");
             return await ValueTask.FromResult<ICompiledKernel>(compiledKernel);
         }
 

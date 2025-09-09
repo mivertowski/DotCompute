@@ -823,3 +823,10 @@ tests/Unit/DotCompute.Memory.Tests/test_buffer.csx
 scripts/convert-logger-calls.sh
 scripts/convert-to-logger-delegates.ps1
 scripts/convert-to-logger-delegates.sh
+scripts/final-logger-fix.sh
+scripts/simple-logger-fix.sh
+src/Backends/DotCompute.Backends.CPU/Kernels/AotCpuKernelCompiler.cs
+scripts/add-algorithms-using.sh
+scripts/add-linq-using.sh
+scripts/add-plugins-using.sh
+scripts/add-cuda-using.sh

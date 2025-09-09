@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Operators;
 
 
@@ -45,7 +46,7 @@ public class ExpressionKernelGenerator
         ArgumentNullException.ThrowIfNull(expression);
         ArgumentNullException.ThrowIfNull(accelerator);
 
-        _logger.LogDebug("Generating kernel from expression {ExpressionType}", expression.NodeType);
+        _logger.LogDebugMessage("Generating kernel from expression {expression.NodeType}");
 
         var kernelName = GenerateKernelName(expression);
         var parameters = ExtractParameters(expression);
@@ -63,8 +64,7 @@ public class ExpressionKernelGenerator
             SourceExpression = expression
         };
 
-        _logger.LogInformation("Generated kernel '{KernelName}' with {ParameterCount} parameters",
-            kernelName, parameters.Length);
+        _logger.LogInfoMessage($"Generated kernel '{kernelName}' with {parameters.Length} parameters");
 
         return kernel;
     }

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using global::System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Core.Telemetry.System;
 using ProfileOptions = DotCompute.Core.Telemetry.Options.ProfileOptions;
@@ -96,8 +97,7 @@ public sealed class PerformanceProfiler : IDisposable
             _ = _activeProfiles.TryAdd(correlationId, activeProfile);
 
 
-            _logger.LogDebug("Started performance profiling for correlation ID {CorrelationId} with options: {Options}",
-                correlationId, options);
+            _logger.LogDebugMessage($"Started performance profiling for correlation ID {correlationId} with options: {options}");
 
             // Collect baseline metrics
 
@@ -143,7 +143,7 @@ public sealed class PerformanceProfiler : IDisposable
         {
             if (_options.AllowOrphanedRecords)
             {
-                _logger.LogWarning("Recording kernel execution for unknown profile {CorrelationId}", correlationId);
+                _logger.LogWarningMessage("Recording kernel execution for unknown profile {correlationId}");
             }
             else
             {
@@ -262,8 +262,7 @@ public sealed class PerformanceProfiler : IDisposable
         var totalDuration = endTime - activeProfile.StartTime;
 
 
-        _logger.LogInformation("Finishing performance profile for {CorrelationId} after {Duration}ms",
-            correlationId, totalDuration.TotalMilliseconds);
+        _logger.LogInfoMessage($"Finishing performance profile for {correlationId} after {totalDuration.TotalMilliseconds}ms");
 
         // Perform comprehensive analysis
 
@@ -615,7 +614,7 @@ public sealed class PerformanceProfiler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to collect profile samples");
+            _logger.LogErrorMessage(ex, "Failed to collect profile samples");
         }
     }
 

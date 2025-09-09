@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Core.Recovery.Models;
 using DotCompute.Core.Recovery.Statistics;
@@ -70,7 +71,7 @@ public sealed class RecoveryCoordinator : IDisposable
             _config.MetricsReportInterval, _config.MetricsReportInterval);
 
 
-        _logger.LogInformation("Recovery Coordinator initialized with {StrategyCount} recovery strategies", _strategies.Count);
+        _logger.LogInfoMessage("Recovery Coordinator initialized with {_strategies.Count} recovery strategies");
     }
 
     /// <summary>
@@ -87,7 +88,7 @@ public sealed class RecoveryCoordinator : IDisposable
         var contextType = typeof(TContext);
 
 
-        _logger.LogWarning("Recovery requested for {ContextType}: {Error}", contextType.Name, error.Message);
+        _logger.LogWarningMessage("Recovery requested for {ContextType}: {contextType.Name, error.Message}");
 
         await _recoveryLock.WaitAsync(cancellationToken);
 
@@ -111,9 +112,7 @@ public sealed class RecoveryCoordinator : IDisposable
                 return result;
             }
 
-            _logger.LogInformation("Using recovery strategy {Strategy} for {ContextType}",
-
-                strategy.GetType().Name, contextType.Name);
+            _logger.LogInfoMessage($"Using recovery strategy {strategy.GetType().Name} for {contextType.Name}");
 
             // Execute recovery with circuit breaker protection
 
@@ -130,8 +129,7 @@ public sealed class RecoveryCoordinator : IDisposable
             if (recoveryResult.Success)
             {
                 _globalMetrics.RecordSuccess(recoveryResult.Duration);
-                _logger.LogInformation("Recovery successful using {Strategy} in {Duration}ms",
-                    strategy.GetType().Name, stopwatch.ElapsedMilliseconds);
+                _logger.LogInfoMessage($"Recovery successful using {strategy.GetType().Name} in {stopwatch.ElapsedMilliseconds}ms");
             }
             else
             {
@@ -146,7 +144,7 @@ public sealed class RecoveryCoordinator : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Exception during recovery coordination for {ContextType}", contextType.Name);
+            _logger.LogErrorMessage(ex, $"Exception during recovery coordination for {contextType.Name}");
 
 
             var result = new RecoveryResult
@@ -271,7 +269,7 @@ public sealed class RecoveryCoordinator : IDisposable
     /// </summary>
     public Task<SystemHealthResult> PerformSystemHealthCheckAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Performing comprehensive system health check");
+        _logger.LogInfoMessage("Performing comprehensive system health check");
         var stopwatch = Stopwatch.StartNew();
 
 
@@ -342,8 +340,7 @@ public sealed class RecoveryCoordinator : IDisposable
             var allHealthy = healthResults.All(r => r.IsHealthy);
 
 
-            _logger.LogInformation("System health check completed in {Duration}ms. Overall health: {Health:P1}",
-                stopwatch.ElapsedMilliseconds, overallHealth);
+            _logger.LogInfoMessage($"System health check completed in {stopwatch.ElapsedMilliseconds}ms. Overall health: {overallHealth}");
 
 
             return Task.FromResult(new SystemHealthResult
@@ -358,7 +355,7 @@ public sealed class RecoveryCoordinator : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Error during system health check");
+            _logger.LogErrorMessage(ex, "Error during system health check");
 
 
             return Task.FromResult(new SystemHealthResult
@@ -382,8 +379,7 @@ public sealed class RecoveryCoordinator : IDisposable
         _ = _strategies.TryAdd(contextType, (IRecoveryStrategy<object>)strategy);
 
 
-        _logger.LogInformation("Registered recovery strategy {Strategy} for context {Context}",
-            strategy.GetType().Name, contextType.Name);
+        _logger.LogInfoMessage($"Registered recovery strategy {strategy.GetType().Name} for context {contextType.Name}");
     }
 
     private void RegisterDefaultStrategies()
@@ -391,7 +387,7 @@ public sealed class RecoveryCoordinator : IDisposable
         // due to their specific implementations and contexts
 
 
-        => _logger.LogDebug("Default recovery strategies registered");
+        => _logger.LogDebugMessage("Default recovery strategies registered");
 
     private IRecoveryStrategy<object>? FindRecoveryStrategy<TContext>(Exception error, TContext context)
     {
@@ -454,20 +450,11 @@ public sealed class RecoveryCoordinator : IDisposable
             var stats = GetRecoveryStatistics();
 
 
-            _logger.LogInformation("Recovery Metrics - Success Rate: {SuccessRate:P1}, " +
-                                 "Avg Recovery Time: {AvgTime}ms, System Health: {Health:P1}",
-                stats.GlobalMetrics.SuccessRate,
-                stats.GlobalMetrics.AverageRecoveryTime.TotalMilliseconds,
-                stats.OverallSystemHealth);
+            _logger.LogInfoMessage($"Recovery Metrics - Success Rate: {stats.GlobalMetrics.SuccessRate:P1}, Avg Recovery Time: {stats.GlobalMetrics.AverageRecoveryTime.TotalMilliseconds:F1}ms");
 
             // Log component-specific metrics
 
-            _logger.LogDebug("Component Health - GPU: {GpuHealth:P1}, Memory: {MemoryLevel}, " +
-                           "Compilation: {CompilationRate:P1}, Plugins: {PluginHealth:P1}",
-                stats.GpuHealthReport.OverallHealth,
-                stats.MemoryPressureInfo.Level,
-                stats.CompilationStatistics.SuccessRate,
-                stats.PluginHealthReport.OverallHealth);
+            _logger.LogDebugMessage($"Component Health - Overall GPU Health: {stats.GpuHealthReport?.OverallHealth ?? 0:P1}");
         }
         catch (Exception ex)
         {
@@ -491,7 +478,7 @@ public sealed class RecoveryCoordinator : IDisposable
 
 
             _disposed = true;
-            _logger.LogInformation("Recovery Coordinator disposed");
+            _logger.LogInfoMessage("Recovery Coordinator disposed");
         }
     }
 }

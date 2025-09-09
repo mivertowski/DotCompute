@@ -8,6 +8,7 @@ using DotCompute.Core.Compute.Enums;
 using DotCompute.Core.Compute.Interfaces;
 using DotCompute.Core.Compute.Options;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Compute
@@ -114,7 +115,7 @@ namespace DotCompute.Core.Compute
 
             await EnsureInitializedAsync();
 
-            _logger.LogInformation("Compiling kernel with entry point: {EntryPoint}", entryPoint ?? "main");
+            _logger.LogInfoMessage($"Compiling kernel with entry point: {entryPoint ?? "default"}");
 
             // Get the first available accelerator
             var criteria = new AcceleratorSelectionCriteria
@@ -149,7 +150,7 @@ namespace DotCompute.Core.Compute
             // Compile the kernel
             var compiledKernel = await accelerator.CompileKernelAsync(definition, options, cancellationToken);
 
-            _logger.LogInformation("Kernel compiled successfully: {KernelName}", compiledKernel.Name);
+            _logger.LogInfoMessage($"Kernel compiled successfully: {compiledKernel.Name}");
 
             return compiledKernel;
         }
@@ -190,8 +191,7 @@ namespace DotCompute.Core.Compute
 
             ArgumentNullException.ThrowIfNull(arguments);
 
-            _logger.LogInformation("Executing kernel {KernelName} on backend {Backend}",
-                kernel.Name, backendType);
+            _logger.LogInfoMessage($"Executing kernel {kernel.Name} on backend {backendType}");
 
             // Convert arguments to KernelArguments
             var kernelArgs = new KernelArguments(arguments);
@@ -199,7 +199,7 @@ namespace DotCompute.Core.Compute
             // Execute the kernel
             await kernel.ExecuteAsync(kernelArgs, cancellationToken);
 
-            _logger.LogInformation("Kernel {KernelName} executed successfully", kernel.Name);
+            _logger.LogInfoMessage($"Kernel {kernel.Name} executed successfully");
         }
 
         private async ValueTask EnsureInitializedAsync()
@@ -218,7 +218,7 @@ namespace DotCompute.Core.Compute
             catch (InvalidOperationException)
             {
                 // Not initialized, try to initialize with a CPU provider
-                _logger.LogInformation("Initializing accelerator manager with CPU provider");
+                _logger.LogInfoMessage("Initializing accelerator manager with CPU provider");
                 var cpuProvider = new CpuAcceleratorProvider(_logger as ILogger<CpuAcceleratorProvider> ??
                     new Microsoft.Extensions.Logging.Abstractions.NullLogger<CpuAcceleratorProvider>());
                 _acceleratorManager.RegisterProvider(cpuProvider);
@@ -247,7 +247,7 @@ namespace DotCompute.Core.Compute
                 if (cudaAvailable)
                 {
                     backends.Add(ComputeBackendType.CUDA);
-                    _logger.LogInformation("CUDA backend detected");
+                    _logger.LogInfoMessage("CUDA backend detected");
                 }
             }
             catch (Exception ex)
@@ -271,7 +271,7 @@ namespace DotCompute.Core.Compute
             _disposed = true;
 
             // Clean up any resources
-            _logger.LogInformation("ComputeEngine disposed");
+            _logger.LogInfoMessage("ComputeEngine disposed");
 
             await ValueTask.CompletedTask;
         }

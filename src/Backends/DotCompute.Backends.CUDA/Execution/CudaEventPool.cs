@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Execution
@@ -59,8 +60,7 @@ namespace DotCompute.Backends.CUDA.Execution
             _maintenanceTimer = new Timer(PerformCleanup, null,
                 TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
 
-            _logger.LogDebug("CUDA Event Pool initialized: {TimingEvents} timing events, {SyncEvents} sync events",
-                _timingEvents.Count, _syncEvents.Count);
+            _logger.LogDebugMessage($"CUDA Event Pool initialized: {_timingEvents.Count} timing events, {_syncEvents.Count} sync events");
         }
 
         /// <summary>
@@ -246,9 +246,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
 
             var totalCreated = _timingEvents.Count + _syncEvents.Count;
-            _logger.LogDebug("Pre-allocated {TotalEvents} events in pool " +
-                            "({TimingEvents} timing, {SyncEvents} sync)",
-                totalCreated, _timingEvents.Count, _syncEvents.Count);
+            _logger.LogDebugMessage($"Pre-allocated {totalCreated} events in pool ({_timingEvents.Count} timing, {_syncEvents.Count} sync)");
         }
 
         private PooledEvent GetTimingEventFromPool()
@@ -300,8 +298,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to create timing event: {Error}",
-                        Native.CudaRuntime.GetErrorString(result));
+                    _logger.LogWarningMessage($"Failed to create timing event: {Native.CudaRuntime.GetErrorString(result)}");
                     return null;
                 }
 
@@ -318,7 +315,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception creating timing event");
+                _logger.LogErrorMessage(ex, "Exception creating timing event");
                 return null;
             }
         }
@@ -334,8 +331,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to create sync event: {Error}",
-                        Native.CudaRuntime.GetErrorString(result));
+                    _logger.LogWarningMessage($"Failed to create sync event: {Native.CudaRuntime.GetErrorString(result)}");
                     return null;
                 }
 
@@ -352,7 +348,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception creating sync event");
+                _logger.LogErrorMessage(ex, "Exception creating sync event");
                 return null;
             }
         }
@@ -365,8 +361,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 var result = Native.CudaRuntime.cudaEventDestroy(pooledEvent.Handle);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to destroy pooled event {Event}: {Error}",
-                        pooledEvent.Handle, Native.CudaRuntime.GetErrorString(result));
+                    _logger.LogWarningMessage($"Failed to destroy pooled event {pooledEvent.Handle}: {Native.CudaRuntime.GetErrorString(result)}");
                 }
             }
             catch (Exception ex)
@@ -411,8 +406,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (destroyedCount > 0)
             {
-                _logger.LogDebug("Cleaned up {Count} old events from {Queue} pool",
-                    destroyedCount, queueName);
+                _logger.LogDebugMessage($"Cleaned up {destroyedCount} old events from {queueName} pool");
             }
         }
 
@@ -514,9 +508,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 _poolSemaphore?.Dispose();
 
-                _logger.LogDebug("CUDA Event Pool disposed: created {TimingEvents} timing events, " +
-                               "{SyncEvents} sync events, served {Acquisitions} acquisitions",
-                    _totalTimingEventsCreated, _totalSyncEventsCreated, _totalEventsAcquired);
+                _logger.LogDebugMessage("CUDA Event Pool disposed");
             }
         }
 
@@ -532,8 +524,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (destroyedCount > 0)
             {
-                _logger.LogDebug("Destroyed {Count} events from {Queue} pool during disposal",
-                    destroyedCount, queueName);
+                _logger.LogDebugMessage($"Destroyed {destroyedCount} events from {queueName} pool during disposal");
             }
         }
     }

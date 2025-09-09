@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Compilation
 {
@@ -138,16 +139,14 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                     // Enhanced diagnostic logging for debugging scale kernel issues
 
-                    _logger.LogInformation("Preparing kernel argument {Index}: Type={Type}, Value={Value}, FullName={FullName}",
-                        i, arg.GetType().Name, arg, arg.GetType().FullName);
+                    _logger.LogInfoMessage($"Preparing kernel argument {i}: Type={arg.GetType().Name}, Value={arg}, FullName={arg.GetType().FullName}");
 
 
                     var argPtr = PrepareKernelArgument(arg, handles, unmanagedAllocations, _logger);
                     argPointers.Add(argPtr);
 
 
-                    _logger.LogDebug("Kernel argument {Index} prepared: Pointer=0x{Pointer:X}",
-                        i, argPtr.ToInt64());
+                    _logger.LogDebugMessage($"Kernel argument {i} prepared: Pointer=0x{argPtr.ToInt64()}");
                 }
 
                 // Pin argument array - this creates an array of pointers where each entry points to an argument value
@@ -156,18 +155,11 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 try
                 {
-                    _logger.LogDebug("Launching CUDA kernel with config: Grid({GridX},{GridY},{GridZ}), Block({BlockX},{BlockY},{BlockZ}), SharedMem={SharedMem}, ArgCount={ArgCount}",
-                        launchConfig.GridX, launchConfig.GridY, launchConfig.GridZ,
-                        launchConfig.BlockX, launchConfig.BlockY, launchConfig.BlockZ,
-                        launchConfig.SharedMemoryBytes, argPointers.Count);
+                    _logger.LogDebugMessage($"Launching CUDA kernel with config: Grid({launchConfig.GridX},{launchConfig.GridY},{launchConfig.GridZ}), Block({launchConfig.BlockX},{launchConfig.BlockY},{launchConfig.BlockZ}), SharedMem={launchConfig.SharedMemoryBytes}, ArgCount={argPointers.Count}");
 
                     // Additional diagnostic logging for debugging
 
-                    _logger.LogDebug("Total threads: {TotalThreads}, Function ptr: 0x{FuncPtr:X}, Stream: 0x{Stream:X}",
-                        launchConfig.GridX * launchConfig.GridY * launchConfig.GridZ *
-
-                        launchConfig.BlockX * launchConfig.BlockY * launchConfig.BlockZ,
-                        function.ToInt64(), _context.Stream.ToInt64());
+                    _logger.LogDebugMessage($"Total threads: {launchConfig.GridX * launchConfig.GridY * launchConfig.GridZ *  launchConfig.BlockX * launchConfig.BlockY * launchConfig.BlockZ}, Function ptr: 0x{function.ToInt64()}, Stream: 0x{_context.Stream.ToInt64()}");
 
                     // Log first few argument pointers for debugging
 
@@ -180,8 +172,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                             {
                                 // Try to read the value at the pointer location
                                 var value = *(IntPtr*)ptr;
-                                _logger.LogDebug("Arg[{Index}]: Ptr=0x{Ptr:X} -> Value=0x{Value:X}",
-                                    i, ptr.ToInt64(), value.ToInt64());
+                                _logger.LogDebugMessage($"Arg[{i}]: Ptr=0x{ptr.ToInt64()} -> Value=0x{value.ToInt64()}");
                             }
                         }
                     }
@@ -198,7 +189,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                             throw new NotSupportedException($"Cooperative kernel launches require compute capability 6.0+, but device has {_deviceProps.Major}.{_deviceProps.Minor}");
                         }
 
-                        _logger.LogDebug("Launching cooperative kernel for grid-wide synchronization");
+                        _logger.LogDebugMessage("Launching cooperative kernel for grid-wide synchronization");
 
 
                         result = CudaRuntime.cuLaunchCooperativeKernel(
@@ -294,7 +285,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 optimalBlockSize = Math.Min(optimalBlockSize, maxThreadsPerBlock);
                 optimalBlockSize = (optimalBlockSize / warpSize) * warpSize;
 
-                _logger.LogDebug("RTX 2000 Ada optimal block size: {BlockSize} threads", optimalBlockSize);
+                _logger.LogDebugMessage(" threads");
                 return optimalBlockSize;
             }
 
@@ -857,8 +848,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             var blockSize = config.BlockX * config.BlockY * config.BlockZ;
             if (blockSize > _deviceProps.MaxThreadsPerBlock)
             {
-                _logger.LogWarning("Block size {BlockSize} exceeds device limit {MaxThreadsPerBlock}",
-                    blockSize, _deviceProps.MaxThreadsPerBlock);
+                _logger.LogWarningMessage($"Block size {blockSize} exceeds device limit {_deviceProps.MaxThreadsPerBlock}");
                 return false;
             }
 
@@ -867,9 +857,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 config.BlockY > _deviceProps.MaxThreadsDimY ||
                 config.BlockZ > _deviceProps.MaxThreadsDimZ)
             {
-                _logger.LogWarning("Block dimensions ({BlockX},{BlockY},{BlockZ}) exceed device limits ({MaxX},{MaxY},{MaxZ})",
-                    config.BlockX, config.BlockY, config.BlockZ,
-                    _deviceProps.MaxThreadsDimX, _deviceProps.MaxThreadsDimY, _deviceProps.MaxThreadsDimZ);
+                _logger.LogWarningMessage($"Block dimensions ({config.BlockX},{config.BlockY},{config.BlockZ}) exceed device limits ({_deviceProps.MaxThreadsDimX},{_deviceProps.MaxThreadsDimY},{_deviceProps.MaxThreadsDimZ})");
                 return false;
             }
 
@@ -878,9 +866,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 config.GridY > _deviceProps.MaxGridSizeY ||
                 config.GridZ > _deviceProps.MaxGridSizeZ)
             {
-                _logger.LogWarning("Grid dimensions ({GridX},{GridY},{GridZ}) exceed device limits ({MaxX},{MaxY},{MaxZ})",
-                    config.GridX, config.GridY, config.GridZ,
-                    _deviceProps.MaxGridSizeX, _deviceProps.MaxGridSizeY, _deviceProps.MaxGridSizeZ);
+                _logger.LogWarningMessage($"Grid dimensions ({config.GridX},{config.GridY},{config.GridZ}) exceed device limits ({_deviceProps.MaxGridSizeX},{_deviceProps.MaxGridSizeY},{_deviceProps.MaxGridSizeZ})");
                 return false;
             }
 
@@ -894,8 +880,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
             if (config.SharedMemoryBytes > maxSharedMem)
             {
-                _logger.LogWarning("Shared memory {SharedMemBytes} bytes exceeds device limit {MaxSharedMem} bytes",
-                    config.SharedMemoryBytes, maxSharedMem);
+                _logger.LogWarningMessage($"Shared memory {config.SharedMemoryBytes} bytes exceeds device limit {maxSharedMem} bytes");
                 return false;
             }
 
@@ -906,7 +891,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 var blocksPerSM = _deviceProps.MaxThreadsPerMultiProcessor / (int)blockSize;
                 if (blocksPerSM < 2)
                 {
-                    _logger.LogInformation("RTX 2000 Ada: Low occupancy detected. Consider reducing block size for better performance");
+                    _logger.LogInfoMessage("RTX 2000 Ada: Low occupancy detected. Consider reducing block size for better performance");
                 }
             }
 

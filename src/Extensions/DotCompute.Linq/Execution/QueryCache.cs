@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using global::System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Execution;
 
@@ -45,8 +46,7 @@ public class QueryCache : IQueryCache
         var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(keyString));
         var key = Convert.ToBase64String(hashBytes);
 
-        _logger.LogDebug("Generated cache key {Key} for expression type {ExpressionType}",
-            key, expression.NodeType);
+        _logger.LogDebugMessage($"Generated cache key {key} for expression type {expression.NodeType}");
 
         return key;
     }
@@ -61,7 +61,7 @@ public class QueryCache : IQueryCache
             // Check if entry has expired
             if (_options.EnableExpiration && DateTime.UtcNow > entry.ExpirationTime)
             {
-                _logger.LogDebug("Cache entry {Key} has expired", key);
+                _logger.LogDebugMessage("Cache entry {key} has expired");
                 _ = _cache.TryRemove(key, out _);
                 result = null;
                 _ = Interlocked.Increment(ref _misses);
@@ -75,14 +75,14 @@ public class QueryCache : IQueryCache
             result = entry.Value;
             _ = Interlocked.Increment(ref _hits);
 
-            _logger.LogDebug("Cache hit for key {Key}", key);
+            _logger.LogDebugMessage("Cache hit for key {key}");
             return true;
         }
 
         result = null;
         _ = Interlocked.Increment(ref _misses);
 
-        _logger.LogDebug("Cache miss for key {Key}", key);
+        _logger.LogDebugMessage("Cache miss for key {key}");
         return false;
     }
 
@@ -111,7 +111,7 @@ public class QueryCache : IQueryCache
 
         _cache[key] = entry;
 
-        _logger.LogDebug("Cached result for key {Key}, size: {Size} bytes", key, entry.Size);
+        _logger.LogDebugMessage("Cached result for key {Key}, size: {key, entry.Size} bytes");
     }
 
     /// <inheritdoc/>
@@ -121,7 +121,7 @@ public class QueryCache : IQueryCache
         _hits = 0;
         _misses = 0;
 
-        _logger.LogInformation("Query cache cleared");
+        _logger.LogInfoMessage("Query cache cleared");
     }
 
     /// <inheritdoc/>
@@ -154,7 +154,7 @@ public class QueryCache : IQueryCache
         if (lruEntry != null)
         {
             _ = _cache.TryRemove(lruEntry.Key, out _);
-            _logger.LogDebug("Evicted cache entry {Key} (LRU)", lruEntry.Key);
+            _logger.LogDebugMessage("Evicted cache entry {lruEntry.Key} (LRU)");
         }
     }
 

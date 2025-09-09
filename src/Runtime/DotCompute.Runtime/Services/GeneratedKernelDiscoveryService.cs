@@ -3,6 +3,7 @@
 
 using System.Reflection;
 using Microsoft.Extensions.Logging;
+using DotCompute.Runtime.Logging;
 using System.Collections;
 
 namespace DotCompute.Runtime.Services;
@@ -34,12 +35,11 @@ public class GeneratedKernelDiscoveryService
         if (discoveredKernels.Count > 0)
         {
             kernelExecutionService.RegisterKernels(discoveredKernels);
-            _logger.LogInformation("Discovered and registered {Count} kernels from {AssemblyCount} assemblies",
-                discoveredKernels.Count, _scannedAssemblies.Count);
+            _logger.LogInfoMessage($"Discovered and registered {discoveredKernels.Count} kernels from {_scannedAssemblies.Count} assemblies");
         }
         else
         {
-            _logger.LogWarning("No kernels discovered. Ensure that source generators have run and generated kernel registries exist.");
+            _logger.LogWarningMessage("No kernels discovered. Ensure that source generators have run and generated kernel registries exist.");
         }
 
         return discoveredKernels.Count;
@@ -63,8 +63,7 @@ public class GeneratedKernelDiscoveryService
                 _scannedAssemblies.Add(assembly);
 
 
-                _logger.LogDebug("Discovered {Count} kernels from assembly {AssemblyName}",
-                    kernels.Count, assembly.GetName().Name);
+                _logger.LogDebugMessage($"Discovered {kernels.Count} kernels from assembly {assembly.GetName().Name}");
             }
             catch (Exception ex)
             {
@@ -115,7 +114,7 @@ public class GeneratedKernelDiscoveryService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error scanning assembly {AssemblyName}", assembly.GetName().Name);
+            _logger.LogErrorMessage(ex, $"Error scanning assembly {assembly.GetName().Name}");
         }
 
         return kernels;
@@ -161,7 +160,7 @@ public class GeneratedKernelDiscoveryService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to extract kernels from registry type {TypeName}", registryType.FullName);
+            _logger.LogErrorMessage(ex, $"Failed to extract kernels from registry type {registryType.FullName}");
         }
 
         return kernels;
@@ -169,6 +168,7 @@ public class GeneratedKernelDiscoveryService
 
     private async Task<KernelRegistrationInfo?> ConvertRegistrationToKernelInfoAsync(object? registration)
     {
+        await Task.CompletedTask; // Make async
         if (registration == null)
         {
             return null;
@@ -189,7 +189,7 @@ public class GeneratedKernelDiscoveryService
 
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(fullName) || containingType == null)
             {
-                _logger.LogWarning("Invalid kernel registration found: missing required properties");
+                _logger.LogWarningMessage("Invalid kernel registration found: missing required properties");
                 return null;
             }
 
@@ -209,13 +209,14 @@ public class GeneratedKernelDiscoveryService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to convert registration to KernelRegistrationInfo");
+            _logger.LogErrorMessage(ex, "Failed to convert registration to KernelRegistrationInfo");
             return null;
         }
     }
 
     private async Task<KernelRegistrationInfo?> CreateKernelRegistrationFromMethodAsync(MethodInfo method)
     {
+        await Task.CompletedTask; // Make async
         try
         {
             var kernelAttribute = method.GetCustomAttributes(false)
@@ -243,7 +244,7 @@ public class GeneratedKernelDiscoveryService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create kernel registration from method {MethodName}", method.Name);
+            _logger.LogErrorMessage(ex, $"Failed to create kernel registration from method {method.Name}");
             return null;
         }
     }
@@ -382,12 +383,12 @@ public class GeneratedKernelDiscoveryService
                 })
                 .ToList();
 
-            _logger.LogDebug("Found {Count} assemblies to scan for kernels", relevantAssemblies.Count);
+            _logger.LogDebugMessage("Found {relevantAssemblies.Count} assemblies to scan for kernels");
             return relevantAssemblies;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get scannable assemblies");
+            _logger.LogErrorMessage(ex, "Failed to get scannable assemblies");
             return Array.Empty<Assembly>();
         }
     }

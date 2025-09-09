@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Memory
 {
@@ -58,7 +59,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 TimeSpan.FromSeconds(MAINTENANCE_INTERVAL_SECONDS),
                 TimeSpan.FromSeconds(MAINTENANCE_INTERVAL_SECONDS));
 
-            _logger.LogInformation("Memory pool manager initialized with {PoolCount} size classes", _pools.Count);
+            _logger.LogInfoMessage("Memory pool manager initialized with {_pools.Count} size classes");
         }
 
         /// <summary>
@@ -113,7 +114,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (!_pools.TryGetValue(poolSize, out var pool))
             {
                 // Should not happen with proper initialization
-                _logger.LogWarning("Pool for size {Size} not found, allocating directly", poolSize);
+                _logger.LogWarningMessage("Pool for size {poolSize} not found, allocating directly");
                 _ = Interlocked.Increment(ref _poolMisses);
                 return await AllocateDirectAsync(sizeInBytes, zeroMemory, cancellationToken);
             }
@@ -238,7 +239,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var block = new MemoryBlock(devicePtr, poolSize);
 
 
-                _logger.LogDebug("Allocated new {Size} byte block for pool", poolSize);
+                _logger.LogDebugMessage("Allocated new {poolSize} byte block for pool");
 
 
                 return new PooledMemoryBuffer(this, block, requestedSize, poolSize);
@@ -256,7 +257,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaMemset(ptr, 0, (nuint)size);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to zero memory: {Error}", result);
+                    _logger.LogWarningMessage("Failed to zero memory: {result}");
                 }
             }, cancellationToken);
         }
@@ -277,7 +278,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
             else
             {
-                _logger.LogWarning("Failed to free memory block: {Error}", result);
+                _logger.LogWarningMessage("Failed to free memory block: {result}");
             }
         }
 
@@ -324,14 +325,12 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (freedBlocks > 0)
                 {
                     _ = Interlocked.Add(ref _totalBytesInPools, -freedBytes);
-                    _logger.LogDebug("Pool maintenance freed {Blocks} blocks ({Bytes:N0} bytes)",
-
-                        freedBlocks, freedBytes);
+                    _logger.LogDebugMessage($"Pool maintenance freed {freedBlocks} blocks ({freedBytes} bytes)");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during pool maintenance");
+                _logger.LogErrorMessage(ex, "Error during pool maintenance");
             }
         }
 
@@ -379,7 +378,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
             _totalBytesInPools = 0;
-            _logger.LogInformation("Cleared all memory pools");
+            _logger.LogInfoMessage("Cleared all memory pools");
         }
 
         public void Dispose()

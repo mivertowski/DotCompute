@@ -8,6 +8,7 @@ using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Compilation.Context;
 using DotCompute.Linq.Execution;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Providers;
 
@@ -63,7 +64,7 @@ public class ComputeQueryProvider : IQueryProvider
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create query for expression of type {ExpressionType}", expression.Type);
+            _logger.LogErrorMessage(ex, $"Failed to create query for expression of type {expression.Type}");
             throw new InvalidOperationException($"Failed to create query for expression of type {expression.Type}", ex);
         }
     }
@@ -89,13 +90,13 @@ public class ComputeQueryProvider : IQueryProvider
     {
         ArgumentNullException.ThrowIfNull(expression);
 
-        _logger.LogDebug("Executing query expression of type {ExpressionType}", expression.Type);
+        _logger.LogDebugMessage("Executing query expression of type {expression.Type}");
 
         // Check cache first
         var cacheKey = _cache.GenerateKey(expression);
         if (_cache.TryGet(cacheKey, out var cachedResult))
         {
-            _logger.LogDebug("Query result found in cache");
+            _logger.LogDebugMessage("Query result found in cache");
             return cachedResult;
         }
 
@@ -116,7 +117,7 @@ public class ComputeQueryProvider : IQueryProvider
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute query expression");
+            _logger.LogErrorMessage(ex, "Failed to execute query expression");
             throw new InvalidOperationException("Failed to execute query expression", ex);
         }
     }

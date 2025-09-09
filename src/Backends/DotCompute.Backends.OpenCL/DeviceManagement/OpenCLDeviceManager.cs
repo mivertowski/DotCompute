@@ -49,7 +49,7 @@ internal sealed class OpenCLDeviceManager
     /// </summary>
     public OpenCLDeviceInfo? GetBestDevice()
     {
-        _logger.LogDebug("Finding best OpenCL device");
+        _logger.LogDebugMessage("Finding best OpenCL device");
 
         // Prefer discrete GPUs first, then integrated GPUs, then accelerators, finally CPUs
         var bestDevice = AllDevices
@@ -61,12 +61,11 @@ internal sealed class OpenCLDeviceManager
 
         if (bestDevice != null)
         {
-            _logger.LogInformation("Selected best device: {DeviceName} ({DeviceType})", 
-                bestDevice.Name, bestDevice.Type);
+            _logger.LogInfoMessage($"Selected best device: {bestDevice.Name} ({bestDevice.Type})");
         }
         else
         {
-            _logger.LogWarning("No suitable OpenCL devices found");
+            _logger.LogWarningMessage("No suitable OpenCL devices found");
         }
 
         return bestDevice;
@@ -114,7 +113,7 @@ internal sealed class OpenCLDeviceManager
     /// </summary>
     private IReadOnlyList<OpenCLPlatformInfo> DiscoverPlatforms()
     {
-        _logger.LogDebug("Discovering OpenCL platforms");
+        _logger.LogDebugMessage("Discovering OpenCL platforms");
 
         try
         {
@@ -122,11 +121,11 @@ internal sealed class OpenCLDeviceManager
             var error = OpenCLRuntime.clGetPlatformIDs(0, null, out var platformCount);
             if (error != OpenCLError.Success || platformCount == 0)
             {
-                _logger.LogWarning("No OpenCL platforms found or error occurred: {Error}", error);
+                _logger.LogWarningMessage("No OpenCL platforms found or error occurred: {error}");
                 return [];
             }
 
-            _logger.LogDebug("Found {PlatformCount} OpenCL platforms", platformCount);
+            _logger.LogDebugMessage("Found {platformCount} OpenCL platforms");
 
             // Get platform IDs
             var platformIds = new nint[platformCount];
@@ -141,8 +140,7 @@ internal sealed class OpenCLDeviceManager
                 {
                     var platform = CreatePlatformInfo(platformId);
                     platforms.Add(platform);
-                    _logger.LogDebug("Added platform: {PlatformName} with {DeviceCount} devices", 
-                        platform.Name, platform.Devices.Count);
+                    _logger.LogDebugMessage($"Added platform: {platform.Name} with {platform.Devices.Count} devices");
                 }
                 catch (Exception ex)
                 {
@@ -150,14 +148,13 @@ internal sealed class OpenCLDeviceManager
                 }
             }
 
-            _logger.LogInformation("Discovered {PlatformCount} platforms with {DeviceCount} total devices",
-                platforms.Count, platforms.Sum(p => p.Devices.Count));
+            _logger.LogInfoMessage($"Discovered {platforms.Count} platforms with {platforms.Sum(p => p.Devices.Count)} total devices");
 
             return platforms.AsReadOnly();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to discover OpenCL platforms");
+            _logger.LogErrorMessage(ex, "Failed to discover OpenCL platforms");
             return [];
         }
     }

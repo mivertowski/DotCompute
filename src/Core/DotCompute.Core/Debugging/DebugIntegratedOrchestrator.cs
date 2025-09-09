@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
@@ -118,9 +119,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         var stopwatch = Stopwatch.StartNew();
 
 
-        _logger.LogDebug("Starting debug-enhanced execution of {KernelName} [ID: {ExecutionId}]",
-
-            kernelName, executionId);
+        _logger.LogDebugMessage($"Starting debug-enhanced execution of {kernelName} [ID: {executionId}]");
 
         try
         {
@@ -149,9 +148,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             var result = await _baseOrchestrator.ExecuteAsync<T>(kernelName, args);
             var executionTime = stopwatch.Elapsed - executionStart;
 
-            _logger.LogDebug("Kernel {KernelName} executed in {ExecutionTime}ms [ID: {ExecutionId}]",
-
-                kernelName, executionTime.TotalMilliseconds, executionId);
+            _logger.LogDebugMessage($"Kernel {kernelName} executed in {executionTime.TotalMilliseconds}ms [ID: {executionId}]");
 
             // Post-execution validation (if enabled)
             if (_options.ValidateAfterExecution)
@@ -179,9 +176,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during debug-enhanced execution of {KernelName} [ID: {ExecutionId}]",
-
-                kernelName, executionId);
+            _logger.LogErrorMessage(ex, $"Error during debug-enhanced execution of {kernelName} [ID: {executionId}]");
 
             // Error analysis (if enabled)
             if (_options.AnalyzeErrorsOnFailure)
@@ -259,9 +254,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             // Validate result is not null when expected
             if (typeof(T) != typeof(object) && result == null)
             {
-                _logger.LogWarning("Kernel {KernelName} returned null result [ID: {ExecutionId}]",
-
-                    kernelName, executionId);
+                _logger.LogWarningMessage($"Kernel {kernelName} returned null result [ID: {executionId}]");
             }
 
             // Check for determinism (if configured)
@@ -270,9 +263,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 var determinismReport = await _debugService.ValidateDeterminismAsync(kernelName, args, 3);
                 if (!determinismReport.IsDeterministic)
                 {
-                    _logger.LogWarning("Non-deterministic behavior detected in {KernelName}: {Source} [ID: {ExecutionId}]",
-
-                        kernelName, determinismReport.NonDeterminismSource, executionId);
+                    _logger.LogWarningMessage($"Non-deterministic behavior detected in {kernelName}: {determinismReport.NonDeterminismSource} [ID: {executionId}]");
                 }
             }
         }
@@ -309,9 +300,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 }
                 else if (errorIssues.Any())
                 {
-                    _logger.LogWarning("Cross-backend validation errors for {KernelName}: {Issues} [ID: {ExecutionId}]",
-
-                        kernelName, string.Join(", ", errorIssues.Select(i => i.Message)), executionId);
+                    _logger.LogWarningMessage($"Cross-backend validation errors for {kernelName}: {string.Join(", ", errorIssues.Select(i => i.Message))} [ID: {executionId}]");
                 }
             }
             else
@@ -342,9 +331,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 Timestamp = DateTimeOffset.UtcNow
             };
 
-            _logger.LogInformation("Performance metrics for {KernelName}: {Metrics} [ID: {ExecutionId}]",
-
-                kernelName, metricsData, executionId);
+            _logger.LogInfoMessage($"Performance metrics for {kernelName}: {metricsData} [ID: {executionId}]");
 
             // Store metrics for trend analysis (if configured)
             if (_options.StorePerformanceHistory)
@@ -381,9 +368,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 Timestamp = DateTimeOffset.UtcNow
             };
 
-            _logger.LogInformation("Error analysis for {KernelName}: {Analysis} [ID: {ExecutionId}]",
-
-                kernelName, errorAnalysis, executionId);
+            _logger.LogInfoMessage($"Error analysis for {kernelName}: {errorAnalysis} [ID: {executionId}]");
 
             // Attempt to determine if error is kernel-specific or systemic
             var backends = await _debugService.GetAvailableBackendsAsync();
@@ -392,7 +377,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
 
             if (availableCount == 0)
             {
-                _logger.LogWarning("System-wide backend failure detected during error analysis [ID: {ExecutionId}]", executionId);
+                _logger.LogWarningMessage("System-wide backend failure detected during error analysis [ID: {executionId}]");
             }
         }
         catch (Exception ex)

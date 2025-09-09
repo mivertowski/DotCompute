@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory
 {
@@ -52,8 +53,7 @@ namespace DotCompute.Core.Memory
                 // Real P2P capability detection based on device types and hardware
                 var capability = await DetectHardwareP2PCapabilityAsync(device1, device2, cancellationToken);
 
-                _logger.LogDebug("P2P capability detected between {Device1} and {Device2}: {Supported}, {ConnectionType}, {BandwidthGBps:F1} GB/s",
-                    device1.Info.Name, device2.Info.Name, capability.IsSupported, capability.ConnectionType, capability.EstimatedBandwidthGBps);
+                _logger.LogDebugMessage($"P2P capability detected between {device1.Info.Name} and {device2.Info.Name}: {capability.IsSupported}, {capability.ConnectionType}, {capability.EstimatedBandwidthGBps} GB/s");
 
                 return capability;
             }
@@ -63,8 +63,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to detect P2P capability between {Device1} and {Device2}",
-                    device1.Info.Name, device2.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to detect P2P capability between {device1.Info.Name} and {device2.Info.Name}");
 
                 return new P2PConnectionCapability
                 {
@@ -107,8 +106,7 @@ namespace DotCompute.Core.Memory
 
                 if (enableSuccess)
                 {
-                    _logger.LogInformation("Successfully enabled P2P access between {Device1} and {Device2}",
-                        device1.Info.Name, device2.Info.Name);
+                    _logger.LogInfoMessage($"Successfully enabled P2P access between {device1.Info.Name} and {device2.Info.Name}");
 
                     return new P2PEnableResult
                     {
@@ -119,8 +117,7 @@ namespace DotCompute.Core.Memory
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to enable P2P access between {Device1} and {Device2}",
-                        device1.Info.Name, device2.Info.Name);
+                    _logger.LogWarningMessage($"Failed to enable P2P access between {device1.Info.Name} and {device2.Info.Name}");
 
                     return new P2PEnableResult
                     {
@@ -132,8 +129,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception while enabling P2P access between {Device1} and {Device2}",
-                    device1.Info.Name, device2.Info.Name);
+                _logger.LogErrorMessage(ex, $"Exception while enabling P2P access between {device1.Info.Name} and {device2.Info.Name}");
 
                 return new P2PEnableResult
                 {
@@ -163,21 +159,18 @@ namespace DotCompute.Core.Memory
 
                 if (disableSuccess)
                 {
-                    _logger.LogInformation("Successfully disabled P2P access between {Device1} and {Device2}",
-                        device1.Info.Name, device2.Info.Name);
+                    _logger.LogInfoMessage($"Successfully disabled P2P access between {device1.Info.Name} and {device2.Info.Name}");
                     return true;
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to disable P2P access between {Device1} and {Device2}",
-                        device1.Info.Name, device2.Info.Name);
+                    _logger.LogWarningMessage($"Failed to disable P2P access between {device1.Info.Name} and {device2.Info.Name}");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception while disabling P2P access between {Device1} and {Device2}",
-                    device1.Info.Name, device2.Info.Name);
+                _logger.LogErrorMessage(ex, $"Exception while disabling P2P access between {device1.Info.Name} and {device2.Info.Name}");
                 return false;
             }
         }
@@ -236,15 +229,13 @@ namespace DotCompute.Core.Memory
                 // Query real device capabilities from hardware
                 var capabilities = await QueryHardwareCapabilitiesAsync(device, cancellationToken);
 
-                _logger.LogDebug("Device {DeviceName} capabilities: P2P={P2PSupported}, MemBW={MemoryBandwidth:F1} GB/s, P2PBW={P2PBandwidth:F1} GB/s, MaxMem={MaxMemoryGB:F1} GB",
-                    device.Info.Name, capabilities.SupportsP2P, capabilities.MemoryBandwidthGBps,
-                    capabilities.P2PBandwidthGBps, capabilities.MaxMemoryBytes / (1024.0 * 1024.0 * 1024.0));
+                _logger.LogDebugMessage($"Device {device.Info.Name} capabilities: P2P={capabilities.SupportsP2P}, MemBW={capabilities.MemoryBandwidthGBps} GB/s, P2PBW={capabilities.P2PBandwidthGBps} GB/s, MaxMem={capabilities.MaxMemoryBytes / (1024.0 * 1024.0 * 1024.0)} GB");
 
                 return capabilities;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to query device capabilities for {DeviceName}", device.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to query device capabilities for {device.Info.Name}");
 
                 // Return conservative fallback capabilities
                 return new DeviceCapabilities
@@ -368,7 +359,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Hardware P2P enable failed for {Vendor} devices", vendor);
+                _logger.LogErrorMessage(ex, $"Hardware P2P enable failed for {vendor} devices");
                 return false;
             }
         }
@@ -396,7 +387,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Hardware P2P disable failed for {Vendor} devices", vendor);
+                _logger.LogErrorMessage(ex, $"Hardware P2P disable failed for {vendor} devices");
                 return false;
             }
         }

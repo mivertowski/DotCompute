@@ -10,6 +10,7 @@ using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using DotCompute.Abstractions.Kernels;
@@ -55,7 +56,7 @@ public class LinqToGpuImplementationTest
     /// </summary>
     public async Task TestCompleteLinqToGpuPipelineAsync()
     {
-        _logger.LogInformation("Starting complete LINQ-to-GPU pipeline test");
+        _logger.LogInfoMessage("Starting complete LINQ-to-GPU pipeline test");
 
         // 1. Create a test expression (simulated LINQ query)
         var testExpression = CreateTestExpression();
@@ -69,7 +70,7 @@ public class LinqToGpuImplementationTest
         // 4. Test query execution
         await TestQueryExecutionAsync(testExpression);
 
-        _logger.LogInformation("Complete LINQ-to-GPU pipeline test completed successfully");
+        _logger.LogInfoMessage("Complete LINQ-to-GPU pipeline test completed successfully");
     }
 
     /// <summary>
@@ -110,7 +111,7 @@ public class LinqToGpuImplementationTest
 
     private void TestExpressionOptimization(Expression expression)
     {
-        _logger.LogInformation("Testing expression optimization");
+        _logger.LogInfoMessage("Testing expression optimization");
 
         var options = new Compilation.CompilationOptions
         {
@@ -132,19 +133,17 @@ public class LinqToGpuImplementationTest
         // Test analysis
         var suggestions = _optimizer.Analyze(expression);
 
-        _logger.LogInformation("Expression optimization completed with {SuggestionCount} optimization suggestions",
-            suggestions.Count());
+        _logger.LogInfoMessage($"Expression optimization completed with {suggestions.Count()} optimization suggestions");
 
         foreach (var suggestion in suggestions)
         {
-            _logger.LogInformation("Optimization suggestion: {Type} - {Description} (Impact: {Impact})",
-                suggestion.Type, suggestion.Description, suggestion.Impact);
+            _logger.LogInfoMessage($"Optimization suggestion: {suggestion.Type} - {suggestion.Description} (Impact: {suggestion.Impact})");
         }
     }
 
     private async Task TestKernelCompilationAsync(Expression expression)
     {
-        _logger.LogInformation("Testing kernel compilation");
+        _logger.LogInfoMessage("Testing kernel compilation");
 
         // Create mock accelerator
         var accelerator = new MockAccelerator();
@@ -153,45 +152,41 @@ public class LinqToGpuImplementationTest
         var canCompile = _compiler.CanCompileExpression(expression);
         if (!canCompile)
         {
-            _logger.LogWarning("Expression cannot be compiled to GPU kernel - using fallback");
+            _logger.LogWarningMessage("Expression cannot be compiled to GPU kernel - using fallback");
             return;
         }
 
         // Test resource estimation
         var resourceEstimate = _compiler.EstimateResources(expression);
-        _logger.LogInformation("Resource estimate - Memory: {Memory} bytes, Compilation: {CompTime}ms, Execution: {ExecTime}ms",
-            resourceEstimate.EstimatedMemoryUsage,
-            resourceEstimate.EstimatedCompilationTime.TotalMilliseconds,
-            resourceEstimate.EstimatedExecutionTime.TotalMilliseconds);
+        _logger.LogInfoMessage($"Resource estimate - Memory: {resourceEstimate.EstimatedMemoryUsage} bytes, Compilation: {resourceEstimate.EstimatedCompilationTime.TotalMilliseconds}ms, Execution: {resourceEstimate.EstimatedExecutionTime.TotalMilliseconds}ms");
 
         // Test actual compilation
         try
         {
             var kernel = await _compiler.CompileExpressionAsync(expression, accelerator);
 
-            _logger.LogInformation("Successfully compiled expression to kernel: {KernelName}", kernel.Name);
+            _logger.LogInfoMessage("Successfully compiled expression to kernel: {kernel.Name}");
 
             // Test kernel properties
             var properties = kernel.Properties;
-            _logger.LogInformation("Kernel properties - MaxThreads: {MaxThreads}, SharedMemory: {SharedMem} bytes, Registers: {Registers}",
-                properties.MaxThreadsPerBlock, properties.SharedMemorySize, properties.RegisterCount);
+            _logger.LogInfoMessage($"Kernel properties - MaxThreads: {properties.MaxThreadsPerBlock}, SharedMemory: {properties.SharedMemorySize} bytes, Registers: {properties.RegisterCount}");
 
             // Test parameter info
             var parameterInfo = kernel.GetParameterInfo();
-            _logger.LogInformation("Kernel has {ParamCount} parameters", parameterInfo.Count);
+            _logger.LogInfoMessage("Kernel has {parameterInfo.Count} parameters");
 
             kernel.Dispose();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Kernel compilation failed");
+            _logger.LogErrorMessage(ex, "Kernel compilation failed");
             throw;
         }
     }
 
     private async Task TestQueryExecutionAsync(Expression expression)
     {
-        _logger.LogInformation("Testing query execution");
+        _logger.LogInfoMessage("Testing query execution");
 
         // Create execution context
         var accelerator = new MockAccelerator();
@@ -214,18 +209,16 @@ public class LinqToGpuImplementationTest
         {
             var result = await _executor.ExecuteAsync(context);
 
-            _logger.LogInformation("Query execution completed successfully. Result type: {ResultType}",
-                result?.GetType().Name ?? "null");
+            _logger.LogInfoMessage($"Query execution completed successfully. Result type: {result?.GetType().Name ?? "null"}");
 
             if (result is int[] resultArray)
             {
-                _logger.LogInformation("Result array has {Length} elements. First 5: [{Values}]",
-                    resultArray.Length, string.Join(", ", resultArray.Take(5)));
+                _logger.LogInfoMessage($"Result array has {resultArray.Length} elements. First 5: [{string.Join(", ", resultArray.Take(5))}]");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Query execution failed");
+            _logger.LogErrorMessage(ex, "Query execution failed");
             throw;
         }
     }
@@ -263,44 +256,44 @@ public class LinqToGpuImplementationTest
     /// </summary>
     public void DemonstrateFeatures()
     {
-        _logger.LogInformation("=== LINQ-to-GPU Implementation Features Demo ===");
+        _logger.LogInfoMessage("=== LINQ-to-GPU Implementation Features Demo ===");
 
         // 1. Expression Tree Optimization
-        _logger.LogInformation("1. Expression Tree Optimization Features:");
-        _logger.LogInformation("   ✓ Operator fusion for Select/Where combinations");
-        _logger.LogInformation("   ✓ Memory access pattern optimization");
-        _logger.LogInformation("   ✓ Constant folding and redundancy elimination");
-        _logger.LogInformation("   ✓ Operation reordering for GPU efficiency");
+        _logger.LogInfoMessage("1. Expression Tree Optimization Features:");
+        _logger.LogInfoMessage("   ✓ Operator fusion for Select/Where combinations");
+        _logger.LogInfoMessage("   ✓ Memory access pattern optimization");
+        _logger.LogInfoMessage("   ✓ Constant folding and redundancy elimination");
+        _logger.LogInfoMessage("   ✓ Operation reordering for GPU efficiency");
 
         // 2. Dynamic Kernel Compilation
-        _logger.LogInformation("2. Dynamic Kernel Compilation Features:");
-        _logger.LogInformation("   ✓ Multi-accelerator support (CUDA, OpenCL, Metal, Vulkan)");
-        _logger.LogInformation("   ✓ Kernel template system with optimization metadata");
-        _logger.LogInformation("   ✓ Compilation caching for performance");
-        _logger.LogInformation("   ✓ Automatic fallback for unsupported expressions");
+        _logger.LogInfoMessage("2. Dynamic Kernel Compilation Features:");
+        _logger.LogInfoMessage("   ✓ Multi-accelerator support (CUDA, OpenCL, Metal, Vulkan)");
+        _logger.LogInfoMessage("   ✓ Kernel template system with optimization metadata");
+        _logger.LogInfoMessage("   ✓ Compilation caching for performance");
+        _logger.LogInfoMessage("   ✓ Automatic fallback for unsupported expressions");
 
         // 3. Query Execution Pipeline
-        _logger.LogInformation("3. Query Execution Pipeline Features:");
-        _logger.LogInformation("   ✓ Memory management with buffer pooling");
-        _logger.LogInformation("   ✓ Asynchronous execution with cancellation");
-        _logger.LogInformation("   ✓ Comprehensive validation and error handling");
-        _logger.LogInformation("   ✓ Resource estimation and optimization");
+        _logger.LogInfoMessage("3. Query Execution Pipeline Features:");
+        _logger.LogInfoMessage("   ✓ Memory management with buffer pooling");
+        _logger.LogInfoMessage("   ✓ Asynchronous execution with cancellation");
+        _logger.LogInfoMessage("   ✓ Comprehensive validation and error handling");
+        _logger.LogInfoMessage("   ✓ Resource estimation and optimization");
 
         // 4. Kernel Template Generation
-        _logger.LogInformation("4. Kernel Template Generation Features:");
-        _logger.LogInformation("   ✓ Template library for common operations (Map, Filter, Reduce, Sort)");
-        _logger.LogInformation("   ✓ Accelerator-specific code generation");
-        _logger.LogInformation("   ✓ Expression-to-kernel source translation");
-        _logger.LogInformation("   ✓ Performance optimization hints and metadata");
+        _logger.LogInfoMessage("4. Kernel Template Generation Features:");
+        _logger.LogInfoMessage("   ✓ Template library for common operations (Map, Filter, Reduce, Sort)");
+        _logger.LogInfoMessage("   ✓ Accelerator-specific code generation");
+        _logger.LogInfoMessage("   ✓ Expression-to-kernel source translation");
+        _logger.LogInfoMessage("   ✓ Performance optimization hints and metadata");
 
         // 5. Performance Optimizations
-        _logger.LogInformation("5. Performance Optimization Features:");
-        _logger.LogInformation("   ✓ Kernel compilation caching with weak references");
-        _logger.LogInformation("   ✓ Memory coalescing for GPU access patterns");
-        _logger.LogInformation("   ✓ Work group size optimization");
-        _logger.LogInformation("   ✓ Shared memory utilization strategies");
+        _logger.LogInfoMessage("5. Performance Optimization Features:");
+        _logger.LogInfoMessage("   ✓ Kernel compilation caching with weak references");
+        _logger.LogInfoMessage("   ✓ Memory coalescing for GPU access patterns");
+        _logger.LogInfoMessage("   ✓ Work group size optimization");
+        _logger.LogInfoMessage("   ✓ Shared memory utilization strategies");
 
-        _logger.LogInformation("=== Demo Complete ===");
+        _logger.LogInfoMessage("=== Demo Complete ===");
     }
 }
 

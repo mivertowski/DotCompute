@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Managers;
 
@@ -31,7 +32,7 @@ internal class PluginHealthMonitor : IDisposable
     {
         await Task.CompletedTask;
         _ = _healthCheckTimer.Change(TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
-        _logger.LogInformation("Plugin health monitoring started");
+        _logger.LogInfoMessage("Plugin health monitoring started");
     }
 
     /// <summary>
@@ -50,7 +51,7 @@ internal class PluginHealthMonitor : IDisposable
         };
 
         _ = _healthStates.TryAdd(pluginId, healthState);
-        _logger.LogDebug("Started monitoring plugin: {PluginId}", pluginId);
+        _logger.LogDebugMessage("Started monitoring plugin: {pluginId}");
     }
 
     /// <summary>
@@ -60,7 +61,7 @@ internal class PluginHealthMonitor : IDisposable
     {
         if (_healthStates.TryRemove(pluginId, out _))
         {
-            _logger.LogDebug("Stopped monitoring plugin: {PluginId}", pluginId);
+            _logger.LogDebugMessage("Stopped monitoring plugin: {pluginId}");
         }
     }
 
@@ -138,7 +139,7 @@ internal class PluginHealthMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Health check failed for plugin: {PluginId}", pluginId);
+            _logger.LogErrorMessage(ex, $"Health check failed for plugin: {pluginId}");
             result.Health = PluginHealth.Critical;
             result.Issues.Add($"Health check exception: {ex.Message}");
         }
@@ -337,7 +338,7 @@ internal class PluginHealthMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during periodic health check");
+            _logger.LogErrorMessage(ex, "Error during periodic health check");
         }
     }
 
@@ -375,7 +376,7 @@ internal class PluginMetricsCollector : IDisposable
     {
         await Task.CompletedTask;
         _ = _metricsTimer.Change(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
-        _logger.LogInformation("Plugin metrics collection started");
+        _logger.LogInfoMessage("Plugin metrics collection started");
     }
 
     /// <summary>
@@ -392,7 +393,7 @@ internal class PluginMetricsCollector : IDisposable
         };
 
         _ = _metricsStates.TryAdd(pluginId, metricsState);
-        _logger.LogDebug("Added plugin to metrics collection: {PluginId}", pluginId);
+        _logger.LogDebugMessage("Added plugin to metrics collection: {pluginId}");
     }
 
     /// <summary>
@@ -402,7 +403,7 @@ internal class PluginMetricsCollector : IDisposable
     {
         if (_metricsStates.TryRemove(pluginId, out _))
         {
-            _logger.LogDebug("Removed plugin from metrics collection: {PluginId}", pluginId);
+            _logger.LogDebugMessage("Removed plugin from metrics collection: {pluginId}");
         }
     }
 
@@ -470,7 +471,7 @@ internal class PluginMetricsCollector : IDisposable
                 _ = metricsState.MetricsHistory.Remove(oldMetric);
             }
 
-            _logger.LogDebug("Cleaned up {Count} old metrics for plugin: {PluginId}", oldMetrics.Count, pluginId);
+            _logger.LogDebugMessage("Cleaned up {Count} old metrics for plugin: {oldMetrics.Count, pluginId}");
         }
     }
 
@@ -520,7 +521,7 @@ internal class PluginMetricsCollector : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during periodic metrics collection");
+            _logger.LogErrorMessage(ex, "Error during periodic metrics collection");
         }
     }
 

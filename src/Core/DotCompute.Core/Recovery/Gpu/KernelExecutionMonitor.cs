@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Recovery.Gpu;
@@ -91,7 +92,7 @@ public class KernelExecutionMonitor : IKernelExecutionMonitor
             return;
         }
 
-        _logger.LogInformation("Cancelling kernel execution {KernelId}", KernelId);
+        _logger.LogInfoMessage("Cancelling kernel execution {KernelId}");
 
         _cancellationTokenSource.Cancel();
         _completed = true;
@@ -126,7 +127,7 @@ public class KernelExecutionMonitor : IKernelExecutionMonitor
     public void MarkCompleted()
     {
         _completed = true;
-        _logger.LogDebug("Kernel {KernelId} execution completed in {Duration}ms", KernelId, ExecutionTime.TotalMilliseconds);
+        _logger.LogDebugMessage("Kernel {KernelId} execution completed in {KernelId, ExecutionTime.TotalMilliseconds}ms");
     }
 
     /// <summary>

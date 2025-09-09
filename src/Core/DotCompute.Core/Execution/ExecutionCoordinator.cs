@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Execution
 {
@@ -33,7 +34,7 @@ namespace DotCompute.Core.Execution
         {
             var executionEvent = new ExecutionEvent(eventName, _logger);
             _events[eventName] = executionEvent;
-            _logger.LogDebug("Created execution event: {EventName}", eventName);
+            _logger.LogDebugMessage($"Created execution event: {eventName}");
             return executionEvent;
         }
 
@@ -44,8 +45,7 @@ namespace DotCompute.Core.Execution
         {
             var barrier = new ExecutionBarrier(barrierName, participantCount, _logger);
             _barriers[barrierName] = barrier;
-            _logger.LogDebug("Created execution barrier: {BarrierName} with {ParticipantCount} participants",
-                barrierName, participantCount);
+            _logger.LogDebugMessage($"Created execution barrier: {barrierName} with {participantCount} participants");
             return barrier;
         }
 
@@ -82,7 +82,7 @@ namespace DotCompute.Core.Execution
         {
             var waitTasks = events.Select(e => e.WaitAsync(cancellationToken).AsTask()).ToArray();
             await Task.WhenAll(waitTasks).ConfigureAwait(false);
-            _logger.LogDebug("All events completed: {EventNames}", string.Join(", ", events.Select(e => e.Name)));
+            _logger.LogDebugMessage($"All events completed: {string.Join(", ", events.Select(e => e.ToString()))}");
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace DotCompute.Core.Execution
             var waitTasks = events.Select((e, index) => e.WaitAsync(cancellationToken).AsTask().ContinueWith(_ => index, cancellationToken)).ToArray();
             var completedIndex = await Task.WhenAny(waitTasks).Result.ConfigureAwait(false);
             var completedEvent = events[completedIndex];
-            _logger.LogDebug("Event completed first: {EventName}", completedEvent.Name);
+            _logger.LogDebugMessage($"Event completed first: {completedEvent.Name}");
             return completedEvent;
         }
 
@@ -127,7 +127,7 @@ namespace DotCompute.Core.Execution
                 }
 
                 await Task.WhenAll(resetTasks).ConfigureAwait(false);
-                _logger.LogDebug("Reset all events and barriers");
+                _logger.LogDebugMessage("Reset all events and barriers");
             }
             finally
             {
@@ -156,7 +156,7 @@ namespace DotCompute.Core.Execution
                 return;
             }
 
-            _logger.LogInformation("Disposing ExecutionCoordinator");
+            _logger.LogInfoMessage("Disposing ExecutionCoordinator");
 
             // Dispose all events and barriers
             var disposeTasks = new List<ValueTask>();
@@ -181,7 +181,7 @@ namespace DotCompute.Core.Execution
             _coordinationSemaphore.Dispose();
 
             _disposed = true;
-            _logger.LogInformation("ExecutionCoordinator disposed");
+            _logger.LogInfoMessage("ExecutionCoordinator disposed");
         }
     }
 
@@ -341,7 +341,7 @@ namespace DotCompute.Core.Execution
                 // Last participant - signal all waiting participants
                 _isComplete = true;
                 _ = _entrySemaphore.Release(_participantCount - 1); // Release all but the current thread
-                _logger.LogDebug("All participants entered barrier: {BarrierName}", Name);
+                _logger.LogDebugMessage($"All participants entered barrier: {Name}");
             }
             else
             {

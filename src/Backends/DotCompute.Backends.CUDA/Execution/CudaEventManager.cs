@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Execution
@@ -138,8 +139,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var startEvent = await CreateTimingEventAsync(cancellationToken).ConfigureAwait(false);
             var endEvent = await CreateTimingEventAsync(cancellationToken).ConfigureAwait(false);
 
-            _logger.LogDebug("Created timing pair: start={StartEvent}, end={EndEvent}",
-                startEvent.EventId, endEvent.EventId);
+            _logger.LogDebugMessage($"Created timing pair: start={startEvent.EventId}, end={endEvent.EventId}");
 
             return (startEvent, endEvent);
         }
@@ -167,7 +167,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var results = await Task.WhenAll(tasks).ConfigureAwait(false);
             Array.Copy(results, events, count);
 
-            _logger.LogDebug("Created batch of {Count} {Type} events", count, eventType);
+            _logger.LogDebugMessage(" events");
             return events;
         }
 
@@ -359,8 +359,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     Stream = stream
                 };
 
-                _logger.LogDebug("Measured operation '{Operation}': GPU={GpuTime:F3}ms, CPU={CpuTime:F3}ms, Overhead={Overhead:F3}ms",
-                    result.OperationName, result.GpuTimeMs, result.CpuTimeMs, result.OverheadMs);
+                _logger.LogDebugMessage($"Measured operation '{result.OperationName}': GPU={result.GpuTimeMs}ms, CPU={result.CpuTimeMs}ms, Overhead={result.OverheadMs}ms");
 
                 return result;
             }
@@ -402,8 +401,7 @@ namespace DotCompute.Backends.CUDA.Execution
             {
                 // Warmup runs
                 var warmupIterations = Math.Min(10, iterations / 10);
-                _logger.LogDebug("Starting profiling session {SessionId}: {Warmup} warmup + {Iterations} iterations",
-                    sessionId, warmupIterations, iterations);
+                _logger.LogDebugMessage($"Starting profiling session {sessionId}: {warmupIterations} warmup + {iterations} iterations");
 
                 for (var i = 0; i < warmupIterations; i++)
                 {
@@ -426,8 +424,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     if ((i + 1) % Math.Max(1, iterations / 10) == 0)
                     {
                         var progress = (double)(i + 1) / iterations * 100;
-                        _logger.LogDebug("Profiling progress {SessionId}: {Progress:F1}% ({Completed}/{Total})",
-                            sessionId, progress, i + 1, iterations);
+                        _logger.LogDebugMessage($"Profiling progress {sessionId}: {progress}% ({i + 1}/{iterations})");
                     }
                 }
 
@@ -509,9 +506,9 @@ namespace DotCompute.Backends.CUDA.Execution
                 await SynchronizeEventAsync(eventId).ConfigureAwait(false);
                 await callback(eventId).ConfigureAwait(false);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error in event callback for event {EventId}", eventId);
+                _logger.LogErrorMessage("Error in event callback execution");
             }
         });
         }
@@ -709,14 +706,12 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (stats.ActiveEvents > MAX_CONCURRENT_EVENTS * 0.8)
             {
-                _logger.LogWarning("High event usage: {ActiveEvents}/{MaxEvents} active events",
-                    stats.ActiveEvents, MAX_CONCURRENT_EVENTS);
+                _logger.LogWarningMessage($"High event usage: {stats.ActiveEvents}/{MAX_CONCURRENT_EVENTS} active events");
             }
 
             if (stats.ActiveTimingSessions > 10)
             {
-                _logger.LogInformation("Many active timing sessions: {ActiveSessions}",
-                    stats.ActiveTimingSessions);
+                _logger.LogInfoMessage($"Many active timing sessions: {stats.ActiveTimingSessions}");
             }
         }
 
@@ -756,9 +751,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 _eventPool?.Dispose();
                 _eventCreationSemaphore?.Dispose();
 
-                _logger.LogInformation("CUDA Event Manager disposed: created {TotalEvents} events, " +
-                                     "performed {TotalMeasurements} timing measurements",
-                    _totalEventsCreated, _totalTimingMeasurements);
+                _logger.LogInfoMessage($"CUDA Event Manager disposed: created {_totalEventsCreated} events");
             }
         }
     }

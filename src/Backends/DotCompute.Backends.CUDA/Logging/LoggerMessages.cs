@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Logging;
 
@@ -213,4 +214,26 @@ internal static partial class LoggerMessages
         Level = LogLevel.Error,
         Message = "Unexpected CUDA error in {Component}: {ErrorMessage}")]
     public static partial void UnexpectedCudaError(this ILogger logger, string component, string errorMessage, Exception? exception = null);
+
+    // Generic Messages for common logging patterns
+    [LoggerMessage(EventId = 31000, Level = LogLevel.Information, Message = "{Message}")]
+    public static partial void LogInfoMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 31001, Level = LogLevel.Debug, Message = "{Message}")]
+    public static partial void LogDebugMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 31002, Level = LogLevel.Warning, Message = "{Message}")]
+    public static partial void LogWarningMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 31003, Level = LogLevel.Error, Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 31004, Level = LogLevel.Error, Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, Exception ex, string message);
+
+    [LoggerMessage(EventId = 31005, Level = LogLevel.Trace, Message = "{Message}")]
+    public static partial void LogTraceMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 31006, Level = LogLevel.Critical, Message = "{Message}")]
+    public static partial void LogCriticalMessage(this ILogger logger, string message);
 }

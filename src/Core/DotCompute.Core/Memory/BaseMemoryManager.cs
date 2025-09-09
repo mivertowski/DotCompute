@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Memory;
@@ -170,14 +171,14 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
             TrackBuffer(buffer, sizeInBytes);
 
 
-            _logger.LogDebug("Allocated {Size} bytes with options {Options}", sizeInBytes, options);
+            _logger.LogDebugMessage("Allocated {Size} bytes with options {sizeInBytes, options}");
 
 
             return buffer;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to allocate {Size} bytes", sizeInBytes);
+            _logger.LogErrorMessage(ex, $"Failed to allocate {sizeInBytes} bytes");
             throw new InvalidOperationException($"Memory allocation failed for {sizeInBytes} bytes", ex);
         }
     }
@@ -276,7 +277,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         {
             var size = buffer.SizeInBytes;
             _ = Interlocked.Add(ref _totalAllocatedBytes, -size);
-            _logger.LogDebug("Freed buffer of {Size} bytes", size);
+            _logger.LogDebugMessage("Freed buffer of {size} bytes");
         }
 
 
@@ -345,7 +346,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
 
         if (toRemove.Count > 0)
         {
-            _logger.LogDebug("Cleaned up {Count} unused buffer references", toRemove.Count);
+            _logger.LogDebugMessage("Cleaned up {toRemove.Count} unused buffer references");
         }
     }
 

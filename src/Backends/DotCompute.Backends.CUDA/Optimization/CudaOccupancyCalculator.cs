@@ -9,6 +9,7 @@ using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Optimization
 {
@@ -66,7 +67,7 @@ namespace DotCompute.Backends.CUDA.Optimization
             _devicePropertiesCache = [];
 
 
-            _logger.LogInformation("CUDA Occupancy Calculator initialized");
+            _logger.LogInfoMessage("CUDA Occupancy Calculator initialized");
         }
 
         /// <summary>

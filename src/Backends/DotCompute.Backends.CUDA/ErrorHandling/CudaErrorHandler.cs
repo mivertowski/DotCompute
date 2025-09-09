@@ -6,7 +6,9 @@ using System.Diagnostics;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.ErrorHandling.Exceptions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using Polly;
 
 namespace DotCompute.Backends.CUDA.ErrorHandling;
@@ -121,12 +123,12 @@ public sealed class CudaErrorHandler : IDisposable
                 },
                 onReset: () =>
                 {
-                    _logger.LogInformation("Circuit breaker reset, GPU operations resuming");
+                    _logger.LogInfoMessage("Circuit breaker reset, GPU operations resuming");
                     _gpuAvailable = true;
                 },
                 onHalfOpen: () =>
                 {
-                    _logger.LogInformation("Circuit breaker half-open, testing GPU availability");
+                    _logger.LogInfoMessage("Circuit breaker half-open, testing GPU availability");
                 });
     }
 
@@ -189,8 +191,8 @@ public sealed class CudaErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error in {Operation}", operationName);
-            throw new CudaOperationException($"Operation '{operationName}' failed", ex);
+            _logger.LogErrorMessage(ex, $"Unexpected error in {operationName}");
+            throw new CudaOperationException(operationName, "Unexpected error occurred", ex);
         }
     }
 
@@ -203,8 +205,7 @@ public sealed class CudaErrorHandler : IDisposable
         string operationName,
         CancellationToken cancellationToken)
     {
-        _logger.LogError(cudaEx, "CUDA error in {Operation}: {Error}",
-            operationName, cudaEx.ErrorCode);
+        _logger.LogErrorMessage(cudaEx, $"CUDA error in {operationName}: {cudaEx.ErrorCode}");
 
         // Try recovery strategies based on error type
         if (IsMemoryError(cudaEx.ErrorCode))
@@ -225,7 +226,7 @@ public sealed class CudaErrorHandler : IDisposable
         }
 
         throw new CudaOperationException(
-            $"Operation '{operationName}' failed with error: {cudaEx.ErrorCode}", cudaEx);
+            operationName, $"Failed with error: {cudaEx.ErrorCode}", cudaEx);
     }
 
     /// <summary>
@@ -236,7 +237,7 @@ public sealed class CudaErrorHandler : IDisposable
         string operationName,
         CancellationToken cancellationToken)
     {
-        _logger.LogWarning("Attempting memory error recovery for {Operation}", operationName);
+        _logger.LogWarningMessage("Attempting memory error recovery for {operationName}");
 
         try
         {
@@ -255,7 +256,7 @@ public sealed class CudaErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Memory error recovery failed for {Operation}", operationName);
+            _logger.LogErrorMessage(ex, $"Memory error recovery failed for {operationName}");
 
 
             if (_options.EnableCpuFallback)
@@ -276,7 +277,7 @@ public sealed class CudaErrorHandler : IDisposable
         string operationName,
         CancellationToken cancellationToken)
     {
-        _logger.LogWarning("Attempting device error recovery for {Operation}", operationName);
+        _logger.LogWarningMessage("Attempting device error recovery for {operationName}");
 
         try
         {
@@ -292,7 +293,7 @@ public sealed class CudaErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Device error recovery failed for {Operation}", operationName);
+            _logger.LogErrorMessage(ex, $"Device error recovery failed for {operationName}");
         }
 
         if (_options.EnableCpuFallback)
@@ -300,7 +301,7 @@ public sealed class CudaErrorHandler : IDisposable
             return await FallbackToCpuAsync<T>(operationName);
         }
 
-        throw new CudaDeviceException($"Device error in operation '{operationName}'");
+        throw new CudaDeviceException(0, $"Device error in operation '{operationName}'");
     }
 
 
@@ -310,7 +311,7 @@ public sealed class CudaErrorHandler : IDisposable
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     private async Task<T> FallbackToCpuAsync<T>(string operationName)
     {
-        _logger.LogInformation("Falling back to CPU for {Operation}", operationName);
+        _logger.LogInfoMessage("Falling back to CPU for {operationName}");
 
         // This would invoke CPU-based implementation
         // For now, throw to indicate fallback is needed
@@ -364,7 +365,7 @@ public sealed class CudaErrorHandler : IDisposable
         {
             try
             {
-                _logger.LogWarning("Resetting CUDA device...");
+                _logger.LogWarningMessage("Resetting CUDA device...");
 
 
                 var result = CudaRuntime.cudaDeviceReset();
@@ -372,7 +373,7 @@ public sealed class CudaErrorHandler : IDisposable
 
                 if (result == CudaError.Success)
                 {
-                    _logger.LogInformation("Device reset successful");
+                    _logger.LogInfoMessage("Device reset successful");
                     _gpuAvailable = true;
                 }
                 else
@@ -383,7 +384,7 @@ public sealed class CudaErrorHandler : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Device reset exception");
+                _logger.LogErrorMessage(ex, "Device reset exception");
                 _gpuAvailable = false;
             }
         });
@@ -491,8 +492,7 @@ public sealed class CudaErrorHandler : IDisposable
     /// </summary>
     private void RecordSuccess(string operationName, long elapsedMs)
     {
-        _logger.LogDebug("Operation {Operation} completed in {ElapsedMs}ms",
-            operationName, elapsedMs);
+        _logger.LogDebugMessage($"Operation {operationName} completed in {elapsedMs}ms");
     }
 
     /// <summary>
@@ -546,181 +546,5 @@ public sealed class CudaErrorHandler : IDisposable
         /// The last occurrence.
         /// </value>
         public DateTimeOffset LastOccurrence { get; set; }
-    }
-}
-
-/// <summary>
-/// Error recovery configuration options.
-/// </summary>
-public sealed class ErrorRecoveryOptions
-{
-    /// <summary>
-    /// Gets the maximum retry attempts.
-    /// </summary>
-    /// <value>
-    /// The maximum retry attempts.
-    /// </value>
-    public int MaxRetryAttempts { get; init; } = 3;
-
-    /// <summary>
-    /// Gets the maximum retry delay ms.
-    /// </summary>
-    /// <value>
-    /// The maximum retry delay ms.
-    /// </value>
-    public int MaxRetryDelayMs { get; init; } = 5000;
-
-    /// <summary>
-    /// Gets the memory retry attempts.
-    /// </summary>
-    /// <value>
-    /// The memory retry attempts.
-    /// </value>
-    public int MemoryRetryAttempts { get; init; } = 2;
-
-    /// <summary>
-    /// Gets the circuit breaker threshold.
-    /// </summary>
-    /// <value>
-    /// The circuit breaker threshold.
-    /// </value>
-    public int CircuitBreakerThreshold { get; init; } = 5;
-
-    /// <summary>
-    /// Gets the circuit breaker duration seconds.
-    /// </summary>
-    /// <value>
-    /// The circuit breaker duration seconds.
-    /// </value>
-    public int CircuitBreakerDurationSeconds { get; init; } = 30;
-
-    /// <summary>
-    /// Gets a value indicating whether [enable cpu fallback].
-    /// </summary>
-    /// <value>
-    ///   <c>true</c> if [enable cpu fallback]; otherwise, <c>false</c>.
-    /// </value>
-    public bool EnableCpuFallback { get; init; } = true;
-
-    /// <summary>
-    /// Gets a value indicating whether [allow device reset].
-    /// </summary>
-    /// <value>
-    ///   <c>true</c> if [allow device reset]; otherwise, <c>false</c>.
-    /// </value>
-    public bool AllowDeviceReset { get; init; }
-
-    /// <summary>
-    /// Gets a value indicating whether [enable diagnostic logging].
-    /// </summary>
-    /// <value>
-    ///   <c>true</c> if [enable diagnostic logging]; otherwise, <c>false</c>.
-    /// </value>
-    public bool EnableDiagnosticLogging { get; init; } = true;
-}
-
-/// <summary>
-/// Exception thrown when CUDA is unavailable.
-/// </summary>
-public sealed class CudaUnavailableException : Exception
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaUnavailableException"/> class.
-    /// </summary>
-    /// <param name="message">The message that describes the error.</param>
-    public CudaUnavailableException(string message) : base(message) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaUnavailableException"/> class.
-    /// </summary>
-    /// <param name="message">The message.</param>
-    /// <param name="inner">The inner.</param>
-    public CudaUnavailableException(string message, Exception inner) : base(message, inner) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaUnavailableException"/> class.
-    /// </summary>
-    public CudaUnavailableException()
-    {
-    }
-}
-
-/// <summary>
-/// Exception thrown for CUDA operations.
-/// </summary>
-public sealed class CudaOperationException : Exception
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaOperationException"/> class.
-    /// </summary>
-    /// <param name="message">The message that describes the error.</param>
-    public CudaOperationException(string message) : base(message) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaOperationException"/> class.
-    /// </summary>
-    /// <param name="message">The message.</param>
-    /// <param name="inner">The inner.</param>
-    public CudaOperationException(string message, Exception inner) : base(message, inner) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaOperationException"/> class.
-    /// </summary>
-    public CudaOperationException()
-    {
-    }
-}
-
-/// <summary>
-/// Exception thrown for device errors.
-/// </summary>
-public sealed class CudaDeviceException : Exception
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaDeviceException"/> class.
-    /// </summary>
-    /// <param name="message">The message that describes the error.</param>
-    public CudaDeviceException(string message) : base(message) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaDeviceException"/> class.
-    /// </summary>
-    /// <param name="message">The message.</param>
-    /// <param name="inner">The inner.</param>
-    public CudaDeviceException(string message, Exception inner) : base(message, inner) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaDeviceException"/> class.
-    /// </summary>
-    public CudaDeviceException()
-    {
-    }
-}
-
-/// <summary>
-/// Exception indicating CPU fallback is required.
-/// </summary>
-public sealed class CpuFallbackRequiredException : Exception
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
-    /// </summary>
-    /// <param name="message">The message that describes the error.</param>
-    public CpuFallbackRequiredException(string message) : base(message) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
-    /// </summary>
-    public CpuFallbackRequiredException()
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CpuFallbackRequiredException"/> class.
-    /// </summary>
-    /// <param name="message">The error message that explains the reason for the exception.</param>
-    /// <param name="innerException">The exception that is the cause of the current exception, or a null reference (<see langword="Nothing" /> in Visual Basic) if no inner exception is specified.</param>
-    public CpuFallbackRequiredException(string message, Exception innerException) : base(message, innerException)
-    {
     }
 }

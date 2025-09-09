@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -42,7 +43,7 @@ namespace DotCompute.Core.Memory.P2P
                 TimeSpan.FromMilliseconds(AdaptiveOptimizationIntervalMs),
                 TimeSpan.FromMilliseconds(AdaptiveOptimizationIntervalMs));
 
-            _logger.LogDebug("P2P Optimizer initialized with adaptive optimization");
+            _logger.LogDebugMessage("P2P Optimizer initialized with adaptive optimization");
         }
 
         /// <summary>
@@ -52,7 +53,7 @@ namespace DotCompute.Core.Memory.P2P
             List<P2PDevicePair> devicePairs,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Initializing P2P topology optimization for {PairCount} device pairs", devicePairs.Count);
+            _logger.LogInfoMessage("Initializing P2P topology optimization for {devicePairs.Count} device pairs");
 
             await _optimizerSemaphore.WaitAsync(cancellationToken);
             try
@@ -92,8 +93,7 @@ namespace DotCompute.Core.Memory.P2P
                     }
                 }
 
-                _logger.LogInformation("P2P topology optimization initialized: {ProfileCount} optimization profiles created",
-                    _optimizationProfiles.Count);
+                _logger.LogInfoMessage($"P2P topology optimization initialized: {_optimizationProfiles.Count} optimization profiles created");
             }
             finally
             {
@@ -147,8 +147,7 @@ namespace DotCompute.Core.Memory.P2P
             // Update statistics
             UpdateOptimizationStatistics(transferPlan);
 
-            _logger.LogDebug("Optimal transfer plan created: {Strategy}, {ChunkSize} bytes chunks, {PipelineDepth} pipeline depth, estimated {EstimatedTime}ms",
-                transferPlan.Strategy, transferPlan.ChunkSize, transferPlan.PipelineDepth, transferPlan.EstimatedTransferTimeMs);
+            _logger.LogDebugMessage($"Optimal transfer plan created: {transferPlan.Strategy}, {transferPlan.ChunkSize} bytes chunks, {transferPlan.PipelineDepth} pipeline depth, estimated {transferPlan.EstimatedTransferTimeMs}ms");
 
             return transferPlan;
         }
@@ -210,8 +209,7 @@ namespace DotCompute.Core.Memory.P2P
                 currentOffset += chunkSize;
             }
 
-            _logger.LogDebug("Scatter plan created: {ChunkCount} chunks, estimated {TotalTime}ms total time",
-                scatterPlan.Chunks.Count, scatterPlan.EstimatedTotalTimeMs);
+            _logger.LogDebugMessage($"Scatter plan created: {scatterPlan.Chunks.Count} chunks, estimated {scatterPlan.EstimatedTotalTimeMs}ms total time");
 
             return scatterPlan;
         }
@@ -268,8 +266,7 @@ namespace DotCompute.Core.Memory.P2P
                 currentDestOffset += sourceBuffer.Length;
             }
 
-            _logger.LogDebug("Gather plan created: {ChunkCount} chunks, estimated {TotalTime}ms total time",
-                gatherPlan.Chunks.Count, gatherPlan.EstimatedTotalTimeMs);
+            _logger.LogDebugMessage($"Gather plan created: {gatherPlan.Chunks.Count} chunks, estimated {gatherPlan.EstimatedTotalTimeMs}ms total time");
 
             return gatherPlan;
         }
@@ -409,9 +406,7 @@ namespace DotCompute.Core.Memory.P2P
                     });
                 }
 
-                _logger.LogDebug("Optimization recommendations generated: {PerfCount} performance, {TopoCount} topology, {ConfigCount} configuration",
-                    recommendations.PerformanceRecommendations.Count, recommendations.TopologyRecommendations.Count,
-                    recommendations.ConfigurationRecommendations.Count);
+                _logger.LogDebugMessage($"Optimization recommendations generated: {recommendations.PerformanceRecommendations.Count} performance, {recommendations.TopologyRecommendations.Count} topology, {recommendations.ConfigurationRecommendations.Count} configuration");
 
                 return recommendations;
             }
@@ -858,7 +853,7 @@ namespace DotCompute.Core.Memory.P2P
             _optimizationProfiles.Clear();
             _transferHistory.Clear();
 
-            _logger.LogDebug("P2P Optimizer disposed");
+            _logger.LogDebugMessage("P2P Optimizer disposed");
             await Task.CompletedTask;
         }
     }

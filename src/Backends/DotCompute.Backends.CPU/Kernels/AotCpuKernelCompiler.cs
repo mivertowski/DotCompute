@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CPU.Logging;
 using KernelExecutionContext = DotCompute.Abstractions.Execution.KernelExecutionContext;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
@@ -349,7 +350,7 @@ ILogger logger) : ICompiledKernel
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Executing AOT kernel: {KernelName}", Name);
+        _logger.LogDebugMessage("Executing AOT kernel: {Name}");
 
         try
         {
@@ -362,11 +363,11 @@ ILogger logger) : ICompiledKernel
             }
 
             await _implementation(context).ConfigureAwait(false);
-            _logger.LogDebug("Successfully executed AOT kernel: {KernelName}", Name);
+            _logger.LogDebugMessage("Successfully executed AOT kernel: {Name}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing AOT kernel: {KernelName}", Name);
+            _logger.LogErrorMessage(ex, $"Error executing AOT kernel: {Name}");
             throw;
         }
     }
@@ -375,7 +376,7 @@ ILogger logger) : ICompiledKernel
     {
         // Thread pool disposal is handled by the accelerator
         // _threadPool is managed externally
-        _logger.LogDebug("Disposed AOT kernel: {KernelName}", Name);
+        _logger.LogDebugMessage("Disposed AOT kernel: {Name}");
         return ValueTask.CompletedTask;
     }
 }

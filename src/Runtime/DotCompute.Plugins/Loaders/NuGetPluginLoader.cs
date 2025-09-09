@@ -16,6 +16,7 @@ using DotCompute.Plugins.Loaders.NuGet.Types;
 using DotCompute.Plugins.Loaders.NuGet.Results;
 using DotCompute.Plugins.Loaders.NuGet.Configuration;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 // CA1848 warnings are addressed by using LoggerMessage delegates for high-performance logging
@@ -607,7 +608,7 @@ public class NuGetPluginLoader : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load assembly with security context: {AssemblyPath}", assemblyPath);
+            _logger.LogErrorMessage(ex, $"Failed to load assembly with security context: {assemblyPath}");
             throw new PluginLoadException($"Security validation failed for assembly: {assemblyPath}", "SecurityValidation", assemblyPath, ex);
         }
     }
@@ -899,8 +900,7 @@ public class NuGetPluginLoader : IDisposable
                     if (suspiciousPatterns.Count > 0)
                     {
                         var patterns = string.Join(", ", suspiciousPatterns);
-                        _logger.LogWarning("Suspicious patterns detected in assembly {AssemblyPath}: {Patterns}",
-                            assemblyPath, patterns);
+                        _logger.LogWarningMessage($"Suspicious patterns detected in assembly {assemblyPath}: {patterns}");
 
                         if (_options.SecurityPolicy?.BlockSuspiciousAssemblies == true)
                         {
@@ -980,9 +980,7 @@ public class NuGetPluginLoader : IDisposable
                 if (dangerousAttributes.Count != 0)
                 {
                     var attrNames = string.Join(", ", dangerousAttributes.Select(a => a.GetType().Name));
-                    _logger.LogWarning("Assembly {AssemblyName} contains dangerous attributes: {Attributes}",
-
-                        assemblyName.Name, attrNames);
+                    _logger.LogWarningMessage($"Assembly {assemblyName.Name} contains dangerous attributes: {attrNames}");
                 }
 
                 // Validate types and members

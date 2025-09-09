@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Execution.Analysis
@@ -180,7 +181,7 @@ namespace DotCompute.Core.Execution.Analysis
         public void ClearCache()
         {
             _performanceCache.Clear();
-            _logger.LogInformation("Cleared device performance cache");
+            _logger.LogInfoMessage("Cleared device performance cache");
         }
 
         /// <summary>

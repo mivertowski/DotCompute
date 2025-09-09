@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using global::System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Security;
 
@@ -58,7 +59,7 @@ public class ResourceMonitor : IDisposable
         var tracker = new PluginResourceTracker(plugin.Id, plugin.Permissions.ResourceLimits, _logger);
         _ = _trackers.TryAdd(plugin.Id, tracker);
 
-        _logger.LogDebug("Registered plugin {PluginId} for resource monitoring", plugin.Id);
+        _logger.LogDebugMessage("Registered plugin {plugin.Id} for resource monitoring");
     }
 
     /// <summary>
@@ -71,7 +72,7 @@ public class ResourceMonitor : IDisposable
         if (_trackers.TryRemove(plugin.Id, out var tracker))
         {
             tracker.Dispose();
-            _logger.LogDebug("Unregistered plugin {PluginId} from resource monitoring", plugin.Id);
+            _logger.LogDebugMessage("Unregistered plugin {plugin.Id} from resource monitoring");
         }
     }
 
@@ -113,9 +114,7 @@ public class ResourceMonitor : IDisposable
                 if (usage.IsExceedingLimits)
                 {
                     var violations = string.Join(", ", usage.ViolatedLimits);
-                    _logger.LogWarning("Resource violations detected for plugin {PluginId}: {Violations}",
-
-                        plugin.Id, violations);
+                    _logger.LogWarningMessage($"Resource violations detected for plugin {plugin.Id}: {violations}");
                     return violations;
                 }
 
@@ -130,7 +129,7 @@ public class ResourceMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error monitoring plugin {PluginId}", plugin.Id);
+            _logger.LogErrorMessage(ex, $"Error monitoring plugin {plugin.Id}");
             return $"Monitoring error: {ex.Message}";
         }
     }
@@ -167,7 +166,7 @@ public class ResourceMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during resource monitoring");
+            _logger.LogErrorMessage(ex, "Error during resource monitoring");
         }
     }
 
@@ -436,9 +435,7 @@ internal class PluginResourceTracker : IDisposable
 
         if (_currentUsage.IsExceedingLimits)
         {
-            _logger.LogWarning("Resource limits violated for plugin {PluginId}: {Violations}",
-
-                _pluginId, string.Join(", ", _currentUsage.ViolatedLimits));
+            _logger.LogWarningMessage($"Resource limits violated for plugin {_pluginId}: {string.Join(", ", _currentUsage.ViolatedLimits)}");
         }
     }
 

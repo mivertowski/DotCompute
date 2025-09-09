@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using global::System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DotCompute.Core.Telemetry;
@@ -97,8 +98,7 @@ public sealed class DistributedTracer : IDisposable
         _ = _activeTraces.TryAdd(correlationId, traceContext);
 
 
-        _logger.LogDebug("Started distributed trace {TraceId} for operation {OperationName} with correlation {CorrelationId}",
-            traceContext.TraceId, operationName, correlationId);
+        _logger.LogDebugMessage($"Started distributed trace {traceContext.TraceId} for operation {operationName} with correlation {correlationId}");
 
 
         return traceContext;
@@ -121,7 +121,7 @@ public sealed class DistributedTracer : IDisposable
 
         if (!_activeTraces.TryGetValue(correlationId, out var traceContext))
         {
-            _logger.LogWarning("Attempted to start span for unknown correlation ID {CorrelationId}", correlationId);
+            _logger.LogWarningMessage("Attempted to start span for unknown correlation ID {correlationId}");
             return null;
         }
 
@@ -339,7 +339,7 @@ public sealed class DistributedTracer : IDisposable
 
         if (!_activeTraces.TryRemove(correlationId, out var traceContext))
         {
-            _logger.LogWarning("Attempted to finish unknown trace with correlation ID {CorrelationId}", correlationId);
+            _logger.LogWarningMessage("Attempted to finish unknown trace with correlation ID {correlationId}");
             return null;
         }
 
@@ -379,10 +379,7 @@ public sealed class DistributedTracer : IDisposable
         _ = _completedSpans.TryAdd(correlationId, traceData.Spans);
 
 
-        _logger.LogInformation("Finished distributed trace {TraceId} for operation '{OperationName}' " +
-            "after {Duration}ms with {SpanCount} spans across {DeviceCount} devices",
-            traceData.TraceId, traceData.OperationName, totalDuration.TotalMilliseconds,
-            traceData.Spans.Count, traceData.DeviceOperations.Count);
+        _logger.LogInfoMessage($"Finished distributed trace {traceData.TraceId} after {traceData.TotalDuration.TotalMilliseconds:F1}ms with {traceData.Spans.Count} spans across {traceData.DeviceOperations.Count} devices for operation '{traceData.OperationName}'");
 
 
         return traceData;
@@ -496,8 +493,7 @@ public sealed class DistributedTracer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to export trace data for correlation ID {CorrelationId} in format {Format}",
-                correlationId, format);
+            _logger.LogErrorMessage(ex, $"Failed to export trace data for correlation ID {correlationId} in format {format}");
         }
     }
 
@@ -506,7 +502,7 @@ public sealed class DistributedTracer : IDisposable
     {
         // Implementation for OpenTelemetry export
         await Task.Delay(1, cancellationToken); // Placeholder
-        _logger.LogDebug("Exported trace {CorrelationId} to OpenTelemetry", correlationId);
+        _logger.LogDebugMessage("Exported trace {correlationId} to OpenTelemetry");
     }
 
     private async Task ExportJaegerTraceAsync(string correlationId, List<SpanData> spans,
@@ -514,7 +510,7 @@ public sealed class DistributedTracer : IDisposable
     {
         // Implementation for Jaeger export
         await Task.Delay(1, cancellationToken); // Placeholder
-        _logger.LogDebug("Exported trace {CorrelationId} to Jaeger", correlationId);
+        _logger.LogDebugMessage("Exported trace {correlationId} to Jaeger");
     }
 
     private async Task ExportZipkinTraceAsync(string correlationId, List<SpanData> spans,
@@ -522,7 +518,7 @@ public sealed class DistributedTracer : IDisposable
     {
         // Implementation for Zipkin export
         await Task.Delay(1, cancellationToken); // Placeholder
-        _logger.LogDebug("Exported trace {CorrelationId} to Zipkin", correlationId);
+        _logger.LogDebugMessage("Exported trace {correlationId} to Zipkin");
     }
 
     private async Task ExportCustomTraceAsync(string correlationId, List<SpanData> spans,
@@ -530,7 +526,7 @@ public sealed class DistributedTracer : IDisposable
     {
         // Implementation for custom export format
         await Task.Delay(1, cancellationToken); // Placeholder
-        _logger.LogDebug("Exported trace {CorrelationId} to custom format", correlationId);
+        _logger.LogDebugMessage("Exported trace {correlationId} to custom format");
     }
 
     private static List<SpanData> IdentifyCriticalPath(List<SpanData> spans)
@@ -690,7 +686,7 @@ public sealed class DistributedTracer : IDisposable
                 if (_activeTraces.TryRemove(correlationId, out var trace))
                 {
                     trace.Activity?.Dispose();
-                    _logger.LogWarning("Cleaned up expired active trace {CorrelationId}", correlationId);
+                    _logger.LogWarningMessage("Cleaned up expired active trace {correlationId}");
                 }
             }
 
@@ -710,13 +706,12 @@ public sealed class DistributedTracer : IDisposable
 
             if (expiredTraces.Count != 0 || expiredCompleted.Count != 0)
             {
-                _logger.LogInformation("Cleaned up {ActiveCount} expired active traces and {CompletedCount} completed traces",
-                    expiredTraces.Count, expiredCompleted.Count);
+                _logger.LogInfoMessage($"Cleaned up {expiredTraces.Count} expired active traces and {expiredCompleted.Count} completed traces");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to cleanup expired traces");
+            _logger.LogErrorMessage(ex, "Failed to cleanup expired traces");
         }
     }
 

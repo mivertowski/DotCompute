@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory
 {
@@ -42,7 +43,7 @@ namespace DotCompute.Core.Memory
                 TimeSpan.FromMilliseconds(CoherenceMonitorIntervalMs),
                 TimeSpan.FromMilliseconds(CoherenceMonitorIntervalMs));
 
-            _logger.LogDebug("P2P memory coherence manager initialized");
+            _logger.LogDebugMessage("P2P memory coherence manager initialized");
         }
 
         /// <summary>
@@ -107,7 +108,7 @@ namespace DotCompute.Core.Memory
         {
             if (!_bufferTracking.TryGetValue(buffer, out var coherenceInfo))
             {
-                _logger.LogWarning("Attempted to synchronize untracked buffer");
+                _logger.LogWarningMessage("Attempted to synchronize untracked buffer");
                 return;
             }
 
@@ -130,8 +131,7 @@ namespace DotCompute.Core.Memory
                     .FirstOrDefault()
                     ?? coherenceInfo.Copies.OrderByDescending(c => c.LastAccessed).First();
 
-                _logger.LogDebug("Synchronizing buffer {BufferId} from canonical copy on {CanonicalDevice}",
-                    coherenceInfo.BufferId, canonicalCopy.Device.Info.Name);
+                _logger.LogDebugMessage($"Synchronizing buffer {coherenceInfo.BufferId} from canonical copy on {canonicalCopy.Device.Info.Name}");
 
                 // Synchronize all other copies
                 foreach (var copy in coherenceInfo.Copies.Where(c => c != canonicalCopy))
@@ -164,8 +164,7 @@ namespace DotCompute.Core.Memory
                     _statistics.CoherentBuffers++;
                 }
 
-                _logger.LogDebug("Buffer {BufferId} synchronized across {CopyCount} devices in {Duration}ms",
-                    coherenceInfo.BufferId, coherenceInfo.Copies.Count, duration.TotalMilliseconds);
+                _logger.LogDebugMessage($"Buffer {coherenceInfo.BufferId} synchronized across {coherenceInfo.Copies.Count} devices in {duration.TotalMilliseconds}ms");
             }
             finally
             {
@@ -184,7 +183,7 @@ namespace DotCompute.Core.Memory
             await _coherenceSemaphore.WaitAsync(cancellationToken);
             try
             {
-                _logger.LogInformation("Optimizing P2P buffer placement across {DeviceCount} devices", devices.Length);
+                _logger.LogInfoMessage("Optimizing P2P buffer placement across {devices.Length} devices");
 
                 // Store P2P topology for future reference
                 _p2pTopology.Clear();
@@ -205,8 +204,7 @@ namespace DotCompute.Core.Memory
 
                 await Task.WhenAll(optimizationTasks);
 
-                _logger.LogInformation("P2P placement optimization completed: {OptimizationCount} optimizations applied",
-                    optimizations.Count);
+                _logger.LogInfoMessage($"P2P placement optimization completed: {optimizations.Count} optimizations applied");
             }
             finally
             {
@@ -342,8 +340,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to synchronize buffer copy from {Source} to {Target}",
-                    canonicalCopy.Device.Info.Name, targetCopy.Device.Info.Name);
+                _logger.LogErrorMessage(ex, $"Failed to synchronize buffer copy from {canonicalCopy.Device.Info.Name} to {targetCopy.Device.Info.Name}");
                 throw;
             }
         }
@@ -574,8 +571,7 @@ namespace DotCompute.Core.Memory
         {
             // This would implement actual buffer migration
             // For now, just log the optimization
-            _logger.LogDebug("Executing placement optimization: {SourceDevice} -> {TargetDevice}, Expected benefit: {Benefit:F1} GB/s",
-                optimization.SourceDeviceId, optimization.TargetDeviceId, optimization.ExpectedBenefit);
+            _logger.LogDebugMessage($"Executing placement optimization: {optimization.SourceDeviceId} -> {optimization.TargetDeviceId}, Expected benefit: {optimization.ExpectedBenefit} GB/s");
 
             await Task.Delay(1, cancellationToken); // Simulate optimization work
         }
@@ -618,8 +614,7 @@ namespace DotCompute.Core.Memory
 
                 if (incoherentRatio > IncoherentThresholdRatio)
                 {
-                    _logger.LogWarning("High incoherence detected: {IncoherentRatio:P1} of buffers are incoherent",
-                        incoherentRatio);
+                    _logger.LogWarningMessage($"High incoherence detected: {incoherentRatio} of buffers are incoherent");
 
                     // Trigger background synchronization for heavily accessed buffers
                     _ = Task.Run(async () => await PerformBackgroundSynchronizationAsync(CancellationToken.None));
@@ -683,7 +678,7 @@ namespace DotCompute.Core.Memory
             _deviceStates.Clear();
             _p2pTopology.Clear();
 
-            _logger.LogDebug("P2P memory coherence manager disposed");
+            _logger.LogDebugMessage("P2P memory coherence manager disposed");
         }
     }
 

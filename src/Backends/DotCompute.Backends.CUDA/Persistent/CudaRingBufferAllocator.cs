@@ -10,6 +10,7 @@ using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Persistent
 {
@@ -62,8 +63,7 @@ namespace DotCompute.Backends.CUDA.Persistent
             var sliceBytes = elementsPerSlice * elementSize;
             var totalBytes = sliceBytes * depth;
 
-            _logger.LogDebug("Allocating ring buffer: depth={Depth}, slice={SliceBytes} bytes, total={TotalBytes} bytes",
-                depth, sliceBytes, totalBytes);
+            _logger.LogDebugMessage($"Allocating ring buffer: depth={depth}, slice={sliceBytes} bytes, total={totalBytes} bytes");
 
             // Allocate contiguous device memory for all slices
             var devicePtr = IntPtr.Zero;
@@ -85,8 +85,7 @@ namespace DotCompute.Backends.CUDA.Persistent
             var allocation = new RingBufferAllocation(devicePtr, totalBytes, ringBuffer);
             _allocations.Add(allocation);
 
-            _logger.LogInformation("Created ring buffer at {Ptr:X} with {Depth} slices of {Elements} elements",
-                devicePtr.ToInt64(), depth, elementsPerSlice);
+            _logger.LogInfoMessage($"Created ring buffer at {devicePtr.ToInt64()} with {depth} slices of {elementsPerSlice} elements");
 
             return await Task.FromResult(ringBuffer);
         }
@@ -139,7 +138,7 @@ namespace DotCompute.Backends.CUDA.Persistent
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error disposing ring buffer allocation");
+                    _logger.LogErrorMessage(ex, "Error disposing ring buffer allocation");
                 }
             }
 

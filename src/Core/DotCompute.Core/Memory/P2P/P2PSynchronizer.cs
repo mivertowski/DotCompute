@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -44,7 +45,7 @@ namespace DotCompute.Core.Memory.P2P
                 TimeSpan.FromMilliseconds(SyncMonitorIntervalMs),
                 TimeSpan.FromMilliseconds(SyncMonitorIntervalMs));
 
-            _logger.LogDebug("P2P Synchronizer initialized with {MaxConcurrentOps} concurrent operations", MaxConcurrentSyncOperations);
+            _logger.LogDebugMessage("P2P Synchronizer initialized with {MaxConcurrentSyncOperations} concurrent operations");
         }
 
         /// <summary>
@@ -61,7 +62,7 @@ namespace DotCompute.Core.Memory.P2P
             }
 
 
-            _logger.LogInformation("Initializing P2P synchronization for {DeviceCount} devices", devices.Length);
+            _logger.LogInfoMessage("Initializing P2P synchronization for {devices.Length} devices");
 
             await _synchronizerSemaphore.WaitAsync(cancellationToken);
             try
@@ -82,7 +83,7 @@ namespace DotCompute.Core.Memory.P2P
                     _deviceSyncStates[device.Info.Id] = syncState;
                 }
 
-                _logger.LogInformation("P2P synchronization initialized for {DeviceCount} devices", devices.Length);
+                _logger.LogInfoMessage("P2P synchronization initialized for {devices.Length} devices");
             }
             finally
             {
@@ -149,8 +150,7 @@ namespace DotCompute.Core.Memory.P2P
                     }
                 });
 
-                _logger.LogDebug("Transfer barrier established: {BarrierId} between {SourceDevice} and {TargetDevice}",
-                    barrierId, sourceDevice.Info.Name, targetDevice.Info.Name);
+                _logger.LogDebugMessage($"Transfer barrier established: {barrierId} between {sourceDevice.Info.Name} and {targetDevice.Info.Name}");
 
                 lock (_statistics)
                 {
@@ -199,7 +199,7 @@ namespace DotCompute.Core.Memory.P2P
                         _statistics.TotalBarrierTime += duration;
                     }
 
-                    _logger.LogDebug("Transfer barrier released: {BarrierId}", barrierId);
+                    _logger.LogDebugMessage("Transfer barrier released: {barrierId}");
                 }
             }
             finally
@@ -275,8 +275,7 @@ namespace DotCompute.Core.Memory.P2P
                     CompletionTask = barrier.CompletionSource.Task
                 };
 
-                _logger.LogDebug("Multi-device barrier created: {BarrierId} with {DeviceCount} devices",
-                    barrierId, devices.Length);
+                _logger.LogDebugMessage($"Multi-device barrier created: {barrierId} with {devices.Length} devices");
 
                 lock (_statistics)
                 {
@@ -305,19 +304,19 @@ namespace DotCompute.Core.Memory.P2P
             {
                 if (!_barriers.TryGetValue(barrierId, out var barrier))
                 {
-                    _logger.LogWarning("Barrier not found: {BarrierId}", barrierId);
+                    _logger.LogWarningMessage("Barrier not found: {barrierId}");
                     return false;
                 }
 
                 if (barrier.BarrierState != P2PBarrierState.Active)
                 {
-                    _logger.LogWarning("Barrier {BarrierId} is not active (state: {State})", barrierId, barrier.BarrierState);
+                    _logger.LogWarningMessage("Barrier {BarrierId} is not active (state: {barrierId, barrier.BarrierState})");
                     return false;
                 }
 
                 if (!barrier.ParticipantDevices.Contains(deviceId))
                 {
-                    _logger.LogWarning("Device {DeviceId} is not a participant in barrier {BarrierId}", deviceId, barrierId);
+                    _logger.LogWarningMessage("Device {DeviceId} is not a participant in barrier {deviceId, barrierId}");
                     return false;
                 }
 
@@ -333,7 +332,7 @@ namespace DotCompute.Core.Memory.P2P
                     barrier.BarrierState = P2PBarrierState.Completed;
                     _ = barrier.CompletionSource.TrySetResult(true);
 
-                    _logger.LogDebug("Barrier {BarrierId} completed - all participants arrived", barrierId);
+                    _logger.LogDebugMessage("Barrier {barrierId} completed - all participants arrived");
 
                     lock (_statistics)
                     {
@@ -363,7 +362,7 @@ namespace DotCompute.Core.Memory.P2P
         {
             if (!_barriers.TryGetValue(barrierId, out var barrier))
             {
-                _logger.LogWarning("Barrier not found: {BarrierId}", barrierId);
+                _logger.LogWarningMessage("Barrier not found: {barrierId}");
                 return false;
             }
 
@@ -385,7 +384,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error waiting for barrier {BarrierId}", barrierId);
+                _logger.LogErrorMessage(ex, $"Error waiting for barrier {barrierId}");
                 return false;
             }
         }
@@ -438,8 +437,7 @@ namespace DotCompute.Core.Memory.P2P
                     }
                 }
 
-                _logger.LogDebug("Sync event created: {EventId} with {DeviceCount} devices, type: {EventType}",
-                    eventId, devices.Length, eventType);
+                _logger.LogDebugMessage($"Sync event created: {eventId} with {devices.Length} devices, type: {eventType}");
 
                 lock (_statistics)
                 {
@@ -467,7 +465,7 @@ namespace DotCompute.Core.Memory.P2P
             {
                 if (!_syncEvents.TryGetValue(eventId, out var syncEvent))
                 {
-                    _logger.LogWarning("Sync event not found: {EventId}", eventId);
+                    _logger.LogWarningMessage("Sync event not found: {eventId}");
                     return false;
                 }
 
@@ -489,8 +487,7 @@ namespace DotCompute.Core.Memory.P2P
                     syncEvent.WaitingDevices.Clear();
                 }
 
-                _logger.LogDebug("Sync event signaled: {EventId}, woke up {WaitingCount} devices",
-                    eventId, waitingTasks.Count);
+                _logger.LogDebugMessage($"Sync event signaled: {eventId}, woke up {waitingTasks.Count} devices");
 
                 lock (_statistics)
                 {
@@ -516,7 +513,7 @@ namespace DotCompute.Core.Memory.P2P
         {
             if (!_syncEvents.TryGetValue(eventId, out var syncEvent))
             {
-                _logger.LogWarning("Sync event not found: {EventId}", eventId);
+                _logger.LogWarningMessage("Sync event not found: {eventId}");
                 return false;
             }
 
@@ -587,8 +584,7 @@ namespace DotCompute.Core.Memory.P2P
 
                 _atomicCounters[counterId] = counter;
 
-                _logger.LogDebug("Atomic counter created: {CounterId} with initial value {InitialValue}",
-                    counterId, initialValue);
+                _logger.LogDebugMessage($"Atomic counter created: {counterId} with initial value {initialValue}");
 
                 lock (_statistics)
                 {
@@ -617,7 +613,7 @@ namespace DotCompute.Core.Memory.P2P
             {
                 if (!_atomicCounters.TryGetValue(counterId, out var counter))
                 {
-                    _logger.LogWarning("Atomic counter not found: {CounterId}", counterId);
+                    _logger.LogWarningMessage("Atomic counter not found: {counterId}");
                     return -1;
                 }
 
@@ -700,7 +696,7 @@ namespace DotCompute.Core.Memory.P2P
                         _statistics.ActiveBarriers--;
                     }
 
-                    _logger.LogWarning("Barrier timed out: {BarrierId} after {TimeoutMs}ms", barrierId, barrier.TimeoutMs);
+                    _logger.LogWarningMessage("Barrier timed out: {BarrierId} after {barrierId, barrier.TimeoutMs}ms");
                 }
             }
             finally
@@ -730,8 +726,7 @@ namespace DotCompute.Core.Memory.P2P
 
                 foreach (var stuckBarrier in stuckBarriers)
                 {
-                    _logger.LogWarning("Stuck barrier detected: {BarrierId}, created {CreatedAt}, {Arrived}/{Expected} participants",
-                        stuckBarrier.BarrierId, stuckBarrier.CreatedAt, stuckBarrier.ArrivedParticipants, stuckBarrier.ExpectedParticipants);
+                    _logger.LogWarningMessage($"Stuck barrier detected: {stuckBarrier.BarrierId}, created {stuckBarrier.CreatedAt}, {stuckBarrier.ArrivedParticipants}/{stuckBarrier.ExpectedParticipants} participants");
                 }
             }
             catch (Exception ex)
@@ -780,7 +775,7 @@ namespace DotCompute.Core.Memory.P2P
             _deviceSyncStates.Clear();
             _synchronizerSemaphore.Dispose();
 
-            _logger.LogDebug("P2P Synchronizer disposed");
+            _logger.LogDebugMessage("P2P Synchronizer disposed");
 
 
             return ValueTask.CompletedTask;

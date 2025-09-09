@@ -12,6 +12,7 @@ using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Analysis;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using ExecutionPerformanceMonitor = DotCompute.Core.Execution.PerformanceMonitor;
 using DotCompute.Core.Execution.Optimization;
 
@@ -75,8 +76,7 @@ namespace DotCompute.Core.Execution
             ArgumentNullException.ThrowIfNull(options);
 
             var stopwatch = Stopwatch.StartNew();
-            _logger.LogInformation("Generating data parallel execution plan for kernel {KernelName} on {DeviceCount} devices",
-                kernelName, devices.Length);
+            _logger.LogInfoMessage($"Generating data parallel execution plan for kernel {kernelName} on {devices.Length} devices");
 
             try
             {
@@ -119,14 +119,13 @@ namespace DotCompute.Core.Execution
                 await _executionOptimizer.OptimizeDataParallelPlanAsync(plan, cancellationToken);
 
                 stopwatch.Stop();
-                _logger.LogInformation("Generated data parallel execution plan in {ElapsedMs:F2}ms with {DeviceCount} devices, estimated execution time: {EstimatedMs:F2}ms",
-                    stopwatch.Elapsed.TotalMilliseconds, selectedDevices.Length, estimatedExecutionTime);
+                _logger.LogInfoMessage($"Generated data parallel execution plan in {stopwatch.Elapsed.TotalMilliseconds}ms with {selectedDevices.Length} devices, estimated execution time: {estimatedExecutionTime}ms");
 
                 return plan;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate data parallel execution plan for kernel {KernelName}", kernelName);
+                _logger.LogErrorMessage(ex, $"Failed to generate data parallel execution plan for kernel {kernelName}");
                 throw;
             }
         }
@@ -154,8 +153,7 @@ namespace DotCompute.Core.Execution
             ArgumentNullException.ThrowIfNull(options);
 
             var stopwatch = Stopwatch.StartNew();
-            _logger.LogInformation("Generating model parallel execution plan for {LayerCount} layers on {DeviceCount} devices",
-                workload.ModelLayers.Count, devices.Length);
+            _logger.LogInfoMessage($"Generating model parallel execution plan for {workload.ModelLayers.Count} layers on {devices.Length} devices");
 
             try
             {
@@ -193,14 +191,13 @@ namespace DotCompute.Core.Execution
                 await _executionOptimizer.OptimizeModelParallelPlanAsync(plan, cancellationToken);
 
                 stopwatch.Stop();
-                _logger.LogInformation("Generated model parallel execution plan in {ElapsedMs:F2}ms, estimated execution time: {EstimatedMs:F2}ms",
-                    stopwatch.Elapsed.TotalMilliseconds, estimatedExecutionTime);
+                _logger.LogInfoMessage($"Generated model parallel execution plan in {stopwatch.Elapsed.TotalMilliseconds}ms, estimated execution time: {estimatedExecutionTime}ms");
 
                 return plan;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate model parallel execution plan");
+                _logger.LogErrorMessage(ex, "Failed to generate model parallel execution plan");
                 throw;
             }
         }
@@ -228,8 +225,7 @@ namespace DotCompute.Core.Execution
             ArgumentNullException.ThrowIfNull(options);
 
             var stopwatch = Stopwatch.StartNew();
-            _logger.LogInformation("Generating pipeline execution plan for {StageCount} stages with {MicrobatchCount} microbatches",
-                pipelineDefinition.Stages.Count, options.MicrobatchSize);
+            _logger.LogInfoMessage($"Generating pipeline execution plan for {pipelineDefinition.Stages.Count} stages with {options.MicrobatchSize} microbatches");
 
             try
             {
@@ -278,14 +274,13 @@ namespace DotCompute.Core.Execution
                 await _executionOptimizer.OptimizePipelinePlanAsync(plan, cancellationToken);
 
                 stopwatch.Stop();
-                _logger.LogInformation("Generated pipeline execution plan in {ElapsedMs:F2}ms, estimated execution time: {EstimatedMs:F2}ms",
-                    stopwatch.Elapsed.TotalMilliseconds, estimatedExecutionTime);
+                _logger.LogInfoMessage($"Generated pipeline execution plan in {stopwatch.Elapsed.TotalMilliseconds}ms, estimated execution time: {estimatedExecutionTime}ms");
 
                 return plan;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate pipeline execution plan");
+                _logger.LogErrorMessage(ex, "Failed to generate pipeline execution plan");
                 throw;
             }
         }

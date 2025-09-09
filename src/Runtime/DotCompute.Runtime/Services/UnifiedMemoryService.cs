@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Runtime.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -53,7 +54,7 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
         _poolService = poolService;
 
 
-        _logger.LogInformation("Unified memory service initialized");
+        _logger.LogInfoMessage("Unified memory service initialized");
     }
 
     /// <summary>
@@ -90,12 +91,12 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
             if (pooledBuffer != null)
             {
                 unifiedBuffer = new ConcreteUnifiedMemoryBuffer(bufferId, sizeInBytes, MemoryOptions.None, pooledBuffer, this, _logger);
-                _logger.LogDebug("Created unified buffer {BufferId} from pool with {Size} bytes for accelerators {AcceleratorIds}", bufferId, sizeInBytes, string.Join(", ", acceleratorIds));
+                _logger.LogDebugMessage($"Created unified buffer {bufferId} from pool with {sizeInBytes} bytes for accelerators {string.Join(", ", acceleratorIds)}");
             }
             else
             {
                 unifiedBuffer = new ConcreteUnifiedMemoryBuffer(bufferId, sizeInBytes, MemoryOptions.None, this, _logger);
-                _logger.LogDebug("Created new unified buffer {BufferId} with {Size} bytes for accelerators {AcceleratorIds}", bufferId, sizeInBytes, string.Join(", ", acceleratorIds));
+                _logger.LogDebugMessage($"Created new unified buffer {bufferId} with {sizeInBytes} bytes for accelerators {string.Join(", ", acceleratorIds)}");
             }
 
             _activeBuffers[bufferId] = unifiedBuffer;
@@ -146,15 +147,11 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
                 _totalTransfers++;
             }
 
-            _logger.LogDebug("Migrated buffer from {SourceId} to {TargetId} in {ElapsedMs:F2}ms",
-
-                sourceAcceleratorId, targetAcceleratorId, elapsedMs);
+            _logger.LogDebugMessage($"Migrated buffer from {sourceAcceleratorId} to {targetAcceleratorId} in {elapsedMs}ms");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to migrate buffer from {SourceId} to {TargetId}",
-
-                sourceAcceleratorId, targetAcceleratorId);
+            _logger.LogErrorMessage(ex, $"Failed to migrate buffer from {sourceAcceleratorId} to {targetAcceleratorId}");
             throw;
         }
     }
@@ -179,9 +176,7 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
         await Task.Delay(Random.Shared.Next(1, 10));
 
 
-        _logger.LogDebug("Synchronized coherence for buffer across {AcceleratorIds}",
-
-            string.Join(", ", acceleratorIds));
+        _logger.LogDebugMessage($"Synchronized coherence for buffer across {string.Join(", ", acceleratorIds)}");
     }
 
     /// <summary>
@@ -194,7 +189,7 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
         ArgumentNullException.ThrowIfNull(buffer);
 
         // For production implementation, this would check actual coherence state
-        // For now, return a simple status based on whether buffer is tracked
+        // For now, return a simple status based on whether buffer is tracked TODO
 
         if (buffer is UnifiedMemoryBuffer umb && _activeBuffers.ContainsKey(umb.Id))
         {
@@ -231,7 +226,7 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
         try
         {
             // For production implementation, this would perform actual device-to-device transfers
-            // For now, simulate the transfer with a small delay
+            // For now, simulate the transfer with a small delay TODO
             await Task.Delay(Random.Shared.Next(1, 5), cancellationToken);
 
             var elapsedMs = (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
@@ -247,7 +242,7 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to transfer data between unified buffers");
+            _logger.LogErrorMessage(ex, "Failed to transfer data between unified buffers");
             throw;
         }
     }
@@ -266,7 +261,7 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
 
         ArgumentNullException.ThrowIfNull(buffer);
 
-        // For production implementation, this would ensure all devices have the latest data
+        // For production implementation, this would ensure all devices have the latest data TODO
         await Task.Delay(1, cancellationToken);
         _logger.LogTrace("Ensured coherency for buffer {BufferId}",
 
@@ -317,7 +312,7 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
 
         _disposed = true;
 
-        _logger.LogInformation("Disposing unified memory service with {ActiveBuffers} active buffers", _activeBuffers.Count);
+        _logger.LogInfoMessage("Disposing unified memory service with {_activeBuffers.Count} active buffers");
 
         // Dispose all active buffers
         foreach (var buffer in _activeBuffers.Values)
@@ -336,7 +331,7 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
         _deviceMemoryManagers.Clear();
         _allocationSemaphore?.Dispose();
 
-        _logger.LogInformation("Unified memory service disposed");
+        _logger.LogInfoMessage("Unified memory service disposed");
     }
 }
 
@@ -466,7 +461,7 @@ internal sealed class UnifiedMemoryBuffer<T> : UnifiedMemoryBuffer, IUnifiedMemo
         Length = count;
     }
 
-    // Implement required methods with simplified logic for production
+    // Implement required methods with simplified logic for production TODO
     public override ValueTask CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset = 0, CancellationToken cancellationToken = default)
     {
         _service.NotifyBufferAccess(Id, Accelerator);
@@ -479,7 +474,7 @@ internal sealed class UnifiedMemoryBuffer<T> : UnifiedMemoryBuffer, IUnifiedMemo
         return ValueTask.CompletedTask;
     }
 
-    // Additional IUnifiedMemoryBuffer<T> methods with simplified implementations
+    // Additional IUnifiedMemoryBuffer<T> methods with simplified implementations TODO
     public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => CopyFromAsync<T>(source, 0, cancellationToken);
     public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => CopyToAsync<T>(destination, 0, cancellationToken);
     public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;

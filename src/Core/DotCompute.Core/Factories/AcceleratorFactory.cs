@@ -8,6 +8,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Accelerators;
 using DotCompute.Abstractions.Factories;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Factories;
 
@@ -61,7 +62,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(backendName);
 
 
-        _logger.LogInformation("Creating {Backend} accelerator", backendName);
+        _logger.LogInfoMessage("Creating {backendName} accelerator");
 
 
         if (!_backends.TryGetValue(backendName, out var factoryMethod))
@@ -78,7 +79,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             var accelerator = await factoryMethod(configuration, _loggerFactory).ConfigureAwait(false);
 
 
-            _logger.LogInformation("Successfully created {Backend} accelerator", backendName);
+            _logger.LogInfoMessage("Successfully created {backendName} accelerator");
 
             // Apply post-creation configuration
 
@@ -89,7 +90,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create {Backend} accelerator", backendName);
+            _logger.LogErrorMessage(ex, $"Failed to create {backendName} accelerator");
             throw new InvalidOperationException($"Failed to create {backendName} accelerator", ex);
         }
     }
@@ -126,7 +127,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             catch
             {
                 // Backend not available on this system
-                _logger.LogDebug("Backend {Backend} is not available on this system", backend);
+                _logger.LogDebugMessage("Backend {backend} is not available on this system");
             }
         }
 
@@ -174,7 +175,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         }
 
 
-        _logger.LogInformation("Registered backend: {Backend}", backendName);
+        _logger.LogInfoMessage("Registered backend: {backendName}");
     }
 
     /// <inheritdoc/>
@@ -288,8 +289,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         }
 
 
-        _logger.LogInformation("Registered provider {ProviderType} for types: {Types}",
-            providerType.Name, string.Join(", ", supportedTypes));
+        _logger.LogInfoMessage($"Registered provider {providerType.Name} for types: {string.Join(", ", supportedTypes)}");
     }
 
 
@@ -302,7 +302,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         // For simplicity, we'll remove all backends that were registered with this provider type
         // In production, you'd track which backends are associated with which provider - TODO
 
-        _logger.LogInformation("Unregistering provider {ProviderType}", providerType.Name);
+        _logger.LogInfoMessage("Unregistering provider {providerType.Name}");
 
         // Since we don't track provider associations, we can't fully implement this
         // Return false to indicate no providers were unregistered
@@ -320,7 +320,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         ArgumentNullException.ThrowIfNull(workloadProfile);
 
 
-        _logger.LogInformation("Selecting best accelerator for workload profile");
+        _logger.LogInfoMessage("Selecting best accelerator for workload profile");
 
 
         var availableTypes = await GetAvailableTypesAsync(cancellationToken).ConfigureAwait(false);
@@ -342,8 +342,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         // Select the best scoring accelerator
 
         var bestType = scores.OrderByDescending(kvp => kvp.Value).First().Key;
-        _logger.LogInformation("Selected {AcceleratorType} as best for workload (score: {Score})",
-            bestType, scores[bestType]);
+        _logger.LogInfoMessage($"Selected {bestType} as best for workload (score: {scores[bestType]})");
 
         // Create optimized configuration for the workload
 
@@ -361,7 +360,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             await Task.Yield(); // Ensure async context
 
             // For AOT compatibility, use factory method instead of dynamic type loading
-            // This should be replaced with proper DI registration in production
+            // This should be replaced with proper DI registration in production TODO
 
             throw new NotSupportedException(
                 "Dynamic backend loading is not supported in AOT scenarios. " +
@@ -374,7 +373,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         {
             await Task.Yield(); // Ensure async context
 
-            // For AOT compatibility, backends should be registered statically
+            // For AOT compatibility, backends should be registered statically TODO
 
             throw new NotSupportedException(
                 "Dynamic backend loading is not supported in AOT scenarios. " +
@@ -526,14 +525,14 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         // Apply post-creation configuration
         if (configuration.EnableProfiling)
         {
-            _logger.LogDebug("Enabling profiling for accelerator");
+            _logger.LogDebugMessage("Enabling profiling for accelerator");
             // Enable profiling through accelerator-specific APIs
         }
 
 
         if (configuration.EnableDebugMode)
         {
-            _logger.LogDebug("Enabling debug mode for accelerator");
+            _logger.LogDebugMessage("Enabling debug mode for accelerator");
             // Enable debug mode through accelerator-specific APIs
         }
 
@@ -543,7 +542,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
     private async ValueTask DiscoverDevicesAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Discovering available accelerator devices");
+        _logger.LogInfoMessage("Discovering available accelerator devices");
 
         // Discover CPU devices (always available)
 

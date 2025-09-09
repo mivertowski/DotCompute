@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using CudaMemoryAdvice = DotCompute.Backends.CUDA.Types.Native.CudaMemoryAdvise;
 
 namespace DotCompute.Backends.CUDA.Memory
@@ -78,17 +79,17 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaStreamCreate(ref _prefetchStream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to create prefetch stream: {Error}", result);
+                    _logger.LogWarningMessage("");
                     _supportsPrefetch = false;
                 }
                 else
                 {
-                    _logger.LogInformation("Memory prefetching initialized for device {DeviceId}", _device.DeviceId);
+                    _logger.LogInfoMessage("");
                 }
             }
             else
             {
-                _logger.LogInformation("Memory prefetching not supported on device {DeviceId}", _device.DeviceId);
+                _logger.LogInfoMessage("");
             }
         }
 
@@ -184,7 +185,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to prefetch to device: {Error}", result);
+                    _logger.LogWarningMessage("");
                     return false;
                 }
             }
@@ -239,7 +240,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to prefetch to host: {Error}", result);
+                    _logger.LogWarningMessage("");
                     return false;
                 }
             }
@@ -287,7 +288,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to set memory advice: {Error}", result);
+                    _logger.LogWarningMessage("");
                     return false;
                 }
             }, cancellationToken);
@@ -332,7 +333,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
             }
 
-            _logger.LogDebug("Batch prefetch completed: {Success}/{Total} successful", successCount, requests.Length);
+            _logger.LogDebugMessage(" successful");
             return successCount;
         }
 
@@ -352,7 +353,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaStreamSynchronize(_prefetchStream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Error synchronizing prefetch stream: {Error}", result);
+                    _logger.LogWarningMessage("");
                 }
             }, cancellationToken);
         }
@@ -406,7 +407,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaStreamDestroy(_prefetchStream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Error destroying prefetch stream: {Error}", result);
+                    _logger.LogWarningMessage("");
                 }
             }
 
@@ -414,8 +415,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _prefetchSemaphore?.Dispose();
             _disposed = true;
 
-            _logger.LogInformation("Disposed memory prefetcher. Total prefetched: {Bytes:N0} bytes in {Count} operations",
-                _totalPrefetchedBytes, _prefetchCount);
+            _logger.LogInfoMessage($"Disposed memory prefetcher. Total prefetched: {_totalPrefetchedBytes} bytes in {_prefetchCount} operations");
         }
 
         private sealed class PrefetchInfo

@@ -210,4 +210,26 @@ internal static partial class LoggerMessages
         Level = LogLevel.Warning,
         Message = "Runtime warning in {Component}: {WarningMessage}")]
     public static partial void RuntimeWarning(this ILogger logger, string component, string warningMessage);
+
+    // Generic Messages for common logging patterns
+    [LoggerMessage(EventId = 19000, Level = LogLevel.Information, Message = "{Message}")]
+    public static partial void LogInfoMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 19001, Level = LogLevel.Debug, Message = "{Message}")]
+    public static partial void LogDebugMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 19002, Level = LogLevel.Warning, Message = "{Message}")]
+    public static partial void LogWarningMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 19003, Level = LogLevel.Error, Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 19004, Level = LogLevel.Error, Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, Exception ex, string message);
+
+    [LoggerMessage(EventId = 19005, Level = LogLevel.Trace, Message = "{Message}")]
+    public static partial void LogTraceMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 19006, Level = LogLevel.Critical, Message = "{Message}")]
+    public static partial void LogCriticalMessage(this ILogger logger, string message);
 }

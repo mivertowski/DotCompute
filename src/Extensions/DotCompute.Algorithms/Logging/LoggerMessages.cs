@@ -83,4 +83,26 @@ internal static partial class LoggerMessages
         Level = LogLevel.Warning,
         Message = "Algorithm {AlgorithmName} warning: {WarningMessage}")]
     public static partial void AlgorithmWarning(this ILogger logger, string algorithmName, string warningMessage);
+
+    // Generic Messages for common logging patterns
+    [LoggerMessage(EventId = 77000, Level = LogLevel.Information, Message = "{Message}")]
+    public static partial void LogInfoMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 77001, Level = LogLevel.Debug, Message = "{Message}")]
+    public static partial void LogDebugMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 77002, Level = LogLevel.Warning, Message = "{Message}")]
+    public static partial void LogWarningMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 77003, Level = LogLevel.Error, Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 77004, Level = LogLevel.Error, Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, Exception ex, string message);
+
+    [LoggerMessage(EventId = 77005, Level = LogLevel.Trace, Message = "{Message}")]
+    public static partial void LogTraceMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 77006, Level = LogLevel.Critical, Message = "{Message}")]
+    public static partial void LogCriticalMessage(this ILogger logger, string message);
 }

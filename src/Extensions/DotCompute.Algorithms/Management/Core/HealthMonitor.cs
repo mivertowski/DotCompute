@@ -4,6 +4,7 @@
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Logging;
 
 namespace DotCompute.Algorithms.Management.Core;
 
@@ -47,7 +48,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         if (_options.EnableHealthChecks && _healthCheckTimer != null)
         {
             _ = _healthCheckTimer.Change(_options.HealthCheckInterval, _options.HealthCheckInterval);
-            _logger.LogInformation("Health monitoring started with interval: {Interval}", _options.HealthCheckInterval);
+            _logger.LogInfoMessage("Health monitoring started with interval: {_options.HealthCheckInterval}");
         }
     }
 
@@ -55,7 +56,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
     public void StopHealthMonitoring()
     {
         _ = (_healthCheckTimer?.Change(Timeout.Infinite, Timeout.Infinite));
-        _logger.LogInformation("Health monitoring stopped");
+        _logger.LogInfoMessage("Health monitoring stopped");
     }
 
     /// <inheritdoc/>
@@ -87,7 +88,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         var pluginInfo = _lifecycleManager.GetLoadedPluginInfo(pluginId);
         if (pluginInfo == null)
         {
-            _logger.LogWarning("Plugin {PluginId} not found for health check", pluginId);
+            _logger.LogWarningMessage("Plugin {pluginId} not found for health check");
             return;
         }
 
@@ -325,8 +326,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
                             loadedPlugin.Health = PluginHealth.Degraded;
                         }
 
-                        _logger.LogWarning("Potential handle leak detected for plugin {PluginId}: {HandleIncrease} new handles",
-                            (string)loadedPlugin.Plugin.Id, handleIncrease);
+                        _logger.LogWarningMessage($"Potential handle leak detected for plugin {(string)loadedPlugin.Plugin.Id}: {handleIncrease} new handles");
                     }
                 }
             }

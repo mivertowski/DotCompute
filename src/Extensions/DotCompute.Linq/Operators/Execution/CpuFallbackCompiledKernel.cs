@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Operators.Execution;
 
@@ -60,7 +61,7 @@ internal class CpuFallbackCompiledKernel : DotCompute.Abstractions.ICompiledKern
             throw new ObjectDisposedException(nameof(CpuFallbackCompiledKernel));
         }
 
-        _logger.LogDebug("Executing CPU fallback kernel {KernelName}", Name);
+        _logger.LogDebugMessage("Executing CPU fallback kernel {Name}");
 
         // Simple CPU execution - just simulate work
         // In production, this would interpret or execute the kernel code
@@ -76,7 +77,7 @@ internal class CpuFallbackCompiledKernel : DotCompute.Abstractions.ICompiledKern
         if (!_disposed)
         {
             _disposed = true;
-            _logger.LogDebug("Disposed CPU fallback kernel {KernelName}", Name);
+            _logger.LogDebugMessage("Disposed CPU fallback kernel {Name}");
         }
         return ValueTask.CompletedTask;
     }

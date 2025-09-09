@@ -7,6 +7,7 @@ using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Execution.Metrics;
 
 namespace DotCompute.Backends.CUDA.Advanced
@@ -49,7 +50,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             _operationCount = 0;
             _totalExecutionTimeMs = 0.0;
 
-            _logger.LogDebug("Dynamic Parallelism Manager initialized");
+            _logger.LogDebugMessage("Dynamic Parallelism Manager initialized");
         }
 
         /// <summary>
@@ -101,7 +102,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error optimizing kernel for dynamic parallelism");
+                _logger.LogErrorMessage(ex, "Error optimizing kernel for dynamic parallelism");
                 return Task.FromResult(new CudaOptimizationResult
                 {
                     Success = false,

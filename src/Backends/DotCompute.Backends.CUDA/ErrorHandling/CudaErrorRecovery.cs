@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.ErrorHandling
 {
@@ -51,7 +52,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             _errorAnalysisTimer = new Timer(AnalyzeErrorPatterns, null,
                 TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
-            _logger.LogInformation("CUDA Error Recovery system initialized");
+            _logger.LogInfoMessage("CUDA Error Recovery system initialized");
         }
 
         /// <summary>
@@ -88,7 +89,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during recovery strategy execution");
+                _logger.LogErrorMessage(ex, "Error during recovery strategy execution");
                 return new CudaErrorRecoveryResult
                 {
                     Success = false,
@@ -153,7 +154,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
 
             try
             {
-                _logger.LogWarning("Attempting CUDA context reset");
+                _logger.LogWarningMessage("Attempting CUDA context reset");
 
                 // Save current device
                 var result = CudaRuntime.cudaGetDevice(out var currentDevice);
@@ -174,12 +175,12 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
                 result = CudaRuntime.cudaSetDevice(currentDevice);
                 CudaRuntime.CheckError(result, "restoring device after reset");
 
-                _logger.LogInformation("CUDA context reset successful");
+                _logger.LogInfoMessage("CUDA context reset successful");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during context reset");
+                _logger.LogErrorMessage(ex, "Error during context reset");
                 return false;
             }
             finally
@@ -277,8 +278,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
                     // Clear any pending errors
                     _ = CudaRuntime.cudaGetLastError();
 
-                    _logger.LogInformation("Retry attempt {Attempt}/{MaxRetries} for operation '{Operation}'",
-                        attempt, maxRetries, errorEvent.Operation);
+                    _logger.LogInfoMessage($"Retry attempt {attempt}/{maxRetries} for operation '{errorEvent.Operation}'");
 
                     return new CudaErrorRecoveryResult
                     {
@@ -317,8 +317,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             CudaErrorEvent errorEvent,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Performing garbage collection before retry for operation '{Operation}'",
-                errorEvent.Operation);
+            _logger.LogInfoMessage($"Performing garbage collection before retry for operation '{errorEvent.Operation}'");
 
             // Force garbage collection
             GC.Collect();
@@ -345,8 +344,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             CudaErrorEvent errorEvent,
             CancellationToken cancellationToken)
         {
-            _logger.LogWarning("Attempting context reset recovery for operation '{Operation}'",
-                errorEvent.Operation);
+            _logger.LogWarningMessage($"Attempting context reset recovery for operation '{errorEvent.Operation}'");
 
             var resetSuccess = await ResetContextAsync(cancellationToken).ConfigureAwait(false);
 
@@ -361,8 +359,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
 
         private CudaErrorRecoveryResult LogAndContinueAsync(CudaErrorEvent errorEvent)
         {
-            _logger.LogWarning("Continuing after error {Error} in operation '{Operation}'",
-                errorEvent.Error, errorEvent.Operation);
+            _logger.LogWarningMessage($"Continuing after error {errorEvent.Error} in operation '{errorEvent.Operation}'");
 
             return new CudaErrorRecoveryResult
             {
@@ -477,8 +474,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             CudaHealthCheckResult healthResult,
             CancellationToken cancellationToken)
         {
-            _logger.LogWarning("System health degraded ({Health:P2}), attempting recovery",
-                healthResult.OverallHealth);
+            _logger.LogWarningMessage($"System health degraded ({healthResult.OverallHealth}), attempting recovery");
 
             if (!healthResult.DeviceAvailable || !healthResult.ContextValid)
             {
@@ -510,8 +506,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
 
                 if (stats.RecentErrors > 10)
                 {
-                    _logger.LogWarning("High error rate detected: {RecentErrors} errors in the last hour",
-                        stats.RecentErrors);
+                    _logger.LogWarningMessage($"High error rate detected: {stats.RecentErrors} errors in the last hour");
                 }
 
                 // Analyze for patterns and suggest optimizations
@@ -520,8 +515,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
                     var topError = stats.MostCommonErrors.First();
                     if (topError.Value > 5)
                     {
-                        _logger.LogInformation("Most common error: {Error} ({Count} occurrences)",
-                            topError.Key, topError.Value);
+                        _logger.LogInfoMessage($"Most common error: {topError.Key} ({topError.Value} occurrences)");
                     }
                 }
             }
@@ -542,7 +536,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
                 _recoverySemaphore?.Dispose();
                 _disposed = true;
 
-                _logger.LogInformation("CUDA Error Recovery system disposed");
+                _logger.LogInfoMessage("CUDA Error Recovery system disposed");
             }
         }
     }

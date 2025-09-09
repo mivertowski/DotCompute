@@ -6,6 +6,7 @@ using System.Diagnostics;
 using DotCompute.Core.Recovery.Models;
 using DotCompute.Core.Recovery.Statistics;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Recovery;
 
@@ -39,8 +40,7 @@ public sealed class CircuitBreaker : IDisposable
         _healthCheckTimer = new Timer(PerformHealthCheck, null,
             _config.HealthCheckInterval, _config.HealthCheckInterval);
 
-        _logger.LogInformation("Circuit Breaker initialized with failure threshold {FailureThreshold}% and timeout {Timeout}",
-            _config.FailureThresholdPercentage, _config.OpenCircuitTimeout);
+        _logger.LogInfoMessage($"Circuit Breaker initialized with failure threshold {_config.FailureThresholdPercentage}% and timeout {_config.OpenCircuitTimeout}");
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public sealed class CircuitBreaker : IDisposable
         var stopwatch = Stopwatch.StartNew();
         var operationId = Guid.NewGuid().ToString("N")[..8];
 
-        _logger.LogDebug("Executing operation {OperationId} for service {ServiceName}", operationId, serviceName);
+        _logger.LogDebugMessage("Executing operation {OperationId} for service {operationId, serviceName}");
 
         try
         {
@@ -75,8 +75,7 @@ public sealed class CircuitBreaker : IDisposable
             stopwatch.Stop();
             RecordSuccess(serviceName, stopwatch.Elapsed);
 
-            _logger.LogDebug("Operation {OperationId} succeeded for service {ServiceName} in {Duration}ms",
-                operationId, serviceName, stopwatch.ElapsedMilliseconds);
+            _logger.LogDebugMessage($"Operation {operationId} succeeded for service {serviceName} in {stopwatch.ElapsedMilliseconds}ms");
 
             return result;
         }
@@ -127,8 +126,7 @@ public sealed class CircuitBreaker : IDisposable
                 // Calculate delay with exponential backoff and jitter
                 var delay = CalculateRetryDelay(attempt, policy);
 
-                _logger.LogWarning("Operation attempt {Attempt}/{MaxRetries} failed for service {ServiceName}, retrying in {Delay}ms: {Error}",
-                    attempt, policy.MaxRetries, serviceName, delay.TotalMilliseconds, ex.Message);
+                _logger.LogWarningMessage($"Operation attempt {attempt}/{policy.MaxRetries} failed for service {serviceName}, retrying in {delay.TotalMilliseconds}ms: {ex.Message}");
 
                 await Task.Delay(delay, cancellationToken);
             }
@@ -197,7 +195,7 @@ public sealed class CircuitBreaker : IDisposable
         var serviceState = GetOrCreateServiceState(serviceName);
         serviceState.ForceState(state);
 
-        _logger.LogWarning("Service {ServiceName} circuit forced to {State}", serviceName, state);
+        _logger.LogWarningMessage("Service {ServiceName} circuit forced to {serviceName, state}");
     }
 
     /// <summary>
@@ -208,7 +206,7 @@ public sealed class CircuitBreaker : IDisposable
         if (_serviceStates.TryGetValue(serviceName, out var serviceState))
         {
             serviceState.Reset();
-            _logger.LogInformation("Service {ServiceName} circuit reset to CLOSED", serviceName);
+            _logger.LogInfoMessage("Service {serviceName} circuit reset to CLOSED");
         }
     }
 
@@ -229,7 +227,7 @@ public sealed class CircuitBreaker : IDisposable
             _lastStateChange = DateTimeOffset.UtcNow;
         }
 
-        _logger.LogInformation("All circuits reset to CLOSED state");
+        _logger.LogInfoMessage("All circuits reset to CLOSED state");
     }
 
     private ServiceCircuitState GetOrCreateServiceState(string serviceName)
@@ -289,8 +287,7 @@ public sealed class CircuitBreaker : IDisposable
         _globalState = newState;
         _lastStateChange = DateTimeOffset.UtcNow;
 
-        _logger.LogWarning("Global circuit breaker state changed from {OldState} to {NewState}: {Reason}",
-            oldState, newState, reason);
+        _logger.LogWarningMessage($"Global circuit breaker state changed from {oldState} to {newState}: {reason}");
     }
 
     private static TimeSpan CalculateRetryDelay(int attempt, RetryPolicy policy)
@@ -336,14 +333,12 @@ public sealed class CircuitBreaker : IDisposable
             if (now.Minute % 5 == 0) // Every 5 minutes
             {
                 var stats = GetStatistics();
-                _logger.LogInformation("Circuit Breaker Stats - Global: {State}, Services: {ActiveServices}, " +
-                                     "Failure Rate: {FailureRate:F1}%, Total Requests: {TotalRequests}",
-                    stats.GlobalState, stats.ActiveServices, stats.OverallFailureRate, stats.TotalRequests);
+                _logger.LogInfoMessage($"Circuit Breaker Stats - Global: {_globalState}, Failure Rate: {stats.OverallFailureRate:F1}%, Services: {_serviceStates.Count}, Total Requests: {_totalRequests}");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during circuit breaker health check");
+            _logger.LogErrorMessage(ex, "Error during circuit breaker health check");
         }
     }
 
@@ -359,7 +354,7 @@ public sealed class CircuitBreaker : IDisposable
             }
 
             _disposed = true;
-            _logger.LogInformation("Circuit Breaker disposed");
+            _logger.LogInfoMessage("Circuit Breaker disposed");
         }
     }
 }

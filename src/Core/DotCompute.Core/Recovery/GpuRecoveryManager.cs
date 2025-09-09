@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Recovery;
 
@@ -35,7 +36,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
             _config.HealthCheckInterval, _config.HealthCheckInterval);
 
-        _logger.LogInformation("GPU Recovery Manager initialized with configuration: {Config}", _config);
+        _logger.LogInfoMessage("GPU Recovery Manager initialized with configuration: {_config}");
     }
 
     /// <summary>
@@ -58,7 +59,7 @@ public sealed class GpuRecoveryManager : IDisposable
             Timestamp = DateTimeOffset.UtcNow
         };
 
-        _logger.LogWarning("GPU error detected on device {DeviceId}: {Error}", deviceId, error.Message);
+        _logger.LogWarningMessage("GPU error detected on device {DeviceId}: {deviceId, error.Message}");
 
         try
         {
@@ -68,7 +69,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
             // Determine recovery strategy based on error type and device state
             var strategy = DetermineRecoveryStrategy(error, deviceState);
-            _logger.LogInformation("Using recovery strategy {Strategy} for device {DeviceId}", strategy, deviceId);
+            _logger.LogInfoMessage("Using recovery strategy {Strategy} for device {strategy, deviceId}");
 
             var result = await ExecuteRecoveryStrategyAsync(strategy, context, deviceState, cancellationToken);
 
@@ -79,9 +80,7 @@ public sealed class GpuRecoveryManager : IDisposable
             if (result.Success)
             {
                 deviceState.RecordSuccessfulRecovery();
-                _logger.LogInformation("GPU recovery successful for device {DeviceId} using {Strategy} in {Duration}ms",
-
-                    deviceId, strategy, stopwatch.ElapsedMilliseconds);
+                _logger.LogInfoMessage($"GPU recovery successful for device {deviceId} using {strategy} in {stopwatch.ElapsedMilliseconds}ms");
             }
             else
             {
@@ -96,7 +95,7 @@ public sealed class GpuRecoveryManager : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Exception during GPU recovery for device {DeviceId}", deviceId);
+            _logger.LogErrorMessage(ex, $"Exception during GPU recovery for device {deviceId}");
             return new RecoveryResult
             {
                 Success = false,
@@ -132,7 +131,7 @@ public sealed class GpuRecoveryManager : IDisposable
     /// </summary>
     public async Task<bool> ResetDeviceAsync(string deviceId, CancellationToken cancellationToken = default)
     {
-        _logger.LogWarning("Attempting device reset for {DeviceId}", deviceId);
+        _logger.LogWarningMessage("Attempting device reset for {deviceId}");
 
         try
         {
@@ -148,12 +147,12 @@ public sealed class GpuRecoveryManager : IDisposable
             // Platform-specific device reset would be implemented here
             await Task.Delay(100, cancellationToken); // Simulate reset time
 
-            _logger.LogInformation("Device reset completed for {DeviceId}", deviceId);
+            _logger.LogInfoMessage("Device reset completed for {deviceId}");
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Device reset failed for {DeviceId}", deviceId);
+            _logger.LogErrorMessage(ex, $"Device reset failed for {deviceId}");
             return false;
         }
     }
@@ -232,7 +231,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private async Task<RecoveryResult> SimpleRetryAsync(GpuRecoveryContext context, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Attempting simple retry for device {DeviceId}", context.DeviceId);
+        _logger.LogInfoMessage("Attempting simple retry for device {context.DeviceId}");
 
 
         await Task.Delay(_config.RetryDelay, cancellationToken);
@@ -248,7 +247,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private async Task<RecoveryResult> MemoryRecoveryAsync(GpuRecoveryContext context, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Performing memory recovery for device {DeviceId}", context.DeviceId);
+        _logger.LogInfoMessage("Performing memory recovery for device {context.DeviceId}");
 
         // Force garbage collection
 
@@ -272,7 +271,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private async Task<RecoveryResult> KernelTerminationAsync(GpuRecoveryContext context, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Terminating hanging kernels for device {DeviceId}", context.DeviceId);
+        _logger.LogInfoMessage("Terminating hanging kernels for device {context.DeviceId}");
 
 
         await CancelDeviceKernelsAsync(context.DeviceId, cancellationToken);
@@ -288,7 +287,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private async Task<RecoveryResult> ContextResetAsync(GpuRecoveryContext context, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Resetting context for device {DeviceId}", context.DeviceId);
+        _logger.LogInfoMessage("Resetting context for device {context.DeviceId}");
 
 
         if (_deviceStates.TryGetValue(context.DeviceId, out var deviceState))
@@ -310,7 +309,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private async Task<RecoveryResult> DeviceResetRecoveryAsync(GpuRecoveryContext context, CancellationToken cancellationToken)
     {
-        _logger.LogWarning("Performing device reset recovery for device {DeviceId}", context.DeviceId);
+        _logger.LogWarningMessage("Performing device reset recovery for device {context.DeviceId}");
 
 
         var success = await ResetDeviceAsync(context.DeviceId, cancellationToken);
@@ -362,9 +361,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
                 if (!deviceState.IsHealthy && deviceState.ConsecutiveFailures > _config.MaxConsecutiveFailures)
                 {
-                    _logger.LogWarning("Device {DeviceId} health degraded: {ConsecutiveFailures} consecutive failures",
-
-                        deviceState.DeviceId, deviceState.ConsecutiveFailures);
+                    _logger.LogWarningMessage($"Device {deviceState.DeviceId} health degraded: {deviceState.ConsecutiveFailures} consecutive failures");
                 }
             }
 
@@ -375,9 +372,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
             foreach (var hangingKernel in hangingKernels)
             {
-                _logger.LogWarning("Kernel {KernelId} appears to be hanging (running for {Duration})",
-
-                    hangingKernel.KernelId, hangingKernel.ExecutionTime);
+                _logger.LogWarningMessage($"Kernel {hangingKernel.KernelId} appears to be hanging (running for {hangingKernel.ExecutionTime})");
 
                 // Auto-cancel hanging kernels
 
@@ -389,14 +384,14 @@ public sealed class GpuRecoveryManager : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to auto-cancel hanging kernel {KernelId}", hangingKernel.KernelId);
+                        _logger.LogErrorMessage(ex, $"Failed to auto-cancel hanging kernel {hangingKernel.KernelId}");
                     }
                 });
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during GPU health check");
+            _logger.LogErrorMessage(ex, "Error during GPU health check");
         }
     }
 
@@ -434,7 +429,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
 
             _disposed = true;
-            _logger.LogInformation("GPU Recovery Manager disposed");
+            _logger.LogInfoMessage("GPU Recovery Manager disposed");
         }
     }
 }

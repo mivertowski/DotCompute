@@ -180,7 +180,7 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
         return Task.FromResult(removedCount);
     }
 
-    internal void CompleteSession(ProfilingSession session, ProfilingResults results)
+    private void CompleteSession(ProfilingSession session, ProfilingResults results)
     {
         if (_activeSessions.TryRemove(session.InternalSessionId, out _))
         {
@@ -325,8 +325,8 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
         {
             return new SessionMetrics
             {
-                Duration = _stopwatch.Elapsed,
-                CustomMetrics = new Dictionary<string, double>(_metrics),
+                ElapsedTime = _stopwatch.Elapsed,
+                Metrics = new Dictionary<string, double>(_metrics),
                 Tags = new Dictionary<string, string>(_tags)
             };
         }
@@ -343,9 +343,13 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
                 OperationName = OperationName,
                 StartTime = StartTime,
                 EndTime = DateTime.UtcNow,
-                Duration = _stopwatch.Elapsed,
-                Metrics = new Dictionary<string, double>(_metrics),
-                Tags = new Dictionary<string, string>(_tags)
+                TotalTime = _stopwatch.Elapsed,
+                Metrics = new SessionMetrics
+                {
+                    ElapsedTime = _stopwatch.Elapsed,
+                    Metrics = new Dictionary<string, double>(_metrics),
+                    Tags = new Dictionary<string, string>(_tags)
+                }
             };
         }
         

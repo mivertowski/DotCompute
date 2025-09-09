@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Logging;
 
@@ -106,4 +107,26 @@ internal static partial class LoggerMessages
         Level = LogLevel.Error,
         Message = "Plugin system error: {ErrorMessage}")]
     public static partial void PluginSystemError(this ILogger logger, string errorMessage, Exception? exception = null);
+
+    // Generic Messages for common logging patterns
+    [LoggerMessage(EventId = 66000, Level = LogLevel.Information, Message = "{Message}")]
+    public static partial void LogInfoMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 66001, Level = LogLevel.Debug, Message = "{Message}")]
+    public static partial void LogDebugMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 66002, Level = LogLevel.Warning, Message = "{Message}")]
+    public static partial void LogWarningMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 66003, Level = LogLevel.Error, Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 66004, Level = LogLevel.Error, Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, Exception ex, string message);
+
+    [LoggerMessage(EventId = 66005, Level = LogLevel.Trace, Message = "{Message}")]
+    public static partial void LogTraceMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 66006, Level = LogLevel.Critical, Message = "{Message}")]
+    public static partial void LogCriticalMessage(this ILogger logger, string message);
 }

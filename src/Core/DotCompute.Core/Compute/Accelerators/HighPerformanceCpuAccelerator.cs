@@ -7,6 +7,7 @@ using DotCompute.Core.Compute.Parsing;
 using DotCompute.Core.Compute.Kernels;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Kernels;
 
 using System;
@@ -76,7 +77,7 @@ namespace DotCompute.Core.Compute.Accelerators
             ArgumentNullException.ThrowIfNull(definition);
             options ??= new CompilationOptions();
 
-            _logger.LogInformation("Compiling high-performance CPU kernel: {KernelName}", definition.Name);
+            _logger.LogInfoMessage("Compiling high-performance CPU kernel: {definition.Name}");
 
             try
             {
@@ -85,12 +86,12 @@ namespace DotCompute.Core.Compute.Accelerators
                 var kernelInfo = _kernelParser.ParseKernel(sourceCode, definition.EntryPoint ?? "main");
                 var optimizedKernel = CreateOptimizedKernel(kernelInfo, options);
 
-                _logger.LogInformation("Successfully compiled optimized CPU kernel: {KernelName}", definition.Name);
+                _logger.LogInfoMessage("Successfully compiled optimized CPU kernel: {definition.Name}");
                 return ValueTask.FromResult(optimizedKernel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to compile high-performance CPU kernel: {KernelName}", definition.Name);
+                _logger.LogErrorMessage(ex, $"Failed to compile high-performance CPU kernel: {definition.Name}");
                 throw new InvalidOperationException($"Kernel compilation failed: {ex.Message}", ex);
             }
         }

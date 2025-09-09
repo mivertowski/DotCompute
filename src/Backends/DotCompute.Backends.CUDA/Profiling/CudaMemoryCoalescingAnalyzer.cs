@@ -10,6 +10,7 @@ using DotCompute.Backends.CUDA.Analysis.Types;
 // using DotCompute.Core.Models; // Commented out to avoid conflicts
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 // Use Analysis types directly as this is part of the CUDA backend
 using CoalescingComparison = DotCompute.Backends.CUDA.Analysis.Types.CoalescingComparison;
@@ -61,7 +62,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             _metricsCache = [];
 
 
-            _logger.LogInformation("CUDA Memory Coalescing Analyzer initialized");
+            _logger.LogInfoMessage("CUDA Memory Coalescing Analyzer initialized");
         }
 
         /// <summary>
@@ -71,7 +72,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             MemoryAccessInfo accessInfo,
             int deviceId = 0)
         {
-            _logger.LogDebug("Analyzing memory access pattern for {KernelName}", accessInfo.KernelName);
+            _logger.LogDebugMessage("Analyzing memory access pattern for {accessInfo.KernelName}");
 
             var analysis = new CoalescingAnalysis
             {
@@ -281,7 +282,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             int warmupRuns = 3,
             int profileRuns = 10)
         {
-            _logger.LogDebug("Profiling runtime memory access for {KernelName}", kernelName);
+            _logger.LogDebugMessage("Profiling runtime memory access for {kernelName}");
 
             var profile = new RuntimeCoalescingProfile
             {

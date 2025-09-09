@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -40,7 +41,7 @@ namespace DotCompute.Core.Memory.P2P
                 TimeSpan.FromMilliseconds(MatrixRefreshIntervalMs),
                 TimeSpan.FromMilliseconds(MatrixRefreshIntervalMs));
 
-            _logger.LogDebug("P2P Capability Matrix initialized");
+            _logger.LogDebugMessage("P2P Capability Matrix initialized");
         }
 
         /// <summary>
@@ -58,7 +59,7 @@ namespace DotCompute.Core.Memory.P2P
             }
 
 
-            _logger.LogInformation("Building P2P capability matrix for {DeviceCount} devices", devices.Length);
+            _logger.LogInfoMessage("Building P2P capability matrix for {devices.Length} devices");
 
             await _matrixSemaphore.WaitAsync(cancellationToken);
             try
@@ -99,7 +100,7 @@ namespace DotCompute.Core.Memory.P2P
                                 var completed = Interlocked.Increment(ref completedPairs);
                                 if (completed % 5 == 0 || completed == totalPairs)
                                 {
-                                    _logger.LogDebug("P2P capability detection progress: {Completed}/{Total}", completed, totalPairs);
+                                    _logger.LogDebugMessage("P2P capability detection progress: {Completed}/{completed, totalPairs}");
                                 }
                             }, TaskScheduler.Default);
 
@@ -114,8 +115,7 @@ namespace DotCompute.Core.Memory.P2P
                 // Calculate matrix statistics
                 CalculateMatrixStatistics(devices);
 
-                _logger.LogInformation("P2P capability matrix built in {Duration}ms: {TotalConnections} connections, {P2PConnections} P2P-enabled",
-                    buildDuration.TotalMilliseconds, _statistics.TotalConnections, _statistics.P2PEnabledConnections);
+                _logger.LogInfoMessage($"P2P capability matrix built in {buildDuration.TotalMilliseconds}ms: {_statistics.TotalConnections} connections, {_statistics.P2PEnabledConnections} P2P-enabled");
             }
             finally
             {
@@ -322,9 +322,7 @@ namespace DotCompute.Core.Memory.P2P
                 validationResult.IsValid = issues.Count == 0;
                 validationResult.ValidationTime = DateTimeOffset.UtcNow;
 
-                _logger.LogDebug("Matrix validation completed: {IsValid}, {IssueCount} issues found",
-
-                    validationResult.IsValid, issues.Count);
+                _logger.LogDebugMessage($"Matrix validation completed: {validationResult.IsValid}, {issues.Count} issues found");
 
                 return validationResult;
             }
@@ -823,7 +821,7 @@ namespace DotCompute.Core.Memory.P2P
             _matrix.Clear();
             _deviceTopology.Clear();
 
-            _logger.LogDebug("P2P Capability Matrix disposed");
+            _logger.LogDebugMessage("P2P Capability Matrix disposed");
         }
     }
 

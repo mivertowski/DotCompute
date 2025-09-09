@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 namespace DotCompute.Linq.Compilation;
@@ -33,7 +34,7 @@ public sealed class LinqToGpuKernelCompiler
     public KernelDefinition CompileExpression<T>(Expression<Func<IEnumerable<T>, IEnumerable<T>>> expression)
         where T : unmanaged
     {
-        _logger.LogDebug("Compiling LINQ expression to CUDA kernel");
+        _logger.LogDebugMessage("Compiling LINQ expression to CUDA kernel");
 
         var body = expression.Body;
         var parameter = expression.Parameters[0];

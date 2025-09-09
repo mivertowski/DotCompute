@@ -6,6 +6,7 @@ using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory.Utilities;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory
 {
@@ -164,13 +165,11 @@ namespace DotCompute.Core.Memory
 
                 if (enableResult.Success)
                 {
-                    _logger.LogInformation("P2P connection established between {Device1} and {Device2}",
-                        device1.Info.Name, device2.Info.Name);
+                    _logger.LogInfoMessage($"P2P connection established between {device1.Info.Name} and {device2.Info.Name}");
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to establish P2P connection between {Device1} and {Device2}: {Error}",
-                        device1.Info.Name, device2.Info.Name, enableResult.ErrorMessage);
+                    _logger.LogWarningMessage($"Failed to establish P2P connection between {device1.Info.Name} and {device2.Info.Name}: {enableResult.ErrorMessage}");
                 }
 
                 return enableResult.Success;
@@ -318,14 +317,11 @@ namespace DotCompute.Core.Memory
                     connection.TotalBytesTransferred += sourceBuffer.SizeInBytes;
                 }
 
-                _logger.LogDebug("P2P transfer completed in {Duration}ms: {Bytes} bytes from {Source} to {Target}",
-                    duration.TotalMilliseconds, sourceBuffer.SizeInBytes,
-                    sourceBuffer.Accelerator.Info.Name, targetBuffer.Accelerator.Info.Name);
+                _logger.LogDebugMessage($"P2P transfer completed in {duration.TotalMilliseconds}ms: {sourceBuffer.SizeInBytes} bytes from {sourceBuffer.Accelerator.Info.Name} to {targetBuffer.Accelerator.Info.Name}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "P2P transfer failed from {Source} to {Target}",
-                    sourceBuffer.Accelerator.Info.Name, targetBuffer.Accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"P2P transfer failed from {sourceBuffer.Accelerator.Info.Name} to {targetBuffer.Accelerator.Info.Name}");
                 throw;
             }
         }

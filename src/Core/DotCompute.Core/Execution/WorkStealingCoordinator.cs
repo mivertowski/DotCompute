@@ -9,6 +9,7 @@ using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Metrics;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Execution
@@ -78,8 +79,7 @@ namespace DotCompute.Core.Execution
             WorkStealingOptions options,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Starting work-stealing execution with {WorkItemCount} work items across {DeviceCount} devices",
-                _workload.WorkItems.Count, _devices.Length);
+            _logger.LogInfoMessage($"Starting work-stealing execution with {_workload.WorkItems.Count} work items across {_devices.Length} devices");
 
             _executionActive = true;
             var executionTasks = new List<Task<DeviceExecutionResult>>();
@@ -101,8 +101,7 @@ namespace DotCompute.Core.Execution
                 var results = await Task.WhenAll(executionTasks).ConfigureAwait(false);
                 await stealingTask.ConfigureAwait(false);
 
-                _logger.LogInformation("Work-stealing execution completed. Processed {CompletedItems} work items",
-                    _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.Completed));
+                _logger.LogInfoMessage($"Work-stealing execution completed. Processed {_workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.Completed)} work items");
 
                 return results;
             }
@@ -172,7 +171,7 @@ namespace DotCompute.Core.Execution
             {
                 if (workItem == null)
                 {
-                    _logger.LogWarning("Skipping null work item during initialization");
+                    _logger.LogWarningMessage("Skipping null work item during initialization");
                     continue;
                 }
 
@@ -191,12 +190,11 @@ namespace DotCompute.Core.Execution
                 // Distribute work items to device queues using load balancer
                 _loadBalancer.DistributeWorkItems(_workload.WorkItems, _deviceQueues);
 
-                _logger.LogDebug("Initialized {WorkItemCount} work items across {DeviceCount} devices",
-                    _workload.WorkItems.Count, _devices.Length);
+                _logger.LogDebugMessage($"Initialized {_workload.WorkItems.Count} work items across {_devices.Length} devices");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to distribute work items during initialization");
+                _logger.LogErrorMessage(ex, "Failed to distribute work items during initialization");
                 throw new InvalidOperationException("Failed to initialize work items for work stealing execution", ex);
             }
         }
@@ -253,16 +251,15 @@ namespace DotCompute.Core.Execution
                 result.ExecutionTimeMs = totalExecutionTime;
                 result.ElementsProcessed = processedItems;
 
-                _logger.LogDebug("Device {DeviceId} processed {ItemCount} work items in {ExecutionTimeMs:F2}ms",
-                    device.Info.Id, processedItems, totalExecutionTime);
+                _logger.LogDebugMessage($"Device {device.Info.Id} processed {processedItems} work items in {totalExecutionTime}ms");
             }
             catch (OperationCanceledException)
             {
-                _logger.LogDebug("Device {DeviceId} work execution cancelled", device.Info.Id);
+                _logger.LogDebugMessage("Device {device.Info.Id} work execution cancelled");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing work on device {DeviceId}", device.Info.Id);
+                _logger.LogErrorMessage(ex, $"Error executing work on device {device.Info.Id}");
                 result.Success = false;
                 result.ErrorMessage = ex.Message;
             }
@@ -405,7 +402,7 @@ namespace DotCompute.Core.Execution
 
                 if (validInputBuffers.Length == 0 && validOutputBuffers.Length == 0)
                 {
-                    _logger.LogWarning("Work item {WorkItemId} has no valid buffers, simulating execution", workItem.Id);
+                    _logger.LogWarningMessage("Work item {workItem.Id} has no valid buffers, simulating execution");
                     // Simulate execution time for testing purposes
                     await Task.Delay((int)workItem.EstimatedProcessingTimeMs, cancellationToken);
                     return workItem.EstimatedProcessingTimeMs;
@@ -462,8 +459,7 @@ namespace DotCompute.Core.Execution
             }
             catch (OperationCanceledException)
             {
-                _logger.LogDebug("Work item {WorkItemId} execution cancelled on device {DeviceId}",
-                    workItem.Id, device.Info.Id);
+                _logger.LogDebugMessage($"Work item {workItem.Id} execution cancelled on device {device.Info.Id}");
 
                 if (status != null)
                 {
@@ -475,8 +471,7 @@ namespace DotCompute.Core.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute work item {WorkItemId} on device {DeviceId}",
-                    workItem.Id, device.Info.Id);
+                _logger.LogErrorMessage(ex, $"Failed to execute work item {workItem.Id} on device {device.Info.Id}");
 
                 if (status != null)
                 {
@@ -497,8 +492,7 @@ namespace DotCompute.Core.Execution
 
                 if (loadImbalance > 0.3) // 30% imbalance threshold
                 {
-                    _logger.LogDebug("Load imbalance detected: {ImbalancePercentage:F1}%. Triggering rebalancing.",
-                        loadImbalance * 100);
+                    _logger.LogDebugMessage($"Load imbalance detected: {loadImbalance * 100}%. Triggering rebalancing.");
 
                     await _loadBalancer.RebalanceWorkAsync(_deviceQueues, cancellationToken);
                 }
@@ -563,14 +557,14 @@ namespace DotCompute.Core.Execution
 
             if (workItem == null)
             {
-                _logger.LogWarning("Attempted to enqueue null work item to device {DeviceId}", _device.Info.Id);
+                _logger.LogWarningMessage("Attempted to enqueue null work item to device {_device.Info.Id}");
                 return;
             }
 
             // Validate work item has valid buffers
             if (workItem.InputBuffers == null || workItem.OutputBuffers == null)
             {
-                _logger.LogWarning("Work item {WorkItemId} has null buffers, skipping", workItem.Id);
+                _logger.LogWarningMessage("Work item {workItem.Id} has null buffers, skipping");
                 return;
             }
 
@@ -589,8 +583,7 @@ namespace DotCompute.Core.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to enqueue work item {WorkItemId} to device {DeviceId}",
-                    workItem.Id, _device.Info.Id);
+                _logger.LogErrorMessage(ex, $"Failed to enqueue work item {workItem.Id} to device {_device.Info.Id}");
             }
         }
 
@@ -851,7 +844,7 @@ namespace DotCompute.Core.Execution
             var validWorkItems = workItems.Where(item => item != null).ToList();
             if (validWorkItems.Count == 0)
             {
-                _logger.LogWarning("No valid work items to distribute");
+                _logger.LogWarningMessage("No valid work items to distribute");
                 return;
             }
 
@@ -869,17 +862,15 @@ namespace DotCompute.Core.Execution
                     }
                     else
                     {
-                        _logger.LogWarning("Device queue at index {DeviceIndex} is null, skipping work item {WorkItemId}",
-                            deviceIndex, validWorkItems[i].Id);
+                        _logger.LogWarningMessage($"Device queue at index {deviceIndex} is null, skipping work item {validWorkItems[i].Id}");
                     }
                 }
 
-                _logger.LogDebug("Distributed {WorkItemCount} work items across {DeviceCount} devices",
-                    validWorkItems.Count, deviceQueues.Length);
+                _logger.LogDebugMessage($"Distributed {validWorkItems.Count} work items across {deviceQueues.Length} devices");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while distributing work items");
+                _logger.LogErrorMessage(ex, "Error occurred while distributing work items");
                 throw;
             }
         }
@@ -908,7 +899,7 @@ namespace DotCompute.Core.Execution
         /// <returns></returns>
         public async ValueTask RebalanceWorkAsync<T>(DeviceWorkQueue<T>[] deviceQueues, CancellationToken cancellationToken) where T : unmanaged
         {
-            _logger.LogDebug("Rebalancing work across {DeviceCount} devices", deviceQueues.Length);
+            _logger.LogDebugMessage("Rebalancing work across {deviceQueues.Length} devices");
 
             // Simple rebalancing: move work from rich queues to poor queues
             var workCounts = deviceQueues.Select(q => q.WorkCount).ToArray();

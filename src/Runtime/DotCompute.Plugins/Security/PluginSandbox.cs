@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Security;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Security;
 
@@ -48,7 +49,7 @@ public class PluginSandbox : IDisposable
         ArgumentNullException.ThrowIfNull(permissions);
 
         var pluginId = Guid.NewGuid();
-        _logger.LogInformation("Creating sandboxed plugin {PluginId} from {AssemblyPath}", pluginId, assemblyPath);
+        _logger.LogInfoMessage("Creating sandboxed plugin {PluginId} from {pluginId, assemblyPath}");
 
         try
         {
@@ -94,12 +95,12 @@ public class PluginSandbox : IDisposable
             _ = _sandboxedPlugins.TryAdd(pluginId, sandboxedPlugin);
             _resourceMonitor.RegisterPlugin(sandboxedPlugin);
 
-            _logger.LogInformation("Successfully created sandboxed plugin {PluginId}", pluginId);
+            _logger.LogInfoMessage("Successfully created sandboxed plugin {pluginId}");
             return sandboxedPlugin;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create sandboxed plugin {PluginId}", pluginId);
+            _logger.LogErrorMessage(ex, $"Failed to create sandboxed plugin {pluginId}");
             throw;
         }
     }
@@ -121,8 +122,7 @@ public class PluginSandbox : IDisposable
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(actualTimeout);
 
-        _logger.LogDebug("Executing operation on sandboxed plugin {PluginId} with timeout {Timeout}",
-            plugin.Id, actualTimeout);
+        _logger.LogDebugMessage($"Executing operation on sandboxed plugin {plugin.Id} with timeout {actualTimeout}");
 
         try
         {
@@ -146,13 +146,12 @@ public class PluginSandbox : IDisposable
         }
         catch (OperationCanceledException) when (cts.Token.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
-            _logger.LogWarning("Plugin execution timed out after {Timeout} for plugin {PluginId}",
-                actualTimeout, plugin.Id);
+            _logger.LogWarningMessage($"Plugin execution timed out after {actualTimeout} for plugin {plugin.Id}");
             throw new TimeoutException($"Plugin execution timed out after {actualTimeout}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing operation on sandboxed plugin {PluginId}", plugin.Id);
+            _logger.LogErrorMessage(ex, $"Error executing operation on sandboxed plugin {plugin.Id}");
 
             // Check if this was a security violation
 
@@ -253,7 +252,7 @@ public class PluginSandbox : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create secure plugin instance of type {TypeName}", pluginType.Name);
+            _logger.LogErrorMessage(ex, $"Failed to create secure plugin instance of type {pluginType.Name}");
             throw;
         }
     }
@@ -395,7 +394,7 @@ public class PluginSandbox : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling security violation for plugin {PluginId}", plugin.Id);
+            _logger.LogErrorMessage(ex, $"Error handling security violation for plugin {plugin.Id}");
         }
     }
 
@@ -435,7 +434,7 @@ public class PluginSandbox : IDisposable
 
         if (_sandboxedPlugins.TryRemove(pluginId, out var plugin))
         {
-            _logger.LogInformation("Terminating sandboxed plugin {PluginId}", pluginId);
+            _logger.LogInfoMessage("Terminating sandboxed plugin {pluginId}");
 
 
             try
@@ -444,7 +443,7 @@ public class PluginSandbox : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error terminating plugin {PluginId}", pluginId);
+                _logger.LogErrorMessage(ex, $"Error terminating plugin {pluginId}");
             }
         }
     }
@@ -471,7 +470,7 @@ public class PluginSandbox : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error disposing sandboxed plugin {PluginId}", plugin.Id);
+                _logger.LogErrorMessage(ex, $"Error disposing sandboxed plugin {plugin.Id}");
             }
         }
 

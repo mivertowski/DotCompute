@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Memory.P2P
@@ -35,7 +36,7 @@ namespace DotCompute.Core.Memory.P2P
             _validationSemaphore = new SemaphoreSlim(MaxConcurrentValidations, MaxConcurrentValidations);
             _statistics = new P2PValidationStatistics();
 
-            _logger.LogDebug("P2P Validator initialized with {MaxValidations} concurrent validations", MaxConcurrentValidations);
+            _logger.LogDebugMessage("P2P Validator initialized with {MaxConcurrentValidations} concurrent validations");
         }
 
         /// <summary>
@@ -96,8 +97,7 @@ namespace DotCompute.Core.Memory.P2P
                 // Update statistics
                 UpdateValidationStatistics(validationResult);
 
-                _logger.LogDebug("Transfer readiness validation completed: {IsValid}, {DetailCount} checks performed",
-                    validationResult.IsValid, validationDetails.Length);
+                _logger.LogDebugMessage($"Transfer readiness validation completed: {validationResult.IsValid}, {validationDetails.Length} checks performed");
 
                 return validationResult;
             }
@@ -176,8 +176,7 @@ namespace DotCompute.Core.Memory.P2P
                 // Update statistics
                 UpdateValidationStatistics(validationResult);
 
-                _logger.LogDebug("Transfer integrity validation completed: {IsValid}, Size: {TransferSize} bytes",
-                    validationResult.IsValid, transferSize);
+                _logger.LogDebugMessage($"Transfer integrity validation completed: {validationResult.IsValid}, Size: {transferSize} bytes");
 
                 return validationResult;
             }
@@ -210,8 +209,7 @@ namespace DotCompute.Core.Memory.P2P
             {
                 if (DateTimeOffset.UtcNow - cachedResult.BenchmarkTime < TimeSpan.FromHours(1))
                 {
-                    _logger.LogDebug("Using cached benchmark result for {Source} -> {Target}",
-                        sourceDevice.Info.Name, targetDevice.Info.Name);
+                    _logger.LogDebugMessage($"Using cached benchmark result for {sourceDevice.Info.Name} -> {targetDevice.Info.Name}");
                     return cachedResult;
                 }
             }
@@ -219,9 +217,7 @@ namespace DotCompute.Core.Memory.P2P
             await _validationSemaphore.WaitAsync(cancellationToken);
             try
             {
-                _logger.LogInformation("Starting P2P benchmark: {Source} -> {Target}",
-
-                    sourceDevice.Info.Name, targetDevice.Info.Name);
+                _logger.LogInfoMessage($"Starting P2P benchmark: {sourceDevice.Info.Name} -> {targetDevice.Info.Name}");
 
                 var benchmarkResult = new P2PBenchmarkResult
                 {
@@ -249,8 +245,7 @@ namespace DotCompute.Core.Memory.P2P
 
                         benchmarkResult.TransferSizes.Add(transferBenchmark);
 
-                        _logger.LogDebug("Benchmarked {SizeKB} KB: {ThroughputGBps:F2} GB/s, {LatencyMs:F1} ms",
-                            sizeBytes / 1024, transferBenchmark.ThroughputGBps, transferBenchmark.LatencyMs);
+                        _logger.LogDebugMessage($"Benchmarked {sizeBytes / 1024} KB: {transferBenchmark.ThroughputGBps} GB/s, {transferBenchmark.LatencyMs} ms");
                     }
 
                     // Calculate aggregate statistics
@@ -259,9 +254,7 @@ namespace DotCompute.Core.Memory.P2P
                     // Cache the result
                     _benchmarkCache[benchmarkKey] = benchmarkResult;
 
-                    _logger.LogInformation("P2P benchmark completed: {Source} -> {Target}, Peak: {PeakThroughput:F2} GB/s, Avg: {AvgThroughput:F2} GB/s",
-                        sourceDevice.Info.Name, targetDevice.Info.Name,
-                        benchmarkResult.PeakThroughputGBps, benchmarkResult.AverageThroughputGBps);
+                    _logger.LogInfoMessage($"P2P benchmark completed: {sourceDevice.Info.Name} -> {targetDevice.Info.Name}, Peak: {benchmarkResult.PeakThroughputGBps} GB/s, Avg: {benchmarkResult.AverageThroughputGBps} GB/s");
 
                     return benchmarkResult;
                 }
@@ -269,8 +262,7 @@ namespace DotCompute.Core.Memory.P2P
                 {
                     benchmarkResult.IsSuccessful = false;
                     benchmarkResult.ErrorMessage = ex.Message;
-                    _logger.LogError(ex, "P2P benchmark failed: {Source} -> {Target}",
-                        sourceDevice.Info.Name, targetDevice.Info.Name);
+                    _logger.LogErrorMessage(ex, $"P2P benchmark failed: {sourceDevice.Info.Name} -> {targetDevice.Info.Name}");
                     return benchmarkResult;
                 }
             }
@@ -297,7 +289,7 @@ namespace DotCompute.Core.Memory.P2P
 
             options ??= P2PMultiGpuBenchmarkOptions.Default;
 
-            _logger.LogInformation("Starting multi-GPU P2P benchmark suite with {DeviceCount} devices", devices.Length);
+            _logger.LogInfoMessage("Starting multi-GPU P2P benchmark suite with {devices.Length} devices");
 
             var benchmarkResult = new P2PMultiGpuBenchmarkResult
             {
@@ -316,37 +308,35 @@ namespace DotCompute.Core.Memory.P2P
                 // Phase 1: Pairwise benchmarks
                 if (options.EnablePairwiseBenchmarks)
                 {
-                    _logger.LogDebug("Phase 1: Executing pairwise benchmarks");
+                    _logger.LogDebugMessage("Phase 1: Executing pairwise benchmarks");
                     await ExecutePairwiseBenchmarksAsync(devices, benchmarkResult, options, cancellationToken);
                 }
 
                 // Phase 2: Scatter benchmarks
                 if (options.EnableScatterBenchmarks)
                 {
-                    _logger.LogDebug("Phase 2: Executing scatter benchmarks");
+                    _logger.LogDebugMessage("Phase 2: Executing scatter benchmarks");
                     await ExecuteScatterBenchmarksAsync(devices, benchmarkResult, options, cancellationToken);
                 }
 
                 // Phase 3: Gather benchmarks
                 if (options.EnableGatherBenchmarks)
                 {
-                    _logger.LogDebug("Phase 3: Executing gather benchmarks");
+                    _logger.LogDebugMessage("Phase 3: Executing gather benchmarks");
                     await ExecuteGatherBenchmarksAsync(devices, benchmarkResult, options, cancellationToken);
                 }
 
                 // Phase 4: All-to-all benchmarks
                 if (options.EnableAllToAllBenchmarks)
                 {
-                    _logger.LogDebug("Phase 4: Executing all-to-all benchmarks");
+                    _logger.LogDebugMessage("Phase 4: Executing all-to-all benchmarks");
                     await ExecuteAllToAllBenchmarksAsync(devices, benchmarkResult, options, cancellationToken);
                 }
 
                 // Calculate aggregate statistics
                 CalculateMultiGpuAggregateStatistics(benchmarkResult);
 
-                _logger.LogInformation("Multi-GPU P2P benchmark suite completed: {PairwiseCount} pairwise, {ScatterCount} scatter, {GatherCount} gather, {AllToAllCount} all-to-all",
-                    benchmarkResult.PairwiseBenchmarks.Count, benchmarkResult.ScatterBenchmarks.Count,
-                    benchmarkResult.GatherBenchmarks.Count, benchmarkResult.AllToAllBenchmarks.Count);
+                _logger.LogInfoMessage($"Multi-GPU P2P benchmark suite completed: {benchmarkResult.PairwiseBenchmarks.Count} pairwise, {benchmarkResult.ScatterBenchmarks.Count} scatter, {benchmarkResult.GatherBenchmarks.Count} gather, {benchmarkResult.AllToAllBenchmarks.Count} all-to-all");
 
                 return benchmarkResult;
             }
@@ -354,7 +344,7 @@ namespace DotCompute.Core.Memory.P2P
             {
                 benchmarkResult.IsSuccessful = false;
                 benchmarkResult.ErrorMessage = ex.Message;
-                _logger.LogError(ex, "Multi-GPU P2P benchmark suite failed");
+                _logger.LogErrorMessage(ex, "Multi-GPU P2P benchmark suite failed");
                 return benchmarkResult;
             }
         }
@@ -972,7 +962,7 @@ namespace DotCompute.Core.Memory.P2P
             _validationSemaphore.Dispose();
             _benchmarkCache.Clear();
 
-            _logger.LogDebug("P2P Validator disposed");
+            _logger.LogDebugMessage("P2P Validator disposed");
             await Task.CompletedTask;
         }
     }

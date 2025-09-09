@@ -3,6 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
+using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -26,12 +27,12 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
     /// </summary>
     public async Task InitializeAsync()
     {
-        _logger.LogInformation("Initializing DotCompute Runtime...");
+        _logger.LogInfoMessage("Initializing DotCompute Runtime...");
 
         // Discover and register accelerators
         await DiscoverAcceleratorsAsync().ConfigureAwait(false);
 
-        _logger.LogInformation("Runtime initialized successfully. Found {Count} accelerators.", _accelerators.Count);
+        _logger.LogInfoMessage("Runtime initialized successfully. Found {_accelerators.Count} accelerators.");
     }
 
     /// <summary>
@@ -46,7 +47,7 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
 
     private Task DiscoverAcceleratorsAsync()
     {
-        _logger.LogDebug("Discovering available accelerators...");
+        _logger.LogDebugMessage("Discovering available accelerators...");
 
         // Get the accelerator manager from DI
         var acceleratorManager = _serviceProvider.GetRequiredService<IAcceleratorManager>();
@@ -57,12 +58,12 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
         foreach (var accelerator in availableAccelerators)
         {
             _accelerators.Add(accelerator);
-            _logger.LogInformation("Discovered {Type} accelerator: {Name}", accelerator.Info.DeviceType, accelerator.Info.Name);
+            _logger.LogInfoMessage("Discovered {Type} accelerator: {accelerator.Info.DeviceType, accelerator.Info.Name}");
         }
 
         if (_accelerators.Count == 0)
         {
-            _logger.LogWarning("No accelerators discovered. This may indicate a configuration issue.");
+            _logger.LogWarningMessage("No accelerators discovered. This may indicate a configuration issue.");
         }
 
         return Task.CompletedTask;
@@ -110,7 +111,7 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
                 // Dispose managed resources synchronously
                 // Note: We're intentionally not disposing accelerators here
                 // to avoid sync-over-async. Use DisposeAsync for proper cleanup.
-                _logger.LogInformation("Disposing AcceleratorRuntime. For proper cleanup, use DisposeAsync().");
+                _logger.LogInfoMessage("Disposing AcceleratorRuntime. For proper cleanup, use DisposeAsync().");
 
                 // Clear the list but don't dispose accelerators synchronously
                 _accelerators.Clear();
@@ -156,7 +157,7 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
 
             if (disposeTasks.Length > 0)
             {
-                _logger.LogInformation("Disposing {Count} accelerators...", disposeTasks.Length);
+                _logger.LogInfoMessage("Disposing {disposeTasks.Length} accelerators...");
                 await Task.WhenAll(disposeTasks).ConfigureAwait(false);
             }
 

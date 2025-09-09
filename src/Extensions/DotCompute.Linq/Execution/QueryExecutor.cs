@@ -10,6 +10,7 @@ using DotCompute.Linq.Operators.Interfaces;
 using DotCompute.Linq.Operators.Types;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Execution;
 
@@ -48,8 +49,7 @@ public class QueryExecutor : IQueryExecutor
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        _logger.LogDebug("Executing compute plan {PlanId} asynchronously with {StageCount} stages",
-            context.Plan.Id, context.Plan.Stages.Count);
+        _logger.LogDebugMessage($"Executing compute plan {context.Plan.Id} asynchronously with {context.Plan.Stages.Count} stages");
 
         var validation = Validate(context.Plan, context.Accelerator);
         if (!validation.IsValid)
@@ -79,17 +79,17 @@ public class QueryExecutor : IQueryExecutor
                 result = await ExecuteStageAsync(stage, context, memoryManager, linkedCts.Token);
             }
 
-            _logger.LogInformation("Successfully executed compute plan {PlanId} asynchronously", context.Plan.Id);
+            _logger.LogInfoMessage("Successfully executed compute plan {context.Plan.Id} asynchronously");
             return result;
         }
         catch (OperationCanceledException) when (timeoutCts?.IsCancellationRequested == true)
         {
-            _logger.LogWarning("Compute plan {PlanId} execution timed out", context.Plan.Id);
+            _logger.LogWarningMessage("Compute plan {context.Plan.Id} execution timed out");
             throw new TimeoutException($"Compute plan execution timed out after {context.Options.Timeout}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute compute plan {PlanId} asynchronously", context.Plan.Id);
+            _logger.LogErrorMessage(ex, $"Failed to execute compute plan {context.Plan.Id} asynchronously");
             throw;
         }
         finally
@@ -149,14 +149,14 @@ public class QueryExecutor : IQueryExecutor
     {
         return _memoryManagers.GetOrAdd(accelerator, acc =>
         {
-            _logger.LogDebug("Creating memory manager for accelerator {AcceleratorId}", acc.Info.Id);
+            _logger.LogDebugMessage("Creating memory manager for accelerator {acc.Info.Id}");
             return _memoryManagerFactory.CreateMemoryManager(acc);
         });
     }
 
     private async Task<object?> ExecuteStage(IComputeStage stage, ExecutionContext context, IUnifiedMemoryManager memoryManager)
     {
-        _logger.LogDebug("Executing stage {StageId}", stage.Id);
+        _logger.LogDebugMessage("Executing stage {stage.Id}");
 
         // Allocate output buffer
         var outputBuffer = await context.BufferPool.GetOrCreateAsync(
@@ -204,7 +204,7 @@ public class QueryExecutor : IQueryExecutor
         IUnifiedMemoryManager memoryManager,
         CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Executing stage {StageId} asynchronously", stage.Id);
+        _logger.LogDebugMessage("Executing stage {stage.Id} asynchronously");
 
         // Allocate output buffer
         var outputBuffer = await context.BufferPool.GetOrCreateAsync(

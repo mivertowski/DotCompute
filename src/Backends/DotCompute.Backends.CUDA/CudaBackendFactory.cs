@@ -6,6 +6,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
@@ -32,24 +33,23 @@ namespace DotCompute.Backends.CUDA
 
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("CUDA runtime returned error: {Error}", CudaRuntime.GetErrorString(result));
+                    _logger.LogWarningMessage($"");
                     return false;
                 }
 
                 var available = deviceCount > 0;
-                _logger.LogInformation("CUDA backend availability check: {Available} ({DeviceCount} devices found)",
-                    available, deviceCount);
+                _logger.LogInfoMessage($"CUDA backend availability check: {available} ({deviceCount} devices found)");
 
                 return available;
             }
             catch (DllNotFoundException)
             {
-                _logger.LogWarning("CUDA runtime library not found. CUDA backend is not available.");
+                _logger.LogWarningMessage("CUDA runtime library not found. CUDA backend is not available.");
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking CUDA availability");
+                _logger.LogErrorMessage(ex, "Error checking CUDA availability");
                 return false;
             }
         }
@@ -58,7 +58,7 @@ namespace DotCompute.Backends.CUDA
         {
             if (!IsAvailable())
             {
-                _logger.LogWarning("CUDA backend is not available. No accelerators will be created.");
+                _logger.LogWarningMessage("CUDA backend is not available. No accelerators will be created.");
                 yield break;
             }
 
@@ -68,14 +68,13 @@ namespace DotCompute.Backends.CUDA
             {
                 // Use CudaDevice.DetectAll for enhanced device detection
                 var devices = CudaDevice.DetectAll(_logger).ToList();
-                _logger.LogInformation("Detected {DeviceCount} CUDA device(s)", devices.Count);
+                _logger.LogInfoMessage(" CUDA device(s)");
 
                 foreach (var device in devices)
                 {
                     try
                     {
-                        _logger.LogInformation("Creating accelerator for {DeviceName} (ID: {DeviceId}, Arch: {Architecture}, RTX2000Ada: {IsRTX2000})",
-                            device.Name, device.DeviceId, device.ArchitectureGeneration, device.IsRTX2000Ada);
+                        _logger.LogInfoMessage($"Creating accelerator for {device.Name} (ID: {device.DeviceId}, Arch: {device.ArchitectureGeneration}, RTX2000Ada: {device.IsRTX2000Ada})");
 
                         // Create logger for this specific device
                         var loggerFactory = _logger is ILoggerFactory factory ? factory : null;
@@ -85,14 +84,13 @@ namespace DotCompute.Backends.CUDA
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to create CUDA accelerator for device {DeviceId}: {DeviceName}",
-                            device.DeviceId, device.Name);
+                        _logger.LogErrorMessage(ex, $"Failed to create CUDA accelerator for device {device.DeviceId}: {device.Name}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to detect CUDA devices");
+                _logger.LogErrorMessage(ex, "Failed to detect CUDA devices");
             }
 
             foreach (var accelerator in createdAccelerators)
@@ -105,7 +103,7 @@ namespace DotCompute.Backends.CUDA
         {
             if (!IsAvailable())
             {
-                _logger.LogWarning("CUDA backend is not available. Cannot create default accelerator.");
+                _logger.LogWarningMessage("CUDA backend is not available. Cannot create default accelerator.");
                 return null;
             }
 
@@ -116,12 +114,11 @@ namespace DotCompute.Backends.CUDA
                 var defaultDevice = CudaDevice.Detect(0, deviceLogger);
                 if (defaultDevice == null)
                 {
-                    _logger.LogWarning("Default CUDA device (device 0) not found");
+                    _logger.LogWarningMessage("Default CUDA device (device 0) not found");
                     return null;
                 }
 
-                _logger.LogInformation("Creating default CUDA accelerator for {DeviceName} (Arch: {Architecture}, RTX2000Ada: {IsRTX2000})",
-                    defaultDevice.Name, defaultDevice.ArchitectureGeneration, defaultDevice.IsRTX2000Ada);
+                _logger.LogInfoMessage($"Creating default CUDA accelerator for {defaultDevice.Name} (Arch: {defaultDevice.ArchitectureGeneration}, RTX2000Ada: {defaultDevice.IsRTX2000Ada})");
 
                 var loggerFactory = _logger is ILoggerFactory lf ? lf : null;
                 var acceleratorLogger = loggerFactory?.CreateLogger<CudaAccelerator>() ?? new NullLogger<CudaAccelerator>();
@@ -129,7 +126,7 @@ namespace DotCompute.Backends.CUDA
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create default CUDA accelerator");
+                _logger.LogErrorMessage(ex, "Failed to create default CUDA accelerator");
                 return null;
             }
         }

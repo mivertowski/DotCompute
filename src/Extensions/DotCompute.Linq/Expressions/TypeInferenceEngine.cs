@@ -4,6 +4,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Expressions;
 
@@ -34,13 +35,12 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
     {
         ArgumentNullException.ThrowIfNull(expression);
 
-        _logger.LogDebug("Starting type inference for expression: {ExpressionType}", expression.NodeType);
+        _logger.LogDebugMessage("Starting type inference for expression: {expression.NodeType}");
 
         var visitor = new TypeInferenceVisitor(_supportedTypes, _typeCapabilities, _logger);
         var result = visitor.AnalyzeExpression(expression);
 
-        _logger.LogDebug("Type inference completed. Found {TypeCount} unique types, {ErrorCount} validation errors",
-            result.InferredTypes.Count, result.ValidationErrors.Count);
+        _logger.LogDebugMessage($"Type inference completed. Found {result.InferredTypes.Count} unique types, {result.ValidationErrors.Count} validation errors");
 
         return result;
     }

@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Security;
 
@@ -97,9 +98,7 @@ public sealed class InputSanitizer : IDisposable
             TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
 
-        _logger.LogInformation("InputSanitizer initialized with configuration: {Configuration}",
-
-            _configuration.ToString());
+        _logger.LogInfoMessage($"InputSanitizer initialized with configuration: {_configuration.ToString()}");
     }
 
     /// <summary>
@@ -195,8 +194,7 @@ public sealed class InputSanitizer : IDisposable
         await _validationLock.WaitAsync(cancellationToken);
         try
         {
-            _logger.LogDebug("Validating kernel parameters: Kernel={KernelName}, ParameterCount={Count}",
-                kernelName, parameters.Count);
+            _logger.LogDebugMessage($"Validating kernel parameters: Kernel={kernelName}, ParameterCount={parameters.Count}");
 
             var result = new ParameterValidationResult
             {
@@ -224,8 +222,7 @@ public sealed class InputSanitizer : IDisposable
             result.IsValid = !result.HasInvalidParameters;
             result.ValidationEndTime = DateTimeOffset.UtcNow;
 
-            _logger.LogDebug("Kernel parameter validation completed: Kernel={KernelName}, Valid={IsValid}, Invalid={InvalidCount}",
-                kernelName, result.IsValid, result.InvalidParameters.Count);
+            _logger.LogDebugMessage($"Kernel parameter validation completed: Kernel={kernelName}, Valid={result.IsValid}, Invalid={result.InvalidParameters.Count}");
 
             return result;
         }
@@ -337,7 +334,7 @@ public sealed class InputSanitizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating file path: {Path}", filePath);
+            _logger.LogErrorMessage(ex, $"Error validating file path: {filePath}");
             result.IsValid = false;
             result.SecurityThreats.Add(new InputThreat
             {
@@ -459,7 +456,7 @@ public sealed class InputSanitizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating work group sizes");
+            _logger.LogErrorMessage(ex, "Error validating work group sizes");
             result.IsValid = false;
             result.ValidationErrors.Add($"Validation error: {ex.Message}");
         }
@@ -487,9 +484,7 @@ public sealed class InputSanitizer : IDisposable
         _ = _customRules.AddOrUpdate(context, rule, (key, existing) => rule);
 
 
-        _logger.LogDebug("Added custom validation rule: Context={Context}, Rule={RuleName}",
-
-            context, rule.Name);
+        _logger.LogDebugMessage($"Added custom validation rule: Context={context}, Rule={rule.Name}");
     }
 
     /// <summary>
@@ -858,8 +853,7 @@ public sealed class InputSanitizer : IDisposable
         try
         {
             var stats = GetStatistics();
-            _logger.LogInformation("Input validation statistics: Validations={TotalValidations}, Threats={TotalThreats}, Violations={TotalViolations}",
-                stats.TotalValidations, stats.TotalThreatsDetected, stats.TotalSecurityViolations);
+            _logger.LogInfoMessage($"Input validation statistics: Validations={stats.TotalValidations}, Threats={stats.TotalThreatsDetected}, Violations={stats.TotalSecurityViolations}");
         }
         catch (Exception ex)
         {
@@ -884,8 +878,7 @@ public sealed class InputSanitizer : IDisposable
         _validationLock?.Dispose();
 
 
-        _logger.LogInformation("InputSanitizer disposed. Final statistics: Validations={TotalValidations}, Threats={TotalThreats}",
-            _statistics.TotalValidations, _statistics.TotalThreatsDetected);
+        _logger.LogInfoMessage($"InputSanitizer disposed. Final statistics: Validations={_statistics.TotalValidations}, Threats={_statistics.TotalThreatsDetected}");
     }
 }
 

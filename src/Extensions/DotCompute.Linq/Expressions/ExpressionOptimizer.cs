@@ -7,6 +7,7 @@ using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Expressions;
 
@@ -33,7 +34,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
         ArgumentNullException.ThrowIfNull(expression);
         ArgumentNullException.ThrowIfNull(options);
 
-        _logger.LogDebug("Optimizing expression of type {ExpressionType}", expression.NodeType);
+        _logger.LogDebugMessage("Optimizing expression of type {expression.NodeType}");
 
         var optimizedExpression = expression;
 
@@ -53,7 +54,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
         optimizedExpression = OptimizeConstants(optimizedExpression);
         optimizedExpression = ReorderOperations(optimizedExpression);
 
-        _logger.LogInformation("Expression optimization complete");
+        _logger.LogInfoMessage("Expression optimization complete");
 
         return optimizedExpression;
     }
@@ -72,35 +73,35 @@ public class ExpressionOptimizer : IExpressionOptimizer
 
     private Expression ApplyOperatorFusion(Expression expression)
     {
-        _logger.LogDebug("Applying operator fusion optimization");
+        _logger.LogDebugMessage("Applying operator fusion optimization");
         var visitor = new OperatorFusionVisitor(_logger);
         return visitor.Visit(expression);
     }
 
     private Expression ApplyMemoryCoalescing(Expression expression)
     {
-        _logger.LogDebug("Applying memory coalescing optimization");
+        _logger.LogDebugMessage("Applying memory coalescing optimization");
         var visitor = new MemoryCoalescingVisitor(_logger);
         return visitor.Visit(expression);
     }
 
     private Expression EliminateRedundancy(Expression expression)
     {
-        _logger.LogDebug("Eliminating redundant operations");
+        _logger.LogDebugMessage("Eliminating redundant operations");
         var visitor = new RedundancyEliminationVisitor(_logger);
         return visitor.Visit(expression);
     }
 
     private Expression OptimizeConstants(Expression expression)
     {
-        _logger.LogDebug("Optimizing constant expressions");
+        _logger.LogDebugMessage("Optimizing constant expressions");
         var visitor = new ConstantFoldingVisitor(_logger);
         return visitor.Visit(expression);
     }
 
     private Expression ReorderOperations(Expression expression)
     {
-        _logger.LogDebug("Reordering operations for optimal execution");
+        _logger.LogDebugMessage("Reordering operations for optimal execution");
         var visitor = new OperationReorderingVisitor(_logger);
         return visitor.Visit(expression);
     }
@@ -133,7 +134,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
                     // Check if we can fuse with the previous operation
                     if (source is MethodCallExpression sourceMethod && CanFuse(node, sourceMethod))
                     {
-                        _logger.LogDebug("Fusing {Method1} with {Method2}", sourceMethod.Method.Name, node.Method.Name);
+                        _logger.LogDebugMessage("Fusing {Method1} with {sourceMethod.Method.Name, node.Method.Name}");
                         return CreateFusedExpression(sourceMethod, node);
                     }
                 }
@@ -266,7 +267,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
             // Analyze member access patterns for coalescing opportunities
             if (node.Member.DeclaringType?.IsValueType == true)
             {
-                _logger.LogDebug("Analyzing member access for coalescing: {Member}", node.Member.Name);
+                _logger.LogDebugMessage("Analyzing member access for coalescing: {node.Member.Name}");
                 // In a full implementation, we'd track access patterns
                 // and reorder them for optimal GPU memory access
             }
@@ -298,7 +299,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
             // Check if we've already visited an equivalent expression
             if (_visitedExpressions.TryGetValue(node, out var cached))
             {
-                _logger.LogDebug("Reusing cached expression for {NodeType}", node.NodeType);
+                _logger.LogDebugMessage("Reusing cached expression for {node.NodeType}");
                 return cached;
             }
 
@@ -318,7 +319,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
                 // If source is already of target type, eliminate the cast
                 if (source.Type.GetGenericArguments().FirstOrDefault() == targetType)
                 {
-                    _logger.LogDebug("Eliminating redundant cast to {Type}", targetType.Name);
+                    _logger.LogDebugMessage("Eliminating redundant cast to {targetType.Name}");
                     return Visit(source);
                 }
             }
@@ -350,8 +351,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
                 try
                 {
                     var result = EvaluateBinaryExpression(node.NodeType, leftConst.Value, rightConst.Value);
-                    _logger.LogDebug("Folded constant expression: {Left} {Op} {Right} = {Result}",
-                        leftConst.Value, node.NodeType, rightConst.Value, result);
+                    _logger.LogDebugMessage($"Folded constant expression: {leftConst.Value} {node.NodeType} {rightConst.Value} = {result}");
                     return Expression.Constant(result);
                 }
                 catch (Exception ex)
@@ -465,7 +465,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
                 var parent = node.Arguments[0];
                 if (parent is MethodCallExpression parentCall && parentCall.Method.Name == "Where")
                 {
-                    _logger.LogDebug("Reordering Where before OrderBy for better performance");
+                    _logger.LogDebugMessage("Reordering Where before OrderBy for better performance");
                     // In a full implementation, we'd reconstruct the expression tree
                     // with Where before OrderBy
                 }

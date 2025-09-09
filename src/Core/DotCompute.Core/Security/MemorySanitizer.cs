@@ -6,6 +6,7 @@ using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
 using global::System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Security;
 
@@ -50,9 +51,7 @@ public sealed class MemorySanitizer : IDisposable
             TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
 
 
-        _logger.LogInformation("MemorySanitizer initialized with configuration: {Configuration}",
-
-            _configuration.ToString());
+        _logger.LogInfoMessage($"MemorySanitizer initialized with configuration: {_configuration.ToString()}");
     }
 
     /// <summary>
@@ -91,8 +90,7 @@ public sealed class MemorySanitizer : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogDebug("Allocating sanitized memory: Size={Size}, Classification={Classification}, Id={Identifier}",
-                size, classification, identifier);
+            _logger.LogDebugMessage($"Allocating sanitized memory: Size={size}, Classification={classification}, Id={identifier}");
 
             var result = new SanitizedMemoryResult
             {
@@ -159,8 +157,7 @@ public sealed class MemorySanitizer : IDisposable
             _ = Interlocked.Add(ref _statistics.TotalBytesAllocated, (long)size);
             _ = _statistics.AllocationsByClassification.AddOrUpdate(classification, 1, (key, value) => value + 1);
 
-            _logger.LogDebug("Sanitized memory allocated: Address={Address:X}, Size={Size}, Id={Identifier}",
-                userPtr.ToInt64(), size, result.Identifier);
+            _logger.LogDebugMessage($"Sanitized memory allocated: Address={userPtr.ToInt64()}, Size={size}, Id={result.Identifier}");
 
             return result;
         }
@@ -250,7 +247,7 @@ public sealed class MemorySanitizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during sanitized memory read: Address={Address:X}", address.ToInt64());
+            _logger.LogErrorMessage(ex, $"Error during sanitized memory read: Address={address.ToInt64():X}");
             throw;
         }
     }
@@ -332,7 +329,7 @@ public sealed class MemorySanitizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during sanitized memory write: Address={Address:X}", address.ToInt64());
+            _logger.LogErrorMessage(ex, $"Error during sanitized memory write: Address={address.ToInt64():X}");
             throw;
         }
     }
@@ -354,7 +351,7 @@ public sealed class MemorySanitizer : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogDebug("Deallocating sanitized memory: Address={Address:X}", address.ToInt64());
+            _logger.LogDebugMessage("Deallocating sanitized memory: Address={address.ToInt64()}");
 
             var result = new MemoryDeallocationResult
             {
@@ -447,8 +444,7 @@ public sealed class MemorySanitizer : IDisposable
             _ = Interlocked.Increment(ref _statistics.TotalDeallocations);
             _ = Interlocked.Add(ref _statistics.TotalBytesFreed, (long)allocation.RequestedSize);
 
-            _logger.LogDebug("Sanitized memory deallocated: Address={Address:X}, Size={Size}, Id={Identifier}",
-                address.ToInt64(), allocation.RequestedSize, allocation.Identifier);
+            _logger.LogDebugMessage($"Sanitized memory deallocated: Address={address.ToInt64()}, Size={allocation.RequestedSize}, Id={allocation.Identifier}");
 
             return result;
         }
@@ -474,7 +470,7 @@ public sealed class MemorySanitizer : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogDebug("Performing memory leak detection");
+            _logger.LogDebugMessage("Performing memory leak detection");
 
             var report = new MemoryLeakReport
             {
@@ -516,8 +512,7 @@ public sealed class MemorySanitizer : IDisposable
 
             if (report.HighSuspicionCount > 0)
             {
-                _logger.LogWarning("Memory leak detection found {HighSuspicionCount} high-suspicion allocations totaling {TotalBytes} bytes",
-                    report.HighSuspicionCount, report.TotalSuspiciousBytes);
+                _logger.LogWarningMessage($"Memory leak detection found {report.HighSuspicionCount} high-suspicion allocations totaling {report.TotalSuspiciousBytes} bytes");
             }
 
             return report;
@@ -773,7 +768,7 @@ public sealed class MemorySanitizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error freeing raw memory: Address={Address:X}", basePtr.ToInt64());
+            _logger.LogErrorMessage(ex, $"Error freeing raw memory: Address={basePtr.ToInt64():X}");
         }
     }
 
@@ -823,13 +818,12 @@ public sealed class MemorySanitizer : IDisposable
                 var report = await DetectMemoryLeaksAsync();
                 if (report.HighSuspicionCount > 0)
                 {
-                    _logger.LogWarning("Memory leak detection: {HighSuspicionCount} high-suspicion leaks detected",
-                        report.HighSuspicionCount);
+                    _logger.LogWarningMessage($"Memory leak detection: {report.HighSuspicionCount} high-suspicion leaks detected");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during memory leak detection");
+                _logger.LogErrorMessage(ex, "Error during memory leak detection");
             }
         });
     }
@@ -865,12 +859,12 @@ public sealed class MemorySanitizer : IDisposable
 
                 if (corruptedCount > 0)
                 {
-                    _logger.LogWarning("Integrity check found {CorruptedCount} corrupted allocations", corruptedCount);
+                    _logger.LogWarningMessage("Integrity check found {corruptedCount} corrupted allocations");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during integrity check");
+                _logger.LogErrorMessage(ex, "Error during integrity check");
             }
         });
     }
@@ -913,8 +907,7 @@ public sealed class MemorySanitizer : IDisposable
         _randomGenerator?.Dispose();
 
         var stats = GetStatistics();
-        _logger.LogInformation("MemorySanitizer disposed. Final statistics: Allocations={TotalAllocations}, Violations={TotalViolations}",
-            stats.TotalAllocations, stats.TotalViolations);
+        _logger.LogInfoMessage($"MemorySanitizer disposed. Final statistics: Allocations={stats.TotalAllocations}, Violations={stats.TotalViolations}");
     }
 }
 

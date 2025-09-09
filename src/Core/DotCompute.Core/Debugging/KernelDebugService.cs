@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions;
@@ -57,7 +58,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
         ArgumentNullException.ThrowIfNull(inputs);
 
-        _logger.LogInformation("Starting cross-backend validation for kernel {KernelName}", kernelName);
+        _logger.LogInfoMessage("Starting cross-backend validation for kernel {kernelName}");
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -149,7 +150,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during kernel validation for {KernelName}", kernelName);
+            _logger.LogErrorMessage(ex, $"Error during kernel validation for {kernelName}");
 
 
             return new KernelValidationResult
@@ -271,7 +272,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         {
             // This is a simplified implementation - in production, you'd need to instrument
             // the kernel execution to capture intermediate values at specific points TODO
-            _logger.LogInformation("Starting traced execution of kernel {KernelName}", kernelName);
+            _logger.LogInfoMessage("Starting traced execution of kernel {kernelName}");
 
             // Execute with instrumentation (placeholder implementation) TODO
             var result = await ExecuteKernelSafelyAsync(kernelName, "CPU", inputs, accelerator);
@@ -328,9 +329,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         }
 
 
-        _logger.LogInformation("Testing determinism of kernel {KernelName} with {Iterations} iterations",
-
-            kernelName, iterations);
+        _logger.LogInfoMessage($"Testing determinism of kernel {kernelName} with {iterations} iterations");
 
         var accelerator = await GetOrCreateAcceleratorAsync("CPU");
         if (accelerator == null)
@@ -398,7 +397,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
         ArgumentNullException.ThrowIfNull(inputs);
 
-        _logger.LogInformation("Analyzing memory patterns for kernel {KernelName}", kernelName);
+        _logger.LogInfoMessage("Analyzing memory patterns for kernel {kernelName}");
 
         // Try GPU first for memory analysis, fallback to CPU
         var preferredBackends = new[] { "CUDA", "CPU" };
@@ -495,7 +494,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving backend information");
+            _logger.LogErrorMessage(ex, "Error retrieving backend information");
         }
 
         return backendInfos.OrderBy(b => b.Priority);
@@ -505,7 +504,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     {
         ArgumentNullException.ThrowIfNull(options);
         _options = options;
-        _logger.LogInformation("Debug service configured with verbosity level {Level}", options.VerbosityLevel);
+        _logger.LogInfoMessage("Debug service configured with verbosity level {options.VerbosityLevel}");
     }
 #pragma warning restore CS1998
 
@@ -535,7 +534,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting available accelerators");
+            _logger.LogErrorMessage(ex, "Error getting available accelerators");
         }
 
         return accelerators;
@@ -562,7 +561,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating accelerator for backend {BackendType}", backendType);
+            _logger.LogErrorMessage(ex, $"Error creating accelerator for backend {backendType}");
             return null;
         }
     }
@@ -588,7 +587,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         {
             // This would need to integrate with the actual kernel execution system
             // For now, we'll create a placeholder implementation TODO
-            _logger.LogDebug("Executing kernel {KernelName} on {BackendType}", kernelName, backendType);
+            _logger.LogDebugMessage("Executing kernel {KernelName} on {kernelName, backendType}");
 
             // Simulate kernel execution (replace with actual execution logic) TODO
             await Task.Delay(10); // Simulate some work
@@ -611,7 +610,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing kernel {KernelName} on {BackendType}", kernelName, backendType);
+            _logger.LogErrorMessage(ex, $"Error executing kernel {kernelName} on {backendType}");
             result = result with {
                 Success = false,
                 ErrorMessage = ex.Message
@@ -794,7 +793,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error disposing accelerator");
+                _logger.LogErrorMessage(ex, "Error disposing accelerator");
             }
         }
 

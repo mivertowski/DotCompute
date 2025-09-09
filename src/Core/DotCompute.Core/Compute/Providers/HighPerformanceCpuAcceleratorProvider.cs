@@ -4,6 +4,7 @@
 using global::System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 
 using System;
@@ -34,7 +35,7 @@ namespace DotCompute.Core.Compute.Providers
         /// <returns>Collection of discovered accelerators.</returns>
         public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Discovering high-performance CPU accelerators");
+            _logger.LogInfoMessage("Discovering high-performance CPU accelerators");
 
             var cpuInfo = new AcceleratorInfo(
                 AcceleratorType.CPU,

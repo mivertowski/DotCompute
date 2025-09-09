@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -64,7 +65,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         // Start background cleanup task
         _ = Task.Run(PerformPeriodicCleanup);
 
-        _logger.LogInformation("Production memory manager initialized with advanced memory pooling");
+        _logger.LogInfoMessage("Production memory manager initialized with advanced memory pooling");
     }
 
     // Generic allocation for typed buffers
@@ -111,8 +112,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
                 var elapsedMs = (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
                 _statistics.RecordAllocation(sizeInBytes, elapsedMs, fromPool: true);
 
-                _logger.LogDebug("Allocated pooled memory buffer {BufferId} with size {SizeBytes} in {ElapsedMs:F2}ms",
-                    id, sizeInBytes, elapsedMs);
+                _logger.LogDebugMessage($"Allocated pooled memory buffer {id} with size {sizeInBytes} in {elapsedMs}ms");
 
                 return buffer;
             }
@@ -125,15 +125,14 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
             var allocElapsedMs = (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
             _statistics.RecordAllocation(sizeInBytes, allocElapsedMs, fromPool: false);
 
-            _logger.LogDebug("Allocated new memory buffer {BufferId} with size {SizeBytes} in {ElapsedMs:F2}ms",
-                id, sizeInBytes, allocElapsedMs);
+            _logger.LogDebugMessage($"Allocated new memory buffer {id} with size {sizeInBytes} in {allocElapsedMs}ms");
 
             return newBuffer;
         }
         catch (OutOfMemoryException ex)
         {
             MemoryStatistics.RecordFailedAllocation(sizeInBytes);
-            _logger.LogError(ex, "Failed to allocate memory buffer of size {SizeBytes} - out of memory", sizeInBytes);
+            _logger.LogErrorMessage(ex, $"Failed to allocate memory buffer of size {sizeInBytes} - out of memory");
 
             // Attempt garbage collection and retry once
             GC.Collect();
@@ -145,7 +144,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
             try
             {
                 var retryBuffer = new ProductionMemoryBuffer(Interlocked.Increment(ref _nextId), sizeInBytes, options, _logger, null, _statistics);
-                _logger.LogInformation("Successfully allocated memory buffer after GC retry");
+                _logger.LogInfoMessage("Successfully allocated memory buffer after GC retry");
                 return retryBuffer;
             }
             catch (OutOfMemoryException)
@@ -157,7 +156,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         catch (Exception ex)
         {
             MemoryStatistics.RecordFailedAllocation(sizeInBytes);
-            _logger.LogError(ex, "Unexpected error during memory allocation for size {SizeBytes}", sizeInBytes);
+            _logger.LogErrorMessage(ex, $"Unexpected error during memory allocation for size {sizeInBytes}");
             throw new InvalidOperationException($"Memory allocation failed: {ex.Message}", ex);
         }
         finally
@@ -331,7 +330,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         GC.WaitForPendingFinalizers();
 
 
-        _logger.LogInformation("Memory optimization completed");
+        _logger.LogInfoMessage("Memory optimization completed");
     }
 
 
@@ -361,7 +360,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         }
 
 
-        _logger.LogInformation("Memory manager cleared - all buffers disposed");
+        _logger.LogInfoMessage("Memory manager cleared - all buffers disposed");
     }
 
     /// <summary>
@@ -468,8 +467,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
 
                 if (deadReferences.Count > 0)
                 {
-                    _logger.LogDebug("Cleaned up {DeadReferences} dead buffer references during periodic maintenance",
-                        deadReferences.Count);
+                    _logger.LogDebugMessage($"Cleaned up {deadReferences.Count} dead buffer references during periodic maintenance");
                 }
             }
             catch (Exception ex) when (!_disposed)
@@ -485,8 +483,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         {
             _disposed = true;
 
-            _logger.LogInformation("Disposing production memory manager with {BufferCount} active buffers",
-                _buffers.Count);
+            _logger.LogInfoMessage($"Disposing production memory manager with {_buffers.Count} active buffers");
 
             // Dispose all active buffers
             foreach (var buffer in _buffers.Values)
@@ -508,7 +505,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
             _memoryPool?.Dispose();
             _allocationSemaphore?.Dispose();
 
-            _logger.LogInformation("Production memory manager disposed successfully");
+            _logger.LogInfoMessage("Production memory manager disposed successfully");
         }
     }
 
@@ -519,8 +516,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         {
             _disposed = true;
 
-            _logger.LogInformation("Disposing production memory manager with {BufferCount} active buffers",
-                _buffers.Count);
+            _logger.LogInfoMessage($"Disposing production memory manager with {_buffers.Count} active buffers");
 
             // Dispose all active buffers asynchronously
             var disposeTasks = _buffers.Values.Select(async buffer =>
@@ -545,7 +541,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
             _memoryPool?.Dispose();
             _allocationSemaphore?.Dispose();
 
-            _logger.LogInformation("Production memory manager disposed successfully");
+            _logger.LogInfoMessage("Production memory manager disposed successfully");
         }
     }
 }
@@ -597,7 +593,7 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create memory buffer {BufferId}", id);
+            _logger.LogErrorMessage(ex, $"Failed to create memory buffer {id}");
             throw;
         }
     }
@@ -638,7 +634,7 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy data to buffer {BufferId}", Id);
+            _logger.LogErrorMessage(ex, $"Failed to copy data to buffer {Id}");
             throw;
         }
     }
@@ -679,7 +675,7 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy data from buffer {BufferId}", Id);
+            _logger.LogErrorMessage(ex, $"Failed to copy data from buffer {Id}");
             throw;
         }
     }
@@ -852,7 +848,7 @@ public sealed class MemoryPool : IDisposable
 
             if (totalFreed > 0)
             {
-                _logger.LogDebug("Memory pool maintenance freed {Count} unused buffers", totalFreed);
+                _logger.LogDebugMessage("Memory pool maintenance freed {totalFreed} unused buffers");
             }
         });
     }
@@ -893,7 +889,7 @@ public sealed class MemoryPool : IDisposable
             }
 
             _pools.Clear();
-            _logger.LogDebug("Memory pool disposed");
+            _logger.LogDebugMessage("Memory pool disposed");
         }
     }
 }
@@ -1017,8 +1013,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
     public ProductionKernelCompiler(ILogger<ProductionKernelCompiler> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _logger.LogInformation("Production kernel compiler initialized with support for {SourceTypes}",
-            string.Join(", ", SupportedSourceTypes));
+        _logger.LogInfoMessage($"Production kernel compiler initialized with support for {string.Join(", ", SupportedSourceTypes)}");
     }
 
     public async ValueTask<ICompiledKernel> CompileAsync(
@@ -1040,7 +1035,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             weakRef.TryGetTarget(out var cachedKernel))
         {
             _statistics.RecordCacheHit();
-            _logger.LogDebug("Retrieved compiled kernel {KernelName} from cache", definition.Name);
+            _logger.LogDebugMessage("Retrieved compiled kernel {definition.Name} from cache");
             return cachedKernel;
         }
 
@@ -1056,7 +1051,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             // Cache the compiled kernel
             _ = _kernelCache.TryAdd(cacheKey, new WeakReference<ProductionCompiledKernel>(compiledKernel));
 
-            _logger.LogDebug("Compiled kernel {KernelName} in {ElapsedMs:F2}ms", definition.Name, elapsedMs);
+            _logger.LogDebugMessage("Compiled kernel {KernelName} in {definition.Name, elapsedMs}ms");
             return compiledKernel;
         }
         catch (Exception ex)
@@ -1064,7 +1059,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             var elapsedMs = (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
             _statistics.RecordCompilation(elapsedMs, success: false);
 
-            _logger.LogError(ex, "Failed to compile kernel {KernelName} after {ElapsedMs:F2}ms", definition.Name, elapsedMs);
+            _logger.LogErrorMessage(ex, $"Failed to compile kernel {definition.Name} after {elapsedMs}ms");
             throw new InvalidOperationException($"Kernel compilation failed: {ex.Message}", ex);
         }
     }
@@ -1137,7 +1132,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
     {
         ArgumentNullException.ThrowIfNull(kernel);
         await Task.Delay(Random.Shared.Next(10, 50), cancellationToken);
-        _logger.LogDebug("Optimized kernel {KernelId} with level {Level}", kernel.Id, level);
+        _logger.LogDebugMessage("Optimized kernel {KernelId} with level {kernel.Id, level}");
         return kernel; // Return same kernel for production implementation
     }
 
@@ -1146,10 +1141,10 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         CompilationOptions? options,
         CancellationToken cancellationToken)
     {
-        // Simulate compilation process with actual work
+        // Simulate compilation process with actual work TODO
         await Task.Delay(Random.Shared.Next(10, 100), cancellationToken);
 
-        // Generate mock bytecode based on source
+        // Generate mock bytecode based on source TODO
         var bytecode = GenerateMockBytecode(definition);
 
         // Create kernel configuration
@@ -1211,7 +1206,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             }
             _kernelCache.Clear();
 
-            _logger.LogInformation("Production kernel compiler disposed");
+            _logger.LogInfoMessage("Production kernel compiler disposed");
         }
     }
 }
@@ -1343,17 +1338,17 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
     // Basic copy operations
 
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
-        // For production implementation, this would use proper memory copying
+        // For production implementation, this would use proper memory copying TODO
 
         => await Task.CompletedTask;
 
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
-        // For production implementation, this would use proper memory copying
+        // For production implementation, this would use proper memory copying TODO
 
         => await Task.CompletedTask;
 
     public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
-        // For production implementation, this would copy between buffers
+        // For production implementation, this would copy between buffers TODO
 
         => await Task.CompletedTask;
 
@@ -1363,7 +1358,7 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
         int destinationOffset,
         int count,
         CancellationToken cancellationToken = default)
-        // For production implementation, this would copy with offsets
+        // For production implementation, this would copy with offsets TODO
 
         => await Task.CompletedTask;
 
@@ -1467,7 +1462,7 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
             throw new ArgumentException("Source too large for view");
         }
 
-        // For a real implementation, this would handle the offset properly
+        // For a real implementation, this would handle the offset properly TODO
 
         await _parent.CopyFromAsync(source, cancellationToken);
     }
@@ -1484,7 +1479,7 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
     public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
         => _parent.CopyToAsync(_offset + sourceOffset, destination, destinationOffset, count, cancellationToken);
 
-    // Simplified implementations for remaining methods (delegate to parent)
+    // Simplified implementations for remaining methods (delegate to parent) TODO
 
     public Span<T> AsSpan() => _parent.AsSpan().Slice(_offset, _length);
     public ReadOnlySpan<T> AsReadOnlySpan() => _parent.AsReadOnlySpan().Slice(_offset, _length);
@@ -1534,7 +1529,7 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         _ = (int)(SizeInBytes / Unsafe.SizeOf<TNew>());
-        // This is a simplified implementation - a real one would need proper offset handling
+        // This is a simplified implementation - a real one would need proper offset handling TODO
         return _parent.AsType<TNew>();
     }
 

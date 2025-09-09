@@ -4,6 +4,7 @@
 using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Execution.Optimization
@@ -46,7 +47,7 @@ namespace DotCompute.Core.Execution.Optimization
         {
             ArgumentNullException.ThrowIfNull(plan);
 
-            _logger.LogDebug("Applying cross-cutting optimizations to {StrategyType} execution plan", plan.StrategyType);
+            _logger.LogDebugMessage("Applying cross-cutting optimizations to {plan.StrategyType} execution plan");
 
             // Apply memory optimizations
             await OptimizeMemoryUsageAsync(plan, cancellationToken);
@@ -57,7 +58,7 @@ namespace DotCompute.Core.Execution.Optimization
             // Apply device-specific optimizations
             await ApplyDeviceOptimizationsAsync(plan, cancellationToken);
 
-            _logger.LogDebug("Completed cross-cutting optimizations");
+            _logger.LogDebugMessage("Completed cross-cutting optimizations");
         }
 
         /// <summary>
@@ -78,8 +79,7 @@ namespace DotCompute.Core.Execution.Optimization
                 {
                     if (deviceStats.UtilizationPercentage > 85.0) // High utilization
                     {
-                        _logger.LogWarning("High memory utilization detected on device {DeviceId}: {UtilizationPercentage:F2}%",
-                            device.Info.Id, deviceStats.UtilizationPercentage);
+                        _logger.LogWarningMessage($"High memory utilization detected on device {device.Info.Id}: {deviceStats.UtilizationPercentage}%");
                     }
                 }
             }
@@ -103,8 +103,7 @@ namespace DotCompute.Core.Execution.Optimization
             {
                 if (strategyMetrics.AverageEfficiencyPercentage < 60)
                 {
-                    _logger.LogInformation("Low efficiency detected for {StrategyType}: {Efficiency:F1}%, applying optimizations",
-                        plan.StrategyType, strategyMetrics.AverageEfficiencyPercentage);
+                    _logger.LogInfoMessage($"Low efficiency detected for {plan.StrategyType}: {strategyMetrics.AverageEfficiencyPercentage}%, applying optimizations");
 
                     // Could apply strategy-specific optimizations here - TODO
                 }

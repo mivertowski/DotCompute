@@ -3,6 +3,7 @@
 
 using System;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 
@@ -62,7 +63,7 @@ namespace DotCompute.Backends.CUDA.Configuration
                         }
                         else
                         {
-                            _logger.LogDebug("Using device compute capability {Major}.{Minor}", major, minor);
+                            _logger.LogDebugMessage("Using device compute capability {Major}.{major, minor}");
                         }
 
 
@@ -77,7 +78,7 @@ namespace DotCompute.Backends.CUDA.Configuration
                 // Fallback to a safe default
                 var fallback = GetFallbackCapability();
                 _cachedCapability = fallback;
-                _logger.LogInformation("Using fallback compute capability {Major}.{Minor}", fallback.major, fallback.minor);
+                _logger.LogInfoMessage("Using fallback compute capability {Major}.{fallback.major, fallback.minor}");
                 return fallback;
             }
         }
@@ -159,7 +160,7 @@ namespace DotCompute.Backends.CUDA.Configuration
                     var minorVersion = (driverVersion % 1000) / 10;
 
 
-                    _logger.LogDebug("CUDA Driver version: {Major}.{Minor}", majorVersion, minorVersion);
+                    _logger.LogDebugMessage("CUDA Driver version: {Major}.{majorVersion, minorVersion}");
 
                     // Map driver version to maximum supported compute capability
                     // Based on NVIDIA documentation
@@ -246,7 +247,7 @@ namespace DotCompute.Backends.CUDA.Configuration
             lock (_lock)
             {
                 _cachedCapability = null;
-                _logger.LogDebug("Cleared compute capability cache");
+                _logger.LogDebugMessage("Cleared compute capability cache");
             }
         }
 

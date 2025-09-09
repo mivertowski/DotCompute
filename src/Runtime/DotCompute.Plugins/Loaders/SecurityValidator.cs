@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 using DotCompute.Plugins.Loaders.NuGet.Types;
 using DotCompute.Plugins.Loaders.NuGet.Results;
 using DotCompute.Plugins.Loaders.Internal;
@@ -38,7 +39,7 @@ public class SecurityValidator
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(result);
 
-        _logger.LogInformation("Performing security validation for plugin: {PluginId}", manifest.Id);
+        _logger.LogInfoMessage("Performing security validation for plugin: {manifest.Id}");
 
         try
         {
@@ -68,12 +69,11 @@ public class SecurityValidator
             // Validate permissions
             ValidatePermissions(manifest, result);
 
-            _logger.LogInformation("Security validation completed for plugin: {PluginId}. Errors: {ErrorCount}, Warnings: {WarningCount}",
-                manifest.Id, result.Errors.Count, result.Warnings.Count);
+            _logger.LogInfoMessage($"Security validation completed for plugin: {manifest.Id}. Errors: {result.Errors.Count}, Warnings: {result.Warnings.Count}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Security validation failed for plugin: {PluginId}", manifest.Id);
+            _logger.LogErrorMessage(ex, $"Security validation failed for plugin: {manifest.Id}");
             result.Errors.Add($"Security validation error: {ex.Message}");
         }
     }
@@ -88,11 +88,11 @@ public class SecurityValidator
         var cacheKey = $"{manifest.Id}_{manifest.Version}";
         if (_scanCache.TryGetValue(cacheKey, out var cached) && !cached.IsExpired)
         {
-            _logger.LogDebug("Using cached security scan for plugin: {PluginId}", manifest.Id);
+            _logger.LogDebugMessage("Using cached security scan for plugin: {manifest.Id}");
             return cached.ScanResult;
         }
 
-        _logger.LogInformation("Scanning plugin for vulnerabilities: {PluginId}", manifest.Id);
+        _logger.LogInfoMessage("Scanning plugin for vulnerabilities: {manifest.Id}");
 
         var scanResult = new SecurityScanResult
         {
@@ -128,12 +128,11 @@ public class SecurityValidator
 
             });
 
-            _logger.LogInformation("Vulnerability scan completed for plugin: {PluginId}. Vulnerabilities found: {Count}",
-                manifest.Id, scanResult.AllVulnerabilities.Count());
+            _logger.LogInfoMessage($"Vulnerability scan completed for plugin: {manifest.Id}. Vulnerabilities found: {scanResult.AllVulnerabilities.Count()}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Vulnerability scan failed for plugin: {PluginId}", manifest.Id);
+            _logger.LogErrorMessage(ex, $"Vulnerability scan failed for plugin: {manifest.Id}");
             scanResult.ScanErrors.Add($"Scan failed: {ex.Message}");
         }
 
@@ -239,14 +238,13 @@ public class SecurityValidator
                     }
                 }
 
-                _logger.LogInformation("Signature verification completed for plugin: {PluginId}. Signed: {IsSigned}, Valid: {IsValid}",
-                    manifest.Id, signatureInfo.IsSigned, signatureInfo.IsValid);
+                _logger.LogInfoMessage($"Signature verification completed for plugin: {manifest.Id}. Signed: {signatureInfo.IsSigned}, Valid: {signatureInfo.IsValid}");
 
             }, cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Signature verification failed for plugin: {PluginId}", manifest.Id);
+            _logger.LogErrorMessage(ex, $"Signature verification failed for plugin: {manifest.Id}");
             result.Errors.Add($"Signature verification failed: {ex.Message}");
         }
     }
@@ -314,7 +312,7 @@ public class SecurityValidator
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Critical error during signature verification for assembly: {AssemblyPath}", assemblyPath);
+            _logger.LogErrorMessage(ex, $"Critical error during signature verification for assembly: {assemblyPath}");
             return new PluginSignature
             {
 
@@ -511,12 +509,11 @@ public class SecurityValidator
                 }
             }
 
-            _logger.LogInformation("Code analysis completed for plugin: {PluginId}. Findings: {Count}",
-                manifest.Id, analysis.SuspiciousPatterns.Count);
+            _logger.LogInfoMessage($"Code analysis completed for plugin: {manifest.Id}. Findings: {analysis.SuspiciousPatterns.Count}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Code analysis failed for plugin: {PluginId}", manifest.Id);
+            _logger.LogErrorMessage(ex, $"Code analysis failed for plugin: {manifest.Id}");
             result.Warnings.Add($"Code analysis failed: {ex.Message}");
         }
     }
@@ -541,8 +538,7 @@ public class SecurityValidator
             result.Errors.Add($"Plugin requires unauthorized permission: {permission}");
         }
 
-        _logger.LogInformation("Permission validation completed for plugin: {PluginId}. Unauthorized permissions: {Count}",
-            manifest.Id, unauthorizedPermissions.Count);
+        _logger.LogInfoMessage($"Permission validation completed for plugin: {manifest.Id}. Unauthorized permissions: {unauthorizedPermissions.Count}");
     }
 
     /// <summary>

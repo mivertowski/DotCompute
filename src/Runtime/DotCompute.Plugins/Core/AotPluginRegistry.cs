@@ -6,6 +6,7 @@ using DotCompute.Plugins.Platform;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - AOT plugin registry uses dynamic logging
 
@@ -44,12 +45,12 @@ namespace DotCompute.Plugins.Core
         /// </summary>
         private void RegisterKnownPlugins()
         {
-            _logger.LogInformation("Registering known plugins for AOT compatibility");
+            _logger.LogInfoMessage("Registering known plugins for AOT compatibility");
 
             // Register CPU backend
             _factories["DotCompute.Backends.CPU"] = () =>
             {
-                _logger.LogDebug("Creating CPU backend plugin");
+                _logger.LogDebugMessage("Creating CPU backend plugin");
 
                 // Create a minimal CPU backend plugin implementation for AOT compatibility
                 return new AotCpuBackendPlugin();
@@ -58,7 +59,7 @@ namespace DotCompute.Plugins.Core
             // Register CUDA backend (when available)
             _factories["DotCompute.Backends.CUDA"] = () =>
             {
-                _logger.LogDebug("Creating CUDA backend plugin");
+                _logger.LogDebugMessage("Creating CUDA backend plugin");
 
                 // Use comprehensive platform detection for CUDA availability
                 PlatformDetection.ValidateBackendAvailability(ComputeBackendType.CUDA);
@@ -68,7 +69,7 @@ namespace DotCompute.Plugins.Core
             // Register Metal backend (when available)
             _factories["DotCompute.Backends.Metal"] = () =>
             {
-                _logger.LogDebug("Creating Metal backend plugin");
+                _logger.LogDebugMessage("Creating Metal backend plugin");
 
                 // Use comprehensive platform detection for Metal availability
                 PlatformDetection.ValidateBackendAvailability(ComputeBackendType.Metal);
@@ -78,7 +79,7 @@ namespace DotCompute.Plugins.Core
             // Register OpenCL backend (when available)
             _factories["DotCompute.Backends.OpenCL"] = () =>
             {
-                _logger.LogDebug("Creating OpenCL backend plugin");
+                _logger.LogDebugMessage("Creating OpenCL backend plugin");
 
                 // Use comprehensive platform detection for OpenCL availability
                 PlatformDetection.ValidateBackendAvailability(ComputeBackendType.OpenCL);
@@ -88,7 +89,7 @@ namespace DotCompute.Plugins.Core
             // Register DirectCompute backend (when available)
             _factories["DotCompute.Backends.DirectCompute"] = () =>
             {
-                _logger.LogDebug("Creating DirectCompute backend plugin");
+                _logger.LogDebugMessage("Creating DirectCompute backend plugin");
 
                 // Use comprehensive platform detection for DirectCompute availability
                 PlatformDetection.ValidateBackendAvailability(ComputeBackendType.DirectCompute);
@@ -98,14 +99,14 @@ namespace DotCompute.Plugins.Core
             // Register Vulkan compute backend (when available)
             _factories["DotCompute.Backends.Vulkan"] = () =>
             {
-                _logger.LogDebug("Creating Vulkan compute backend plugin");
+                _logger.LogDebugMessage("Creating Vulkan compute backend plugin");
 
                 // Use comprehensive platform detection for Vulkan availability
                 PlatformDetection.ValidateBackendAvailability(ComputeBackendType.Vulkan);
                 return new AotVulkanBackendPlugin();
             };
 
-            _logger.LogInformation("Registered {Count} plugin factories", _factories.Count);
+            _logger.LogInfoMessage("Registered {_factories.Count} plugin factories");
         }
 
         /// <summary>
@@ -147,13 +148,12 @@ namespace DotCompute.Plugins.Core
                         var plugin = factory();
                         _plugins[plugin.Id] = plugin;
 
-                        _logger.LogInformation("Successfully created plugin {Id} ({Name}) from factory",
-                            plugin.Id, plugin.Name);
+                        _logger.LogInfoMessage($"Successfully created plugin {plugin.Id} ({plugin.Name}) from factory");
 
                         return plugin;
                     }
 
-                    _logger.LogWarning("No factory found for plugin type: {Type}", pluginTypeName);
+                    _logger.LogWarningMessage("No factory found for plugin type: {pluginTypeName}");
                     return null;
                 }
                 catch (PlatformNotSupportedException)
@@ -163,7 +163,7 @@ namespace DotCompute.Plugins.Core
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to create plugin {Type}", pluginTypeName);
+                    _logger.LogErrorMessage(ex, $"Failed to create plugin {pluginTypeName}");
                     return null;
                 }
             }
@@ -223,20 +223,20 @@ namespace DotCompute.Plugins.Core
                 {
                     try
                     {
-                        _logger.LogInformation("Unloading plugin {Id}", pluginId);
+                        _logger.LogInfoMessage("Unloading plugin {pluginId}");
                         plugin.Dispose();
                         _ = _plugins.Remove(pluginId);
-                        _logger.LogInformation("Successfully unloaded plugin {Id}", pluginId);
+                        _logger.LogInfoMessage("Successfully unloaded plugin {pluginId}");
                         return true;
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to unload plugin {Id}", pluginId);
+                        _logger.LogErrorMessage(ex, $"Failed to unload plugin {pluginId}");
                         return false;
                     }
                 }
 
-                _logger.LogWarning("Plugin {Id} not found for unloading", pluginId);
+                _logger.LogWarningMessage("Plugin {pluginId} not found for unloading");
                 return false;
             }
         }
@@ -258,7 +258,7 @@ namespace DotCompute.Plugins.Core
             lock (_lock)
             {
                 _factories[pluginTypeName] = factory;
-                _logger.LogInformation("Registered custom plugin factory for {Type}", pluginTypeName);
+                _logger.LogInfoMessage("Registered custom plugin factory for {pluginTypeName}");
             }
         }
 
@@ -284,7 +284,7 @@ namespace DotCompute.Plugins.Core
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error disposing plugin {Id}", plugin.Id);
+                        _logger.LogErrorMessage(ex, $"Error disposing plugin {plugin.Id}");
                     }
                 }
 
@@ -292,7 +292,7 @@ namespace DotCompute.Plugins.Core
                 _factories.Clear();
             }
 
-            _logger.LogInformation("AotPluginRegistry disposed");
+            _logger.LogInfoMessage("AotPluginRegistry disposed");
         }
     }
 
@@ -332,7 +332,7 @@ namespace DotCompute.Plugins.Core
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
 
-            _logger.LogInformation("Loading plugin {Type} (assembly path ignored in AOT mode)", pluginTypeName);
+            _logger.LogInfoMessage("Loading plugin {pluginTypeName} (assembly path ignored in AOT mode)");
 
             // In AOT mode, we ignore the assembly path and use static registration
             await Task.Yield(); // Maintain async signature for compatibility

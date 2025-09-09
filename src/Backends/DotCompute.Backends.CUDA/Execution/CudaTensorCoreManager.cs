@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Execution.Metrics;
 using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -38,7 +39,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             _performanceTimer = new Timer(UpdatePerformanceMetrics, null,
                 TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
 
-            _logger.LogDebug("Tensor Core Manager initialized for {Architecture}", GetArchitectureName());
+            _logger.LogDebugMessage($"");
         }
 
         /// <summary>
@@ -115,7 +116,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error optimizing kernel for Tensor Cores");
+                _logger.LogErrorMessage(ex, "Error optimizing kernel for Tensor Cores");
                 return new CudaOptimizationResult
                 {
                     Success = false,
@@ -164,7 +165,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing Tensor Core operation {OperationType}", operation.Type);
+                _logger.LogErrorMessage("");
                 return new CudaTensorCoreExecutionResult
                 {
                     Success = false,
@@ -280,7 +281,7 @@ namespace DotCompute.Backends.CUDA.Advanced
 
                 if (oldKernels.Count > 0)
                 {
-                    _logger.LogDebug("Cleaned up {Count} unused Tensor Core kernels", oldKernels.Count);
+                    _logger.LogDebugMessage(" unused Tensor Core kernels");
                 }
             }
             catch (Exception ex)

@@ -3,6 +3,7 @@
 
 using global::System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Logging;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -45,7 +46,7 @@ public sealed class AuthenticodeValidator : IDisposable
             };
         }
 
-        _logger.LogDebug("Validating Authenticode signature for: {AssemblyPath}", assemblyPath);
+        _logger.LogDebugMessage("Validating Authenticode signature for: {assemblyPath}");
 
         try
         {
@@ -53,19 +54,18 @@ public sealed class AuthenticodeValidator : IDisposable
 
             if (result.IsValid)
             {
-                _logger.LogInformation("Authenticode validation passed for: {AssemblyPath}", assemblyPath);
+                _logger.LogInfoMessage("Authenticode validation passed for: {assemblyPath}");
             }
             else
             {
-                _logger.LogWarning("Authenticode validation failed for: {AssemblyPath}, Reason: {ErrorMessage}",
-                    assemblyPath, result.ErrorMessage);
+                _logger.LogWarningMessage($"Authenticode validation failed for: {assemblyPath}, Reason: {result.ErrorMessage}");
             }
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception during Authenticode validation for: {AssemblyPath}", assemblyPath);
+            _logger.LogErrorMessage(ex, $"Exception during Authenticode validation for: {assemblyPath}");
             return new AuthenticodeValidationResult
             {
                 IsValid = false,
@@ -206,14 +206,13 @@ public sealed class AuthenticodeValidator : IDisposable
             // If we get here, the signature is valid
             result.IsValid = true;
 
-            _logger.LogDebug("Authenticode validation successful - Signer: {Signer}, Trust Level: {TrustLevel}",
-                result.SignerName, result.TrustLevel);
+            _logger.LogDebugMessage($"Authenticode validation successful - Signer: {result.SignerName}, Trust Level: {result.TrustLevel}");
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating Authenticode signature for: {FilePath}", filePath);
+            _logger.LogErrorMessage(ex, $"Error validating Authenticode signature for: {filePath}");
             result.IsValid = false;
             result.ErrorMessage = $"Validation error: {ex.Message}";
             result.TrustLevel = TrustLevel.None;

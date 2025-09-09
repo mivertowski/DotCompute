@@ -19,6 +19,7 @@ using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Execution;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Compilation;
 
@@ -103,7 +104,7 @@ public sealed class CudaKernelCache : IDisposable
             if (!Directory.Exists(_diskCachePath))
             {
                 _ = Directory.CreateDirectory(_diskCachePath);
-                _logger.LogInformation("Created disk cache directory: {Path}", _diskCachePath);
+                _logger.LogInfoMessage("Created disk cache directory: {_diskCachePath}");
             }
 
             // Load existing cache metadata
@@ -149,8 +150,7 @@ public sealed class CudaKernelCache : IDisposable
                 }
 
 
-                _logger.LogInformation("Loaded {Count} kernel metadata entries from disk cache",
-                    _metadataCache.Count);
+                _logger.LogInfoMessage($"Loaded {_metadataCache.Count} kernel metadata entries from disk cache");
             }
         }
         catch (Exception ex)
@@ -179,7 +179,7 @@ public sealed class CudaKernelCache : IDisposable
         if (TryGetFromMemoryCache(cacheKey, out var cached))
         {
             RecordCacheHit();
-            _logger.LogDebug("Kernel cache hit (memory): {Key}", cacheKey);
+            _logger.LogDebugMessage("Kernel cache hit (memory): {cacheKey}");
             return cached;
         }
 
@@ -190,7 +190,7 @@ public sealed class CudaKernelCache : IDisposable
             if (TryGetFromMemoryCache(cacheKey, out cached))
             {
                 RecordCacheHit();
-                _logger.LogDebug("Kernel cache hit (disk): {Key}", cacheKey);
+                _logger.LogDebugMessage("Kernel cache hit (disk): {cacheKey}");
                 return cached;
             }
         }
@@ -198,7 +198,7 @@ public sealed class CudaKernelCache : IDisposable
         // Cache miss - compile kernel
 
         RecordCacheMiss();
-        _logger.LogInformation("Kernel cache miss, compiling: {Name}", kernelName);
+        _logger.LogInfoMessage("Kernel cache miss, compiling: {kernelName}");
 
 
         var compiled = await CompileKernelAsync(
@@ -264,7 +264,7 @@ public sealed class CudaKernelCache : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to compile kernel '{Name}'", kernelName);
+            _logger.LogErrorMessage("'");
             throw new KernelCompilationException($"Kernel compilation failed: {kernelName}", ex);
         }
     }
@@ -347,8 +347,7 @@ public sealed class CudaKernelCache : IDisposable
 
             try
             {
-                _logger.LogDebug("Compiling PTX to cubin for compute_{Major}_{Minor}",
-                    options.ComputeCapability.Major, options.ComputeCapability.Minor);
+                _logger.LogDebugMessage($"Compiling PTX to cubin for compute_{options.ComputeCapability.Major}_{options.ComputeCapability.Minor}");
 
                 // Setup JIT compilation options
 
@@ -443,7 +442,7 @@ public sealed class CudaKernelCache : IDisposable
                     Marshal.Copy(cubinPtr, cubinBytes, 0, (int)cubinSize);
 
 
-                    _logger.LogInformation("Successfully compiled PTX to CUBIN: {Size} bytes", cubinSize);
+                    _logger.LogInfoMessage("Successfully compiled PTX to CUBIN: {cubinSize} bytes");
 
 
                     return cubinBytes;
@@ -660,7 +659,7 @@ public sealed class CudaKernelCache : IDisposable
             AddToMemoryCache(cacheKey, kernel);
 
 
-            _logger.LogDebug("Loaded kernel from disk cache: {Key}", cacheKey);
+            _logger.LogDebugMessage("Loaded kernel from disk cache: {cacheKey}");
             return true;
         }
         catch (Exception ex)
@@ -727,9 +726,7 @@ public sealed class CudaKernelCache : IDisposable
             UpdateLru(cacheKey);
 
 
-            _logger.LogDebug("Added kernel to memory cache: {Key} ({Size} bytes)",
-
-                cacheKey, kernelSize);
+            _logger.LogDebugMessage($"Added kernel to memory cache: {cacheKey} ({kernelSize} bytes)");
         }
     }
 
@@ -772,7 +769,7 @@ public sealed class CudaKernelCache : IDisposable
             await SaveCacheMetadataAsync(cancellationToken);
 
 
-            _logger.LogDebug("Added kernel to disk cache: {Key}", cacheKey);
+            _logger.LogDebugMessage("Added kernel to disk cache: {cacheKey}");
         }
         catch (Exception ex)
         {
@@ -835,7 +832,7 @@ public sealed class CudaKernelCache : IDisposable
                 if (_memoryCache.TryRemove(lruKey, out var cached))
                 {
                     _ = Interlocked.Add(ref _currentCacheSize, -cached.Size);
-                    _logger.LogDebug("Evicted kernel from memory cache: {Key}", lruKey);
+                    _logger.LogDebugMessage("Evicted kernel from memory cache: {lruKey}");
                     return true;
                 }
             }
@@ -940,7 +937,7 @@ public sealed class CudaKernelCache : IDisposable
 
         if (keysToRemove.Count > 0)
         {
-            _logger.LogInformation("Cleaned up {Count} expired disk cache entries", keysToRemove.Count);
+            _logger.LogInfoMessage("Cleaned up {keysToRemove.Count} expired disk cache entries");
             _ = SaveCacheMetadataAsync(CancellationToken.None);
         }
     }
@@ -984,7 +981,7 @@ public sealed class CudaKernelCache : IDisposable
         }
 
 
-        _logger.LogInformation("Cleared kernel cache");
+        _logger.LogInfoMessage("Cleared kernel cache");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

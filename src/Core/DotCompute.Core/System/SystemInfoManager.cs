@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.System;
 
@@ -46,7 +47,7 @@ public sealed partial class SystemInfoManager : IDisposable
 
         _isMonitoring = true;
         _ = _monitoringTimer.Change(TimeSpan.Zero, interval);
-        _logger.LogInformation("Started system monitoring with {Interval}s interval", interval.TotalSeconds);
+        _logger.LogInfoMessage("Started system monitoring with {interval.TotalSeconds}s interval");
     }
 
     /// <summary>
@@ -62,7 +63,7 @@ public sealed partial class SystemInfoManager : IDisposable
 
         _isMonitoring = false;
         _ = _monitoringTimer.Change(Timeout.Infinite, Timeout.Infinite);
-        _logger.LogInformation("Stopped system monitoring");
+        _logger.LogInfoMessage("Stopped system monitoring");
     }
 
     /// <summary>
@@ -145,7 +146,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get system information");
+            _logger.LogErrorMessage(ex, "Failed to get system information");
             return _cachedInfo ?? new SystemInfo();
         }
     }
@@ -289,7 +290,7 @@ public sealed partial class SystemInfoManager : IDisposable
                 }
                 else
                 {
-                    _logger.LogWarning("System.Management not available, using fallback");
+                    _logger.LogWarningMessage("System.Management not available, using fallback");
                     return GetFallbackMemoryInfo();
                 }
             }
@@ -573,7 +574,7 @@ public sealed partial class SystemInfoManager : IDisposable
             }
             else
             {
-                _logger.LogWarning("System.Management not available for CPU info");
+                _logger.LogWarningMessage("System.Management not available for CPU info");
             }
         }
         catch (Exception ex)
@@ -783,7 +784,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating system information");
+            _logger.LogErrorMessage(ex, "Error updating system information");
         }
     }
 

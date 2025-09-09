@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Recovery.Compilation;
@@ -69,7 +70,7 @@ public class KernelInterpreter : IDisposable
     {
         if (_prepared)
         {
-            _logger.LogDebug("Kernel interpreter already prepared");
+            _logger.LogDebugMessage("Kernel interpreter already prepared");
             return;
         }
 
@@ -83,7 +84,7 @@ public class KernelInterpreter : IDisposable
 
         await Task.Delay(100, cancellationToken);
         _prepared = true;
-        _logger.LogDebug("Kernel interpreter prepared for source code length {Length}", _sourceCode.Length);
+        _logger.LogDebugMessage("Kernel interpreter prepared for source code length {_sourceCode.Length}");
     }
 
     /// <summary>

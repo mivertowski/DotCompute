@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Plans;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using DotCompute.Core.Execution.Metrics;
 
@@ -62,8 +63,7 @@ namespace DotCompute.Core.Execution
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();
 
-            _logger.LogInformation("Starting data parallel execution {ExecutionId} for kernel {KernelName} on {DeviceCount} devices",
-                executionId, plan.KernelName, plan.Devices.Length);
+            _logger.LogInfoMessage($"Starting data parallel execution {executionId} for kernel {plan.KernelName} on {plan.Devices.Length} devices");
 
             try
             {
@@ -94,16 +94,14 @@ namespace DotCompute.Core.Execution
                 var profilingData = await _profiler.StopProfilingAsync(executionId, cancellationToken);
                 result.ProfilingData = profilingData;
 
-                _logger.LogInformation("Completed data parallel execution {ExecutionId} in {ElapsedMs:F2}ms with {SuccessRate:F1}% success rate",
-                    executionId, stopwatch.Elapsed.TotalMilliseconds,
-                    deviceResults.Count(r => r.Success) * 100.0 / deviceResults.Length);
+                _logger.LogInfoMessage($"Completed data parallel execution {executionId} in {stopwatch.Elapsed.TotalMilliseconds}ms with {deviceResults.Count(r => r.Success) * 100.0 / deviceResults.Length}% success rate");
 
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogError(ex, "Failed to execute data parallel plan {ExecutionId}", executionId);
+                _logger.LogErrorMessage(ex, $"Failed to execute data parallel plan {executionId}");
 
                 return new ParallelExecutionResult
                 {
@@ -133,8 +131,7 @@ namespace DotCompute.Core.Execution
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();
 
-            _logger.LogInformation("Starting model parallel execution {ExecutionId} for {LayerCount} layers on {DeviceCount} devices",
-                executionId, plan.ModelLayers.Length, plan.Devices.Length);
+            _logger.LogInfoMessage($"Starting model parallel execution {executionId} for {plan.ModelLayers.Length} layers on {plan.Devices.Length} devices");
 
             try
             {
@@ -154,15 +151,14 @@ namespace DotCompute.Core.Execution
                 var profilingData = await _profiler.StopProfilingAsync(executionId, cancellationToken);
                 result.ProfilingData = profilingData;
 
-                _logger.LogInformation("Completed model parallel execution {ExecutionId} in {ElapsedMs:F2}ms",
-                    executionId, stopwatch.Elapsed.TotalMilliseconds);
+                _logger.LogInfoMessage($"Completed model parallel execution {executionId} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogError(ex, "Failed to execute model parallel plan {ExecutionId}", executionId);
+                _logger.LogErrorMessage(ex, $"Failed to execute model parallel plan {executionId}");
 
                 return new ParallelExecutionResult
                 {
@@ -194,8 +190,7 @@ namespace DotCompute.Core.Execution
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();
 
-            _logger.LogInformation("Starting pipeline execution {ExecutionId} with {StageCount} stages and {MicrobatchCount} microbatches",
-                executionId, plan.Stages.Length, plan.MicrobatchConfig.Count);
+            _logger.LogInfoMessage($"Starting pipeline execution {executionId} with {plan.Stages.Length} stages and {plan.MicrobatchConfig.Count} microbatches");
 
             try
             {
@@ -215,15 +210,14 @@ namespace DotCompute.Core.Execution
                 var profilingData = await _profiler.StopProfilingAsync(executionId, cancellationToken);
                 result.ProfilingData = profilingData;
 
-                _logger.LogInformation("Completed pipeline execution {ExecutionId} in {ElapsedMs:F2}ms",
-                    executionId, stopwatch.Elapsed.TotalMilliseconds);
+                _logger.LogInfoMessage($"Completed pipeline execution {executionId} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogError(ex, "Failed to execute pipeline plan {ExecutionId}", executionId);
+                _logger.LogErrorMessage(ex, $"Failed to execute pipeline plan {executionId}");
 
                 return new ParallelExecutionResult
                 {
@@ -336,7 +330,7 @@ namespace DotCompute.Core.Execution
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogError(ex, "Failed execution on device {DeviceId} for task {TaskIndex}", deviceId, taskIndex);
+                _logger.LogErrorMessage(ex, $"Failed execution on device {deviceId} for task {taskIndex}");
 
                 // Signal completion even on failure to avoid deadlocks
                 await _coordinator.SignalEventAsync(completionEvent, CancellationToken.None);
@@ -447,7 +441,7 @@ namespace DotCompute.Core.Execution
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogError(ex, "Failed execution of layer {LayerId}", layer.LayerId);
+                _logger.LogErrorMessage(ex, $"Failed execution of layer {layer.LayerId}");
 
                 await _coordinator.SignalEventAsync(completionEvent, CancellationToken.None);
 
@@ -601,8 +595,7 @@ namespace DotCompute.Core.Execution
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogError(ex, "Failed execution of stage {StageId} for microbatch {MicrobatchIndex}",
-                    stage.StageId, microbatchIndex);
+                _logger.LogErrorMessage(ex, $"Failed execution of stage {stage.StageId} for microbatch {microbatchIndex}");
 
                 return new StageExecutionResult
                 {
@@ -951,14 +944,14 @@ namespace DotCompute.Core.Execution
                 return;
             }
 
-            _logger.LogInformation("Disposing ExecutionPlanExecutor");
+            _logger.LogInfoMessage("Disposing ExecutionPlanExecutor");
 
             await _coordinator.DisposeAsync();
             await _resourceTracker.DisposeAsync();
             await _profiler.DisposeAsync();
 
             _disposed = true;
-            _logger.LogInformation("ExecutionPlanExecutor disposed");
+            _logger.LogInfoMessage("ExecutionPlanExecutor disposed");
         }
     }
 

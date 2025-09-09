@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Loaders.Internal;
 
@@ -31,7 +32,7 @@ internal class CodeAnalyzer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Code analysis failed for assembly: {AssemblyPath}", assemblyPath);
+            _logger.LogErrorMessage(ex, $"Code analysis failed for assembly: {assemblyPath}");
             result.AnalysisErrors.Add($"Analysis failed: {ex.Message}");
         }
 

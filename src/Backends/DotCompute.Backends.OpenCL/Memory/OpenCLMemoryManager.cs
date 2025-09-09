@@ -72,7 +72,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _logger.LogDebug("Created OpenCL memory manager for device: {DeviceName}", _context.DeviceInfo.Name);
+        _logger.LogDebugMessage("Created OpenCL memory manager for device: {_context.DeviceInfo.Name}");
     }
 
     /// <summary>
@@ -99,8 +99,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         if ((long)sizeInBytes > MaxAllocationSize)
             throw new OutOfMemoryException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
 
-        _logger.LogDebug("Allocating OpenCL buffer: type={Type}, count={Count}, size={Size} bytes", 
-            typeof(T).Name, count, sizeInBytes);
+        _logger.LogDebugMessage($"Allocating OpenCL buffer: type={typeof(T).Name}, count={count}, size={sizeInBytes} bytes");
 
         var flags = DetermineMemoryFlags(options);
         var buffer = new OpenCLMemoryBuffer<T>(
@@ -286,8 +285,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            _logger.LogDebug("Memory optimization completed: removed {Count} disposed buffer references",
-                disposedBuffers.Count);
+            _logger.LogDebugMessage($"Memory optimization completed: removed {disposedBuffers.Count} disposed buffer references");
         }, cancellationToken);
     }
 
@@ -300,7 +298,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
 
         lock (_lock)
         {
-            _logger.LogInformation("Clearing all OpenCL memory allocations");
+            _logger.LogInfoMessage("Clearing all OpenCL memory allocations");
 
             // Dispose all tracked buffers
             foreach (var buffer in _allocatedBuffers.Values.ToArray())
@@ -318,7 +316,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
             _allocatedBuffers.Clear();
             Interlocked.Exchange(ref _currentAllocatedMemory, 0);
 
-            _logger.LogInformation("All OpenCL memory cleared");
+            _logger.LogInfoMessage("All OpenCL memory cleared");
         }
     }
 
@@ -359,7 +357,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         {
             if (_disposed) return;
 
-            _logger.LogInformation("Disposing OpenCL memory manager");
+            _logger.LogInfoMessage("Disposing OpenCL memory manager");
 
             Clear(); // Dispose all buffers
             _disposed = true;

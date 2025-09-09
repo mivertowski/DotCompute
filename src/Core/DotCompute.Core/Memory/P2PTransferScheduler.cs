@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Memory
 {
@@ -48,8 +49,7 @@ namespace DotCompute.Core.Memory
                 TimeSpan.FromMilliseconds(BandwidthMonitorIntervalMs),
                 TimeSpan.FromMilliseconds(BandwidthMonitorIntervalMs));
 
-            _logger.LogDebug("P2P transfer scheduler initialized with {MaxConcurrentTransfers} concurrent transfers per device",
-                MaxConcurrentTransfersPerDevice);
+            _logger.LogDebugMessage($"P2P transfer scheduler initialized with {MaxConcurrentTransfersPerDevice} concurrent transfers per device");
         }
 
         /// <summary>
@@ -103,8 +103,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "P2P transfer failed: {Source} to {Target}",
-                    sourceBuffer.Accelerator.Info.Name, targetBuffer.Accelerator.Info.Name);
+                _logger.LogErrorMessage(ex, $"P2P transfer failed: {sourceBuffer.Accelerator.Info.Name} to {targetBuffer.Accelerator.Info.Name}");
                 throw;
             }
         }
@@ -162,7 +161,7 @@ namespace DotCompute.Core.Memory
         /// </summary>
         private async Task ProcessTransferQueueAsync()
         {
-            _logger.LogDebug("P2P transfer scheduler started");
+            _logger.LogDebugMessage("P2P transfer scheduler started");
 
             while (!_shutdownTokenSource.Token.IsCancellationRequested)
             {
@@ -184,11 +183,11 @@ namespace DotCompute.Core.Memory
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error in transfer scheduler main loop");
+                    _logger.LogErrorMessage(ex, "Error in transfer scheduler main loop");
                 }
             }
 
-            _logger.LogDebug("P2P transfer scheduler stopped");
+            _logger.LogDebugMessage("P2P transfer scheduler stopped");
         }
 
         /// <summary>
@@ -244,8 +243,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Transfer execution failed: {Source} -> {Target}",
-                    sourceDeviceId, targetDeviceId);
+                _logger.LogErrorMessage(ex, $"Transfer execution failed: {sourceDeviceId} -> {targetDeviceId}");
 
                 operation.CompletionSource.SetException(ex);
             }
@@ -402,8 +400,7 @@ namespace DotCompute.Core.Memory
 
                 if (overallUtilization > BandwidthUtilizationThreshold)
                 {
-                    _logger.LogDebug("High bandwidth utilization detected: {Utilization:P1}, throttling transfers",
-                        overallUtilization);
+                    _logger.LogDebugMessage($"High bandwidth utilization detected: {overallUtilization}, throttling transfers");
 
                     // Implement throttling logic here if needed
                     // For now, just log the situation
@@ -457,7 +454,7 @@ namespace DotCompute.Core.Memory
             _deviceChannels.Clear();
             _deviceTransferCompletions.Clear();
 
-            _logger.LogDebug("P2P transfer scheduler disposed");
+            _logger.LogDebugMessage("P2P transfer scheduler disposed");
         }
     }
 

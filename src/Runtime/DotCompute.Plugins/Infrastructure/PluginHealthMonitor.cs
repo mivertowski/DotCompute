@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Infrastructure
 {
@@ -41,8 +42,7 @@ namespace DotCompute.Plugins.Infrastructure
             _pluginRegistrations[pluginId] = DateTime.UtcNow;
             _ = _pluginErrors.TryRemove(pluginId, out _);
 
-            _logger.LogInformation("Registered plugin {PluginId} ({PluginName} v{Version}) for health monitoring",
-                pluginId, pluginName, version);
+            _logger.LogInfoMessage($"Registered plugin {pluginId} ({pluginName} v{version}) for health monitoring");
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace DotCompute.Plugins.Infrastructure
             _ = _pluginRegistrations.TryRemove(pluginId, out _);
             _ = _pluginErrors.TryRemove(pluginId, out _);
 
-            _logger.LogInformation("Unregistered plugin {PluginId} from health monitoring", pluginId);
+            _logger.LogInfoMessage("Unregistered plugin {pluginId} from health monitoring");
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace DotCompute.Plugins.Infrastructure
             }
 
             _pluginErrors[pluginId] = exception;
-            _logger.LogError(exception, "Recorded error for plugin {PluginId}", pluginId);
+            _logger.LogErrorMessage(exception, $"Recorded error for plugin {pluginId}");
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace DotCompute.Plugins.Infrastructure
             }
 
             _ = _pluginErrors.TryRemove(pluginId, out _);
-            _logger.LogInformation("Cleared error status for plugin {PluginId}", pluginId);
+            _logger.LogInfoMessage("Cleared error status for plugin {pluginId}");
         }
 
         private void PerformHealthCheck(object? state)
@@ -139,12 +139,11 @@ namespace DotCompute.Plugins.Infrastructure
                     }
                 }
 
-                _logger.LogDebug("Health check completed: {HealthyCount} healthy, {UnhealthyCount} unhealthy plugins",
-                    healthyCount, unhealthyCount);
+                _logger.LogDebugMessage($"Health check completed: {healthyCount} healthy, {unhealthyCount} unhealthy plugins");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during plugin health check");
+                _logger.LogErrorMessage(ex, "Error during plugin health check");
             }
         }
 

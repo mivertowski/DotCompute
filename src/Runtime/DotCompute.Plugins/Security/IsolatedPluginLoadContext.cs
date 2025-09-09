@@ -5,6 +5,7 @@ using System.Reflection;
 using global::System.Runtime.Loader;
 using System.Security;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Security;
 
@@ -44,12 +45,12 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
     {
         lock (_loadLock)
         {
-            _logger.LogDebug("Loading assembly: {AssemblyName}", assemblyName);
+            _logger.LogDebugMessage("Loading assembly: {assemblyName}");
 
             // Check if this assembly is allowed to be loaded
             if (!IsAssemblyLoadAllowed(assemblyName))
             {
-                _logger.LogWarning("Assembly load denied: {AssemblyName}", assemblyName);
+                _logger.LogWarningMessage("Assembly load denied: {assemblyName}");
                 throw new SecurityException($"Assembly load denied: {assemblyName}");
             }
 
@@ -57,7 +58,7 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
             var assemblyKey = assemblyName.FullName;
             if (_loadedAssemblies.Contains(assemblyKey))
             {
-                _logger.LogDebug("Assembly already loaded: {AssemblyName}", assemblyName);
+                _logger.LogDebugMessage("Assembly already loaded: {assemblyName}");
                 return null; // Already loaded
             }
 
@@ -75,9 +76,7 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
                 var assembly = LoadFromAssemblyPath(assemblyPath);
 
 
-                _logger.LogDebug("Successfully loaded assembly: {AssemblyName} from {Path}",
-
-                    assemblyName, assemblyPath);
+                _logger.LogDebugMessage($"Successfully loaded assembly: {assemblyName} from {assemblyPath}");
 
 
                 return assembly;
@@ -86,11 +85,11 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
             // Check if it's a system assembly that should be loaded from default context
             if (IsSystemAssembly(assemblyName))
             {
-                _logger.LogDebug("Loading system assembly from default context: {AssemblyName}", assemblyName);
+                _logger.LogDebugMessage("Loading system assembly from default context: {assemblyName}");
                 return null; // Load from default context
             }
 
-            _logger.LogWarning("Could not resolve assembly: {AssemblyName}", assemblyName);
+            _logger.LogWarningMessage("Could not resolve assembly: {assemblyName}");
             return null;
         }
     }
@@ -100,12 +99,12 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
     /// </summary>
     protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
     {
-        _logger.LogDebug("Loading unmanaged DLL: {DllName}", unmanagedDllName);
+        _logger.LogDebugMessage("Loading unmanaged DLL: {unmanagedDllName}");
 
         // Check if unmanaged DLL loading is allowed
         if (!_permissions.AllowedPermissions.Contains("LoadNativeDll"))
         {
-            _logger.LogWarning("Unmanaged DLL load denied: {DllName}", unmanagedDllName);
+            _logger.LogWarningMessage("Unmanaged DLL load denied: {unmanagedDllName}");
             throw new SecurityException($"Unmanaged DLL load denied: {unmanagedDllName}");
         }
 
@@ -118,11 +117,11 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
         var libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
         if (libraryPath != null)
         {
-            _logger.LogDebug("Loading unmanaged DLL from: {Path}", libraryPath);
+            _logger.LogDebugMessage("Loading unmanaged DLL from: {libraryPath}");
             return LoadUnmanagedDllFromPath(libraryPath);
         }
 
-        _logger.LogWarning("Could not resolve unmanaged DLL: {DllName}", unmanagedDllName);
+        _logger.LogWarningMessage("Could not resolve unmanaged DLL: {unmanagedDllName}");
         return IntPtr.Zero;
     }
 
@@ -201,9 +200,7 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
             var fileInfo = new FileInfo(assemblyPath);
             if (fileInfo.Length > _permissions.ResourceLimits.MaxMemoryMB * 1024 * 1024)
             {
-                _logger.LogWarning("Assembly exceeds size limit: {Path} ({Size} bytes)",
-
-                    assemblyPath, fileInfo.Length);
+                _logger.LogWarningMessage($"Assembly exceeds size limit: {assemblyPath} ({fileInfo.Length} bytes)");
                 return false;
             }
 
@@ -214,7 +211,7 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
 
             if (fileName.Contains("..") || fileName.Contains("~") || fileName.StartsWith("."))
             {
-                _logger.LogWarning("Unsafe assembly path detected: {Path}", assemblyPath);
+                _logger.LogWarningMessage("Unsafe assembly path detected: {assemblyPath}");
                 return false;
             }
 
@@ -227,7 +224,7 @@ public class IsolatedPluginLoadContext : AssemblyLoadContext
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating assembly: {Path}", assemblyPath);
+            _logger.LogErrorMessage(ex, $"Error validating assembly: {assemblyPath}");
             return false;
         }
     }

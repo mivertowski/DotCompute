@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Compute
@@ -67,7 +68,7 @@ namespace DotCompute.Core.Compute
                 return;
             }
 
-            _logger.LogInformation("Initializing accelerator manager");
+            _logger.LogInfoMessage("Initializing accelerator manager");
 
             // Discover accelerators from all providers
             foreach (var provider in _providers)
@@ -79,7 +80,7 @@ namespace DotCompute.Core.Compute
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to discover accelerators from provider {Provider}", provider.Name);
+                    _logger.LogErrorMessage(ex, $"Failed to discover accelerators from provider {provider.Name}");
                 }
             }
 
@@ -89,7 +90,7 @@ namespace DotCompute.Core.Compute
                        _accelerators.FirstOrDefault();
 
             _initialized = true;
-            _logger.LogInformation("Initialized with {Count} accelerators", _accelerators.Count);
+            _logger.LogInfoMessage("Initialized with {_accelerators.Count} accelerators");
         }
 
         /// <summary>
@@ -254,7 +255,7 @@ namespace DotCompute.Core.Compute
             }
 
             _providers.Add(provider ?? throw new ArgumentNullException(nameof(provider)));
-            _logger.LogInformation("Registered accelerator provider: {Provider}", provider.Name);
+            _logger.LogInfoMessage("Registered accelerator provider: {provider.Name}");
         }
 
         /// <summary>
@@ -266,7 +267,7 @@ namespace DotCompute.Core.Compute
         /// </returns>
         public async ValueTask RefreshAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Refreshing accelerator list");
+            _logger.LogInfoMessage("Refreshing accelerator list");
 
             _accelerators.Clear();
             _default = null;
@@ -351,7 +352,7 @@ namespace DotCompute.Core.Compute
                 return;
             }
 
-            _logger.LogInformation("Disposing accelerator manager");
+            _logger.LogInfoMessage("Disposing accelerator manager");
 
             // Dispose all accelerators
             foreach (var accelerator in _accelerators)
@@ -362,7 +363,7 @@ namespace DotCompute.Core.Compute
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to dispose accelerator {Id}", accelerator.Info.Id);
+                    _logger.LogErrorMessage(ex, $"Failed to dispose accelerator {accelerator.Info.Id}");
                 }
             }
 

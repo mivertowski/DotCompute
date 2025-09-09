@@ -11,6 +11,7 @@ using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Memory
 {
@@ -41,7 +42,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _maxPinnedMemory = maxPinnedMemory;
 
 
-            _logger.LogInformation("Initialized pinned memory allocator with {MaxMemory:N0} bytes limit", _maxPinnedMemory);
+            _logger.LogInfoMessage("Initialized pinned memory allocator with {_maxPinnedMemory} bytes limit");
         }
 
         /// <summary>
@@ -151,11 +152,11 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (result == CudaError.Success)
                 {
                     _ = Interlocked.Add(ref _totalAllocated, -allocation.Size);
-                    _logger.LogDebug("Freed {Size:N0} bytes of pinned memory at {Ptr:X}", allocation.Size, hostPtr);
+                    _logger.LogDebugMessage("Freed {Size:N0} bytes of pinned memory at {allocation.Size, hostPtr}");
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to free pinned memory at {Ptr:X}: {Error}", hostPtr, result);
+                    _logger.LogWarningMessage("");
                 }
             }
         }
@@ -177,7 +178,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 CudaRuntime.CheckError(result, "registering host memory");
             }, cancellationToken);
 
-            _logger.LogDebug("Registered {Size:N0} bytes of host memory at {Ptr:X}", sizeInBytes, hostPtr);
+            _logger.LogDebugMessage("Registered {Size:N0} bytes of host memory at {sizeInBytes, hostPtr}");
 
 
             return new PinnedMemoryRegistration(hostPtr, sizeInBytes, this);
@@ -191,7 +192,7 @@ namespace DotCompute.Backends.CUDA.Memory
             var result = CudaRuntime.cudaHostUnregister(hostPtr);
             if (result != CudaError.Success)
             {
-                _logger.LogWarning("Failed to unregister host memory at {Ptr:X}: {Error}", hostPtr, result);
+                _logger.LogWarningMessage("");
             }
         }
 
@@ -228,7 +229,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _allocationSemaphore?.Dispose();
             _disposed = true;
 
-            _logger.LogInformation("Disposed pinned memory allocator");
+            _logger.LogInfoMessage("Disposed pinned memory allocator");
         }
 
         private sealed class PinnedAllocation

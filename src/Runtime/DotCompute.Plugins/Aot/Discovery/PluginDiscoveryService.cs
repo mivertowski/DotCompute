@@ -4,6 +4,7 @@
 using DotCompute.Plugins.Aot.Registration;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Aot.Discovery;
 
@@ -32,7 +33,7 @@ public sealed class PluginDiscoveryService : IPluginDiscovery
         _loadedPlugins = [];
 
 
-        _logger.LogDebug("PluginDiscoveryService initialized");
+        _logger.LogDebugMessage("PluginDiscoveryService initialized");
     }
 
     /// <summary>
@@ -73,15 +74,14 @@ public sealed class PluginDiscoveryService : IPluginDiscovery
                 var factory = _registrationService.GetFactory(pluginTypeName);
                 if (factory == null)
                 {
-                    _logger.LogWarning("No factory found for plugin type: {PluginType}", pluginTypeName);
+                    _logger.LogWarningMessage("No factory found for plugin type: {pluginTypeName}");
                     return null;
                 }
 
                 var plugin = factory();
                 _loadedPlugins[plugin.Id] = plugin;
 
-                _logger.LogInformation("Successfully created plugin {PluginId} ({PluginName}) from factory",
-                    plugin.Id, plugin.Name);
+                _logger.LogInfoMessage($"Successfully created plugin {plugin.Id} ({plugin.Name}) from factory");
 
                 return plugin;
             }
@@ -92,7 +92,7 @@ public sealed class PluginDiscoveryService : IPluginDiscovery
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create plugin {PluginType}", pluginTypeName);
+                _logger.LogErrorMessage(ex, $"Failed to create plugin {pluginTypeName}");
                 return null;
             }
         }
@@ -136,8 +136,7 @@ public sealed class PluginDiscoveryService : IPluginDiscovery
                 plugin = factory();
                 _loadedPlugins[plugin.Id] = plugin;
 
-                _logger.LogInformation("Successfully created plugin {PluginId} ({PluginName}) from factory",
-                    plugin.Id, plugin.Name);
+                _logger.LogInfoMessage($"Successfully created plugin {plugin.Id} ({plugin.Name}) from factory");
 
                 return true;
             }
@@ -149,7 +148,7 @@ public sealed class PluginDiscoveryService : IPluginDiscovery
             catch (Exception ex)
             {
                 errorMessage = $"Failed to create plugin {pluginTypeName}: {ex.Message}";
-                _logger.LogError(ex, "Failed to create plugin {PluginType}", pluginTypeName);
+                _logger.LogErrorMessage(ex, $"Failed to create plugin {pluginTypeName}");
                 return false;
             }
         }
@@ -223,7 +222,7 @@ public sealed class PluginDiscoveryService : IPluginDiscovery
         lock (_lock)
         {
             _loadedPlugins[plugin.Id] = plugin;
-            _logger.LogDebug("Registered loaded plugin {PluginId}", plugin.Id);
+            _logger.LogDebugMessage("Registered loaded plugin {plugin.Id}");
         }
     }
 
@@ -247,7 +246,7 @@ public sealed class PluginDiscoveryService : IPluginDiscovery
             if (_loadedPlugins.TryGetValue(pluginId, out var plugin))
             {
                 _ = _loadedPlugins.Remove(pluginId);
-                _logger.LogDebug("Unregistered loaded plugin {PluginId}", pluginId);
+                _logger.LogDebugMessage("Unregistered loaded plugin {pluginId}");
                 return plugin;
             }
             return null;
@@ -272,6 +271,6 @@ public sealed class PluginDiscoveryService : IPluginDiscovery
             _loadedPlugins.Clear();
         }
 
-        _logger.LogInformation("PluginDiscoveryService disposed");
+        _logger.LogInfoMessage("PluginDiscoveryService disposed");
     }
 }

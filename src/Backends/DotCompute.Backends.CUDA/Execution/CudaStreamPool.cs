@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
 {
@@ -58,8 +59,7 @@ namespace DotCompute.Backends.CUDA.Execution
             _cleanupTimer = new Timer(PerformCleanup, null,
                 TimeSpan.FromMinutes(3), TimeSpan.FromMinutes(3));
 
-            _logger.LogDebug("CUDA Stream Pool initialized with {High}H/{Normal}N/{Low}L streams",
-                INITIAL_HIGH_PRIORITY_COUNT, INITIAL_NORMAL_PRIORITY_COUNT, INITIAL_LOW_PRIORITY_COUNT);
+            _logger.LogDebugMessage($"CUDA Stream Pool initialized with {INITIAL_HIGH_PRIORITY_COUNT}H/{INITIAL_NORMAL_PRIORITY_COUNT}N/{INITIAL_LOW_PRIORITY_COUNT}L streams");
         }
 
         /// <summary>
@@ -227,7 +227,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
 
             var totalCreated = _highPriorityStreams.Count + _normalPriorityStreams.Count + _lowPriorityStreams.Count;
-            _logger.LogDebug("Pre-allocated {TotalStreams} streams in pool", totalCreated);
+            _logger.LogDebugMessage(" streams in pool");
         }
 
         private PooledStream GetStreamFromPool(CudaStreamPriority priority)
@@ -300,8 +300,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to create pooled stream with priority {Priority}: {Error}",
-                        priority, Native.CudaRuntime.GetErrorString(result));
+                    _logger.LogWarningMessage($"Failed to create pooled stream with priority {priority}: {Native.CudaRuntime.GetErrorString(result)}");
                     return null;
                 }
 
@@ -314,9 +313,9 @@ namespace DotCompute.Backends.CUDA.Execution
                     AcquireCount = 0
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Exception creating pooled stream with priority {Priority}", priority);
+                _logger.LogErrorMessage("Failed to create pooled stream");
                 return null;
             }
         }
@@ -329,8 +328,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 var result = Native.CudaRuntime.cudaStreamDestroy(pooledStream.Handle);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to destroy pooled stream {Stream}: {Error}",
-                        pooledStream.Handle, Native.CudaRuntime.GetErrorString(result));
+                    _logger.LogWarningMessage($"Failed to destroy pooled stream {pooledStream.Handle}: {Native.CudaRuntime.GetErrorString(result)}");
                 }
             }
             catch (Exception ex)
@@ -394,8 +392,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (destroyedCount > 0)
             {
-                _logger.LogDebug("Cleaned up {Count} old streams from {Queue} priority pool",
-                    destroyedCount, queueName);
+                _logger.LogDebugMessage($"Cleaned up {destroyedCount} old streams from {queueName} priority pool");
             }
         }
 
@@ -489,7 +486,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 _poolSemaphore?.Dispose();
 
-                _logger.LogDebug("CUDA Stream Pool disposed");
+                _logger.LogDebugMessage("CUDA Stream Pool disposed");
             }
         }
 
@@ -505,8 +502,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (destroyedCount > 0)
             {
-                _logger.LogDebug("Destroyed {Count} streams from {Queue} priority pool during disposal",
-                    destroyedCount, queueName);
+                _logger.LogDebugMessage($"Destroyed {destroyedCount} streams from {queueName} priority pool during disposal");
             }
         }
     }

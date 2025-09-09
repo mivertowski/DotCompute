@@ -9,6 +9,7 @@ using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
 using DotCompute.Linq.Operators.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using ParameterDirection = DotCompute.Linq.Operators.Parameters.ParameterDirection;
 
@@ -50,8 +51,7 @@ public class DefaultKernelFactory : IKernelFactory
         }
 
         // Fallback to placeholder for unsupported accelerators
-        _logger.LogWarning("No kernel generator found for accelerator type {AcceleratorType}, using placeholder",
-            accelerator.Type);
+        _logger.LogWarningMessage($"No kernel generator found for accelerator type {accelerator.Type}, using placeholder");
         return new PlaceholderKernel(definition.Name, definition);
     }
 
@@ -73,7 +73,7 @@ public class DefaultKernelFactory : IKernelFactory
                 // Check if expression can be compiled
                 if (!generator.CanCompile(expression))
                 {
-                    _logger.LogWarning("Expression cannot be compiled for {AcceleratorType}, using fallback", accelerator.Type);
+                    _logger.LogWarningMessage("Expression cannot be compiled for {accelerator.Type}, using fallback");
                     return new ExpressionFallbackKernel(expression, _logger);
                 }
 
@@ -83,13 +83,13 @@ public class DefaultKernelFactory : IKernelFactory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate kernel from expression for {AcceleratorType}", accelerator.Type);
+                _logger.LogErrorMessage(ex, $"Failed to generate kernel from expression for {accelerator.Type}");
                 return new ExpressionFallbackKernel(expression, _logger);
             }
         }
 
         // No generator available
-        _logger.LogWarning("No kernel generator available for {AcceleratorType}", accelerator.Type);
+        _logger.LogWarningMessage("No kernel generator available for {accelerator.Type}");
         return new ExpressionFallbackKernel(expression, _logger);
     }
 
@@ -124,7 +124,7 @@ public class DefaultKernelFactory : IKernelFactory
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create dynamic kernel {KernelName}", definition.Name);
+            _logger.LogErrorMessage(ex, $"Failed to create dynamic kernel {definition.Name}");
             return new PlaceholderKernel(definition.Name, definition);
         }
     }
@@ -135,7 +135,7 @@ public class DefaultKernelFactory : IKernelFactory
         var fusionType = fusionMetadata.GetValueOrDefault("FusionType")?.ToString() ?? "Generic";
         var operations = fusionMetadata.GetValueOrDefault("FusedOperations") as string[] ?? [];
 
-        _logger.LogDebug("Creating fused kernel for operations: {Operations}", string.Join(", ", operations));
+        _logger.LogDebugMessage($"Creating fused kernel for operations: {string.Join(", ", operations)}");
 
         // Create a custom operation type for the fused kernel
         var fusedOperationType = $"Fused_{string.Join("_", operations)}";
@@ -201,7 +201,7 @@ public class DefaultKernelFactory : IKernelFactory
 
 
 
-        => _logger.LogDebug("Built-in generators will be registered through backend plugins");
+        => _logger.LogDebugMessage("Built-in generators will be registered through backend plugins");
 
     private static Dictionary<string, object>? ExtractFusionMetadata(DotCompute.Abstractions.Kernels.KernelDefinition definition)
     {

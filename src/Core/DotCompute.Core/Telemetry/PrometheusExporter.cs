@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 // TODO: Add Prometheus.NET package reference
 // using Prometheus;
@@ -67,9 +68,7 @@ public sealed class PrometheusExporter : IDisposable
             // _metricServer = new MetricServer(hostname: _options.Hostname, port: _options.Port, url: _options.Endpoint);
             // _ = _metricServer.Start();
             _metricServer = null;
-            _logger.LogInformation("Started Prometheus metric server on {Hostname}:{Port}{Endpoint}",
-
-                _options.Hostname, _options.Port, _options.Endpoint);
+            _logger.LogInfoMessage($"Started Prometheus metric server on {_options.Hostname}:{_options.Port}{_options.Endpoint}");
         }
 
         // Start collection timer
@@ -124,7 +123,7 @@ public sealed class PrometheusExporter : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to record kernel execution metrics for {KernelName}", kernelName);
+            _logger.LogErrorMessage(ex, $"Failed to record kernel execution metrics for {kernelName}");
         }
     }
 
@@ -160,7 +159,7 @@ public sealed class PrometheusExporter : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to record memory operation metrics for {OperationType}", operationType);
+            _logger.LogErrorMessage(ex, $"Failed to record memory operation metrics for {operationType}");
         }
     }
 
@@ -183,7 +182,7 @@ public sealed class PrometheusExporter : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to record device metrics for {DeviceId}", deviceId);
+            _logger.LogErrorMessage(ex, $"Failed to record device metrics for {deviceId}");
         }
     }
 
@@ -209,7 +208,7 @@ public sealed class PrometheusExporter : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to record profile metrics for {CorrelationId}", correlationId);
+            _logger.LogErrorMessage(ex, $"Failed to record profile metrics for {correlationId}");
         }
     }
 
@@ -241,7 +240,7 @@ public sealed class PrometheusExporter : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to record compilation metrics for {KernelName}", kernelName);
+            _logger.LogErrorMessage(ex, $"Failed to record compilation metrics for {kernelName}");
         }
     }
 
@@ -276,7 +275,7 @@ public sealed class PrometheusExporter : IDisposable
         await File.WriteAllTextAsync(filePath, metricsText, cancellationToken);
 
 
-        _logger.LogInformation("Exported Prometheus metrics to {FilePath}", filePath);
+        _logger.LogInfoMessage("Exported Prometheus metrics to {filePath}");
     }
 
     /// <summary>
@@ -454,7 +453,7 @@ public sealed class PrometheusExporter : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to collect metrics during timer update");
+            _logger.LogErrorMessage(ex, "Failed to collect metrics during timer update");
         }
     }
 
@@ -497,7 +496,7 @@ public sealed class PrometheusExporter : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during PrometheusExporter disposal");
+            _logger.LogErrorMessage(ex, "Error during PrometheusExporter disposal");
         }
     }
 }

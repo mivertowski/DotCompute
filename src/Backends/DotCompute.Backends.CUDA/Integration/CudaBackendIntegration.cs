@@ -12,6 +12,7 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
 using DotCompute.Abstractions.Kernels;
@@ -67,8 +68,7 @@ namespace DotCompute.Backends.CUDA.Integration
             _healthCheckTimer = new Timer(PerformHealthCheck, null,
                 TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
 
-            _logger.LogInformation("CUDA Backend Integration initialized for device {DeviceId}",
-                context.DeviceId);
+            _logger.LogInfoMessage($"CUDA Backend Integration initialized for device {context.DeviceId}");
         }
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace DotCompute.Backends.CUDA.Integration
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing optimized kernel {KernelName}", kernel.Name);
+                _logger.LogErrorMessage("");
                 return new CudaExecutionResult
                 {
                     Success = false,
@@ -199,7 +199,7 @@ namespace DotCompute.Backends.CUDA.Integration
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing optimized workflow {WorkflowId}", workflowId);
+                _logger.LogErrorMessage("");
                 return new CudaGraphExecutionResult
                 {
                     Success = false,
@@ -239,7 +239,7 @@ namespace DotCompute.Backends.CUDA.Integration
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during optimized P2P transfer");
+                _logger.LogErrorMessage(ex, "Error during optimized P2P transfer");
                 return new CudaP2PTransferResult
                 {
                     Success = false,
@@ -276,7 +276,7 @@ namespace DotCompute.Backends.CUDA.Integration
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting system health");
+                _logger.LogErrorMessage(ex, "Error getting system health");
                 return new CudaSystemHealth
                 {
                     OverallHealth = 0.0,
@@ -333,14 +333,13 @@ namespace DotCompute.Backends.CUDA.Integration
                 summary.EndTime = DateTimeOffset.UtcNow;
                 summary.Success = true;
 
-                _logger.LogInformation("Backend optimization completed: {OptimizationCount} optimizations applied",
-                    summary.OptimizationsApplied.Count);
+                _logger.LogInfoMessage($"Backend optimization completed: {summary.OptimizationsApplied.Count} optimizations applied");
 
                 return summary;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during backend optimization");
+                _logger.LogErrorMessage(ex, "Error during backend optimization");
                 summary.Success = false;
                 summary.ErrorMessage = ex.Message;
                 summary.EndTime = DateTimeOffset.UtcNow;
@@ -471,11 +470,11 @@ namespace DotCompute.Backends.CUDA.Integration
 
                 if (health.OverallHealth < 0.7)
                 {
-                    _logger.LogWarning("CUDA backend health degraded: {Health:P2}", health.OverallHealth);
+                    _logger.LogWarningMessage("CUDA backend health degraded: {health.OverallHealth}");
                 }
                 else
                 {
-                    _logger.LogDebug("CUDA backend health: {Health:P2}", health.OverallHealth);
+                    _logger.LogDebugMessage("CUDA backend health: {health.OverallHealth}");
                 }
 
                 // Trigger maintenance if needed
@@ -501,11 +500,11 @@ namespace DotCompute.Backends.CUDA.Integration
                 // CudaMemoryManager.PerformMaintenance();
                 // _advancedFeatures.TensorCores.PerformMaintenance();
 
-                _logger.LogInformation("CUDA backend maintenance completed");
+                _logger.LogInfoMessage("CUDA backend maintenance completed");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during backend maintenance");
+                _logger.LogErrorMessage(ex, "Error during backend maintenance");
             }
         }
 
@@ -533,7 +532,7 @@ namespace DotCompute.Backends.CUDA.Integration
 
                 _disposed = true;
 
-                _logger.LogInformation("CUDA Backend Integration disposed");
+                _logger.LogInfoMessage("CUDA Backend Integration disposed");
             }
         }
     }
@@ -788,7 +787,7 @@ namespace DotCompute.Backends.CUDA.Integration
                 {
                     try
                     {
-                        _logger.LogDebug("Executing kernel {Name} with {ArgumentCount} arguments", Name, arguments.Arguments.Count);
+                        _logger.LogDebugMessage(" arguments");
 
                         // For context wrapper, we need to simulate kernel execution
                         // In a real implementation, this would compile and execute actual kernels TODO
@@ -796,12 +795,12 @@ namespace DotCompute.Backends.CUDA.Integration
                         {
                             _context.MakeCurrent();
                             _context.Synchronize();
-                            _logger.LogDebug("Kernel {Name} execution completed", Name);
+                            _logger.LogDebugMessage(" execution completed");
                         }, cancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to execute kernel {Name}", Name);
+                        _logger.LogErrorMessage("");
                         throw new InvalidOperationException($"Failed to execute kernel '{Name}'", ex);
                     }
                 }

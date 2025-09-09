@@ -4,6 +4,7 @@ using global::System.Runtime.InteropServices;
 using System.Security;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Execution;
@@ -111,7 +112,7 @@ public sealed class LogEnricher : IDisposable
         catch (Exception ex)
         {
             // Never throw from enrichment - log the error
-            _logger.LogError(ex, "Failed to enrich log entry");
+            _logger.LogErrorMessage(ex, "Failed to enrich log entry");
         }
     }
 
@@ -663,12 +664,12 @@ public sealed class LogEnricher : IDisposable
 
             if (keysToRemove.Count > 0)
             {
-                _logger.LogDebug("Cleaned up {Count} expired context entries", keysToRemove.Count);
+                _logger.LogDebugMessage("Cleaned up {keysToRemove.Count} expired context entries");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to cleanup expired context");
+            _logger.LogErrorMessage(ex, "Failed to cleanup expired context");
         }
     }
 

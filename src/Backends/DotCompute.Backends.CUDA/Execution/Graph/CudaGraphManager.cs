@@ -14,6 +14,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution.Graph
 {
@@ -67,7 +68,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             _graphs[name] = graph;
             _statistics[name] = new Types.GraphStatistics { Name = name, CreatedAt = DateTime.UtcNow };
 
-            _logger.LogInformation("Created CUDA graph '{GraphName}'", name);
+            _logger.LogInfoMessage("'");
             return graph;
         }
 
@@ -84,7 +85,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 var result = CudaRuntime.cudaStreamBeginCapture(stream, (uint)mode);
                 CudaRuntime.CheckError(result, "beginning stream capture");
 
-                _logger.LogDebug("Started graph capture for '{GraphName}' with mode {Mode}", graphName, mode);
+                _logger.LogDebugMessage("");
 
 
                 return new GraphCaptureContext(stream, graphName, mode, EndCapture);
@@ -120,7 +121,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                     CaptureMode = CudaGraphCaptureMode.Global
                 };
 
-                _logger.LogInformation("Captured CUDA graph '{GraphName}'", graphName);
+                _logger.LogInfoMessage("'");
                 return graph;
             }
         }
@@ -174,7 +175,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebug("Added kernel node to graph '{GraphName}'", graph.Name);
+            _logger.LogDebugMessage("'");
             return node;
         }
 
@@ -226,7 +227,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebug("Added memcpy node to graph '{GraphName}'", graph.Name);
+            _logger.LogDebugMessage("'");
             return node;
         }
 
@@ -275,7 +276,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebug("Added memset node to graph '{GraphName}'", graph.Name);
+            _logger.LogDebugMessage("'");
             return node;
         }
 
@@ -328,7 +329,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebug("Added host callback node to graph '{GraphName}'", graph.Name);
+            _logger.LogDebugMessage("'");
             return node;
         }
 
@@ -366,7 +367,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebug("Added event record node to graph '{GraphName}'", graph.Name);
+            _logger.LogDebugMessage("'");
             return node;
         }
 
@@ -404,7 +405,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebug("Added event wait node to graph '{GraphName}'", graph.Name);
+            _logger.LogDebugMessage("'");
             return node;
         }
 
@@ -444,7 +445,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             parentGraph.Nodes.Add(node);
             UpdateStatistics(parentGraph.Name, s => s.NodeCount++);
 
-            _logger.LogDebug("Added child graph node to parent '{ParentName}'", parentGraph.Name);
+            _logger.LogDebugMessage("'");
             return node;
         }
 
@@ -490,7 +491,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 _executables[graph.Name] = executable;
                 UpdateStatistics(graph.Name, s => s.InstantiationCount++);
 
-                _logger.LogInformation("Instantiated graph '{GraphName}' for execution", graph.Name);
+                _logger.LogInfoMessage("' for execution");
                 return executable;
             }
             finally
@@ -562,9 +563,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                     s.LastExecutedAt = DateTime.UtcNow;
                 });
 
-                _logger.LogDebug("Graph '{GraphName}' executed in {Time}ms",
-
-                    executable.Graph.Name, elapsedMs);
+                _logger.LogDebugMessage($"Graph '{executable.Graph.Name}' executed in {elapsedMs}ms");
 
                 return executionResult;
             }
@@ -582,7 +581,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
                 UpdateStatistics(executable.Graph.Name, s => s.ErrorCount++);
 
-                _logger.LogError(ex, "Failed to execute graph '{GraphName}'", executable.Graph.Name);
+                _logger.LogErrorMessage("'");
                 return executionResult;
             }
         }
@@ -609,13 +608,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 UpdateStatistics(newGraph.Name, s => s.UpdateCount++);
 
 
-                _logger.LogInformation("Updated graph executable for '{GraphName}'", newGraph.Name);
+                _logger.LogInfoMessage("'");
                 return true;
             }
 
-            _logger.LogWarning("Failed to update graph executable for '{GraphName}': {Error}",
-
-                newGraph.Name, result);
+            _logger.LogWarningMessage($"Failed to update graph executable for '{newGraph.Name}': {result}");
             return false;
         }
 
@@ -654,9 +651,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 ClonedFrom = sourceGraph.Name
             };
 
-            _logger.LogInformation("Cloned graph '{SourceName}' to '{NewName}'",
-
-                sourceGraph.Name, newName);
+            _logger.LogInfoMessage($"Cloned graph '{sourceGraph.Name}' to '{newName}'");
             return clonedGraph;
         }
 
@@ -689,8 +684,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             }
 
             UpdateStatistics(graph.Name, s => s.OptimizationCount++);
-            _logger.LogInformation("Optimized graph '{GraphName}' with {OptCount} optimizations applied",
-                graph.Name, analysis.OptimizationsApplied);
+            _logger.LogInfoMessage($"Optimized graph '{graph.Name}' with {analysis.OptimizationsApplied} optimizations applied");
         }
 
         /// <summary>
@@ -748,13 +742,13 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 }
 
                 _ = CudaRuntime.cudaGraphDestroy(graph.Handle);
-                _logger.LogInformation("Destroyed graph '{GraphName}'", graphName);
+                _logger.LogInfoMessage("'");
             }
 
             if (_executables.TryRemove(graphName, out var executable))
             {
                 _ = CudaRuntime.cuGraphExecDestroy(executable.Handle);
-                _logger.LogDebug("Destroyed graph executable for '{GraphName}'", graphName);
+                _logger.LogDebugMessage("'");
             }
         }
 
@@ -889,21 +883,21 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         private void ApplyKernelFusion(CudaGraph graph, GraphAnalysis analysis)
         {
             // Implement kernel fusion optimization
-            _logger.LogDebug("Applied kernel fusion to graph '{GraphName}'", graph.Name);
+            _logger.LogDebugMessage("'");
             analysis.OptimizationsApplied++;
         }
 
         private void OptimizeMemoryAccess(CudaGraph graph, GraphAnalysis analysis)
         {
             // Implement memory access pattern optimization
-            _logger.LogDebug("Optimized memory access patterns in graph '{GraphName}'", graph.Name);
+            _logger.LogDebugMessage("'");
             analysis.OptimizationsApplied++;
         }
 
         private void MaximizeParallelism(CudaGraph graph, GraphAnalysis analysis)
         {
             // Implement parallelism maximization
-            _logger.LogDebug("Maximized parallelism in graph '{GraphName}'", graph.Name);
+            _logger.LogDebugMessage("'");
             analysis.OptimizationsApplied++;
         }
 

@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Validation;
 using DotCompute.Runtime.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -57,8 +58,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         try
         {
-            _logger.LogDebug("Creating accelerator {AcceleratorId} of type {AcceleratorType}",
-                acceleratorInfo.Id, acceleratorInfo.DeviceType);
+            _logger.LogDebugMessage($"Creating accelerator {acceleratorInfo.Id} of type {acceleratorInfo.DeviceType}");
 
             // Parse accelerator type
             if (!Enum.TryParse<AcceleratorType>(acceleratorInfo.DeviceType, true, out var acceleratorType))
@@ -97,16 +97,14 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             }
 
             stopwatch.Stop();
-            _logger.LogInformation("Created accelerator {AcceleratorId} in {ElapsedMs}ms",
-                acceleratorInfo.Id, stopwatch.ElapsedMilliseconds);
+            _logger.LogInfoMessage($"Created accelerator {acceleratorInfo.Id} in {stopwatch.ElapsedMilliseconds}ms");
 
             return accelerator;
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Failed to create accelerator {AcceleratorId} after {ElapsedMs}ms",
-                acceleratorInfo.Id, stopwatch.ElapsedMilliseconds);
+            _logger.LogErrorMessage(ex, $"Failed to create accelerator {acceleratorInfo.Id} after {stopwatch.ElapsedMilliseconds}ms");
             throw;
         }
     }
@@ -121,7 +119,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             throw new ObjectDisposedException(nameof(DefaultAcceleratorFactory));
         }
 
-        _logger.LogDebug("Creating accelerator provider {ProviderType}", typeof(TProvider).Name);
+        _logger.LogDebugMessage($"Creating accelerator provider {typeof(TProvider).Name}");
 
         try
         {
@@ -153,7 +151,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create accelerator provider {ProviderType}", typeof(TProvider).Name);
+            _logger.LogErrorMessage(ex, $"Failed to create accelerator provider {typeof(TProvider).Name}");
             throw;
         }
     }
@@ -270,8 +268,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         foreach (var type in supportedTypes)
         {
             _providerTypes[type] = providerType;
-            _logger.LogDebug("Registered provider {ProviderType} for accelerator type {AcceleratorType}",
-                providerType.Name, type);
+            _logger.LogDebugMessage($"Registered provider {providerType.Name} for accelerator type {type}");
         }
     }
 
@@ -286,7 +283,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         return _acceleratorScopes.GetOrAdd(acceleratorId, id =>
         {
-            _logger.LogDebug("Creating service scope for accelerator {AcceleratorId}", id);
+            _logger.LogDebugMessage("Creating service scope for accelerator {id}");
             return _serviceProvider.CreateScope();
         });
     }
@@ -297,7 +294,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
 
 
-        => _logger.LogDebug("Registered default accelerator providers");
+        => _logger.LogDebugMessage("Registered default accelerator providers");
 
     private async Task<IAcceleratorProvider> GetOrCreateProviderAsync(AcceleratorType type, IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
@@ -446,7 +443,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             return;
         }
 
-        _logger.LogDebug("Disposing DefaultAcceleratorFactory");
+        _logger.LogDebugMessage("Disposing DefaultAcceleratorFactory");
 
         // Dispose all accelerator scopes
         foreach (var scope in _acceleratorScopes.Values)

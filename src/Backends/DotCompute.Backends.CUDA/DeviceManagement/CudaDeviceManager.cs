@@ -9,6 +9,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.DeviceManagement;
 
@@ -64,7 +65,7 @@ public sealed class CudaDeviceManager : IDisposable
     /// </summary>
     private void EnumerateDevices()
     {
-        _logger.LogInformation("Enumerating CUDA devices...");
+        _logger.LogInfoMessage("Enumerating CUDA devices...");
 
 
         try
@@ -73,11 +74,11 @@ public sealed class CudaDeviceManager : IDisposable
             var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
             if (result != CudaError.Success)
             {
-                _logger.LogWarning("No CUDA devices found or CUDA not available: {Error}", result);
+                _logger.LogWarningMessage("No CUDA devices found or CUDA not available: {result}");
                 return;
             }
 
-            _logger.LogInformation("Found {Count} CUDA device(s)", deviceCount);
+            _logger.LogInfoMessage("Found {deviceCount} CUDA device(s)");
 
             // Enumerate each device
             for (var deviceId = 0; deviceId < deviceCount; deviceId++)
@@ -94,9 +95,9 @@ public sealed class CudaDeviceManager : IDisposable
                         deviceInfo.ComputeCapabilityMinor, deviceInfo.TotalMemory / (1024 * 1024),
                         deviceInfo.MultiProcessorCount);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    _logger.LogError(ex, "Failed to enumerate device {DeviceId}", deviceId);
+                    _logger.LogErrorMessage("Error getting device info");
                 }
             }
 
@@ -114,7 +115,7 @@ public sealed class CudaDeviceManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to enumerate CUDA devices");
+            _logger.LogErrorMessage(ex, "Failed to enumerate CUDA devices");
             throw new InvalidOperationException("CUDA device enumeration failed", ex);
         }
     }
@@ -199,7 +200,7 @@ public sealed class CudaDeviceManager : IDisposable
     /// </summary>
     private void DetectP2PCapabilities()
     {
-        _logger.LogInformation("Detecting P2P capabilities between devices...");
+        _logger.LogInfoMessage("Detecting P2P capabilities between devices...");
 
         foreach (var device1 in _devices.Keys)
         {
@@ -223,9 +224,7 @@ public sealed class CudaDeviceManager : IDisposable
 
                         if (canAccessP2P)
                         {
-                            _logger.LogInformation("P2P access available: Device {From} -> Device {To}",
-
-                                device1, device2);
+                            _logger.LogInfoMessage($"P2P access available: Device {device1} -> Device {device2}");
                         }
                     }
                 }
@@ -267,7 +266,7 @@ public sealed class CudaDeviceManager : IDisposable
 
 
             _currentDevice = deviceId;
-            _logger.LogDebug("Set current device to {DeviceId}", deviceId);
+            _logger.LogDebugMessage("Set current device to {deviceId}");
         }
     }
 
@@ -344,7 +343,7 @@ public sealed class CudaDeviceManager : IDisposable
             }
 
 
-            _logger.LogInformation("Enabled P2P access: Device {From} -> Device {To}", fromDevice, toDevice);
+            _logger.LogInfoMessage("Enabled P2P access: Device {From} -> Device {fromDevice, toDevice}");
         }
         finally
         {
@@ -381,9 +380,7 @@ public sealed class CudaDeviceManager : IDisposable
             var result = CudaRuntime.cudaDeviceDisablePeerAccess(toDevice);
             if (result != CudaError.Success && result != CudaError.PeerAccessNotEnabled)
             {
-                _logger.LogWarning("Failed to disable peer access from device {From} to {To}: {Error}",
-
-                    fromDevice, toDevice, result);
+                _logger.LogWarningMessage($"Failed to disable peer access from device {fromDevice} to {toDevice}: {result}");
             }
         }
         finally
@@ -440,12 +437,12 @@ public sealed class CudaDeviceManager : IDisposable
                 var result = CudaRuntime.cudaDeviceReset();
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to reset device {DeviceId}: {Error}", deviceId, result);
+                    _logger.LogWarningMessage("Failed to reset device {DeviceId}: {deviceId, result}");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error resetting device {DeviceId}", deviceId);
+                _logger.LogErrorMessage("Error during device disposal");
             }
         }
 
@@ -476,8 +473,7 @@ public sealed class CudaDeviceManager : IDisposable
         var bestDevice = scoredDevices.First();
 
 
-        _logger.LogInformation("Selected device {DeviceId} ({Name}) with score {Score:F2}",
-            bestDevice.Device.DeviceId, bestDevice.Device.Name, bestDevice.Score);
+        _logger.LogInfoMessage($"Selected device {bestDevice.Device.DeviceId} ({bestDevice.Device.Name}) with score {bestDevice.Score}");
 
 
         return bestDevice.Device.DeviceId;

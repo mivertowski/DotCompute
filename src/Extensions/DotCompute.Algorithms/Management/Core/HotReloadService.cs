@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Algorithms.Management.Configuration;
 using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Logging;
 
 namespace DotCompute.Algorithms.Management.Core;
 
@@ -184,7 +185,7 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
     /// </summary>
     private async void OnFileWatcherError(object sender, ErrorEventArgs e)
     {
-        _logger.LogError(e.GetException(), "File watcher error occurred");
+        _logger.LogErrorMessage(e.GetException(), "File watcher error occurred");
 
         // Try to restart the watcher if it's a temporary error
         if (sender is FileSystemWatcher watcher)
@@ -194,11 +195,11 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
                 watcher.EnableRaisingEvents = false;
                 await Task.Delay(1000, CancellationToken.None).ConfigureAwait(false); // Wait a bit before restarting
                 watcher.EnableRaisingEvents = true;
-                _logger.LogInformation("Successfully restarted file watcher for: {Path}", watcher.Path);
+                _logger.LogInfoMessage("Successfully restarted file watcher for: {watcher.Path}");
             }
             catch (Exception restartEx)
             {
-                _logger.LogError(restartEx, "Failed to restart file watcher for: {Path}", watcher.Path);
+                _logger.LogErrorMessage(restartEx, $"Failed to restart file watcher for: {watcher.Path}");
             }
         }
     }

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -388,7 +389,7 @@ public sealed class MetricsCollector : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to collect system metrics");
+            _logger.LogErrorMessage(ex, "Failed to collect system metrics");
         }
     }
 

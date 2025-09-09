@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Platform
 {
@@ -31,8 +32,7 @@ namespace DotCompute.Plugins.Platform
             var platformInfo = PlatformDetection.Current;
             _ = PlatformDetection.Hardware;
 
-            _logger.LogInformation("Analyzing optimal compute configuration for {OS} {Arch} with {CPUs} cores",
-                platformInfo.OperatingSystem, platformInfo.Architecture, platformInfo.ProcessorCount);
+            _logger.LogInfoMessage($"Analyzing optimal compute configuration for {platformInfo.OperatingSystem} {platformInfo.Architecture} with {platformInfo.ProcessorCount} cores");
 
             // Find the best available backend
             var primaryBackend = SelectPrimaryBackend();
@@ -48,8 +48,7 @@ namespace DotCompute.Plugins.Platform
                 BackendSpecificSettings = GetBackendSpecificSettings(primaryBackend)
             };
 
-            _logger.LogInformation("Selected configuration: Primary={Primary}, Fallbacks=[{Fallbacks}], Parallelism={Parallelism}",
-                config.PrimaryBackend, string.Join(", ", config.FallbackBackends), config.MaxParallelism);
+            _logger.LogInfoMessage($"Selected configuration: Primary={config.PrimaryBackend}, Fallbacks=[{string.Join(", ", config.FallbackBackends)}], Parallelism={config.MaxParallelism}");
 
             return config;
         }
@@ -110,10 +109,8 @@ namespace DotCompute.Plugins.Platform
             var platformInfo = PlatformDetection.Current;
             var hardware = PlatformDetection.Hardware;
 
-            _logger.LogDebug("Analyzing hardware capabilities...");
-            _logger.LogDebug("Platform: {OS} {Arch}, CPUs: {CPUs}, Memory: {Memory:N0} MB",
-                platformInfo.OperatingSystem, platformInfo.Architecture,
-                platformInfo.ProcessorCount, hardware.TotalPhysicalMemory / (1024 * 1024));
+            _logger.LogDebugMessage("Analyzing hardware capabilities...");
+            _logger.LogDebugMessage($"Platform: {platformInfo.OperatingSystem} {platformInfo.Architecture}, CPUs: {platformInfo.ProcessorCount}, Memory: {hardware.TotalPhysicalMemory / (1024 * 1024)} MB");
 
             // Analyze each backend
             foreach (var backendType in Enum.GetValues<ComputeBackendType>())
@@ -121,9 +118,7 @@ namespace DotCompute.Plugins.Platform
                 if (PlatformDetection.IsBackendAvailable(backendType))
                 {
                     _backendCapabilities[backendType] = AnalyzeBackendCapabilities(backendType);
-                    _logger.LogDebug("Backend {Backend}: Performance={Perf}, Memory={Mem} MB",
-                        backendType, _backendCapabilities[backendType].RelativePerformance,
-                        _backendCapabilities[backendType].MemoryRequirements / (1024 * 1024));
+                    _logger.LogDebugMessage($"Backend {backendType}: Performance={_backendCapabilities[backendType].RelativePerformance}, Memory={_backendCapabilities[backendType].MemoryRequirements / (1024 * 1024)} MB");
                 }
             }
         }
@@ -207,8 +202,7 @@ namespace DotCompute.Plugins.Platform
             {
                 if (capabilities.RelativePerformance > 0)
                 {
-                    _logger.LogInformation("Selected {Backend} as primary backend (performance score: {Score})",
-                        backendType, capabilities.RelativePerformance);
+                    _logger.LogInfoMessage($"Selected {backendType} as primary backend (performance score: {capabilities.RelativePerformance})");
                     return backendType;
                 }
             }

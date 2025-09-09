@@ -10,6 +10,7 @@ using DotCompute.Core.Execution.Analysis;
 using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Optimization;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Execution
@@ -59,8 +60,7 @@ namespace DotCompute.Core.Execution
             ArgumentNullException.ThrowIfNull(availableDevices);
             ArgumentNullException.ThrowIfNull(constraints);
 
-            _logger.LogInformation("Creating optimal execution plan for workload {WorkloadType} with {DeviceCount} devices",
-                workload.WorkloadType, availableDevices.Length);
+            _logger.LogInfoMessage($"Creating optimal execution plan for workload {workload.WorkloadType} with {availableDevices.Length} devices");
 
             // Analyze workload characteristics
             var workloadAnalysis = AnalyzeWorkloadAsync(workload, cancellationToken);
@@ -76,8 +76,7 @@ namespace DotCompute.Core.Execution
             // Apply cross-cutting optimizations
             await _optimizer.OptimizePlanAsync(plan, cancellationToken);
 
-            _logger.LogInformation("Created {StrategyType} execution plan with estimated time {EstimatedTimeMs:F2}ms",
-                plan.StrategyType, plan.EstimatedExecutionTimeMs);
+            _logger.LogInfoMessage($"Created {plan.StrategyType} execution plan with estimated time {plan.EstimatedExecutionTimeMs}ms");
 
             return plan!;
         }
@@ -148,8 +147,7 @@ namespace DotCompute.Core.Execution
                 DependencyComplexity = workload.GetDependencyComplexity()
             };
 
-            _logger.LogDebug("Workload analysis: DataSize={DataSize}, ComputeIntensity={Compute:F2}, MemoryIntensity={Memory:F2}",
-                analysis.DataSize, analysis.ComputeIntensity, analysis.MemoryIntensity);
+            _logger.LogDebugMessage($"Workload analysis: DataSize={analysis.DataSize}, ComputeIntensity={analysis.ComputeIntensity}, MemoryIntensity={analysis.MemoryIntensity}");
             return analysis;
         }
 

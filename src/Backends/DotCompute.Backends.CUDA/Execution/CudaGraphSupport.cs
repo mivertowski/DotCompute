@@ -23,6 +23,7 @@ using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Execution.Types;
 using DotCompute.Backends.CUDA.Execution.Optimization;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
 {
@@ -78,7 +79,7 @@ namespace DotCompute.Backends.CUDA.Execution
             _optimizationTimer = new Timer(OptimizeGraphs, null,
                 TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
-            _logger.LogInformation("CUDA Graph Support initialized for RTX 2000 Ada optimizations");
+            _logger.LogInfoMessage("CUDA Graph Support initialized for RTX 2000 Ada optimizations");
         }
 
         /// <summary>
@@ -123,8 +124,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 _graphTemplates[graphId] = graph;
 
-                _logger.LogInformation("Created CUDA graph {GraphId} with {NodeCount} nodes",
-                    graphId, graph.NodeCount);
+                _logger.LogInfoMessage($"Created CUDA graph {graphId} with {graph.NodeCount} nodes");
 
                 return graphId;
             }
@@ -182,8 +182,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 instance.IsValid = true;
                 _graphInstances[instanceId] = instance;
 
-                _logger.LogDebug("Instantiated graph {GraphId} as instance {InstanceId}",
-                    graphId, instanceId);
+                _logger.LogDebugMessage($"Instantiated graph {graphId} as instance {instanceId}");
 
                 return instance;
             }
@@ -258,7 +257,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute graph instance {InstanceId}", instance.Id);
+                _logger.LogErrorMessage("");
 
                 return Task.FromResult(new DotCompute.Backends.CUDA.Types.CudaGraphExecutionResult
                 {
@@ -313,20 +312,18 @@ namespace DotCompute.Backends.CUDA.Execution
                     instance.UpdateCount++;
                     instance.LastUpdatedAt = DateTimeOffset.UtcNow;
 
-                    _logger.LogDebug("Updated graph instance {InstanceId} (update #{UpdateCount})",
-                        instance.Id, instance.UpdateCount);
+                    _logger.LogDebugMessage($"Updated graph instance {instance.Id} (update #{instance.UpdateCount})");
                     return true;
                 }
                 else
                 {
-                    _logger.LogWarning("Graph update failed for instance {InstanceId}: {Error}",
-                        instance.Id, CudaRuntime.GetErrorString(result));
+                    _logger.LogWarningMessage($"Graph update failed for instance {instance.Id}: {CudaRuntime.GetErrorString(result)}");
                     return false;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating graph instance {InstanceId}", instance.Id);
+                _logger.LogErrorMessage("Error checking CUDA graph support");
                 return false;
             }
         }
@@ -389,14 +386,12 @@ namespace DotCompute.Backends.CUDA.Execution
 
                     if (nodeCount != graph.NodeCount)
                     {
-                        _logger.LogWarning("Node count mismatch: Graph reports {GraphNodeCount}, CUDA reports {CudaNodeCount}",
-                            graph.NodeCount, nodeCount);
+                        _logger.LogWarningMessage($"Node count mismatch: Graph reports {graph.NodeCount}, CUDA reports {nodeCount}");
                     }
 
                     _graphTemplates[graphId] = graph;
 
-                    _logger.LogInformation("Captured CUDA graph {GraphId} with {NodeCount} nodes",
-                        graphId, graph.NodeCount);
+                    _logger.LogInfoMessage($"Captured CUDA graph {graphId} with {graph.NodeCount} nodes");
 
                     return graphId;
                 }
@@ -520,7 +515,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (removedCount > 0)
             {
-                _logger.LogInformation("Cleaned up {Count} unused graph instances", removedCount);
+                _logger.LogInfoMessage(" unused graph instances");
             }
 
             return removedCount;
@@ -553,12 +548,10 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 if (graph.NodeCount != nodeHandles.Count)
                 {
-                    _logger.LogWarning("Node count mismatch after building: Graph has {GraphNodeCount} nodes, created {HandleCount} handles",
-                        graph.NodeCount, nodeHandles.Count);
+                    _logger.LogWarningMessage($"Node count mismatch after building: Graph has {graph.NodeCount} nodes, created {nodeHandles.Count} handles");
                 }
 
-                _logger.LogDebug("Built graph {GraphId} with {NodeCount} kernel nodes",
-                    graph.Id, graph.NodeCount);
+                _logger.LogDebugMessage($"Built graph {graph.Id} with {graph.NodeCount} kernel nodes");
             }
             catch
             {
@@ -663,7 +656,7 @@ namespace DotCompute.Backends.CUDA.Execution
             // - Memory access patterns
             // - Warp scheduling
 
-            _logger.LogDebug("Applied Ada Lovelace optimizations to graph {GraphId}", graph.Id);
+            _logger.LogDebugMessage("");
 
             // Apply Ada Lovelace specific optimizations
             // These would use CUDA 12+ APIs for Ada architecture features
@@ -675,7 +668,7 @@ namespace DotCompute.Backends.CUDA.Execution
         private async Task AttemptKernelFusionAsync(CudaGraph graph, CancellationToken cancellationToken)
         {
             // Attempt to fuse compatible kernels
-            _logger.LogDebug("Attempting kernel fusion for graph {GraphId}", graph.Id);
+            _logger.LogDebugMessage("");
 
             // Analyze graph nodes for fusion opportunities
             var fusionCandidates = IdentifyFusionCandidates(graph);
@@ -683,8 +676,7 @@ namespace DotCompute.Backends.CUDA.Execution
             {
                 // Apply kernel fusion using CUDA graph API
                 await FuseKernelNodesAsync(graph, fusionCandidates, cancellationToken).ConfigureAwait(false);
-                _logger.LogInformation("Successfully fused {Count} kernel pairs in graph {GraphId}",
-                    fusionCandidates.Count, graph.Id);
+                _logger.LogInfoMessage($"Successfully fused {fusionCandidates.Count} kernel pairs in graph {graph.Id}");
             }
         }
 
@@ -765,7 +757,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 _graphSemaphore?.Dispose();
                 _disposed = true;
 
-                _logger.LogInformation("CUDA Graph Support disposed");
+                _logger.LogInfoMessage("CUDA Graph Support disposed");
             }
         }
 

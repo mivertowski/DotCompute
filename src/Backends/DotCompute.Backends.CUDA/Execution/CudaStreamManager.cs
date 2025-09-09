@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
 {
@@ -110,8 +111,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             _streamGroups[groupName] = group;
 
-            _logger.LogDebug("Created RTX-optimized stream group '{GroupName}' with {StreamCount} streams",
-                groupName, OPTIMAL_CONCURRENT_STREAMS);
+            _logger.LogDebugMessage($"Created RTX-optimized stream group '{groupName}' with {OPTIMAL_CONCURRENT_STREAMS} streams");
 
             return group;
         }
@@ -161,8 +161,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 _activeStreams[streamId] = streamInfo;
 
-                _logger.LogDebug("Created CUDA stream {StreamId} (handle={Handle}) with priority={Priority}, flags={Flags}",
-                    streamId, stream, priority, flags);
+                _logger.LogDebugMessage($"Created CUDA stream {streamId} (handle={stream}) with priority={priority}, flags={flags}");
 
                 return new CudaStreamHandle(streamId, stream, this);
             }
@@ -208,7 +207,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var results = await Task.WhenAll(tasks).ConfigureAwait(false);
             Array.Copy(results, streams, count);
 
-            _logger.LogDebug("Created batch of {Count} streams with priority={Priority}", count, priority);
+            _logger.LogDebugMessage("");
             return streams;
         }
 
@@ -356,8 +355,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 await Task.WhenAll(levelTasks).ConfigureAwait(false);
             }
 
-            _logger.LogDebug("Completed execution graph with {NodeCount} nodes in {LevelCount} levels",
-                executionPlan.TotalNodes, executionPlan.Levels.Count);
+            _logger.LogDebugMessage($"Completed execution graph with {executionPlan.TotalNodes} nodes in {executionPlan.Levels.Count} levels");
         }
 
         /// <summary>
@@ -433,9 +431,9 @@ namespace DotCompute.Backends.CUDA.Execution
                 await SynchronizeStreamAsync(streamId).ConfigureAwait(false);
                 await callback(streamId).ConfigureAwait(false);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error in stream callback for stream {StreamId}", streamId);
+                _logger.LogErrorMessage("Error in stream callback execution");
             }
         });
         }
@@ -464,8 +462,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     .Take(optimalCount)
                     .ToList();
 
-                _logger.LogDebug("RTX 2000 optimization: {ActiveStreams} active streams, {HighPriorityActive} high-priority active",
-                    activeStreamCount, highPriorityStreams.Count);
+                _logger.LogDebugMessage($"RTX 2000 optimization: {activeStreamCount} active streams, {highPriorityStreams.Count} high-priority active");
 
                 // Additional optimization: cleanup old idle streams
                 CleanupIdleStreams(TimeSpan.FromMinutes(5));
@@ -489,8 +486,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var priorityResult = Native.CudaRuntime.cudaDeviceGetStreamPriorityRange(out _leastPriority, out _greatestPriority);
             if (priorityResult != CudaError.Success)
             {
-                _logger.LogWarning("Failed to get stream priority range, using defaults: {Error}",
-                    Native.CudaRuntime.GetErrorString(priorityResult));
+                _logger.LogWarningMessage($"Failed to get stream priority range, using defaults: {Native.CudaRuntime.GetErrorString(priorityResult)}");
                 _leastPriority = 0;
                 _greatestPriority = -1;
             }
@@ -513,14 +509,12 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to create RTX-optimized stream {Index}: {Error}",
-                        i, Native.CudaRuntime.GetErrorString(result));
+                    _logger.LogWarningMessage($"Failed to create RTX-optimized stream {i}: {Native.CudaRuntime.GetErrorString(result)}");
                     break;
                 }
             }
 
-            _logger.LogDebug("Initialized {Count} RTX-optimized streams with priority range [{Least}, {Greatest}]",
-                _rtxOptimizedStreams.Count(s => s != IntPtr.Zero), _leastPriority, _greatestPriority);
+            _logger.LogDebugMessage($"Initialized {_rtxOptimizedStreams.Count(s => s != IntPtr.Zero)} RTX-optimized streams with priority range [{_leastPriority}, {_greatestPriority}]");
         }
 
         private void CleanupIdleStreams(TimeSpan maxIdleTime)
@@ -545,7 +539,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             if (idleStreams.Count > 0)
             {
-                _logger.LogDebug("Cleaned up {Count} idle streams", idleStreams.Count);
+                _logger.LogDebugMessage(" idle streams");
             }
         }
 
@@ -562,8 +556,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 var result = Native.CudaRuntime.cudaStreamDestroy(stream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to destroy CUDA stream {Stream}: {Error}",
-                        stream, Native.CudaRuntime.GetErrorString(result));
+                    _logger.LogWarningMessage($"Failed to destroy CUDA stream {stream}: {Native.CudaRuntime.GetErrorString(result)}");
                 }
             }
             catch (Exception ex)
@@ -656,7 +649,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 _streamCreationSemaphore?.Dispose();
                 _dependencyTracker?.Dispose();
 
-                _logger.LogInformation("CUDA Stream Manager disposed");
+                _logger.LogInfoMessage("CUDA Stream Manager disposed");
             }
         }
     }

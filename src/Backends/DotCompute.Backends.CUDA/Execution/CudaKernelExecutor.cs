@@ -7,6 +7,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -50,8 +51,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var result = CudaRuntime.cudaGetDeviceProperties(ref _deviceProperties, context.DeviceId);
             CudaRuntime.CheckError(result, "getting device properties");
 
-            _logger.LogInformation("CUDA Kernel Executor initialized for device {DeviceId} ({DeviceName})",
-                context.DeviceId, _deviceProperties.DeviceName);
+            _logger.LogInfoMessage($"CUDA Kernel Executor initialized for device {context.DeviceId} ({_deviceProperties.DeviceName})");
         }
 
         public IAccelerator Accelerator => _accelerator;
@@ -139,7 +139,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to execute kernel {KernelName}", kernel.Id.ToString());
+                    _logger.LogErrorMessage($"");
                     execution.IsCompleted = true;
                     execution.CompletedAt = DateTimeOffset.UtcNow;
                     return new KernelExecutionResult
@@ -212,7 +212,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to execute kernel {KernelName} asynchronously", kernel.Id.ToString());
+                    _logger.LogErrorMessage($" asynchronously");
                     execution.Error = ex;
                     execution.IsCompleted = true;
                     execution.CompletedAt = DateTimeOffset.UtcNow;
@@ -452,7 +452,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 // Ensure it's a multiple of warp size
                 optimalBlockSize = (optimalBlockSize / warpSize) * warpSize;
 
-                _logger.LogDebug("Using RTX 2000 Ada optimized block size: {BlockSize}", optimalBlockSize);
+                _logger.LogDebugMessage("");
                 return optimalBlockSize;
             }
 

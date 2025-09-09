@@ -17,6 +17,7 @@ using DotCompute.Linq.Operators.Models;
 using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Operators.Kernels;
 
@@ -88,7 +89,7 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
 
         try
         {
-            _logger.LogDebug("Compiling dynamic kernel {KernelName}", Name);
+            _logger.LogDebugMessage("Compiling dynamic kernel {Name}");
 
             // Check compilation cache first
             var tempRequest = new KernelCompilationRequest
@@ -105,7 +106,7 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
             if (KernelCompilationCache.TryGetCached(cacheKey, out var cachedKernel))
             {
                 _compiledKernel = cachedKernel;
-                _logger.LogDebug("Using cached compiled kernel {KernelName}", Name);
+                _logger.LogDebugMessage("Using cached compiled kernel {Name}");
                 return;
             }
 
@@ -135,11 +136,11 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
                 KernelCompilationCache.Cache(cacheKey, _compiledKernel);
             }
 
-            _logger.LogInformation("Successfully compiled dynamic kernel {KernelName}", Name);
+            _logger.LogInfoMessage("Successfully compiled dynamic kernel {Name}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to compile dynamic kernel {KernelName}", Name);
+            _logger.LogErrorMessage(ex, $"Failed to compile dynamic kernel {Name}");
             throw;
         }
     }
@@ -160,8 +161,7 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
 
         try
         {
-            _logger.LogDebug("Executing dynamic kernel {KernelName} with work items: {WorkItems}",
-                Name, string.Join(",", workItems.GlobalWorkSize));
+            _logger.LogDebugMessage($"Executing dynamic kernel {Name} with work items: {string.Join(",", workItems.GlobalWorkSize)}");
 
             // Convert work items to execution parameters
             var executionParams = CreateExecutionParameters(workItems, parameters);
@@ -169,11 +169,11 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
             // Execute the compiled kernel
             await _compiledKernel!.ExecuteAsync(executionParams, cancellationToken).ConfigureAwait(false);
 
-            _logger.LogDebug("Successfully executed dynamic kernel {KernelName}", Name);
+            _logger.LogDebugMessage("Successfully executed dynamic kernel {Name}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute dynamic kernel {KernelName}", Name);
+            _logger.LogErrorMessage(ex, $"Failed to execute dynamic kernel {Name}");
             throw;
         }
     }

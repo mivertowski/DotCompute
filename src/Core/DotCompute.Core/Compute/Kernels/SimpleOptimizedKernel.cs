@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Compute.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 using System;
 namespace DotCompute.Core.Compute.Kernels
@@ -59,7 +60,7 @@ namespace DotCompute.Core.Compute.Kernels
                 throw new ObjectDisposedException(nameof(SimpleOptimizedKernel));
             }
 
-            _logger.LogDebug("Executing simple optimized kernel: {KernelName}", Name);
+            _logger.LogDebugMessage("Executing simple optimized kernel: {Name}");
 
             // Simple implementation - in a real scenario this would perform optimized execution
             // based on the kernel type and arguments - TODO

@@ -7,6 +7,7 @@ using DotCompute.Linq.Operators.Interfaces;
 using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 
 namespace DotCompute.Linq.Operators;
 
@@ -67,7 +68,7 @@ public class ExpressionFallbackKernel : Interfaces.IKernel
     /// <inheritdoc/>
     public async Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Executing fallback kernel for expression type: {ExpressionType}", _expression.NodeType);
+        _logger.LogDebugMessage("Executing fallback kernel for expression type: {_expression.NodeType}");
 
         // This is a simplified fallback - in production you'd implement proper CPU execution
 

@@ -7,6 +7,7 @@ using global::System.Runtime.Loader;
 using DotCompute.Plugins.Exceptions.Loading;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.CompilerServices;
 
@@ -179,14 +180,13 @@ public class PluginSystem : IDisposable
         // Check if dynamic code compilation is available
         if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
         {
-            _logger.LogWarning("Plugin loading from assembly path is not supported in AOT scenarios. " +
-                             "Assembly: {Path}, Type: {Type}", assemblyPath, pluginTypeName);
+            _logger.LogWarningMessage($"Plugin loading from assembly path is not supported in AOT scenarios. ");
             return Task.FromResult<IBackendPlugin?>(null);
         }
 
         try
         {
-            _logger.LogInformation("Loading plugin from {Path}, type: {Type}", assemblyPath, pluginTypeName);
+            _logger.LogInfoMessage("Loading plugin from {Path}, type: {assemblyPath, pluginTypeName}");
 
             // Create isolated load context
             var context = new PluginAssemblyLoadContext(assemblyPath);
@@ -235,12 +235,12 @@ public class PluginSystem : IDisposable
                 basePlugin.SetState(PluginState.Loaded);
             }
 
-            _logger.LogInformation("Successfully loaded plugin {Id} ({Name})", instance.Id, instance.Name);
+            _logger.LogInfoMessage("Successfully loaded plugin {Id} ({instance.Id, instance.Name})");
             return Task.FromResult<IBackendPlugin?>(instance);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load plugin from {Path}", assemblyPath);
+            _logger.LogErrorMessage(ex, $"Failed to load plugin from {assemblyPath}");
             return Task.FromResult<IBackendPlugin?>(null);
         }
     }
@@ -261,13 +261,13 @@ public class PluginSystem : IDisposable
         {
             if (!_plugins.TryGetValue(pluginId, out var loadedPlugin))
             {
-                _logger.LogWarning("Plugin {Id} not found", pluginId);
+                _logger.LogWarningMessage("Plugin {pluginId} not found");
                 return Task.FromResult(false);
             }
 
             try
             {
-                _logger.LogInformation("Unloading plugin {Id}", pluginId);
+                _logger.LogInfoMessage("Unloading plugin {pluginId}");
 
                 var disposalSucceeded = true;
                 var contextUnloadSucceeded = true;
@@ -279,7 +279,7 @@ public class PluginSystem : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to dispose plugin {Id}, continuing with unload", pluginId);
+                    _logger.LogErrorMessage(ex, $"Failed to dispose plugin {pluginId}, continuing with unload");
                     disposalSucceeded = false;
                 }
 
@@ -296,7 +296,7 @@ public class PluginSystem : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to unload context for plugin {Id}, continuing", pluginId);
+                    _logger.LogErrorMessage(ex, $"Failed to unload context for plugin {pluginId}, continuing");
                     contextUnloadSucceeded = false;
                 }
 
@@ -305,11 +305,11 @@ public class PluginSystem : IDisposable
 
                 if (success)
                 {
-                    _logger.LogInformation("Successfully unloaded plugin {Id}", pluginId);
+                    _logger.LogInfoMessage("Successfully unloaded plugin {pluginId}");
                 }
                 else
                 {
-                    _logger.LogWarning("Plugin {Id} was removed but disposal/context unload had issues", pluginId);
+                    _logger.LogWarningMessage("Plugin {pluginId} was removed but disposal/context unload had issues");
                 }
 
 
@@ -317,7 +317,7 @@ public class PluginSystem : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Critical error during plugin {Id} unload", pluginId);
+                _logger.LogErrorMessage(ex, $"Critical error during plugin {pluginId} unload");
 
                 // Try to remove from collection as last resort
 

@@ -68,7 +68,7 @@ public static class ServiceCollectionExtensions
         
         // Register the production kernel execution service
         services.AddSingleton<KernelExecutionService>();
-        services.AddSingleton<IComputeOrchestrator>(provider => 
+        services.AddSingleton<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>(provider => 
             provider.GetRequiredService<KernelExecutionService>());
         
         // Keep simplified version available for backward compatibility

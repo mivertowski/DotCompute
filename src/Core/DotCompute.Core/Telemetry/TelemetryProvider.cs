@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using global::System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DotCompute.Core.Telemetry;
@@ -255,7 +256,7 @@ public sealed class TelemetryProvider : IDisposable
         });
 
 
-        _logger.LogError(exception, "Operation failed with correlation ID {CorrelationId}", correlationId);
+        _logger.LogErrorMessage(exception, $"Operation failed with correlation ID {correlationId}");
     }
 
     /// <summary>
@@ -299,7 +300,7 @@ public sealed class TelemetryProvider : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to export telemetry data");
+            _logger.LogErrorMessage(ex, "Failed to export telemetry data");
             _errorCounter.Add(1, new KeyValuePair<string, object?>("error_type", "telemetry_export"));
         }
     }
@@ -338,22 +339,18 @@ public sealed class TelemetryProvider : IDisposable
 
             if (health.MemoryUsageBytes > _options.MemoryAlertThreshold)
             {
-                _logger.LogWarning("Memory usage exceeded threshold: {MemoryUsage} bytes",
-
-                    health.MemoryUsageBytes);
+                _logger.LogWarningMessage($"Memory usage exceeded threshold: {health.MemoryUsageBytes} bytes");
             }
 
 
             if (health.ErrorRate > _options.ErrorRateThreshold)
             {
-                _logger.LogWarning("Error rate exceeded threshold: {ErrorRate}%",
-
-                    health.ErrorRate * 100);
+                _logger.LogWarningMessage($"Error rate exceeded threshold: {health.ErrorRate * 100}%");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to sample metrics");
+            _logger.LogErrorMessage(ex, "Failed to sample metrics");
         }
     }
 

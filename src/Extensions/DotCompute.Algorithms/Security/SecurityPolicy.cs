@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using global::System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Logging;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -96,7 +97,7 @@ public sealed class SecurityPolicy
         ArgumentNullException.ThrowIfNull(rule);
 
         _ = _rules.AddOrUpdate(ruleName, rule, (_, _) => rule);
-        _logger.LogInformation("Added security rule: {RuleName}", ruleName);
+        _logger.LogInfoMessage("Added security rule: {ruleName}");
     }
 
     /// <summary>
@@ -109,7 +110,7 @@ public sealed class SecurityPolicy
         var removed = _rules.TryRemove(ruleName, out _);
         if (removed)
         {
-            _logger.LogInformation("Removed security rule: {RuleName}", ruleName);
+            _logger.LogInfoMessage("Removed security rule: {ruleName}");
         }
         return removed;
     }
@@ -171,7 +172,7 @@ public sealed class SecurityPolicy
 
         if (!File.Exists(configPath))
         {
-            _logger.LogWarning("Security policy file not found: {ConfigPath}", configPath);
+            _logger.LogWarningMessage("Security policy file not found: {configPath}");
             return;
         }
 
@@ -183,12 +184,12 @@ public sealed class SecurityPolicy
             if (config != null)
             {
                 ApplyConfiguration(config);
-                _logger.LogInformation("Loaded security policy from: {ConfigPath}", configPath);
+                _logger.LogInfoMessage("Loaded security policy from: {configPath}");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load security policy from: {ConfigPath}", configPath);
+            _logger.LogErrorMessage(ex, $"Failed to load security policy from: {configPath}");
             throw;
         }
     }
@@ -209,11 +210,11 @@ public sealed class SecurityPolicy
             var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(configPath, json, cancellationToken);
 
-            _logger.LogInformation("Saved security policy to: {ConfigPath}", configPath);
+            _logger.LogInfoMessage("Saved security policy to: {configPath}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save security policy to: {ConfigPath}", configPath);
+            _logger.LogErrorMessage(ex, $"Failed to save security policy to: {configPath}");
             throw;
         }
     }
@@ -228,7 +229,7 @@ public sealed class SecurityPolicy
 
         if (_trustedPublishers.Add(thumbprint.ToUpperInvariant()))
         {
-            _logger.LogInformation("Added trusted publisher: {Thumbprint}", thumbprint);
+            _logger.LogInfoMessage("Added trusted publisher: {thumbprint}");
         }
     }
 
@@ -244,7 +245,7 @@ public sealed class SecurityPolicy
         var removed = _trustedPublishers.Remove(thumbprint.ToUpperInvariant());
         if (removed)
         {
-            _logger.LogInformation("Removed trusted publisher: {Thumbprint}", thumbprint);
+            _logger.LogInfoMessage("Removed trusted publisher: {thumbprint}");
         }
         return removed;
     }

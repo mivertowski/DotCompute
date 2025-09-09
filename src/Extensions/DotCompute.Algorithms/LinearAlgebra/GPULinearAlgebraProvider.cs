@@ -7,6 +7,7 @@ using DotCompute.Algorithms.Types.Kernels;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Logging;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.KernelExecutionParameters;
@@ -207,7 +208,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
             await bufferC.ReadAsync(resultData, 0, cancellationToken).ConfigureAwait(false);
             CopyArrayToMatrix(resultData, result);
 
-            _logger.LogDebug("GPU matrix multiplication completed in {ElapsedMs}ms", executionResult.Timings?.KernelTimeMs ?? 0);
+            _logger.LogDebugMessage("GPU matrix multiplication completed in {executionResult.Timings?.KernelTimeMs ?? 0}ms");
 
             return result;
         }

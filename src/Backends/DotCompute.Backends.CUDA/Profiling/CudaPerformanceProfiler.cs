@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Profiling
 {
@@ -126,7 +127,7 @@ namespace DotCompute.Backends.CUDA.Profiling
                 TimeSpan.FromSeconds(5));
 
 
-            _logger.LogInformation("CUDA Performance Profiler initialized");
+            _logger.LogInfoMessage("CUDA Performance Profiler initialized");
         }
 
         /// <summary>
@@ -142,11 +143,11 @@ namespace DotCompute.Backends.CUDA.Profiling
             {
                 if (_isProfilingActive)
                 {
-                    _logger.LogWarning("Profiling already active");
+                    _logger.LogWarningMessage("Profiling already active");
                     return;
                 }
 
-                _logger.LogInformation("Starting profiling session with config: {@Config}", config);
+                _logger.LogInfoMessage("Starting profiling session with config: {config}");
 
                 // Subscribe to CUPTI callbacks
 
@@ -203,7 +204,7 @@ namespace DotCompute.Backends.CUDA.Profiling
                 }
 
                 _isProfilingActive = true;
-                _logger.LogInformation("Profiling session started successfully");
+                _logger.LogInfoMessage("Profiling session started successfully");
             }
             finally
             {
@@ -221,11 +222,11 @@ namespace DotCompute.Backends.CUDA.Profiling
             {
                 if (!_isProfilingActive)
                 {
-                    _logger.LogWarning("No active profiling session");
+                    _logger.LogWarningMessage("No active profiling session");
                     return new ProfilingReport();
                 }
 
-                _logger.LogInformation("Stopping profiling session");
+                _logger.LogInfoMessage("Stopping profiling session");
 
                 // Flush all pending activities
                 _ = cuptiActivityFlushAll(0);
@@ -283,7 +284,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             int warmupRuns = 3,
             int profileRuns = 10)
         {
-            _logger.LogDebug("Profiling kernel {KernelName}", kernelName);
+            _logger.LogDebugMessage("Profiling kernel {kernelName}");
 
             // Warmup runs
 
@@ -385,7 +386,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error collecting GPU metrics");
+                _logger.LogErrorMessage(ex, "Error collecting GPU metrics");
             }
 
             await Task.CompletedTask;
@@ -474,7 +475,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in CUPTI callback handler");
+                _logger.LogErrorMessage(ex, "Error in CUPTI callback handler");
             }
         }
 
@@ -502,7 +503,7 @@ namespace DotCompute.Backends.CUDA.Profiling
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing profiling event");
+                    _logger.LogErrorMessage(ex, "Error processing profiling event");
                 }
             }
         }
@@ -517,13 +518,13 @@ namespace DotCompute.Backends.CUDA.Profiling
                 case CuptiRuntimeCallbackId.KernelLaunch:
                     // Extract kernel launch information
                     // This would involve marshaling the callback data structure
-                    _logger.LogDebug("Kernel launch event captured");
+                    _logger.LogDebugMessage("Kernel launch event captured");
                     break;
 
 
                 case CuptiRuntimeCallbackId.MemcpyAsync:
                     // Extract memory transfer information
-                    _logger.LogDebug("Memory transfer event captured");
+                    _logger.LogDebugMessage("Memory transfer event captured");
                     break;
             }
         }
@@ -531,12 +532,12 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Processes driver API events.
         /// </summary>
-        private void ProcessDriverEvent(ProfilingEvent evt) => _logger.LogDebug("Driver event captured: {CallbackId}", evt.CallbackId);
+        private void ProcessDriverEvent(ProfilingEvent evt) => _logger.LogDebugMessage("Driver event captured: {evt.CallbackId}");
 
         /// <summary>
         /// Processes resource events.
         /// </summary>
-        private void ProcessResourceEvent(ProfilingEvent evt) => _logger.LogDebug("Resource event captured: {CallbackId}", evt.CallbackId);
+        private void ProcessResourceEvent(ProfilingEvent evt) => _logger.LogDebugMessage("Resource event captured: {evt.CallbackId}");
 
         /// <summary>
         /// Collects periodic metrics.
@@ -563,7 +564,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error collecting periodic metrics");
+                _logger.LogErrorMessage(ex, "Error collecting periodic metrics");
             }
         }
 
@@ -625,11 +626,11 @@ namespace DotCompute.Backends.CUDA.Profiling
                 await File.WriteAllTextAsync(filepath, json);
 
 
-                _logger.LogInformation("Profiling report exported to {FilePath}", filepath);
+                _logger.LogInfoMessage("Profiling report exported to {filepath}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error exporting profiling report");
+                _logger.LogErrorMessage(ex, "Error exporting profiling report");
                 throw;
             }
         }
@@ -694,11 +695,11 @@ namespace DotCompute.Backends.CUDA.Profiling
                 var result = nvmlInit();
                 if (result == NvmlReturn.Success)
                 {
-                    _logger.LogInformation("NVML initialized successfully");
+                    _logger.LogInfoMessage("NVML initialized successfully");
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to initialize NVML: {Result}", result);
+                    _logger.LogWarningMessage("Failed to initialize NVML: {result}");
                 }
             }
             catch (Exception ex)

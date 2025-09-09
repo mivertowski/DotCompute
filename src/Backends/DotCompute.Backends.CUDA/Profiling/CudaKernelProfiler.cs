@@ -9,6 +9,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Monitoring;
 using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -77,7 +78,7 @@ namespace DotCompute.Backends.CUDA.Advanced
                     _ = await ExecuteKernelOnceAsync(functionHandle, arguments, launchConfig, startEvent, endEvent, cancellationToken);
                 }
 
-                _logger.LogInformation("Starting profiling of kernel '{KernelName}' for {Iterations} iterations", kernelName, iterations);
+                _logger.LogInfoMessage("Starting profiling of kernel '{KernelName}' for {kernelName, iterations} iterations");
 
                 // Profiling runs
                 for (var i = 0; i < iterations; i++)

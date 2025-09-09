@@ -4,6 +4,7 @@
 // using DotCompute.Algorithms.Types // Commented out - missing reference.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using DotCompute.Runtime.Logging;
 using System.Collections.Concurrent;
 
 namespace DotCompute.Runtime.DependencyInjection;
@@ -47,7 +48,7 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
         {
             await SetStateAsync(pluginId, PluginLifecycleState.Loading);
 
-            _logger.LogDebug("Creating plugin instance of type {PluginType}", pluginType.Name);
+            _logger.LogDebugMessage("Creating plugin instance of type {pluginType.Name}");
 
             // Validate dependencies first
             var validation = _dependencyResolver.ValidateDependencies(pluginType, serviceProvider);
@@ -86,7 +87,7 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create plugin instance of type {PluginType}", pluginType.Name);
+            _logger.LogErrorMessage(ex, $"Failed to create plugin instance of type {pluginType.Name}");
             await SetStateAsync(pluginId, PluginLifecycleState.Error);
             await NotifyErrorAsync(pluginId, null, ex);
             throw;
@@ -109,7 +110,7 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
         {
             await SetStateAsync(pluginId, PluginLifecycleState.Initializing);
 
-            _logger.LogDebug("Initializing plugin {PluginType}", plugin.GetType().Name);
+            _logger.LogDebugMessage($"Initializing plugin {plugin.GetType().Name}");
 
             // Call plugin-specific initialization if it exists
             // Note: IAlgorithmPlugin interface is commented out due to missing reference
@@ -139,11 +140,11 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
             await SetStateAsync(pluginId, PluginLifecycleState.Ready);
             await NotifyReadyAsync(pluginId, plugin);
 
-            _logger.LogInformation("Plugin {PluginType} initialized successfully", plugin.GetType().Name);
+            _logger.LogInfoMessage($"Plugin {plugin.GetType().Name} initialized successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initialize plugin {PluginType}", plugin.GetType().Name);
+            _logger.LogErrorMessage(ex, $"Failed to initialize plugin {plugin.GetType().Name}");
             await SetStateAsync(pluginId, PluginLifecycleState.Error);
             await NotifyErrorAsync(pluginId, plugin, ex);
             throw;
@@ -161,7 +162,7 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
             await SetStateAsync(pluginId, PluginLifecycleState.Disposing);
             await NotifyDisposingAsync(pluginId, plugin);
 
-            _logger.LogDebug("Disposing plugin {PluginType}", plugin.GetType().Name);
+            _logger.LogDebugMessage($"Disposing plugin {plugin.GetType().Name}");
 
             // Dispose plugin if it implements IDisposable/IAsyncDisposable
             switch (plugin)
@@ -185,11 +186,11 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
 
             await SetStateAsync(pluginId, PluginLifecycleState.Disposed);
 
-            _logger.LogDebug("Plugin {PluginType} disposed successfully", plugin.GetType().Name);
+            _logger.LogDebugMessage($"Plugin {plugin.GetType().Name} disposed successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error disposing plugin {PluginType}", plugin.GetType().Name);
+            _logger.LogErrorMessage(ex, $"Error disposing plugin {plugin.GetType().Name}");
             await SetStateAsync(pluginId, PluginLifecycleState.Error);
             throw;
         }
@@ -213,7 +214,7 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
         }
 
         _lifecycleHandlers[pluginId] = eventHandlers;
-        _logger.LogDebug("Registered lifecycle handlers for plugin {PluginId}", pluginId);
+        _logger.LogDebugMessage("Registered lifecycle handlers for plugin {pluginId}");
     }
 
     private async Task SetStateAsync(string pluginId, PluginLifecycleState newState)
@@ -323,7 +324,7 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
             return;
         }
 
-        _logger.LogDebug("Disposing PluginLifecycleManager");
+        _logger.LogDebugMessage("Disposing PluginLifecycleManager");
 
         // Dispose all plugin scopes
         foreach (var scope in _pluginScopes.Values)
@@ -395,8 +396,7 @@ public class DefaultPluginFactory : IPluginFactory
             throw new ArgumentException($"Cannot create plugin of type {pluginType.Name}", nameof(pluginType));
         }
 
-        _logger.LogDebug("Creating plugin {PluginType} with interface {InterfaceType}",
-            pluginType.Name, typeof(T).Name);
+        _logger.LogDebugMessage($"Creating plugin {pluginType.Name} with interface {typeof(T).Name}");
 
         try
         {
@@ -410,7 +410,7 @@ public class DefaultPluginFactory : IPluginFactory
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create plugin {PluginType}", pluginType.Name);
+            _logger.LogErrorMessage(ex, $"Failed to create plugin {pluginType.Name}");
             throw;
         }
     }

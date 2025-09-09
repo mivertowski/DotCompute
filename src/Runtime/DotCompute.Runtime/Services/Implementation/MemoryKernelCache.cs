@@ -58,7 +58,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         keyBuilder.Append('_');
         keyBuilder.Append(accelerator.Info.DeviceType);
         keyBuilder.Append('_');
-        keyBuilder.Append(accelerator.Info.DeviceId);
+        keyBuilder.Append(accelerator.Info.Id);
         
         if (compilationOptions != null)
         {
@@ -185,6 +185,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         IEnumerable<KernelDefinition> kernelDefinitions,
         IEnumerable<IAccelerator> accelerators)
     {
+        await Task.CompletedTask; // Make async
         var successCount = 0;
         var acceleratorList = accelerators.ToList();
 

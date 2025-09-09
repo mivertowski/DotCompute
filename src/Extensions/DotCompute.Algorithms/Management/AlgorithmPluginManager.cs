@@ -20,6 +20,7 @@ using DotCompute.Algorithms.Management.Validation;
 using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Types.Security;
 using Microsoft.Extensions.Logging;
+using DotCompute.Algorithms.Logging;
 
 namespace DotCompute.Algorithms.Management
 {
@@ -1360,7 +1361,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     /// </summary>
     private async void OnFileWatcherError(object sender, ErrorEventArgs e)
     {
-        _logger.LogError(e.GetException(), "File watcher error occurred");
+        _logger.LogErrorMessage(e.GetException(), "File watcher error occurred");
         
         // Try to restart the watcher if it's a temporary error
         if (sender is FileSystemWatcher watcher)
@@ -1370,11 +1371,11 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 watcher.EnableRaisingEvents = false;
                 await Task.Delay(1000, CancellationToken.None).ConfigureAwait(false); // Wait a bit before restarting
                 watcher.EnableRaisingEvents = true;
-                _logger.LogInformation("Successfully restarted file watcher for: {Path}", watcher.Path);
+                _logger.LogInfoMessage("Successfully restarted file watcher for: {watcher.Path}");
             }
             catch (Exception restartEx)
             {
-                _logger.LogError(restartEx, "Failed to restart file watcher for: {Path}", watcher.Path);
+                _logger.LogErrorMessage(restartEx, $"Failed to restart file watcher for: {watcher.Path}");
             }
         }
     }
@@ -1628,8 +1629,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                         loadedPlugin.Health = PluginHealth.Degraded;
                     }
                     
-                    _logger.LogWarning("Potential handle leak detected for plugin {PluginId}: {HandleIncrease} new handles",
-                        loadedPlugin.Plugin.Id, handleIncrease);
+                    _logger.LogWarningMessage($"Potential handle leak detected for plugin {loadedPlugin.Plugin.Id}: {handleIncrease} new handles");
                 }
             }
 
@@ -1649,8 +1649,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                         loadedPlugin.Health = PluginHealth.Degraded;
                     }
                     
-                    _logger.LogWarning("Potential thread leak detected for plugin {PluginId}: {ThreadIncrease} new threads",
-                        loadedPlugin.Plugin.Id, threadIncrease);
+                    _logger.LogWarningMessage($"Potential thread leak detected for plugin {loadedPlugin.Plugin.Id}: {threadIncrease} new threads");
                 }
             }
 

@@ -3,6 +3,7 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 using System.Collections.Concurrent;
 using System.Reflection;
 
@@ -47,8 +48,7 @@ namespace DotCompute.Plugins.Infrastructure
             // Build the plugin service provider
             _pluginServiceProvider = _pluginServices.BuildServiceProvider();
 
-            _logger.LogInformation("Plugin service provider initialized with {ServiceCount} plugin services",
-                _pluginServices.Count);
+            _logger.LogInfoMessage($"Plugin service provider initialized with {_pluginServices.Count} plugin services");
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace DotCompute.Plugins.Infrastructure
             ArgumentNullException.ThrowIfNull(pluginAssembly);
             ObjectDisposedException.ThrowIf(_disposed, this);
 
-            _logger.LogDebug("Registering services from plugin assembly: {AssemblyName}", pluginAssembly.FullName);
+            _logger.LogDebugMessage("Registering services from plugin assembly: {pluginAssembly.FullName}");
 
             try
             {
@@ -73,13 +73,11 @@ namespace DotCompute.Plugins.Infrastructure
                 // Discover and register services from the assembly
                 await DiscoverAndRegisterServicesAsync(pluginAssembly, scope.ServiceProvider, cancellationToken);
 
-                _logger.LogInformation("Successfully registered services from plugin assembly: {AssemblyName}",
-                    pluginAssembly.GetName().Name);
+                _logger.LogInfoMessage($"Successfully registered services from plugin assembly: {pluginAssembly.GetName().Name}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to register services from plugin assembly: {AssemblyName}",
-                    pluginAssembly.FullName);
+                _logger.LogErrorMessage(ex, $"Failed to register services from plugin assembly: {pluginAssembly.FullName}");
                 throw;
             }
         }
@@ -96,8 +94,7 @@ namespace DotCompute.Plugins.Infrastructure
             if (_assemblyScopes.TryRemove(pluginAssembly, out var scope))
             {
                 scope.Dispose();
-                _logger.LogInformation("Unregistered services from plugin assembly: {AssemblyName}",
-                    pluginAssembly.GetName().Name);
+                _logger.LogInfoMessage($"Unregistered services from plugin assembly: {pluginAssembly.GetName().Name}");
             }
         }
 
@@ -146,7 +143,7 @@ namespace DotCompute.Plugins.Infrastructure
                     service = _hostServiceProvider.GetService(serviceType);
                     if (service != null)
                     {
-                        _logger.LogDebug("Falling back to host service for type: {ServiceType}", serviceType.Name);
+                        _logger.LogDebugMessage("Falling back to host service for type: {serviceType.Name}");
                         return service;
                     }
                 }
@@ -155,7 +152,7 @@ namespace DotCompute.Plugins.Infrastructure
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving service of type: {ServiceType}", serviceType.Name);
+                _logger.LogErrorMessage(ex, $"Error retrieving service of type: {serviceType.Name}");
                 throw;
             }
         }
@@ -243,7 +240,7 @@ namespace DotCompute.Plugins.Infrastructure
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get plugin service provider health");
+                _logger.LogErrorMessage(ex, "Failed to get plugin service provider health");
                 return new PluginServiceProviderHealth
                 {
                     IsHealthy = false,
@@ -271,7 +268,7 @@ namespace DotCompute.Plugins.Infrastructure
                 _ = _pluginServices.AddSingleton(_hostServiceProvider);
             }
 
-            _logger.LogDebug("Configured {Count} base plugin services", _pluginServices.Count);
+            _logger.LogDebugMessage("Configured {_pluginServices.Count} base plugin services");
         }
 
         private async Task DiscoverAndRegisterServicesAsync(
@@ -302,7 +299,7 @@ namespace DotCompute.Plugins.Infrastructure
 
                         if (method != null)
                         {
-                            _logger.LogDebug("Invoking ConfigureServices from {TypeName}", type.FullName);
+                            _logger.LogDebugMessage("Invoking ConfigureServices from {type.FullName}");
                             _ = method.Invoke(null, [_pluginServices]);
                         }
                     }
@@ -345,8 +342,7 @@ namespace DotCompute.Plugins.Infrastructure
 
                         _pluginServices.Add(serviceDescriptor);
 
-                        _logger.LogDebug("Registered plugin service: {ServiceType} -> {ImplementationType} ({Lifetime})",
-                            serviceType.Name, type.Name, attribute.Lifetime);
+                        _logger.LogDebugMessage($"Registered plugin service: {serviceType.Name} -> {type.Name} ({attribute.Lifetime})");
                     }
                     catch (Exception ex)
                     {
@@ -371,8 +367,7 @@ namespace DotCompute.Plugins.Infrastructure
                     if (service != null)
                     {
                         property.SetValue(instance, service);
-                        _logger.LogDebug("Injected {ServiceType} into {PropertyName} of {InstanceType}",
-                            property.PropertyType.Name, property.Name, type.Name);
+                        _logger.LogDebugMessage($"Injected {property.PropertyType.Name} into {property.Name} of {type.Name}");
                     }
                     else
                     {
@@ -385,8 +380,7 @@ namespace DotCompute.Plugins.Infrastructure
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to inject {ServiceType} into {PropertyName}",
-                        property.PropertyType.Name, property.Name);
+                    _logger.LogErrorMessage(ex, $"Failed to inject {property.PropertyType.Name} into {property.Name}");
                     throw;
                 }
             }
@@ -418,7 +412,7 @@ namespace DotCompute.Plugins.Infrastructure
                 _singletonCache.Clear();
 
                 _disposed = true;
-                _logger.LogInformation("Plugin service provider disposed");
+                _logger.LogInfoMessage("Plugin service provider disposed");
             }
         }
     }
@@ -525,8 +519,7 @@ namespace DotCompute.Plugins.Infrastructure
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get service {ServiceType} for plugin assembly {AssemblyName}",
-                    serviceType.Name, _pluginAssembly.GetName().Name);
+                _logger.LogErrorMessage(ex, $"Failed to get service {serviceType.Name} for plugin assembly {_pluginAssembly.GetName().Name}");
                 throw;
             }
         }

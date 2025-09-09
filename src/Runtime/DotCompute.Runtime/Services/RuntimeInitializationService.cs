@@ -4,6 +4,7 @@
 using DotCompute.Runtime.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DotCompute.Runtime.Services;
@@ -30,7 +31,7 @@ public class RuntimeInitializationService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Initializing DotCompute Runtime...");
+        _logger.LogInfoMessage("Initializing DotCompute Runtime...");
 
         try
         {
@@ -39,11 +40,11 @@ public class RuntimeInitializationService : IHostedService
 
             await _runtime.InitializeAsync();
 
-            _logger.LogInformation("DotCompute Runtime initialized successfully");
+            _logger.LogInfoMessage("DotCompute Runtime initialized successfully");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            _logger.LogWarning("DotCompute Runtime initialization was cancelled");
+            _logger.LogWarningMessage("DotCompute Runtime initialization was cancelled");
             throw;
         }
         catch (OperationCanceledException)
@@ -54,11 +55,11 @@ public class RuntimeInitializationService : IHostedService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initialize DotCompute Runtime");
+            _logger.LogErrorMessage(ex, "Failed to initialize DotCompute Runtime");
 
             if (_options.EnableGracefulDegradation)
             {
-                _logger.LogWarning("Continuing with graceful degradation enabled");
+                _logger.LogWarningMessage("Continuing with graceful degradation enabled");
                 return;
             }
 
@@ -68,16 +69,16 @@ public class RuntimeInitializationService : IHostedService
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Shutting down DotCompute Runtime...");
+        _logger.LogInfoMessage("Shutting down DotCompute Runtime...");
 
         try
         {
             await _runtime.DisposeAsync();
-            _logger.LogInformation("DotCompute Runtime shutdown completed");
+            _logger.LogInfoMessage("DotCompute Runtime shutdown completed");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during DotCompute Runtime shutdown");
+            _logger.LogErrorMessage(ex, "Error during DotCompute Runtime shutdown");
             throw;
         }
     }

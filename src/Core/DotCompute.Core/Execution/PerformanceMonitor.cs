@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Core.Kernels;
 
 using DotCompute.Core.Execution.Metrics;
@@ -85,8 +86,7 @@ namespace DotCompute.Core.Execution
                 _ = Task.Run(() => AnalyzePerformanceAsync());
             }
 
-            _logger.LogDebug("Recorded execution: Strategy={Strategy}, Success={Success}, Time={ExecutionTimeMs:F2}ms, Efficiency={EfficiencyPercentage:F1}%",
-                result.Strategy, result.Success, result.TotalExecutionTimeMs, result.EfficiencyPercentage);
+            _logger.LogDebugMessage($"Recorded execution: Strategy={result.Strategy}, Success={result.Success}, Time={result.TotalExecutionTimeMs}ms, Efficiency={result.EfficiencyPercentage}%");
         }
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace DotCompute.Core.Execution
                 _currentMetrics = new ParallelExecutionMetrics();
             }
 
-            _logger.LogInformation("Performance monitor reset");
+            _logger.LogInfoMessage("Performance monitor reset");
         }
 
         public void Dispose()
@@ -221,7 +221,7 @@ namespace DotCompute.Core.Execution
             Reset();
             _disposed = true;
 
-            _logger.LogInformation("Performance monitor disposed");
+            _logger.LogInfoMessage("Performance monitor disposed");
         }
 
         #region Private Methods
@@ -336,21 +336,19 @@ namespace DotCompute.Core.Execution
                 if (analysis.Bottlenecks.Count != 0)
                 {
                     var primaryBottleneck = analysis.Bottlenecks.OrderByDescending(b => b.Severity).First();
-                    _logger.LogInformation("Performance analysis: Primary bottleneck is {BottleneckType} with severity {Severity:F2}",
-                        primaryBottleneck.Type, primaryBottleneck.Severity);
+                    _logger.LogInfoMessage($"Performance analysis: Primary bottleneck is {primaryBottleneck.Type} with severity {primaryBottleneck.Severity}");
                 }
 
                 if (analysis.OptimizationRecommendations.Count != 0)
                 {
-                    _logger.LogInformation("Performance recommendations: {Recommendations}",
-                        string.Join("; ", analysis.OptimizationRecommendations));
+                    _logger.LogInfoMessage($"Performance recommendations: {string.Join("; ", analysis.OptimizationRecommendations)}");
                 }
 
                 await Task.CompletedTask;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during performance analysis");
+                _logger.LogErrorMessage(ex, "Error during performance analysis");
             }
         }
 

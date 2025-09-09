@@ -68,7 +68,7 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _id = Guid.NewGuid();
 
-        _logger.LogDebug("Created OpenCL compiled kernel: {KernelName} (ID: {Id})", _name, _id);
+        _logger.LogDebugMessage("Created OpenCL compiled kernel: {KernelName} (ID: {_name, _id})");
     }
 
     /// <summary>
@@ -82,11 +82,10 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
 
         if (arguments.Arguments == null || arguments.Arguments.Count == 0)
         {
-            _logger.LogWarning("Executing kernel {KernelName} with no arguments", _name);
+            _logger.LogWarningMessage("Executing kernel {_name} with no arguments");
         }
 
-        _logger.LogDebug("Executing OpenCL kernel: {KernelName} with {ArgCount} arguments", 
-            _name, arguments.Arguments?.Count ?? 0);
+        _logger.LogDebugMessage($"Executing OpenCL kernel: {_name} with {arguments.Arguments?.Count ?? 0} arguments");
 
         try
         {
@@ -109,11 +108,11 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
             // Release event
             OpenCLContext.ReleaseObject(executionEvent.Handle, OpenCLRuntime.clReleaseEvent, "execution event");
 
-            _logger.LogDebug("Successfully executed OpenCL kernel: {KernelName}", _name);
+            _logger.LogDebugMessage("Successfully executed OpenCL kernel: {_name}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute OpenCL kernel: {KernelName}", _name);
+            _logger.LogErrorMessage(ex, $"Failed to execute OpenCL kernel: {_name}");
             throw;
         }
     }
@@ -333,7 +332,7 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
             {
                 if (_disposed) return;
 
-                _logger.LogDebug("Disposing OpenCL kernel: {KernelName} (ID: {Id})", _name, _id);
+                _logger.LogDebugMessage("Disposing OpenCL kernel: {KernelName} (ID: {_name, _id})");
 
                 OpenCLContext.ReleaseObject(_kernel.Handle, OpenCLRuntime.clReleaseKernel, "kernel");
                 OpenCLContext.ReleaseObject(_program.Handle, OpenCLRuntime.clReleaseProgram, "program");

@@ -6,6 +6,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using global::System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Security;
 
@@ -37,12 +38,12 @@ public class SecurityManager : IDisposable
 
         try
         {
-            _logger.LogDebug("Validating assembly integrity: {AssemblyPath}", assemblyPath);
+            _logger.LogDebugMessage("Validating assembly integrity: {assemblyPath}");
 
             // Basic file validation
             if (!File.Exists(assemblyPath))
             {
-                _logger.LogWarning("Assembly file not found: {AssemblyPath}", assemblyPath);
+                _logger.LogWarningMessage("Assembly file not found: {assemblyPath}");
                 return false;
             }
 
@@ -52,7 +53,7 @@ public class SecurityManager : IDisposable
 
             if (!peReader.HasMetadata)
             {
-                _logger.LogWarning("Assembly does not contain valid metadata: {AssemblyPath}", assemblyPath);
+                _logger.LogWarningMessage("Assembly does not contain valid metadata: {assemblyPath}");
                 return false;
             }
 
@@ -60,7 +61,7 @@ public class SecurityManager : IDisposable
             var metadataReader = peReader.GetMetadataReader();
             if (!ValidateMetadataStructure(metadataReader))
             {
-                _logger.LogWarning("Assembly metadata structure is invalid: {AssemblyPath}", assemblyPath);
+                _logger.LogWarningMessage("Assembly metadata structure is invalid: {assemblyPath}");
                 return false;
             }
 
@@ -68,19 +69,17 @@ public class SecurityManager : IDisposable
             var hash = await CalculateAssemblyHashAsync(assemblyPath, cancellationToken);
             if (string.IsNullOrEmpty(hash))
             {
-                _logger.LogWarning("Failed to calculate assembly hash: {AssemblyPath}", assemblyPath);
+                _logger.LogWarningMessage("Failed to calculate assembly hash: {assemblyPath}");
                 return false;
             }
 
-            _logger.LogDebug("Assembly integrity validated successfully: {AssemblyPath} (Hash: {Hash})",
-
-                assemblyPath, hash[..16] + "...");
+            _logger.LogDebugMessage($"Assembly integrity validated successfully: {assemblyPath} (Hash: {hash[..16] + "..."})");
 
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating assembly integrity: {AssemblyPath}", assemblyPath);
+            _logger.LogErrorMessage(ex, $"Error validating assembly integrity: {assemblyPath}");
             return false;
         }
     }
@@ -97,7 +96,7 @@ public class SecurityManager : IDisposable
 
         try
         {
-            _logger.LogDebug("Analyzing assembly metadata: {AssemblyPath}", assemblyPath);
+            _logger.LogDebugMessage("Analyzing assembly metadata: {assemblyPath}");
 
             using var fileStream = File.OpenRead(assemblyPath);
             using var peReader = new PEReader(fileStream);
@@ -118,14 +117,13 @@ public class SecurityManager : IDisposable
             // Determine overall risk level
             analysis.RiskLevel = CalculateRiskLevel(analysis);
 
-            _logger.LogDebug("Assembly metadata analysis completed: {AssemblyPath}, Risk: {RiskLevel}, Patterns: {PatternCount}",
-                assemblyPath, analysis.RiskLevel, analysis.SuspiciousPatterns.Count);
+            _logger.LogDebugMessage($"Assembly metadata analysis completed: {assemblyPath}, Risk: {analysis.RiskLevel}, Patterns: {analysis.SuspiciousPatterns.Count}");
 
             return analysis;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error analyzing assembly metadata: {AssemblyPath}", assemblyPath);
+            _logger.LogErrorMessage(ex, $"Error analyzing assembly metadata: {assemblyPath}");
             analysis.HasError = true;
             analysis.ErrorMessage = ex.Message;
             return analysis;

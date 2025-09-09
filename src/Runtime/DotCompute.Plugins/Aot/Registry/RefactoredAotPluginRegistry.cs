@@ -7,6 +7,7 @@ using DotCompute.Plugins.Aot.Registration;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Platform;
 using Microsoft.Extensions.Logging;
+using DotCompute.Plugins.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - AOT plugin registry uses dynamic logging
 
@@ -47,7 +48,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
 
         RegisterKnownPlugins();
-        _logger.LogInformation("RefactoredAotPluginRegistry initialized with {ServiceCount} composed services", 3);
+        _logger.LogInfoMessage("RefactoredAotPluginRegistry initialized with {3} composed services");
     }
 
     /// <summary>
@@ -72,7 +73,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         _lifecycleManager = new PluginLifecycleManager(lifecycleLogger, _discoveryService);
 
         RegisterKnownPlugins();
-        _logger.LogInformation("RefactoredAotPluginRegistry initialized with internally created services");
+        _logger.LogInfoMessage("RefactoredAotPluginRegistry initialized with internally created services");
     }
 
     /// <summary>
@@ -100,7 +101,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
     /// </summary>
     private void RegisterKnownPlugins()
     {
-        _logger.LogInformation("Registering known plugins for AOT compatibility");
+        _logger.LogInfoMessage("Registering known plugins for AOT compatibility");
 
         var registeredCount = 0;
 
@@ -137,7 +138,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         }
 
 
-        _logger.LogInformation("Registered {Count} plugin factories", registeredCount);
+        _logger.LogInfoMessage("Registered {registeredCount} plugin factories");
     }
 
     /// <summary>
@@ -147,7 +148,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
     {
         _registrationService.RegisterPluginFactory("DotCompute.Backends.CPU", () =>
         {
-            _logger.LogDebug("Creating CPU backend plugin");
+            _logger.LogDebugMessage("Creating CPU backend plugin");
             return new Backends.AotCpuBackendPlugin();
         });
     }
@@ -162,7 +163,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         {
             _registrationService.RegisterPluginFactory("DotCompute.Backends.CUDA", () =>
             {
-                _logger.LogDebug("Creating CUDA backend plugin");
+                _logger.LogDebugMessage("Creating CUDA backend plugin");
                 PlatformDetection.ValidateBackendAvailability(ComputeBackendType.CUDA);
                 return new Backends.AotCudaBackendPlugin();
             });
@@ -170,7 +171,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         }
         catch (PlatformNotSupportedException)
         {
-            _logger.LogDebug("CUDA backend not supported on this platform, skipping registration");
+            _logger.LogDebugMessage("CUDA backend not supported on this platform, skipping registration");
             return false;
         }
     }
@@ -185,7 +186,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         {
             _registrationService.RegisterPluginFactory("DotCompute.Backends.Metal", () =>
             {
-                _logger.LogDebug("Creating Metal backend plugin");
+                _logger.LogDebugMessage("Creating Metal backend plugin");
                 PlatformDetection.ValidateBackendAvailability(ComputeBackendType.Metal);
                 return new Backends.AotMetalBackendPlugin();
             });
@@ -193,7 +194,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         }
         catch (PlatformNotSupportedException)
         {
-            _logger.LogDebug("Metal backend not supported on this platform, skipping registration");
+            _logger.LogDebugMessage("Metal backend not supported on this platform, skipping registration");
             return false;
         }
     }
@@ -208,7 +209,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         {
             _registrationService.RegisterPluginFactory("DotCompute.Backends.OpenCL", () =>
             {
-                _logger.LogDebug("Creating OpenCL backend plugin");
+                _logger.LogDebugMessage("Creating OpenCL backend plugin");
                 PlatformDetection.ValidateBackendAvailability(ComputeBackendType.OpenCL);
                 return new Backends.AotOpenClBackendPlugin();
             });
@@ -216,7 +217,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         }
         catch (PlatformNotSupportedException)
         {
-            _logger.LogDebug("OpenCL backend not supported on this platform, skipping registration");
+            _logger.LogDebugMessage("OpenCL backend not supported on this platform, skipping registration");
             return false;
         }
     }
@@ -231,7 +232,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         {
             _registrationService.RegisterPluginFactory("DotCompute.Backends.DirectCompute", () =>
             {
-                _logger.LogDebug("Creating DirectCompute backend plugin");
+                _logger.LogDebugMessage("Creating DirectCompute backend plugin");
                 PlatformDetection.ValidateBackendAvailability(ComputeBackendType.DirectCompute);
                 return new Backends.AotDirectComputeBackendPlugin();
             });
@@ -239,7 +240,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         }
         catch (PlatformNotSupportedException)
         {
-            _logger.LogDebug("DirectCompute backend not supported on this platform, skipping registration");
+            _logger.LogDebugMessage("DirectCompute backend not supported on this platform, skipping registration");
             return false;
         }
     }
@@ -254,7 +255,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         {
             _registrationService.RegisterPluginFactory("DotCompute.Backends.Vulkan", () =>
             {
-                _logger.LogDebug("Creating Vulkan compute backend plugin");
+                _logger.LogDebugMessage("Creating Vulkan compute backend plugin");
                 PlatformDetection.ValidateBackendAvailability(ComputeBackendType.Vulkan);
                 return new Backends.AotVulkanBackendPlugin();
             });
@@ -262,7 +263,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
         }
         catch (PlatformNotSupportedException)
         {
-            _logger.LogDebug("Vulkan backend not supported on this platform, skipping registration");
+            _logger.LogDebugMessage("Vulkan backend not supported on this platform, skipping registration");
             return false;
         }
     }
@@ -348,7 +349,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error disposing lifecycle manager");
+                _logger.LogErrorMessage(ex, "Error disposing lifecycle manager");
             }
 
             try
@@ -357,7 +358,7 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error disposing discovery service");
+                _logger.LogErrorMessage(ex, "Error disposing discovery service");
             }
 
             try
@@ -366,10 +367,10 @@ public sealed class RefactoredAotPluginRegistry : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error disposing registration service");
+                _logger.LogErrorMessage(ex, "Error disposing registration service");
             }
         }
 
-        _logger.LogInformation("RefactoredAotPluginRegistry disposed");
+        _logger.LogInfoMessage("RefactoredAotPluginRegistry disposed");
     }
 }

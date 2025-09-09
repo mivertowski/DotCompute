@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Security;
 using global::System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Security;
 
@@ -52,9 +53,7 @@ public sealed class CryptographicSecurity : IDisposable
             _configuration.KeyRotationInterval, _configuration.KeyRotationInterval);
 
 
-        _logger.LogInformation("CryptographicSecurity initialized with configuration: {Configuration}",
-
-            _configuration.ToString());
+        _logger.LogInfoMessage($"CryptographicSecurity initialized with configuration: {_configuration.ToString()}");
     }
 
     /// <summary>
@@ -82,8 +81,7 @@ public sealed class CryptographicSecurity : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogInformation("Generating new cryptographic key: Type={KeyType}, Size={KeySize}, Id={Identifier}",
-                keyType, keySize, identifier);
+            _logger.LogInfoMessage($"Generating new cryptographic key: Type={keyType}, Size={keySize}, Id={identifier}");
 
             var result = new KeyGenerationResult
             {
@@ -115,8 +113,7 @@ public sealed class CryptographicSecurity : IDisposable
             result.KeyFingerprint = await CalculateKeyFingerprintAsync(keyContainer);
 
 
-            _logger.LogInformation("Cryptographic key generated successfully: Id={Identifier}, Fingerprint={Fingerprint}",
-                identifier, result.KeyFingerprint);
+            _logger.LogInfoMessage($"Cryptographic key generated successfully: Id={identifier}, Fingerprint={result.KeyFingerprint}");
 
             return result;
         }
@@ -151,8 +148,7 @@ public sealed class CryptographicSecurity : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogDebug("Encrypting data: KeyId={KeyIdentifier}, Algorithm={Algorithm}, DataSize={DataSize}",
-                keyIdentifier, algorithm, data.Length);
+            _logger.LogDebugMessage($"Encrypting data: KeyId={keyIdentifier}, Algorithm={algorithm}, DataSize={data.Length}");
 
             var result = new EncryptionResult
             {
@@ -177,8 +173,7 @@ public sealed class CryptographicSecurity : IDisposable
             // Perform encryption with timing attack protection
             result = await PerformEncryptionAsync(data, keyContainer, algorithm, associatedData, result);
 
-            _logger.LogDebug("Data encryption completed: KeyId={KeyIdentifier}, Success={IsSuccessful}",
-                keyIdentifier, result.IsSuccessful);
+            _logger.LogDebugMessage($"Data encryption completed: KeyId={keyIdentifier}, Success={result.IsSuccessful}");
 
             return result;
         }
@@ -216,8 +211,7 @@ public sealed class CryptographicSecurity : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogDebug("Decrypting data: KeyId={KeyIdentifier}, Algorithm={Algorithm}, DataSize={DataSize}",
-                keyIdentifier, algorithm, encryptedData.Length);
+            _logger.LogDebugMessage($"Decrypting data: KeyId={keyIdentifier}, Algorithm={algorithm}, DataSize={encryptedData.Length}");
 
             var result = new DecryptionResult
             {
@@ -242,8 +236,7 @@ public sealed class CryptographicSecurity : IDisposable
             // Perform decryption with timing attack protection
             result = await PerformDecryptionAsync(encryptedData, keyContainer, algorithm, nonce, tag, associatedData, result);
 
-            _logger.LogDebug("Data decryption completed: KeyId={KeyIdentifier}, Success={IsSuccessful}",
-                keyIdentifier, result.IsSuccessful);
+            _logger.LogDebugMessage($"Data decryption completed: KeyId={keyIdentifier}, Success={result.IsSuccessful}");
 
             return result;
         }
@@ -277,8 +270,7 @@ public sealed class CryptographicSecurity : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogDebug("Signing data: KeyId={KeyIdentifier}, HashAlgorithm={HashAlgorithm}, DataSize={DataSize}",
-                keyIdentifier, hashAlgorithm, data.Length);
+            _logger.LogDebugMessage($"Signing data: KeyId={keyIdentifier}, HashAlgorithm={hashAlgorithm}, DataSize={data.Length}");
 
             var result = new SignatureResult
             {
@@ -310,8 +302,7 @@ public sealed class CryptographicSecurity : IDisposable
             // Perform signing
             result = await PerformSigningAsync(data, keyContainer, hashAlgorithm, result);
 
-            _logger.LogDebug("Data signing completed: KeyId={KeyIdentifier}, Success={IsSuccessful}",
-                keyIdentifier, result.IsSuccessful);
+            _logger.LogDebugMessage($"Data signing completed: KeyId={keyIdentifier}, Success={result.IsSuccessful}");
 
             return result;
         }
@@ -346,8 +337,7 @@ public sealed class CryptographicSecurity : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogDebug("Verifying signature: KeyId={KeyIdentifier}, HashAlgorithm={HashAlgorithm}, DataSize={DataSize}",
-                keyIdentifier, hashAlgorithm, data.Length);
+            _logger.LogDebugMessage($"Verifying signature: KeyId={keyIdentifier}, HashAlgorithm={hashAlgorithm}, DataSize={data.Length}");
 
             var result = new SignatureVerificationResult
             {
@@ -373,8 +363,7 @@ public sealed class CryptographicSecurity : IDisposable
             // Perform verification with timing attack protection
             result = await PerformSignatureVerificationAsync(data, signature, keyContainer, hashAlgorithm, result);
 
-            _logger.LogDebug("Signature verification completed: KeyId={KeyIdentifier}, IsValid={IsValid}",
-                keyIdentifier, result.IsValid);
+            _logger.LogDebugMessage($"Signature verification completed: KeyId={keyIdentifier}, IsValid={result.IsValid}");
 
             return result;
         }
@@ -437,8 +426,7 @@ public sealed class CryptographicSecurity : IDisposable
             result.Recommendations.Add("Ensure constant-time implementation is used");
         }
 
-        _logger.LogDebug("Algorithm validation completed: Algorithm={Algorithm}, Approved={IsApproved}, Issues={IssueCount}",
-            algorithm, result.IsApproved, result.SecurityIssues.Count);
+        _logger.LogDebugMessage($"Algorithm validation completed: Algorithm={algorithm}, Approved={result.IsApproved}, Issues={result.SecurityIssues.Count}");
 
         return result;
     }
@@ -460,7 +448,7 @@ public sealed class CryptographicSecurity : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogInformation("Starting key rotation: ForceRotation={ForceRotation}", forceRotation);
+            _logger.LogInfoMessage("Starting key rotation: ForceRotation={forceRotation}");
 
             var result = new KeyRotationResult
             {
@@ -481,7 +469,7 @@ public sealed class CryptographicSecurity : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to rotate key: {KeyId}", keyContainer.Identifier);
+                    _logger.LogErrorMessage(ex, $"Failed to rotate key: {keyContainer.Identifier}");
                     result.FailedRotations[keyContainer.Identifier] = ex.Message;
                 }
             }
@@ -489,8 +477,7 @@ public sealed class CryptographicSecurity : IDisposable
             result.EndTime = DateTimeOffset.UtcNow;
             result.TotalKeysProcessed = keysToRotate.Count;
 
-            _logger.LogInformation("Key rotation completed: Processed={TotalProcessed}, Successful={Successful}, Failed={Failed}",
-                result.TotalKeysProcessed, result.SuccessfulRotations.Count, result.FailedRotations.Count);
+            _logger.LogInfoMessage($"Key rotation completed: Processed={result.TotalKeysProcessed}, Successful={result.SuccessfulRotations.Count}, Failed={result.FailedRotations.Count}");
 
             return result;
         }
@@ -1052,7 +1039,7 @@ public sealed class CryptographicSecurity : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during automatic key rotation");
+            _logger.LogErrorMessage(ex, "Error during automatic key rotation");
         }
     }
 
@@ -1077,7 +1064,7 @@ public sealed class CryptographicSecurity : IDisposable
         keyContainer.Dispose();
 
 
-        _logger.LogDebug("Key rotated successfully: {KeyId}", keyContainer.Identifier);
+        _logger.LogDebugMessage("Key rotated successfully: {keyContainer.Identifier}");
     }
 
     private static bool ValidateAESConfiguration(string algorithm, int keySize, AlgorithmValidationResult result)
@@ -1174,7 +1161,7 @@ public sealed class CryptographicSecurity : IDisposable
         }
         _keyStore.Clear();
 
-        _logger.LogInformation("CryptographicSecurity disposed");
+        _logger.LogInfoMessage("CryptographicSecurity disposed");
     }
 }
 

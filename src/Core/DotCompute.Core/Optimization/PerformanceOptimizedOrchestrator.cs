@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
@@ -49,8 +50,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         _kernelProfiles = new Dictionary<string, KernelPerformanceProfile>();
         _workloadCache = new Dictionary<string, WorkloadCharacteristics>();
 
-        _logger.LogInformation("Performance-optimized orchestrator initialized with {Strategy} optimization strategy",
-            _options.OptimizationStrategy);
+        _logger.LogInfoMessage($"Performance-optimized orchestrator initialized with {_options.OptimizationStrategy} optimization strategy");
     }
 
     public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
@@ -86,9 +86,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var executionId = Guid.NewGuid();
         var stopwatch = Stopwatch.StartNew();
 
-        _logger.LogDebug("Starting optimized execution of {KernelName} [ID: {ExecutionId}]",
-
-            kernelName, executionId);
+        _logger.LogDebugMessage($"Starting optimized execution of {kernelName} [ID: {executionId}]");
 
         try
         {
@@ -103,15 +101,11 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
             if (backendSelection.SelectedBackend == null)
             {
-                _logger.LogWarning("No suitable backend found for {KernelName}, falling back to base orchestrator",
-
-                    kernelName);
+                _logger.LogWarningMessage($"No suitable backend found for {kernelName}, falling back to base orchestrator");
                 return await _baseOrchestrator.ExecuteAsync<T>(kernelName, args);
             }
 
-            _logger.LogDebug("Selected {Backend} for {KernelName} with {Confidence:P1} confidence using {Strategy}",
-
-                backendSelection.BackendId, kernelName, backendSelection.ConfidenceScore, backendSelection.SelectionStrategy);
+            _logger.LogDebugMessage($"Selected {backendSelection.BackendId} for {kernelName} with {backendSelection.ConfidenceScore} confidence using {backendSelection.SelectionStrategy}");
 
             // Phase 3: Pre-execution Optimization
             await ApplyPreExecutionOptimizations(kernelName, args, backendSelection);
@@ -128,9 +122,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during optimized execution of {KernelName} [ID: {ExecutionId}]",
-
-                kernelName, executionId);
+            _logger.LogErrorMessage(ex, $"Error during optimized execution of {kernelName} [ID: {executionId}]");
 
             // Fallback to base orchestrator on error
 
@@ -140,7 +132,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             }
             catch (Exception fallbackEx)
             {
-                _logger.LogError(fallbackEx, "Fallback execution also failed for {KernelName}", kernelName);
+                _logger.LogErrorMessage(fallbackEx, $"Fallback execution also failed for {kernelName}");
                 throw;
             }
         }

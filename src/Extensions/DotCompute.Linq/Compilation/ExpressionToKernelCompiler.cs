@@ -13,6 +13,7 @@ using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Logging;
 using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 using LinqParameterDirection = DotCompute.Linq.Operators.Parameters.ParameterDirection;
 
@@ -69,8 +70,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
                 "Use pre-compiled kernels or source generators instead.");
         }
 
-        _logger.LogDebug("Compiling expression {ExpressionType} for {AcceleratorType}",
-            expression.NodeType, accelerator.Type);
+        _logger.LogDebugMessage($"Compiling expression {expression.NodeType} for {accelerator.Type}");
 
         await _compilationSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -140,8 +140,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         CompilationOptions options,
         CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Compiling fused expression with {OperationCount} operations",
-            fusionContext.FusedOperations.Count);
+        _logger.LogDebugMessage($"Compiling fused expression with {fusionContext.FusedOperations.Count} operations");
 
         // Create kernel definition for fused operations
         var definition = CreateFusedKernelDefinition(fusionContext, expression);
@@ -168,13 +167,13 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         CompilationOptions options,
         CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Compiling simple expression {ExpressionType}", expression.NodeType);
+        _logger.LogDebugMessage("Compiling simple expression {expression.NodeType}");
 
         // Check for template match
         var templateKey = GenerateTemplateKey(analysis);
         if (_templateCache.TryGetValue(templateKey, out var template))
         {
-            _logger.LogDebug("Using cached template for expression compilation");
+            _logger.LogDebugMessage("Using cached template for expression compilation");
             var templateKernel = await CompileFromTemplate(template, accelerator, expression, options, cancellationToken).ConfigureAwait(false);
             return new Operators.Adapters.KernelAdapter(templateKernel);
         }

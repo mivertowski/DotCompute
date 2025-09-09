@@ -146,4 +146,72 @@ internal static partial class LoggerMessages
         Level = LogLevel.Critical,
         Message = "Critical failure in {Component}: System recovery required")]
     public static partial void CriticalFailure(this ILogger logger, string component, Exception exception);
+
+    // Generic Messages for Common Patterns
+    [LoggerMessage(
+        EventId = 11000,
+        Level = LogLevel.Information,
+        Message = "{Message}")]
+    public static partial void LogInfoMessage(this ILogger logger, string message);
+
+    [LoggerMessage(
+        EventId = 11001,
+        Level = LogLevel.Debug,
+        Message = "{Message}")]
+    public static partial void LogDebugMessage(this ILogger logger, string message);
+
+    [LoggerMessage(
+        EventId = 11002,
+        Level = LogLevel.Warning,
+        Message = "{Message}")]
+    public static partial void LogWarningMessage(this ILogger logger, string message);
+
+    [LoggerMessage(
+        EventId = 11003,
+        Level = LogLevel.Error,
+        Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, string message, Exception? exception = null);
+
+    [LoggerMessage(
+        EventId = 11004,
+        Level = LogLevel.Error,
+        Message = "{Message}")]
+    public static partial void LogErrorMessage(this ILogger logger, Exception exception, string message);
+
+    // Security-specific Messages
+    [LoggerMessage(
+        EventId = 12000,
+        Level = LogLevel.Information,
+        Message = "MemoryProtection initialized with configuration: {Configuration}")]
+    public static partial void MemoryProtectionInitialized(this ILogger logger, string configuration);
+
+    [LoggerMessage(
+        EventId = 12001,
+        Level = LogLevel.Information,
+        Message = "Protected memory allocated: Address={Address:X}, Size={Size}, Id={Identifier}")]
+    public static partial void ProtectedMemoryAllocated(this ILogger logger, IntPtr address, long size, string identifier);
+
+    [LoggerMessage(
+        EventId = 12002,
+        Level = LogLevel.Information,
+        Message = "Protected memory freed: Address={Address:X}, Size={Size}, Id={Identifier}")]
+    public static partial void ProtectedMemoryFreed(this ILogger logger, IntPtr address, long size, string identifier);
+
+    [LoggerMessage(
+        EventId = 12003,
+        Level = LogLevel.Warning,
+        Message = "Memory sanitization warning: {Issue} at {Location}")]
+    public static partial void MemorySanitizationWarning(this ILogger logger, string issue, string location);
+
+    [LoggerMessage(
+        EventId = 12004,
+        Level = LogLevel.Information,
+        Message = "Input sanitized: Type={Type}, Length={Length}, Result={Result}")]
+    public static partial void InputSanitized(this ILogger logger, string type, int length, string result);
+
+    [LoggerMessage(
+        EventId = 12005,
+        Level = LogLevel.Information,
+        Message = "Security scan completed: {Component} - {Result} ({Details})")]
+    public static partial void SecurityScanCompleted(this ILogger logger, string component, string result, string details);
 }

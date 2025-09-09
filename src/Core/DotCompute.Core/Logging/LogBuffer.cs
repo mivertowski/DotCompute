@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DotCompute.Core.Logging;
@@ -111,8 +112,7 @@ public sealed class LogBuffer : IDisposable
 
                 if (_options.LogDroppedEntries)
                 {
-                    _logger.LogWarning("Log entry dropped due to full buffer: {Category} - {Message}",
-                        logEntry.Category, logEntry.Message);
+                    _logger.LogWarningMessage($"Log entry dropped due to full buffer: {logEntry.Category} - {logEntry.Message}");
                 }
             }
 
@@ -194,11 +194,11 @@ public sealed class LogBuffer : IDisposable
         try
         {
             sink.Initialize();
-            _logger.LogInformation("Added log sink: {SinkType}", sink.GetType().Name);
+            _logger.LogInfoMessage($"Added log sink: {sink.GetType().Name}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initialize log sink: {SinkType}", sink.GetType().Name);
+            _logger.LogErrorMessage(ex, $"Failed to initialize log sink: {sink.GetType().Name}");
         }
     }
 
@@ -224,11 +224,11 @@ public sealed class LogBuffer : IDisposable
             try
             {
                 sink.Dispose();
-                _logger.LogInformation("Removed log sink: {SinkType}", sink.GetType().Name);
+                _logger.LogInfoMessage($"Removed log sink: {sink.GetType().Name}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error disposing log sink: {SinkType}", sink.GetType().Name);
+                _logger.LogErrorMessage(ex, $"Error disposing log sink: {sink.GetType().Name}");
             }
         }
 
@@ -274,7 +274,7 @@ public sealed class LogBuffer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in log processing task");
+            _logger.LogErrorMessage(ex, "Error in log processing task");
         }
         finally
         {
@@ -321,7 +321,7 @@ public sealed class LogBuffer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to process log batch of {Count} entries", batch.Count);
+            _logger.LogErrorMessage(ex, $"Failed to process log batch of {batch.Count} entries");
 
             // Attempt individual entry processing for resilience
 
@@ -371,7 +371,7 @@ public sealed class LogBuffer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to write batch to sink: {SinkType}", sink.GetType().Name);
+            _logger.LogErrorMessage(ex, $"Failed to write batch to sink: {sink.GetType().Name}");
 
             // Mark sink as unhealthy
 
@@ -434,7 +434,7 @@ public sealed class LogBuffer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to flush sink: {SinkType}", sink.GetType().Name);
+            _logger.LogErrorMessage(ex, $"Failed to flush sink: {sink.GetType().Name}");
         }
     }
 
@@ -445,11 +445,11 @@ public sealed class LogBuffer : IDisposable
             try
             {
                 sink.Initialize();
-                _logger.LogInformation("Initialized log sink: {SinkType}", sink.GetType().Name);
+                _logger.LogInfoMessage($"Initialized log sink: {sink.GetType().Name}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to initialize log sink: {SinkType}", sink.GetType().Name);
+                _logger.LogErrorMessage(ex, $"Failed to initialize log sink: {sink.GetType().Name}");
             }
         }
     }
@@ -539,7 +539,7 @@ public sealed class LogBuffer : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during timer-triggered batch flush");
+                _logger.LogErrorMessage(ex, "Error during timer-triggered batch flush");
             }
         }, _cancellationTokenSource.Token);
     }
@@ -577,7 +577,7 @@ public sealed class LogBuffer : IDisposable
 
             if (!_processingTask.Wait(TimeSpan.FromSeconds(30)))
             {
-                _logger.LogWarning("Log processing task did not complete within timeout");
+                _logger.LogWarningMessage("Log processing task did not complete within timeout");
             }
 
             // Final flush
@@ -594,13 +594,13 @@ public sealed class LogBuffer : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error disposing sink: {SinkType}", sink.GetType().Name);
+                    _logger.LogErrorMessage(ex, $"Error disposing sink: {sink.GetType().Name}");
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during LogBuffer disposal");
+            _logger.LogErrorMessage(ex, "Error during LogBuffer disposal");
         }
         finally
         {
