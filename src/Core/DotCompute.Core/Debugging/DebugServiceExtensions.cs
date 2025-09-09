@@ -4,7 +4,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Core.Interfaces;
+using DotCompute.Abstractions.Interfaces;
 
 namespace DotCompute.Core.Debugging;
 

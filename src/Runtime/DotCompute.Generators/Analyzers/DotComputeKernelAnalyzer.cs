@@ -276,10 +276,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
         {
             TryStatementSyntax => true,
             ThrowStatementSyntax => true,
-
             UnsafeStatementSyntax => true,
-            DynamicExpressionSyntax => true,
-            LinqExpressionSyntax => true,
+            // Dynamic and LINQ expressions would require more specific checks
             _ => false
         });
 
@@ -290,7 +288,6 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
                 TryStatementSyntax => "try-catch blocks",
                 ThrowStatementSyntax => "throw statements",
                 UnsafeStatementSyntax => "unsafe code blocks",
-                DynamicExpressionSyntax => "dynamic types",
                 _ => node.GetType().Name
             };
 

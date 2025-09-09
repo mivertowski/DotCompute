@@ -4,8 +4,8 @@
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.Services;
 using DotCompute.Runtime.Services.Interfaces;
+using DotCompute.Runtime.Services.Implementation;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Kernels;
 using DotCompute.Runtime.Services.Performance.Metrics;
 using DotCompute.Runtime.Services.Performance.Results;
 using DotCompute.Runtime.Services.Performance.Types;
@@ -60,12 +60,19 @@ public static class ServiceCollectionExtensions
         
         // Add the integration services (core bridge between generator and runtime)
         services.AddSingleton<GeneratedKernelDiscoveryService>();
-        services.AddSingleton<KernelExecutionServiceSimplified>();
+        
+        // Add production kernel services
+        services.AddSingleton<IKernelCompiler, DefaultKernelCompiler>();
+        services.AddSingleton<IKernelCache, MemoryKernelCache>();
+        services.AddSingleton<IKernelProfiler, DefaultKernelProfiler>();
+        
+        // Register the production kernel execution service
+        services.AddSingleton<KernelExecutionService>();
         services.AddSingleton<IComputeOrchestrator>(provider => 
-            provider.GetRequiredService<KernelExecutionServiceSimplified>());
-
-        // Note: Actual kernel compiler, cache, profiler, and plugin services 
-        // should be registered by the specific backend implementations
+            provider.GetRequiredService<KernelExecutionService>());
+        
+        // Keep simplified version available for backward compatibility
+        services.AddSingleton<KernelExecutionServiceSimplified>();
 
         return services;
     }
@@ -76,12 +83,12 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection</param>
     /// <param name="configureOptions">Action to configure runtime options</param>
     /// <returns>The service collection for chaining</returns>
-    public static IServiceCollection AddDotComputeRuntime(
+    public static IServiceCollection AddDotComputeRuntimeWithOptions(
         this IServiceCollection services,
         Action<DotComputeRuntimeOptions> configureOptions)
     {
         services.Configure(configureOptions);
-        return services.AddDotComputeRuntime();
+        return services.AddDotComputeRuntime(configuration: null);
     }
 
     /// <summary>
@@ -93,7 +100,7 @@ public static class ServiceCollectionExtensions
     /// <param name="configureMemory">Action to configure memory options</param>
     /// <param name="configurePerformance">Action to configure performance options</param>
     /// <returns>The service collection for chaining</returns>
-    public static IServiceCollection AddDotComputeRuntime(
+    public static IServiceCollection AddDotComputeRuntimeAdvanced(
         this IServiceCollection services,
         Action<DotComputeRuntimeOptions>? configureRuntime = null,
         Action<DotComputePluginOptions>? configurePlugins = null,
@@ -109,7 +116,7 @@ public static class ServiceCollectionExtensions
         if (configurePerformance != null)
             services.Configure(configurePerformance);
 
-        return services.AddDotComputeRuntime();
+        return services.AddDotComputeRuntime(configuration: null);
     }
 
     /// <summary>

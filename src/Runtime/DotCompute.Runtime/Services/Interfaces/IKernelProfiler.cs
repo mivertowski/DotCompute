@@ -57,48 +57,6 @@ public interface IKernelProfiler
 }
 
 /// <summary>
-/// Represents an active profiling session.
-/// </summary>
-public interface IProfilingSession : IDisposable
-{
-    /// <summary>
-    /// Gets the unique session identifier.
-    /// </summary>
-    public Guid SessionId { get; }
-
-    /// <summary>
-    /// Gets the session name.
-    /// </summary>
-    public string Name { get; }
-
-    /// <summary>
-    /// Records a custom metric during execution.
-    /// </summary>
-    /// <param name="metricName">Name of the metric</param>
-    /// <param name="value">Metric value</param>
-    public void RecordMetric(string metricName, double value);
-
-    /// <summary>
-    /// Records a timing checkpoint.
-    /// </summary>
-    /// <param name="checkpointName">Name of the checkpoint</param>
-    public void RecordCheckpoint(string checkpointName);
-
-    /// <summary>
-    /// Records memory usage at current point.
-    /// </summary>
-    /// <param name="label">Optional label for the measurement</param>
-    public void RecordMemoryUsage(string? label = null);
-
-    /// <summary>
-    /// Adds contextual information to the session.
-    /// </summary>
-    /// <param name="key">Context key</param>
-    /// <param name="value">Context value</param>
-    public void AddContext(string key, object value);
-}
-
-/// <summary>
 /// Results from a profiling session.
 /// </summary>
 public class ProfilingResults

@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions;
 using DotCompute.Core.Telemetry;
 using DotCompute.Core.Pipelines;
 

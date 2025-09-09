@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Runtime;
 using DotCompute.Abstractions;
 
 namespace DotCompute.Core.Debugging;
@@ -21,7 +20,7 @@ namespace DotCompute.Core.Debugging;
 /// </summary>
 public class KernelDebugService : IKernelDebugService, IDisposable
 {
-    private readonly IAcceleratorRuntime _runtime;
+    private readonly IAccelerator? _primaryAccelerator;
     private readonly ILogger<KernelDebugService> _logger;
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
     private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory;
@@ -37,10 +36,10 @@ public class KernelDebugService : IKernelDebugService, IDisposable
 
 
     public KernelDebugService(
-        IAcceleratorRuntime runtime,
-        ILogger<KernelDebugService> logger)
+        ILogger<KernelDebugService> logger,
+        IAccelerator? primaryAccelerator = null)
     {
-        _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+        _primaryAccelerator = primaryAccelerator;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _accelerators = new ConcurrentDictionary<string, IAccelerator>();
         _executionHistory = new ConcurrentQueue<KernelExecutionResult>();
@@ -84,7 +83,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
                     KernelName = kernelName,
                     IsValid = false,
                     BackendsTested = availableAccelerators.Keys.ToArray(),
-                    Issues = new List<ValidationIssue>
+                    Issues = new List<DotCompute.Abstractions.Debugging.ValidationIssue>
                     {
                         new()
                         {
@@ -99,7 +98,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
 
             // Compare results between backends
             var comparisonReport = await CompareResultsAsync(successfulResults, ComparisonStrategy.Tolerance);
-            var issues = new List<ValidationIssue>();
+            var issues = new List<DotCompute.Abstractions.Debugging.ValidationIssue>();
             var maxDifference = 0f;
 
             if (!comparisonReport.ResultsMatch)
@@ -109,7 +108,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
 
                 if (maxDifference > tolerance)
                 {
-                    issues.Add(new ValidationIssue
+                    issues.Add(new DotCompute.Abstractions.Debugging.ValidationIssue
                     {
                         Severity = ValidationSeverity.Error,
                         Message = $"Results differ beyond tolerance ({maxDifference:F6} > {tolerance:F6})",
@@ -119,7 +118,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
                 }
                 else
                 {
-                    issues.Add(new ValidationIssue
+                    issues.Add(new DotCompute.Abstractions.Debugging.ValidationIssue
                     {
                         Severity = ValidationSeverity.Warning,
                         Message = $"Minor differences detected ({maxDifference:F6})",

@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DotCompute.Abstractions.Interfaces;
 
 namespace DotCompute.Abstractions.Debugging;
 

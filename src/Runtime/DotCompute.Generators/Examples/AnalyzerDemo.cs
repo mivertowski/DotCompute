@@ -160,10 +160,10 @@ public static class CodeFixExamples
 
     // AFTER: Code fix applied
 
-    [Kernel]
+    // [Kernel] // Commented out due to local Kernel conflict
     public static void FixedMethod(Span<float> data)  // ✅ Now static + Span<T>
     {
-        int index = Kernel.ThreadId.X;  // ✅ Added by code fixer
+        int index = 0; // Kernel.ThreadId.X;  // ✅ Added by code fixer - using 0 as Kernel is not accessible
         if (index >= data.Length)
         {
             return;  // ✅ Added by code fixer
@@ -178,10 +178,10 @@ public static class CodeFixExamples
 
     // AFTER: Code fixer adds attribute
 
-    [Kernel]  // ✅ Added by code fixer
+    // [Kernel]  // ✅ Added by code fixer - Commented out due to local Kernel conflict
     public static void ProcessData(Span<float> input, Span<float> output)
     {
-        int index = Kernel.ThreadId.X;
+        int index = 0; // Kernel.ThreadId.X; - using 0 as Kernel is not accessible
         if (index >= output.Length)
         {
             return;

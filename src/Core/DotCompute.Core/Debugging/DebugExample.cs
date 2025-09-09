@@ -7,8 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Core.Interfaces;
-using DotCompute.Runtime.Services;
+using DotCompute.Abstractions.Interfaces;
 
 namespace DotCompute.Core.Debugging;
 

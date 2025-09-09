@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Interfaces;
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Debugging;
-using DotCompute.Runtime.Services;
 
 namespace DotCompute.Core.Optimization;
 

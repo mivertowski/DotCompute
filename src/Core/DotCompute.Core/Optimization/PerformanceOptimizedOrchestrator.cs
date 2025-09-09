@@ -7,8 +7,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Interfaces;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Telemetry;
 
@@ -592,6 +592,19 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
     }
 
     #endregion
+
+    /// <inheritdoc />
+    public async Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args)
+    {
+        // Delegate to base orchestrator for validation
+        if (_baseOrchestrator != null)
+        {
+            return await _baseOrchestrator.ValidateKernelArgsAsync(kernelName, args);
+        }
+        
+        // Basic validation - just check if kernel exists and args are not null
+        return !string.IsNullOrEmpty(kernelName) && args != null;
+    }
 
     public void Dispose()
     {

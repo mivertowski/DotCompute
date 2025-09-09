@@ -4,7 +4,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-using DotCompute.Core.Interfaces;
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Telemetry;
 
 namespace DotCompute.Core.Optimization;

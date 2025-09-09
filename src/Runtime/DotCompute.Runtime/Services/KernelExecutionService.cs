@@ -6,8 +6,8 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Memory;
 using DotCompute.Runtime.Services.Interfaces;
-using DotCompute.Runtime.Services.Types;
 using Microsoft.Extensions.Logging;
+using KernelValidationResult = DotCompute.Runtime.Services.Types.KernelValidationResult;
 
 namespace DotCompute.Runtime.Services;
 
@@ -115,10 +115,10 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         }
 
         // Validate arguments
-        var validation = await ValidateKernelArgsAsync(kernelName, args);
-        if (!validation.IsValid)
+        var isValid = await ValidateKernelArgsAsync(kernelName, args);
+        if (!isValid)
         {
-            throw new ArgumentException($"Kernel argument validation failed: {string.Join(", ", validation.Errors)}");
+            throw new ArgumentException($"Kernel argument validation failed for kernel: {kernelName}");
         }
 
         // Get or compile kernel
@@ -258,28 +258,23 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
     }
 
     /// <inheritdoc />
-    public async Task<KernelValidationResult> ValidateKernelArgsAsync(string kernelName, params object[] args)
+    public async Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args)
     {
         if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
         {
-            return KernelValidationResult.Failure(new[] { $"Kernel not found: {kernelName}" });
+            return false;
         }
-
-        var errors = new List<string>();
-        var warnings = new List<string>();
 
         // Validate argument count (implementation-specific validation would go here)
         if (args == null || args.Length == 0)
         {
-            warnings.Add("No arguments provided - verify this is expected for the kernel");
+            // Might be valid for some kernels, so just return true with a warning logged
+            _logger.LogWarning("No arguments provided - verify this is expected for the kernel");
         }
 
         // Additional validation logic would be implemented based on kernel metadata
 
-        return errors.Count > 0
-
-            ? KernelValidationResult.Failure(errors, warnings)
-            : KernelValidationResult.Success();
+        return await Task.FromResult(true);
     }
 
     private KernelDefinition CreateKernelDefinition(KernelRegistrationInfo registration)

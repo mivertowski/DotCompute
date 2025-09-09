@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Core.Optimization;
 

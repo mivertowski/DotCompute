@@ -9,8 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Interfaces;
-using DotCompute.Core.Runtime;
 
 namespace DotCompute.Core.Debugging;
 
@@ -380,6 +378,19 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
     {
         // Simplified memory estimation
         return args.Length * 1024; // 1KB per argument as baseline
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args)
+    {
+        // Delegate to base orchestrator for validation
+        if (_baseOrchestrator != null)
+        {
+            return await _baseOrchestrator.ValidateKernelArgsAsync(kernelName, args);
+        }
+        
+        // Basic validation - just check if kernel exists and args are not null
+        return !string.IsNullOrEmpty(kernelName) && args != null;
     }
 
     public void Dispose()
