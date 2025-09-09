@@ -30,12 +30,14 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
         {
             var factory = new CudaAcceleratorFactory(logger as ILogger<CudaAcceleratorFactory>);
             var productionAccelerator = factory.CreateProductionAccelerator(deviceId);
-            
+
             // For production accelerator, we can't directly access internal components
             // Return null for context and memory manager as they're encapsulated
+
             CudaContext context = null;
             CudaMemoryManager memoryManager = null;
-            
+
+
             return (productionAccelerator, context, memoryManager);
         }
 
@@ -142,7 +144,8 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                 (blockX, blockY, blockZ)
             );
         }
-        
+
+
         /// <summary>
         /// Creates a kernel arguments instance with proper grid and block dimensions.
         /// </summary>
@@ -152,25 +155,29 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
             (int x, int y, int z)? blockDim = null)
         {
             var kernelArgs = new KernelArguments();
-            
+
             // Add actual arguments
+
             foreach (var arg in arguments)
             {
                 kernelArgs.Add(arg);
             }
-            
+
             // Set grid dimensions using extension methods if provided
+
             if (gridDim.HasValue)
             {
                 kernelArgs.SetGridDimensions(gridDim.Value);
             }
-            
+
             // Set block dimensions using extension methods if provided
+
             if (blockDim.HasValue)
             {
                 kernelArgs.SetBlockDimensions(blockDim.Value);
             }
-            
+
+
             return kernelArgs;
         }
     }
@@ -222,7 +229,8 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                 return "Pascal";
             if (info.Name.Contains("Maxwell"))
                 return "Maxwell";
-            
+
+
             return "Unknown";
         }
 
@@ -239,7 +247,8 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                 // Tests should use the production accelerator directly via IAccelerator interface
                 return null;
             }
-            
+
+
             return accelerator as CudaAccelerator;
         }
 
@@ -254,7 +263,7 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
             {
                 return null;
             }
-            
+
             // Check if the accelerator context can be cast to CudaContext
             // This won't work with ProductionCudaAccelerator as it uses AcceleratorContext
             // var context = accelerator.Context as CudaContext;
@@ -262,11 +271,13 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
             // {
             //     return context;
             // }
-            
+
+
             return null;
         }
     }
-    
+
+
     /// <summary>
     /// Test logger implementation for xUnit output.
     /// </summary>
@@ -282,7 +293,8 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
         public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
         public bool IsEnabled(LogLevel logLevel) => true;
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, 
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
+
             Exception? exception, Func<TState, Exception?, string> formatter)
             where TState : notnull
         {

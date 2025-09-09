@@ -28,7 +28,7 @@ namespace DotCompute.Core.Compute.Interfaces
         /// This timestamp can be used for cache validation, debugging compilation issues,
         /// and tracking kernel compilation performance over time.
         /// </remarks>
-        DateTimeOffset CompilationTime { get; }
+        public DateTimeOffset CompilationTime { get; }
 
         /// <summary>
         /// Gets the compilation options that were used during kernel compilation.
@@ -42,7 +42,7 @@ namespace DotCompute.Core.Compute.Interfaces
         /// These options directly affect the generated code quality, performance characteristics,
         /// and debugging capabilities of the compiled kernel.
         /// </remarks>
-        CompilationOptions Options { get; }
+        public CompilationOptions Options { get; }
 
         /// <summary>
         /// Gets any compilation warnings that were generated during the kernel compilation process.
@@ -58,7 +58,7 @@ namespace DotCompute.Core.Compute.Interfaces
         /// These messages are typically formatted for developer consumption and may include
         /// line numbers and specific recommendations.
         /// </remarks>
-        string[] Warnings { get; }
+        public string[] Warnings { get; }
 
         /// <summary>
         /// Gets the optimization level that was applied during compilation.
@@ -73,6 +73,6 @@ namespace DotCompute.Core.Compute.Interfaces
         /// and runtime performance. Higher optimization levels generally produce faster
         /// executing code at the cost of longer compilation times.
         /// </remarks>
-        OptimizationLevel OptimizationLevel { get; }
+        public OptimizationLevel OptimizationLevel { get; }
     }
 }

@@ -26,15 +26,17 @@ public class BaseUnifiedBufferTests
         _ = buffer.SizeInBytes.Should().Be(512);
         _ = buffer.Length.Should().Be(64); // 512 bytes / 8 bytes per double
     }
-    
+
+
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void UnifiedBuffer_SupportsWrappingExistingMemory()
     {
         // Arrange
         var existingPointer = IntPtr.Zero; // Test pointer
-        
+
         // Act
+
         using var buffer = new TestUnifiedBuffer<int>(existingPointer, 256);
 
         // Assert
@@ -42,22 +44,25 @@ public class BaseUnifiedBufferTests
         _ = buffer.SizeInBytes.Should().Be(256);
         _ = buffer.MemoryType.Should().Be(MemoryType.Unified);
     }
-    
+
+
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void UnifiedBuffer_HandlesSlicing()
     {
         // Arrange
         using var buffer = new TestUnifiedBuffer<float>(64); // 16 elements
-        
+
         // Act
+
         var slice = buffer.Slice(4, 8); // Get middle 8 elements
 
         // Assert
         _ = slice.Should().NotBeNull();
         _ = slice.Should().BeSameAs(buffer); // Test implementation returns self
     }
-    
+
+
     [Theory]
     [InlineData(-1, 4)] // Negative start
     [InlineData(0, -1)] // Negative length
@@ -68,20 +73,23 @@ public class BaseUnifiedBufferTests
     {
         // Arrange
         using var buffer = new TestUnifiedBuffer<float>(64); // 16 elements
-        
+
         // Act & Assert
+
         Action act = () => buffer.Slice(start, length);
         _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
-    
+
+
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void UnifiedBuffer_ProvidesHostAndDeviceAccess()
     {
         // Arrange
         using var buffer = new TestUnifiedBuffer<long>(256); // 32 elements
-        
+
         // Act
+
         var span = buffer.AsSpan();
         var readOnlySpan = buffer.AsReadOnlySpan();
         var memory = buffer.Memory;

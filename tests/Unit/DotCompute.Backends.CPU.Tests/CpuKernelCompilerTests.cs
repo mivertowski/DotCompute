@@ -21,122 +21,144 @@ public class CpuKernelCompilerTests : IDisposable
 {
     private readonly ILogger<CpuKernelCompilerTests> _logger;
     private readonly CpuThreadPool _threadPool;
-    
+
+
     public CpuKernelCompilerTests()
     {
         var loggerFactory = new LoggerFactory();
         _logger = loggerFactory.CreateLogger<CpuKernelCompilerTests>();
-        
+
+
         var threadPoolOptions = Options.Create(new CpuThreadPoolOptions
         {
             WorkerThreads = Environment.ProcessorCount
         });
-        
+
+
         _threadPool = new CpuThreadPool(threadPoolOptions);
     }
-    
+
+
     [Fact]
     public async Task CompileAsync_WithValidKernel_CompilesSuccessfully()
     {
         // Arrange
         var definition = CreateSimpleKernelDefinition("simple_add", 3, 1);
         var context = CreateCompilationContext(definition, OptimizationLevel.Default);
-        
+
         // Act
+
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be("simple_add");
         _ = compiledKernel.Id.Should().NotBe(Guid.Empty);
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Theory]
     [InlineData(OptimizationLevel.None)]
-    [InlineData(OptimizationLevel.Default)] 
+    [InlineData(OptimizationLevel.Default)]
+
     [InlineData(OptimizationLevel.Maximum)]
     public async Task CompileAsync_WithDifferentOptimizationLevels_AppliesOptimizations(OptimizationLevel level)
     {
         // Arrange
         var definition = CreateComplexKernelDefinition($"optimized_kernel_{level}", 5, 2);
         var context = CreateCompilationContext(definition, level);
-        
+
         // Act
+
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be($"optimized_kernel_{level}");
-        
+
         // Verify optimization metadata if available
+
         if (definition.Metadata?.ContainsKey("CompilationTime") == true)
         {
             _ = definition.Metadata["CompilationTime"].Should().BeOfType<TimeSpan>();
         }
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task CompileAsync_WithVectorizableKernel_EnablesVectorization()
     {
         // Arrange
         var definition = CreateVectorizableKernelDefinition("vector_operation", 3, 1);
         var context = CreateCompilationContext(definition, OptimizationLevel.Maximum);
-        
+
         // Act
+
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be("vector_operation");
-        
+
         // Check if SIMD capabilities were utilized
+
         if (definition.Metadata?.ContainsKey("SimdCapabilities") == true)
         {
             var simdCapabilities = definition.Metadata["SimdCapabilities"];
             _ = simdCapabilities.Should().NotBeNull();
         }
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task CompileAsync_WithNonVectorizableKernel_FallsBackToScalar()
     {
         // Arrange
         var definition = CreateNonVectorizableKernelDefinition("complex_branching", 4, 1);
         var context = CreateCompilationContext(definition, OptimizationLevel.Maximum);
-        
+
         // Act
+
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be("complex_branching");
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task CompileAsync_WithMemoryIntensiveKernel_OptimizesMemoryAccess()
     {
         // Arrange
         var definition = CreateMemoryIntensiveKernelDefinition("memory_intensive", 8, 2);
         var context = CreateCompilationContext(definition, OptimizationLevel.Maximum);
-        
+
         // Act
+
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be("memory_intensive");
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.ErrorHandling)]
     public async Task CompileAsync_WithInvalidKernel_ThrowsKernelCompilationException()
@@ -151,12 +173,14 @@ public class CpuKernelCompilerTests : IDisposable
             }
         };
         var context = CreateCompilationContext(invalidDefinition, OptimizationLevel.Default);
-        
+
         // Act & Assert
+
         Func<Task> act = async () => await CpuKernelCompiler.CompileAsync(context);
         _ = await act.Should().ThrowAsync<KernelCompilationException>();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.ErrorHandling)]
     public async Task CompileAsync_WithNullContext_ThrowsArgumentNullException()
@@ -165,7 +189,8 @@ public class CpuKernelCompilerTests : IDisposable
         Func<Task> act = async () => await CpuKernelCompiler.CompileAsync(null!);
         _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
-    
+
+
     [Theory]
     [InlineData(1)] // 1D kernel
     [InlineData(2)] // 2D kernel
@@ -175,17 +200,20 @@ public class CpuKernelCompilerTests : IDisposable
         // Arrange
         var definition = CreateKernelWithDimensions($"kernel_{dimensions}d", 3, dimensions);
         var context = CreateCompilationContext(definition, OptimizationLevel.Default);
-        
+
         // Act
+
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be($"kernel_{dimensions}d");
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.Performance)]
     public async Task CompileAsync_CompilationPerformance_MeetsTimingRequirements()
@@ -194,18 +222,21 @@ public class CpuKernelCompilerTests : IDisposable
         var definition = CreateComplexKernelDefinition("performance_test", 10, 3);
         var context = CreateCompilationContext(definition, OptimizationLevel.Maximum);
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         // Act
+
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
         stopwatch.Stop();
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000); // Should compile within 10 seconds
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.Concurrency)]
     public async Task CompileAsync_ConcurrentCompilation_HandlesParallelRequests()
@@ -213,27 +244,33 @@ public class CpuKernelCompilerTests : IDisposable
         // Arrange
         var definitions = Enumerable.Range(0, 5).Select(i =>
             CreateSimpleKernelDefinition($"concurrent_{i}", 3, 1)).ToArray();
-        
-        var contexts = definitions.Select(d => 
+
+
+        var contexts = definitions.Select(d =>
+
             CreateCompilationContext(d, OptimizationLevel.Default)).ToArray();
-        
+
         // Act
+
         var compilationTasks = contexts.Select(c => CpuKernelCompiler.CompileAsync(c).AsTask()).ToArray();
         var compiledKernels = await Task.WhenAll(compilationTasks);
 
         // Assert
         _ = compiledKernels.Should().HaveCount(5);
         _ = compiledKernels.Should().OnlyContain(k => k != null);
-        
+
+
         for (var i = 0; i < 5; i++)
         {
             _ = compiledKernels[i].Name.Should().Be($"concurrent_{i}");
         }
-        
+
         // Cleanup
+
         await Task.WhenAll(compiledKernels.Select(k => k.DisposeAsync().AsTask()));
     }
-    
+
+
     [Fact]
     public async Task CompileAsync_WithDebugInfo_IncludesDebuggingSymbols()
     {
@@ -246,51 +283,60 @@ public class CpuKernelCompilerTests : IDisposable
             AdditionalFlags = ["debug", "symbols"]
         };
         var context = CreateCompilationContext(definition, OptimizationLevel.None);
-        
+
         // Act
+
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be("debug_kernel");
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task CompileAsync_WithAOTPath_UsesAOTCompiler()
     {
         // Arrange - Simulate AOT environment
         var definition = CreateSimpleKernelDefinition("aot_kernel", 3, 1);
         var context = CreateCompilationContext(definition, OptimizationLevel.Default);
-        
+
         // Act
+
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be("aot_kernel");
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task CompileAsync_WithJITPath_UsesJITCompiler()
     {
         // Arrange - Simulate JIT environment (this is the default)
         var definition = CreateSimpleKernelDefinition("jit_kernel", 3, 1);
         var context = CreateCompilationContext(definition, OptimizationLevel.Default);
-        
+
         // Act
+
         var compiledKernel = await CpuKernelCompiler.CompileAsync(context);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be("jit_kernel");
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     private static KernelDefinition CreateSimpleKernelDefinition(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateSimpleKernelCode(name), name)
@@ -303,7 +349,8 @@ public class CpuKernelCompilerTests : IDisposable
             }
         };
     }
-    
+
+
     private static KernelDefinition CreateComplexKernelDefinition(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateComplexKernelCode(name), name)
@@ -316,7 +363,8 @@ public class CpuKernelCompilerTests : IDisposable
             }
         };
     }
-    
+
+
     private static KernelDefinition CreateVectorizableKernelDefinition(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateVectorizableKernelCode(name), name)
@@ -329,7 +377,8 @@ public class CpuKernelCompilerTests : IDisposable
             }
         };
     }
-    
+
+
     private static KernelDefinition CreateNonVectorizableKernelDefinition(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateNonVectorizableKernelCode(name), name)
@@ -342,7 +391,8 @@ public class CpuKernelCompilerTests : IDisposable
             }
         };
     }
-    
+
+
     private static KernelDefinition CreateMemoryIntensiveKernelDefinition(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateMemoryIntensiveKernelCode(name), name)
@@ -355,7 +405,8 @@ public class CpuKernelCompilerTests : IDisposable
             }
         };
     }
-    
+
+
     private static KernelDefinition CreateKernelWithDimensions(string name, int parameterCount, int workDimensions)
     {
         return new KernelDefinition(name, GenerateKernelWithDimensions(name, workDimensions), name)
@@ -368,11 +419,11 @@ public class CpuKernelCompilerTests : IDisposable
             }
         };
     }
-    
+
     // NOTE: CpuKernelCompilationContext is internal and cannot be accessed from tests
     // These methods are commented out because they reference internal types
     // Tests that use these methods need to be refactored to use public APIs
-    
+
     /*
     private CpuKernelCompilationContext CreateCompilationContext(KernelDefinition definition, OptimizationLevel optimizationLevel)
     {
@@ -395,6 +446,7 @@ public class CpuKernelCompilerTests : IDisposable
         };
     }
     */
+
 
 
     private static string GenerateSimpleKernelCode(string name) => $"__kernel void {name}(__global float* a, __global float* b, __global float* c) {{ int i = get_global_id(0); c[i] = a[i] + b[i]; }}";
@@ -424,7 +476,8 @@ public class CpuKernelCompilerTests : IDisposable
             }}
         }}";
     }
-    
+
+
     private static string GenerateMemoryIntensiveKernelCode(string name)
     {
         return $@"__kernel void {name}(__global float* input, __global float* output, __global float* cache) {{
@@ -434,7 +487,8 @@ public class CpuKernelCompilerTests : IDisposable
             output[i] = cache[i] + cache[i+1];
         }}";
     }
-    
+
+
     private static string GenerateKernelWithDimensions(string name, int dimensions)
     {
         return dimensions switch
@@ -445,7 +499,8 @@ public class CpuKernelCompilerTests : IDisposable
             _ => GenerateSimpleKernelCode(name)
         };
     }
-    
+
+
     private CpuKernelCompilationContext CreateCompilationContext(KernelDefinition definition, OptimizationLevel optimizationLevel)
     {
         var options = new CompilationOptions
@@ -464,7 +519,8 @@ public class CpuKernelCompilerTests : IDisposable
             Logger = _logger
         };
     }
-    
+
+
     public void Dispose()
     {
         _threadPool?.DisposeAsync().AsTask().Wait();

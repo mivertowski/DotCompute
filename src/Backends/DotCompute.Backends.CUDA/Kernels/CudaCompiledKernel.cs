@@ -115,8 +115,9 @@ namespace DotCompute.Backends.CUDA.Compilation
                     // Try progressive fallback strategy for optimal compatibility
                     CudaError result;
                     var loadingStrategy = "unknown";
-                    
+
                     // Strategy 1: JIT options with fallback configurations
+
                     if (TryLoadModuleWithJitOptions(ptxPtr, out result))
                     {
                         loadingStrategy = "JIT optimized";
@@ -124,32 +125,39 @@ namespace DotCompute.Backends.CUDA.Compilation
                     // Strategy 2: Standard module loading (cuModuleLoadData)
                     else
                     {
-                        _logger.LogInformation("JIT module loading failed with {Result}, using standard loading for kernel '{Name}'", 
+                        _logger.LogInformation("JIT module loading failed with {Result}, using standard loading for kernel '{Name}'",
+
                             result, Name);
-                        
+
+
                         result = CudaRuntime.cuModuleLoadData(ref _module, ptxPtr);
                         if (result == CudaError.Success)
                         {
                             loadingStrategy = "standard";
                         }
                     }
-                    
+
                     // Check if any loading strategy succeeded
+
                     if (result != CudaError.Success)
                     {
                         // Enhanced error reporting for CUDA 13.0 troubleshooting
                         var computeCapability = CudaCapabilityManager.GetTargetComputeCapability();
                         var ptxVersion = CudaCapabilityManager.GetCompatiblePtxVersion(computeCapability);
-                        
+
+
                         var errorDetails = $"CUDA module loading failed for kernel '{Name}' with error: {result}. " +
                             $"Target compute capability: sm_{computeCapability.major}{computeCapability.minor}, " +
                             $"PTX version: {ptxVersion}, " +
                             $"PTX size: {_ptxData.Length} bytes";
-                            
+
+
                         throw new InvalidOperationException(errorDetails);
                     }
-                    
-                    _logger.LogInformation("CUDA module loaded successfully using '{Strategy}' strategy for kernel '{Name}'", 
+
+
+                    _logger.LogInformation("CUDA module loaded successfully using '{Strategy}' strategy for kernel '{Name}'",
+
                         loadingStrategy, Name);
 
                     // Enhanced function symbol resolution with multiple fallback strategies
@@ -184,11 +192,13 @@ namespace DotCompute.Backends.CUDA.Compilation
                 var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, mangledName);
                 if (result == CudaError.Success)
                 {
-                    _logger.LogInformation("Resolved kernel function using mangled name '{MangledName}' for '{Name}'", 
+                    _logger.LogInformation("Resolved kernel function using mangled name '{MangledName}' for '{Name}'",
+
                         mangledName, Name);
                     return true;
                 }
-                
+
+
                 _logger.LogDebug("Failed to resolve using mangled name '{MangledName}': {Result}", mangledName, result);
             }
 
@@ -196,11 +206,13 @@ namespace DotCompute.Backends.CUDA.Compilation
             var originalResult = CudaRuntime.cuModuleGetFunction(ref _function, _module, _entryPoint);
             if (originalResult == CudaError.Success)
             {
-                _logger.LogInformation("Resolved kernel function using original name '{EntryPoint}' for '{Name}'", 
+                _logger.LogInformation("Resolved kernel function using original name '{EntryPoint}' for '{Name}'",
+
                     _entryPoint, Name);
                 return true;
             }
-            
+
+
             _logger.LogDebug("Failed to resolve using original name '{EntryPoint}': {Result}", _entryPoint, originalResult);
 
             // Strategy 3: Try common naming variations for CUDA kernels
@@ -217,11 +229,13 @@ namespace DotCompute.Backends.CUDA.Compilation
                 var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, variation);
                 if (result == CudaError.Success)
                 {
-                    _logger.LogInformation("Resolved kernel function using naming variation '{Variation}' for '{Name}'", 
+                    _logger.LogInformation("Resolved kernel function using naming variation '{Variation}' for '{Name}'",
+
                         variation, Name);
                     return true;
                 }
-                
+
+
                 _logger.LogDebug("Naming variation '{Variation}' failed: {Result}", variation, result);
             }
 
@@ -234,7 +248,8 @@ namespace DotCompute.Backends.CUDA.Compilation
         private string BuildDetailedErrorMessage(Exception originalException)
         {
             var errorMessage = $"Failed to load CUDA module for kernel '{Name}' with entry point '{_entryPoint}': {originalException.Message}";
-            
+
+
             try
             {
                 // Add available mangled names information
@@ -264,7 +279,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // If we can't get debugging info, just return basic error message
                 errorMessage += "\n(Unable to gather additional debugging information)";
             }
-            
+
+
             return errorMessage;
         }
 
@@ -317,8 +333,10 @@ namespace DotCompute.Backends.CUDA.Compilation
                 {
                     return true;
                 }
-                
-                _logger.LogDebug("JIT configuration '{Description}' failed with {Result}, trying next", 
+
+
+                _logger.LogDebug("JIT configuration '{Description}' failed with {Result}, trying next",
+
                     config.Description, result);
             }
 
@@ -388,12 +406,15 @@ namespace DotCompute.Backends.CUDA.Compilation
                     {
                         _logger.LogInformation(
                             "Successfully loaded module using JIT configuration '{Description}' " +
-                            "(O{OptLevel}, {MaxRegs} max registers) for kernel '{Name}'", 
-                            config.Description, config.OptimizationLevel, 
+                            "(O{OptLevel}, {MaxRegs} max registers) for kernel '{Name}'",
+
+                            config.Description, config.OptimizationLevel,
+
                             config.MaxRegisters > 0 ? config.MaxRegisters.ToString() : "auto", Name);
                         return true;
                     }
-                    
+
+
                     return false;
                 }
                 finally
@@ -404,7 +425,8 @@ namespace DotCompute.Backends.CUDA.Compilation
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Exception during JIT configuration '{Description}' for kernel '{Name}'", 
+                _logger.LogDebug(ex, "Exception during JIT configuration '{Description}' for kernel '{Name}'",
+
                     config.Description, Name);
                 result = CudaError.Unknown;
                 return false;
@@ -429,24 +451,31 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // Try to extract launch configuration from arguments metadata
                 CudaLaunchConfig? config = null;
                 var launchConfigObj = arguments.GetLaunchConfiguration();
-                
+
+
                 if (launchConfigObj != null)
                 {
                     _logger.LogDebug("Found launch configuration in arguments metadata: {Config}", launchConfigObj);
-                    
+
                     // Check if it's a KernelLaunchConfiguration type from abstractions
+
                     if (launchConfigObj is KernelLaunchConfiguration launchConfig)
                     {
                         // Convert LaunchConfiguration to CudaLaunchConfig
                         config = new CudaLaunchConfig(
-                            (uint)launchConfig.GridSize.X, 
-                            (uint)launchConfig.GridSize.Y, 
+                            (uint)launchConfig.GridSize.X,
+
+                            (uint)launchConfig.GridSize.Y,
+
                             (uint)launchConfig.GridSize.Z,
-                            (uint)launchConfig.BlockSize.X, 
-                            (uint)launchConfig.BlockSize.Y, 
+                            (uint)launchConfig.BlockSize.X,
+
+                            (uint)launchConfig.BlockSize.Y,
+
                             (uint)launchConfig.BlockSize.Z,
                             (uint)launchConfig.SharedMemoryBytes);
-                        
+
+
                         _logger.LogDebug("Converted LaunchConfiguration to CudaLaunchConfig: Grid({GridX},{GridY},{GridZ}) Block({BlockX},{BlockY},{BlockZ}) SharedMem={SharedMem}",
                             config.Value.GridX, config.Value.GridY, config.Value.GridZ,
                             config.Value.BlockX, config.Value.BlockY, config.Value.BlockZ,

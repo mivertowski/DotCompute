@@ -15,7 +15,7 @@ public interface IKernelRegistryGenerator
     /// <summary>
     /// Generates the kernel registry for all discovered kernels.
     /// </summary>
-    void GenerateRegistry(
+    public void GenerateRegistry(
         ImmutableArray<KernelMethodInfo> kernelMethods,
         ImmutableArray<KernelClassInfo> kernelClasses,
         SourceProductionContext context);
@@ -23,7 +23,7 @@ public interface IKernelRegistryGenerator
     /// <summary>
     /// Generates an invoker for kernel classes.
     /// </summary>
-    void GenerateInvoker(
+    public void GenerateInvoker(
         KernelClassInfo kernelClass,
         ImmutableArray<KernelMethodInfo> allMethods,
         SourceProductionContext context);

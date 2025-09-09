@@ -35,7 +35,11 @@ public class KernelCodeFixProvider : CodeFixProvider
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root == null) return;
+        if (root == null)
+        {
+            return;
+        }
+
 
         foreach (var diagnostic in context.Diagnostics)
         {
@@ -44,19 +48,23 @@ public class KernelCodeFixProvider : CodeFixProvider
                 case "DC001":
                     await RegisterMakeStaticFixAsync(context, root, diagnostic);
                     break;
-                    
+
+
                 case "DC002":
                     await RegisterParameterTypeFixAsync(context, root, diagnostic);
                     break;
-                    
+
+
                 case "DC007":
                     await RegisterAddKernelAttributeFixAsync(context, root, diagnostic);
                     break;
-                    
+
+
                 case "DC010":
                     await RegisterFixThreadingModelAsync(context, root, diagnostic);
                     break;
-                    
+
+
                 case "DC011":
                     await RegisterAddBoundsCheckFixAsync(context, root, diagnostic);
                     break;
@@ -68,10 +76,16 @@ public class KernelCodeFixProvider : CodeFixProvider
     {
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not MethodDeclarationSyntax methodDecl)
+        {
             return;
+        }
+
 
         if (methodDecl.Modifiers.Any(SyntaxKind.StaticKeyword))
+        {
             return;
+        }
+
 
         var action = CodeAction.Create(
             title: "Make method static",
@@ -85,9 +99,12 @@ public class KernelCodeFixProvider : CodeFixProvider
     {
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node.FirstAncestorOrSelf<ParameterSyntax>() is not ParameterSyntax parameter)
+        {
             return;
+        }
 
         // Suggest converting array parameters to Span<T>
+
         if (parameter.Type?.ToString().Contains("[]") == true)
         {
             var action = CodeAction.Create(
@@ -103,7 +120,10 @@ public class KernelCodeFixProvider : CodeFixProvider
     {
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not MethodDeclarationSyntax methodDecl)
+        {
             return;
+        }
+
 
         var action = CodeAction.Create(
             title: "Add [Kernel] attribute",
@@ -117,7 +137,10 @@ public class KernelCodeFixProvider : CodeFixProvider
     {
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not MethodDeclarationSyntax methodDecl)
+        {
             return;
+        }
+
 
         var action = CodeAction.Create(
             title: "Use Kernel.ThreadId for indexing",
@@ -131,7 +154,10 @@ public class KernelCodeFixProvider : CodeFixProvider
     {
         var node = root.FindNode(diagnostic.Location.SourceSpan);
         if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not MethodDeclarationSyntax methodDecl)
+        {
             return;
+        }
+
 
         var action = CodeAction.Create(
             title: "Add bounds check",
@@ -144,7 +170,11 @@ public class KernelCodeFixProvider : CodeFixProvider
     private static async Task<Document> MakeMethodStaticAsync(Document document, MethodDeclarationSyntax methodDecl, CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null) return document;
+        if (root == null)
+        {
+            return document;
+        }
+
 
         var newModifiers = methodDecl.Modifiers.Add(SyntaxFactory.Token(SyntaxKind.StaticKeyword));
         var newMethodDecl = methodDecl.WithModifiers(newModifiers);
@@ -156,17 +186,28 @@ public class KernelCodeFixProvider : CodeFixProvider
     private static async Task<Document> ConvertParameterToSpanAsync(Document document, ParameterSyntax parameter, CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null || parameter.Type == null) return document;
+        if (root == null || parameter.Type == null)
+        {
+            return document;
+        }
+
 
         var typeString = parameter.Type.ToString();
-        if (!typeString.Contains("[]")) return document;
+        if (!typeString.Contains("[]"))
+        {
+            return document;
+        }
 
         // Extract element type (e.g., "float[]" -> "float")
+
         var elementType = typeString.Replace("[]", "");
-        
+
         // Create new Span<T> type
-        var newTypeName = parameter.Modifiers.Any(SyntaxKind.InKeyword) || parameter.Modifiers.Any(SyntaxKind.RefKeyword) 
-            ? $"ReadOnlySpan<{elementType}>" 
+
+        var newTypeName = parameter.Modifiers.Any(SyntaxKind.InKeyword) || parameter.Modifiers.Any(SyntaxKind.RefKeyword)
+
+            ? $"ReadOnlySpan<{elementType}>"
+
             : $"Span<{elementType}>";
 
         var newType = SyntaxFactory.ParseTypeName(newTypeName).WithTriviaFrom(parameter.Type);
@@ -179,9 +220,13 @@ public class KernelCodeFixProvider : CodeFixProvider
     private static async Task<Document> AddKernelAttributeAsync(Document document, MethodDeclarationSyntax methodDecl, CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null) return document;
+        if (root == null)
+        {
+            return document;
+        }
 
         // Create [Kernel] attribute
+
         var kernelAttribute = SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Kernel"));
         var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(kernelAttribute));
 
@@ -194,15 +239,24 @@ public class KernelCodeFixProvider : CodeFixProvider
     private static async Task<Document> AddKernelThreadingAsync(Document document, MethodDeclarationSyntax methodDecl, CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null || methodDecl.Body == null) return document;
+        if (root == null || methodDecl.Body == null)
+        {
+            return document;
+        }
 
         // Find for loops and add threading model
+
         var forLoops = methodDecl.Body.DescendantNodes().OfType<ForStatementSyntax>().ToList();
-        if (forLoops.Count == 0) return document;
+        if (forLoops.Count == 0)
+        {
+            return document;
+        }
+
 
         var newMethodDecl = methodDecl;
-        
+
         // Add index variable declaration at the start of the method
+
         var indexDeclaration = SyntaxFactory.LocalDeclarationStatement(
             SyntaxFactory.VariableDeclaration(
                 SyntaxFactory.IdentifierName("int"))
@@ -229,11 +283,19 @@ public class KernelCodeFixProvider : CodeFixProvider
     private static async Task<Document> AddBoundsCheckAsync(Document document, MethodDeclarationSyntax methodDecl, CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null || methodDecl.Body == null) return document;
+        if (root == null || methodDecl.Body == null)
+        {
+            return document;
+        }
 
         // Find array accesses and wrap in bounds check
+
         var elementAccesses = methodDecl.Body.DescendantNodes().OfType<ElementAccessExpressionSyntax>().ToList();
-        if (elementAccesses.Count == 0) return document;
+        if (elementAccesses.Count == 0)
+        {
+            return document;
+        }
+
 
         var newMethodDecl = methodDecl;
 
@@ -250,7 +312,8 @@ public class KernelCodeFixProvider : CodeFixProvider
             SyntaxFactory.ReturnStatement());
 
         var statements = methodDecl.Body.Statements.Insert(
-            methodDecl.Body.Statements.Count > 0 && methodDecl.Body.Statements[0].ToString().Contains("index") ? 1 : 0, 
+            methodDecl.Body.Statements.Count > 0 && methodDecl.Body.Statements[0].ToString().Contains("index") ? 1 : 0,
+
             boundsCheck);
 
         var newBody = methodDecl.Body.WithStatements(statements);

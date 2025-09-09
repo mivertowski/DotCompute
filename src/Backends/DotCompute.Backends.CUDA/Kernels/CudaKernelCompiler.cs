@@ -112,7 +112,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // Ensure we have valid compilation options
                 // The architecture capping is handled in BuildCompilationOptions and GetTargetComputeCapability
                 // which already cap at compute_86 for CUDA 12.8 compatibility
-                
+
+
                 LogCompilingCudaKernel(_logger, definition.Name);
 
                 // Check cache first
@@ -173,7 +174,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 }
 
                 // Kernel compiled successfully with proper extern "C" handling
-                
+
                 // Temporarily disable verification to test CUBIN compatibility
                 // TODO: Re-enable verification once CUBIN compilation is working
                 // if (!VerifyCompiledCode(compiledCode, source.Name))
@@ -182,6 +183,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // }
 
                 // Create compiled kernel
+
                 var compiledKernel = new CudaCompiledKernel(
                     _context,
                     source.Name,
@@ -259,7 +261,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             _cacheMetadata.Clear();
         }
 
-        private Task<string> PrepareCudaSourceAsync(KernelSource source, DotCompute.Abstractions.CompilationOptions? options)
+        private static Task<string> PrepareCudaSourceAsync(KernelSource source, DotCompute.Abstractions.CompilationOptions? options)
         {
             var builder = new StringBuilder();
 
@@ -275,9 +277,10 @@ namespace DotCompute.Backends.CUDA.Compilation
             // - Math functions (sin, cos, exp, etc.)
             // - Atomic operations
             // - Synchronization primitives (__syncthreads, etc.)
-            
+
             // For NVRTC, we don't need to include any headers
             // The runtime compilation has all CUDA intrinsics built-in
+
 
             _ = builder.AppendLine();
 
@@ -436,8 +439,9 @@ namespace DotCompute.Backends.CUDA.Compilation
                 var compilationOptions = BuildCompilationOptions(options);
 
                 LogNvrtcCompilationOptions(_logger, string.Join(" ", compilationOptions));
-                
+
                 // Log each option individually for debugging
+
                 foreach (var option in compilationOptions)
                 {
                     _logger.LogDebug("NVRTC Option: {Option}", option);
@@ -554,41 +558,47 @@ namespace DotCompute.Backends.CUDA.Compilation
 
             // Add CUDA include paths first - CRITICAL for headers like cooperative_groups.h
             AddCudaIncludePaths(optionsList);
-            
+
             // Get target GPU architecture - this is REQUIRED
+
             var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
-            
+
             // Use the centralized architecture string generation
+
             var archString = CudaCapabilityManager.GetArchitectureString((major, minor));
             optionsList.Add($"--gpu-architecture={archString}");
             _logger.LogDebug("NVRTC compilation using architecture: {ArchString}", archString);
-            
+
             // Use absolutely minimal NVRTC options - most options are not supported by NVRTC
             // Only use options that are documented to work with NVRTC
-            
+
             // CUDA 13.0 optimizations: Enable shared memory register spilling for Turing and newer
+
             if (major >= 7 && minor >= 5)
             {
                 // Enable verbose ptxas output to analyze register usage
                 optionsList.Add("--ptxas-options=-v");
-                
+
                 // Enable shared memory register spilling (available in CUDA 13.0+)
                 // This helps when register pressure is high
+
                 if (options?.EnableSharedMemoryRegisterSpilling ?? true)
                 {
                     optionsList.Add("--ptxas-options=--allow-expensive-optimizations=true");
                 }
             }
-            
+
             // Add dynamic parallelism support if requested
             // Dynamic parallelism requires relocatable device code (-rdc=true)
+
             if (options?.EnableDynamicParallelism == true)
             {
                 optionsList.Add("--relocatable-device-code=true");
                 _logger.LogDebug("Enabled relocatable device code for dynamic parallelism support");
             }
-            
+
             // Add debug info if requested
+
             if (options?.EnableDebugInfo == true)
             {
                 optionsList.Add("--device-debug");
@@ -606,7 +616,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
         // Obsolete - replaced by CudaCapabilityManager.GetTargetComputeCapability()
         // This method is no longer used - all compute capability detection is centralized
-        private (int major, int minor) GetTargetComputeCapability()
+        private static (int major, int minor) GetTargetComputeCapability()
         {
             // Delegate to centralized manager
             return CudaCapabilityManager.GetTargetComputeCapability();
@@ -742,13 +752,15 @@ namespace DotCompute.Backends.CUDA.Compilation
             var optionsList = new List<string>();
 
             // MINIMAL OPTIONS FOR CUBIN - NVRTC is very limited
-            
+
             // Get target GPU architecture for CUBIN generation
+
             var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
             // For CUBIN, we use the centralized architecture string generation
             var archString = CudaCapabilityManager.GetArchitectureString((major, minor));
-            
+
             // Just use architecture - NVRTC will handle the rest
+
             optionsList.Add($"--gpu-architecture={archString}");
 
             // Add dynamic parallelism support if requested
@@ -758,8 +770,9 @@ namespace DotCompute.Backends.CUDA.Compilation
                 optionsList.Add("--relocatable-device-code=true");
                 _logger.LogDebug("Enabled relocatable device code for dynamic parallelism support (CUBIN)");
             }
-            
+
             // Add debug info if requested
+
             if (options?.EnableDebugInfo == true)
             {
                 optionsList.Add("--device-debug");
@@ -784,9 +797,10 @@ namespace DotCompute.Backends.CUDA.Compilation
             try
             {
                 var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
-                
+
                 // CRITICAL FIX: CUDA 13.0 driver 581.15 has better PTX JIT stability than CUBIN
                 // Force PTX for all modern architectures (Ampere and newer) for production reliability
+
                 if (major >= 8) // All Ampere and Ada architectures (sm_80, sm_86, sm_89, etc.)
                 {
                     _logger.LogInformation("CUDA 13.0 optimization: Using PTX compilation for compute " +
@@ -794,30 +808,34 @@ namespace DotCompute.Backends.CUDA.Compilation
                         "better performance and stability", major, minor);
                     return false; // Use PTX for Ampere/Ada - better CUDA 13.0 support
                 }
-                
+
                 // Turing architecture: PTX is also more reliable with CUDA 13.0
+
                 if (major == 7 && minor >= 5) // Turing (sm_75)
                 {
                     _logger.LogInformation("Using PTX compilation for Turing architecture (sm_{Major}{Minor}) " +
                         "for CUDA 13.0 compatibility", major, minor);
                     return false; // Prefer PTX for Turing as well
                 }
-                
+
                 // For older architectures (Volta and earlier), CUBIN is stable and well-tested
+
                 if (major == 7 && minor < 5) // Volta (sm_70, sm_72)
                 {
                     _logger.LogDebug("Using CUBIN compilation for Volta architecture {Major}.{Minor}", major, minor);
                     return true;
                 }
-                
+
                 // Pascal and older - CUBIN is mature
+
                 if (major <= 6)
                 {
                     _logger.LogDebug("Using CUBIN compilation for legacy architecture {Major}.{Minor}", major, minor);
                     return major > 3 || (major == 3 && minor >= 5);
                 }
-                
+
                 // Default to PTX for any unhandled cases - safest option
+
                 return false;
             }
             catch (Exception ex)
@@ -1137,15 +1155,17 @@ namespace DotCompute.Backends.CUDA.Compilation
         private List<string> ExtractKernelFunctionNames(string cudaSource)
         {
             var functionNames = new List<string>();
-            
+
+
             try
             {
                 // Use regex to find __global__ function declarations
                 // Pattern matches: [extern "C"] __global__ void functionName(
                 var pattern = @"(?:extern\s*""C""\s*)?__global__\s+void\s+(\w+)\s*\(";
                 var matches = System.Text.RegularExpressions.Regex.Matches(
-                    cudaSource, 
-                    pattern, 
+                    cudaSource,
+                    pattern,
+
                     System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
                 foreach (System.Text.RegularExpressions.Match match in matches)
@@ -1166,8 +1186,9 @@ namespace DotCompute.Backends.CUDA.Compilation
                     // Look for any function-like patterns as fallback
                     var fallbackPattern = @"void\s+(\w+)\s*\([^)]*\)\s*\{";
                     var fallbackMatches = System.Text.RegularExpressions.Regex.Matches(
-                        cudaSource, 
-                        fallbackPattern, 
+                        cudaSource,
+                        fallbackPattern,
+
                         System.Text.RegularExpressions.RegexOptions.Multiline);
 
                     foreach (System.Text.RegularExpressions.Match match in fallbackMatches)
@@ -1323,8 +1344,9 @@ namespace DotCompute.Backends.CUDA.Compilation
                 {
                     // Save cache asynchronously before disposing
                     await SavePersistentCacheAsync().ConfigureAwait(false);
-                    
+
                     // Dispose synchronously
+
                     Dispose();
                 }
                 catch (Exception ex)
@@ -1440,9 +1462,10 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // Access the compiled kernel's binary data
                 // This is a simplified implementation - in practice, you might need to use reflection
                 // or add a public property to CudaCompiledKernel to access the binary data
-                
+
                 // For now, return null to indicate we couldn't get the data
                 // In a real implementation, you would access the PTX/CUBIN binary from the kernel
+
                 return null;
             }
             catch (Exception ex)
@@ -1460,12 +1483,14 @@ namespace DotCompute.Backends.CUDA.Compilation
         {
             // Detect CUDA installation dynamically
             var cudaInstallPath = DetectCudaInstallation();
-            
+
+
             if (!string.IsNullOrEmpty(cudaInstallPath))
             {
                 _logger.LogDebug("Detected CUDA installation at: {CudaPath}", cudaInstallPath);
-                
+
                 // Add CUDA primary include paths (order is critical for header resolution)
+
                 var cudaIncludePaths = new[]
                 {
                     Path.Combine(cudaInstallPath, "include"),
@@ -1487,8 +1512,9 @@ namespace DotCompute.Backends.CUDA.Compilation
                     }
                 }
             }
-            
+
             // Fallback paths for system-wide CUDA installations
+
             var fallbackPaths = new[]
             {
                 "/usr/local/cuda-13.0/include",
@@ -1496,7 +1522,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                 "/usr/local/cuda-13.0/include/cccl/cuda",
                 "/usr/local/cuda-13.0/include/cccl/cuda/std",
                 "/usr/local/cuda-13.0/include/cooperative_groups",
-                "/usr/local/cuda-13.0/targets/x86_64-linux/include", 
+                "/usr/local/cuda-13.0/targets/x86_64-linux/include",
+
                 "/usr/local/cuda/include",
                 "/usr/local/cuda/include/cccl",
                 "/usr/local/cuda/include/cccl/cuda",
@@ -1532,12 +1559,14 @@ namespace DotCompute.Backends.CUDA.Compilation
                     break; // Only add one C++ include path to avoid conflicts
                 }
             }
-            
+
             // Add NVRTC-specific compiler directives for better header compatibility
+
             optionsList.Add("--std=c++17"); // Enable C++17 for CUDA STL compatibility
             optionsList.Add("--disable-warnings"); // Reduce noise from system headers
         }
-        
+
+
         /// <summary>
         /// Detects the CUDA installation path on the system.
         /// </summary>
@@ -1560,13 +1589,15 @@ namespace DotCompute.Backends.CUDA.Compilation
                 }
 
                 // Look for versioned installations (newest first)
-                var cudaDirs = Directory.Exists("/usr/local") 
+                var cudaDirs = Directory.Exists("/usr/local")
+
                     ? Directory.GetDirectories("/usr/local", "cuda-*")
                         .OrderByDescending(d => d)
                         .Where(d => Directory.Exists(Path.Combine(d, "include")))
                         .ToArray()
                     : Array.Empty<string>();
-                
+
+
                 if (cudaDirs.Length > 0)
                 {
                     return cudaDirs[0];
@@ -1577,7 +1608,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // Check Program Files for NVIDIA installations
                 var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
                 var nvidiPath = Path.Combine(programFiles, "NVIDIA GPU Computing Toolkit", "CUDA");
-                
+
+
                 if (Directory.Exists(nvidiPath))
                 {
                     var versions = Directory.GetDirectories(nvidiPath, "v*")

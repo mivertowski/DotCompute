@@ -175,7 +175,8 @@ namespace DotCompute.Core.Kernels
         }
     }
 
-    
+
+
 
     /// <summary>
     /// Kernel optimization hints.

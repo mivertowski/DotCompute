@@ -25,7 +25,8 @@ public class SimdOperationsTests
         // Assert
         _ = isSupported.Should().Be(Vector.IsHardwareAccelerated);
     }
-    
+
+
     [Fact]
     public void SimdCapabilities_PreferredVectorWidth_ReturnsValidWidth()
     {
@@ -36,7 +37,8 @@ public class SimdOperationsTests
         _ = vectorWidth.Should().BeGreaterThan(0);
         _ = vectorWidth.Should().BeOneOf(64, 128, 256, 512);
     }
-    
+
+
     [Fact]
     public void SimdCapabilities_GetSummary_ReturnsCompleteInformation()
     {
@@ -48,13 +50,15 @@ public class SimdOperationsTests
         _ = summary.IsHardwareAccelerated.Should().Be(Vector.IsHardwareAccelerated);
         _ = summary.PreferredVectorWidth.Should().BeGreaterThan(0);
         _ = summary.SupportedInstructionSets.Should().NotBeNull();
-        
+
+
         if (Vector.IsHardwareAccelerated)
         {
             _ = summary.SupportedInstructionSets.Should().NotBeEmpty();
         }
     }
-    
+
+
     [SkippableFactAttribute]
     [Trait("Category", TestCategories.RequiresSIMD)]
     public void X86SimdInfo_SSE_Detection_ReturnsCorrectValues()
@@ -69,7 +73,8 @@ public class SimdOperationsTests
         _ = X86SimdInfo.HasSse41.Should().Be(Sse41.IsSupported);
         _ = X86SimdInfo.HasSse42.Should().Be(Sse42.IsSupported);
     }
-    
+
+
     [SkippableFactAttribute]
     [Trait("Category", TestCategories.RequiresSIMD)]
     public void X86SimdInfo_AVX_Detection_ReturnsCorrectValues()
@@ -82,7 +87,8 @@ public class SimdOperationsTests
         _ = X86SimdInfo.HasAvx512F.Should().Be(Avx512F.IsSupported);
         _ = X86SimdInfo.HasAvx512BW.Should().Be(Avx512BW.IsSupported);
     }
-    
+
+
     [SkippableFactAttribute]
     [Trait("Category", TestCategories.RequiresSIMD)]
     public void X86SimdInfo_AdditionalInstructions_Detection_ReturnsCorrectValues()
@@ -96,14 +102,16 @@ public class SimdOperationsTests
         _ = X86SimdInfo.HasPopcnt.Should().Be(Popcnt.IsSupported);
         _ = X86SimdInfo.HasLzcnt.Should().Be(Lzcnt.IsSupported);
     }
-    
+
+
     [Fact]
     public void X86SimdInfo_MaxVectorWidth_ReturnsCorrectWidth()
     {
         // Act
         var maxWidth = X86SimdInfo.MaxVectorWidth;
-        
+
         // Assert
+
         if (Avx512F.IsSupported)
         {
             _ = maxWidth.Should().Be(512);
@@ -121,7 +129,8 @@ public class SimdOperationsTests
             _ = maxWidth.Should().Be(0);
         }
     }
-    
+
+
     [SkippableFactAttribute]
     [Trait("Category", TestCategories.RequiresSIMD)]
     public void ArmSimdInfo_NEON_Detection_ReturnsCorrectValues()
@@ -132,7 +141,8 @@ public class SimdOperationsTests
         _ = ArmSimdInfo.HasNeon.Should().Be(AdvSimd.IsSupported);
         _ = ArmSimdInfo.HasNeonArm64.Should().Be(AdvSimd.Arm64.IsSupported);
     }
-    
+
+
     [SkippableFactAttribute]
     [Trait("Category", TestCategories.RequiresSIMD)]
     public void ArmSimdInfo_AdditionalInstructions_Detection_ReturnsCorrectValues()
@@ -147,14 +157,16 @@ public class SimdOperationsTests
         _ = ArmSimdInfo.HasDp.Should().Be(Dp.IsSupported);
         _ = ArmSimdInfo.HasRdm.Should().Be(Rdm.IsSupported);
     }
-    
+
+
     [Fact]
     public void ArmSimdInfo_MaxVectorWidth_ReturnsCorrectWidth()
     {
         // Act
         var maxWidth = ArmSimdInfo.MaxVectorWidth;
-        
+
         // Assert
+
         if (AdvSimd.IsSupported)
         {
             _ = maxWidth.Should().Be(128);
@@ -164,7 +176,8 @@ public class SimdOperationsTests
             _ = maxWidth.Should().Be(0);
         }
     }
-    
+
+
     [Fact]
     public void SimdSummary_BooleanProperties_ReturnCorrectValues()
     {
@@ -177,19 +190,22 @@ public class SimdOperationsTests
         _ = summary.SupportsAvx512.Should().Be(summary.SupportedInstructionSets.Contains("AVX512F"));
         _ = summary.SupportsAdvSimd.Should().Be(summary.SupportedInstructionSets.Contains("NEON"));
     }
-    
+
+
     [Fact]
     public void SimdSummary_ToString_ReturnsReadableString()
     {
         // Arrange
         var summary = SimdCapabilities.GetSummary();
-        
+
         // Act
+
         var stringRepresentation = summary.ToString();
 
         // Assert
         _ = stringRepresentation.Should().NotBeNullOrWhiteSpace();
-        
+
+
         if (summary.IsHardwareAccelerated)
         {
             _ = stringRepresentation.Should().Contain("SIMD");
@@ -200,7 +216,8 @@ public class SimdOperationsTests
             _ = stringRepresentation.Should().Contain("No SIMD support");
         }
     }
-    
+
+
     [Theory]
     [InlineData(4)]   // SSE-sized vectors
     [InlineData(8)]   // AVX-sized vectors  
@@ -212,21 +229,24 @@ public class SimdOperationsTests
         var b = new float[vectorSize];
         var expected = new float[vectorSize];
         var result = new float[vectorSize];
-        
+
+
         for (var i = 0; i < vectorSize; i++)
         {
             a[i] = i + 1.0f;
             b[i] = i + 2.0f;
             expected[i] = a[i] + b[i];
         }
-        
+
         // Act
+
         PerformVectorAddition(a, b, result);
 
         // Assert
         _ = result.Should().Equal(expected);
     }
-    
+
+
     [Theory]
     [InlineData(4)]
     [InlineData(8)]
@@ -238,21 +258,24 @@ public class SimdOperationsTests
         var b = new float[vectorSize];
         var expected = new float[vectorSize];
         var result = new float[vectorSize];
-        
+
+
         for (var i = 0; i < vectorSize; i++)
         {
             a[i] = i + 1.0f;
             b[i] = 2.0f;
             expected[i] = a[i] * b[i];
         }
-        
+
         // Act
+
         PerformVectorMultiplication(a, b, result);
 
         // Assert
         _ = result.Should().Equal(expected);
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.Performance)]
     public void VectorOperations_Performance_SimdFasterThanScalar()
@@ -263,36 +286,41 @@ public class SimdOperationsTests
         var b = new float[size];
         var scalarResult = new float[size];
         var vectorResult = new float[size];
-        
+
+
         for (var i = 0; i < size; i++)
         {
             a[i] = i;
             b[i] = i + 1;
         }
-        
+
         // Act - Scalar operation
+
         var scalarStopwatch = System.Diagnostics.Stopwatch.StartNew();
         for (var i = 0; i < size; i++)
         {
             scalarResult[i] = a[i] + b[i];
         }
         scalarStopwatch.Stop();
-        
+
         // Act - Vector operation  
+
         var vectorStopwatch = System.Diagnostics.Stopwatch.StartNew();
         PerformVectorAddition(a, b, vectorResult);
         vectorStopwatch.Stop();
 
         // Assert
         _ = vectorResult.Should().Equal(scalarResult);
-        
+
         // Performance assertion - SIMD should be faster if hardware accelerated
+
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
             _ = vectorStopwatch.ElapsedMilliseconds.Should().BeLessThanOrEqualTo(scalarStopwatch.ElapsedMilliseconds);
         }
     }
-    
+
+
     [Fact]
     public void FallbackToScalar_WhenSimdUnavailable_ProducesCorrectResults()
     {
@@ -301,14 +329,16 @@ public class SimdOperationsTests
         var b = new float[] { 5.0f, 6.0f, 7.0f, 8.0f };
         var expected = new float[] { 6.0f, 8.0f, 10.0f, 12.0f };
         var result = new float[4];
-        
+
         // Act - Force scalar path
+
         PerformScalarAddition(a, b, result);
 
         // Assert
         _ = result.Should().Equal(expected);
     }
-    
+
+
     [Theory]
     [InlineData(new float[] { 1.0f, 2.0f, 3.0f, 4.0f }, new float[] { 1.0f, 2.0f, 3.0f, 4.0f })]
     [InlineData(new float[] { -1.0f, -2.0f, 3.0f, -4.0f }, new float[] { 1.0f, 2.0f, 3.0f, 4.0f })]
@@ -316,8 +346,9 @@ public class SimdOperationsTests
     {
         // Arrange
         var result = new float[input.Length];
-        
+
         // Act
+
         PerformVectorAbs(input, result);
 
         // Assert
@@ -325,7 +356,8 @@ public class SimdOperationsTests
             .Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
             .WhenTypeIs<float>());
     }
-    
+
+
     [Theory]
     [InlineData(new float[] { 1.0f, 4.0f, 9.0f, 16.0f }, new float[] { 1.0f, 2.0f, 3.0f, 4.0f })]
     [InlineData(new float[] { 0.25f, 1.0f, 2.25f, 4.0f }, new float[] { 0.5f, 1.0f, 1.5f, 2.0f })]
@@ -333,8 +365,9 @@ public class SimdOperationsTests
     {
         // Arrange
         var result = new float[input.Length];
-        
+
         // Act
+
         PerformVectorSqrt(input, result);
 
         // Assert
@@ -342,7 +375,8 @@ public class SimdOperationsTests
             .Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
             .WhenTypeIs<float>());
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.ErrorHandling)]
     public void VectorOperations_WithNullInputs_HandlesGracefully()
@@ -362,7 +396,8 @@ public class SimdOperationsTests
         _ = FluentActions.Invoking(() => PerformVectorAddition(validArray, validArray, nullArray!))
             .Should().Throw<ArgumentNullException>();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.ErrorHandling)]
     public void VectorOperations_WithMismatchedSizes_HandlesGracefully()
@@ -376,7 +411,8 @@ public class SimdOperationsTests
         _ = FluentActions.Invoking(() => PerformVectorAddition(shortArray, longArray, result))
             .Should().Throw<ArgumentException>();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.Concurrency)]
     public async Task VectorOperations_ConcurrentExecution_ProducesConsistentResults()
@@ -386,10 +422,12 @@ public class SimdOperationsTests
         var a = Enumerable.Range(0, arraySize).Select(i => (float)i).ToArray();
         var b = Enumerable.Range(0, arraySize).Select(i => (float)(i + 1)).ToArray();
         var expected = a.Zip(b, (x, y) => x + y).ToArray();
-        
+
+
         var tasks = new Task<float[]>[Environment.ProcessorCount];
-        
+
         // Act
+
         for (var i = 0; i < tasks.Length; i++)
         {
             tasks[i] = Task.Run(() =>
@@ -399,39 +437,46 @@ public class SimdOperationsTests
                 return result;
             });
         }
-        
+
+
         var results = await Task.WhenAll(tasks);
-        
+
         // Assert
+
         foreach (var result in results)
         {
             _ = result.Should().Equal(expected);
         }
     }
-    
+
     // Helper methods for vector operations
+
     private static void PerformVectorAddition(float[] a, float[] b, float[] result)
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
         ArgumentNullException.ThrowIfNull(result);
-        
+
+
         if (a.Length != b.Length || a.Length != result.Length)
             throw new ArgumentException("Array lengths must match");
-        
+
+
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
             var vectorSize = Vector<float>.Count;
             var vectorLength = a.Length - (a.Length % vectorSize);
-            
+
+
             for (var i = 0; i < vectorLength; i += vectorSize)
             {
                 var vectorA = new Vector<float>(a, i);
                 var vectorB = new Vector<float>(b, i);
                 (vectorA + vectorB).CopyTo(result, i);
             }
-            
+
             // Handle remaining elements
+
             for (var i = vectorLength; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
@@ -442,7 +487,8 @@ public class SimdOperationsTests
             PerformScalarAddition(a, b, result);
         }
     }
-    
+
+
     private static void PerformScalarAddition(float[] a, float[] b, float[] result)
     {
         for (var i = 0; i < a.Length; i++)
@@ -450,25 +496,29 @@ public class SimdOperationsTests
             result[i] = a[i] + b[i];
         }
     }
-    
+
+
     private static void PerformVectorMultiplication(float[] a, float[] b, float[] result)
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
         ArgumentNullException.ThrowIfNull(result);
-        
+
+
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
             var vectorSize = Vector<float>.Count;
             var vectorLength = a.Length - (a.Length % vectorSize);
-            
+
+
             for (var i = 0; i < vectorLength; i += vectorSize)
             {
                 var vectorA = new Vector<float>(a, i);
                 var vectorB = new Vector<float>(b, i);
                 (vectorA * vectorB).CopyTo(result, i);
             }
-            
+
+
             for (var i = vectorLength; i < a.Length; i++)
             {
                 result[i] = a[i] * b[i];
@@ -482,20 +532,23 @@ public class SimdOperationsTests
             }
         }
     }
-    
+
+
     private static void PerformVectorAbs(float[] input, float[] result)
     {
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
             var vectorSize = Vector<float>.Count;
             var vectorLength = input.Length - (input.Length % vectorSize);
-            
+
+
             for (var i = 0; i < vectorLength; i += vectorSize)
             {
                 var vector = new Vector<float>(input, i);
                 Vector.Abs(vector).CopyTo(result, i);
             }
-            
+
+
             for (var i = vectorLength; i < input.Length; i++)
             {
                 result[i] = Math.Abs(input[i]);
@@ -509,20 +562,23 @@ public class SimdOperationsTests
             }
         }
     }
-    
+
+
     private static void PerformVectorSqrt(float[] input, float[] result)
     {
         if (Vector.IsHardwareAccelerated && Vector<float>.Count > 1)
         {
             var vectorSize = Vector<float>.Count;
             var vectorLength = input.Length - (input.Length % vectorSize);
-            
+
+
             for (var i = 0; i < vectorLength; i += vectorSize)
             {
                 var vector = new Vector<float>(input, i);
                 Vector.SquareRoot(vector).CopyTo(result, i);
             }
-            
+
+
             for (var i = vectorLength; i < input.Length; i++)
             {
                 result[i] = (float)Math.Sqrt(input[i]);

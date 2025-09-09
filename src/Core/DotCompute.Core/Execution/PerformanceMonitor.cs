@@ -167,7 +167,7 @@ namespace DotCompute.Core.Execution
                 .OrderBy(e => e.Timestamp)
                 .ToArray();
 
-            return _analyzer.AnalyzeTrends(relevantExecutions);
+            return PerformanceAnalyzer.AnalyzeTrends(relevantExecutions);
         }
 
         /// <summary>
@@ -384,7 +384,8 @@ namespace DotCompute.Core.Execution
             var kernelBottlenecks = new List<Analysis.BottleneckAnalysis>();
             foreach (var b in analysis.Bottlenecks)
             {
-                kernelBottlenecks.Add(new Analysis.BottleneckAnalysis 
+                kernelBottlenecks.Add(new Analysis.BottleneckAnalysis
+
                 {
                     Type = b.Type switch
                     {
@@ -397,7 +398,8 @@ namespace DotCompute.Core.Execution
                     ResourceUtilization = []
                 });
             }
-            
+
+
             analysis.OptimizationRecommendations = [.. GenerateOptimizationRecommendations(executions, kernelBottlenecks)];
 
             // Recommend optimal strategy
@@ -409,7 +411,7 @@ namespace DotCompute.Core.Execution
             return analysis;
         }
 
-        public PerformanceTrends AnalyzeTrends(ExecutionRecord[] executions)
+        public static PerformanceTrends AnalyzeTrends(ExecutionRecord[] executions)
         {
             if (executions.Length == 0)
             {
@@ -715,7 +717,8 @@ namespace DotCompute.Core.Execution
             // Simple estimation based on historical data or defaults
             const double baseTimeMs = 10.0; // Base execution time
             const double dataSizeMultiplier = 0.001; // Time per data element
-            
+
+
             var deviceMultiplier = deviceTypes.Length > 0 ? 1.0 / deviceTypes.Length : 1.0;
             return (baseTimeMs + (dataSize * dataSizeMultiplier)) * deviceMultiplier;
         }
@@ -729,7 +732,8 @@ namespace DotCompute.Core.Execution
             const double baseLayerTimeMs = 5.0;
             var totalLayers = workload.ModelLayers.Count;
             var deviceCount = layerAssignments.Values.Distinct().Count();
-            
+
+
             return totalLayers * baseLayerTimeMs / Math.Max(1, deviceCount);
         }
 
@@ -742,7 +746,8 @@ namespace DotCompute.Core.Execution
             const double baseStageTimeMs = 8.0;
             var stageCount = pipelineStages.Count;
             var microbatchOverhead = microbatchConfig.Count * 0.5; // Small overhead per microbatch
-            
+
+
             return (stageCount * baseStageTimeMs) + microbatchOverhead;
         }
 
@@ -754,7 +759,8 @@ namespace DotCompute.Core.Execution
             // Estimate based on stage complexity and microbatch size
             const double baseProcessingTimeMs = 5.0;
             var microbatchMultiplier = microbatchConfig.Count * 0.3;
-            
+
+
             return baseProcessingTimeMs + microbatchMultiplier;
         }
     }

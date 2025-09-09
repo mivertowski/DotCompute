@@ -38,10 +38,10 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
     public IReadOnlyList<DotCompute.Abstractions.Types.KernelLanguage> SupportedSourceTypes => _accelerator.Type switch
     {
         AcceleratorType.CUDA => new[] { DotCompute.Abstractions.Types.KernelLanguage.CUDA, DotCompute.Abstractions.Types.KernelLanguage.Ptx },
-        AcceleratorType.OpenCL => new[] { DotCompute.Abstractions.Types.KernelLanguage.OpenCL },
-        AcceleratorType.Metal => new[] { DotCompute.Abstractions.Types.KernelLanguage.Metal },
-        AcceleratorType.DirectCompute => new[] { DotCompute.Abstractions.Types.KernelLanguage.HLSL, DotCompute.Abstractions.Types.KernelLanguage.DirectCompute },
-        _ => new[] { DotCompute.Abstractions.Types.KernelLanguage.CSharp }
+        AcceleratorType.OpenCL => [DotCompute.Abstractions.Types.KernelLanguage.OpenCL],
+        AcceleratorType.Metal => [DotCompute.Abstractions.Types.KernelLanguage.Metal],
+        AcceleratorType.DirectCompute => [DotCompute.Abstractions.Types.KernelLanguage.HLSL, DotCompute.Abstractions.Types.KernelLanguage.DirectCompute],
+        _ => [DotCompute.Abstractions.Types.KernelLanguage.CSharp]
     };
 
     /// <summary>
@@ -66,6 +66,7 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
         DotCompute.Abstractions.CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
         // Delegate to the accelerator's compilation capabilities
+
         => await _accelerator.CompileKernelAsync(definition, options, cancellationToken).ConfigureAwait(false);
 
     /// <summary>
@@ -110,5 +111,6 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
         OptimizationLevel level,
         CancellationToken cancellationToken = default)
         // Delegate to accelerator's optimization capabilities if available
+
         => ValueTask.FromResult(kernel);
 }

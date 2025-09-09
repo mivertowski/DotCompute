@@ -17,19 +17,19 @@ public interface IProfilingSession : IDisposable
     /// Gets the unique session identifier.
     /// Used to correlate metrics and events within this profiling session.
     /// </summary>
-    string SessionId { get; }
+    public string SessionId { get; }
 
     /// <summary>
     /// Gets the name of the operation being profiled.
     /// Identifies what operation or workflow this session is tracking.
     /// </summary>
-    string OperationName { get; }
+    public string OperationName { get; }
 
     /// <summary>
     /// Gets the start time of the profiling session.
     /// Marks when the profiling began for duration calculations.
     /// </summary>
-    DateTime StartTime { get; }
+    public DateTime StartTime { get; }
 
     /// <summary>
     /// Records a custom metric for this session.
@@ -37,7 +37,7 @@ public interface IProfilingSession : IDisposable
     /// </summary>
     /// <param name="name">The metric name.</param>
     /// <param name="value">The metric value.</param>
-    void RecordMetric(string name, double value);
+    public void RecordMetric(string name, double value);
 
     /// <summary>
     /// Adds a tag to this session.
@@ -45,19 +45,19 @@ public interface IProfilingSession : IDisposable
     /// </summary>
     /// <param name="key">The tag key.</param>
     /// <param name="value">The tag value.</param>
-    void AddTag(string key, string value);
+    public void AddTag(string key, string value);
 
     /// <summary>
     /// Gets the current session metrics.
     /// Returns intermediate metrics collected so far in the session.
     /// </summary>
     /// <returns>Current session metrics.</returns>
-    SessionMetrics GetMetrics();
+    public SessionMetrics GetMetrics();
 
     /// <summary>
     /// Ends the profiling session.
     /// Finalizes metric collection and returns the complete session results.
     /// </summary>
     /// <returns>Final profiling session results.</returns>
-    ProfilingSessionResult End();
+    public ProfilingSessionResult End();
 }

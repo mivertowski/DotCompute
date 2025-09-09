@@ -171,8 +171,9 @@ namespace DotCompute.Backends.CUDA.Advanced
                 var endTime = DateTimeOffset.UtcNow;
                 cooperativeKernel.LaunchCount++;
                 cooperativeKernel.TotalExecutionTime += (endTime - startTime);
-                
+
                 // Update metrics tracking
+
                 lock (_metricsLock)
                 {
                     _totalCooperativeLaunches++;
@@ -349,8 +350,10 @@ namespace DotCompute.Backends.CUDA.Advanced
                 var totalTime = _cooperativeKernels.Values.Sum(k => k.TotalExecutionTime.TotalMilliseconds);
 
                 // Calculate efficiency score based on launch frequency and execution time
-                var newEfficiencyScore = totalLaunches > 0 && totalTime > 0 
-                    ? Math.Min(1.0, Math.Max(0.0, totalLaunches / (totalTime * 0.001))) 
+                var newEfficiencyScore = totalLaunches > 0 && totalTime > 0
+
+                    ? Math.Min(1.0, Math.Max(0.0, totalLaunches / (totalTime * 0.001)))
+
                     : 0.5;
 
                 var newSynchronizationOverhead = CalculateSynchronizationOverhead();
@@ -361,8 +364,10 @@ namespace DotCompute.Backends.CUDA.Advanced
                     _efficiencyScore = newEfficiencyScore;
                     _synchronizationOverhead = newSynchronizationOverhead;
                 }
-                
-                _logger.LogTrace("Updated cooperative groups metrics: Efficiency={EfficiencyScore:F3}, Overhead={SynchronizationOverhead:F2}ms", 
+
+
+                _logger.LogTrace("Updated cooperative groups metrics: Efficiency={EfficiencyScore:F3}, Overhead={SynchronizationOverhead:F2}ms",
+
                     _efficiencyScore, _synchronizationOverhead);
             }
             catch (Exception ex)
@@ -383,7 +388,8 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Base overhead increases with number of active groups
 
             var baseOverhead = _cooperativeKernels.Count * 0.01; // 1% per group
-            
+
+
             double avgSyncPoints;
             lock (_metricsLock)
             {
@@ -392,9 +398,11 @@ namespace DotCompute.Backends.CUDA.Advanced
                     ? (double)_totalSynchronizationPoints / _totalCooperativeLaunches
                     : 1.0;
             }
-            
+
+
             var syncOverhead = avgSyncPoints * 0.02; // 2% per sync point on average
-            
+
+
             return Math.Min(0.2, baseOverhead + syncOverhead); // Cap at 20% overhead
         }
 
@@ -421,7 +429,8 @@ namespace DotCompute.Backends.CUDA.Advanced
 
             var baseUtilization = 0.6; // 60% base utilization
             var cooperativeBonus = Math.Min(0.3, _cooperativeKernels.Count * 0.05); // Up to 30% bonus
-            
+
+
             return Math.Min(1.0, baseUtilization + cooperativeBonus);
         }
 
@@ -438,13 +447,16 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Base compute utilization with cooperative groups benefits
 
             var totalKernels = _cooperativeKernels.Count;
-            var avgLaunchCount = totalKernels > 0 
-                ? _cooperativeKernels.Values.Average(k => k.LaunchCount) 
+            var avgLaunchCount = totalKernels > 0
+
+                ? _cooperativeKernels.Values.Average(k => k.LaunchCount)
+
                 : 0;
 
             // Higher launch counts indicate better utilization
             var utilizationFactor = Math.Min(1.0, avgLaunchCount / 10.0);
-            
+
+
             return Math.Max(0.4, utilizationFactor); // Minimum 40% utilization
         }
 

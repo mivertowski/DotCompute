@@ -40,7 +40,8 @@ public static class CodeFormatter
         var indent = GetIndentation(indentLevel, style);
         var lines = code.Split('\n');
         var sb = new StringBuilder();
-        
+
+
         foreach (var line in lines)
         {
             var trimmedLine = line.TrimEnd();
@@ -54,10 +55,12 @@ public static class CodeFormatter
                 _ = sb.AppendLine();
             }
         }
-        
+
+
         return sb.ToString();
     }
-    
+
+
     /// <summary>
     /// Gets the indentation string for a given level.
     /// </summary>
@@ -67,7 +70,8 @@ public static class CodeFormatter
     public static string GetIndentation(int level, CodeStyle? style = null)
     {
         style ??= _defaultStyle;
-        
+
+
         if (level <= 0)
         {
 
@@ -78,10 +82,12 @@ public static class CodeFormatter
         var singleIndent = style.IndentationStyle == IndentationStyle.Tabs
             ? "\t"
             : new string(' ', style.IndentSize);
-        
+
+
         return string.Concat(System.Linq.Enumerable.Repeat(singleIndent, level));
     }
-    
+
+
     /// <summary>
     /// Formats a method signature with proper style.
     /// </summary>
@@ -101,10 +107,12 @@ public static class CodeFormatter
         CodeStyle? style = null)
     {
         style ??= _defaultStyle;
-        
+
+
         var sb = new StringBuilder();
         _ = sb.Append(accessModifier);
-        
+
+
         if (isStatic)
         {
             _ = sb.Append(" static");
@@ -115,8 +123,9 @@ public static class CodeFormatter
         _ = sb.Append(' ');
         _ = sb.Append(methodName);
         _ = sb.Append('(');
-        
+
         // Handle long parameter lists
+
         if (parameters.Length > style.MaxLineLength - sb.Length - 2)
         {
             _ = sb.AppendLine();
@@ -141,7 +150,8 @@ public static class CodeFormatter
         _ = sb.Append(')');
         return sb.ToString();
     }
-    
+
+
     /// <summary>
     /// Formats an opening brace according to the style settings.
     /// </summary>
@@ -151,12 +161,14 @@ public static class CodeFormatter
     public static string FormatOpeningBrace(int indentLevel, CodeStyle? style = null)
     {
         style ??= _defaultStyle;
-        
+
+
         return style.BraceStyle == BraceStyle.NextLine
             ? $"{GetIndentation(indentLevel, style)}{{\n"
             : " {\n";
     }
-    
+
+
     /// <summary>
     /// Formats a closing brace according to the style settings.
     /// </summary>
@@ -168,7 +180,8 @@ public static class CodeFormatter
         style ??= _defaultStyle;
         return $"{GetIndentation(indentLevel, style)}}}";
     }
-    
+
+
     /// <summary>
     /// Normalizes line endings in the code.
     /// </summary>
@@ -178,22 +191,27 @@ public static class CodeFormatter
     public static string NormalizeLineEndings(string code, CodeStyle? style = null)
     {
         style ??= _defaultStyle;
-        
+
         // First normalize to \n
+
         code = code.Replace("\r\n", "\n").Replace("\r", "\n");
-        
+
         // Then apply the desired style
+
         return style.LineEndings switch
         {
             LineEndingStyle.Windows => code.Replace("\n", "\r\n"),
             LineEndingStyle.Unix => code,
-            LineEndingStyle.Auto => Environment.NewLine == "\r\n" 
-                ? code.Replace("\n", "\r\n") 
+            LineEndingStyle.Auto => Environment.NewLine == "\r\n"
+
+                ? code.Replace("\n", "\r\n")
+
                 : code,
             _ => code
         };
     }
-    
+
+
     /// <summary>
     /// Wraps a line of code if it exceeds the maximum length.
     /// </summary>
@@ -204,7 +222,8 @@ public static class CodeFormatter
     public static string WrapLine(string line, int indentLevel, CodeStyle? style = null)
     {
         style ??= _defaultStyle;
-        
+
+
         if (line.Length <= style.MaxLineLength)
         {
 
@@ -217,7 +236,8 @@ public static class CodeFormatter
         _ = GetIndentation(indentLevel, style);
         var continuationIndent = GetIndentation(indentLevel + 1, style);
         var words = line.Split(' ');
-        
+
+
         foreach (var word in words)
         {
             if (currentLine.Length + word.Length + 1 > style.MaxLineLength && currentLine.Length > 0)
@@ -226,7 +246,8 @@ public static class CodeFormatter
                 _ = currentLine.Clear();
                 _ = currentLine.Append(continuationIndent);
             }
-            
+
+
             if (currentLine.Length > 0 && !currentLine.ToString().EndsWith(" "))
             {
                 _ = currentLine.Append(' ');
@@ -235,7 +256,8 @@ public static class CodeFormatter
 
             _ = currentLine.Append(word);
         }
-        
+
+
         if (currentLine.Length > 0)
         {
             _ = sb.Append(currentLine);
@@ -244,7 +266,8 @@ public static class CodeFormatter
 
         return sb.ToString();
     }
-    
+
+
     /// <summary>
     /// Formats a comment block with proper indentation and wrapping.
     /// </summary>
@@ -256,7 +279,8 @@ public static class CodeFormatter
     public static string FormatComment(string comment, int indentLevel, bool isXmlDoc = false, CodeStyle? style = null)
     {
         style ??= _defaultStyle;
-        
+
+
         if (!style.Comments.IncludeMethodComments && isXmlDoc)
         {
             return string.Empty;
@@ -274,7 +298,8 @@ public static class CodeFormatter
         var prefix = isXmlDoc ? "/// " : "// ";
         var lines = comment.Split('\n');
         var sb = new StringBuilder();
-        
+
+
         foreach (var line in lines)
         {
             var trimmedLine = line.Trim();
@@ -290,10 +315,12 @@ public static class CodeFormatter
                 }
             }
         }
-        
+
+
         return sb.ToString();
     }
-    
+
+
     /// <summary>
     /// Creates a formatted XML documentation comment.
     /// </summary>
@@ -313,7 +340,8 @@ public static class CodeFormatter
         CodeStyle? style = null)
     {
         style ??= _defaultStyle;
-        
+
+
         if (!style.Comments.IncludeMethodComments)
         {
 
@@ -335,8 +363,9 @@ public static class CodeFormatter
         }
         _ = sb.Append(indent);
         _ = sb.AppendLine("/// </summary>");
-        
+
         // Parameters
+
         if (parameters != null && parameters.Length > 0)
         {
             foreach (var (name, description) in parameters)
@@ -345,15 +374,17 @@ public static class CodeFormatter
                 _ = sb.AppendLine($"/// <param name=\"{name}\">{description}</param>");
             }
         }
-        
+
         // Returns
+
         if (!string.IsNullOrEmpty(returns))
         {
             _ = sb.Append(indent);
             _ = sb.AppendLine($"/// <returns>{returns}</returns>");
         }
-        
+
         // Remarks
+
         if (!string.IsNullOrEmpty(remarks) && style.Comments.DetailLevel >= CommentDetailLevel.Normal)
         {
             _ = sb.Append(indent);
@@ -367,10 +398,12 @@ public static class CodeFormatter
             _ = sb.Append(indent);
             _ = sb.AppendLine("/// </remarks>");
         }
-        
+
+
         return sb.ToString();
     }
-    
+
+
     /// <summary>
     /// Creates a standard file header for generated code.
     /// </summary>
@@ -403,10 +436,12 @@ public static class CodeFormatter
     {
         ArgumentValidation.ThrowIfNullOrEmpty(namespaceName);
         style ??= _defaultStyle;
-        
+
+
         var sb = new StringBuilder();
         _ = sb.Append($"namespace {namespaceName}");
-        
+
+
         if (style.BraceStyle == BraceStyle.NextLine)
         {
             _ = sb.AppendLine();
@@ -416,7 +451,8 @@ public static class CodeFormatter
         {
             _ = sb.AppendLine(" {");
         }
-        
+
+
         return sb.ToString();
     }
 

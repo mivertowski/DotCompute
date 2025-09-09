@@ -13,17 +13,20 @@ public static class FluentAssertionsExtensions
     /// <summary>
     /// Verifies that two float arrays are approximately equal within specified tolerance.
     /// </summary>
-    public static void ShouldBeApproximatelyEqualTo(this IEnumerable<float> subject, IEnumerable<float> expected, 
+    public static void ShouldBeApproximatelyEqualTo(this IEnumerable<float> subject, IEnumerable<float> expected,
+
         float tolerance, string because = "", params object[] becauseArgs)
     {
         _ = subject.Should().NotBeNull();
         _ = expected.Should().NotBeNull();
-        
+
+
         var subjectArray = subject.ToArray();
         var expectedArray = expected.ToArray();
 
         _ = subjectArray.Should().HaveCount(expectedArray.Length, because, becauseArgs);
-        
+
+
         for (var i = 0; i < subjectArray.Length; i++)
         {
             _ = subjectArray[i].Should().BeApproximately(expectedArray[i], tolerance,
@@ -35,17 +38,20 @@ public static class FluentAssertionsExtensions
     /// <summary>
     /// Verifies that two double arrays are approximately equal within specified tolerance.
     /// </summary>
-    public static void ShouldBeApproximatelyEqualTo(this IEnumerable<double> subject, IEnumerable<double> expected, 
+    public static void ShouldBeApproximatelyEqualTo(this IEnumerable<double> subject, IEnumerable<double> expected,
+
         double tolerance, string because = "", params object[] becauseArgs)
     {
         _ = subject.Should().NotBeNull();
         _ = expected.Should().NotBeNull();
-        
+
+
         var subjectArray = subject.ToArray();
         var expectedArray = expected.ToArray();
 
         _ = subjectArray.Should().HaveCount(expectedArray.Length, because, becauseArgs);
-        
+
+
         for (var i = 0; i < subjectArray.Length; i++)
         {
             _ = subjectArray[i].Should().BeApproximately(expectedArray[i], tolerance,
@@ -53,7 +59,8 @@ public static class FluentAssertionsExtensions
                 $"element at index {i} should be approximately equal {because}", becauseArgs);
         }
     }
-    
+
+
     /// <summary>
     /// Verifies that a collection contains only finite values (not NaN or Infinity)
     /// </summary>
@@ -61,7 +68,8 @@ public static class FluentAssertionsExtensions
         where T : IComparable<T>
     {
         _ = subject.Should().NotBeNull();
-        
+
+
         if (typeof(T) == typeof(float))
         {
             var floats = subject.Cast<float>();
@@ -129,7 +137,8 @@ public static class FluentAssertionsExtensions
     {
         _ = subject.Should().NotBeNull(because, becauseArgs);
         _ = subject.Should().NotBeEmpty(because, becauseArgs);
-        
+
+
         if (typeof(T) == typeof(float))
         {
             var floats = subject.Cast<float>();
@@ -145,7 +154,8 @@ public static class FluentAssertionsExtensions
     /// <summary>
     /// Verifies that performance metrics meet expected thresholds
     /// </summary>
-    public static void ShouldMeetPerformanceThreshold(this double actualThroughput, double expectedMinThroughput, 
+    public static void ShouldMeetPerformanceThreshold(this double actualThroughput, double expectedMinThroughput,
+
         string unit = "ops/sec", string because = "", params object[] becauseArgs)
     {
         _ = actualThroughput.Should().BeGreaterThanOrEqualTo(expectedMinThroughput,
@@ -161,18 +171,21 @@ public static class FluentAssertionsExtensions
     {
         _ = subject.Should().NotBeNull();
         subject.ShouldContainOnlyFiniteValues(because, becauseArgs);
-        
+
+
         var array = subject.ToArray();
         _ = array.Should().NotBeEmpty("because stable computation should produce results");
-        
+
         // Additional stability checks could be added here
         // e.g., checking for reasonable value ranges, no sudden spikes, etc.
+
     }
 
     /// <summary>
     /// Verifies that memory usage is within acceptable bounds
     /// </summary>
-    public static void ShouldBeWithinMemoryBounds(this long actualMemoryBytes, long maxMemoryBytes, 
+    public static void ShouldBeWithinMemoryBounds(this long actualMemoryBytes, long maxMemoryBytes,
+
         string because = "", params object[] becauseArgs)
     {
         _ = actualMemoryBytes.Should().BeLessThanOrEqualTo(maxMemoryBytes, because, becauseArgs);
@@ -208,7 +221,8 @@ public static class FluentAssertionsExtensions
 
         _ = recovered.Should().BeTrue($"because the system should recover gracefully from {typeof(TException).Name} {because}", becauseArgs);
     }
-    
+
+
     /// <summary>
     /// Asserts that an action does not exceed a specified memory increase.
     /// </summary>
@@ -218,19 +232,23 @@ public static class FluentAssertionsExtensions
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-        
+
         // Measure initial memory
+
         var initialMemory = GC.GetTotalMemory(true);
-        
+
         // Execute the action
+
         action();
-        
+
         // Force garbage collection after execution
+
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-        
+
         // Measure final memory
+
         var finalMemory = GC.GetTotalMemory(true);
         var memoryIncrease = finalMemory - initialMemory;
 

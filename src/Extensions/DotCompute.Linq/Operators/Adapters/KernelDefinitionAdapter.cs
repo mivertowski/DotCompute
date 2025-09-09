@@ -25,19 +25,23 @@ public static class KernelDefinitionAdapter
             Name = linqDefinition.Name,
             Source = linqDefinition.CompiledSource ?? string.Empty,
         };
-        
+
         // Store parameters in metadata for later retrieval
+
         if (linqDefinition.Parameters != null && linqDefinition.Parameters.Count > 0)
         {
             coreDefinition.Metadata["Parameters"] = linqDefinition.Parameters.ToArray();
         }
-        
+
         // Store language in metadata
+
         coreDefinition.Metadata["Language"] = linqDefinition.Language;
-        
+
+
         return coreDefinition;
     }
-    
+
+
     /// <summary>
     /// Converts a Core KernelDefinition to a LINQ KernelDefinition.
     /// </summary>
@@ -50,43 +54,52 @@ public static class KernelDefinitionAdapter
             Name = coreDefinition.Name,
             CompiledSource = coreDefinition.Source
         };
-        
+
         // Retrieve parameters from metadata
-        if (coreDefinition.Metadata.TryGetValue("Parameters", out var paramsObj) && 
+
+        if (coreDefinition.Metadata.TryGetValue("Parameters", out var paramsObj) &&
+
             paramsObj is Parameters.KernelParameter[] parameters)
         {
             linqDefinition.Parameters.AddRange(parameters);
         }
-        
+
         // Retrieve language from metadata
-        if (coreDefinition.Metadata.TryGetValue("Language", out var langObj) && 
+
+        if (coreDefinition.Metadata.TryGetValue("Language", out var langObj) &&
+
             langObj is KernelLanguage language)
         {
             linqDefinition.Language = language;
         }
-        
+
+
         return linqDefinition;
     }
-    
+
+
     /// <summary>
     /// Extracts parameters from a Core KernelDefinition.
     /// </summary>
     public static Parameters.KernelParameter[] ExtractParameters(CoreKernelDefinition definition)
     {
-        if (definition.Metadata.TryGetValue("Parameters", out var paramsObj) && 
+        if (definition.Metadata.TryGetValue("Parameters", out var paramsObj) &&
+
             paramsObj is Parameters.KernelParameter[] parameters)
         {
             return parameters;
         }
         return [];
     }
-    
+
+
     /// <summary>
     /// Extracts language from a Core KernelDefinition.
     /// </summary>
     public static KernelLanguage ExtractLanguage(CoreKernelDefinition definition)
     {
-        if (definition.Metadata.TryGetValue("Language", out var langObj) && 
+        if (definition.Metadata.TryGetValue("Language", out var langObj) &&
+
             langObj is KernelLanguage language)
         {
             return language;

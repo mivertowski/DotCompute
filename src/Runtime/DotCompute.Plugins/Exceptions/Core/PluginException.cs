@@ -22,16 +22,18 @@ public class PluginException : Exception
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginException"/> class.
     /// </summary>
-    public PluginException() 
-    { 
+    public PluginException()
+    {
+
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginException"/> class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
-    public PluginException(string message) : base(message) 
-    { 
+    public PluginException(string message) : base(message)
+    {
+
     }
 
     /// <summary>
@@ -41,8 +43,9 @@ public class PluginException : Exception
     /// <param name="message">The error message that explains the reason for the exception.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
     public PluginException(string message, Exception innerException)
-        : base(message, innerException) 
-    { 
+        : base(message, innerException)
+    {
+
     }
 
     /// <summary>

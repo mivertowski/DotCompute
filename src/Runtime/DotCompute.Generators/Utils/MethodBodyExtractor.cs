@@ -37,21 +37,25 @@ public static class MethodBodyExtractor
     public static string? ExtractMethodBody(MethodDeclarationSyntax method, ExtractionOptions? options = null)
     {
         ArgumentValidation.ThrowIfNull(method);
-        
+
+
         options ??= new ExtractionOptions();
-        
+
         // Try block body first
+
         if (method.Body != null)
         {
             return ExtractBlockBody(method.Body, options);
         }
-        
+
         // Try expression body
+
         if (method.ExpressionBody != null)
         {
             return ExtractExpressionBody(method.ExpressionBody, options);
         }
-        
+
+
         return null;
     }
 
@@ -64,22 +68,27 @@ public static class MethodBodyExtractor
     public static string ExtractExpressionBody(ArrowExpressionClauseSyntax expressionBody, ExtractionOptions? options = null)
     {
         ArgumentValidation.ThrowIfNull(expressionBody);
-        
+
+
         options ??= new ExtractionOptions();
-        
+
+
         var expression = expressionBody.Expression;
-        
+
+
         if (options.NormalizeWhitespace)
         {
             expression = expression.NormalizeWhitespace();
         }
-        
+
+
         if (options.ExpandExpressionBodies)
         {
             // Convert to statement form
             return $"return {expression};";
         }
-        
+
+
         return expression.ToString();
     }
 
@@ -92,14 +101,17 @@ public static class MethodBodyExtractor
     public static string ExtractBlockBody(BlockSyntax block, ExtractionOptions? options = null)
     {
         ArgumentValidation.ThrowIfNull(block);
-        
+
+
         options ??= new ExtractionOptions();
-        
+
+
         if (options.NormalizeWhitespace)
         {
             block = block.NormalizeWhitespace();
         }
-        
+
+
         return ProcessStatements(block.Statements, options);
     }
 
@@ -112,23 +124,29 @@ public static class MethodBodyExtractor
     public static string ProcessStatements(IEnumerable<StatementSyntax> statements, ExtractionOptions? options = null)
     {
         ArgumentValidation.ThrowIfNull(statements);
-        
+
+
         options ??= new ExtractionOptions();
-        
+
+
         var sb = new StringBuilder();
         var statementList = statements.ToList();
-        
+
+
         for (var i = 0; i < statementList.Count; i++)
         {
             var statement = statementList[i];
-            
+
+
             if (!options.IncludeComments)
             {
                 statement = RemoveComments(statement);
             }
-            
+
+
             var statementStr = statement.ToString();
-            
+
+
             if (options.PreserveFormatting)
             {
                 _ = sb.AppendLine(statementStr);
@@ -142,7 +160,8 @@ public static class MethodBodyExtractor
                 }
             }
         }
-        
+
+
         return sb.ToString();
     }
 
@@ -154,22 +173,27 @@ public static class MethodBodyExtractor
     public static IEnumerable<VariableDeclarationInfo> ExtractVariableDeclarations(MethodDeclarationSyntax method)
     {
         ArgumentValidation.ThrowIfNull(method);
-        
+
+
         var declarations = new List<VariableDeclarationInfo>();
-        
+
+
         var body = method.Body;
         if (body == null)
         {
             return declarations;
         }
-        
+
+
         var localDeclarations = body.DescendantNodes().OfType<LocalDeclarationStatementSyntax>();
-        
+
+
         foreach (var localDecl in localDeclarations)
         {
             var declaration = localDecl.Declaration;
             var type = declaration.Type.ToString();
-            
+
+
             foreach (var variable in declaration.Variables)
             {
                 declarations.Add(new VariableDeclarationInfo
@@ -182,7 +206,8 @@ public static class MethodBodyExtractor
                 });
             }
         }
-        
+
+
         return declarations;
     }
 
@@ -194,10 +219,12 @@ public static class MethodBodyExtractor
     public static IEnumerable<ReturnStatementInfo> ExtractReturnStatements(MethodDeclarationSyntax method)
     {
         ArgumentValidation.ThrowIfNull(method);
-        
+
+
         var returns = new List<ReturnStatementInfo>();
-        
+
         // Handle expression body
+
         if (method.ExpressionBody != null)
         {
             returns.Add(new ReturnStatementInfo
@@ -208,16 +235,19 @@ public static class MethodBodyExtractor
             });
             return returns;
         }
-        
+
         // Handle block body
+
         var body = method.Body;
         if (body == null)
         {
             return returns;
         }
-        
+
+
         var returnStatements = body.DescendantNodes().OfType<ReturnStatementSyntax>();
-        
+
+
         foreach (var returnStmt in returnStatements)
         {
             returns.Add(new ReturnStatementInfo
@@ -227,7 +257,8 @@ public static class MethodBodyExtractor
                 LineNumber = returnStmt.GetLocation().GetLineSpan().StartLinePosition.Line
             });
         }
-        
+
+
         return returns;
     }
 
@@ -239,22 +270,27 @@ public static class MethodBodyExtractor
     public static IEnumerable<MethodInvocationInfo> ExtractMethodCalls(MethodDeclarationSyntax method)
     {
         ArgumentValidation.ThrowIfNull(method);
-        
+
+
         var invocations = new List<MethodInvocationInfo>();
-        
+
+
         var searchRoot = method.Body ?? (SyntaxNode?)method.ExpressionBody;
         if (searchRoot == null)
         {
             return invocations;
         }
-        
+
+
         var methodCalls = searchRoot.DescendantNodes().OfType<InvocationExpressionSyntax>();
-        
+
+
         foreach (var call in methodCalls)
         {
             var methodName = ExtractMethodName(call.Expression);
             var arguments = call.ArgumentList.Arguments.Select(a => a.ToString()).ToList();
-            
+
+
             invocations.Add(new MethodInvocationInfo
             {
                 MethodName = methodName,
@@ -262,7 +298,8 @@ public static class MethodBodyExtractor
                 FullExpression = call.ToString()
             });
         }
-        
+
+
         return invocations;
     }
 
@@ -276,7 +313,8 @@ public static class MethodBodyExtractor
     {
         ArgumentValidation.ThrowIfNull(method);
         ArgumentValidation.ThrowIfNull(transformer);
-        
+
+
         var body = ExtractMethodBody(method);
         return body != null ? transformer(body) : null;
     }
@@ -312,21 +350,24 @@ public static class MethodBodyExtractor
     public static MethodBodyAnalysis AnalyzeMethodBody(MethodDeclarationSyntax method)
     {
         ArgumentValidation.ThrowIfNull(method);
-        
+
+
         var analysis = new MethodBodyAnalysis
         {
             MethodName = method.Identifier.Text,
             HasBody = method.Body != null || method.ExpressionBody != null,
             IsExpressionBodied = method.ExpressionBody != null
         };
-        
+
+
         var searchRoot = method.Body ?? (SyntaxNode?)method.ExpressionBody;
         if (searchRoot == null)
         {
             return analysis;
         }
-        
+
         // Count various statement types
+
         analysis.StatementCount = searchRoot.DescendantNodes().OfType<StatementSyntax>().Count();
         analysis.LoopCount = searchRoot.DescendantNodes().OfType<ForStatementSyntax>().Count() +
                             searchRoot.DescendantNodes().OfType<WhileStatementSyntax>().Count() +
@@ -335,15 +376,18 @@ public static class MethodBodyExtractor
         analysis.ConditionalCount = searchRoot.DescendantNodes().OfType<IfStatementSyntax>().Count() +
                                    searchRoot.DescendantNodes().OfType<SwitchStatementSyntax>().Count();
         analysis.TryCatchCount = searchRoot.DescendantNodes().OfType<TryStatementSyntax>().Count();
-        
+
         // Check for async/await
+
         analysis.HasAsyncOperations = searchRoot.DescendantNodes().OfType<AwaitExpressionSyntax>().Any();
-        
+
         // Check for LINQ
+
         analysis.HasLinqOperations = searchRoot.DescendantNodes().OfType<QueryExpressionSyntax>().Any() ||
                                     searchRoot.DescendantNodes().OfType<InvocationExpressionSyntax>()
                                         .Any(i => IsLinqMethod(i));
-        
+
+
         return analysis;
     }
 
@@ -360,7 +404,8 @@ public static class MethodBodyExtractor
             "Last", "LastOrDefault", "Single", "SingleOrDefault", "Any", "All",
             "Count", "Sum", "Average", "Min", "Max", "Aggregate"
         };
-        
+
+
         return linqMethods.Contains(methodName);
     }
 

@@ -313,7 +313,8 @@ public static class ServiceCollectionDecoratorExtensions
             {
                 // Create the original service instance
                 TService originalService;
-                
+
+
                 if (existingDescriptor.ImplementationInstance != null)
                 {
                     originalService = (TService)existingDescriptor.ImplementationInstance;

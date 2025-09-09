@@ -18,7 +18,7 @@ public interface IPluginDiscovery : IDisposable
     /// <returns>The created plugin instance, or null if creation failed or no factory exists.</returns>
     /// <exception cref="ArgumentException">Thrown when pluginTypeName is null, empty, or whitespace.</exception>
     /// <exception cref="PlatformNotSupportedException">Thrown when the plugin is not supported on the current platform.</exception>
-    IBackendPlugin? CreatePlugin(string pluginTypeName);
+    public IBackendPlugin? CreatePlugin(string pluginTypeName);
 
     /// <summary>
     /// Attempts to create a plugin instance, providing detailed error information on failure.
@@ -27,30 +27,30 @@ public interface IPluginDiscovery : IDisposable
     /// <param name="plugin">The created plugin instance if successful.</param>
     /// <param name="errorMessage">Error message if creation failed.</param>
     /// <returns>True if the plugin was successfully created; false otherwise.</returns>
-    bool TryCreatePlugin(string pluginTypeName, out IBackendPlugin? plugin, out string? errorMessage);
+    public bool TryCreatePlugin(string pluginTypeName, out IBackendPlugin? plugin, out string? errorMessage);
 
     /// <summary>
     /// Gets a loaded plugin by its unique identifier.
     /// </summary>
     /// <param name="pluginId">The unique identifier of the plugin.</param>
     /// <returns>The plugin instance if found and loaded; null otherwise.</returns>
-    IBackendPlugin? GetPlugin(string pluginId);
+    public IBackendPlugin? GetPlugin(string pluginId);
 
     /// <summary>
     /// Gets all currently loaded and active plugin instances.
     /// </summary>
     /// <returns>A read-only collection of loaded plugin instances.</returns>
-    IReadOnlyCollection<IBackendPlugin> GetLoadedPlugins();
+    public IReadOnlyCollection<IBackendPlugin> GetLoadedPlugins();
 
     /// <summary>
     /// Checks if a plugin with the specified ID is currently loaded.
     /// </summary>
     /// <param name="pluginId">The plugin ID to check.</param>
     /// <returns>True if the plugin is loaded; false otherwise.</returns>
-    bool IsPluginLoaded(string pluginId);
+    public bool IsPluginLoaded(string pluginId);
 
     /// <summary>
     /// Gets the count of currently loaded plugins.
     /// </summary>
-    int LoadedPluginCount { get; }
+    public int LoadedPluginCount { get; }
 }

@@ -119,8 +119,10 @@ namespace DotCompute.Core.Execution.Metrics
         /// <c>true</c> if the device has good throughput, bandwidth, and success rate; otherwise, <c>false</c>.
         /// </value>
         public bool IsPerformingWell
-            => AverageThroughputGFLOPS > 1.0 && 
-            AverageMemoryBandwidthGBps > 10.0 && 
+            => AverageThroughputGFLOPS > 1.0 &&
+
+            AverageMemoryBandwidthGBps > 10.0 &&
+
             SuccessRatePercentage > 95.0;
 
         /// <summary>
@@ -184,7 +186,8 @@ namespace DotCompute.Core.Execution.Metrics
         {
             if (utilizationPercentage is < 0.0 or > 100.0)
             {
-                throw new ArgumentOutOfRangeException(nameof(utilizationPercentage), 
+                throw new ArgumentOutOfRangeException(nameof(utilizationPercentage),
+
                     "Utilization percentage must be between 0 and 100.");
             }
 
@@ -221,7 +224,8 @@ namespace DotCompute.Core.Execution.Metrics
             var throughputScore = (AverageThroughputGFLOPS - other.AverageThroughputGFLOPS) * 0.3;
             var bandwidthScore = (AverageMemoryBandwidthGBps - other.AverageMemoryBandwidthGBps) * 0.3;
             var reliabilityScore = (SuccessRatePercentage - other.SuccessRatePercentage) * 0.25;
-            var speedScore = (other.AverageExecutionTimeMs - AverageExecutionTimeMs) / 
+            var speedScore = (other.AverageExecutionTimeMs - AverageExecutionTimeMs) /
+
                            Math.Max(AverageExecutionTimeMs, other.AverageExecutionTimeMs) * 15.0;
 
             return throughputScore + bandwidthScore + reliabilityScore + speedScore;

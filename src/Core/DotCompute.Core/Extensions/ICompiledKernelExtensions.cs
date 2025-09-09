@@ -21,7 +21,8 @@ namespace DotCompute.Core.Extensions
     public static class ICompiledKernelExtensions
     {
         private static readonly ConcurrentDictionary<string, object> s_metadataCache = new();
-        
+
+
         /// <summary>
         /// Launches the kernel asynchronously with the given arguments.
         /// This is an alias for the ExecuteAsync method to match test expectations.
@@ -31,12 +32,14 @@ namespace DotCompute.Core.Extensions
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>A ValueTask representing the asynchronous operation</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ValueTask LaunchAsync(this ICompiledKernel kernel, 
+        public static ValueTask LaunchAsync(this ICompiledKernel kernel,
+
             KernelArguments arguments, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(arguments);
-            
+
+
             return kernel.ExecuteAsync(arguments, cancellationToken);
         }
 
@@ -50,20 +53,25 @@ namespace DotCompute.Core.Extensions
         /// <param name="arguments">The kernel arguments</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>A ValueTask representing the asynchronous operation</returns>
-        public static ValueTask LaunchAsync(this ICompiledKernel kernel, 
-            (int x, int y, int z) gridDim, 
+        public static ValueTask LaunchAsync(this ICompiledKernel kernel,
+
+            (int x, int y, int z) gridDim,
+
             (int x, int y, int z) blockDim,
-            KernelArguments arguments, 
+            KernelArguments arguments,
+
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(arguments);
-            
+
             // Store grid and block dimensions in arguments for kernel execution
             // These will be extracted by the specific backend implementation
+
             arguments.SetGridDimensions(gridDim);
             arguments.SetBlockDimensions(blockDim);
-            
+
+
             return kernel.ExecuteAsync(arguments, cancellationToken);
         }
 
@@ -81,17 +89,20 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(arguments);
-            
+
             // Console.WriteLine($"[DEBUG] LaunchAsync non-generic called with launchConfig={launchConfig?.GetType().Name}, arguments.Length={arguments?.Length}");
-            
+
+
             var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? []);
-            
+
             // Store launch configuration for backend-specific handling
+
             if (launchConfig != null)
             {
                 kernelArgs.SetLaunchConfiguration(launchConfig);
             }
-            
+
+
             return kernel.ExecuteAsync(kernelArgs);
         }
 
@@ -110,17 +121,20 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(arguments);
-            
+
             // Console.WriteLine($"[DEBUG] LaunchAsync<T> called with launchConfig={launchConfig?.GetType().Name}, arguments.Length={arguments?.Length}");
-            
+
+
             var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? []);
-            
+
             // Store launch configuration for backend-specific handling
+
             if (launchConfig != null)
             {
                 kernelArgs.SetLaunchConfiguration(launchConfig);
             }
-            
+
+
             return kernel.ExecuteAsync(kernelArgs);
         }
 
@@ -142,22 +156,26 @@ namespace DotCompute.Core.Extensions
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(stream);
             ArgumentNullException.ThrowIfNull(arguments);
-            
+
             // Console.WriteLine($"[DEBUG] LaunchAsync with IComputeStream called with launchConfig={launchConfig?.GetType().Name}, stream={stream?.GetType().Name}, arguments.Length={arguments?.Length}");
-            
+
+
             var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? []);
-            
+
             // Store launch configuration and stream for backend-specific handling
+
             if (launchConfig != null)
             {
                 kernelArgs.SetLaunchConfiguration(launchConfig);
             }
-            
+
+
             if (stream != null)
             {
                 kernelArgs.SetExecutionStream(stream);
             }
-            
+
+
             return kernel.ExecuteAsync(kernelArgs);
         }
 
@@ -174,12 +192,14 @@ namespace DotCompute.Core.Extensions
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(kernel);
-            
+
+
             var arguments = new KernelArguments
             {
                 arg1
             };
-            
+
+
             return kernel.ExecuteAsync(arguments, cancellationToken);
         }
 
@@ -199,13 +219,15 @@ namespace DotCompute.Core.Extensions
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(kernel);
-            
+
+
             var arguments = new KernelArguments
             {
                 arg1,
                 arg2
             };
-            
+
+
             return kernel.ExecuteAsync(arguments, cancellationToken);
         }
 
@@ -228,14 +250,16 @@ namespace DotCompute.Core.Extensions
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(kernel);
-            
+
+
             var arguments = new KernelArguments
             {
                 arg1,
                 arg2,
                 arg3
             };
-            
+
+
             return kernel.ExecuteAsync(arguments, cancellationToken);
         }
 
@@ -255,10 +279,12 @@ namespace DotCompute.Core.Extensions
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(arguments);
             ArgumentNullException.ThrowIfNull(options);
-            
+
             // Store execution options in arguments
+
             arguments.SetExecutionOptions(options);
-            
+
+
             return kernel.ExecuteAsync(arguments, cancellationToken);
         }
 
@@ -280,15 +306,18 @@ namespace DotCompute.Core.Extensions
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(arguments);
             ArgumentNullException.ThrowIfNull(globalWorkSize);
-            
+
             // Set work group dimensions
+
             arguments.SetGlobalWorkSize(globalWorkSize);
-            
+
+
             if (localWorkSize != null)
             {
                 arguments.SetLocalWorkSize(localWorkSize);
             }
-            
+
+
             return kernel.ExecuteAsync(arguments, cancellationToken);
         }
 
@@ -306,27 +335,32 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(parameters);
-            
+
+
             var arguments = new KernelArguments();
-            
+
             // Use reflection to extract properties from the parameters object
+
             var parametersType = parameters.GetType();
-            
+
             // Check for GlobalWorkSize property
+
             var globalWorkSizeProp = parametersType.GetProperty("GlobalWorkSize");
             if (globalWorkSizeProp?.GetValue(parameters) is int[] globalWorkSize)
             {
                 arguments.SetGlobalWorkSize(globalWorkSize);
             }
-            
+
             // Check for LocalWorkSize property
+
             var localWorkSizeProp = parametersType.GetProperty("LocalWorkSize");
             if (localWorkSizeProp?.GetValue(parameters) is int[] localWorkSize)
             {
                 arguments.SetLocalWorkSize(localWorkSize);
             }
-            
+
             // Check for Arguments property (Dictionary<string, object>)
+
             var argumentsProp = parametersType.GetProperty("Arguments");
             if (argumentsProp?.GetValue(parameters) is Dictionary<string, object> argsDict)
             {
@@ -335,15 +369,17 @@ namespace DotCompute.Core.Extensions
                     arguments.Add(kvp.Value);
                 }
             }
-            
+
             // Check for SharedMemorySize property
+
             var sharedMemoryProp = parametersType.GetProperty("SharedMemorySize");
             if (sharedMemoryProp?.GetValue(parameters) is int sharedMemorySize && sharedMemorySize > 0)
             {
                 arguments.SetSharedMemorySize(sharedMemorySize);
             }
-            
+
             // Convert ValueTask to Task for compatibility
+
             return kernel.ExecuteAsync(arguments, cancellationToken).AsTask();
         }
 
@@ -355,15 +391,19 @@ namespace DotCompute.Core.Extensions
         public static ValueTask<Dictionary<string, object>> GetMetadataAsync(this ICompiledKernel kernel)
         {
             ArgumentNullException.ThrowIfNull(kernel);
-            
+
+
             var cacheKey = $"metadata_{kernel.GetType().FullName}_{kernel.GetHashCode()}";
-            
-            if (s_metadataCache.TryGetValue(cacheKey, out var cachedMetadata) && 
+
+
+            if (s_metadataCache.TryGetValue(cacheKey, out var cachedMetadata) &&
+
                 cachedMetadata is Dictionary<string, object> metadata)
             {
                 return ValueTask.FromResult(metadata);
             }
-            
+
+
             var newMetadata = new Dictionary<string, object>
             {
                 ["KernelType"] = kernel.GetType().Name,
@@ -385,8 +425,9 @@ namespace DotCompute.Core.Extensions
         public static bool IsDisposed(this ICompiledKernel kernel)
         {
             ArgumentNullException.ThrowIfNull(kernel);
-            
+
             // Try to access kernel properties to detect disposed state
+
             try
             {
                 // Most kernel implementations will throw ObjectDisposedException if disposed
@@ -419,7 +460,8 @@ namespace DotCompute.Core.Extensions
                 {
                     return name;
                 }
-                
+
+
                 return kernel.GetType().Name;
             }
             catch
@@ -443,7 +485,8 @@ namespace DotCompute.Core.Extensions
                 {
                     return id;
                 }
-                
+
+
                 return Guid.NewGuid();
             }
             catch
@@ -460,7 +503,8 @@ namespace DotCompute.Core.Extensions
         private static KernelArguments CreateKernelArgumentsFromObjects(object[] arguments)
         {
             var kernelArgs = new KernelArguments();
-            
+
+
             if (arguments != null)
             {
                 foreach (var arg in arguments)
@@ -482,7 +526,8 @@ namespace DotCompute.Core.Extensions
     public static class KernelArgumentsExtensions
     {
         private static readonly ConditionalWeakTable<KernelArguments, Dictionary<string, object>> s_metadataTable = [];
-        
+
+
         private const string GridDimensionsKey = "__grid_dimensions";
         private const string BlockDimensionsKey = "__block_dimensions";
         private const string LaunchConfigKey = "__launch_config";
@@ -502,11 +547,13 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentNullException.ThrowIfNull(arguments);
             ArgumentNullException.ThrowIfNull(key);
-            
+
+
             var metadata = s_metadataTable.GetOrCreateValue(arguments);
             metadata[key] = value!;
         }
-        
+
+
         /// <summary>
         /// Gets metadata from the kernel arguments.
         /// </summary>
@@ -519,14 +566,17 @@ namespace DotCompute.Core.Extensions
         {
             ArgumentNullException.ThrowIfNull(arguments);
             ArgumentNullException.ThrowIfNull(key);
-            
-            if (s_metadataTable.TryGetValue(arguments, out var metadata) && 
+
+
+            if (s_metadataTable.TryGetValue(arguments, out var metadata) &&
+
                 metadata.TryGetValue(key, out var value) &&
                 value is T typedValue)
             {
                 return typedValue;
             }
-            
+
+
             return defaultValue;
         }
 

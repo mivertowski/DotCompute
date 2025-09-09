@@ -24,7 +24,7 @@ public enum OptimizationLevel
     /// scenarios where code clarity is more important than performance.
     /// </remarks>
     None,
-    
+
     /// <summary>
     /// Balanced optimization suitable for general-purpose use.
     /// </summary>
@@ -34,7 +34,7 @@ public enum OptimizationLevel
     /// This is the recommended setting for most production scenarios.
     /// </remarks>
     Balanced,
-    
+
     /// <summary>
     /// Aggressive optimization for maximum performance, potentially increasing code size.
     /// </summary>
@@ -44,7 +44,8 @@ public enum OptimizationLevel
     /// and compilation time but provides the best runtime performance.
     /// </remarks>
     Aggressive,
-    
+
+
     /// <summary>
     /// Optimization focused on minimizing code size rather than maximizing performance.
     /// </summary>

@@ -30,7 +30,8 @@ public sealed class PluginDiscoveryService : IPluginDiscovery
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _registrationService = registrationService ?? throw new ArgumentNullException(nameof(registrationService));
         _loadedPlugins = [];
-        
+
+
         _logger.LogDebug("PluginDiscoveryService initialized");
     }
 

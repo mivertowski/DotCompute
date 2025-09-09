@@ -33,7 +33,8 @@ namespace DotCompute.Core.Compute.Accelerators
         {
             Info = info ?? throw new ArgumentNullException(nameof(info));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _memoryManager = new CpuMemoryManager(this, logger as ILogger<CpuMemoryManager> ?? 
+            _memoryManager = new CpuMemoryManager(this, logger as ILogger<CpuMemoryManager> ??
+
                                                       throw new ArgumentException("Logger must be ILogger<CpuMemoryManager>", nameof(logger)));
             _kernelParser = new OpenCLKernelParser(logger);
         }
@@ -103,6 +104,7 @@ namespace DotCompute.Core.Compute.Accelerators
         private ICompiledKernel CreateOptimizedKernel(Types.KernelInfo kernelInfo, CompilationOptions options)
             // For now, just create a simple kernel since we moved the optimized ones to Backends.CPU
             // In a full implementation, this would try to load the CPU backend dynamically - TODO
+
 
             => new SimpleOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger);
 

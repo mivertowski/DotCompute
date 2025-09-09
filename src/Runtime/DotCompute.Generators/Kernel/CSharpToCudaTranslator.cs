@@ -60,18 +60,24 @@ internal sealed class CSharpToCudaTranslator
         catch (Exception ex)
         {
             // Fallback to default if translation fails
-            return GenerateDefaultKernelBody() + 
+            return GenerateDefaultKernelBody() +
+
                    $"\n            // Translation error: {ex.Message}";
         }
     }
 
     private void AnalyzeMemoryAccessPatterns()
     {
-        if (_kernelInfo.MethodDeclaration?.Body == null) return;
+        if (_kernelInfo.MethodDeclaration?.Body == null)
+        {
+            return;
+        }
+
 
         var dataFlow = _semanticModel.AnalyzeDataFlow(_kernelInfo.MethodDeclaration.Body);
-        
+
         // Identify variables that should use shared memory
+
         foreach (var variable in dataFlow?.VariablesDeclared ?? Enumerable.Empty<ISymbol>())
         {
             if (IsSharedMemoryCandidate(variable))
@@ -85,15 +91,16 @@ internal sealed class CSharpToCudaTranslator
         }
     }
 
-    private bool IsSharedMemoryCandidate(ISymbol variable)
+    private static bool IsSharedMemoryCandidate(ISymbol variable)
     {
         // Heuristics for shared memory usage
         var type = variable.GetTypeDisplayString();
-        return type.Contains("[]") && !type.Contains("Span") && 
+        return type.Contains("[]") && !type.Contains("Span") &&
+
                variable.Name.IndexOf("tile", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private bool IsConstantMemoryCandidate(ISymbol variable)
+    private static bool IsConstantMemoryCandidate(ISymbol variable)
     {
         // Heuristics for constant memory usage
         return variable.IsStatic || variable.Name.IndexOf("const", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -141,12 +148,14 @@ internal sealed class CSharpToCudaTranslator
     private void TranslateLocalDeclaration(LocalDeclarationStatementSyntax localDecl)
     {
         var type = ConvertToCudaType(localDecl.Declaration.Type.ToString());
-        
+
+
         foreach (var variable in localDecl.Declaration.Variables)
         {
             var varName = variable.Identifier.Text;
-            
+
             // Check if this should be in shared memory
+
             if (_sharedMemoryVariables.Contains(varName))
             {
                 WriteIndented($"__shared__ {type} {varName}");
@@ -165,7 +174,8 @@ internal sealed class CSharpToCudaTranslator
                 _output.Append(" = ");
                 TranslateExpression(variable.Initializer.Value);
             }
-            
+
+
             _output.AppendLine(";");
         }
     }
@@ -187,8 +197,9 @@ internal sealed class CSharpToCudaTranslator
         }
 
         WriteIndented("for (");
-        
+
         // Declaration
+
         if (forStmt.Declaration != null)
         {
             var type = ConvertToCudaType(forStmt.Declaration.Type.ToString());
@@ -203,24 +214,32 @@ internal sealed class CSharpToCudaTranslator
             }
         }
         _output.Append("; ");
-        
+
         // Condition
+
         if (forStmt.Condition != null)
         {
             TranslateExpression(forStmt.Condition);
         }
         _output.Append("; ");
-        
+
         // Incrementors
+
         if (forStmt.Incrementors.Any())
         {
             for (int i = 0; i < forStmt.Incrementors.Count; i++)
             {
-                if (i > 0) _output.Append(", ");
+                if (i > 0)
+                {
+                    _output.Append(", ");
+                }
+
+
                 TranslateExpression(forStmt.Incrementors[i]);
             }
         }
-        
+
+
         _output.AppendLine(") {");
         _indentLevel++;
         TranslateStatement(forStmt.Statement);
@@ -228,15 +247,20 @@ internal sealed class CSharpToCudaTranslator
         WriteIndented("}");
     }
 
-    private bool IsGridStrideLoop(ForStatementSyntax forStmt)
+    private static bool IsGridStrideLoop(ForStatementSyntax forStmt)
     {
         // Detect pattern: for (int i = idx; i < length; i += gridSize)
-        if (forStmt.Declaration?.Variables.Count != 1) return false;
-        
+        if (forStmt.Declaration?.Variables.Count != 1)
+        {
+            return false;
+        }
+
+
         var variable = forStmt.Declaration.Variables[0];
         var varName = variable.Identifier.Text;
-        
+
         // Check if initializer contains thread/block index references
+
         var initText = variable.Initializer?.Value.ToString() ?? "";
         return initText.Contains("idx") || initText.Contains("threadIdx") || initText.Contains("blockIdx");
     }
@@ -253,11 +277,13 @@ internal sealed class CSharpToCudaTranslator
         WriteIndented("if (");
         TranslateExpression(ifStmt.Condition);
         _output.AppendLine(") {");
-        
+
+
         _indentLevel++;
         TranslateStatement(ifStmt.Statement);
         _indentLevel--;
-        
+
+
         if (ifStmt.Else != null)
         {
             WriteIndented("} else ");
@@ -286,11 +312,13 @@ internal sealed class CSharpToCudaTranslator
         WriteIndented("while (");
         TranslateExpression(whileStmt.Condition);
         _output.AppendLine(") {");
-        
+
+
         _indentLevel++;
         TranslateStatement(whileStmt.Statement);
         _indentLevel--;
-        
+
+
         WriteIndented("}");
     }
 
@@ -371,8 +399,9 @@ internal sealed class CSharpToCudaTranslator
     private void TranslateLiteralExpression(LiteralExpressionSyntax literal)
     {
         var value = literal.Token.Value?.ToString() ?? literal.Token.Text;
-        
+
         // Handle float literals
+
         if (literal.Token.Text.EndsWith("f", StringComparison.OrdinalIgnoreCase))
         {
             _output.Append(literal.Token.Text);
@@ -390,8 +419,9 @@ internal sealed class CSharpToCudaTranslator
     private void TranslateIdentifier(IdentifierNameSyntax identifier)
     {
         var name = identifier.Identifier.Text;
-        
+
         // Map special identifiers
+
         switch (name)
         {
             case "Math":
@@ -421,13 +451,20 @@ internal sealed class CSharpToCudaTranslator
     {
         TranslateExpression(elementAccess.Expression);
         _output.Append("[");
-        
+
+
         for (int i = 0; i < elementAccess.ArgumentList.Arguments.Count; i++)
         {
-            if (i > 0) _output.Append(", ");
+            if (i > 0)
+            {
+                _output.Append(", ");
+            }
+
+
             TranslateExpression(elementAccess.ArgumentList.Arguments[i].Expression);
         }
-        
+
+
         _output.Append("]");
     }
 
@@ -438,7 +475,8 @@ internal sealed class CSharpToCudaTranslator
         {
             var methodName = memberAccess.Name.Identifier.Text;
             var objectName = memberAccess.Expression.ToString();
-            
+
+
             if (objectName == "Math" || objectName == "MathF")
             {
                 // Translate Math functions to CUDA equivalents
@@ -460,11 +498,17 @@ internal sealed class CSharpToCudaTranslator
         {
             TranslateExpression(invocation.Expression);
         }
-        
+
+
         _output.Append("(");
         for (int i = 0; i < invocation.ArgumentList.Arguments.Count; i++)
         {
-            if (i > 0) _output.Append(", ");
+            if (i > 0)
+            {
+                _output.Append(", ");
+            }
+
+
             TranslateExpression(invocation.ArgumentList.Arguments[i].Expression);
         }
         _output.Append(")");
@@ -473,8 +517,9 @@ internal sealed class CSharpToCudaTranslator
     private void TranslateMemberAccess(MemberAccessExpressionSyntax memberAccess)
     {
         var memberName = memberAccess.Name.Identifier.Text;
-        
+
         // Handle special properties
+
         if (memberName == "Length" || memberName == "Count")
         {
             // For arrays and spans, this maps to our length parameter
@@ -495,9 +540,10 @@ internal sealed class CSharpToCudaTranslator
         TranslateExpression(assignment.Right);
     }
 
-    private bool IsAtomicOperation(string methodName)
+    private static bool IsAtomicOperation(string methodName)
     {
-        return methodName.StartsWith("Interlocked") || 
+        return methodName.StartsWith("Interlocked") ||
+
                methodName.IndexOf("Atomic", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
@@ -518,10 +564,12 @@ internal sealed class CSharpToCudaTranslator
             "InterlockedMax" => "atomicMax",
             _ => $"/* Unsupported atomic: {methodName} */"
         };
-        
+
+
         _output.Append(atomicOp);
         _output.Append("(");
-        
+
+
         if (methodName == "InterlockedIncrement")
         {
             TranslateExpression(arguments.Arguments[0].Expression);
@@ -536,15 +584,21 @@ internal sealed class CSharpToCudaTranslator
         {
             for (int i = 0; i < arguments.Arguments.Count; i++)
             {
-                if (i > 0) _output.Append(", ");
+                if (i > 0)
+                {
+                    _output.Append(", ");
+                }
+
+
                 TranslateExpression(arguments.Arguments[i].Expression);
             }
         }
-        
+
+
         _output.Append(")");
     }
 
-    private string TranslateMathFunction(string methodName)
+    private static string TranslateMathFunction(string methodName)
     {
         return methodName switch
         {
@@ -578,7 +632,7 @@ internal sealed class CSharpToCudaTranslator
         };
     }
 
-    private string GetOperatorString(SyntaxToken operatorToken)
+    private static string GetOperatorString(SyntaxToken operatorToken)
     {
         return operatorToken.Kind() switch
         {
@@ -619,7 +673,7 @@ internal sealed class CSharpToCudaTranslator
         };
     }
 
-    private string ConvertToCudaType(string csharpType)
+    private static string ConvertToCudaType(string csharpType)
     {
         return csharpType switch
         {
@@ -661,18 +715,21 @@ internal sealed class CSharpToCudaTranslator
     private string GenerateDefaultKernelBody()
     {
         var sb = new StringBuilder();
-        
+
         // Analyze parameters to generate appropriate default body
+
         var inputBuffers = _kernelInfo.Parameters.Where(p => p.IsBuffer && p.IsReadOnly).ToList();
         var outputBuffers = _kernelInfo.Parameters.Where(p => p.IsBuffer && !p.IsReadOnly).ToList();
         var scalarParams = _kernelInfo.Parameters.Where(p => !p.IsBuffer).ToList();
-        
+
+
         if (inputBuffers.Count > 0 && outputBuffers.Count > 0)
         {
             // Element-wise operation pattern
             sb.AppendLine("            // Element-wise kernel operation");
             sb.AppendLine($"            if (i < length) {{");
-            
+
+
             if (inputBuffers.Count == 2 && outputBuffers.Count == 1)
             {
                 // Binary operation
@@ -696,7 +753,8 @@ internal sealed class CSharpToCudaTranslator
                 sb.AppendLine($"                // Process element at index i");
                 sb.AppendLine($"                {outputBuffers[0].Name}[i] = {inputBuffers[0].Name}[i];");
             }
-            
+
+
             sb.AppendLine("            }");
         }
         else if (outputBuffers.Count > 0)
@@ -713,7 +771,8 @@ internal sealed class CSharpToCudaTranslator
             sb.AppendLine("            // Custom kernel operation");
             sb.AppendLine("            // Implement kernel logic here");
         }
-        
+
+
         return sb.ToString();
     }
 }
@@ -724,11 +783,26 @@ internal static class SymbolExtensions
     public static string GetTypeDisplayString(this ISymbol symbol)
     {
         if (symbol is ILocalSymbol local)
+        {
+
             return local.Type.ToDisplayString();
+        }
+
+
         if (symbol is IParameterSymbol parameter)
+        {
+
             return parameter.Type.ToDisplayString();
+        }
+
+
         if (symbol is IFieldSymbol field)
+        {
+
             return field.Type.ToDisplayString();
+        }
+
+
         return "unknown";
     }
 }

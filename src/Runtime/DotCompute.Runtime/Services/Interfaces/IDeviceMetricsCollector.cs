@@ -19,7 +19,7 @@ public interface IDeviceMetricsCollector
     /// </summary>
     /// <param name="acceleratorId">The unique identifier of the accelerator.</param>
     /// <returns>A task representing the start operation.</returns>
-    Task StartCollectionAsync(string acceleratorId);
+    public Task StartCollectionAsync(string acceleratorId);
 
     /// <summary>
     /// Stops collecting metrics for a device.
@@ -27,7 +27,7 @@ public interface IDeviceMetricsCollector
     /// </summary>
     /// <param name="acceleratorId">The unique identifier of the accelerator.</param>
     /// <returns>A task representing the stop operation.</returns>
-    Task StopCollectionAsync(string acceleratorId);
+    public Task StopCollectionAsync(string acceleratorId);
 
     /// <summary>
     /// Gets current device metrics.
@@ -35,7 +35,7 @@ public interface IDeviceMetricsCollector
     /// </summary>
     /// <param name="acceleratorId">The unique identifier of the accelerator.</param>
     /// <returns>Current device metrics.</returns>
-    Task<DeviceMetrics> GetCurrentMetricsAsync(string acceleratorId);
+    public Task<DeviceMetrics> GetCurrentMetricsAsync(string acceleratorId);
 
     /// <summary>
     /// Gets historical device metrics.
@@ -45,9 +45,11 @@ public interface IDeviceMetricsCollector
     /// <param name="startTime">The start time of the historical period.</param>
     /// <param name="endTime">The end time of the historical period.</param>
     /// <returns>Collection of historical device metrics.</returns>
-    Task<IEnumerable<DeviceMetrics>> GetHistoricalMetricsAsync(
-        string acceleratorId, 
-        DateTime startTime, 
+    public Task<IEnumerable<DeviceMetrics>> GetHistoricalMetricsAsync(
+        string acceleratorId,
+
+        DateTime startTime,
+
         DateTime endTime);
 
     /// <summary>
@@ -56,5 +58,5 @@ public interface IDeviceMetricsCollector
     /// </summary>
     /// <param name="acceleratorId">The unique identifier of the accelerator.</param>
     /// <returns>Device utilization statistics.</returns>
-    Task<DeviceUtilizationStats> GetUtilizationStatsAsync(string acceleratorId);
+    public Task<DeviceUtilizationStats> GetUtilizationStatsAsync(string acceleratorId);
 }

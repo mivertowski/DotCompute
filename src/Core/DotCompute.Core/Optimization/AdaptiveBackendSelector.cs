@@ -23,16 +23,20 @@ public class AdaptiveBackendSelector : IDisposable
     private readonly ILogger<AdaptiveBackendSelector> _logger;
     private readonly PerformanceProfiler _performanceProfiler;
     private readonly AdaptiveSelectionOptions _options;
-    
+
     // Historical performance data for different workload patterns
+
     private readonly ConcurrentDictionary<WorkloadSignature, PerformanceHistory> _performanceHistory;
-    
+
     // Real-time backend performance monitoring
+
     private readonly ConcurrentDictionary<string, BackendPerformanceState> _backendStates;
-    
+
     // Workload analysis cache
+
     private readonly ConcurrentDictionary<string, WorkloadAnalysis> _workloadAnalysisCache;
-    
+
+
     private readonly Timer _performanceUpdateTimer;
     private bool _disposed;
 
@@ -102,8 +106,9 @@ public class AdaptiveBackendSelector : IDisposable
 
         var workloadSignature = CreateWorkloadSignature(kernelName, workloadCharacteristics);
         var workloadAnalysis = await AnalyzeWorkloadAsync(workloadSignature, workloadCharacteristics);
-        
+
         // Apply different selection strategies based on configuration and available data
+
         var selection = await ApplyOptimalSelectionStrategyAsync(
             backends, workloadAnalysis, workloadSignature, constraints);
 
@@ -127,7 +132,10 @@ public class AdaptiveBackendSelector : IDisposable
         PerformanceResult performanceResult)
     {
         if (!_options.EnableLearning)
+        {
             return;
+        }
+
 
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
         ArgumentNullException.ThrowIfNull(workloadCharacteristics);
@@ -135,9 +143,11 @@ public class AdaptiveBackendSelector : IDisposable
         ArgumentNullException.ThrowIfNull(performanceResult);
 
         var workloadSignature = CreateWorkloadSignature(kernelName, workloadCharacteristics);
-        
+
         // Update performance history
-        var history = _performanceHistory.GetOrAdd(workloadSignature, 
+
+        var history = _performanceHistory.GetOrAdd(workloadSignature,
+
             _ => new PerformanceHistory(workloadSignature, _options.MaxHistoryEntries));
 
         history.AddPerformanceResult(selectedBackend, performanceResult);
@@ -266,7 +276,10 @@ public class AdaptiveBackendSelector : IDisposable
         {
             var backendId = GetBackendId(backend);
             if (constraints?.IsBackendAllowed(backendId) == false)
+            {
                 continue;
+            }
+
 
             if (_backendStates.TryGetValue(backendId, out var state))
             {
@@ -284,7 +297,8 @@ public class AdaptiveBackendSelector : IDisposable
         var bestBackendId = realtimeScores.OrderByDescending(kvp => kvp.Value).First().Key;
         var bestBackend = backends.First(b => GetBackendId(b) == bestBackendId);
         var bestState = _backendStates[bestBackendId];
-        
+
+
         await Task.CompletedTask;
 
         return new BackendSelection
@@ -315,7 +329,10 @@ public class AdaptiveBackendSelector : IDisposable
         {
             var backendId = GetBackendId(backend);
             if (constraints?.IsBackendAllowed(backendId) == false)
+            {
                 continue;
+            }
+
 
             var score = CalculateCharacteristicScore(backendId, workloadPattern);
             characteristicScores[backendId] = score;
@@ -349,12 +366,15 @@ public class AdaptiveBackendSelector : IDisposable
         SelectionConstraints? constraints)
     {
         var priorityOrder = new[] { "CUDA", "Metal", "OpenCL", "CPU" };
-        
+
+
         foreach (var preferredBackend in priorityOrder)
         {
-            var backend = backends.FirstOrDefault(b => 
+            var backend = backends.FirstOrDefault(b =>
+
                 GetBackendId(b).Equals(preferredBackend, StringComparison.OrdinalIgnoreCase));
-                
+
+
             if (backend != null && constraints?.IsBackendAllowed(GetBackendId(backend)) != false)
             {
                 return new BackendSelection
@@ -402,7 +422,8 @@ public class AdaptiveBackendSelector : IDisposable
         WorkloadCharacteristics characteristics)
     {
         var cacheKey = GetWorkloadCacheKey(signature);
-        
+
+
         if (_workloadAnalysisCache.TryGetValue(cacheKey, out var cachedAnalysis))
         {
             return cachedAnalysis;
@@ -432,35 +453,53 @@ public class AdaptiveBackendSelector : IDisposable
         return analysis;
     }
 
-    private WorkloadPattern DetermineWorkloadPattern(WorkloadCharacteristics characteristics)
+    private static WorkloadPattern DetermineWorkloadPattern(WorkloadCharacteristics characteristics)
     {
         // Determine pattern based on compute vs memory intensity
         var computeRatio = characteristics.ComputeIntensity;
         var memoryRatio = characteristics.MemoryIntensity;
-        
+
+
         if (computeRatio > 0.7 && memoryRatio < 0.3)
+        {
+
             return WorkloadPattern.ComputeIntensive;
-        
+        }
+
+
         if (memoryRatio > 0.7 && computeRatio < 0.3)
+        {
+
             return WorkloadPattern.MemoryIntensive;
-        
+        }
+
+
         if (computeRatio > 0.5 && memoryRatio > 0.5)
+        {
+
             return WorkloadPattern.Balanced;
-        
+        }
+
+
         if (characteristics.ParallelismLevel > 0.8)
+        {
+
             return WorkloadPattern.HighlyParallel;
-        
+        }
+
+
         return WorkloadPattern.Sequential;
     }
 
-    private double CalculateCompositeScore(BackendPerformanceStats stats)
+    private static double CalculateCompositeScore(BackendPerformanceStats stats)
     {
         // Composite score based on execution time (lower is better), throughput (higher is better), and reliability
         var timeScore = stats.AverageExecutionTimeMs > 0 ? 1000.0 / stats.AverageExecutionTimeMs : 0;
         var throughputScore = stats.AverageThroughput / 10000.0; // Normalize to 0-1 range
         var reliabilityScore = stats.ReliabilityScore;
-        
+
         // Weighted combination
+
         return (timeScore * 0.4) + (throughputScore * 0.4) + (reliabilityScore * 0.2);
     }
 
@@ -470,7 +509,8 @@ public class AdaptiveBackendSelector : IDisposable
         var sampleConfidence = Math.Min(1.0f, stats.SampleCount / (float)_options.MinSamplesForHighConfidence);
         var consistencyConfidence = 1.0f - (stats.ExecutionTimeStdDev / Math.Max(1.0f, stats.AverageExecutionTimeMs));
         var reliabilityConfidence = stats.ReliabilityScore;
-        
+
+
         return (sampleConfidence + consistencyConfidence + reliabilityConfidence) / 3.0f;
     }
 
@@ -481,14 +521,18 @@ public class AdaptiveBackendSelector : IDisposable
     {
         // Real-time score based on current system state and backend performance
         var utilizationScore = 1.0 - state.CurrentUtilization; // Lower utilization is better
-        var recentPerformanceScore = state.RecentAverageExecutionTimeMs > 0 
-            ? 1000.0 / state.RecentAverageExecutionTimeMs 
+        var recentPerformanceScore = state.RecentAverageExecutionTimeMs > 0
+
+            ? 1000.0 / state.RecentAverageExecutionTimeMs
+
             : 0.1;
-        
+
         // Adjust for system load
+
         var systemLoadScore = 1.0 - (systemSnapshot.CpuUsage + systemSnapshot.MemoryUsage) / 2.0;
-        
+
         // Pattern-specific adjustments
+
         var patternMultiplier = workloadPattern switch
         {
             WorkloadPattern.ComputeIntensive => GetBackendComputeAffinity(state.BackendId),
@@ -496,7 +540,8 @@ public class AdaptiveBackendSelector : IDisposable
             WorkloadPattern.HighlyParallel => GetBackendParallelismAffinity(state.BackendId),
             _ => 1.0
         };
-        
+
+
         return (utilizationScore * 0.3 + recentPerformanceScore * 0.4 + systemLoadScore * 0.3) * patternMultiplier;
     }
 
@@ -514,7 +559,7 @@ public class AdaptiveBackendSelector : IDisposable
         };
     }
 
-    private double GetBackendComputeAffinity(string backendId) => backendId.ToUpperInvariant() switch
+    private static double GetBackendComputeAffinity(string backendId) => backendId.ToUpperInvariant() switch
     {
         "CUDA" => 0.95,
         "METAL" => 0.9,
@@ -523,7 +568,7 @@ public class AdaptiveBackendSelector : IDisposable
         _ => 0.5
     };
 
-    private double GetBackendMemoryAffinity(string backendId) => backendId.ToUpperInvariant() switch
+    private static double GetBackendMemoryAffinity(string backendId) => backendId.ToUpperInvariant() switch
     {
         "CPU" => 0.9,
         "CUDA" => 0.7,
@@ -532,7 +577,7 @@ public class AdaptiveBackendSelector : IDisposable
         _ => 0.5
     };
 
-    private double GetBackendParallelismAffinity(string backendId) => backendId.ToUpperInvariant() switch
+    private static double GetBackendParallelismAffinity(string backendId) => backendId.ToUpperInvariant() switch
     {
         "CUDA" => 0.95,
         "OPENCL" => 0.9,
@@ -541,7 +586,7 @@ public class AdaptiveBackendSelector : IDisposable
         _ => 0.5
     };
 
-    private double GetBackendBalancedAffinity(string backendId) => backendId.ToUpperInvariant() switch
+    private static double GetBackendBalancedAffinity(string backendId) => backendId.ToUpperInvariant() switch
     {
         "CUDA" => 0.85,
         "METAL" => 0.8,
@@ -550,7 +595,7 @@ public class AdaptiveBackendSelector : IDisposable
         _ => 0.5
     };
 
-    private double GetBackendSequentialAffinity(string backendId) => backendId.ToUpperInvariant() switch
+    private static double GetBackendSequentialAffinity(string backendId) => backendId.ToUpperInvariant() switch
     {
         "CPU" => 0.9,
         "CUDA" => 0.3,
@@ -559,27 +604,29 @@ public class AdaptiveBackendSelector : IDisposable
         _ => 0.5
     };
 
-    private double EstimateExecutionTime(WorkloadCharacteristics characteristics)
+    private static double EstimateExecutionTime(WorkloadCharacteristics characteristics)
     {
         // Simplified execution time estimation based on workload characteristics
         var baseTime = characteristics.DataSize / 1000000.0; // Base on data size (MB)
         var computeMultiplier = 1.0 + characteristics.ComputeIntensity * 2.0;
         var memoryMultiplier = 1.0 + characteristics.MemoryIntensity * 1.5;
         var parallelismDivisor = Math.Max(1.0, characteristics.ParallelismLevel * Environment.ProcessorCount);
-        
+
+
         return (baseTime * computeMultiplier * memoryMultiplier) / parallelismDivisor;
     }
 
-    private long EstimateMemoryUsage(WorkloadCharacteristics characteristics)
+    private static long EstimateMemoryUsage(WorkloadCharacteristics characteristics)
     {
         // Simplified memory usage estimation
         var baseMemory = characteristics.DataSize / 1024 / 1024; // Convert to MB
         var memoryMultiplier = 1.0 + characteristics.MemoryIntensity * 3.0;
-        
+
+
         return (long)(baseMemory * memoryMultiplier);
     }
 
-    private string GetWorkloadCacheKey(WorkloadSignature signature) =>
+    private static string GetWorkloadCacheKey(WorkloadSignature signature) =>
         $"{signature.KernelName}_{signature.DataSize}_{signature.ComputeIntensity:F2}_{signature.MemoryIntensity:F2}_{signature.ParallelismLevel:F2}";
 
     private string GetBackendId(IAccelerator accelerator)
@@ -610,8 +657,10 @@ public class AdaptiveBackendSelector : IDisposable
     private LearningStatistics GetLearningStatistics()
     {
         var totalSamples = _performanceHistory.Values.Sum(h => h.TotalEntries);
-        var averageSamplesPerWorkload = _performanceHistory.Count > 0 
-            ? totalSamples / _performanceHistory.Count 
+        var averageSamplesPerWorkload = _performanceHistory.Count > 0
+
+            ? totalSamples / _performanceHistory.Count
+
             : 0;
 
         return new LearningStatistics
@@ -627,7 +676,11 @@ public class AdaptiveBackendSelector : IDisposable
     {
         // Simplified learning effectiveness calculation
         var totalWorkloads = _performanceHistory.Count;
-        if (totalWorkloads == 0) return 0f;
+        if (totalWorkloads == 0)
+        {
+            return 0f;
+        }
+
 
         var workloadsWithGoodHistory = _performanceHistory.Values.Count(h => h.TotalEntries >= _options.MinHistoryForLearning);
         return (float)workloadsWithGoodHistory / totalWorkloads;
@@ -635,12 +688,17 @@ public class AdaptiveBackendSelector : IDisposable
 
     private void UpdateBackendPerformanceStates(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
             var systemSnapshot = PerformanceMonitor.GetSystemPerformanceSnapshot();
-            
+
+
             foreach (var backendState in _backendStates.Values)
             {
                 backendState.UpdateState(systemSnapshot);
@@ -656,12 +714,17 @@ public class AdaptiveBackendSelector : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _performanceUpdateTimer?.Dispose();
         _disposed = true;
         GC.SuppressFinalize(this);
     }
 }
+
 
 // Supporting data structures and enums will be defined in separate files...

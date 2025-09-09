@@ -31,8 +31,9 @@ public static class DebugExample
             {
                 // Add core DotCompute services
                 services.AddDotComputeRuntime();
-                
+
                 // Add comprehensive debugging (development mode)
+
                 services.AddDevelopmentDebugging();
 
                 // Add logging
@@ -120,8 +121,9 @@ public static class DebugExample
     {
         logger.LogInformation("Performing cross-backend validation...");
 
-        var inputs = new object[] 
-        { 
+        var inputs = new object[]
+        {
+
             new float[] { 1.0f, 2.0f, 3.0f, 4.0f },
             new float[4],
             1.5f
@@ -131,9 +133,11 @@ public static class DebugExample
         {
             var validationResult = await debugService.ValidateKernelAsync("VectorMultiply", inputs);
 
-            logger.LogInformation("Validation completed in {Time}ms", 
+            logger.LogInformation("Validation completed in {Time}ms",
+
                 validationResult.TotalValidationTime.TotalMilliseconds);
-            logger.LogInformation("Backends tested: {Backends}", 
+            logger.LogInformation("Backends tested: {Backends}",
+
                 string.Join(", ", validationResult.BackendsTested));
             logger.LogInformation("Validation result: {IsValid}", validationResult.IsValid);
             logger.LogInformation("Recommended backend: {Backend}", validationResult.RecommendedBackend);
@@ -168,11 +172,13 @@ public static class DebugExample
             var cudaResult = await debugService.ExecuteOnBackendAsync("MatrixMultiply", "CUDA", inputs);
 
             var results = new[] { cpuResult, cudaResult }.Where(r => r.Success);
-            
+
+
             if (results.Any())
             {
                 var comparison = await debugService.CompareResultsAsync(results);
-                
+
+
                 logger.LogInformation("Performance comparison:");
                 foreach (var perf in comparison.PerformanceComparison)
                 {
@@ -213,7 +219,8 @@ public static class DebugExample
 
             if (!string.IsNullOrEmpty(determinismReport.NonDeterminismSource))
             {
-                logger.LogInformation("  Non-determinism source: {Source}", 
+                logger.LogInformation("  Non-determinism source: {Source}",
+
                     determinismReport.NonDeterminismSource);
             }
 
@@ -246,7 +253,8 @@ public static class DebugExample
 
             logger.LogInformation("Memory analysis results:");
             logger.LogInformation("  Backend: {Backend}", memoryReport.BackendType);
-            logger.LogInformation("  Total memory accessed: {Memory}MB", 
+            logger.LogInformation("  Total memory accessed: {Memory}MB",
+
                 memoryReport.TotalMemoryAccessed / (1024 * 1024));
             logger.LogInformation("  Memory efficiency: {Efficiency:P1}", memoryReport.MemoryEfficiency);
 
@@ -302,7 +310,8 @@ public static class DebugExample
                     backend.Name, backend.Version);
                 logger.LogInformation("    Available: {Available}", backend.IsAvailable);
                 logger.LogInformation("    Priority: {Priority}", backend.Priority);
-                
+
+
                 if (!backend.IsAvailable && !string.IsNullOrEmpty(backend.UnavailabilityReason))
                 {
                     logger.LogInformation("    Reason: {Reason}", backend.UnavailabilityReason);
@@ -310,7 +319,8 @@ public static class DebugExample
 
                 if (backend.Capabilities.Length > 0)
                 {
-                    logger.LogInformation("    Capabilities: {Capabilities}", 
+                    logger.LogInformation("    Capabilities: {Capabilities}",
+
                         string.Join(", ", backend.Capabilities));
                 }
 

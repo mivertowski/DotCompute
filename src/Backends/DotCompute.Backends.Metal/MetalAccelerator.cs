@@ -84,8 +84,9 @@ public sealed class MetalAccelerator : BaseAccelerator
         CancellationToken cancellationToken)
     {
         using var profiling = _profiler.Profile($"CompileKernel:{definition.Name}");
-        
+
         // Compile kernel using Metal Shading Language
+
         return await _kernelCompiler.CompileAsync(definition, options, cancellationToken).ConfigureAwait(false);
     }
 

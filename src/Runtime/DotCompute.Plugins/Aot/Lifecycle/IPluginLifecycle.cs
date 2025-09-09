@@ -17,7 +17,7 @@ public interface IPluginLifecycle : IDisposable
     /// <param name="pluginId">The unique identifier of the plugin to unload.</param>
     /// <returns>True if the plugin was successfully unloaded; false if not found or unloading failed.</returns>
     /// <exception cref="ArgumentException">Thrown when pluginId is null, empty, or whitespace.</exception>
-    bool UnloadPlugin(string pluginId);
+    public bool UnloadPlugin(string pluginId);
 
     /// <summary>
     /// Attempts to unload a plugin, providing detailed information about the operation.
@@ -25,42 +25,42 @@ public interface IPluginLifecycle : IDisposable
     /// <param name="pluginId">The unique identifier of the plugin to unload.</param>
     /// <param name="errorMessage">Error message if unloading failed.</param>
     /// <returns>True if the plugin was successfully unloaded; false otherwise.</returns>
-    bool TryUnloadPlugin(string pluginId, out string? errorMessage);
+    public bool TryUnloadPlugin(string pluginId, out string? errorMessage);
 
     /// <summary>
     /// Unloads all currently loaded plugins.
     /// </summary>
     /// <returns>The number of plugins that were successfully unloaded.</returns>
-    int UnloadAllPlugins();
+    public int UnloadAllPlugins();
 
     /// <summary>
     /// Registers a plugin instance for lifecycle management.
     /// </summary>
     /// <param name="plugin">The plugin instance to register for management.</param>
     /// <exception cref="ArgumentNullException">Thrown when plugin is null.</exception>
-    void RegisterPluginForManagement(IBackendPlugin plugin);
+    public void RegisterPluginForManagement(IBackendPlugin plugin);
 
     /// <summary>
     /// Unregisters a plugin from lifecycle management without disposing it.
     /// </summary>
     /// <param name="pluginId">The plugin ID to unregister.</param>
     /// <returns>True if the plugin was unregistered; false if not found.</returns>
-    bool UnregisterPlugin(string pluginId);
+    public bool UnregisterPlugin(string pluginId);
 
     /// <summary>
     /// Event raised when a plugin is successfully loaded and registered.
     /// </summary>
-    event EventHandler<PluginLifecycleEventArgs>? PluginLoaded;
+    public event EventHandler<PluginLifecycleEventArgs>? PluginLoaded;
 
     /// <summary>
     /// Event raised when a plugin is unloaded and disposed.
     /// </summary>
-    event EventHandler<PluginLifecycleEventArgs>? PluginUnloaded;
+    public event EventHandler<PluginLifecycleEventArgs>? PluginUnloaded;
 
     /// <summary>
     /// Event raised when a plugin lifecycle operation encounters an error.
     /// </summary>
-    event EventHandler<PluginLifecycleErrorEventArgs>? LifecycleError;
+    public event EventHandler<PluginLifecycleErrorEventArgs>? LifecycleError;
 }
 
 /// <summary>

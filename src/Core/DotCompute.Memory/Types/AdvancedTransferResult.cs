@@ -132,7 +132,8 @@ public class AdvancedTransferResult
     {
         var throughputMBps = ThroughputBytesPerSecond / (1024 * 1024);
         var sizeMB = TotalBytes / (1024.0 * 1024.0);
-        
+
+
         return $"Transfer Result: {sizeMB:F2} MB in {Duration.TotalSeconds:F2}s " +
                $"({throughputMBps:F2} MB/s) - " +
                $"Chunks: {ChunkCount}, " +

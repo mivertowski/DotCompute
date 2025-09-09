@@ -47,14 +47,16 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 {
                     _initialized = true;
                     _logger.LogInformation("NVML initialized successfully");
-                    
+
                     // Log NVML version
+
                     var versionBuffer = new StringBuilder(256);
                     if (nvmlSystemGetNVMLVersion(versionBuffer, (uint)versionBuffer.Capacity) == NvmlReturn.Success)
                     {
                         _logger.LogInformation("NVML Version: {Version}", versionBuffer.ToString());
                     }
-                    
+
+
                     return true;
                 }
                 else
@@ -194,10 +196,11 @@ namespace DotCompute.Backends.CUDA.Monitoring
             }
         }
 
-        private string DecodeThrottleReasons(ulong reasons)
+        private static string DecodeThrottleReasons(ulong reasons)
         {
             var reasonList = new StringBuilder();
-            
+
+
             if ((reasons & 0x1) != 0)
             {
                 _ = reasonList.Append("GpuIdle ");

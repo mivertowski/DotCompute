@@ -33,33 +33,38 @@ public class CachedCompilationResult
     /// </summary>
     /// <value>A hash string uniquely identifying the kernel and its compilation parameters.</value>
     public string KernelHash { get; set; } = string.Empty;
-    
+
+
     /// <summary>
     /// Gets or sets the name of the kernel that was compiled.
     /// </summary>
     /// <value>The kernel identifier for reference and logging.</value>
     public string KernelName { get; set; } = string.Empty;
-    
+
+
     /// <summary>
     /// Gets or sets the original source code of the kernel.
     /// This is stored for verification that the cached result matches the current request.
     /// </summary>
     /// <value>The complete kernel source code.</value>
     public string SourceCode { get; set; } = string.Empty;
-    
+
+
     /// <summary>
     /// Gets or sets the compilation options that resulted in successful compilation.
     /// These options can be reused for identical compilation requests.
     /// </summary>
     /// <value>The compilation configuration that achieved success.</value>
     public CompilationOptions SuccessfulOptions { get; set; } = null!;
-    
+
+
     /// <summary>
     /// Gets or sets the timestamp when this result was cached.
     /// </summary>
     /// <value>The UTC timestamp of when the compilation result was stored.</value>
     public DateTimeOffset Timestamp { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the timestamp when this cached result expires and should no longer be used.
     /// </summary>

@@ -88,7 +88,8 @@ public static class DebugServiceExtensions
     public static IServiceCollection AddProductionDebugging(this IServiceCollection services)
     {
         return services.AddComprehensiveDebugging(
-            debugService => 
+            debugService =>
+
             {
                 debugService.VerbosityLevel = LogLevel.Warning;
                 debugService.EnableProfiling = true;
@@ -210,7 +211,8 @@ public static class ServiceDecoratorExtensions
             {
                 // Create the original service instance
                 TService originalService;
-                
+
+
                 if (existingDescriptor.ImplementationInstance != null)
                 {
                     originalService = (TService)existingDescriptor.ImplementationInstance;

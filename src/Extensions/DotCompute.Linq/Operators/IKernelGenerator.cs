@@ -48,6 +48,7 @@ internal class CUDAKernelGenerator : IKernelGenerator
     public bool CanCompile(Expression expression)
         // Basic check for supported expressions
 
+
         => expression.NodeType is ExpressionType.Call or ExpressionType.Lambda;
 
     public GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context)

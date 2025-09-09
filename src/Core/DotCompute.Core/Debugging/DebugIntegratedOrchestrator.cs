@@ -41,7 +41,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
     public async Task<T?> ExecuteAsync<T>(string kernelName, params object[] args)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (!_options.EnableDebugHooks)
         {
             return await _baseOrchestrator.ExecuteAsync<T>(kernelName, args);
@@ -53,7 +54,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
     public async Task ExecuteAsync(string kernelName, params object[] args)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (!_options.EnableDebugHooks)
         {
             await _baseOrchestrator.ExecuteAsync(kernelName, args);
@@ -66,7 +68,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
     public async Task<T?> ExecuteWithBuffersAsync<T>(string kernelName, object[] buffers, params object[] scalarArgs)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (!_options.EnableDebugHooks)
         {
             return await _baseOrchestrator.ExecuteWithBuffersAsync<T>(kernelName, buffers, scalarArgs);
@@ -86,8 +89,10 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
     {
         var executionId = Guid.NewGuid();
         var stopwatch = Stopwatch.StartNew();
-        
-        _logger.LogDebug("Starting debug-enhanced execution of {KernelName} [ID: {ExecutionId}]", 
+
+
+        _logger.LogDebug("Starting debug-enhanced execution of {KernelName} [ID: {ExecutionId}]",
+
             kernelName, executionId);
 
         try
@@ -99,9 +104,11 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 preValidation = await ValidateKernelPreExecution(kernelName, args);
                 if (preValidation.HasCriticalIssues)
                 {
-                    _logger.LogError("Pre-execution validation failed for {KernelName}: {Issues}", 
+                    _logger.LogError("Pre-execution validation failed for {KernelName}: {Issues}",
+
                         kernelName, string.Join(", ", preValidation.Issues));
-                    
+
+
                     if (_options.FailOnValidationErrors)
                     {
                         throw new InvalidOperationException(
@@ -115,7 +122,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             var result = await _baseOrchestrator.ExecuteAsync<T>(kernelName, args);
             var executionTime = stopwatch.Elapsed - executionStart;
 
-            _logger.LogDebug("Kernel {KernelName} executed in {ExecutionTime}ms [ID: {ExecutionId}]", 
+            _logger.LogDebug("Kernel {KernelName} executed in {ExecutionTime}ms [ID: {ExecutionId}]",
+
                 kernelName, executionTime.TotalMilliseconds, executionId);
 
             // Post-execution validation (if enabled)
@@ -144,7 +152,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during debug-enhanced execution of {KernelName} [ID: {ExecutionId}]", 
+            _logger.LogError(ex, "Error during debug-enhanced execution of {KernelName} [ID: {ExecutionId}]",
+
                 kernelName, executionId);
 
             // Error analysis (if enabled)
@@ -157,7 +166,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
         finally
         {
-            _logger.LogTrace("Debug-enhanced execution of {KernelName} completed in {TotalTime}ms [ID: {ExecutionId}]", 
+            _logger.LogTrace("Debug-enhanced execution of {KernelName} completed in {TotalTime}ms [ID: {ExecutionId}]",
+
                 kernelName, stopwatch.Elapsed.TotalMilliseconds, executionId);
         }
     }
@@ -171,13 +181,15 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             var availableBackends = backends.Where(b => b.IsAvailable).ToList();
 
             var issues = new List<string>();
-            
+
+
             if (availableBackends.Count == 0)
             {
                 issues.Add("No backends available for execution");
             }
-            
+
             // Check for common argument issues
+
             if (args.Any(arg => arg == null))
             {
                 issues.Add("Null arguments detected");
@@ -199,10 +211,12 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error during pre-execution validation for {KernelName}", kernelName);
-            return new ValidationResult 
-            { 
+            return new ValidationResult
+            {
+
                 Issues = new List<string> { $"Validation error: {ex.Message}" },
-                HasCriticalIssues = false 
+                HasCriticalIssues = false
+
             };
         }
     }
@@ -211,13 +225,15 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
     {
         try
         {
-            _logger.LogTrace("Starting post-execution validation for {KernelName} [ID: {ExecutionId}]", 
+            _logger.LogTrace("Starting post-execution validation for {KernelName} [ID: {ExecutionId}]",
+
                 kernelName, executionId);
 
             // Validate result is not null when expected
             if (typeof(T) != typeof(object) && result == null)
             {
-                _logger.LogWarning("Kernel {KernelName} returned null result [ID: {ExecutionId}]", 
+                _logger.LogWarning("Kernel {KernelName} returned null result [ID: {ExecutionId}]",
+
                     kernelName, executionId);
             }
 
@@ -227,14 +243,16 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 var determinismReport = await _debugService.ValidateDeterminismAsync(kernelName, args, 3);
                 if (!determinismReport.IsDeterministic)
                 {
-                    _logger.LogWarning("Non-deterministic behavior detected in {KernelName}: {Source} [ID: {ExecutionId}]", 
+                    _logger.LogWarning("Non-deterministic behavior detected in {KernelName}: {Source} [ID: {ExecutionId}]",
+
                         kernelName, determinismReport.NonDeterminismSource, executionId);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during post-execution validation for {KernelName} [ID: {ExecutionId}]", 
+            _logger.LogWarning(ex, "Error during post-execution validation for {KernelName} [ID: {ExecutionId}]",
+
                 kernelName, executionId);
         }
     }
@@ -243,36 +261,43 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
     {
         try
         {
-            _logger.LogTrace("Starting cross-backend validation for {KernelName} [ID: {ExecutionId}]", 
+            _logger.LogTrace("Starting cross-backend validation for {KernelName} [ID: {ExecutionId}]",
+
                 kernelName, executionId);
 
             var validationResult = await _debugService.ValidateKernelAsync(kernelName, args, _options.ValidationTolerance);
-            
+
+
             if (!validationResult.IsValid)
             {
                 var criticalIssues = validationResult.Issues.Where(i => i.Severity == ValidationSeverity.Critical);
                 var errorIssues = validationResult.Issues.Where(i => i.Severity == ValidationSeverity.Error);
-                
+
+
                 if (criticalIssues.Any())
                 {
-                    _logger.LogError("Critical cross-backend validation issues for {KernelName}: {Issues} [ID: {ExecutionId}]", 
+                    _logger.LogError("Critical cross-backend validation issues for {KernelName}: {Issues} [ID: {ExecutionId}]",
+
                         kernelName, string.Join(", ", criticalIssues.Select(i => i.Message)), executionId);
                 }
                 else if (errorIssues.Any())
                 {
-                    _logger.LogWarning("Cross-backend validation errors for {KernelName}: {Issues} [ID: {ExecutionId}]", 
+                    _logger.LogWarning("Cross-backend validation errors for {KernelName}: {Issues} [ID: {ExecutionId}]",
+
                         kernelName, string.Join(", ", errorIssues.Select(i => i.Message)), executionId);
                 }
             }
             else
             {
-                _logger.LogTrace("Cross-backend validation passed for {KernelName} (recommended: {Backend}) [ID: {ExecutionId}]", 
+                _logger.LogTrace("Cross-backend validation passed for {KernelName} (recommended: {Backend}) [ID: {ExecutionId}]",
+
                     kernelName, validationResult.RecommendedBackend, executionId);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during cross-backend validation for {KernelName} [ID: {ExecutionId}]", 
+            _logger.LogWarning(ex, "Error during cross-backend validation for {KernelName} [ID: {ExecutionId}]",
+
                 kernelName, executionId);
         }
     }
@@ -290,7 +315,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 Timestamp = DateTimeOffset.UtcNow
             };
 
-            _logger.LogInformation("Performance metrics for {KernelName}: {Metrics} [ID: {ExecutionId}]", 
+            _logger.LogInformation("Performance metrics for {KernelName}: {Metrics} [ID: {ExecutionId}]",
+
                 kernelName, metricsData, executionId);
 
             // Store metrics for trend analysis (if configured)
@@ -302,7 +328,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error logging performance metrics for {KernelName} [ID: {ExecutionId}]", 
+            _logger.LogWarning(ex, "Error logging performance metrics for {KernelName} [ID: {ExecutionId}]",
+
                 kernelName, executionId);
         }
     }
@@ -311,7 +338,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
     {
         try
         {
-            _logger.LogTrace("Starting error analysis for {KernelName} [ID: {ExecutionId}]", 
+            _logger.LogTrace("Starting error analysis for {KernelName} [ID: {ExecutionId}]",
+
                 kernelName, executionId);
 
             var errorAnalysis = new
@@ -326,13 +354,15 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 Timestamp = DateTimeOffset.UtcNow
             };
 
-            _logger.LogInformation("Error analysis for {KernelName}: {Analysis} [ID: {ExecutionId}]", 
+            _logger.LogInformation("Error analysis for {KernelName}: {Analysis} [ID: {ExecutionId}]",
+
                 kernelName, errorAnalysis, executionId);
 
             // Attempt to determine if error is kernel-specific or systemic
             var backends = await _debugService.GetAvailableBackendsAsync();
             var availableCount = backends.Count(b => b.IsAvailable);
-            
+
+
             if (availableCount == 0)
             {
                 _logger.LogWarning("System-wide backend failure detected during error analysis [ID: {ExecutionId}]", executionId);
@@ -340,7 +370,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during error analysis for {KernelName} [ID: {ExecutionId}]", 
+            _logger.LogWarning(ex, "Error during error analysis for {KernelName} [ID: {ExecutionId}]",
+
                 kernelName, executionId);
         }
     }
@@ -353,11 +384,16 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _baseOrchestrator?.Dispose();
         _debugService?.Dispose();
-        
+
+
         _disposed = true;
         GC.SuppressFinalize(this);
     }

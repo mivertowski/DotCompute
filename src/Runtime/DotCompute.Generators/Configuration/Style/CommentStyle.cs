@@ -47,7 +47,8 @@ public class CommentStyle
     /// at the cost of reduced documentation and IntelliSense support.
     /// </remarks>
     public bool IncludeMethodComments { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to include inline explanatory comments.
     /// </summary>

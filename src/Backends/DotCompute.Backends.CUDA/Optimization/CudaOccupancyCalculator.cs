@@ -20,8 +20,9 @@ namespace DotCompute.Backends.CUDA.Optimization
     {
         private readonly ILogger<CudaOccupancyCalculator> _logger;
         private readonly Dictionary<int, DeviceProperties> _devicePropertiesCache;
-        
+
         // CUDA API imports
+
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaOccupancyMaxActiveBlocksPerMultiprocessor(
             out int numBlocks,
@@ -63,7 +64,8 @@ namespace DotCompute.Backends.CUDA.Optimization
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _devicePropertiesCache = [];
-            
+
+
             _logger.LogInformation("CUDA Occupancy Calculator initialized");
         }
 
@@ -77,15 +79,17 @@ namespace DotCompute.Backends.CUDA.Optimization
             LaunchConstraints? constraints = null)
         {
             constraints ??= LaunchConstraints.Default;
-            
+
+
             _logger.LogDebug(
                 "Calculating optimal launch config for kernel on device {DeviceId}",
                 deviceId);
 
             // Get device properties
             var deviceProps = await GetDevicePropertiesAsync(deviceId);
-            
+
             // Get kernel attributes
+
             var kernelAttrs = await GetKernelAttributesAsync(kernelFunc);
 
             // Calculate optimal block size
@@ -96,7 +100,8 @@ namespace DotCompute.Backends.CUDA.Optimization
                 kernelFunc,
                 dynamicSharedMemory,
                 constraints.MaxBlockSize ?? deviceProps.MaxThreadsPerBlock);
-            
+
+
             if (error != CudaError.Success)
             {
                 throw new OccupancyException($"Failed to calculate optimal block size: {error}");
@@ -104,8 +109,9 @@ namespace DotCompute.Backends.CUDA.Optimization
 
             // Apply constraints
             blockSize = ApplyBlockSizeConstraints(blockSize, constraints, deviceProps);
-            
+
             // Calculate grid size based on problem size
+
             var gridSize = CalculateGridSize(
                 constraints.ProblemSize ?? deviceProps.MaxGridSize,
                 blockSize,
@@ -159,7 +165,8 @@ namespace DotCompute.Backends.CUDA.Optimization
         {
             var deviceProps = await GetDevicePropertiesAsync(deviceId);
             var kernelAttrs = await GetKernelAttributesAsync(kernelFunc);
-            
+
+
             var curve = new OccupancyCurve
             {
                 KernelName = kernelAttrs.KernelName,
@@ -195,7 +202,8 @@ namespace DotCompute.Backends.CUDA.Optimization
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, 
+                    _logger.LogWarning(ex,
+
                         "Failed to calculate occupancy for block size {BlockSize}", blockSize);
                 }
             }
@@ -207,7 +215,8 @@ namespace DotCompute.Backends.CUDA.Optimization
                     .OrderByDescending(p => p.Occupancy)
                     .ThenBy(p => p.BlockSize)
                     .First().BlockSize;
-                
+
+
                 curve.MaxOccupancy = curve.DataPoints.Max(p => p.Occupancy);
             }
 
@@ -224,7 +233,8 @@ namespace DotCompute.Backends.CUDA.Optimization
         {
             var deviceProps = await GetDevicePropertiesAsync(deviceId);
             var kernelAttrs = await GetKernelAttributesAsync(kernelFunc);
-            
+
+
             var analysis = new RegisterAnalysis
             {
                 RegistersPerThread = kernelAttrs.NumRegs,
@@ -235,38 +245,47 @@ namespace DotCompute.Backends.CUDA.Optimization
             // Calculate register usage
             var registersPerBlock = kernelAttrs.NumRegs * blockSize;
             analysis.RegistersUsedPerBlock = registersPerBlock;
-            
+
             // Calculate how many blocks can run per SM based on registers
+
             var blocksPerSmRegisters = deviceProps.RegistersPerMultiprocessor / registersPerBlock;
             analysis.MaxBlocksPerSmRegisters = blocksPerSmRegisters;
-            
+
             // Calculate warp occupancy
+
             var warpsPerBlock = (blockSize + deviceProps.WarpSize - 1) / deviceProps.WarpSize;
             var activeWarps = Math.Min(
                 blocksPerSmRegisters * warpsPerBlock,
                 deviceProps.MaxWarpsPerMultiprocessor);
-            
+
+
             analysis.WarpOccupancy = (double)activeWarps / deviceProps.MaxWarpsPerMultiprocessor;
-            
+
             // Determine if register pressure is limiting factor
+
             analysis.IsRegisterLimited = blocksPerSmRegisters < deviceProps.MaxBlocksPerMultiprocessor;
-            
+
             // Suggest optimizations
+
             if (analysis.IsRegisterLimited)
             {
                 analysis.Suggestions.Add($"Kernel is register limited ({kernelAttrs.NumRegs} regs/thread)");
-                
+
                 // Calculate ideal register count
-                var idealRegisters = deviceProps.RegistersPerMultiprocessor / 
+
+                var idealRegisters = deviceProps.RegistersPerMultiprocessor /
+
                     (deviceProps.MaxBlocksPerMultiprocessor * blockSize);
-                
+
+
                 if (idealRegisters < kernelAttrs.NumRegs)
                 {
                     analysis.Suggestions.Add(
                         $"Reduce register usage to {idealRegisters} for full occupancy");
                 }
-                
+
                 // Suggest compiler flags
+
                 analysis.Suggestions.Add("Consider using --maxrregcount compiler flag");
                 analysis.Suggestions.Add("Use __launch_bounds__ to limit register usage");
             }
@@ -284,8 +303,9 @@ namespace DotCompute.Backends.CUDA.Optimization
             nuint dynamicSharedMemory = 0)
         {
             var deviceProps = await GetDevicePropertiesAsync(deviceId);
-            
+
             // Common 2D block sizes for different architectures
+
             var blockSizesToTest = new[]
             {
                 new Dim2(32, 32),  // Good for memory coalescing
@@ -301,7 +321,8 @@ namespace DotCompute.Backends.CUDA.Optimization
             foreach (var blockDim in blockSizesToTest)
             {
                 var blockSize = blockDim.X * blockDim.Y;
-                
+
+
                 if (blockSize > deviceProps.MaxThreadsPerBlock)
                 {
                     continue;
@@ -322,11 +343,13 @@ namespace DotCompute.Backends.CUDA.Optimization
                     if (occupancy.Percentage > bestOccupancy)
                     {
                         bestOccupancy = occupancy.Percentage;
-                        
+
                         // Calculate grid dimensions
+
                         var gridX = (problemSize.X + blockDim.X - 1) / blockDim.X;
                         var gridY = (problemSize.Y + blockDim.Y - 1) / blockDim.Y;
-                        
+
+
                         bestConfig = new LaunchConfiguration
                         {
                             BlockSize = new DotCompute.Abstractions.Types.Dim3(blockDim.X, blockDim.Y, 1),
@@ -342,7 +365,8 @@ namespace DotCompute.Backends.CUDA.Optimization
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, 
+                    _logger.LogWarning(ex,
+
                         "Failed to test 2D configuration {BlockDim}", blockDim);
                 }
             }
@@ -371,12 +395,13 @@ namespace DotCompute.Backends.CUDA.Optimization
             int maxNestingDepth = 2)
         {
             var deviceProps = await GetDevicePropertiesAsync(deviceId);
-            
+
             // Check if device supports dynamic parallelism
+
             if (deviceProps.ComputeCapability < 35)
             {
                 throw new OccupancyException(
-                    $"Device {deviceId} does not support dynamic parallelism (CC {deviceProps.ComputeCapability/10.0:F1})");
+                    $"Device {deviceId} does not support dynamic parallelism (CC {deviceProps.ComputeCapability / 10.0:F1})");
             }
 
             var config = new DynamicParallelismConfig
@@ -395,17 +420,21 @@ namespace DotCompute.Backends.CUDA.Optimization
                 MaxBlockSize = Math.Min(256, deviceProps.MaxThreadsPerBlock / 2),
                 ProblemSize = deviceProps.MaxGridSize / 2
             };
-            
+
+
             config.ChildConfig = await CalculateOptimalLaunchConfigAsync(
                 childKernel, deviceId, 0, childConstraints);
 
             // Calculate resource budget
-            config.TotalWarpsAvailable = deviceProps.MaxWarpsPerMultiprocessor * 
+            config.TotalWarpsAvailable = deviceProps.MaxWarpsPerMultiprocessor *
+
                                          deviceProps.MultiprocessorCount;
-            
+
+
             config.ParentWarpsNeeded = config.ParentConfig.ActiveWarps;
             config.ChildWarpsPerParent = config.ChildConfig.ActiveWarps;
-            config.MaxChildrenPerParent = (config.TotalWarpsAvailable - config.ParentWarpsNeeded) / 
+            config.MaxChildrenPerParent = (config.TotalWarpsAvailable - config.ParentWarpsNeeded) /
+
                                           config.ChildWarpsPerParent;
 
             _logger.LogInformation(
@@ -478,7 +507,8 @@ namespace DotCompute.Backends.CUDA.Optimization
             props.MaxDeviceDepth = value;
 
             _devicePropertiesCache[deviceId] = props;
-            
+
+
             await Task.CompletedTask;
             return props;
         }
@@ -512,31 +542,39 @@ namespace DotCompute.Backends.CUDA.Optimization
 
             // Calculate blocks per SM based on different limits
             var warpsPerBlock = (blockSize + deviceProps.WarpSize - 1) / deviceProps.WarpSize;
-            
+
             // Thread/warp limit
+
             var blocksPerSmWarps = deviceProps.MaxWarpsPerMultiprocessor / warpsPerBlock;
-            
+
             // Register limit
+
             var registersPerBlock = kernelAttrs.NumRegs * blockSize;
-            var blocksPerSmRegisters = registersPerBlock > 0 
-                ? deviceProps.RegistersPerMultiprocessor / registersPerBlock 
+            var blocksPerSmRegisters = registersPerBlock > 0
+
+                ? deviceProps.RegistersPerMultiprocessor / registersPerBlock
+
                 : int.MaxValue;
-            
+
             // Shared memory limit
+
             var sharedMemPerBlock = dynamicSharedMemory + (nuint)kernelAttrs.SharedSizeBytes;
             var blocksPerSmSharedMem = sharedMemPerBlock > 0
                 ? (int)(deviceProps.SharedMemoryPerMultiprocessor / sharedMemPerBlock)
                 : int.MaxValue;
-            
+
             // Block limit
+
             var blocksPerSmBlocks = deviceProps.MaxBlocksPerMultiprocessor;
-            
+
             // Find limiting factor
+
             result.ActiveBlocks = Math.Min(
                 Math.Min(blocksPerSmWarps, blocksPerSmRegisters),
                 Math.Min(blocksPerSmSharedMem, blocksPerSmBlocks));
-            
+
             // Determine limiting factor
+
             if (result.ActiveBlocks == blocksPerSmWarps)
             {
                 result.LimitingFactor = "Warps";
@@ -560,7 +598,8 @@ namespace DotCompute.Backends.CUDA.Optimization
 
             result.ActiveWarps = result.ActiveBlocks * warpsPerBlock;
             result.Percentage = (double)result.ActiveWarps / deviceProps.MaxWarpsPerMultiprocessor;
-            
+
+
             await Task.CompletedTask;
             return result;
         }
@@ -568,7 +607,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// <summary>
         /// Applies user constraints to block size.
         /// </summary>
-        private int ApplyBlockSizeConstraints(
+        private static int ApplyBlockSizeConstraints(
             int calculatedBlockSize,
             LaunchConstraints constraints,
             DeviceProperties deviceProps)
@@ -614,7 +653,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// <summary>
         /// Optimizes configuration for specific access patterns.
         /// </summary>
-        private async Task<LaunchConfiguration> OptimizeForPatternAsync(
+        private static async Task<LaunchConfiguration> OptimizeForPatternAsync(
             LaunchConfiguration baseConfig,
             OptimizationHint hint,
             DeviceProperties deviceProps)
@@ -650,7 +689,8 @@ namespace DotCompute.Backends.CUDA.Optimization
                     var largerBlock = Math.Min(
                         NextPowerOfTwo(optimized.BlockSize.X * 2),
                         deviceProps.MaxThreadsPerBlock);
-                    
+
+
                     if (largerBlock > optimized.BlockSize.X)
                     {
                         optimized.BlockSize = new DotCompute.Abstractions.Types.Dim3(largerBlock, 1, 1);
@@ -695,7 +735,8 @@ namespace DotCompute.Backends.CUDA.Optimization
             public bool RequirePowerOfTwo { get; set; }
 
             public OptimizationHint OptimizationHint { get; set; } = OptimizationHint.Balanced;
-            
+
+
             public static LaunchConstraints Default => new();
         }
 

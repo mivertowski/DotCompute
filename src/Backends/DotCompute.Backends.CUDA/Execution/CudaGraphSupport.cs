@@ -384,8 +384,9 @@ namespace DotCompute.Backends.CUDA.Execution
                     result = CudaRuntime.cuGraphGetNodes(capturedGraph, IntPtr.Zero, ref nodeCountNuint);
                     nodeCount = (int)nodeCountNuint;
                     CudaRuntime.CheckError(result, "getting graph node count");
-                    
+
                     // Log verification of node count consistency
+
                     if (nodeCount != graph.NodeCount)
                     {
                         _logger.LogWarning("Node count mismatch: Graph reports {GraphNodeCount}, CUDA reports {CudaNodeCount}",
@@ -547,8 +548,9 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
 
                 graph.IsBuilt = true;
-                
+
                 // Verify node count matches handles created
+
                 if (graph.NodeCount != nodeHandles.Count)
                 {
                     _logger.LogWarning("Node count mismatch after building: Graph has {GraphNodeCount} nodes, created {HandleCount} handles",
@@ -603,7 +605,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var result = CudaRuntime.cuGraphAddKernelNode(
                 ref nodeHandle,
                 graph,
-                new IntPtr[0], // No dependencies yet
+                [], // No dependencies yet
                 0,
                 ref nodeParams);
 
@@ -847,6 +849,7 @@ namespace DotCompute.Backends.CUDA.Execution
         private static double EstimateFusionBenefit(CudaKernelOperation first, CudaKernelOperation second)
             // Estimate the performance benefit of fusing these kernels
             // Consider memory bandwidth savings and kernel launch overhead reduction
+
             => 0.2; // 20% estimated improvement
 
         private static async Task FuseKernelNodesAsync(CudaGraph graph, List<DotCompute.Backends.CUDA.Execution.Optimization.KernelFusionCandidate> candidates, CancellationToken cancellationToken)
@@ -862,7 +865,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     Name = $"{candidate.FirstKernel.Name}_fused_{candidate.SecondKernel.Name}",
                     Type = DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.Fused,
                     IsFused = true,
-                    OriginalOperations = new[] { candidate.FirstKernel, candidate.SecondKernel }
+                    OriginalOperations = [candidate.FirstKernel, candidate.SecondKernel]
                 };
 
                 // Replace original kernels with fused kernel in graph

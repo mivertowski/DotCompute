@@ -37,15 +37,18 @@ namespace DotCompute.Backends.CUDA.Native
                 {
                     var currentPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "";
                     var cudaLib64 = Path.Combine(cudaPath, "lib64");
-                    
+
+
                     if (!currentPath.Contains(cudaLib64))
                     {
-                        Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", 
+                        Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
+
                             $"{cudaLib64}:{currentPath}");
                         Console.WriteLine($"Added CUDA library path: {cudaLib64}");
                     }
                 }
-                
+
+
                 try
                 {
                     // Try to explicitly load the CUDA driver library
@@ -238,26 +241,33 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaDeviceGetAttribute(ref int value, CudaDeviceAttribute attr, int device);
-        
+
         // ========================================
         // CUDA JIT Linking and Compilation APIs
         // ========================================
-        
+
         // cuLink APIs for PTX to CUBIN compilation
+
         [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkCreate_v2")]
         internal static extern CudaError cuLinkCreate(uint numOptions, IntPtr options, IntPtr optionValues, ref IntPtr stateOut);
-        
+
+
         [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkAddData_v2")]
-        internal static extern CudaError cuLinkAddData(IntPtr state, CUjitInputType type, IntPtr data, nuint size, 
+        internal static extern CudaError cuLinkAddData(IntPtr state, CUjitInputType type, IntPtr data, nuint size,
+
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint numOptions, IntPtr options, IntPtr optionValues);
-        
+
+
         [DllImport(CUDA_DRIVER_LIBRARY, EntryPoint = "cuLinkAddFile_v2")]
-        internal static extern CudaError cuLinkAddFile(IntPtr state, CUjitInputType type, 
+        internal static extern CudaError cuLinkAddFile(IntPtr state, CUjitInputType type,
+
             [MarshalAs(UnmanagedType.LPUTF8Str)] string path, uint numOptions, IntPtr options, IntPtr optionValues);
-        
+
+
         [DllImport(CUDA_DRIVER_LIBRARY)]
         internal static extern CudaError cuLinkComplete(IntPtr state, ref IntPtr cubinOut, ref nuint sizeOut);
-        
+
+
         [DllImport(CUDA_DRIVER_LIBRARY)]
         internal static extern CudaError cuLinkDestroy(IntPtr state);
 
@@ -414,7 +424,8 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaFreeAsync(IntPtr devPtr, IntPtr stream);
-        
+
+
         [DllImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cudaMallocAsync(ref IntPtr ptr, ulong size, IntPtr stream);
@@ -536,7 +547,8 @@ namespace DotCompute.Backends.CUDA.Native
         internal static extern CudaError cuGraphAddKernelNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
             ref CudaKernelNodeParams nodeParams);
-            
+
+
         public static CudaError cudaGraphAddKernelNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr pDependencies, nuint numDependencies,
             ref CudaKernelNodeParams nodeParams)
@@ -549,13 +561,15 @@ namespace DotCompute.Backends.CUDA.Native
             }
             return cuGraphAddKernelNode(ref phGraphNode, hGraph, deps ?? [], (ulong)numDependencies, ref nodeParams);
         }
-        
+
+
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphAddMemcpyNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
             ref CudaMemcpy3DParms copyParams);
-            
+
+
         public static CudaError cudaGraphAddMemcpyNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr pDependencies, nuint numDependencies,
             ref CudaMemcpy3DParms copyParams)
@@ -571,9 +585,12 @@ namespace DotCompute.Backends.CUDA.Native
 
         // Add missing CUDA Graph API methods
         public static CudaError cuGraphAddMemsetNode(
-            out IntPtr pGraphNode, 
-            IntPtr graph, 
-            IntPtr pDependencies, 
+            out IntPtr pGraphNode,
+
+            IntPtr graph,
+
+            IntPtr pDependencies,
+
             nuint numDependencies,
             ref CudaMemsetParams pMemsetParams)
         {
@@ -626,13 +643,15 @@ namespace DotCompute.Backends.CUDA.Native
         {
             return CudaRuntimeExtended.cuGraphClone(out pGraphClone, originalGraph);
         }
-        
+
+
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphAddMemsetNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
             ref CudaMemsetParams memsetParams);
-            
+
+
         public static CudaError cudaGraphAddMemsetNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr pDependencies, nuint numDependencies,
             ref CudaMemsetParams memsetParams)
@@ -650,14 +669,16 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphExecUpdate(
             IntPtr hGraphExec, IntPtr hGraph, ref IntPtr hErrorNode);
-        
+
+
         public static CudaError cudaGraphExecUpdate(IntPtr hGraphExec, IntPtr hGraph, IntPtr hErrorNode, uint flags) => cuGraphExecUpdate(hGraphExec, hGraph, ref hErrorNode);
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphGetNodes(
             IntPtr hGraph, IntPtr nodes, ref nuint numNodes);
-        
+
+
         public static CudaError cudaGraphGetNodes(IntPtr hGraph, IntPtr nodes, ref nuint numNodes) => cuGraphGetNodes(hGraph, nodes, ref numNodes);
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
@@ -802,9 +823,10 @@ namespace DotCompute.Backends.CUDA.Native
                     // CUDA driver version format is different from runtime version
                     // Driver version comes as a single integer (e.g., 12080 for 12.8)
                     // But we need to check if this is actually the runtime version API
-                    
+
                     // For driver version, we should use a different approach
                     // Try to get the actual driver version using device query
+
                     try
                     {
                         var deviceResult = cudaGetDeviceCount(out var deviceCount);
@@ -819,20 +841,23 @@ namespace DotCompute.Backends.CUDA.Native
                                 // Map runtime version to expected driver compatibility
                                 var runtimeMajor = version / 1000;
                                 var runtimeMinor = (version % 1000) / 10;
-                                
+
                                 // For CUDA 13.0 runtime, we know the driver supports it
+
                                 if (runtimeMajor >= 13)
                                 {
                                     return new Version(581, 15); // Current working driver version
                                 }
-                                
+
                                 // If we have CUDA 12.0+ runtime, assume driver supports 13.0 
+
                                 if (runtimeMajor >= 12)
                                 {
                                     return new Version(535, 0); // Minimum driver version for CUDA 13.0
                                 }
-                                
+
                                 // Otherwise use runtime version as driver version
+
                                 return new Version(runtimeMajor, runtimeMinor);
                             }
                         }
@@ -841,7 +866,8 @@ namespace DotCompute.Backends.CUDA.Native
                     {
                         // Fallback to runtime version parsing
                     }
-                    
+
+
                     var major = version / 1000;
                     var minor = (version % 1000) / 10;
                     return new Version(major, minor);
@@ -883,10 +909,12 @@ namespace DotCompute.Backends.CUDA.Native
                 }
 
                 // Look for versioned installations (newest first)
-                var cudaDirs = Directory.Exists("/usr/local") 
+                var cudaDirs = Directory.Exists("/usr/local")
+
                     ? Directory.GetDirectories("/usr/local", "cuda-*").OrderByDescending(d => d).ToArray()
                     : Array.Empty<string>();
-                
+
+
                 if (cudaDirs.Length > 0)
                 {
                     return cudaDirs[0];
@@ -897,7 +925,8 @@ namespace DotCompute.Backends.CUDA.Native
                 // Check Program Files for NVIDIA installations
                 var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
                 var nvidiPath = Path.Combine(programFiles, "NVIDIA GPU Computing Toolkit", "CUDA");
-                
+
+
                 if (Directory.Exists(nvidiPath))
                 {
                     var versions = Directory.GetDirectories(nvidiPath, "v*").OrderByDescending(d => d).ToArray();
@@ -918,7 +947,8 @@ namespace DotCompute.Backends.CUDA.Native
         {
             var paths = new List<string>();
             var cudaPath = DetectCudaInstallation();
-            
+
+
             if (!string.IsNullOrEmpty(cudaPath))
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -930,7 +960,8 @@ namespace DotCompute.Backends.CUDA.Native
                         var cudartFiles = Directory.GetFiles(lib64Path, "libcudart.so*")
                             .OrderByDescending(f => f)
                             .ToArray();
-                        
+
+
                         paths.AddRange(cudartFiles);
                     }
                 }

@@ -29,12 +29,14 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Device_Memory_Allocation_Should_Succeed_For_Various_Sizes()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             using var memoryTracker = new MemoryTracker(Output);
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
             // Test progressively larger allocations
+
             var testSizes = new[]
             {
                 1 * 1024,           // 1 KB
@@ -43,11 +45,13 @@ namespace DotCompute.Hardware.Cuda.Tests
                 64 * 1024 * 1024,   // 64 MB
                 256 * 1024 * 1024   // 256 MB
             };
-            
+
+
             foreach (var sizeBytes in testSizes)
             {
                 var elementCount = (int)(sizeBytes / sizeof(float));
-                
+
+
                 try
                 {
                     await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
@@ -55,7 +59,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                     _ = buffer.Should().NotBeNull();
                     _ = buffer.SizeInBytes.Should().Be(sizeBytes);
                     _ = buffer.ElementCount().Should().Be(elementCount);
-                    
+
+
                     Output.WriteLine($"✓ Successfully allocated {sizeBytes / (1024.0 * 1024.0):F1} MB");
                     memoryTracker.LogCurrentUsage($"After {sizeBytes / (1024 * 1024)}MB allocation");
                 }
@@ -71,27 +76,33 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Large_Memory_Allocation_Should_Handle_GPU_Memory_Limits()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             var deviceInfo = accelerator.Info;
             var totalMemoryGB = deviceInfo.GlobalMemoryBytes() / (1024.0 * 1024.0 * 1024.0);
             var availableMemoryGB = deviceInfo.AvailableMemory / (1024.0 * 1024.0 * 1024.0);
-            
+
+
             Output.WriteLine($"GPU Memory Information:");
             Output.WriteLine($"  Total Memory: {totalMemoryGB:F2} GB");
             Output.WriteLine($"  Available Memory: {availableMemoryGB:F2} GB");
-            
+
             // Try to allocate 80% of available memory
+
             var targetAllocationBytes = (long)(deviceInfo.AvailableMemory * 0.8);
             var elementCount = (long)(targetAllocationBytes / sizeof(float));
-            
+
+
             try
             {
                 await using var largeBuffer = await accelerator.Memory.AllocateAsync<float>((int)Math.Min(elementCount, int.MaxValue));
                 _ = largeBuffer.Should().NotBeNull();
-                
+
+
                 Output.WriteLine($"✓ Successfully allocated large buffer: {targetAllocationBytes / (1024.0 * 1024.0 * 1024.0):F2} GB");
             }
             catch (OutOfMemoryException ex)
@@ -110,31 +121,37 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Multiple_Small_Allocations_Should_Not_Fragment_Memory_Excessively()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             using var memoryTracker = new MemoryTracker(Output);
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int allocationCount = 100;
             const int allocationSize = 1024 * 1024; // 1MB each
             var buffers = new IUnifiedMemoryBuffer<float>[allocationCount];
-            
+
+
             try
             {
                 // Allocate many small buffers
                 for (var i = 0; i < allocationCount; i++)
                 {
                     buffers[i] = await accelerator.Memory.AllocateAsync<float>(allocationSize / sizeof(float));
-                    
+
+
                     if (i % 20 == 0)
                     {
                         memoryTracker.LogCurrentUsage($"After {i + 1} allocations");
                     }
                 }
-                
+
+
                 Output.WriteLine($"✓ Successfully allocated {allocationCount} buffers of {allocationSize / (1024 * 1024)} MB each");
-                
+
                 // Verify all buffers are still valid
+
                 for (var i = 0; i < allocationCount; i++)
                 {
                     _ = buffers[i].SizeInBytes.Should().Be(allocationSize);
@@ -147,7 +164,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                 {
                     buffers[i]?.Dispose();
                 }
-                
+
+
                 memoryTracker.LogCurrentUsage("After cleanup");
             }
         }
@@ -160,13 +178,16 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Host_To_Device_Transfer_Should_Preserve_Data_Integrity()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int elementCount = 1024 * 1024; // 1M elements
-            
+
             // Generate test data with various patterns
+
             var testPatterns = new[]
             {
                 TestDataGenerator.CreateLinearSequence(elementCount, 0.0f, 1.0f),
@@ -174,26 +195,32 @@ namespace DotCompute.Hardware.Cuda.Tests
                 TestDataGenerator.CreateSinusoidalData(elementCount, frequency: 0.01),
                 TestDataGenerator.CreateConstantData(elementCount, 42.0f)
             };
-            
+
+
             foreach (var testData in testPatterns)
             {
                 await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
-                
+
                 // Upload data
+
                 var perfMeasurement = new PerformanceMeasurement("Host to Device Transfer", Output);
                 perfMeasurement.Start();
                 await buffer.CopyFromAsync(testData);
                 await accelerator.SynchronizeAsync();
                 perfMeasurement.Stop();
-                
+
                 // Download and verify
+
                 var downloaded = new float[elementCount];
                 await buffer.CopyToAsync(downloaded);
-                
+
                 // Verify data integrity
-                VerifyFloatArraysMatch(testData, downloaded, tolerance: 0.0f, 
+
+                VerifyFloatArraysMatch(testData, downloaded, tolerance: 0.0f,
+
                     context: "Host-Device-Host transfer");
-                
+
+
                 var dataSize = elementCount * sizeof(float);
                 perfMeasurement.LogResults(dataSize);
             }
@@ -203,17 +230,21 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Concurrent_Memory_Transfers_Should_Work_Correctly()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int bufferCount = 4;
             const int elementCount = 256 * 1024; // 256K elements each
-            
+
+
             var buffers = new IUnifiedMemoryBuffer<float>[bufferCount];
             var testDataSets = new float[bufferCount][];
             var tasks = new Task[bufferCount];
-            
+
+
             try
             {
                 // Create buffers and test data
@@ -222,10 +253,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                     buffers[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);
                     testDataSets[i] = TestDataGenerator.CreateRandomData(elementCount, seed: i * 1000);
                 }
-                
+
+
                 var stopwatch = Stopwatch.StartNew();
-                
+
                 // Start concurrent uploads
+
                 for (var i = 0; i < bufferCount; i++)
                 {
                     var bufferIndex = i; // Capture loop variable
@@ -234,24 +267,29 @@ namespace DotCompute.Hardware.Cuda.Tests
                         await buffers[bufferIndex].CopyFromAsync(testDataSets[bufferIndex]);
                     });
                 }
-                
+
                 // Wait for all transfers to complete
+
                 await Task.WhenAll(tasks);
                 await accelerator.SynchronizeAsync();
                 stopwatch.Stop();
-                
+
+
                 Output.WriteLine($"Concurrent transfers completed in {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
-                
+
                 // Verify data integrity for all buffers
+
                 for (var i = 0; i < bufferCount; i++)
                 {
                     var downloaded = new float[elementCount];
                     await buffers[i].CopyToAsync(downloaded);
-                    
+
+
                     VerifyFloatArraysMatch(testDataSets[i], downloaded, tolerance: 0.0f,
                         context: $"Concurrent transfer buffer {i}");
                 }
-                
+
+
                 var totalDataSize = bufferCount * elementCount * sizeof(float);
                 var totalBandwidth = totalDataSize / (stopwatch.Elapsed.TotalSeconds * 1024 * 1024 * 1024);
                 Output.WriteLine($"Total concurrent transfer bandwidth: {totalBandwidth:F2} GB/s");
@@ -273,45 +311,56 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Memory_Bandwidth_Should_Meet_Hardware_Specifications()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             var deviceInfo = accelerator.Info;
             var theoreticalBandwidthGBps = deviceInfo.MemoryBandwidthGBps();
-            
+
+
             Output.WriteLine($"Theoretical Memory Bandwidth: {theoreticalBandwidthGBps:F0} GB/s");
-            
+
             // Test with different data sizes to find optimal transfer size
+
             var testSizes = new[] { 1, 4, 16, 64, 256 }; // MB
-            
+
+
             foreach (var sizeMB in testSizes)
             {
                 var sizeBytes = sizeMB * 1024 * 1024;
                 var elementCount = (int)(sizeBytes / sizeof(float));
                 var testData = TestDataGenerator.CreateRandomData(elementCount);
-                
+
+
                 await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
-                
+
                 // Measure sustained transfer performance
+
                 const int iterations = 10;
                 var stopwatch = Stopwatch.StartNew();
-                
+
+
                 for (var i = 0; i < iterations; i++)
                 {
                     await buffer.CopyFromAsync(testData);
                 }
                 await accelerator.SynchronizeAsync();
                 stopwatch.Stop();
-                
+
+
                 var achievedBandwidth = (sizeBytes * iterations) / (stopwatch.Elapsed.TotalSeconds * 1024 * 1024 * 1024);
                 var efficiency = (achievedBandwidth / theoreticalBandwidthGBps) * 100;
-                
+
+
                 Output.WriteLine($"Transfer Size: {sizeMB:3} MB - " +
                                $"Bandwidth: {achievedBandwidth:6.2f} GB/s - " +
                                $"Efficiency: {efficiency:5.1f}%");
-                
+
                 // For larger transfers, we should achieve reasonable efficiency
+
                 if (sizeMB >= 16)
                 {
                     _ = achievedBandwidth.Should().BeGreaterThan(theoreticalBandwidthGBps * 0.3,
@@ -324,23 +373,29 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Device_To_Device_Memory_Copy_Should_Be_Efficient()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int elementCount = 16 * 1024 * 1024; // 16M elements (64MB)
             var testData = TestDataGenerator.CreateRandomData(elementCount);
-            
+
+
             await using var sourceBuffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await using var destBuffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
-            
+
             // Upload initial data
+
             await sourceBuffer.CopyFromAsync(testData);
-            
+
             // Test device-to-device copy performance
+
             var perfMeasurement = new PerformanceMeasurement("Device to Device Copy", Output);
             const int copyIterations = 20;
-            
+
+
             perfMeasurement.Start();
             for (var i = 0; i < copyIterations; i++)
             {
@@ -348,17 +403,20 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             await accelerator.SynchronizeAsync();
             perfMeasurement.Stop();
-            
+
             // Verify copy correctness
+
             var copiedData = new float[elementCount];
             await destBuffer.CopyToAsync(copiedData);
             VerifyFloatArraysMatch(testData, copiedData, tolerance: 0.0f, context: "Device to Device Copy");
-            
+
             // Calculate and report performance
+
             var dataSize = elementCount * sizeof(float);
             var totalDataTransferred = dataSize * copyIterations;
             var bandwidth = totalDataTransferred / (perfMeasurement.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
-            
+
+
             perfMeasurement.LogResults(totalDataTransferred);
             Output.WriteLine($"Device-to-Device Copy Bandwidth: {bandwidth:F2} GB/s");
 
@@ -375,33 +433,41 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             Skip.IfNot(HasMinimumComputeCapability(6, 0), "Unified Memory requires CC 6.0+");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             var deviceInfo = accelerator.Info;
-            
+
+
             if (!deviceInfo.SupportsUnifiedMemory())
             {
                 Skip.If(true, "Device does not support Unified Memory");
                 return;
             }
-            
+
+
             Output.WriteLine("Testing Unified Memory functionality...");
-            
+
             // Test unified memory allocation and access patterns
+
             const int elementCount = 1024 * 1024;
-            
+
+
             try
             {
                 // This would typically use cudaMallocManaged or similar
                 // For now, we'll test regular memory with unified memory concepts
                 await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
-                
+
+
                 var testData = TestDataGenerator.CreateLinearSequence(elementCount);
                 await buffer.CopyFromAsync(testData);
-                
+
                 // Create a simple kernel that modifies data
+
                 const string unifiedMemoryKernel = @"
                     extern ""C"" __global__ void ModifyUnifiedData(float* data, int count, float multiplier)
                     {
@@ -410,10 +476,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                             data[idx] *= multiplier;
                         }
                     }";
-                
+
+
                 await using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "ModifyUnifiedData", Source = unifiedMemoryKernel, EntryPoint = "ModifyUnifiedData" });
-                
+
                 // Execute kernel
+
                 var kernelArgs = new KernelArguments
                 {
                     buffer,
@@ -425,20 +493,24 @@ namespace DotCompute.Hardware.Cuda.Tests
                     (256, 1, 1),
                     kernelArgs
                 );
-                
+
+
                 await accelerator.SynchronizeAsync();
-                
+
                 // Verify results
+
                 var results = new float[elementCount];
                 await buffer.CopyToAsync(results);
-                
+
+
                 for (var i = 0; i < Math.Min(1000, elementCount); i++)
                 {
                     var expected = testData[i] * 2.0f;
                     _ = Math.Abs(results[i] - expected).Should().BeLessThan(0.001f,
                         $"Unified memory operation failed at index {i}");
                 }
-                
+
+
                 Output.WriteLine("✓ Unified Memory test completed successfully");
             }
             catch (Exception ex)
@@ -456,19 +528,24 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Coalesced_Memory_Access_Should_Outperform_Strided_Access()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int arraySize = 1024 * 1024; // 1M elements
             var testData = TestDataGenerator.CreateLinearSequence(arraySize);
-            
+
+
             await using var inputBuffer = await accelerator.Memory.AllocateAsync<float>(arraySize);
             await using var outputBuffer = await accelerator.Memory.AllocateAsync<float>(arraySize);
-            
+
+
             await inputBuffer.CopyFromAsync(testData);
-            
+
             // Coalesced access kernel (consecutive threads access consecutive memory)
+
             const string coalescedKernel = @"
                 extern ""C"" __global__ void CoalescedCopy(float* input, float* output, int count)
                 {
@@ -477,8 +554,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                         output[idx] = input[idx] * 2.0f;
                     }
                 }";
-            
+
             // Strided access kernel (threads access memory with large strides)
+
             const string stridedKernel = @"
                 extern ""C"" __global__ void StridedCopy(float* input, float* output, int count, int stride)
                 {
@@ -488,17 +566,21 @@ namespace DotCompute.Hardware.Cuda.Tests
                         output[strided_idx] = input[strided_idx] * 2.0f;
                     }
                 }";
-            
+
+
             await using var coalescedKernelObj = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "CoalescedCopy", Source = coalescedKernel, EntryPoint = "CoalescedCopy" });
             await using var stridedKernelObj = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "StridedCopy", Source = stridedKernel, EntryPoint = "StridedCopy" });
-            
+
+
             var gridSize = (arraySize + 255) / 256;
             var blockSize = 256;
-            
+
             // Measure coalesced access performance
+
             var coalescedPerf = new PerformanceMeasurement("Coalesced Memory Access", Output);
             coalescedPerf.Start();
-            
+
+
             for (var i = 0; i < 10; i++)
             {
                 var coalescedArgs = new KernelArguments
@@ -515,11 +597,13 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             await accelerator.SynchronizeAsync();
             coalescedPerf.Stop();
-            
+
             // Measure strided access performance
+
             var stridedPerf = new PerformanceMeasurement("Strided Memory Access", Output);
             stridedPerf.Start();
-            
+
+
             for (var i = 0; i < 10; i++)
             {
                 var stridedArgs = new KernelArguments
@@ -537,16 +621,19 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             await accelerator.SynchronizeAsync();
             stridedPerf.Stop();
-            
+
+
             var dataSize = arraySize * sizeof(float) * 2 * 10; // Read + write, 10 iterations
             coalescedPerf.LogResults(dataSize);
             stridedPerf.LogResults(dataSize);
-            
+
             // Coalesced access should be significantly faster
+
             var coalescedBandwidth = dataSize / (coalescedPerf.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
             var stridedBandwidth = dataSize / (stridedPerf.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
             var speedupRatio = coalescedBandwidth / stridedBandwidth;
-            
+
+
             Output.WriteLine($"Memory Access Performance Comparison:");
             Output.WriteLine($"  Coalesced: {coalescedBandwidth:F2} GB/s");
             Output.WriteLine($"  Strided:   {stridedBandwidth:F2} GB/s");
@@ -563,20 +650,24 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Out_Of_Memory_Should_Be_Handled_Gracefully()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             var deviceInfo = accelerator.Info;
             Output.WriteLine($"Testing memory limits on device with {deviceInfo.GlobalMemoryBytes() / (1024.0 * 1024.0 * 1024.0):F2} GB");
-            
+
+
             try
             {
                 // Try to allocate more memory than available
                 var excessiveSize = deviceInfo.GlobalMemoryBytes() + (1024L * 1024L * 1024L); // +1GB
                 var elementCount = (long)(excessiveSize / sizeof(float));
-                
+
                 // This should either throw an exception or fail gracefully
+
                 Func<Task> allocateExcessiveMemory = async () =>
                 {
                     await using var excessiveBuffer = await accelerator.Memory.AllocateAsync<float>((int)Math.Min(elementCount, int.MaxValue));
@@ -595,17 +686,20 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Zero_Size_Buffer_Should_Be_Handled_Correctly()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
             // Test zero-size allocation
+
             Func<Task> createZeroSizeBuffer = async () =>
             {
                 await using var buffer = await accelerator.Memory.AllocateAsync<float>(0);
             };
-            
+
             // Should either create a valid buffer or throw an appropriate exception
+
             try
             {
                 await createZeroSizeBuffer.Invoke();
@@ -626,36 +720,43 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             Skip.IfNot(HasMinimumComputeCapability(6, 0), "Memory pools require modern CUDA versions");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int allocationCount = 100;
             const int bufferSize = 1024 * 1024; // 1MB each
             const int elementCount = (int)(bufferSize / sizeof(float));
-            
+
             // Measure standard allocation performance
+
             var standardAllocTime = new PerformanceMeasurement("Standard Allocations", Output);
             var standardBuffers = new IUnifiedMemoryBuffer<float>[allocationCount];
-            
+
+
             standardAllocTime.Start();
             for (var i = 0; i < allocationCount; i++)
             {
                 standardBuffers[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);
             }
             standardAllocTime.Stop();
-            
+
             // Clean up
+
             for (var i = 0; i < allocationCount; i++)
             {
                 standardBuffers[i].Dispose();
             }
-            
+
+
             standardAllocTime.LogResults();
-            
+
             // Note: Actual memory pool testing would require specific CUDA memory pool APIs
             // This test demonstrates the measurement approach for when pools are implemented
-            
+
+
             Output.WriteLine("Memory allocation performance measured");
             Output.WriteLine("Note: Memory pool optimizations would be implemented in production CUDA backend");
         }
@@ -665,23 +766,29 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             Skip.IfNot(HasMinimumComputeCapability(6, 0), "Memory prefetching requires Pascal+");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int dataSize = 64 * 1024 * 1024; // 64MB
             const int elementCount = (int)(dataSize / sizeof(float));
-            
+
+
             var testData = TestDataGenerator.CreateRandomData(elementCount);
             await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
-            
+
             // Test without prefetching
+
             var noPrefetchPerf = new PerformanceMeasurement("No Prefetch", Output);
-            
+
+
             noPrefetchPerf.Start();
             await buffer.CopyFromAsync(testData);
-            
+
             // Simple kernel that accesses all data
+
             const string accessKernel = @"
                 extern ""C"" __global__ void AccessData(float* data, int count, float* result)
                 {
@@ -690,10 +797,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                         result[0] += data[idx]; // Simple reduction-like access
                     }
                 }";
-            
+
+
             await using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "AccessData", Source = accessKernel, EntryPoint = "AccessData" });
             await using var resultBuffer = await accelerator.Memory.AllocateAsync<float>(1);
-            
+
+
             var kernelArgs2 = new KernelArguments
             {
                 buffer,
@@ -705,15 +814,18 @@ namespace DotCompute.Hardware.Cuda.Tests
                 (256, 1, 1),
                 kernelArgs2
             );
-            
+
+
             await accelerator.SynchronizeAsync();
             noPrefetchPerf.Stop();
-            
+
+
             noPrefetchPerf.LogResults(dataSize);
-            
+
             // Note: Actual prefetching would use cudaMemPrefetchAsync or similar
             // This test demonstrates the measurement framework for prefetching optimizations
-            
+
+
             Output.WriteLine("Memory access performance measured");
             Output.WriteLine("Note: Memory prefetching optimizations would be implemented in production backend");
         }

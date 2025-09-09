@@ -78,6 +78,7 @@ internal class ExpressionFallbackKernel : IKernel
     /// <returns>A completed task.</returns>
     public static Task CompileAsync(CancellationToken cancellationToken = default)
         // Already compiled during construction
+
         => Task.CompletedTask;
 
     /// <summary>

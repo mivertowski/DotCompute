@@ -23,12 +23,14 @@ internal abstract class OptimizedKernelBase : ICompiledKernel
     /// Gets the logger instance for this kernel.
     /// </summary>
     protected readonly ILogger Logger;
-    
+
+
     /// <summary>
     /// Gets the compilation options used for this kernel.
     /// </summary>
     protected readonly CompilationOptions Options;
-    
+
+
     /// <summary>
     /// Gets a value indicating whether this kernel has been disposed.
     /// </summary>

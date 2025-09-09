@@ -156,7 +156,8 @@ public class ConcurrentTransferResult
     public override string ToString()
     {
         var totalGB = TotalBytesTransferred / (1024.0 * 1024.0 * 1024.0);
-        
+
+
         return $"Concurrent Transfer Result: {TransferCount} transfers, " +
                $"{totalGB:F2} GB total in {Duration.TotalSeconds:F2}s " +
                $"(Aggregate: {AggregateThroughputMBps:F2} MB/s, Average: {AverageThroughputMBps:F2} MB/s) - " +

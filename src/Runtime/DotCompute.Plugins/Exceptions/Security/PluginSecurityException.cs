@@ -23,16 +23,18 @@ public class PluginSecurityException : PluginException
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginSecurityException"/> class.
     /// </summary>
-    public PluginSecurityException() 
-    { 
+    public PluginSecurityException()
+    {
+
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginSecurityException"/> class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
-    public PluginSecurityException(string message) : base(message) 
-    { 
+    public PluginSecurityException(string message) : base(message)
+    {
+
     }
 
     /// <summary>
@@ -42,8 +44,9 @@ public class PluginSecurityException : PluginException
     /// <param name="message">The error message that explains the reason for the exception.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
     public PluginSecurityException(string message, Exception innerException)
-        : base(message, innerException) 
-    { 
+        : base(message, innerException)
+    {
+
     }
 
     /// <summary>

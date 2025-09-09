@@ -49,7 +49,8 @@ public static class SimdTypeMapper
     public static string GetSimdType(string elementType, int vectorSize)
     {
         ArgumentValidation.ThrowIfNullOrEmpty(elementType);
-        
+
+
         if (vectorSize <= 0)
         {
             throw new ArgumentException("Vector size must be positive", nameof(vectorSize));
@@ -61,19 +62,22 @@ public static class SimdTypeMapper
         }
 
         var vectorBits = vectorSize * 8;
-        
+
         // Use generic Vector<T> for standard sizes
         // Note: In source generators (netstandard2.0), we generate code for runtime that may support these types
+
         if (vectorBits == 128)
         {
             return $"Vector128<{elementType}>";
         }
-        
+
+
         if (vectorBits == 256)
         {
             return $"Vector256<{elementType}>";
         }
-        
+
+
         if (vectorBits == 512)
         {
             return $"Vector512<{elementType}>"; // For future AVX-512 support
@@ -96,7 +100,8 @@ public static class SimdTypeMapper
 
         // Extract base vector type (e.g., Vector256 from Vector256<float>)
         var baseVectorType = ExtractBaseVectorType(vectorType);
-        
+
+
         return operation switch
         {
             "+" => $"{baseVectorType}.Add",
@@ -133,12 +138,14 @@ public static class SimdTypeMapper
     public static int GetOptimalVectorSize(string elementType, SimdConfiguration? config = null)
     {
         ArgumentValidation.ThrowIfNullOrEmpty(elementType);
-        
+
+
         config ??= new SimdConfiguration();
         _ = GetElementSizeInBytes(elementType);
         var targetBits = config.DefaultVectorBitWidth;
-        
+
         // Check hardware support
+
         if (config.PreferAvx512 && IsAvx512Supported())
         {
             targetBits = 512;
@@ -151,7 +158,8 @@ public static class SimdTypeMapper
         {
             targetBits = 128;
         }
-        
+
+
         return targetBits / 8;
     }
 
@@ -211,7 +219,8 @@ public static class SimdTypeMapper
         ArgumentValidation.ThrowIfNullOrEmpty(vectorType);
         ArgumentValidation.ThrowIfNullOrEmpty(sourceExpression);
         ArgumentValidation.ThrowIfNullOrEmpty(offset);
-        
+
+
         var baseType = ExtractBaseVectorType(vectorType);
         return $"{baseType}.Load({sourceExpression}, {offset})";
     }
@@ -228,7 +237,8 @@ public static class SimdTypeMapper
         ArgumentValidation.ThrowIfNullOrEmpty(vectorExpression);
         ArgumentValidation.ThrowIfNullOrEmpty(destinationExpression);
         ArgumentValidation.ThrowIfNullOrEmpty(offset);
-        
+
+
         return $"{vectorExpression}.Store({destinationExpression}, {offset})";
     }
 
@@ -243,17 +253,20 @@ public static class SimdTypeMapper
     {
         ArgumentValidation.ThrowIfNullOrEmpty(operation);
         ArgumentValidation.ThrowIfNullOrEmpty(platform);
-        
+
+
         if (platform.Equals("X86", StringComparison.OrdinalIgnoreCase))
         {
             return GetX86Intrinsic(operation, vectorWidth);
         }
-        
+
+
         if (platform.Equals("Arm", StringComparison.OrdinalIgnoreCase))
         {
             return GetArmIntrinsic(operation, vectorWidth);
         }
-        
+
+
         throw new NotSupportedException($"Platform {platform} not supported");
     }
 
@@ -278,7 +291,8 @@ public static class SimdTypeMapper
             512 => "Avx512F",
             _ => throw new NotSupportedException($"Vector width {vectorWidth} not supported for X86")
         };
-        
+
+
         return operation switch
         {
             "+" => $"{prefix}.Add",
@@ -301,7 +315,8 @@ public static class SimdTypeMapper
         {
             throw new NotSupportedException($"Vector width {vectorWidth} not supported for ARM");
         }
-        
+
+
         return operation switch
         {
             "+" => "AdvSimd.Add",
@@ -368,7 +383,8 @@ public static class SimdTypeMapper
         var vectorType = GetSimdType(elementType, vectorSize);
         var elementCount = GetVectorElementCount(elementType, vectorSize);
         var intrinsic = GetIntrinsicOperation(operation, vectorType);
-        
+
+
         return $@"
 // Vectorized loop using {vectorType}
 var vectorSize = {elementCount};

@@ -188,27 +188,32 @@ public class VectorizationInfo
             // Simple heuristic based on pattern recognition
 
             var speedup = 1.0;
-            
+
+
             if (VectorizableLoops > 0)
             {
                 speedup *= 2.0 * VectorizableLoops; // Base speedup for vectorizable loops
             }
-            
+
+
             if (HasDotProductPattern)
             {
                 speedup *= 1.5; // Additional speedup for dot product
             }
-            
+
+
             if (HasReductionPattern)
             {
                 speedup *= 1.3; // Reduction operations benefit from SIMD
             }
-            
+
+
             if (HasDataDependency)
             {
                 speedup *= 0.5; // Data dependencies reduce effectiveness
             }
-            
+
+
             return Math.Min(speedup, 8.0); // Cap at 8x theoretical maximum
         }
     }

@@ -30,8 +30,9 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
     private long _nextId = 1;
     private bool _disposed;
     private readonly IAccelerator? _accelerator;
-    
+
     // Interface Properties
+
     public IAccelerator Accelerator => _accelerator ?? throw new InvalidOperationException("No accelerator associated with this memory manager");
     public DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new()
     {
@@ -76,7 +77,8 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         var buffer = await AllocateRawAsync(sizeInBytes, options, cancellationToken);
         return new TypedMemoryBufferWrapper<T>(buffer, count);
     }
-    
+
+
     public async ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
     {
         if (_disposed)
@@ -212,7 +214,8 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
 
         return view;
     }
-    
+
+
     public IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
     {
         if (_disposed)
@@ -239,8 +242,9 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
     }
 
     public MemoryStatistics GetStatistics() => _statistics.CreateSnapshot();
-    
+
     // Copy operations
+
     public async ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         IUnifiedMemoryBuffer<T> destination,
@@ -248,15 +252,18 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(destination);
-        
+
+
         if (source.Length != destination.Length)
         {
             throw new ArgumentException("Source and destination buffers must be the same size");
         }
-        
+
+
         await source.CopyToAsync(destination, cancellationToken);
     }
-    
+
+
     public async ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         int sourceOffset,
@@ -267,10 +274,12 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(destination);
-        
+
+
         await source.CopyToAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);
     }
-    
+
+
     public async ValueTask CopyToDeviceAsync<T>(
         ReadOnlyMemory<T> source,
         IUnifiedMemoryBuffer<T> destination,
@@ -279,7 +288,8 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         ArgumentNullException.ThrowIfNull(destination);
         await destination.CopyFromAsync(source, cancellationToken);
     }
-    
+
+
     public async ValueTask CopyFromDeviceAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         Memory<T> destination,
@@ -288,8 +298,9 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         ArgumentNullException.ThrowIfNull(source);
         await source.CopyToAsync(destination, cancellationToken);
     }
-    
+
     // Free operations
+
     public async ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
     {
         if (buffer is ProductionMemoryBuffer prodBuffer)
@@ -302,7 +313,8 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
             await (buffer?.DisposeAsync() ?? ValueTask.CompletedTask);
         }
     }
-    
+
+
     public async ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
     {
         if (_disposed)
@@ -312,14 +324,17 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
 
 
         await _memoryPool.PerformMaintenanceAsync();
-        
+
         // Trigger garbage collection for optimization
+
         GC.Collect(2, GCCollectionMode.Optimized, true, true);
         GC.WaitForPendingFinalizers();
-        
+
+
         _logger.LogInformation("Memory optimization completed");
     }
-    
+
+
     public void Clear()
     {
         if (_disposed)
@@ -331,7 +346,8 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         var buffersToDispose = _buffers.Values.ToList();
         _buffers.Clear();
         _bufferRegistry.Clear();
-        
+
+
         foreach (var buffer in buffersToDispose)
         {
             try
@@ -343,7 +359,8 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
                 _logger.LogWarning(ex, "Error disposing buffer during clear operation");
             }
         }
-        
+
+
         _logger.LogInformation("Memory manager cleared - all buffers disposed");
     }
 
@@ -494,7 +511,8 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
             _logger.LogInformation("Production memory manager disposed successfully");
         }
     }
-    
+
+
     public async ValueTask DisposeAsync()
     {
         if (!_disposed)
@@ -516,7 +534,8 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
                     _logger.LogWarning(ex, "Error disposing buffer {BufferId}", buffer.Id);
                 }
             }).ToArray();
-            
+
+
             await Task.WhenAll(disposeTasks);
 
             _buffers.Clear();
@@ -892,7 +911,8 @@ public sealed class MemoryStatistics
     private long _poolMisses;
     private double _totalAllocationTimeMs;
     private double _totalCopyTimeMs;
-    
+
+
     public long CurrentlyAllocatedBytes => _totalBytesAllocated - _totalBytesFreed;
     public long TotalAllocations => _totalAllocations;
     public long TotalDeallocations => _totalDeallocations;
@@ -974,7 +994,8 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
     private bool _disposed;
 
     public string Name => "Production Kernel Compiler";
-    
+
+
     public IReadOnlyDictionary<string, object> Capabilities => new Dictionary<string, object>
     {
         { "SupportedOptimizationLevels", new[] { OptimizationLevel.None, OptimizationLevel.Minimal, OptimizationLevel.Aggressive } },
@@ -1103,13 +1124,15 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
 
         return result;
     }
-    
+
+
     public async ValueTask<UnifiedValidationResult> ValidateAsync(KernelDefinition definition, CancellationToken cancellationToken = default)
     {
         await Task.Delay(1, cancellationToken); // Simulate async validation
         return Validate(definition);
     }
-    
+
+
     public async ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(kernel);
@@ -1294,21 +1317,24 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
 {
     private readonly IUnifiedMemoryBuffer _buffer;
     private readonly int _length;
-    
+
+
     public TypedMemoryBufferWrapper(IUnifiedMemoryBuffer buffer, int length)
     {
         _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
         _length = length;
     }
-    
+
     // Properties from IUnifiedMemoryBuffer<T>
+
     public int Length => _length;
     public IAccelerator Accelerator => throw new NotSupportedException("Accelerator not available in production wrapper");
     public bool IsOnHost => true; // Simplified for production wrapper
     public bool IsOnDevice => false;
     public bool IsDirty => false;
-    
+
     // Properties from IUnifiedMemoryBuffer
+
     public long SizeInBytes => _buffer.SizeInBytes;
     public MemoryOptions Options => _buffer.Options;
     public bool IsDisposed => _buffer.IsDisposed;
@@ -1318,14 +1344,17 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
 
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
         // For production implementation, this would use proper memory copying
+
         => await Task.CompletedTask;
 
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         // For production implementation, this would use proper memory copying
+
         => await Task.CompletedTask;
 
     public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
         // For production implementation, this would copy between buffers
+
         => await Task.CompletedTask;
 
     public async ValueTask CopyToAsync(
@@ -1335,6 +1364,7 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
         int count,
         CancellationToken cancellationToken = default)
         // For production implementation, this would copy with offsets
+
         => await Task.CompletedTask;
 
     // Simplified implementations for remaining methods
@@ -1347,7 +1377,8 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
     public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => throw new NotSupportedException("Memory mapping not supported in production wrapper");
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => throw new NotSupportedException("Memory mapping not supported in production wrapper");
     public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => throw new NotSupportedException("Memory mapping not supported in production wrapper");
-    
+
+
     public void EnsureOnHost() { /* No-op for production */ }
     public void EnsureOnDevice() { /* No-op for production */ }
     public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
@@ -1356,10 +1387,12 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
     public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
     public void MarkHostDirty() { /* No-op for production */ }
     public void MarkDeviceDirty() { /* No-op for production */ }
-    
+
+
     public ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
     public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-    
+
+
     public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
@@ -1386,7 +1419,8 @@ public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where 
         var newLength = (int)(_buffer.SizeInBytes / Unsafe.SizeOf<TNew>());
         return new TypedMemoryBufferWrapper<TNew>(_buffer, newLength);
     }
-    
+
+
     public void Dispose() => _buffer?.Dispose();
     public ValueTask DisposeAsync() => _buffer?.DisposeAsync() ?? ValueTask.CompletedTask;
 }
@@ -1400,28 +1434,32 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
     private readonly IUnifiedMemoryBuffer<T> _parent;
     private readonly int _offset;
     private readonly int _length;
-    
+
+
     public TypedMemoryBufferView(IUnifiedMemoryBuffer<T> parent, int offset, int length)
     {
         _parent = parent ?? throw new ArgumentNullException(nameof(parent));
         _offset = offset;
         _length = length;
     }
-    
+
     // Properties from IUnifiedMemoryBuffer<T>
+
     public int Length => _length;
     public IAccelerator Accelerator => _parent.Accelerator;
     public bool IsOnHost => _parent.IsOnHost;
     public bool IsOnDevice => _parent.IsOnDevice;
     public bool IsDirty => _parent.IsDirty;
-    
+
     // Properties from IUnifiedMemoryBuffer
+
     public long SizeInBytes => _length * Unsafe.SizeOf<T>();
     public MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
     public BufferState State => _parent.State;
-    
+
     // Delegate all operations to parent with offset adjustments
+
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
         if (source.Length > _length)
@@ -1433,17 +1471,21 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
 
         await _parent.CopyFromAsync(source, cancellationToken);
     }
-    
+
+
     public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         => _parent.CopyToAsync(destination, cancellationToken);
-    
+
+
     public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
         => _parent.CopyToAsync(destination, cancellationToken);
-    
+
+
     public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
         => _parent.CopyToAsync(_offset + sourceOffset, destination, destinationOffset, count, cancellationToken);
-    
+
     // Simplified implementations for remaining methods (delegate to parent)
+
     public Span<T> AsSpan() => _parent.AsSpan().Slice(_offset, _length);
     public ReadOnlySpan<T> AsReadOnlySpan() => _parent.AsReadOnlySpan().Slice(_offset, _length);
     public Memory<T> AsMemory() => _parent.AsMemory().Slice(_offset, _length);
@@ -1452,7 +1494,8 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
     public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => _parent.MapRange(_offset, _length, mode);
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => _parent.MapRange(_offset + offset, length, mode);
     public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => _parent.MapAsync(mode, cancellationToken);
-    
+
+
     public void EnsureOnHost() => _parent.EnsureOnHost();
     public void EnsureOnDevice() => _parent.EnsureOnDevice();
     public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => _parent.EnsureOnHostAsync(context, cancellationToken);
@@ -1461,7 +1504,8 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
     public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => _parent.SynchronizeAsync(context, cancellationToken);
     public void MarkHostDirty() => _parent.MarkHostDirty();
     public void MarkDeviceDirty() => _parent.MarkDeviceDirty();
-    
+
+
     public ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => _parent.FillAsync(value, _offset, _length, cancellationToken);
     public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => _parent.FillAsync(value, _offset + offset, count, cancellationToken);
 
@@ -1485,14 +1529,16 @@ public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T :
 
         return new TypedMemoryBufferView<T>(_parent, _offset + offset, length);
     }
-    
+
+
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         _ = (int)(SizeInBytes / Unsafe.SizeOf<TNew>());
         // This is a simplified implementation - a real one would need proper offset handling
         return _parent.AsType<TNew>();
     }
-    
+
+
     public void Dispose() { /* Views don't own the parent buffer */ }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

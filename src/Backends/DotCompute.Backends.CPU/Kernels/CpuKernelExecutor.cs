@@ -92,7 +92,7 @@ internal sealed class CpuKernelExecutor
         }
     }
 
-    private async ValueTask ExecuteSequentialAsync(
+    private static async ValueTask ExecuteSequentialAsync(
         KernelDefinition definition,
         KernelArguments arguments,
         KernelExecutionPlan executionPlan,
@@ -205,7 +205,7 @@ internal sealed class CpuKernelExecutor
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    private ValueTask ExecuteVectorizedKernelAsync(
+    private static ValueTask ExecuteVectorizedKernelAsync(
         KernelDefinition definition,
         VectorizedBuffers vectorizedArgs,
         long totalItems,
@@ -225,7 +225,7 @@ internal sealed class CpuKernelExecutor
         return ValueTask.CompletedTask;
     }
 
-    private void ExecuteVectorizedWorker(
+    private static void ExecuteVectorizedWorker(
         KernelDefinition definition,
         VectorizedBuffers vectorizedArgs,
         long startVector,

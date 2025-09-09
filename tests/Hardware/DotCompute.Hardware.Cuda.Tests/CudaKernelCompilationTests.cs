@@ -42,8 +42,9 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Assert.NotNull(compiledKernel);
             Assert.Equal("simpleKernel", compiledKernel.Name);
-            
+
             // Verify the kernel compiled successfully
+
             Output.WriteLine($"Compiled kernel '{compiledKernel.Name}'");
             Output.WriteLine($"  Compilation successful");
         }
@@ -70,7 +71,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Assert.NotNull(compiledKernel);
             Assert.Equal("cubinTestKernel", compiledKernel.Name);
-            
+
+
             Output.WriteLine($"Kernel compilation results:");
             Output.WriteLine($"  Kernel: {compiledKernel.Name}");
             Output.WriteLine($"  Compilation successful");
@@ -229,7 +231,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             const int size = 1024;
             const float scalar = 2.5f;
-            
+
+
             await using var inputBuffer = await accelerator.Memory.AllocateAsync<float>(size);
             await using var outputBuffer = await accelerator.Memory.AllocateAsync<float>(size);
 

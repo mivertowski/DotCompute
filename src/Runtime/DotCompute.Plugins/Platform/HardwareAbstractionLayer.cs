@@ -270,7 +270,7 @@ namespace DotCompute.Plugins.Platform
             };
         }
 
-        private SIMDConfiguration GetSIMDConfiguration()
+        private static SIMDConfiguration GetSIMDConfiguration()
         {
             var hardware = PlatformDetection.Hardware;
 
@@ -453,9 +453,10 @@ namespace DotCompute.Plugins.Platform
         private static long EstimateGpuMemory()
             // Conservative estimate - would be better to query actual GPU memory
 
+
             => 2L * 1024 * 1024 * 1024; // 2GB default
 
-        private long EstimateOpenClMemory()
+        private static long EstimateOpenClMemory()
         {
             var hardware = PlatformDetection.Hardware;
             return hardware.HasGpu ? EstimateGpuMemory() : hardware.AvailablePhysicalMemory / 4;

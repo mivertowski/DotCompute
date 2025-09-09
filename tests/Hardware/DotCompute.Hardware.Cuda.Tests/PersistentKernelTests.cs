@@ -28,10 +28,12 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task RingBuffer_Pattern_Kernel_Should_Compile()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
             // Test kernel that simulates ring buffer access pattern
+
             const string kernelCode = @"
                 extern ""C"" __global__ void ring_buffer_kernel(
                     float* buffer,
@@ -60,10 +62,12 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Act & Assert - should compile without errors
             var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
-            
+
+
             kernel.Should().NotBeNull();
             Output.WriteLine("Ring buffer pattern kernel compiled successfully");
-            
+
+
             await kernel.DisposeAsync();
         }
 
@@ -71,23 +75,28 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task TimeStep_Advance_Kernel_Should_Execute()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
             // Simulate time-stepping with simple kernel
+
             const int bufferSize = 256;
             const int timeSteps = 5;
-            
+
+
             using var buffer = await accelerator.Memory.AllocateAsync<float>(bufferSize);
             using var stepBuffer = await accelerator.Memory.AllocateAsync<int>(1);
-            
+
             // Initialize
+
             var initialData = new float[bufferSize];
             for (int i = 0; i < bufferSize; i++)
                 initialData[i] = i * 0.01f;
             await buffer.CopyFromAsync(initialData.AsMemory());
             await stepBuffer.CopyFromAsync(new[] { 0 }.AsMemory());
-            
+
+
             const string kernelCode = @"
                 extern ""C"" __global__ void time_step(
                     float* data,
@@ -107,10 +116,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                 "time_step",
                 kernelCode
             );
-            
+
+
             var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
-            
+
             // Execute time steps
+
             for (int i = 0; i < timeSteps; i++)
             {
                 var (grid, block) = CudaTestHelpers.CreateLaunchConfig(1, 1, 1, 256, 1, 1);
@@ -121,16 +132,20 @@ namespace DotCompute.Hardware.Cuda.Tests
                 );
                 await kernel.ExecuteAsync(kernelArgs);
             }
-            
+
+
             await accelerator.SynchronizeAsync();
-            
+
             // Verify step counter
+
             var stepResult = new int[1];
             await stepBuffer.CopyToAsync(stepResult.AsMemory());
             stepResult[0].Should().Be(timeSteps, "Step counter should match execution count");
-            
+
+
             Output.WriteLine($"Time-stepping kernel executed {timeSteps} steps successfully");
-            
+
+
             await kernel.DisposeAsync();
         }
 
@@ -138,10 +153,12 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Wave_Simulation_Kernel_Should_Compile()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
             // Wave equation kernel using multiple time steps
+
             const string kernelCode = @"
                 extern ""C"" __global__ void wave_update(
                     float* u_current,
@@ -174,10 +191,12 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Act & Assert - should compile without errors
             var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
-            
+
+
             kernel.Should().NotBeNull();
             Output.WriteLine("Wave simulation kernel compiled successfully");
-            
+
+
             await kernel.DisposeAsync();
         }
 
@@ -193,8 +212,10 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             // Simple validation logic for kernel configuration
             bool isValid = ringBufferDepth >= 2 && blockSize > 0 && blockSize <= 1024;
-            
-            isValid.Should().Be(shouldBeValid, 
+
+
+            isValid.Should().Be(shouldBeValid,
+
                 $"Configuration with depth={ringBufferDepth}, blockSize={blockSize} should be {(shouldBeValid ? "valid" : "invalid")}");
         }
 
@@ -204,8 +225,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
             // Simplified persistent pattern kernel (single execution)
+
             var kernelCode = @"
                 extern ""C"" __global__ void persistent_pattern(
                     float* data,
@@ -234,19 +256,23 @@ namespace DotCompute.Hardware.Cuda.Tests
             );
 
             var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
-            
+
+
             const int dataSize = 256;
             const int maxIterations = 10;
-            
+
+
             using var dataBuffer = await accelerator.Memory.AllocateAsync<float>(dataSize);
             using var iterBuffer = await accelerator.Memory.AllocateAsync<int>(1);
-            
+
             // Initialize
+
             var initialData = new float[dataSize];
             await dataBuffer.CopyFromAsync(initialData.AsMemory());
             await iterBuffer.CopyFromAsync(new[] { 0 }.AsMemory());
-            
+
             // Execute
+
             var (grid, block) = CudaTestHelpers.CreateLaunchConfig(4, 1, 1, 64, 1, 1);
             var kernelArgs = CudaTestHelpers.CreateKernelArguments(
                 [dataBuffer, iterBuffer, dataSize, maxIterations],
@@ -254,16 +280,20 @@ namespace DotCompute.Hardware.Cuda.Tests
                 block
             );
             await kernel.ExecuteAsync(kernelArgs);
-            
+
+
             await accelerator.SynchronizeAsync();
-            
+
             // Verify iterations completed
+
             var iterResult = new int[1];
             await iterBuffer.CopyToAsync(iterResult.AsMemory());
             iterResult[0].Should().Be(maxIterations, "Should complete all iterations");
-            
+
+
             Output.WriteLine($"Persistent pattern kernel executed {maxIterations} iterations successfully");
-            
+
+
             await kernel.DisposeAsync();
         }
 
@@ -271,19 +301,23 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Multi_Buffer_Copy_Pattern_Should_Work()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
+
             const int elements = 256;
             const int numBuffers = 3;
-            
+
             // Create multiple buffers to simulate ring buffer pattern
+
             var buffers = new List<IDisposable>();
             for (int i = 0; i < numBuffers; i++)
             {
                 buffers.Add(await accelerator.Memory.AllocateAsync<float>(elements));
             }
-            
+
+
             try
             {
                 // Create test data
@@ -292,10 +326,11 @@ namespace DotCompute.Hardware.Cuda.Tests
                 {
                     testData[i] = i * 0.5f;
                 }
-                
+
                 // Basic buffer test - just verify buffers were created
                 // Full memory operations would require casting to specific buffer types
-                
+
+
                 Output.WriteLine("Multi-buffer copy pattern executed successfully");
             }
             finally
@@ -320,9 +355,11 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             // Simple dimension validation
             long totalElements = (long)width * height * depth;
-            
+
+
             totalElements.Should().BeGreaterThan(0, $"{dimensionType} grid should have positive element count");
-            
+
+
             Output.WriteLine($"{dimensionType} grid: {width}x{height}x{depth} = {totalElements} elements");
         }
 
@@ -347,7 +384,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
             public bool IsEnabled(LogLevel logLevel) => true;
 
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, 
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
+
                 Exception? exception, Func<TState, Exception?, string> formatter)
                 where TState : notnull
             {

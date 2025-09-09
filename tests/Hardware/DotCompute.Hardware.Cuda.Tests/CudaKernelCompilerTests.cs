@@ -411,7 +411,8 @@ public class CudaKernelCompilerTests : CudaTestBase
 
         // Assert
         _ = results.Should().HaveCount(20);
-        _ = results.Should().AllSatisfy(r => r.Id.Should().Be(results[0].Id), 
+        _ = results.Should().AllSatisfy(r => r.Id.Should().Be(results[0].Id),
+
             "all should get the same cached instance");
     }
 
@@ -451,7 +452,8 @@ public class CudaKernelCompilerTests : CudaTestBase
 
         // Arrange
         var largeKernelSource = string.Join("\n",
-            Enumerable.Range(0, 1000).Select(i => 
+            Enumerable.Range(0, 1000).Select(i =>
+
                 $"__device__ float function_{i}(float x) {{ return x * {i}.0f + {i}.0f; }}")) +
             @"
             extern ""C"" __global__ void large_kernel(float* data) {

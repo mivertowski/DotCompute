@@ -268,8 +268,8 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
 
         return new WorkItems
         {
-            GlobalWorkSize = new[] { globalSize },
-            LocalWorkSize = new[] { localSize }
+            GlobalWorkSize = [globalSize],
+            LocalWorkSize = [localSize]
         };
     }
 

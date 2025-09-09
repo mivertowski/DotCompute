@@ -28,43 +28,50 @@ public class CompilationRecoveryContext
     /// </summary>
     /// <value>The kernel identifier used for logging and caching.</value>
     public string KernelName { get; set; } = string.Empty;
-    
+
+
     /// <summary>
     /// Gets or sets the source code of the kernel to be compiled.
     /// </summary>
     /// <value>The complete kernel source code.</value>
     public string SourceCode { get; set; } = string.Empty;
-    
+
+
     /// <summary>
     /// Gets or sets the original compilation options requested for this kernel.
     /// </summary>
     /// <value>The initial compilation configuration.</value>
     public CompilationOptions CompilationOptions { get; set; } = null!;
-    
+
+
     /// <summary>
     /// Gets or sets the target platform for compilation (e.g., CUDA, OpenCL, CPU).
     /// </summary>
     /// <value>The platform identifier for the compilation target.</value>
     public string TargetPlatform { get; set; } = string.Empty;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether the compilation failure was due to a timeout.
     /// </summary>
     /// <value>true if the compilation timed out; otherwise, false.</value>
     public bool IsCompilationTimeout { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether the kernel has been simplified during recovery.
     /// </summary>
     /// <value>true if kernel simplification has been applied; otherwise, false.</value>
     public bool IsSimplified { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether interpreter mode should be used for execution.
     /// </summary>
     /// <value>true if interpreter mode is enabled; otherwise, false.</value>
     public bool UseInterpreter { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the path to the plugin responsible for this kernel, if applicable.
     /// </summary>
@@ -77,13 +84,15 @@ public class CompilationRecoveryContext
     /// </summary>
     /// <value>The modified compilation configuration, or null if not modified.</value>
     public CompilationOptions? ModifiedOptions { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the interpreter instance created for fallback execution.
     /// </summary>
     /// <value>The kernel interpreter instance, or null if not using interpreter mode.</value>
     public KernelInterpreter? InterpreterInstance { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the cached compilation result that may be used as a fallback.
     /// </summary>

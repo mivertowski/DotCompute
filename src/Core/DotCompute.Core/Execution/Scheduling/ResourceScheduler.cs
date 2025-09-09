@@ -56,7 +56,8 @@ namespace DotCompute.Core.Execution.Scheduling
             if (options.TargetDevices != null && options.TargetDevices.Length > 0)
             {
                 deviceCandidates = [.. deviceCandidates.Where(d => options.TargetDevices.Contains(d.Info.Id))];
-                
+
+
                 if (deviceCandidates.Count == 0)
                 {
                     throw new InvalidOperationException("No available devices match the target device list");
@@ -74,7 +75,7 @@ namespace DotCompute.Core.Execution.Scheduling
                 deviceCandidates.Select(async d => new
                 {
                     Device = d,
-                    Score = await _performanceEstimator.CalculateDeviceScoreAsync(d, cancellationToken)
+                    Score = await DevicePerformanceEstimator.CalculateDeviceScoreAsync(d, cancellationToken)
                 }));
 
             var selectedDevices = deviceScores
@@ -130,7 +131,8 @@ namespace DotCompute.Core.Execution.Scheduling
                 LoadBalancingStrategy.Dynamic => await DistributeDynamicAsync(inputBuffers, devices, cancellationToken),
                 _ => await DistributeRoundRobinAsync(inputBuffers, devices, cancellationToken),
             };
-            
+
+
             _logger.LogInformation("Distributed {TotalElements} elements across {DeviceCount} devices using {Strategy} strategy",
                 totalElements, devices.Length, strategy);
 
@@ -280,7 +282,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <summary>
         /// Distributes workload using weighted strategy based on device performance.
         /// </summary>
-        private async ValueTask<List<DeviceWorkAssignment>> DistributeWeightedAsync<T>(
+        private static async ValueTask<List<DeviceWorkAssignment>> DistributeWeightedAsync<T>(
             IUnifiedMemoryBuffer<T>[] inputBuffers,
             IAccelerator[] devices,
             CancellationToken cancellationToken) where T : unmanaged
@@ -424,7 +426,7 @@ namespace DotCompute.Core.Execution.Scheduling
                 {
                     Device = d,
                     MemoryCapacity = d.Info.AvailableMemory,
-                    ComputeCapability = await _performanceEstimator.EstimateComputeCapabilityAsync(d, cancellationToken)
+                    ComputeCapability = await DevicePerformanceEstimator.EstimateComputeCapabilityAsync(d, cancellationToken)
                 }));
 
             // Sort devices by capability
@@ -467,8 +469,9 @@ namespace DotCompute.Core.Execution.Scheduling
                     // Fallback to device with most capacity
                     var fallbackDevice = sortedDevices.First().Device;
                     assignments[layer.LayerId] = fallbackDevice;
-                    
+
                     // Update the fallback device's load
+
                     if (deviceLoads.ContainsKey(fallbackDevice))
                     {
                         var currentLoad = deviceLoads[fallbackDevice];

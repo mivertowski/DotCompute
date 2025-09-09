@@ -31,7 +31,8 @@ public class CodeStyle
     /// across different editors and environments.
     /// </remarks>
     public IndentationStyle IndentationStyle { get; set; } = IndentationStyle.Spaces;
-    
+
+
     /// <summary>
     /// Gets or sets the number of spaces or tabs per indentation level.
     /// </summary>
@@ -45,7 +46,8 @@ public class CodeStyle
     /// Common values are 2, 4, or 8.
     /// </remarks>
     public int IndentSize { get; set; } = 4;
-    
+
+
     /// <summary>
     /// Gets or sets the brace placement style for generated code.
     /// </summary>
@@ -58,7 +60,8 @@ public class CodeStyle
     /// SameLine follows JavaScript/Java conventions.
     /// </remarks>
     public BraceStyle BraceStyle { get; set; } = BraceStyle.NextLine;
-    
+
+
     /// <summary>
     /// Gets or sets the line ending style for generated files.
     /// </summary>
@@ -71,7 +74,8 @@ public class CodeStyle
     /// which is important for version control and cross-platform development.
     /// </remarks>
     public LineEndingStyle LineEndings { get; set; } = LineEndingStyle.Auto;
-    
+
+
     /// <summary>
     /// Gets or sets the maximum line length before automatic wrapping is applied.
     /// </summary>
@@ -84,7 +88,8 @@ public class CodeStyle
     /// The choice depends on team preferences and display constraints.
     /// </remarks>
     public int MaxLineLength { get; set; } = 120;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to use the 'var' keyword for type inference.
     /// </summary>
@@ -98,7 +103,8 @@ public class CodeStyle
     /// This can improve readability by reducing redundant type information.
     /// </remarks>
     public bool UseVarKeyword { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to use expression-bodied members for simple methods.
     /// </summary>
@@ -112,7 +118,8 @@ public class CodeStyle
     /// This can improve code density and readability for straightforward implementations.
     /// </remarks>
     public bool UseExpressionBody { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets the naming convention settings for generated code elements.
     /// </summary>
@@ -125,7 +132,8 @@ public class CodeStyle
     /// Consistent naming conventions improve code readability and maintainability.
     /// </remarks>
     public NamingConventions Naming { get; set; } = new();
-    
+
+
     /// <summary>
     /// Gets or sets comment style preferences for generated code.
     /// </summary>

@@ -28,7 +28,7 @@ public enum LineEndingStyle
     /// cause version control issues in mixed-platform teams.
     /// </remarks>
     Auto,
-    
+
     /// <summary>
     /// Use Windows-style line endings (CRLF - Carriage Return + Line Feed).
     /// </summary>
@@ -41,7 +41,8 @@ public enum LineEndingStyle
     /// Character sequence: \r\n (0x0D 0x0A)
     /// </remarks>
     Windows,
-    
+
+
     /// <summary>
     /// Use Unix-style line endings (LF - Line Feed only).
     /// </summary>

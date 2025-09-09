@@ -1038,8 +1038,9 @@ namespace DotCompute.Core.Memory.P2P
         public Memory<T> AsMemory() => Memory<T>.Empty;
         public ReadOnlyMemory<T> AsReadOnlyMemory() => ReadOnlyMemory<T>.Empty;
         public DeviceMemory GetDeviceMemory() => DeviceMemory.Invalid;
-        
+
         // Synchronization methods
+
         public void EnsureOnHost() => State = BufferState.HostReady;
         public void EnsureOnDevice() => State = BufferState.DeviceReady;
         public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
@@ -1057,8 +1058,9 @@ namespace DotCompute.Core.Memory.P2P
             => ValueTask.CompletedTask;
         public void MarkHostDirty() => State = BufferState.HostDirty;
         public void MarkDeviceDirty() => State = BufferState.DeviceDirty;
-        
+
         // Copy methods
+
         public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
         public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)

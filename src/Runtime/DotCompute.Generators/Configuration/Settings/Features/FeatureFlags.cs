@@ -31,7 +31,8 @@ public class FeatureFlags
     /// vectorize suitable operations using the appropriate instruction sets.
     /// </remarks>
     public bool EnableSimd { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to generate AVX2 (Advanced Vector Extensions 2) code.
     /// </summary>
@@ -46,7 +47,8 @@ public class FeatureFlags
     /// instruction compared to SSE, but may not be available on all target machines.
     /// </remarks>
     public bool EnableAvx2 { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to generate AVX-512 code.
     /// </summary>
@@ -61,7 +63,8 @@ public class FeatureFlags
     /// limited availability and may cause CPU frequency throttling on some systems.
     /// </remarks>
     public bool EnableAvx512 { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to generate parallel code using multiple threads.
     /// </summary>

@@ -45,15 +45,17 @@ public class ErrorHandlingTests : IDisposable
 
         // Act & Assert - First call should fail
         var definition = new KernelDefinition("device_reset_test", "__kernel void test() {}", "test");
-        
+
+
         var act = async () => await accelerator.CompileKernelAsync(definition);
         _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Device error*");
 
         // Enable recovery
         accelerator.SimulateDeviceError = false;
-        
+
         // Second call should succeed after device reset
+
         var result = await accelerator.CompileKernelAsync(definition);
         _ = result.Should().NotBeNull();
         _ = accelerator.DeviceResetCount.Should().Be(1);
@@ -93,8 +95,9 @@ public class ErrorHandlingTests : IDisposable
 
         // Assert - Circuit breaker should be open
         _ = accelerator.CircuitBreakerState.Should().Be(CircuitBreakerState.Open);
-        
+
         // New requests should fail immediately
+
         var act = async () => await accelerator.CompileKernelAsync(definition);
         _ = await act.Should().ThrowAsync<CircuitBreakerOpenException>();
     }
@@ -201,7 +204,8 @@ public class ErrorHandlingTests : IDisposable
         var accelerator = CreateTestAccelerator();
         accelerator.SimulateStackOverflow = true;
 
-        var definition = new KernelDefinition("stack_overflow_test", 
+        var definition = new KernelDefinition("stack_overflow_test",
+
             "__kernel void recursive() { recursive(); }", "test");
 
         // Act & Assert
@@ -273,8 +277,9 @@ public class ErrorHandlingTests : IDisposable
 
         // Compile once to cache
         _ = await accelerator.CompileKernelAsync(definition);
-        
+
         // Enable corruption simulation
+
         accelerator.TriggerMemoryCorruption = true;
 
         // Act - Second compilation should detect corruption
@@ -313,8 +318,9 @@ public class ErrorHandlingTests : IDisposable
         // Assert
         _ = result.Should().NotBeNull();
         _ = accelerator.RetryDelays.Should().HaveCount(3);
-        
+
         // Verify exponential backoff (each delay should be roughly double the previous)
+
         for (var i = 1; i < accelerator.RetryDelays.Count; i++)
         {
             _ = accelerator.RetryDelays[i].Should().BeGreaterThan(accelerator.RetryDelays[i - 1]);
@@ -392,13 +398,15 @@ public class ErrorHandlingTests : IDisposable
         // Create initial state
         var definition1 = new KernelDefinition("state_test_1", "__kernel void test1() {}", "test");
         _ = await accelerator.CompileKernelAsync(definition1);
-        
+
+
         var initialStateChecksum = accelerator.CalculateStateChecksum();
 
         // Simulate error that corrupts state
         accelerator.SimulateStateCorruption = true;
         var definition2 = new KernelDefinition("state_test_2", "__kernel void test2() {}", "test");
-        
+
+
         try
         {
             _ = await accelerator.CompileKernelAsync(definition2);
@@ -1015,9 +1023,11 @@ public class ErrorHandlingTests : IDisposable
         _ = act1.Should().Throw<ArgumentNullException>()
             .WithParameterName("parameters");
 
-        var act2 = () => accelerator.ValidateKernelParameters(new Dictionary<string, object> 
-        { 
-            ["invalid@key"] = "value" 
+        var act2 = () => accelerator.ValidateKernelParameters(new Dictionary<string, object>
+        {
+
+            ["invalid@key"] = "value"
+
         });
         _ = act2.Should().Throw<ArgumentException>()
             .WithMessage("*Invalid parameter key format*");
@@ -1183,24 +1193,27 @@ public class ErrorHandlingTests : IDisposable
         public bool SimulateTransientFailure { get; set; }
         public bool SimulatePermanentGpuFailure { get; set; }
         public bool SimulateStateCorruption { get; set; }
-        
+
         // Additional Device Error Simulation
+
         public bool SimulateDeviceUnavailable { get; set; }
         public bool DeviceUnavailableDetected { get; private set; }
         public bool SimulateThermalThrottling { get; set; }
         public bool EnablePerformanceDegradation { get; set; }
         public bool ThermalThrottlingActivated { get; private set; }
         public float PerformanceDegradationLevel { get; private set; }
-        
+
         // Additional Kernel Error Simulation
+
         public bool SimulateCompilerCrash { get; set; }
         public bool EnableFallbackCompiler { get; set; }
         public bool CompilerCrashDetected { get; private set; }
         public bool FallbackCompilerUsed { get; private set; }
         public string LastCompilerUsed { get; private set; } = "PrimaryCompiler";
         public bool SimulateVersionMismatch { get; set; }
-        
+
         // Additional Memory Error Simulation  
+
         public bool EnableMemoryLeakDetection { get; set; }
         public bool SimulateMemoryLeak { get; set; }
         public bool MemoryLeakDetected { get; private set; }
@@ -1215,8 +1228,9 @@ public class ErrorHandlingTests : IDisposable
         public bool EnableBufferOverflowProtection { get; set; }
         public bool SimulateBufferOverflow { get; set; }
         public bool BufferOverflowPrevented { get; private set; }
-        
+
         // Additional Recovery Mechanisms
+
         public bool EnableBackupExecutionPlan { get; set; }
         public bool SimulatePrimaryPlanFailure { get; set; }
         public bool PrimaryPlanFailed { get; private set; }
@@ -1235,21 +1249,24 @@ public class ErrorHandlingTests : IDisposable
         public bool SelfHealingActivated { get; private set; }
         public int HealingAttemptsUsed { get; private set; }
         public bool HealingSuccessful { get; private set; }
-        
+
         // Additional Error Propagation
+
         public bool PreserveStackTraces { get; set; }
         public bool SimulateDeepStackError { get; set; }
         public bool EnableErrorCorrelation { get; set; }
         public bool SimulateCorrelatedErrors { get; set; }
         public bool CorrelatedErrorsDetected { get; private set; }
         private Guid _correlationId;
-        
+
         // Additional Concurrency Features
+
         public bool SimulateThreadSafetyIssues { get; set; }
         public int ThreadSafetyViolations { get; private set; }
         public int ConcurrentAccessErrors { get; private set; }
-        
+
         // Additional Async Features
+
         public bool EnableNestedAsyncSimulation { get; set; }
         public bool SimulateNestedAsyncError { get; set; }
         public int AsyncNestingLevel { get; set; } = 1;
@@ -1257,8 +1274,9 @@ public class ErrorHandlingTests : IDisposable
         public bool SimulateSyncContextDeadlock { get; set; }
         public bool SyncContextDeadlockAvoided { get; private set; }
         public bool ConfigureAwaitUsedCorrectly { get; private set; }
-        
+
         // Additional Sync Features
+
         public bool EnableSynchronousValidation { get; set; }
         public int SynchronousValidationCount { get; private set; }
         public bool EnableResourceLocking { get; set; }
@@ -1307,7 +1325,8 @@ public class ErrorHandlingTests : IDisposable
                 {
                     var deadlockTask = Task.Delay(Timeout.Infinite, cancellationToken);
                     var timeoutTask = Task.Delay(DeadlockTimeout, CancellationToken.None);
-                    
+
+
                     var completedTask = await Task.WhenAny(deadlockTask, timeoutTask);
                     if (completedTask == timeoutTask)
                     {
@@ -1354,12 +1373,14 @@ public class ErrorHandlingTests : IDisposable
             catch (OperationCanceledException)
             {
                 CompilationCancelled = true;
-                
+
+
                 if (TrackResourceCleanup)
                 {
                     ResourcesCleanedUpOnCancellation = true;
                 }
-                
+
+
                 throw;
             }
             finally
@@ -1623,16 +1644,19 @@ public class ErrorHandlingTests : IDisposable
         private async Task HandleMemoryError()
         {
             var currentFailure = Interlocked.Increment(ref _memoryFailureCount);
-            
+
+
             if (EnableMemoryRecovery && currentFailure <= MemoryFailureCountBeforeSuccess)
             {
                 // Simulate memory cleanup
                 MemoryCleanupCount++;
                 GarbageCollectionTriggered = true;
-                
+
                 // Simulate cleanup delay
+
                 await Task.Delay(50);
-                
+
+
                 throw new OutOfMemoryException("Memory allocation failed");
             }
         }
@@ -1718,7 +1742,8 @@ public class ErrorHandlingTests : IDisposable
         public void ValidateKernelParameters(Dictionary<string, object>? parameters)
         {
             SynchronousValidationCount++;
-            
+
+
             if (parameters == null)
                 throw new ArgumentNullException(nameof(parameters));
 
@@ -1732,7 +1757,8 @@ public class ErrorHandlingTests : IDisposable
         public void ValidateMemorySize(long size)
         {
             SynchronousValidationCount++;
-            
+
+
             if (size < 0)
                 throw new ArgumentOutOfRangeException(nameof(size), "Memory size cannot be negative");
         }

@@ -82,7 +82,8 @@ public class KernelExecutionContext
     /// <summary>
     /// Gets or sets the kernel name (alias for KernelName).
     /// </summary>
-    public string? Name 
+    public string? Name
+
     {
         get => KernelName;
         set => KernelName = value;

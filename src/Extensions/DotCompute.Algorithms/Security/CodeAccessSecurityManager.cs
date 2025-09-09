@@ -393,6 +393,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
         // 3. Thread count limits
 
 
+
         => _logger.LogDebug("Setting up resource limits for: {AssemblyPath}", assemblyPath);
 
     private bool ValidateOperation(SecurityPermissionSet permissionSet, SecurityOperation operation, string? target)

@@ -19,14 +19,16 @@ public class CpuMemoryManagerTests : IDisposable
 {
     private readonly ILogger<CpuMemoryManager> _logger;
     private readonly CpuMemoryManager _memoryManager;
-    
+
+
     public CpuMemoryManagerTests()
     {
         var loggerFactory = new LoggerFactory();
         _logger = loggerFactory.CreateLogger<CpuMemoryManager>();
         _memoryManager = new CpuMemoryManager(_logger);
     }
-    
+
+
     [Fact]
     public void Constructor_WithDefaultPolicy_InitializesSuccessfully()
     {
@@ -37,7 +39,8 @@ public class CpuMemoryManagerTests : IDisposable
         _ = _memoryManager.Topology.Should().NotBeNull();
         _ = _memoryManager.IsDisposed.Should().BeFalse();
     }
-    
+
+
     [Fact]
     public void Constructor_WithCustomPolicy_InitializesWithPolicy()
     {
@@ -48,15 +51,17 @@ public class CpuMemoryManagerTests : IDisposable
             AllowRemoteAccess = true,
             InterleavingEnabled = true
         };
-        
+
         // Act
+
         using var memoryManager = new CpuMemoryManager(_logger, customPolicy);
 
         // Assert
         _ = memoryManager.Should().NotBeNull();
         _ = memoryManager.Topology.Should().NotBeNull();
     }
-    
+
+
     [Fact]
     public void Topology_ReturnsValidTopology()
     {
@@ -68,7 +73,8 @@ public class CpuMemoryManagerTests : IDisposable
         _ = topology.NodeCount.Should().BeGreaterThan(0);
         _ = topology.TotalMemoryBytes.Should().BeGreaterThan(0);
     }
-    
+
+
     [Theory]
     [InlineData(1024)]      // 1KB
     [InlineData(64 * 1024)] // 64KB
@@ -77,8 +83,9 @@ public class CpuMemoryManagerTests : IDisposable
     {
         // Arrange
         var options = MemoryOptions.HostVisible;
-        
+
         // Act
+
         var buffer = await _memoryManager.AllocateAsync(sizeInBytes, options);
 
         // Assert
@@ -86,79 +93,94 @@ public class CpuMemoryManagerTests : IDisposable
         _ = buffer.SizeInBytes.Should().Be(sizeInBytes);
         _ = buffer.IsDisposed.Should().BeFalse();
         _ = buffer.Options.Should().Be(options);
-        
+
         // Cleanup
+
         await buffer.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task AllocateAsync_WithNumaPolicy_ConsidersNumaPlacement()
     {
         // Arrange
         var options = MemoryOptions.HostVisible;
-        
+
+
         var numaPolicy = new NumaMemoryPolicy
         {
             PreferLocalNode = true,
             AllowRemoteAccess = false,
             InterleavingEnabled = false
         };
-        
+
         // Act
+
         var buffer = await _memoryManager.AllocateAsync(1024, options, numaPolicy);
 
         // Assert
         _ = buffer.Should().NotBeNull();
         _ = buffer.SizeInBytes.Should().Be(1024);
-        
+
         // Cleanup
+
         await buffer.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task AllocateAsync_MultipleAllocations_TracksMemoryCorrectly()
     {
         // Arrange
         var options = MemoryOptions.HostVisible;
-        
+
+
         var initialAllocated = _memoryManager.CurrentAllocatedMemory;
-        
+
         // Act
+
         var buffer1 = await _memoryManager.AllocateAsync(1024, options);
         var buffer2 = await _memoryManager.AllocateAsync(2048, options);
-        
+
+
         var afterAllocation = _memoryManager.CurrentAllocatedMemory;
 
         // Assert
         _ = afterAllocation.Should().BeGreaterThan(initialAllocated);
         _ = (afterAllocation - initialAllocated).Should().BeGreaterThanOrEqualTo(3072); // At least 1024 + 2048
-        
+
         // Cleanup
+
         await buffer1.DisposeAsync();
         await buffer2.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task CreateView_WithValidBuffer_CreatesViewSuccessfully()
     {
         // Arrange
         var options = MemoryOptions.HostVisible;
-        
+
+
         var buffer = await _memoryManager.AllocateAsync(1024, options);
-        
+
         // Act
+
         var view = _memoryManager.CreateView(buffer, 256, 512);
 
         // Assert
         _ = view.Should().NotBeNull();
         _ = view.SizeInBytes.Should().Be(512);
         _ = view.IsDisposed.Should().BeFalse();
-        
+
         // Cleanup
+
         await view.DisposeAsync();
         await buffer.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task CreateView_WithInvalidBuffer_ThrowsArgumentException()
     {
@@ -170,7 +192,8 @@ public class CpuMemoryManagerTests : IDisposable
         _ = _memoryManager.Invoking(mm => mm.CreateView(mockBuffer.Object, 0, 512))
             .Should().Throw<ArgumentException>();
     }
-    
+
+
     [Fact]
     public void MaxAllocationSize_ReturnsMaxValue()
     {
@@ -180,7 +203,8 @@ public class CpuMemoryManagerTests : IDisposable
         // Assert
         _ = maxSize.Should().Be(long.MaxValue);
     }
-    
+
+
     [Fact]
     public void TotalAvailableMemory_ReturnsPositiveValue()
     {
@@ -190,7 +214,8 @@ public class CpuMemoryManagerTests : IDisposable
         // Assert
         _ = availableMemory.Should().BeGreaterThan(0);
     }
-    
+
+
     [Fact]
     public void Accelerator_ReturnsValidAccelerator()
     {
@@ -201,7 +226,8 @@ public class CpuMemoryManagerTests : IDisposable
         _ = accelerator.Should().NotBeNull();
         _ = accelerator.Type.Should().Be(AcceleratorType.CPU);
     }
-    
+
+
     [Fact]
     public void Statistics_ReturnsValidStatistics()
     {
@@ -215,105 +241,124 @@ public class CpuMemoryManagerTests : IDisposable
         _ = statistics.ActiveBuffers.Should().BeGreaterThanOrEqualTo(0);
         _ = statistics.PeakMemoryUsage.Should().BeGreaterThanOrEqualTo(0);
     }
-    
+
+
     [Fact]
     public async Task FreeAsync_WithValidBuffer_UpdatesStatistics()
     {
         // Arrange
         var options = MemoryOptions.HostVisible;
-        
+
+
         var buffer = await _memoryManager.AllocateAsync(1024, options) as CpuMemoryBuffer;
         var beforeFree = _memoryManager.Statistics;
-        
+
         // Act
+
         await _memoryManager.FreeAsync(buffer!, CancellationToken.None);
-        
+
         // Assert
+
         var afterFree = _memoryManager.Statistics;
         _ = afterFree.TotalFreed.Should().BeGreaterThan(beforeFree.TotalFreed);
         _ = afterFree.ActiveBuffers.Should().BeLessThan(beforeFree.ActiveBuffers);
     }
-    
+
+
     [Fact]
     public async Task OptimizeAsync_TriggersGarbageCollection()
     {
         // Arrange
         var beforeGC = GC.CollectionCount(0);
-        
+
         // Act
+
         await _memoryManager.OptimizeAsync(CancellationToken.None);
-        
+
         // Assert
+
         var afterGC = GC.CollectionCount(0);
         _ = afterGC.Should().BeGreaterThan(beforeGC);
     }
-    
+
+
     [Fact]
     public void Clear_ResetsStatistics()
     {
         // Act
         _memoryManager.Clear();
-        
+
         // Assert
+
         var statistics = _memoryManager.Statistics;
         _ = statistics.TotalAllocated.Should().Be(0);
         _ = statistics.ActiveBuffers.Should().Be(0);
         _ = statistics.TotalFreed.Should().Be(0);
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.ErrorHandling)]
     public async Task AllocateAsync_WithZeroSize_ThrowsArgumentException()
     {
         // Arrange
         var options = MemoryOptions.HostVisible;
-        
+
         // Act & Assert
+
         Func<Task> act = async () => await _memoryManager.AllocateAsync(0, options);
         _ = await act.Should().ThrowExactlyAsync<ArgumentOutOfRangeException>();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.ErrorHandling)]
     public async Task AllocateAsync_WithNegativeSize_ThrowsArgumentException()
     {
         // Arrange
         var options = MemoryOptions.HostVisible;
-        
+
         // Act & Assert
+
         Func<Task> act = async () => await _memoryManager.AllocateAsync(-1024, options);
         _ = await act.Should().ThrowExactlyAsync<ArgumentOutOfRangeException>();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.ErrorHandling)]
     public async Task CreateView_WithInvalidRange_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
         var options = MemoryOptions.HostVisible;
-        
+
+
         var buffer = await _memoryManager.AllocateAsync(1024, options);
 
         // Act & Assert
         _ = _memoryManager.Invoking(mm => mm.CreateView(buffer, 512, 1024))
             .Should().Throw<ArgumentOutOfRangeException>();
-        
+
         // Cleanup
+
         await buffer.DisposeAsync();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.Concurrency)]
     public async Task AllocateAsync_ConcurrentAllocations_HandlesParallelRequests()
     {
         // Arrange
         var options = MemoryOptions.HostVisible;
-        
+
+
         var allocationTasks = Enumerable.Range(0, 10)
             .Select(_ => _memoryManager.AllocateAsync(1024, options).AsTask())
             .ToArray();
-        
+
         // Act
+
         var buffers = await Task.WhenAll(allocationTasks);
 
         // Assert
@@ -322,38 +367,44 @@ public class CpuMemoryManagerTests : IDisposable
 
         // Verify all buffers are different instances
         _ = buffers.Distinct().Should().HaveCount(10);
-        
+
         // Cleanup
+
         await Task.WhenAll(buffers.Select(b => b.DisposeAsync().AsTask()));
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.Performance)]
     public async Task AllocateAsync_PerformanceBenchmark_MeetsTimingRequirements()
     {
         // Arrange
         var options = MemoryOptions.HostVisible;
-        
+
+
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var buffers = new List<IUnifiedMemoryBuffer>();
-        
+
         // Act - Allocate 100 buffers of 64KB each
+
         for (var i = 0; i < 100; i++)
         {
             var buffer = await _memoryManager.AllocateAsync(64 * 1024, options);
             buffers.Add(buffer);
         }
-        
+
+
         stopwatch.Stop();
 
         // Assert
         _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); // Should complete within 5 seconds
         _ = buffers.Should().HaveCount(100);
-        
+
         // Cleanup
+
         await Task.WhenAll(buffers.Select(b => b.DisposeAsync().AsTask()));
     }
-    
+
     // NOTE: MemoryAccessMode type no longer exists - MemoryOptions is now an enum
     // This test needs to be refactored to use the new MemoryOptions enum
     /*
@@ -377,24 +428,28 @@ public class CpuMemoryManagerTests : IDisposable
         await buffer.DisposeAsync();
     }
     */
-    
+
+
     [Fact]
     public async Task AllocateAsync_WithPinnedMemory_ConfiguresCorrectly()
     {
         // Arrange
         var options = MemoryOptions.Pinned | MemoryOptions.HostVisible;
-        
+
         // Act
+
         var buffer = await _memoryManager.AllocateAsync(1024, options);
 
         // Assert
         _ = buffer.Should().NotBeNull();
         _ = buffer.Options.IsPinned().Should().BeTrue();
-        
+
         // Cleanup
+
         await buffer.DisposeAsync();
     }
-    
+
+
     public void Dispose()
     {
         _memoryManager?.Dispose();

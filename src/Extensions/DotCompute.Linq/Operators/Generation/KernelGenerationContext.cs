@@ -41,7 +41,7 @@ public class KernelGenerationContext
     /// <summary>
     /// Gets or sets the work group dimensions for kernel execution.
     /// </summary>
-    public int[] WorkGroupDimensions { get; set; } = new[] { 256, 1, 1 };
+    public int[] WorkGroupDimensions { get; set; } = [256, 1, 1];
 
     /// <summary>
     /// Gets or sets metadata for kernel generation.

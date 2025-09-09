@@ -34,16 +34,18 @@ public class PluginDependencyException : PluginException
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginDependencyException"/> class.
     /// </summary>
-    public PluginDependencyException() 
-    { 
+    public PluginDependencyException()
+    {
+
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginDependencyException"/> class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
-    public PluginDependencyException(string message) : base(message) 
-    { 
+    public PluginDependencyException(string message) : base(message)
+    {
+
     }
 
     /// <summary>
@@ -53,8 +55,9 @@ public class PluginDependencyException : PluginException
     /// <param name="message">The error message that explains the reason for the exception.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
     public PluginDependencyException(string message, Exception innerException)
-        : base(message, innerException) 
-    { 
+        : base(message, innerException)
+    {
+
     }
 
     /// <summary>

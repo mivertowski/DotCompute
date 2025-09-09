@@ -363,8 +363,9 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     {
         var sizeInBytes = originalData.Length * Unsafe.SizeOf<T>();
         var readBuffer = new byte[sizeInBytes];
-        
+
         // Cast to generic buffer for type-safe operations
+
         if (buffer is IUnifiedMemoryBuffer<byte> typedBuffer)
         {
             await typedBuffer.CopyToAsync(readBuffer.AsMemory(), cancellationToken).ConfigureAwait(false);

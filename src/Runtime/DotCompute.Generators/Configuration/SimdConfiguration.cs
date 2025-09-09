@@ -14,7 +14,8 @@ namespace DotCompute.Generators.Configuration
     public static class SimdConfiguration
     {
         #region Array Size Thresholds
-        
+
+
         /// <summary>
         /// Minimum array size for SIMD optimization to be beneficial.
         /// </summary>
@@ -25,7 +26,8 @@ namespace DotCompute.Generators.Configuration
         /// reduced instruction overhead.
         /// </remarks>
         public const int SmallArrayThreshold = 32;
-        
+
+
         /// <summary>
         /// Minimum size for vectorized operations to provide performance benefits.
         /// </summary>
@@ -34,7 +36,8 @@ namespace DotCompute.Generators.Configuration
         /// at least a few full vectors, making the vectorization worthwhile.
         /// </remarks>
         public const int MinimumVectorSize = 32;
-        
+
+
         /// <summary>
         /// Minimum size for AVX-512 operations to be beneficial over AVX2.
         /// </summary>
@@ -43,7 +46,8 @@ namespace DotCompute.Generators.Configuration
         /// beneficial for larger data sets where the wider vectors can be fully utilized.
         /// </remarks>
         public const int MinimumAvx512Size = 64;
-        
+
+
         /// <summary>
         /// Default chunk size for parallel processing distribution.
         /// </summary>
@@ -53,11 +57,12 @@ namespace DotCompute.Generators.Configuration
         /// may lead to load imbalance.
         /// </remarks>
         public const int DefaultParallelChunkSize = 1024;
-        
+
         #endregion
-        
+
         #region Vector Sizes
-        
+
+
         /// <summary>
         /// Number of 32-bit float elements in an AVX2 vector (256-bit / 32-bit).
         /// </summary>
@@ -66,17 +71,20 @@ namespace DotCompute.Generators.Configuration
         /// floating-point values or 4 double-precision values.
         /// </remarks>
         public const int Avx2FloatVectorSize = 8;
-        
+
+
         /// <summary>
         /// Number of 64-bit double elements in an AVX2 vector (256-bit / 64-bit).
         /// </summary>
         public const int Avx2DoubleVectorSize = 4;
-        
+
+
         /// <summary>
         /// Number of 32-bit integer elements in an AVX2 vector (256-bit / 32-bit).
         /// </summary>
         public const int Avx2Int32VectorSize = 8;
-        
+
+
         /// <summary>
         /// Number of 32-bit float elements in an AVX-512 vector (512-bit / 32-bit).
         /// </summary>
@@ -85,21 +93,24 @@ namespace DotCompute.Generators.Configuration
         /// for maximum throughput on supported processors.
         /// </remarks>
         public const int Avx512FloatVectorSize = 16;
-        
+
+
         /// <summary>
         /// Number of 64-bit double elements in an AVX-512 vector (512-bit / 64-bit).
         /// </summary>
         public const int Avx512DoubleVectorSize = 8;
-        
+
+
         /// <summary>
         /// Number of 32-bit integer elements in an AVX-512 vector (512-bit / 32-bit).
         /// </summary>
         public const int Avx512Int32VectorSize = 16;
-        
+
         #endregion
-        
+
         #region Loop Unrolling Factors
-        
+
+
         /// <summary>
         /// Default unrolling factor for vectorized loops.
         /// </summary>
@@ -108,7 +119,8 @@ namespace DotCompute.Generators.Configuration
         /// which helps hide memory latency and improves instruction-level parallelism.
         /// </remarks>
         public const int DefaultUnrollFactor = 4;
-        
+
+
         /// <summary>
         /// Maximum unrolling factor to prevent code bloat.
         /// </summary>
@@ -117,11 +129,12 @@ namespace DotCompute.Generators.Configuration
         /// register pressure, degrading performance.
         /// </remarks>
         public const int MaxUnrollFactor = 8;
-        
+
         #endregion
-        
+
         #region Performance Tuning
-        
+
+
         /// <summary>
         /// Prefetch distance in cache lines for memory streaming operations.
         /// </summary>
@@ -130,7 +143,8 @@ namespace DotCompute.Generators.Configuration
         /// data is in cache when needed. The distance is measured in cache lines (64 bytes).
         /// </remarks>
         public const int PrefetchDistance = 8;
-        
+
+
         /// <summary>
         /// Alignment requirement in bytes for optimal SIMD performance.
         /// </summary>
@@ -139,7 +153,8 @@ namespace DotCompute.Generators.Configuration
         /// 32-byte alignment, while AVX-512 benefits from 64-byte alignment.
         /// </remarks>
         public const int OptimalAlignment = 64;
-        
+
+
         #endregion
     }
 }

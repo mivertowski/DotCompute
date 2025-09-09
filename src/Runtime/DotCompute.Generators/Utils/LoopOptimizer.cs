@@ -50,9 +50,11 @@ public static class LoopOptimizer
         ArgumentValidation.ThrowIfNullOrEmpty(indexVar);
         ArgumentValidation.ThrowIfNullOrEmpty(limitVar);
         ArgumentValidation.ThrowIfNullOrEmpty(body);
-        
+
+
         options ??= new LoopOptimizationOptions();
-        
+
+
         var context = new LoopContext
         {
             IndexVariable = indexVar,
@@ -77,16 +79,19 @@ public static class LoopOptimizer
     public static string GenerateUnrolledLoop(LoopContext context)
     {
         ArgumentValidation.ThrowIfNull(context);
-        
+
+
         var sb = new StringBuilder();
         var unrollFactor = context.Options.UnrollFactor;
-        
+
         // Generate unrolled loop
+
         _ = sb.AppendLine($"var remainder = {context.LimitVariable} % {unrollFactor};");
         _ = sb.AppendLine($"var limit = {context.LimitVariable} - remainder;");
         _ = sb.AppendLine();
-        
+
         // Add prefetching hint if enabled
+
         if (context.Options.EnablePrefetching)
         {
             _ = sb.AppendLine("// Prefetch data for better cache utilization");
@@ -95,8 +100,9 @@ public static class LoopOptimizer
             _ = sb.AppendLine("#endif");
             _ = sb.AppendLine();
         }
-        
+
         // Main unrolled loop
+
         _ = sb.AppendLine($"for (int {context.IndexVariable} = {context.StartValue}; {context.IndexVariable} < limit; {context.IndexVariable} += {unrollFactor})");
         _ = sb.AppendLine("{");
 
@@ -108,8 +114,9 @@ public static class LoopOptimizer
 
         _ = sb.AppendLine("}");
         _ = sb.AppendLine();
-        
+
         // Handle remainder
+
         _ = sb.AppendLine("// Handle remainder");
         _ = sb.AppendLine($"for (int {context.IndexVariable} = limit; {context.IndexVariable} < {context.LimitVariable}; {context.IndexVariable} += {context.Increment})");
         _ = sb.AppendLine("{");
@@ -127,14 +134,17 @@ public static class LoopOptimizer
     public static string GenerateRegularLoop(LoopContext context)
     {
         ArgumentValidation.ThrowIfNull(context);
-        
+
+
         var sb = new StringBuilder();
-        
+
+
         if (context.Options.ParallelizeIfPossible)
         {
             return GenerateParallelLoop(context);
         }
-        
+
+
         _ = sb.AppendLine($"for (int {context.IndexVariable} = {context.StartValue}; {context.IndexVariable} < {context.LimitVariable}; {context.IndexVariable} += {context.Increment})");
         _ = sb.AppendLine("{");
         _ = sb.AppendLine($"    {context.Body}");
@@ -156,18 +166,21 @@ public static class LoopOptimizer
         {
             return 1; // Don't unroll small loops
         }
-        
+
+
         if (loopSize < 32)
         {
             return 2;
         }
-        
+
+
         if (loopSize < 128)
         {
             return 4;
         }
-        
+
         // For large loops, consider operation complexity
+
         return operationComplexity switch
         {
             <= 2 => 8,
@@ -182,12 +195,14 @@ public static class LoopOptimizer
     private static string GenerateParallelLoop(LoopContext context)
     {
         var sb = new StringBuilder();
-        
+
+
         _ = sb.AppendLine($"Parallel.For({context.StartValue}, {context.LimitVariable}, {context.IndexVariable} =>");
         _ = sb.AppendLine("{");
         _ = sb.AppendLine($"    {context.Body}");
         _ = sb.AppendLine("});");
-        
+
+
         return sb.ToString();
     }
 
@@ -196,11 +211,14 @@ public static class LoopOptimizer
     /// </summary>
     private static string GenerateUnrolledIteration(LoopContext context, int offset)
     {
-        var indexExpr = offset == 0 
-            ? context.IndexVariable 
+        var indexExpr = offset == 0
+
+            ? context.IndexVariable
+
             : $"{context.IndexVariable} + {offset}";
-        
+
         // Replace index variable references in the body
+
         return context.Body.Replace($"{{{context.IndexVariable}}}", $"{{{indexExpr}}}");
     }
 
@@ -217,9 +235,11 @@ public static class LoopOptimizer
         ArgumentValidation.ThrowIfNullOrEmpty(outerLimit);
         ArgumentValidation.ThrowIfNullOrEmpty(innerLimit);
         ArgumentValidation.ThrowIfNullOrEmpty(body);
-        
+
+
         var sb = new StringBuilder();
-        
+
+
         _ = sb.AppendLine($"const int tileSize = {tileSize};");
         _ = sb.AppendLine($"for (int ii = 0; ii < {outerLimit}; ii += tileSize)");
         _ = sb.AppendLine("{");
@@ -234,7 +254,8 @@ public static class LoopOptimizer
         _ = sb.AppendLine("        }");
         _ = sb.AppendLine("    }");
         _ = sb.AppendLine("}");
-        
+
+
         return sb.ToString();
     }
 
@@ -246,29 +267,37 @@ public static class LoopOptimizer
     /// <param name="isReductionLoop">Whether this is a reduction loop.</param>
     /// <returns>Recommended optimization options.</returns>
     public static LoopOptimizationOptions AnalyzeAndRecommendOptimizations(
-        int iterationCount, 
-        bool hasDataDependency, 
+        int iterationCount,
+
+        bool hasDataDependency,
+
         bool isReductionLoop)
     {
         var options = new LoopOptimizationOptions();
-        
+
         // Can't parallelize if there are data dependencies
+
         options.ParallelizeIfPossible = !hasDataDependency && iterationCount > 1000;
-        
+
         // Unrolling is beneficial for medium-sized loops without complex dependencies
+
         options.EnableUnrolling = iterationCount > 8 && iterationCount < 10000 && !isReductionLoop;
-        
+
+
         if (options.EnableUnrolling)
         {
             options.UnrollFactor = CalculateOptimalUnrollFactor(iterationCount);
         }
-        
+
         // Prefetching helps with memory-bound loops
+
         options.EnablePrefetching = iterationCount > 100;
-        
+
         // Vectorization for arithmetic-heavy loops
+
         options.EnableVectorization = !hasDataDependency && iterationCount > 16;
-        
+
+
         return options;
     }
 }

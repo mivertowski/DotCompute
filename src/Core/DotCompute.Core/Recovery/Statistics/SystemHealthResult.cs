@@ -23,32 +23,37 @@ public class SystemHealthResult
     /// otherwise, false.
     /// </value>
     public bool IsHealthy { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the overall health score as a percentage (0.0 to 1.0).
     /// This is calculated from all component health scores.
     /// </summary>
     /// <value>A value between 0.0 (completely unhealthy) and 1.0 (completely healthy).</value>
     public double OverallHealth { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the list of individual component health results.
     /// </summary>
     /// <value>A collection of health results for each monitored component.</value>
     public List<ComponentHealthResult> ComponentResults { get; set; } = [];
-    
+
+
     /// <summary>
     /// Gets or sets the duration of the health check operation.
     /// </summary>
     /// <value>The time taken to complete the health check.</value>
     public TimeSpan Duration { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the timestamp when the health check was performed.
     /// </summary>
     /// <value>The UTC timestamp of the health check operation.</value>
     public DateTimeOffset Timestamp { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the error message if the health check failed or encountered issues.
     /// </summary>

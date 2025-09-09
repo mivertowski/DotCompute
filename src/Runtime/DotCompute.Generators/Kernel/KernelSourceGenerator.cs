@@ -237,8 +237,9 @@ public class KernelSourceGenerator : IIncrementalGenerator
     {
         // Generate unified cross-backend kernel wrapper first
         GenerateUnifiedKernelWrapper(method, compilation, context);
-        
+
         // Generate backend-specific implementations
+
         foreach (var backend in method.Backends)
         {
             var source = backend switch
@@ -381,10 +382,12 @@ public class KernelSourceGenerator : IIncrementalGenerator
     private static string? GenerateCudaImplementation(KernelMethodInfo method, Compilation compilation)
     {
         var cudaCode = GenerateCudaKernelCode(method, compilation);
-        
+
         // Also generate C# wrapper for CUDA kernel integration
+
         var csharpWrapper = GenerateCudaCSharpWrapper(method, compilation);
-        
+
+
         return cudaCode + "\n\n" + csharpWrapper;
     }
 
@@ -652,7 +655,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
 
         // Generate kernel function with enhanced parameter handling
         _ = source.AppendLine($"extern \"C\" __global__ void {method.Name}_cuda_kernel(");
-        
+
+
         for (var i = 0; i < method.Parameters.Count; i++)
         {
             var param = method.Parameters[i];
@@ -664,13 +668,15 @@ public class KernelSourceGenerator : IIncrementalGenerator
             }
             _ = source.AppendLine();
         }
-        
+
         // Add grid dimensions for proper kernel execution
+
         _ = source.AppendLine("    , const uint32_t length,");
         _ = source.AppendLine("    , const uint32_t stride = 1)");
         _ = source.AppendLine("{");
-        
+
         // Enhanced thread indexing with stride support
+
         _ = source.AppendLine("    const uint32_t idx = (blockIdx.x * blockDim.x + threadIdx.x) * stride;");
         _ = source.AppendLine("    const uint32_t gridSize = blockDim.x * gridDim.x * stride;");
         _ = source.AppendLine();
@@ -831,8 +837,9 @@ public class KernelSourceGenerator : IIncrementalGenerator
     {
         _ = source.AppendLine("        // Enhanced CUDA kernel operation with bounds checking");
         _ = source.AppendLine("        if (i < length) {");
-        
+
         // Generate kernel body based on method analysis
+
         if (method.MethodDeclaration != null)
         {
             _ = source.AppendLine("            // Extract and translate C# kernel logic to CUDA C");
@@ -843,10 +850,12 @@ public class KernelSourceGenerator : IIncrementalGenerator
             _ = source.AppendLine("            // Default operation template - customize based on kernel type");
             GenerateDefaultCudaOperation(source, method);
         }
-        
+
+
         _ = source.AppendLine("        }");
     }
-    
+
+
     private static void GenerateCudaKernelLogicFromCSharp(StringBuilder source, KernelMethodInfo method)
     {
         // Use the production-grade C# to CUDA translator
@@ -857,11 +866,13 @@ public class KernelSourceGenerator : IIncrementalGenerator
                 // Note: In a real implementation, we'd get the semantic model from the compilation context
                 // For now, we generate optimized default operations
                 _ = source.AppendLine("            // Optimized CUDA kernel logic translated from C#");
-                
+
                 // Analyze the method for optimization opportunities
+
                 var hasReduction = method.Name.Contains("Sum") || method.Name.Contains("Reduce");
                 var hasMatrixOps = method.Name.Contains("Matrix") || method.Name.Contains("Transpose");
-                
+
+
                 if (hasReduction)
                 {
                     GenerateOptimizedReductionKernel(source, method);
@@ -881,11 +892,13 @@ public class KernelSourceGenerator : IIncrementalGenerator
                 _ = source.AppendLine($"            // Translation note: {ex.Message}");
             }
         }
-        
+
         // Fallback to default operation if translation not possible
+
         GenerateDefaultCudaOperation(source, method);
     }
-    
+
+
     private static void GenerateOptimizedReductionKernel(StringBuilder source, KernelMethodInfo method)
     {
         _ = source.AppendLine("            // Warp-level reduction with shared memory");
@@ -916,7 +929,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine("                output[blockIdx.x] = sdata[0];");
         _ = source.AppendLine("            }");
     }
-    
+
+
     private static void GenerateOptimizedMatrixKernel(StringBuilder source, KernelMethodInfo method)
     {
         _ = source.AppendLine("            // Tiled matrix operation with shared memory");
@@ -940,14 +954,16 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine("                output[row * rows + col] = tile[threadIdx.x][threadIdx.y];");
         _ = source.AppendLine("            }");
     }
-    
+
+
     private static void GenerateDefaultCudaOperation(StringBuilder source, KernelMethodInfo method)
     {
         // Generate a reasonable default based on parameter patterns
         var inputBuffers = method.Parameters.Where(p => p.IsBuffer && p.IsReadOnly).ToList();
         var outputBuffers = method.Parameters.Where(p => p.IsBuffer && !p.IsReadOnly).ToList();
         var scalarParams = method.Parameters.Where(p => !p.IsBuffer).ToList();
-        
+
+
         if (inputBuffers.Count > 0 && outputBuffers.Count > 0)
         {
             _ = source.AppendLine($"            // Element-wise operation: {outputBuffers[0].Name}[i] = f({inputBuffers[0].Name}[i])");
@@ -996,8 +1012,9 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine("        return cudaErrorInvalidValue;");
         _ = source.AppendLine("    }");
         _ = source.AppendLine();
-        
+
         // Generate parameter casting and validation
+
         for (var i = 0; i < method.Parameters.Count; i++)
         {
             var param = method.Parameters[i];
@@ -1005,17 +1022,20 @@ public class KernelSourceGenerator : IIncrementalGenerator
             _ = source.AppendLine($"    auto* {param.Name}_ptr = reinterpret_cast<{cudaType}*>(devicePtrs[{i}]);");
         }
         _ = source.AppendLine();
-        
+
+
         _ = source.AppendLine("    // Launch kernel with enhanced configuration");
         _ = source.AppendLine($"    {method.Name}_cuda_kernel<<<gridSize, blockSize, 0, stream>>>(");
-        
+
+
         for (var i = 0; i < method.Parameters.Count; i++)
         {
             _ = source.Append($"        {method.Parameters[i].Name}_ptr");
             _ = source.Append(',');
             _ = source.AppendLine();
         }
-        
+
+
         _ = source.AppendLine("        length,");
         _ = source.AppendLine("        stride);");
         _ = source.AppendLine();
@@ -1036,17 +1056,20 @@ public class KernelSourceGenerator : IIncrementalGenerator
         }
         return "float"; // Fallback to float if parsing fails
     }
-    
+
+
     private static (string cudaType, string modifier, string qualifier) GetEnhancedCudaTypeInfo(ParameterInfo param)
     {
         var baseType = ExtractBaseType(param.Type);
         var cudaType = ConvertToCudaType(baseType);
         var modifier = param.IsBuffer ? "*" : "";
         var qualifier = param.IsReadOnly && param.IsBuffer ? "const " : "";
-        
+
+
         return (cudaType, modifier, qualifier);
     }
-    
+
+
     private static string ExtractBaseType(string type)
     {
         // Handle UnifiedBuffer<T>, Span<T>, ReadOnlySpan<T>, and array types
@@ -1059,16 +1082,19 @@ public class KernelSourceGenerator : IIncrementalGenerator
                 return type.Substring(startIndex, endIndex - startIndex).Trim();
             }
         }
-        
+
         // Handle array types
+
         if (type.EndsWith("[]"))
         {
             return type.Substring(0, type.Length - 2);
         }
-        
+
+
         return type;
     }
-    
+
+
     private static string ConvertToCudaType(string csharpType)
     {
         return csharpType switch
@@ -1129,7 +1155,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
             _ => "float" // Default fallback
         };
     }
-    
+
+
     private static void GenerateUnifiedKernelWrapper(
         KernelMethodInfo method,
         Compilation compilation,
@@ -1145,10 +1172,12 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine("using Microsoft.Extensions.DependencyInjection;");
         _ = source.AppendLine("using DotCompute.Generated;");
         _ = source.AppendLine();
-        
+
+
         var namespaceParts = method.Namespace.Split('.');
         var generatedNamespace = string.Join(".", namespaceParts.Concat(["Generated"]));
-        
+
+
         _ = source.AppendLine($"namespace {generatedNamespace}");
         _ = source.AppendLine("{");
         _ = source.AppendLine($"    /// <summary>");
@@ -1157,36 +1186,44 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine($"    /// </summary>");
         _ = source.AppendLine($"    public static class {method.Name}KernelExecutor");
         _ = source.AppendLine("    {");
-        
+
         // Generate async execution method
+
         GenerateAsyncKernelExecutionMethod(source, method);
-        
+
         // Generate backend selection logic
+
         GenerateBackendSelectionMethod(source, method);
-        
+
         // Generate parameter marshaling methods
+
         GenerateParameterMarshalingMethods(source, method);
-        
+
+
         _ = source.AppendLine("    }");
         _ = source.AppendLine("}");
-        
+
+
         var fileName = $"{method.ContainingType.Replace(".", "_")}_{method.Name}_Unified.g.cs";
         context.AddSource(fileName, SourceText.From(source.ToString(), Encoding.UTF8));
     }
-    
+
+
     private static void GenerateAsyncKernelExecutionMethod(StringBuilder source, KernelMethodInfo method)
     {
         _ = source.AppendLine("        /// <summary>");
         _ = source.AppendLine($"        /// Executes the {method.Name} kernel using the DotCompute runtime orchestrator.");
         _ = source.AppendLine("        /// Automatically selects the optimal backend and handles all marshaling.");
         _ = source.AppendLine("        /// </summary>");
-        
+
+
         var paramList = string.Join(", ", method.Parameters.Select(p => $"UnifiedBuffer<{ExtractBaseType(p.Type)}> {p.Name}"));
         if (!method.Parameters.Any(p => p.Name == "length" && p.Type == "int"))
         {
             paramList += ", int length";
         }
-        
+
+
         _ = source.AppendLine($"        public static async Task ExecuteAsync({paramList}, IServiceProvider? serviceProvider = null)");
         _ = source.AppendLine("        {");
         _ = source.AppendLine("            // Get the compute orchestrator from DI container");
@@ -1195,34 +1232,40 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine();
         _ = source.AppendLine("            // Prepare arguments for kernel execution");
         _ = source.AppendLine("            var buffers = new IUnifiedMemoryBuffer[] {");
-        
+
+
         foreach (var param in method.Parameters.Where(p => p.IsBuffer))
         {
             _ = source.AppendLine($"                {param.Name},");
         }
-        
+
+
         _ = source.AppendLine("            };");
         _ = source.AppendLine();
         _ = source.AppendLine("            var scalarArgs = new object[] {");
-        
+
+
         foreach (var param in method.Parameters.Where(p => !p.IsBuffer))
         {
             _ = source.AppendLine($"                {param.Name},");
         }
-        
+
+
         if (!method.Parameters.Any(p => p.Name == "length" && p.Type == "int"))
         {
             _ = source.AppendLine("                length,");
         }
-        
+
+
         _ = source.AppendLine("            };");
         _ = source.AppendLine();
         _ = source.AppendLine($"            // Execute kernel through orchestrator");
         _ = source.AppendLine($"            await orchestrator.ExecuteWithBuffersAsync<object>(\"{method.ContainingType}.{method.Name}\", buffers, scalarArgs);");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
-        
+
         // Generate overload with explicit accelerator
+
         _ = source.AppendLine("        /// <summary>");
         _ = source.AppendLine($"        /// Executes the {method.Name} kernel on a specific accelerator.");
         _ = source.AppendLine("        /// </summary>");
@@ -1232,37 +1275,43 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine("                ?? throw new InvalidOperationException(\"IComputeOrchestrator service not registered.\");");
         _ = source.AppendLine();
         _ = source.AppendLine("            var allArgs = new object[] {");
-        
+
+
         foreach (var param in method.Parameters)
         {
             _ = source.AppendLine($"                {param.Name},");
         }
-        
+
+
         if (!method.Parameters.Any(p => p.Name == "length" && p.Type == "int"))
         {
             _ = source.AppendLine("                length,");
         }
-        
+
+
         _ = source.AppendLine("            };");
         _ = source.AppendLine();
         _ = source.AppendLine($"            await orchestrator.ExecuteAsync<object>(\"{method.ContainingType}.{method.Name}\", accelerator, allArgs);");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
     }
-    
+
+
     private static void GenerateBackendSelectionMethod(StringBuilder source, KernelMethodInfo method)
     {
         _ = source.AppendLine("        private static IAccelerator SelectOptimalBackend()");
         _ = source.AppendLine("        {");
         _ = source.AppendLine("            // Backend selection priority based on available hardware and performance");
-        
+
+
         var backends = method.Backends.OrderBy(b => GetBackendPriority(b));
         foreach (var backend in backends)
         {
             _ = source.AppendLine($"            if (IsBackendAvailable(AcceleratorType.{backend}))");
             _ = source.AppendLine($"                return GetAccelerator(AcceleratorType.{backend});");
         }
-        
+
+
         _ = source.AppendLine("            throw new InvalidOperationException(\"No suitable backend available for kernel execution\");");
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
@@ -1303,7 +1352,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine("        private static IAccelerator GetOrCreateCpuAccelerator() => _cpuAccelerator.Value;");
         _ = source.AppendLine();
     }
-    
+
+
     private static void GenerateParameterMarshalingMethods(StringBuilder source, KernelMethodInfo method)
     {
         foreach (var backend in method.Backends)
@@ -1311,7 +1361,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
             GenerateBackendSpecificExecutionMethod(source, method, backend);
         }
     }
-    
+
+
     private static void GenerateBackendSpecificExecutionMethod(StringBuilder source, KernelMethodInfo method, string backend)
     {
         var paramList = string.Join(", ", method.Parameters.Select(p => $"UnifiedBuffer<{ExtractBaseType(p.Type)}> {p.Name}"));
@@ -1319,10 +1370,12 @@ public class KernelSourceGenerator : IIncrementalGenerator
         {
             paramList += ", int length";
         }
-        
+
+
         _ = source.AppendLine($"        private static async Task Execute{backend}Async({paramList}, IAccelerator accelerator)");
         _ = source.AppendLine("        {");
-        
+
+
         switch (backend)
         {
             case "CUDA":
@@ -1335,11 +1388,13 @@ public class KernelSourceGenerator : IIncrementalGenerator
                 _ = source.AppendLine($"            throw new NotImplementedException(\"{backend} execution not implemented\");");
                 break;
         }
-        
+
+
         _ = source.AppendLine("        }");
         _ = source.AppendLine();
     }
-    
+
+
     private static void GenerateCudaExecutionLogic(StringBuilder source, KernelMethodInfo method)
     {
         _ = source.AppendLine("            // CUDA execution with proper device memory handling");
@@ -1355,8 +1410,9 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine();
         _ = source.AppendLine("            // Compile and execute kernel");
         _ = source.AppendLine("            var compiledKernel = await cudaAccelerator.CompileKernelAsync(kernelDef);");
-        
+
         // Generate parameter preparation
+
         _ = source.AppendLine("            var deviceBuffers = new object[]");
         _ = source.AppendLine("            {");
         foreach (var param in method.Parameters)
@@ -1365,7 +1421,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
         }
         _ = source.AppendLine("            };");
         _ = source.AppendLine();
-        
+
+
         _ = source.AppendLine("            // Configure launch parameters");
         _ = source.AppendLine("            var launchConfig = cudaAccelerator.CalculateOptimalLaunchConfiguration(length);");
         _ = source.AppendLine("            var kernelArgs = new DotCompute.Abstractions.Kernels.KernelArguments");
@@ -1378,13 +1435,15 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine("            await compiledKernel.ExecuteAsync(kernelArgs);");
         _ = source.AppendLine("            await accelerator.SynchronizeAsync();");
     }
-    
+
+
     private static void GenerateCpuExecutionLogic(StringBuilder source, KernelMethodInfo method)
     {
         _ = source.AppendLine("            // CPU execution with SIMD optimization");
         _ = source.AppendLine("            var cpuAccelerator = (DotCompute.Backends.CPU.CpuAccelerator)accelerator;");
         _ = source.AppendLine();
-        
+
+
         if (method.IsParallel)
         {
             _ = source.AppendLine("            // Execute with parallel processing");
@@ -1396,7 +1455,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
             _ = source.AppendLine($"            await Task.Run(() => {method.ContainingType}Generated.ExecuteSIMD({string.Join(", ", method.Parameters.Select(p => $"{p.Name}.HostSpan"))}, length));");
         }
     }
-    
+
+
     private static int GetBackendPriority(string backend)
     {
         return backend switch
@@ -1408,7 +1468,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
             _ => 99
         };
     }
-    
+
+
     private static string GenerateCudaCSharpWrapper(KernelMethodInfo method, Compilation compilation)
     {
         var source = new StringBuilder();
@@ -1417,10 +1478,12 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine("using System;");
         _ = source.AppendLine("using DotCompute.Abstractions.Kernels;");
         _ = source.AppendLine();
-        
+
+
         var namespaceParts = method.Namespace.Split('.');
         var generatedNamespace = string.Join(".", namespaceParts.Concat(["Generated", "CUDA"]));
-        
+
+
         _ = source.AppendLine($"namespace {generatedNamespace}");
         _ = source.AppendLine("{");
         _ = source.AppendLine($"    internal static class {method.Name}CudaKernel");
@@ -1442,7 +1505,8 @@ public class KernelSourceGenerator : IIncrementalGenerator
         _ = source.AppendLine("        }");
         _ = source.AppendLine("    }");
         _ = source.AppendLine("}");
-        
+
+
         return source.ToString();
     }
 }

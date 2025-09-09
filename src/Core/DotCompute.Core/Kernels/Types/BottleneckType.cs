@@ -87,13 +87,14 @@ public enum BottleneckType
     /// Performance is limited by divergent execution paths in SIMD units.
     /// </summary>
     WarpDivergence,
-    
+
     /// <summary>
     /// Thread divergence limitation.
     /// Performance is limited by divergent execution paths between threads.
     /// </summary>
     Divergence,
-    
+
+
     /// <summary>
     /// Thermal or power throttling.
     /// Performance is limited by thermal or power constraints causing frequency reduction.

@@ -184,8 +184,9 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     public async ValueTask<IAccelerator> CreateAsync(AcceleratorType type, AcceleratorConfiguration? configuration = null, IServiceProvider? serviceProvider = null, CancellationToken cancellationToken = default)
     {
         serviceProvider ??= _serviceProvider;
-        
+
         // Create a mock AcceleratorInfo from the type
+
         var acceleratorInfo = new AcceleratorInfo
         {
             Id = Guid.NewGuid().ToString(),
@@ -194,7 +195,8 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             DeviceIndex = configuration?.DeviceIndex ?? 0,
             IsUnifiedMemory = configuration?.MemoryStrategy == MemoryAllocationStrategy.Unified
         };
-        
+
+
         return await CreateAsync(acceleratorInfo, serviceProvider, cancellationToken);
     }
 
@@ -204,7 +206,8 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         {
             throw new ArgumentException($"Unknown backend name: {backendName}", nameof(backendName));
         }
-        
+
+
         return await CreateAsync(type, configuration, serviceProvider, cancellationToken);
     }
 
@@ -218,7 +221,8 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     {
         await Task.CompletedTask;
         var devices = new List<AcceleratorInfo>();
-        
+
+
         foreach (var type in GetSupportedTypes())
         {
             // Create a mock device info for each supported type
@@ -231,21 +235,25 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                 IsUnifiedMemory = false
             });
         }
-        
+
+
         return devices;
     }
 
     public bool UnregisterProvider(Type providerType)
     {
         ArgumentNullException.ThrowIfNull(providerType);
-        
+
+
         var keysToRemove = _providerTypes.Where(kvp => kvp.Value == providerType).Select(kvp => kvp.Key).ToList();
-        
+
+
         foreach (var key in keysToRemove)
         {
             _ = _providerTypes.TryRemove(key, out _);
         }
-        
+
+
         return keysToRemove.Count > 0;
     }
 
@@ -286,6 +294,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     private void RegisterDefaultProviders()
         // Register CPU provider by default
         // _providerTypes[AcceleratorType.CPU] = typeof(DotCompute.Core.Accelerators.CpuAcceleratorProvider); // Commented out - type doesn't exist"
+
 
 
         => _logger.LogDebug("Registered default accelerator providers");
@@ -329,7 +338,8 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                 var instance = constructor.Invoke(null);
                 return ValueTask.FromResult(instance);
             }
-            
+
+
             throw new InvalidOperationException(
                 $"Cannot create instance of {providerType.Name}. " +
                 "Ensure it has a parameterless constructor or all dependencies are registered.");
@@ -384,7 +394,8 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             }
 
             return errors.Count == 0
-                ? AcceleratorValidationResult.Success(AcceleratorType.Auto, 0, SupportedFeatures.ToArray(), 
+                ? AcceleratorValidationResult.Success(AcceleratorType.Auto, 0, SupportedFeatures.ToArray(),
+
                     new AcceleratorPerformanceMetrics
                     {
                         MemoryBandwidthGBps = performanceMetrics.GetValueOrDefault("MemoryBandwidth", 0.0),
@@ -422,7 +433,8 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         {
             // Ignore exceptions during fallback creation
         }
-        
+
+
         instance = null;
         return false;
     }

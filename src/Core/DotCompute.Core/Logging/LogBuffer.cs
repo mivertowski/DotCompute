@@ -760,6 +760,7 @@ public sealed class FileSink : ILogSink, IHealthCheckable
     public Task FlushAsync(CancellationToken cancellationToken = default)
         // File writes are immediately flushed
 
+
         => Task.CompletedTask;
 
 

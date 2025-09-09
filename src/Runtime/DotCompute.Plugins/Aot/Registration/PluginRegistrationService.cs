@@ -27,7 +27,8 @@ public sealed class PluginRegistrationService : IPluginRegistration
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _factories = [];
-        
+
+
         _logger.LogDebug("PluginRegistrationService initialized");
     }
 
@@ -67,7 +68,8 @@ public sealed class PluginRegistrationService : IPluginRegistration
         {
             var isReplacing = _factories.ContainsKey(pluginTypeName);
             _factories[pluginTypeName] = factory;
-            
+
+
             _logger.LogInformation(
                 isReplacing ? "Replaced plugin factory for {PluginType}" : "Registered plugin factory for {PluginType}",
                 pluginTypeName);

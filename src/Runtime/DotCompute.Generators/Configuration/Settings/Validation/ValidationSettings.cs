@@ -31,7 +31,8 @@ public class ValidationSettings
     /// null values are guaranteed not to occur, these checks can be disabled.
     /// </remarks>
     public bool GenerateNullChecks { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to generate array bounds checks.
     /// </summary>

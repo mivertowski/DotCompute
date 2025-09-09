@@ -37,7 +37,8 @@ public sealed class PipelineOptimizationException : PipelineException
     /// Initializes a new instance of the PipelineOptimizationException class with a message.
     /// </summary>
     /// <param name="message">The error message.</param>
-    public PipelineOptimizationException(string message) 
+    public PipelineOptimizationException(string message)
+
         : base(message, "PIPELINE_OPTIMIZATION_FAILED")
     {
         FailedOptimization = OptimizationType.KernelFusion;
@@ -49,7 +50,8 @@ public sealed class PipelineOptimizationException : PipelineException
     /// </summary>
     /// <param name="message">The error message.</param>
     /// <param name="innerException">The inner exception.</param>
-    public PipelineOptimizationException(string message, Exception innerException) 
+    public PipelineOptimizationException(string message, Exception innerException)
+
         : base(message, "PIPELINE_OPTIMIZATION_FAILED", innerException)
     {
         FailedOptimization = OptimizationType.KernelFusion;

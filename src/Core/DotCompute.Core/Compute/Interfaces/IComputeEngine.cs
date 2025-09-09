@@ -30,7 +30,7 @@ namespace DotCompute.Core.Compute.Interfaces
         /// <exception cref="ArgumentNullException">Thrown when kernelSource is null or empty.</exception>
         /// <exception cref="CompilationException">Thrown when the kernel source contains compilation errors.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
-        ValueTask<ICompiledKernel> CompileKernelAsync(
+        public ValueTask<ICompiledKernel> CompileKernelAsync(
             string kernelSource,
             string? entryPoint = null,
             CompilationOptions? options = null,
@@ -49,7 +49,7 @@ namespace DotCompute.Core.Compute.Interfaces
         /// <exception cref="ArgumentException">Thrown when arguments don't match kernel parameter requirements.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the specified backend is not available.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled via the cancellation token.</exception>
-        ValueTask ExecuteAsync(
+        public ValueTask ExecuteAsync(
             ICompiledKernel kernel,
             object[] arguments,
             ComputeBackendType backendType,
@@ -69,7 +69,7 @@ namespace DotCompute.Core.Compute.Interfaces
         /// and hardware capabilities. For example, CUDA backend requires NVIDIA drivers,
         /// while Metal backend is only available on Apple platforms.
         /// </remarks>
-        ComputeBackendType[] AvailableBackends { get; }
+        public ComputeBackendType[] AvailableBackends { get; }
 
         /// <summary>
         /// Gets the default backend for the current system.
@@ -84,6 +84,6 @@ namespace DotCompute.Core.Compute.Interfaces
         /// characteristics. The selection algorithm prioritizes GPU backends when available
         /// and falls back to optimized CPU execution when dedicated compute hardware is not present.
         /// </remarks>
-        ComputeBackendType DefaultBackend { get; }
+        public ComputeBackendType DefaultBackend { get; }
     }
 }

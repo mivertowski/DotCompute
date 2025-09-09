@@ -95,8 +95,9 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         var count = await DiscoveryService.DiscoverAndLoadPluginsAsync(pluginDirectory, cancellationToken).ConfigureAwait(false);
-        
+
         // Setup hot reload for discovered plugins if enabled
+
         if (count > 0)
         {
             var pluginFiles = Directory.GetFiles(pluginDirectory, "*.dll", SearchOption.AllDirectories);
@@ -105,7 +106,8 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
                 HotReloadService.SetupHotReload(pluginFile);
             }
         }
-        
+
+
         return count;
     }
 
@@ -114,13 +116,15 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         var count = await DiscoveryService.LoadPluginsFromAssemblyAsync(assemblyPath, cancellationToken).ConfigureAwait(false);
-        
+
         // Setup hot reload for the assembly if plugins were loaded
+
         if (count > 0)
         {
             HotReloadService.SetupHotReload(assemblyPath);
         }
-        
+
+
         return count;
     }
 
@@ -218,10 +222,12 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
         CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         var startTime = DateTime.UtcNow;
         Exception? executionError = null;
-        
+
+
         try
         {
             var result = await Executor.ExecutePluginAsync(pluginId, inputs, parameters, cancellationToken).ConfigureAwait(false);

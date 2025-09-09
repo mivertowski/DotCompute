@@ -40,7 +40,8 @@ public sealed class PipelineValidationException : PipelineException
     /// Initializes a new instance of the PipelineValidationException class with a message.
     /// </summary>
     /// <param name="message">The error message.</param>
-    public PipelineValidationException(string message) 
+    public PipelineValidationException(string message)
+
         : base(message, "PIPELINE_VALIDATION_FAILED")
     {
         Errors = [];
@@ -51,7 +52,8 @@ public sealed class PipelineValidationException : PipelineException
     /// </summary>
     /// <param name="message">The error message.</param>
     /// <param name="innerException">The inner exception.</param>
-    public PipelineValidationException(string message, Exception innerException) 
+    public PipelineValidationException(string message, Exception innerException)
+
         : base(message, "PIPELINE_VALIDATION_FAILED", innerException)
     {
         Errors = [];

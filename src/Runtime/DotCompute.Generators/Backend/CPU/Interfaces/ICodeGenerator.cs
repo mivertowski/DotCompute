@@ -14,5 +14,5 @@ public interface ICodeGenerator
     /// Generates code and appends it to the provided StringBuilder.
     /// </summary>
     /// <param name="sb">The StringBuilder to append generated code to.</param>
-    void Generate(StringBuilder sb);
+    public void Generate(StringBuilder sb);
 }

@@ -11,6 +11,7 @@ namespace DotCompute.Core.Execution.Types
     /// </summary>
     public enum ExecutionStrategyType
     {
+
         /// <summary>
         /// Single device execution strategy.
         /// Executes the entire workload on a single computing device without parallelization.

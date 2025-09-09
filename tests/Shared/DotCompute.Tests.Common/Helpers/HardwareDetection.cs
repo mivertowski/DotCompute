@@ -13,14 +13,16 @@ namespace DotCompute.Tests.Common.Helpers;
 public static class HardwareDetection
 {
     private static readonly Lazy<HardwareInfo> _hardwareInfo = new(DetectHardware);
-    
+
+
     /// <summary>
     /// Gets cached hardware information.
     /// </summary>
     public static HardwareInfo Info => _hardwareInfo.Value;
-    
+
     #region GPU Detection
-    
+
+
     /// <summary>
     /// Checks if CUDA-capable GPUs are available.
     /// </summary>
@@ -41,7 +43,8 @@ public static class HardwareDetection
             {
                 return false; // CUDA not supported on macOS
             }
-            
+
+
             return false;
         }
         catch
@@ -49,7 +52,8 @@ public static class HardwareDetection
             return false;
         }
     }
-    
+
+
     /// <summary>
     /// Checks if OpenCL is available.
     /// </summary>
@@ -69,7 +73,8 @@ public static class HardwareDetection
             {
                 return CheckMacOSOpenCL();
             }
-            
+
+
             return false;
         }
         catch
@@ -77,7 +82,8 @@ public static class HardwareDetection
             return false;
         }
     }
-    
+
+
     /// <summary>
     /// Gets the number of available CUDA devices.
     /// </summary>
@@ -85,7 +91,8 @@ public static class HardwareDetection
     {
         if (!IsCudaAvailable())
             return 0;
-        
+
+
         try
         {
             // This would typically use CUDA API calls
@@ -97,7 +104,8 @@ public static class HardwareDetection
             return 0;
         }
     }
-    
+
+
     /// <summary>
     /// Gets the number of available OpenCL devices.
     /// </summary>
@@ -105,7 +113,8 @@ public static class HardwareDetection
     {
         if (!IsOpenCLAvailable())
             return 0;
-        
+
+
         try
         {
             // This would typically enumerate OpenCL platforms and devices
@@ -153,10 +162,12 @@ public static class HardwareDetection
         {
             // Fallback to logical cores
         }
-        
+
+
         return GetLogicalCoreCount();
     }
-    
+
+
     /// <summary>
     /// Checks if the CPU supports AVX instructions.
     /// </summary>
@@ -171,7 +182,8 @@ public static class HardwareDetection
             return false;
         }
     }
-    
+
+
     /// <summary>
     /// Checks if the CPU supports AVX2 instructions.
     /// </summary>
@@ -186,7 +198,8 @@ public static class HardwareDetection
             return false;
         }
     }
-    
+
+
     /// <summary>
     /// Checks if the CPU supports AVX-512 instructions.
     /// </summary>
@@ -201,11 +214,12 @@ public static class HardwareDetection
             return false;
         }
     }
-    
+
     #endregion
-    
+
     #region Memory Detection
-    
+
+
     /// <summary>
     /// Gets the total system memory in bytes.
     /// </summary>
@@ -230,10 +244,12 @@ public static class HardwareDetection
         {
             // Fallback to GC estimate
         }
-        
+
+
         return GC.GetTotalMemory(false);
     }
-    
+
+
     /// <summary>
     /// Gets available system memory in bytes.
     /// </summary>
@@ -258,14 +274,16 @@ public static class HardwareDetection
         {
             // Conservative estimate
         }
-        
+
+
         return GetTotalSystemMemory() / 2; // Conservative estimate
     }
-    
+
     #endregion
-    
+
     #region Hardware Information Class
-    
+
+
     /// <summary>
     /// Contains comprehensive hardware information.
     /// </summary>
@@ -392,11 +410,12 @@ public static class HardwareDetection
         /// </value>
         public string CpuName { get; init; } = string.Empty;
     }
-    
+
     #endregion
-    
+
     #region Private Implementation Methods
-    
+
+
     private static HardwareInfo DetectHardware()
     {
         return new HardwareInfo
@@ -418,7 +437,8 @@ public static class HardwareDetection
             CpuName = GetCpuName()
         };
     }
-    
+
+
     private static string GetPlatformString()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -437,7 +457,8 @@ public static class HardwareDetection
     private static List<string> GetGpuNames()
     {
         var gpuNames = new List<string>();
-        
+
+
         try
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -450,10 +471,12 @@ public static class HardwareDetection
         {
             // Ignore errors in GPU name detection
         }
-        
+
+
         return gpuNames;
     }
-    
+
+
     private static string GetCpuName()
     {
         try
@@ -468,12 +491,14 @@ public static class HardwareDetection
         {
             // Ignore errors in CPU name detection
         }
-        
+
+
         return "Unknown CPU";
     }
-    
+
     #region Platform-Specific Implementations
-    
+
+
     private static bool CheckWindowsCuda()
     {
         try
@@ -485,24 +510,28 @@ public static class HardwareDetection
 #else
             var hasNvidiaGpu = false; // TODO: Implement GPU detection for non-Windows platforms
 #endif
-            
+
+
             if (!hasNvidiaGpu)
                 return false;
-            
+
             // Check for CUDA runtime libraries
+
             var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
             if (!string.IsNullOrEmpty(cudaPath))
             {
                 return Directory.Exists(cudaPath);
             }
-            
+
             // Check common CUDA installation paths
+
             var commonPaths = new[]
             {
                 @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA",
                 @"C:\Program Files (x86)\NVIDIA GPU Computing Toolkit\CUDA"
             };
-            
+
+
             return commonPaths.Any(Directory.Exists);
         }
         catch
@@ -510,7 +539,8 @@ public static class HardwareDetection
             return false;
         }
     }
-    
+
+
     private static bool CheckLinuxCuda()
     {
         try
@@ -519,10 +549,12 @@ public static class HardwareDetection
             var result = ExecuteCommand("which", "nvidia-smi");
             if (string.IsNullOrEmpty(result))
                 return false;
-            
+
             // Check for CUDA libraries
+
             var ldLibraryPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "";
-            return ldLibraryPath.Contains("cuda", StringComparison.OrdinalIgnoreCase) || 
+            return ldLibraryPath.Contains("cuda", StringComparison.OrdinalIgnoreCase) ||
+
                    Directory.Exists("/usr/local/cuda") ||
                    Directory.Exists("/opt/cuda");
         }
@@ -531,7 +563,8 @@ public static class HardwareDetection
             return false;
         }
     }
-    
+
+
     private static bool CheckWindowsOpenCL()
     {
         try
@@ -544,7 +577,8 @@ public static class HardwareDetection
             return false;
         }
     }
-    
+
+
     private static bool CheckLinuxOpenCL()
     {
         try
@@ -557,7 +591,8 @@ public static class HardwareDetection
             return false;
         }
     }
-    
+
+
     private static bool CheckMacOSOpenCL()
     {
         try
@@ -569,7 +604,8 @@ public static class HardwareDetection
             return false;
         }
     }
-    
+
+
     private static int GetNvidiaGpuCount()
     {
         try
@@ -583,8 +619,9 @@ public static class HardwareDetection
                 return 0; // TODO: Implement cross-platform GPU detection
 #endif
             }
-            
+
             // For Linux/macOS, we'd need different approaches
+
             return 0;
         }
         catch
@@ -592,7 +629,8 @@ public static class HardwareDetection
             return 0;
         }
     }
-    
+
+
     private static int GetAmdGpuCount()
     {
         try
@@ -606,7 +644,8 @@ public static class HardwareDetection
                 return 0; // TODO: Implement cross-platform GPU detection
 #endif
             }
-            
+
+
             return 0;
         }
         catch
@@ -614,7 +653,8 @@ public static class HardwareDetection
             return 0;
         }
     }
-    
+
+
     private static int GetIntelGpuCount()
     {
         try
@@ -628,7 +668,8 @@ public static class HardwareDetection
                 return 0; // TODO: Implement cross-platform GPU detection
 #endif
             }
-            
+
+
             return 0;
         }
         catch
@@ -636,7 +677,8 @@ public static class HardwareDetection
             return 0;
         }
     }
-    
+
+
     private static int GetWindowsPhysicalCores()
     {
 #if WINDOWS
@@ -647,7 +689,8 @@ public static class HardwareDetection
         return Environment.ProcessorCount;
 #endif
     }
-    
+
+
     private static int GetLinuxPhysicalCores()
     {
         try
@@ -658,7 +701,8 @@ public static class HardwareDetection
                 .Select(line => line.Split(':')[1].Trim())
                 .Distinct()
                 .Count();
-            
+
+
             return Math.Max(coreIds, 1);
         }
         catch
@@ -666,7 +710,8 @@ public static class HardwareDetection
             return Environment.ProcessorCount;
         }
     }
-    
+
+
     private static int GetMacOSPhysicalCores()
     {
         try
@@ -679,7 +724,8 @@ public static class HardwareDetection
             return Environment.ProcessorCount;
         }
     }
-    
+
+
     private static long GetWindowsTotalMemory()
     {
 #if WINDOWS
@@ -690,7 +736,8 @@ public static class HardwareDetection
         return GC.GetTotalMemory(false);
 #endif
     }
-    
+
+
     private static long GetLinuxTotalMemory()
     {
         try
@@ -710,10 +757,12 @@ public static class HardwareDetection
         {
             // Fallback
         }
-        
+
+
         return 0;
     }
-    
+
+
     private static long GetMacOSTotalMemory()
     {
         try
@@ -726,7 +775,8 @@ public static class HardwareDetection
             return 0;
         }
     }
-    
+
+
     private static long GetWindowsAvailableMemory()
     {
 #if WINDOWS
@@ -737,7 +787,8 @@ public static class HardwareDetection
         return GC.GetTotalMemory(false);
 #endif
     }
-    
+
+
     private static long GetLinuxAvailableMemory()
     {
         try
@@ -757,10 +808,12 @@ public static class HardwareDetection
         {
             // Fallback
         }
-        
+
+
         return 0;
     }
-    
+
+
     private static long GetMacOSAvailableMemory()
     {
         try
@@ -775,7 +828,8 @@ public static class HardwareDetection
             return 0;
         }
     }
-    
+
+
     private static List<string> GetWindowsGpuNames()
     {
         var names = new List<string>();
@@ -800,10 +854,12 @@ public static class HardwareDetection
         {
             // Ignore errors
         }
-        
+
+
         return names;
     }
-    
+
+
     private static string GetWindowsCpuName()
     {
         try
@@ -821,7 +877,8 @@ public static class HardwareDetection
             return "Unknown CPU";
         }
     }
-    
+
+
     private static string ExecuteCommand(string command, string arguments = "")
     {
         try
@@ -834,7 +891,8 @@ public static class HardwareDetection
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            
+
+
             using var process = Process.Start(processStartInfo);
             return process?.StandardOutput.ReadToEnd() ?? string.Empty;
         }
@@ -843,8 +901,9 @@ public static class HardwareDetection
             return string.Empty;
         }
     }
-    
+
     #endregion
-    
+
+
     #endregion
 }

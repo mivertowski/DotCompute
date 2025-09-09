@@ -40,31 +40,36 @@ public class CompilationHistory : IDisposable
     /// </summary>
     /// <value>The kernel identifier.</value>
     public string KernelName => _kernelName;
-    
+
+
     /// <summary>
     /// Gets the current number of consecutive compilation failures.
     /// </summary>
     /// <value>The count of failures since the last successful compilation.</value>
     public int FailureCount => _failureCount;
-    
+
+
     /// <summary>
     /// Gets the total number of compilation attempts made for this kernel.
     /// </summary>
     /// <value>The cumulative count of all compilation attempts.</value>
     public int TotalAttempts => _totalAttempts;
-    
+
+
     /// <summary>
     /// Gets a value indicating whether the last compilation attempt was successful.
     /// </summary>
     /// <value>true if the most recent compilation succeeded; otherwise, false.</value>
     public bool LastCompilationSuccessful => _successfulStrategy.HasValue;
-    
+
+
     /// <summary>
     /// Gets the fallback strategy that was most recently successful for this kernel.
     /// </summary>
     /// <value>The successful strategy, or null if no successful compilation has occurred.</value>
     public CompilationFallbackStrategy? SuccessfulStrategy => _successfulStrategy;
-    
+
+
     /// <summary>
     /// Gets a read-only list of recent compilation errors.
     /// The list is limited to the most recent errors to prevent unbounded growth.

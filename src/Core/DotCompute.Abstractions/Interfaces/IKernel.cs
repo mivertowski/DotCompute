@@ -12,21 +12,21 @@ namespace DotCompute.Abstractions
         /// <summary>
         /// Gets the unique name of this kernel.
         /// </summary>
-        string Name { get; }
+        public string Name { get; }
 
         /// <summary>
         /// Gets the source code or IL representation of the kernel.
         /// </summary>
-        string Source { get; }
+        public string Source { get; }
 
         /// <summary>
         /// Gets the entry point method name for the kernel.
         /// </summary>
-        string EntryPoint { get; }
+        public string EntryPoint { get; }
 
         /// <summary>
         /// Gets the required shared memory size in bytes.
         /// </summary>
-        int RequiredSharedMemory { get; }
+        public int RequiredSharedMemory { get; }
     }
 }

@@ -16,143 +16,185 @@ namespace DotCompute.Memory;
 public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
     private readonly int _elementSize;
-    
+
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseMemoryBuffer{T}"/> class.
     /// </summary>
     protected BaseMemoryBuffer(long sizeInBytes)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
-        
+
         // Check for unreasonably large allocations (>1TB)
+
         const long maxReasonableSize = 1L << 40; // 1TB
         if (sizeInBytes > maxReasonableSize)
         {
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes), $"Size {sizeInBytes} exceeds maximum reasonable allocation of {maxReasonableSize} bytes");
         }
-        
+
+
         _elementSize = Unsafe.SizeOf<T>();
         SizeInBytes = sizeInBytes;
         Length = (int)(sizeInBytes / _elementSize);
-        
+
+
         if ((long)Length * _elementSize != sizeInBytes)
         {
             throw new ArgumentException($"Size {sizeInBytes} is not evenly divisible by element size {_elementSize}", nameof(sizeInBytes));
         }
     }
-    
+
+
     /// <inheritdoc/>
     public long SizeInBytes { get; }
-    
+
+
     /// <inheritdoc/>
     public int Length { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract IntPtr DevicePointer { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract MemoryType MemoryType { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract bool IsDisposed { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract IAccelerator Accelerator { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract BufferState State { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract MemoryOptions Options { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract bool IsOnHost { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract bool IsOnDevice { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract bool IsDirty { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract Span<T> AsSpan();
-    
+
+
     /// <inheritdoc/>
     public abstract ReadOnlySpan<T> AsReadOnlySpan();
-    
+
+
     /// <inheritdoc/>
     public abstract Memory<T> AsMemory();
-    
+
+
     /// <inheritdoc/>
     public abstract ReadOnlyMemory<T> AsReadOnlyMemory();
-    
+
+
     /// <inheritdoc/>
     public abstract DeviceMemory GetDeviceMemory();
-    
+
+
     /// <inheritdoc/>
     public abstract MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite);
-    
+
+
     /// <inheritdoc/>
     public abstract MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite);
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract void EnsureOnHost();
-    
+
+
     /// <inheritdoc/>
     public abstract void EnsureOnDevice();
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract void Synchronize();
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract void MarkHostDirty();
-    
+
+
     /// <inheritdoc/>
     public abstract void MarkDeviceDirty();
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask FillAsync(T value, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract IUnifiedMemoryBuffer<T> Slice(int offset, int length);
-    
+
+
     /// <inheritdoc/>
     public abstract IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged;
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyFromAsync(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyToAsync(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default);
-    
+
     // Non-generic interface implementation - delegate to generic versions
+
     ValueTask IUnifiedMemoryBuffer.CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset, CancellationToken cancellationToken)
     {
         if (typeof(U) != typeof(T))
@@ -165,7 +207,8 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
         var typedSource = MemoryMarshal.Cast<U, T>(source.Span);
         return CopyFromAsync(typedSource.ToArray(), offset, cancellationToken);
     }
-    
+
+
     ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken)
     {
         if (typeof(U) != typeof(T))
@@ -178,25 +221,30 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
         var typedDestination = MemoryMarshal.Cast<U, T>(destination.Span);
         return CopyToAsync(typedDestination.ToArray(), offset, cancellationToken);
     }
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default);
-    
+
+
     /// <summary>
     /// Validates copy parameters.
     /// </summary>
     protected void ValidateCopyParameters(long sourceLength, long sourceOffset, long destinationLength, long destinationOffset, long count)
     {
         ThrowIfDisposed();
-        
+
+
         ArgumentOutOfRangeException.ThrowIfNegative(sourceOffset, nameof(sourceOffset));
         ArgumentOutOfRangeException.ThrowIfNegative(destinationOffset, nameof(destinationOffset));
-        
+
+
         if (count < -1)
         {
             throw new ArgumentOutOfRangeException(nameof(count), "Count cannot be less than -1");
         }
-        
+
+
         if (count == -1)
         {
             count = Math.Min(sourceLength - sourceOffset, destinationLength - destinationOffset);
@@ -205,23 +253,27 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
         {
             ArgumentOutOfRangeException.ThrowIfNegative(count, nameof(count));
         }
-        
+
         // Check for integer overflow
+
         if (sourceOffset > long.MaxValue - count)
         {
             throw new ArgumentOutOfRangeException(nameof(count), "Source offset + count would overflow");
         }
-        
+
+
         if (destinationOffset > long.MaxValue - count)
         {
             throw new ArgumentOutOfRangeException(nameof(count), "Destination offset + count would overflow");
         }
-        
+
+
         if (sourceOffset + count > sourceLength)
         {
             throw new ArgumentOutOfRangeException(nameof(count), "Source buffer overflow");
         }
-        
+
+
         if (destinationOffset + count > destinationLength)
         {
             throw new ArgumentOutOfRangeException(nameof(count), "Destination buffer overflow");
@@ -238,7 +290,8 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
 
     /// <inheritdoc/>
     public abstract void Dispose();
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask DisposeAsync();
 }
@@ -250,7 +303,8 @@ public abstract class BaseDeviceBuffer<T> : BaseMemoryBuffer<T> where T : unmana
 {
     private readonly IntPtr _devicePointer;
     private volatile int _disposed;
-    
+
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseDeviceBuffer{T}"/> class.
     /// </summary>
@@ -259,16 +313,20 @@ public abstract class BaseDeviceBuffer<T> : BaseMemoryBuffer<T> where T : unmana
         ArgumentNullException.ThrowIfNull(devicePointer);
         _devicePointer = devicePointer;
     }
-    
+
+
     /// <inheritdoc/>
     public override IntPtr DevicePointer => _devicePointer;
-    
+
+
     /// <inheritdoc/>
     public override MemoryType MemoryType => MemoryType.Device;
-    
+
+
     /// <inheritdoc/>
     public override bool IsDisposed => _disposed != 0;
-    
+
+
     /// <summary>
     /// Marks the buffer as disposed.
     /// </summary>
@@ -282,7 +340,8 @@ public abstract class BaseUnifiedBuffer<T> : BaseMemoryBuffer<T> where T : unman
 {
     private readonly IntPtr _unifiedPointer;
     private volatile int _disposed;
-    
+
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseUnifiedBuffer{T}"/> class.
     /// </summary>
@@ -291,16 +350,20 @@ public abstract class BaseUnifiedBuffer<T> : BaseMemoryBuffer<T> where T : unman
         ArgumentNullException.ThrowIfNull(unifiedPointer);
         _unifiedPointer = unifiedPointer;
     }
-    
+
+
     /// <inheritdoc/>
     public override IntPtr DevicePointer => _unifiedPointer;
-    
+
+
     /// <inheritdoc/>
     public override MemoryType MemoryType => MemoryType.Unified;
-    
+
+
     /// <inheritdoc/>
     public override bool IsDisposed => _disposed != 0;
-    
+
+
     /// <summary>
     /// Gets a span view of the unified memory for CPU access.
     /// </summary>
@@ -309,7 +372,8 @@ public abstract class BaseUnifiedBuffer<T> : BaseMemoryBuffer<T> where T : unman
         ThrowIfDisposed();
         return new Span<T>(_unifiedPointer.ToPointer(), (int)Length);
     }
-    
+
+
     /// <summary>
     /// Marks the buffer as disposed.
     /// </summary>
@@ -323,7 +387,8 @@ public abstract class BasePooledBuffer<T> : BaseMemoryBuffer<T>, IMemoryOwner<T>
 {
     private readonly Action<BasePooledBuffer<T>>? _returnAction;
     private volatile int _disposed;
-    
+
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BasePooledBuffer{T}"/> class.
     /// </summary>
@@ -331,13 +396,16 @@ public abstract class BasePooledBuffer<T> : BaseMemoryBuffer<T>, IMemoryOwner<T>
     {
         _returnAction = returnAction;
     }
-    
+
+
     /// <inheritdoc/>
     public override bool IsDisposed => _disposed != 0;
-    
+
+
     /// <inheritdoc/>
     public abstract Memory<T> Memory { get; }
-    
+
+
     /// <inheritdoc/>
     public override void Dispose()
     {
@@ -349,7 +417,8 @@ public abstract class BasePooledBuffer<T> : BaseMemoryBuffer<T>, IMemoryOwner<T>
             GC.SuppressFinalize(this);
         }
     }
-    
+
+
     /// <inheritdoc/>
     public override async ValueTask DisposeAsync()
     {
@@ -361,12 +430,14 @@ public abstract class BasePooledBuffer<T> : BaseMemoryBuffer<T>, IMemoryOwner<T>
             GC.SuppressFinalize(this);
         }
     }
-    
+
+
     /// <summary>
     /// Core disposal logic to be implemented by derived classes.
     /// </summary>
     protected virtual void DisposeCore() { }
-    
+
+
     /// <summary>
     /// Core async disposal logic to be implemented by derived classes.
     /// </summary>
@@ -387,27 +458,33 @@ public abstract class BasePinnedBuffer<T> : BaseMemoryBuffer<T> where T : unmana
     private readonly GCHandle _pinnedHandle;
     private readonly IntPtr _pinnedPointer;
     private volatile int _disposed;
-    
+
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BasePinnedBuffer{T}"/> class.
     /// </summary>
     protected BasePinnedBuffer(T[] array) : base(array.Length * Unsafe.SizeOf<T>())
     {
         ArgumentNullException.ThrowIfNull(array);
-        
+
+
         _pinnedHandle = GCHandle.Alloc(array, GCHandleType.Pinned);
         _pinnedPointer = _pinnedHandle.AddrOfPinnedObject();
     }
-    
+
+
     /// <inheritdoc/>
     public override IntPtr DevicePointer => _pinnedPointer;
-    
+
+
     /// <inheritdoc/>
     public override MemoryType MemoryType => MemoryType.Pinned;
-    
+
+
     /// <inheritdoc/>
     public override bool IsDisposed => _disposed != 0;
-    
+
+
     /// <inheritdoc/>
     public override void Dispose()
     {
@@ -420,7 +497,8 @@ public abstract class BasePinnedBuffer<T> : BaseMemoryBuffer<T> where T : unmana
             GC.SuppressFinalize(this);
         }
     }
-    
+
+
     /// <inheritdoc/>
     public override ValueTask DisposeAsync()
     {

@@ -80,7 +80,8 @@ namespace DotCompute.Backends.CUDA.Models
         /// Gets whether validation was successful.
         /// </summary>
         public bool IsSuccessful
-            => OverallStatus == ValidationStatus.Passed || 
+            => OverallStatus == ValidationStatus.Passed ||
+
             OverallStatus == ValidationStatus.Warning && FailedTests == 0;
     }
 }

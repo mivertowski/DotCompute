@@ -51,7 +51,8 @@ namespace DotCompute.Core.Models
         /// Gets whether this entry has expired.
         /// </summary>
         public bool IsExpired
-            => TimeToLive.HasValue && 
+            => TimeToLive.HasValue &&
+
             DateTimeOffset.UtcNow - CreatedAt > TimeToLive.Value;
     }
 }

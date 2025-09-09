@@ -44,7 +44,8 @@ namespace DotCompute.Core.Compute.Memory
         /// Gets a value indicating whether the buffer has been disposed.
         /// </summary>
         public bool IsDisposed => _disposed;
-        
+
+
         /// <summary>
         /// Gets or sets the buffer state.
         /// </summary>
@@ -158,7 +159,8 @@ namespace DotCompute.Core.Compute.Memory
                 return new Span<T>((void*)_alignedPtr, (int)(_sizeInBytes / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>()));
             }
         }
-        
+
+
         /// <summary>
         /// Copies data from host memory to this buffer.
         /// </summary>
@@ -168,7 +170,8 @@ namespace DotCompute.Core.Compute.Memory
             source.Span.CopyTo(span.Slice((int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>())));
             return ValueTask.CompletedTask;
         }
-        
+
+
         /// <summary>
         /// Copies data from this buffer to host memory.
         /// </summary>
@@ -178,7 +181,8 @@ namespace DotCompute.Core.Compute.Memory
             span.Slice((int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>()), destination.Length).CopyTo(destination.Span);
             return ValueTask.CompletedTask;
         }
-        
+
+
         /// <summary>
         /// Asynchronously disposes the buffer.
         /// </summary>

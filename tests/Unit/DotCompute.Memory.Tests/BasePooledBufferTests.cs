@@ -15,20 +15,23 @@ namespace DotCompute.Memory.Tests;
 public class BasePooledBufferTests
 {
     private readonly ITestOutputHelper _output;
-    
+
+
     public BasePooledBufferTests(ITestOutputHelper output)
     {
         _output = output;
     }
-    
+
+
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void PooledBuffer_InitializesCorrectly()
     {
         // Arrange
         var returnAction = new Action<BasePooledBuffer<float>>(b => { });
-        
+
         // Act
+
         using var buffer = new TestPooledBuffer<float>(1024, returnAction);
 
         // Assert
@@ -37,7 +40,8 @@ public class BasePooledBufferTests
         _ = buffer.SizeInBytes.Should().Be(1024);
         _ = buffer.Length.Should().Be(256); // 1024 bytes / 4 bytes per float
     }
-    
+
+
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void PooledBuffer_CallsReturnActionOnDispose()
@@ -48,17 +52,20 @@ public class BasePooledBufferTests
         {
             returnCalled = true;
         });
-        
+
+
         var buffer = new TestPooledBuffer<int>(512, returnAction);
-        
+
         // Act
+
         buffer.Dispose();
 
         // Assert
         _ = returnCalled.Should().BeTrue("return action should be called on dispose");
         _ = buffer.IsDisposed.Should().BeTrue();
     }
-    
+
+
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void PooledBuffer_ResetsClearsState()
@@ -66,7 +73,8 @@ public class BasePooledBufferTests
         // Arrange
         var returnCount = 0;
         var pool = new Queue<TestPooledBuffer<int>>();
-        
+
+
         TestPooledBuffer<int> CreateOrRent()
         {
             if (pool.Count > 0)
@@ -75,17 +83,20 @@ public class BasePooledBufferTests
                 buffer.Reset();
                 return buffer;
             }
-            return new TestPooledBuffer<int>(1024, b => 
+            return new TestPooledBuffer<int>(1024, b =>
+
             {
                 returnCount++;
                 pool.Enqueue((TestPooledBuffer<int>)b);
             });
         }
-        
+
         // Act - Simulate pool usage
+
         var buffer1 = CreateOrRent();
         buffer1.Dispose(); // Returns to pool
-        
+
+
         var buffer2 = CreateOrRent(); // Reuses from pool
         buffer2.Dispose();
 
@@ -93,20 +104,23 @@ public class BasePooledBufferTests
         _ = returnCount.Should().Be(2, "buffer should be returned twice");
         _ = pool.Count.Should().Be(1, "one buffer should be in the pool");
     }
-    
+
+
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void PooledBuffer_ProvidesFunctionalMemoryAccess()
     {
         // Arrange
         using var buffer = new TestPooledBuffer<float>(64, null);
-        
+
         // Act
+
         var span = buffer.AsSpan();
         var readOnlySpan = buffer.AsReadOnlySpan();
         var memory = buffer.Memory;
-        
+
         // Fill span with test data
+
         for (var i = 0; i < span.Length; i++)
         {
             span[i] = i * 1.5f;
@@ -116,14 +130,16 @@ public class BasePooledBufferTests
         _ = span.Length.Should().Be(16); // 64 bytes / 4 bytes per float
         _ = readOnlySpan.Length.Should().Be(16);
         _ = memory.Length.Should().Be(16);
-        
+
         // Verify data integrity
+
         for (var i = 0; i < span.Length; i++)
         {
             _ = span[i].Should().Be(i * 1.5f);
         }
     }
-    
+
+
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void PooledBuffer_SupportsMultipleInstances()
@@ -131,14 +147,16 @@ public class BasePooledBufferTests
         // Arrange
         var buffers = new List<TestPooledBuffer<double>>();
         var returnCount = 0;
-        
+
         // Act - Create multiple pooled buffers
+
         for (var i = 0; i < 5; i++)
         {
             buffers.Add(new TestPooledBuffer<double>(512, _ => returnCount++));
         }
-        
+
         // Dispose all buffers
+
         foreach (var buffer in buffers)
         {
             buffer.Dispose();

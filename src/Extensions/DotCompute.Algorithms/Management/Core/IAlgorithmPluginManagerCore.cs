@@ -18,37 +18,37 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// <summary>
     /// Gets the plugin lifecycle manager.
     /// </summary>
-    IPluginLifecycleManager LifecycleManager { get; }
+    public IPluginLifecycleManager LifecycleManager { get; }
 
     /// <summary>
     /// Gets the plugin discovery service.
     /// </summary>
-    IPluginDiscoveryService DiscoveryService { get; }
+    public IPluginDiscoveryService DiscoveryService { get; }
 
     /// <summary>
     /// Gets the NuGet plugin service.
     /// </summary>
-    INuGetPluginService NuGetService { get; }
+    public INuGetPluginService NuGetService { get; }
 
     /// <summary>
     /// Gets the plugin executor.
     /// </summary>
-    IPluginExecutor Executor { get; }
+    public IPluginExecutor Executor { get; }
 
     /// <summary>
     /// Gets the health monitor.
     /// </summary>
-    IHealthMonitor HealthMonitor { get; }
+    public IHealthMonitor HealthMonitor { get; }
 
     /// <summary>
     /// Gets the hot reload service.
     /// </summary>
-    IHotReloadService HotReloadService { get; }
+    public IHotReloadService HotReloadService { get; }
 
     /// <summary>
     /// Gets the registered plugin IDs.
     /// </summary>
-    IEnumerable<string> RegisteredPlugins { get; }
+    public IEnumerable<string> RegisteredPlugins { get; }
 
     /// <summary>
     /// Discovers plugins in the specified directory.
@@ -56,7 +56,7 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// <param name="pluginDirectory">The directory to scan for plugins.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of plugins discovered and loaded.</returns>
-    Task<int> DiscoverAndLoadPluginsAsync(string pluginDirectory, CancellationToken cancellationToken = default);
+    public Task<int> DiscoverAndLoadPluginsAsync(string pluginDirectory, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Loads plugins from an assembly file with advanced isolation and security validation.
@@ -64,7 +64,7 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// <param name="assemblyPath">The path to the assembly file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of plugins loaded.</returns>
-    Task<int> LoadPluginsFromAssemblyAsync(string assemblyPath, CancellationToken cancellationToken = default);
+    public Task<int> LoadPluginsFromAssemblyAsync(string assemblyPath, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Loads plugins from a NuGet package.
@@ -73,7 +73,7 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// <param name="targetFramework">Target framework for assembly selection (optional, defaults to current framework).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of plugins loaded.</returns>
-    Task<int> LoadPluginsFromNuGetPackageAsync(
+    public Task<int> LoadPluginsFromNuGetPackageAsync(
         string packageSource,
         string? targetFramework = null,
         CancellationToken cancellationToken = default);
@@ -85,7 +85,7 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// <param name="targetFramework">Target framework for assembly selection (optional, defaults to current framework).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of plugins loaded from the updated package.</returns>
-    Task<int> UpdateNuGetPackageAsync(
+    public Task<int> UpdateNuGetPackageAsync(
         string packageId,
         string? targetFramework = null,
         CancellationToken cancellationToken = default);
@@ -96,14 +96,14 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// <param name="olderThan">Optional age filter - only clear packages older than this timespan.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the cache clearing operation.</returns>
-    Task ClearNuGetCacheAsync(TimeSpan? olderThan = null, CancellationToken cancellationToken = default);
+    public Task ClearNuGetCacheAsync(TimeSpan? olderThan = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets information about cached NuGet packages.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Array of cached NuGet package information.</returns>
-    Task<CachedPackageInfo[]> GetCachedNuGetPackagesAsync(CancellationToken cancellationToken = default);
+    public Task<CachedPackageInfo[]> GetCachedNuGetPackagesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Validates a NuGet package before loading it.
@@ -112,7 +112,7 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// <param name="targetFramework">Target framework for validation.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Validation result with details about the package.</returns>
-    Task<NuGetValidationResult> ValidateNuGetPackageAsync(
+    public Task<NuGetValidationResult> ValidateNuGetPackageAsync(
         string packageSource,
         string? targetFramework = null,
         CancellationToken cancellationToken = default);
@@ -123,41 +123,41 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// <param name="plugin">The plugin to register.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the registration operation.</returns>
-    Task RegisterPluginAsync(IAlgorithmPlugin plugin, CancellationToken cancellationToken = default);
+    public Task RegisterPluginAsync(IAlgorithmPlugin plugin, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a registered plugin by ID.
     /// </summary>
     /// <param name="pluginId">The plugin ID.</param>
     /// <returns>The plugin instance if found; otherwise, null.</returns>
-    IAlgorithmPlugin? GetPlugin(string pluginId);
+    public IAlgorithmPlugin? GetPlugin(string pluginId);
 
     /// <summary>
     /// Gets detailed information about a loaded plugin.
     /// </summary>
     /// <param name="pluginId">The plugin ID.</param>
     /// <returns>The loaded plugin information if found; otherwise, null.</returns>
-    LoadedPluginInfo? GetLoadedPluginInfo(string pluginId);
+    public LoadedPluginInfo? GetLoadedPluginInfo(string pluginId);
 
     /// <summary>
     /// Gets all plugins that support the specified accelerator type.
     /// </summary>
     /// <param name="acceleratorType">The accelerator type.</param>
     /// <returns>Collection of compatible plugins.</returns>
-    IEnumerable<IAlgorithmPlugin> GetPluginsByAcceleratorType(AcceleratorType acceleratorType);
+    public IEnumerable<IAlgorithmPlugin> GetPluginsByAcceleratorType(AcceleratorType acceleratorType);
 
     /// <summary>
     /// Gets all plugins that can process the specified input type.
     /// </summary>
     /// <param name="inputType">The input type.</param>
     /// <returns>Collection of compatible plugins.</returns>
-    IEnumerable<IAlgorithmPlugin> GetPluginsByInputType(Type inputType);
+    public IEnumerable<IAlgorithmPlugin> GetPluginsByInputType(Type inputType);
 
     /// <summary>
     /// Gets all healthy and running plugins.
     /// </summary>
     /// <returns>Collection of healthy plugins.</returns>
-    IEnumerable<IAlgorithmPlugin> GetHealthyPlugins();
+    public IEnumerable<IAlgorithmPlugin> GetHealthyPlugins();
 
     /// <summary>
     /// Executes a plugin with the specified inputs and enhanced monitoring.
@@ -167,7 +167,7 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// <param name="parameters">Optional parameters.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The execution result.</returns>
-    Task<object> ExecutePluginAsync(
+    public Task<object> ExecutePluginAsync(
         string pluginId,
         object[] inputs,
         Dictionary<string, object>? parameters = null,
@@ -178,7 +178,7 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// </summary>
     /// <param name="pluginId">The plugin ID to unregister.</param>
     /// <returns>True if the plugin was unregistered; otherwise, false.</returns>
-    Task<bool> UnregisterPluginAsync(string pluginId);
+    public Task<bool> UnregisterPluginAsync(string pluginId);
 
     /// <summary>
     /// Reloads a plugin (hot reload).
@@ -186,11 +186,11 @@ public interface IAlgorithmPluginManagerCore : IAsyncDisposable
     /// <param name="pluginId">The plugin ID to reload.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>True if the plugin was reloaded successfully; otherwise, false.</returns>
-    Task<bool> ReloadPluginAsync(string pluginId, CancellationToken cancellationToken = default);
+    public Task<bool> ReloadPluginAsync(string pluginId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets information about all registered plugins.
     /// </summary>
     /// <returns>Collection of plugin information.</returns>
-    IEnumerable<AlgorithmPluginInfo> GetPluginInfo();
+    public IEnumerable<AlgorithmPluginInfo> GetPluginInfo();
 }

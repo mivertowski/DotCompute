@@ -14,11 +14,13 @@ public abstract class TestBase : IDisposable
     private readonly Stopwatch _testStopwatch;
     private readonly long _initialMemory;
     private bool _disposed;
-    
+
     // Cache for CUDA availability check
+
     private static bool? _cachedCudaAvailable;
     private static readonly object _cudaCheckLock = new();
-    
+
+
     static TestBase()
     {
         // Initialize LD_LIBRARY_PATH for Linux to ensure CUDA libraries are found
@@ -29,7 +31,8 @@ public abstract class TestBase : IDisposable
             var newPath = "/usr/local/cuda-12.8/lib64:/usr/local/cuda-12.6/lib64:/usr/lib/wsl/lib";
             if (!currentPath.Contains("/usr/local/cuda-12.8/lib64", StringComparison.Ordinal))
             {
-                Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", 
+                Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
+
                     newPath + ":" + currentPath);
             }
         }
@@ -44,7 +47,8 @@ public abstract class TestBase : IDisposable
         Output = output ?? throw new ArgumentNullException(nameof(output));
         _testStopwatch = Stopwatch.StartNew();
         _initialMemory = GC.GetTotalMemory(false);
-        
+
+
         LogTestStart();
     }
 
@@ -86,39 +90,48 @@ public abstract class TestBase : IDisposable
             return _cachedCudaAvailable.Value;
         }
     }
-    
+
+
     [DllImport("cudart64_13", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
     private static extern int CudaGetDeviceCount_Windows13(out int count);
-    
+
+
     [DllImport("cudart64_12", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
     private static extern int CudaGetDeviceCount_Windows12(out int count);
-    
+
+
     [DllImport("cudart64_11", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
     private static extern int CudaGetDeviceCount_Windows11(out int count);
-    
+
+
     [DllImport("libcudart.so.13", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
     private static extern int CudaGetDeviceCount_Linux13(out int count);
-    
+
+
     [DllImport("libcudart.so.12", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
     private static extern int CudaGetDeviceCount_Linux12(out int count);
-    
+
     // Try specific CUDA 12.8 path
+
     [DllImport("/usr/local/cuda-12.8/lib64/libcudart.so.12", EntryPoint = "cudaGetDeviceCount")]
     private static extern int CudaGetDeviceCount_Linux12_8(out int count);
-    
+
+
     [DllImport("libcudart.so.1", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
     private static extern int CudaGetDeviceCount_LinuxWSL(out int count);
-    
+
+
     [DllImport("cudart", EntryPoint = "cudaGetDeviceCount")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories | DllImportSearchPath.System32)]
     private static extern int CudaGetDeviceCount_Linux(out int count);
-    
+
+
     private static bool CheckWindowsCuda()
     {
         try
@@ -128,7 +141,8 @@ public abstract class TestBase : IDisposable
                 return true;
         }
         catch { }
-        
+
+
         try
         {
             // Try CUDA 12
@@ -136,7 +150,8 @@ public abstract class TestBase : IDisposable
                 return true;
         }
         catch { }
-        
+
+
         try
         {
             // Try CUDA 11
@@ -144,10 +159,12 @@ public abstract class TestBase : IDisposable
                 return true;
         }
         catch { }
-        
+
+
         return false;
     }
-    
+
+
     private static bool CheckLinuxCuda()
     {
         // Try CUDA 12.8 specific path first (matches driver version)
@@ -158,8 +175,9 @@ public abstract class TestBase : IDisposable
                 return true;
         }
         catch { }
-        
+
         // Try generic CUDA 12 (known to work in this environment)
+
         try
         {
             var result = CudaGetDeviceCount_Linux12(out var count);
@@ -167,8 +185,9 @@ public abstract class TestBase : IDisposable
                 return true;
         }
         catch { }
-        
+
         // Try WSL-specific library (common in WSL environments)
+
         try
         {
             var result = CudaGetDeviceCount_LinuxWSL(out var count);
@@ -176,8 +195,9 @@ public abstract class TestBase : IDisposable
                 return true;
         }
         catch { }
-        
+
         // Try CUDA 13 (might have compatibility issues)
+
         try
         {
             var result = CudaGetDeviceCount_Linux13(out var count);
@@ -185,8 +205,9 @@ public abstract class TestBase : IDisposable
                 return true;
         }
         catch { }
-        
+
         // Try generic CUDA runtime
+
         try
         {
             var result = CudaGetDeviceCount_Linux(out var count);
@@ -194,7 +215,8 @@ public abstract class TestBase : IDisposable
                 return true;
         }
         catch { }
-        
+
+
         return false;
     }
 
@@ -215,7 +237,8 @@ public abstract class TestBase : IDisposable
                 return System.IO.File.Exists("/usr/lib/x86_64-linux-gnu/libOpenCL.so.1") ||
                        System.IO.File.Exists("/usr/local/lib/libOpenCL.so");
             }
-            
+
+
             return false;
         }
         catch
@@ -267,19 +290,24 @@ public abstract class TestBase : IDisposable
         action();
         GC.Collect();
         GC.WaitForPendingFinalizers();
-        
+
+
         var stopwatch = Stopwatch.StartNew();
-        
+
+
         for (var i = 0; i < iterations; i++)
         {
             action();
         }
-        
+
+
         stopwatch.Stop();
-        
+
+
         var avgTime = stopwatch.Elapsed.TotalMilliseconds / iterations;
         Output.WriteLine($"Execution time: {avgTime:F2}ms (avg over {iterations} iterations)");
-        
+
+
         return avgTime;
     }
 
@@ -298,19 +326,24 @@ public abstract class TestBase : IDisposable
         await func();
         GC.Collect();
         GC.WaitForPendingFinalizers();
-        
+
+
         var stopwatch = Stopwatch.StartNew();
-        
+
+
         for (var i = 0; i < iterations; i++)
         {
             await func();
         }
-        
+
+
         stopwatch.Stop();
-        
+
+
         var avgTime = stopwatch.Elapsed.TotalMilliseconds / iterations;
         Output.WriteLine($"Async execution time: {avgTime:F2}ms (avg over {iterations} iterations)");
-        
+
+
         return avgTime;
     }
 
@@ -335,12 +368,14 @@ public abstract class TestBase : IDisposable
     {
         var random = new Random(seed);
         var data = new float[size];
-        
+
+
         for (var i = 0; i < size; i++)
         {
             data[i] = (float)(random.NextDouble() * 2.0 - 1.0); // Range: -1.0 to 1.0
         }
-        
+
+
         return data;
     }
 
@@ -356,12 +391,14 @@ public abstract class TestBase : IDisposable
     {
         var random = new Random(seed);
         var data = new int[size];
-        
+
+
         for (var i = 0; i < size; i++)
         {
             data[i] = random.Next(minValue, maxValue);
         }
-        
+
+
         return data;
     }
 
@@ -375,12 +412,14 @@ public abstract class TestBase : IDisposable
     protected static float[] GenerateSequentialFloats(int size, float start = 0.0f, float increment = 1.0f)
     {
         var data = new float[size];
-        
+
+
         for (var i = 0; i < size; i++)
         {
             data[i] = start + i * increment;
         }
-        
+
+
         return data;
     }
 
@@ -397,7 +436,8 @@ public abstract class TestBase : IDisposable
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-        
+
+
         var currentMemory = GC.GetTotalMemory(false);
         return currentMemory - _initialMemory;
     }
@@ -409,9 +449,11 @@ public abstract class TestBase : IDisposable
     {
         var delta = GetMemoryUsageDelta();
         var current = GC.GetTotalMemory(false);
-        
+
+
         Output.WriteLine($"Memory - Current: {current:N0} bytes, Delta: {delta:N0} bytes");
-        
+
+
         if (Math.Abs(delta) > 1024 * 1024) // Warn for > 1MB delta
         {
             Output.WriteLine($"WARNING: Significant memory delta detected: {delta / 1024.0 / 1024.0:F2} MB");
@@ -441,7 +483,8 @@ public abstract class TestBase : IDisposable
     protected void LogTestComplete()
     {
         _testStopwatch.Stop();
-        
+
+
         Output.WriteLine($"Test completed in: {_testStopwatch.Elapsed.TotalMilliseconds:F2}ms");
         LogMemoryUsage();
     }
@@ -493,7 +536,8 @@ public sealed class PerformanceContext : IDisposable
         _output = output;
         _stopwatch = Stopwatch.StartNew();
         _initialMemory = GC.GetTotalMemory(false);
-        
+
+
         _output.WriteLine($"Performance measurement started: {_name}");
     }
 
@@ -506,7 +550,8 @@ public sealed class PerformanceContext : IDisposable
         var elapsed = _stopwatch.Elapsed.TotalMilliseconds;
         var currentMemory = GC.GetTotalMemory(false);
         var memoryDelta = currentMemory - _initialMemory;
-        
+
+
         _output.WriteLine($"Checkpoint '{checkpoint}': {elapsed:F2}ms, Memory Delta: {memoryDelta:N0} bytes");
     }
 
@@ -521,10 +566,12 @@ public sealed class PerformanceContext : IDisposable
             var totalTime = _stopwatch.Elapsed.TotalMilliseconds;
             var finalMemory = GC.GetTotalMemory(false);
             var totalMemoryDelta = finalMemory - _initialMemory;
-            
+
+
             _output.WriteLine($"Performance measurement completed: {_name}");
             _output.WriteLine($"Total time: {totalTime:F2}ms, Total memory delta: {totalMemoryDelta:N0} bytes");
-            
+
+
             _disposed = true;
         }
     }

@@ -17,20 +17,20 @@ public interface IKernelAnalyzer
     /// <summary>
     /// Analyzes a method to extract kernel information.
     /// </summary>
-    KernelMethodInfo? AnalyzeMethod(GeneratorSyntaxContext context);
+    public KernelMethodInfo? AnalyzeMethod(GeneratorSyntaxContext context);
 
     /// <summary>
     /// Analyzes a class to extract kernel class information.
     /// </summary>
-    KernelClassInfo? AnalyzeClass(GeneratorSyntaxContext context);
+    public KernelClassInfo? AnalyzeClass(GeneratorSyntaxContext context);
 
     /// <summary>
     /// Determines if a syntax node represents a kernel method.
     /// </summary>
-    bool IsKernelMethod(SyntaxNode node);
+    public bool IsKernelMethod(SyntaxNode node);
 
     /// <summary>
     /// Determines if a syntax node represents a kernel class.
     /// </summary>
-    bool IsKernelClass(SyntaxNode node);
+    public bool IsKernelClass(SyntaxNode node);
 }

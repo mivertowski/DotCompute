@@ -14,31 +14,35 @@ namespace DotCompute.Generators.Backend.CPU;
 public abstract class CpuCodeGeneratorBase
 {
     #region Constants
-    
+
+
     protected const int SmallArrayThreshold = 32;
     protected const int MinVectorSize = 32;
     protected const int MinAvx512Size = 64;
     protected const int DefaultChunkSize = 1024;
     protected const int Avx2VectorSize = 8;  // 256-bit / 32-bit float
     protected const int Avx512VectorSize = 16; // 512-bit / 32-bit float
-    
+
+
     protected const int BaseIndentLevel = 2;
     protected const int MethodBodyIndentLevel = 3;
     protected const int LoopBodyIndentLevel = 4;
-    
+
     #endregion
-    
+
     #region Fields
-    
+
+
     protected readonly string MethodName;
     protected readonly IReadOnlyList<KernelParameter> Parameters;
     protected readonly MethodDeclarationSyntax MethodSyntax;
     protected readonly VectorizationInfo VectorizationInfo;
-    
+
     #endregion
-    
+
     #region Constructor
-    
+
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CpuCodeGeneratorBase"/> class.
     /// </summary>
@@ -52,23 +56,26 @@ public abstract class CpuCodeGeneratorBase
         Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         MethodSyntax = methodSyntax ?? throw new ArgumentNullException(nameof(methodSyntax));
         VectorizationInfo = vectorizationInfo ?? throw new ArgumentNullException(nameof(vectorizationInfo));
-        
+
+
         ValidateParameters();
     }
-    
+
     #endregion
-    
+
     #region Public Methods
-    
+
+
     /// <summary>
     /// Generates the implementation for this specific generator.
     /// </summary>
     public abstract void Generate(StringBuilder sb);
-    
+
     #endregion
-    
+
     #region Protected Methods
-    
+
+
     /// <summary>
     /// Validates all kernel parameters.
     /// </summary>
@@ -79,7 +86,8 @@ public abstract class CpuCodeGeneratorBase
             parameter.Validate();
         }
     }
-    
+
+
     /// <summary>
     /// Generates method documentation comments.
     /// </summary>
@@ -88,7 +96,8 @@ public abstract class CpuCodeGeneratorBase
         _ = sb.AppendLine("        /// <summary>");
         _ = sb.AppendLine($"        /// {summary}");
         _ = sb.AppendLine("        /// </summary>");
-        
+
+
         if (!string.IsNullOrEmpty(remarks))
         {
             _ = sb.AppendLine("        /// <remarks>");
@@ -96,7 +105,8 @@ public abstract class CpuCodeGeneratorBase
             _ = sb.AppendLine("        /// </remarks>");
         }
     }
-    
+
+
     /// <summary>
     /// Generates a method signature.
     /// </summary>
@@ -106,7 +116,8 @@ public abstract class CpuCodeGeneratorBase
         _ = sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
         _ = sb.Append($"        {(isPrivate ? "private" : "public")} static void {methodName}(");
         _ = sb.Append(string.Join(", ", Parameters.Select(p => p.GetDeclaration())));
-        
+
+
         if (includeRange)
         {
             _ = sb.Append(", int start, int end");
@@ -115,10 +126,12 @@ public abstract class CpuCodeGeneratorBase
         {
             _ = sb.Append(", int length");
         }
-        
+
+
         _ = sb.AppendLine(")");
     }
-    
+
+
     /// <summary>
     /// Generates a method body with the provided content generator.
     /// </summary>
@@ -129,7 +142,8 @@ public abstract class CpuCodeGeneratorBase
         _ = sb.AppendLine("        }");
         _ = sb.AppendLine();
     }
-    
+
+
     /// <summary>
     /// Generates remainder handling code.
     /// </summary>
@@ -143,6 +157,7 @@ public abstract class CpuCodeGeneratorBase
         _ = sb.AppendLine(", alignedEnd, end);");
         _ = sb.AppendLine("            }");
     }
-    
+
+
     #endregion
 }

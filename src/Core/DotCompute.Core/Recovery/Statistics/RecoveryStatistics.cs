@@ -29,49 +29,57 @@ public class RecoveryStatistics
     /// </summary>
     /// <value>The UTC timestamp of statistics collection.</value>
     public DateTimeOffset Timestamp { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the global recovery metrics aggregated across all components.
     /// </summary>
     /// <value>The global metrics including success rates and recovery counts.</value>
     public RecoveryMetrics GlobalMetrics { get; set; } = null!;
-    
+
+
     /// <summary>
     /// Gets or sets the GPU health report containing device status and performance metrics.
     /// </summary>
     /// <value>The current GPU health status and diagnostics.</value>
     public DeviceHealthReport GpuHealthReport { get; set; } = null!;
-    
+
+
     /// <summary>
     /// Gets or sets the memory pressure information including utilization and availability.
     /// </summary>
     /// <value>The current memory status and pressure indicators.</value>
     public MemoryPressureInfo MemoryPressureInfo { get; set; } = null!;
-    
+
+
     /// <summary>
     /// Gets or sets the compilation statistics including success rates and fallback usage.
     /// </summary>
     /// <value>The compilation performance and error statistics.</value>
     public CompilationStatistics CompilationStatistics { get; set; } = null!;
-    
+
+
     /// <summary>
     /// Gets or sets the circuit breaker statistics including state and failure rates.
     /// </summary>
     /// <value>The circuit breaker status and performance metrics.</value>
     public CircuitBreakerStatistics CircuitBreakerStatistics { get; set; } = null!;
-    
+
+
     /// <summary>
     /// Gets or sets the plugin health report containing plugin status and availability.
     /// </summary>
     /// <value>The current plugin health and diagnostics.</value>
     public PluginHealthReport PluginHealthReport { get; set; } = null!;
-    
+
+
     /// <summary>
     /// Gets or sets the total number of registered recovery strategies across all components.
     /// </summary>
     /// <value>The count of active recovery strategies.</value>
     public int RegisteredStrategies { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the overall system health as a percentage (0.0 to 1.0).
     /// This value is calculated based on all component health metrics.

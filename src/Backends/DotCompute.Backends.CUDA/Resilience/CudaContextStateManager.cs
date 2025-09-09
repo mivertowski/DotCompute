@@ -98,8 +98,10 @@ namespace DotCompute.Backends.CUDA.Resilience
             {
                 _ = Interlocked.Add(ref _totalMemoryAllocated, (long)size);
                 _ = Interlocked.Increment(ref _activeAllocations);
-                
-                _logger.LogDebug("Registered memory allocation: {Ptr:X} ({Size} bytes, {Type})", 
+
+
+                _logger.LogDebug("Registered memory allocation: {Ptr:X} ({Size} bytes, {Type})",
+
                     ptr.ToInt64(), size, type);
             }
         }
@@ -113,8 +115,10 @@ namespace DotCompute.Backends.CUDA.Resilience
             {
                 _ = Interlocked.Add(ref _totalMemoryFreed, (long)info.Size);
                 _ = Interlocked.Decrement(ref _activeAllocations);
-                
-                _logger.LogDebug("Unregistered memory allocation: {Ptr:X} ({Size} bytes)", 
+
+
+                _logger.LogDebug("Unregistered memory allocation: {Ptr:X} ({Size} bytes)",
+
                     ptr.ToInt64(), info.Size);
             }
         }
@@ -140,7 +144,8 @@ namespace DotCompute.Backends.CUDA.Resilience
 
             if (_activeStreams.TryAdd(stream, info))
             {
-                _logger.LogDebug("Registered CUDA stream: {Stream:X} (Priority: {Priority})", 
+                _logger.LogDebug("Registered CUDA stream: {Stream:X} (Priority: {Priority})",
+
                     stream.ToInt64(), priority);
             }
         }
@@ -198,10 +203,12 @@ namespace DotCompute.Backends.CUDA.Resilience
                 await CaptureDeviceStateAsync(snapshot, cancellationToken);
 
                 _lastSnapshot = snapshot;
-                
+
+
                 _logger.LogInformation("Created context snapshot {SnapshotId} with {AllocCount} allocations, " +
                     "{StreamCount} streams, {KernelCount} kernels",
-                    snapshot.SnapshotId, snapshot.MemoryAllocations.Count, 
+                    snapshot.SnapshotId, snapshot.MemoryAllocations.Count,
+
                     snapshot.ActiveStreams.Count, snapshot.CompiledKernels.Count);
 
                 return snapshot;
@@ -230,7 +237,8 @@ namespace DotCompute.Backends.CUDA.Resilience
                     var result = CudaRuntime.cudaStreamSynchronize(stream.Stream);
                     if (result != CudaError.Success)
                     {
-                        _logger.LogWarning("Failed to synchronize stream {Stream:X}: {Error}", 
+                        _logger.LogWarning("Failed to synchronize stream {Stream:X}: {Error}",
+
                             stream.Stream.ToInt64(), result);
                     }
                 }
@@ -249,7 +257,8 @@ namespace DotCompute.Backends.CUDA.Resilience
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error freeing memory {Ptr:X} during recovery preparation", 
+                    _logger.LogWarning(ex, "Error freeing memory {Ptr:X} during recovery preparation",
+
                         allocation.Pointer.ToInt64());
                 }
             }
@@ -262,7 +271,8 @@ namespace DotCompute.Backends.CUDA.Resilience
                     var result = CudaRuntime.cudaStreamDestroy(stream);
                     if (result != CudaError.Success)
                     {
-                        _logger.LogWarning("Failed to destroy stream {Stream:X}: {Error}", 
+                        _logger.LogWarning("Failed to destroy stream {Stream:X}: {Error}",
+
                             stream.ToInt64(), result);
                     }
                 }
@@ -276,7 +286,8 @@ namespace DotCompute.Backends.CUDA.Resilience
             _allocatedMemory.Clear();
             _activeStreams.Clear();
             _activeEvents.Clear();
-            
+
+
             _logger.LogInformation("Context prepared for recovery - resources cleaned up");
         }
 
@@ -284,16 +295,20 @@ namespace DotCompute.Backends.CUDA.Resilience
         /// Restores context state after recovery.
         /// </summary>
         public async Task<RestoreResult> RestoreFromSnapshotAsync(
-            ContextSnapshot? snapshot = null, 
+            ContextSnapshot? snapshot = null,
+
             CancellationToken cancellationToken = default)
         {
             snapshot ??= _lastSnapshot;
             if (snapshot == null)
             {
-                return new RestoreResult 
-                { 
-                    Success = false, 
-                    Message = "No snapshot available for restoration" 
+                return new RestoreResult
+                {
+
+                    Success = false,
+
+                    Message = "No snapshot available for restoration"
+
                 };
             }
 
@@ -355,8 +370,10 @@ namespace DotCompute.Backends.CUDA.Resilience
                 result.Success = false;
                 result.Message = $"Restoration completed with {errors.Count} errors";
                 result.Errors = errors;
-                
-                _logger.LogWarning("Context restoration completed with errors: {Errors}", 
+
+
+                _logger.LogWarning("Context restoration completed with errors: {Errors}",
+
                     string.Join("; ", errors));
             }
             else
@@ -377,36 +394,45 @@ namespace DotCompute.Backends.CUDA.Resilience
             int attemptNumber = 1,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogWarning("Performing progressive recovery for error {Error}, attempt {Attempt}", 
+            _logger.LogWarning("Performing progressive recovery for error {Error}, attempt {Attempt}",
+
                 error, attemptNumber);
 
             var strategy = DetermineRecoveryStrategy(error, attemptNumber);
-            
+
+
             switch (strategy)
             {
                 case RecoveryStrategy.StreamSync:
                     return await RecoverWithStreamSyncAsync(cancellationToken);
-                    
+
+
                 case RecoveryStrategy.MemoryCleanup:
                     return await RecoverWithMemoryCleanupAsync(cancellationToken);
-                    
+
+
                 case RecoveryStrategy.ContextReset:
                     return await RecoverWithContextResetAsync(cancellationToken);
-                    
+
+
                 case RecoveryStrategy.DeviceReset:
                     return await RecoverWithDeviceResetAsync(cancellationToken);
-                    
+
+
                 default:
-                    return new RecoveryResult 
-                    { 
-                        Success = false, 
+                    return new RecoveryResult
+                    {
+
+                        Success = false,
+
                         Strategy = strategy,
-                        Message = "No recovery strategy available" 
+                        Message = "No recovery strategy available"
+
                     };
             }
         }
 
-        private RecoveryStrategy DetermineRecoveryStrategy(CudaError error, int attemptNumber)
+        private static RecoveryStrategy DetermineRecoveryStrategy(CudaError error, int attemptNumber)
         {
             // Progressive strategy based on error type and attempt number
             if (attemptNumber == 1)
@@ -432,37 +458,46 @@ namespace DotCompute.Backends.CUDA.Resilience
         private async Task<RecoveryResult> RecoverWithStreamSyncAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Attempting recovery with stream synchronization");
-            
+
+
             foreach (var stream in _activeStreams.Values)
             {
                 var result = CudaRuntime.cudaStreamSynchronize(stream.Stream);
                 if (result != CudaError.Success)
                 {
                     _logger.LogWarning("Stream sync failed: {Error}", result);
-                    return new RecoveryResult 
-                    { 
-                        Success = false, 
+                    return new RecoveryResult
+                    {
+
+                        Success = false,
+
                         Strategy = RecoveryStrategy.StreamSync,
-                        Message = $"Stream sync failed: {result}" 
+                        Message = $"Stream sync failed: {result}"
+
                     };
                 }
             }
 
             await Task.Delay(100, cancellationToken).ConfigureAwait(false); // Brief pause
-            
-            return new RecoveryResult 
-            { 
-                Success = true, 
+
+
+            return new RecoveryResult
+            {
+
+                Success = true,
+
                 Strategy = RecoveryStrategy.StreamSync,
-                Message = "Recovery successful with stream synchronization" 
+                Message = "Recovery successful with stream synchronization"
+
             };
         }
 
         private async Task<RecoveryResult> RecoverWithMemoryCleanupAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Attempting recovery with memory cleanup");
-            
+
             // Free least recently used allocations
+
             var allocationsToFree = _allocatedMemory.Values
                 .OrderBy(a => a.LastAccessTime ?? a.AllocationTime)
                 .Take(_allocatedMemory.Count / 3) // Free 1/3 of allocations
@@ -482,57 +517,75 @@ namespace DotCompute.Backends.CUDA.Resilience
             }
 
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);
-            
-            return new RecoveryResult 
-            { 
-                Success = true, 
+
+
+            return new RecoveryResult
+            {
+
+                Success = true,
+
                 Strategy = RecoveryStrategy.MemoryCleanup,
-                Message = $"Recovery successful after freeing {allocationsToFree.Count} allocations" 
+                Message = $"Recovery successful after freeing {allocationsToFree.Count} allocations"
+
             };
         }
 
         private async Task<RecoveryResult> RecoverWithContextResetAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Attempting recovery with context reset");
-            
+
+
             await PrepareForRecoveryAsync(cancellationToken);
-            
+
             // Context reset is handled by CudaErrorRecoveryManager
-            
-            return new RecoveryResult 
-            { 
-                Success = true, 
+
+
+            return new RecoveryResult
+            {
+
+                Success = true,
+
                 Strategy = RecoveryStrategy.ContextReset,
-                Message = "Context prepared for reset" 
+                Message = "Context prepared for reset"
+
             };
         }
 
         private async Task<RecoveryResult> RecoverWithDeviceResetAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Attempting recovery with device reset");
-            
+
+
             await PrepareForRecoveryAsync(cancellationToken);
-            
+
+
             var result = CudaRuntime.cudaDeviceReset();
             if (result != CudaError.Success)
             {
-                return new RecoveryResult 
-                { 
-                    Success = false, 
+                return new RecoveryResult
+                {
+
+                    Success = false,
+
                     Strategy = RecoveryStrategy.DeviceReset,
-                    Message = $"Device reset failed: {result}" 
+                    Message = $"Device reset failed: {result}"
+
                 };
             }
-            
-            return new RecoveryResult 
-            { 
-                Success = true, 
+
+
+            return new RecoveryResult
+            {
+
+                Success = true,
+
                 Strategy = RecoveryStrategy.DeviceReset,
-                Message = "Recovery successful with device reset" 
+                Message = "Recovery successful with device reset"
+
             };
         }
 
-        private void FreeMemoryAllocation(ResourceInfo allocation)
+        private static void FreeMemoryAllocation(ResourceInfo allocation)
         {
             switch (allocation.Type)
             {

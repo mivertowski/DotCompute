@@ -29,12 +29,14 @@ public class KernelDefinition
     /// Gets or sets the compiled source code (if available).
     /// </summary>
     public string? CompiledSource { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the source code (alias for CompiledSource).
     /// </summary>
-    public string? Source 
-    { 
+    public string? Source
+    {
+
         get => CompiledSource;
         set => CompiledSource = value;
     }

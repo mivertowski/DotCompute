@@ -48,7 +48,8 @@ namespace DotCompute.Core.Extensions
                     _ => 2 * 1024 * 1024       // 2 MB default
                 };
             }
-            
+
+
             return 6 * 1024 * 1024; // 6 MB default for unknown GPUs
         }
 

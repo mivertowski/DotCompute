@@ -15,22 +15,26 @@ public static class TestDataFixture
     public static class Small
     {
         public const int Size = 1024;
-        
+
+
         /// <summary>
         /// Gets a small array of sequential float values.
         /// </summary>
         public static float[] SequentialFloats => GenerateSequentialFloats(Size);
-        
+
+
         /// <summary>
         /// Gets a small array of random float values.
         /// </summary>
         public static float[] RandomFloats => GenerateRandomFloats(Size, 42);
-        
+
+
         /// <summary>
         /// Gets a small array of sequential integer values.
         /// </summary>
         public static int[] SequentialInts => GenerateSequentialInts(Size);
-        
+
+
         /// <summary>
         /// Gets a small array of random integer values.
         /// </summary>
@@ -43,22 +47,26 @@ public static class TestDataFixture
     public static class Medium
     {
         public const int Size = 64 * 1024;
-        
+
+
         /// <summary>
         /// Gets a medium array of sequential float values.
         /// </summary>
         public static float[] SequentialFloats => GenerateSequentialFloats(Size);
-        
+
+
         /// <summary>
         /// Gets a medium array of random float values.
         /// </summary>
         public static float[] RandomFloats => GenerateRandomFloats(Size, 12345);
-        
+
+
         /// <summary>
         /// Gets a medium array of sequential integer values.
         /// </summary>
         public static int[] SequentialInts => GenerateSequentialInts(Size);
-        
+
+
         /// <summary>
         /// Gets a medium array of random integer values.
         /// </summary>
@@ -71,22 +79,26 @@ public static class TestDataFixture
     public static class Large
     {
         public const int Size = 16 * 1024 * 1024;
-        
+
+
         /// <summary>
         /// Gets a large array of sequential float values.
         /// </summary>
         public static float[] SequentialFloats => GenerateSequentialFloats(Size);
-        
+
+
         /// <summary>
         /// Gets a large array of random float values.
         /// </summary>
         public static float[] RandomFloats => GenerateRandomFloats(Size, 67890);
-        
+
+
         /// <summary>
         /// Gets a large array of sequential integer values.
         /// </summary>
         public static int[] SequentialInts => GenerateSequentialInts(Size);
-        
+
+
         /// <summary>
         /// Gets a large array of random integer values.
         /// </summary>
@@ -110,7 +122,8 @@ public static class TestDataFixture
             public const int Rows = 32;
             public const int Columns = 32;
             public const int Size = Rows * Columns;
-            
+
+
             public static float[] Identity => GenerateIdentityMatrix(Rows, Columns);
             public static float[] Random => GenerateRandomFloats(Size, 111);
             public static float[] Sequential => GenerateSequentialFloats(Size);
@@ -124,7 +137,8 @@ public static class TestDataFixture
             public const int Rows = 256;
             public const int Columns = 256;
             public const int Size = Rows * Columns;
-            
+
+
             public static float[] Identity => GenerateIdentityMatrix(Rows, Columns);
             public static float[] Random => GenerateRandomFloats(Size, 222);
             public static float[] Sequential => GenerateSequentialFloats(Size);
@@ -138,7 +152,8 @@ public static class TestDataFixture
             public const int Rows = 1024;
             public const int Columns = 1024;
             public const int Size = Rows * Columns;
-            
+
+
             public static float[] Identity => GenerateIdentityMatrix(Rows, Columns);
             public static float[] Random => GenerateRandomFloats(Size, 333);
             public static float[] Sequential => GenerateSequentialFloats(Size);
@@ -329,7 +344,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         public static float[] MatrixMultiply(float[] a, float[] b, int rowsA, int colsA, int colsB)
         {
             var result = new float[rowsA * colsB];
-            
+
+
             for (var row = 0; row < rowsA; row++)
             {
                 for (var col = 0; col < colsB; col++)
@@ -342,7 +358,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
                     result[row * colsB + col] = sum;
                 }
             }
-            
+
+
             return result;
         }
 
@@ -363,7 +380,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         public static float[] ElementWiseOperation(float[] input, float scalar, int operation)
         {
             var result = new float[input.Length];
-            
+
+
             for (var i = 0; i < input.Length; i++)
             {
                 result[i] = operation switch
@@ -375,7 +393,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
                     _ => input[i]
                 };
             }
-            
+
+
             return result;
         }
     }
@@ -398,7 +417,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         {
             var data = new float[size];
             var random = new Random(9999);
-            
+
+
             for (var i = 0; i < size; i++)
             {
                 // Mix of small, large, and precision-sensitive values
@@ -409,7 +429,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
                     _ => (float)(random.NextDouble() * 2.0 - 1.0)                 // Normal range
                 };
             }
-            
+
+
             return data;
         }
 
@@ -424,7 +445,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         {
             var data = new float[size];
             var random = new Random(seed);
-            
+
+
             for (var i = 0; i < size; i++)
             {
                 if (random.NextSingle() < sparsityRatio)
@@ -433,7 +455,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
                 }
                 // else remains 0.0f
             }
-            
+
+
             return data;
         }
 
@@ -446,7 +469,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         public static float[] PatternedData(int size, DataPattern pattern)
         {
             var data = new float[size];
-            
+
+
             for (var i = 0; i < size; i++)
             {
                 data[i] = pattern switch
@@ -460,7 +484,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
                     _ => 0.0f
                 };
             }
-            
+
+
             return data;
         }
     }
@@ -507,7 +532,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
         var random = new Random(seed);
         var data = new float[size];
         var range = max - min;
-        
+
+
         for (var i = 0; i < size; i++)
         {
             data[i] = min + (float)random.NextDouble() * range;
@@ -519,7 +545,8 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
     {
         var random = new Random(seed);
         var data = new int[size];
-        
+
+
         for (var i = 0; i < size; i++)
         {
             data[i] = random.Next(min, max);

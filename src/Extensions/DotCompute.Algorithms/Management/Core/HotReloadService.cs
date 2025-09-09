@@ -155,7 +155,8 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
             foreach (var pluginId in _lifecycleManager.RegisteredPlugins)
             {
                 var pluginInfo = _lifecycleManager.GetLoadedPluginInfo(pluginId);
-                if (pluginInfo != null && 
+                if (pluginInfo != null &&
+
                     string.Equals(pluginInfo.Metadata.AssemblyPath, assemblyPath, StringComparison.OrdinalIgnoreCase))
                 {
                     pluginsToReload.Add(pluginId);

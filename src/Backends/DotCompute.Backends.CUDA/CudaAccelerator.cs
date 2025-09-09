@@ -38,12 +38,14 @@ namespace DotCompute.Backends.CUDA
         /// Gets the device ID.
         /// </summary>
         public int DeviceId => _device.DeviceId;
-        
+
+
         /// <summary>
         /// Gets the CUDA-specific context.
         /// </summary>
         internal CudaContext CudaContext => _context;
-        
+
+
         /// <summary>
         /// Gets the graph manager for optimized kernel execution.
         /// </summary>
@@ -58,17 +60,20 @@ namespace DotCompute.Backends.CUDA
                 logger ?? new NullLogger<CudaAccelerator>())
         {
             var actualLogger = logger ?? new NullLogger<CudaAccelerator>();
-            
+
             // Use the same instances created by CreateMemoryAdapter
+
             _device = device;
             _context = context;
             _memoryManager = memoryManager;
-            
+
+
 #pragma warning disable IL2026, IL3050 // CudaKernelCompiler uses runtime code generation which is not trimming/AOT compatible
             _kernelCompiler = new CudaKernelCompiler(_context, actualLogger);
 #pragma warning restore IL2026, IL3050
-            
+
             // Initialize graph manager for devices that support it
+
             if (_device.ComputeCapability.Major >= 10) // CUDA graphs require compute capability 10.0+
             {
                 _graphManager = new CudaGraphManager(_context, actualLogger as ILogger<CudaGraphManager> ?? NullLogger<CudaGraphManager>.Instance);
@@ -116,8 +121,9 @@ namespace DotCompute.Backends.CUDA
             await _memoryManager.DisposeAsync().ConfigureAwait(false);
             _context.Dispose();
             _device.Dispose();
-            
+
             // Call base disposal
+
             await base.DisposeCoreAsync().ConfigureAwait(false);
         }
 
@@ -187,10 +193,12 @@ namespace DotCompute.Backends.CUDA
             {
                 var device = new CudaDevice(deviceId, logger);
                 var info = device.ToAcceleratorInfo();
-                
+
+
                 logger.LogInformation("Detected {DeviceName} (Compute Capability {ComputeCapability})",
                     device.Name, device.ComputeCapability);
-                
+
+
                 return info;
             }
             catch (Exception ex)

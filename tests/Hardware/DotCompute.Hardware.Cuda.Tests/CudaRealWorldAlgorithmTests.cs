@@ -31,8 +31,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var factory = new CudaAcceleratorFactory();
                 // Create base CUDA accelerator for tests
                 _accelerator = new CudaAccelerator(0, Microsoft.Extensions.Logging.Abstractions.NullLogger<CudaAccelerator>.Instance);
-                
-                using var loggerFactory = LoggerFactory.Create(builder => 
+
+
+                using var loggerFactory = LoggerFactory.Create(builder =>
+
                     builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
                 _logger = loggerFactory.CreateLogger<CudaRealWorldAlgorithmTests>();
             }
@@ -59,8 +61,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             var a = TestDataGenerator.CreateRandomData(m * k, 42);
             var b = TestDataGenerator.CreateRandomData(k * n, 43);
             var result = new float[m * n];
-            
+
             // Calculate expected result (CPU reference)
+
             var expected = new float[m * n];
             var perf = new PerformanceMeasurement("CPU Matrix Multiply", Output);
             perf.Start();
@@ -87,7 +90,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             perf.LogResults(m * n * k * 2L);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.001f, maxElementsToCheck: 1000, 
+            VerifyFloatArraysMatch(expected, result, 0.001f, maxElementsToCheck: 1000,
+
                 context: "Tiled matrix multiplication");
         }
 
@@ -101,8 +105,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Arrange
             const int size = 1_000_000;
             var data = TestDataGenerator.CreateRandomData(size, 42, 0.0f, 1.0f);
-            
+
             // Calculate expected sum
+
             double expectedSum = data.Sum(x => (double)x);
 
             // Act
@@ -113,9 +118,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             perf.LogResults(size * sizeof(float));
 
             // Assert
-            gpuSum.Should().BeApproximately((float)expectedSum, (float)(expectedSum * 0.001), 
+            gpuSum.Should().BeApproximately((float)expectedSum, (float)(expectedSum * 0.001),
+
                 "GPU reduction should match CPU sum within tolerance");
-            
+
+
             Output.WriteLine($"Data size: {size:N0} elements");
             Output.WriteLine($"CPU sum: {expectedSum:F6}");
             Output.WriteLine($"GPU sum: {gpuSum:F6}");
@@ -133,8 +140,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int size = 10000;
             var input = TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
             var result = new float[size];
-            
+
             // Calculate expected prefix sum
+
             var expected = new float[size];
             expected[0] = input[0];
             for (int i = 1; i < size; i++)
@@ -146,7 +154,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecutePrefixSum(input, result);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.001f, 
+            VerifyFloatArraysMatch(expected, result, 0.001f,
+
                 context: "Prefix sum (inclusive scan)");
         }
 
@@ -172,7 +181,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             perf.LogResults(size * sizeof(float));
 
             // Assert
-            VerifyFloatArraysMatch(expected, gpuData, 0.0f, 
+            VerifyFloatArraysMatch(expected, gpuData, 0.0f,
+
                 maxElementsToCheck: Math.Min(1000, size),
                 context: "Bitonic sort");
         }
@@ -183,19 +193,22 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task FastFourierTransform_Should_ComputeCorrectly()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
             // Arrange - Simple FFT test with known pattern
+
             const int size = 1024; // Power of 2 for FFT
             var input = new float[size * 2]; // Complex numbers (real, imag pairs)
-            
+
             // Create a simple sinusoidal signal
+
             const float frequency = 10.0f;
             for (int i = 0; i < size; i++)
             {
                 input[i * 2] = MathF.Sin(2.0f * MathF.PI * frequency * i / size); // Real part
                 input[i * 2 + 1] = 0.0f; // Imaginary part
             }
-            
+
+
             var output = new float[size * 2];
 
             // Act
@@ -204,24 +217,29 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert - Check for peak at expected frequency
             float maxMagnitude = 0.0f;
             int maxIndex = 0;
-            
+
+
             for (int i = 0; i < size / 2; i++)
             {
                 float real = output[i * 2];
                 float imag = output[i * 2 + 1];
                 float magnitude = MathF.Sqrt(real * real + imag * imag);
-                
+
+
                 if (magnitude > maxMagnitude)
                 {
                     maxMagnitude = magnitude;
                     maxIndex = i;
                 }
             }
-            
+
             // Peak should be at frequency bin 10
-            maxIndex.Should().BeCloseTo((int)frequency, 1, 
+
+            maxIndex.Should().BeCloseTo((int)frequency, 1,
+
                 "FFT should show peak at input frequency");
-            
+
+
             Output.WriteLine($"FFT peak found at frequency bin {maxIndex} with magnitude {maxMagnitude:F2}");
         }
 
@@ -237,14 +255,17 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int height = 256;
             const int iterations = 100;
             const float alpha = 0.1f; // Thermal diffusivity
-            
+
+
             var temperature = new float[width * height];
-            
+
             // Initial conditions - hot spot in center
+
             int centerX = width / 2;
             int centerY = height / 2;
             int radius = 20;
-            
+
+
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
@@ -261,7 +282,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                     }
                 }
             }
-            
+
+
             var initialEnergy = temperature.Sum();
 
             // Act
@@ -273,20 +295,24 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Assert
             var finalEnergy = temperature.Sum();
-            
+
             // Energy should be approximately conserved (with small numerical error)
+
             finalEnergy.Should().BeApproximately(initialEnergy, initialEnergy * 0.01f,
                 "Total energy should be conserved in heat diffusion");
-            
+
             // Temperature should have diffused (max temp should decrease)
+
             var maxTemp = temperature.Max();
             maxTemp.Should().BeLessThan(100.0f, "Maximum temperature should decrease due to diffusion");
-            
+
             // Temperature should be more uniform (lower standard deviation)
+
             var avgTemp = temperature.Average();
             var variance = temperature.Select(t => (t - avgTemp) * (t - avgTemp)).Average();
             var stdDev = MathF.Sqrt(variance);
-            
+
+
             Output.WriteLine($"Initial energy: {initialEnergy:F2}");
             Output.WriteLine($"Final energy: {finalEnergy:F2}");
             Output.WriteLine($"Max temperature: {maxTemp:F2}");
@@ -303,12 +329,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Arrange - Create a simple graph
             const int numNodes = 1000;
             const int edgesPerNode = 10;
-            
+
             // Generate random graph (adjacency list format)
+
             var edges = GenerateRandomGraph(numNodes, edgesPerNode);
             var distances = new int[numNodes];
             Array.Fill(distances, -1); // -1 means unvisited
-            
+
+
             const int startNode = 0;
             distances[startNode] = 0;
 
@@ -318,14 +346,16 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert
             distances[startNode].Should().Be(0, "Start node should have distance 0");
             distances.Should().NotContain(-1, "All nodes should be reachable in connected graph");
-            
+
             // Verify monotonicity of distances
+
             for (int i = 1; i < numNodes; i++)
             {
                 distances[i].Should().BeGreaterThan(0, "All non-start nodes should have positive distance");
                 distances[i].Should().BeLessThan(numNodes, "Distance should not exceed number of nodes");
             }
-            
+
+
             Output.WriteLine($"BFS completed. Max distance: {distances.Max()}");
         }
 
@@ -348,7 +378,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             var compiled = await _accelerator.CompileKernelAsync(kernel);
-            
+
+
             var args = new KernelArguments
             {
                 Buffers = new[] { bufferA, bufferB, bufferC },
@@ -377,7 +408,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             var compiled = await _accelerator.CompileKernelAsync(kernel);
-            
+
+
             var args = new KernelArguments
             {
                 Buffers = new[] { bufferData, bufferResult },
@@ -386,7 +418,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             await compiled.ExecuteAsync(args);
             await _accelerator.SynchronizeAsync();
-            
+
+
             var result = new float[1];
             await bufferResult.CopyToAsync(result);
             return result[0];
@@ -408,7 +441,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             var compiled = await _accelerator.CompileKernelAsync(kernel);
-            
+
+
             var args = new KernelArguments
             {
                 Buffers = new[] { bufferInput, bufferOutput },
@@ -434,8 +468,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             var compiled = await _accelerator.CompileKernelAsync(kernel);
-            
+
             // Bitonic sort requires multiple passes
+
             int n = data.Length;
             for (int k = 2; k <= n; k *= 2)
             {
@@ -449,7 +484,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                     await compiled.ExecuteAsync(args);
                 }
             }
-            
+
+
             await _accelerator.SynchronizeAsync();
             await bufferData.CopyToAsync(data);
         }
@@ -470,7 +506,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             var compiled = await _accelerator.CompileKernelAsync(kernel);
-            
+
+
             var args = new KernelArguments
             {
                 Buffers = new[] { bufferInput, bufferOutput },
@@ -499,22 +536,26 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             var compiled = await _accelerator.CompileKernelAsync(kernel);
-            
+
+
             for (int iter = 0; iter < iterations; iter++)
             {
                 var args = new KernelArguments
                 {
-                    Buffers = (iter % 2 == 0) 
+                    Buffers = (iter % 2 == 0)
+
                         ? new[] { bufferTemp1, bufferTemp2 }
-                        : new[] { bufferTemp2, bufferTemp1 },
+                        : [bufferTemp2, bufferTemp1],
                     ScalarArguments = new object[] { width, height, alpha }
                 };
                 await compiled.ExecuteAsync(args);
             }
-            
+
+
             await _accelerator.SynchronizeAsync();
-            
+
             // Copy final result back
+
             if (iterations % 2 == 0)
                 await bufferTemp1.CopyToAsync(temperature);
             else
@@ -549,8 +590,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             var compiled = await _accelerator.CompileKernelAsync(kernel);
-            
+
             // BFS requires multiple iterations
+
             for (int level = 0; level < numNodes; level++)
             {
                 var args = new KernelArguments
@@ -561,41 +603,47 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await compiled.ExecuteAsync(args);
                 await _accelerator.SynchronizeAsync();
             }
-            
+
+
             await bufferDistances.CopyToAsync(distances);
         }
 
-        private int[][] GenerateRandomGraph(int numNodes, int edgesPerNode)
+        private static int[][] GenerateRandomGraph(int numNodes, int edgesPerNode)
         {
             var random = new Random(42);
             var edges = new int[numNodes][];
-            
+
+
             for (int i = 0; i < numNodes; i++)
             {
                 var nodeEdges = new HashSet<int>();
-                
+
                 // Add some random edges
+
                 for (int j = 0; j < edgesPerNode; j++)
                 {
                     int target = random.Next(numNodes);
                     if (target != i)
                         nodeEdges.Add(target);
                 }
-                
+
                 // Ensure connectivity by connecting to next node
+
                 if (i < numNodes - 1)
                     nodeEdges.Add(i + 1);
                 if (i > 0)
                     nodeEdges.Add(i - 1);
-                
+
+
                 edges[i] = nodeEdges.ToArray();
             }
-            
+
+
             return edges;
         }
 
         // CUDA kernel source code
-        private string GetTiledMatrixMultiplyKernel() => @"
+        private static string GetTiledMatrixMultiplyKernel() => @"
 #define TILE_SIZE 16
 
 extern ""C"" __global__ void tiled_matrix_multiply(
@@ -633,7 +681,7 @@ extern ""C"" __global__ void tiled_matrix_multiply(
         C[row * N + col] = sum;
 }";
 
-        private string GetParallelReductionKernel() => @"
+        private static string GetParallelReductionKernel() => @"
 extern ""C"" __global__ void parallel_reduction(
     const float* input, float* output, int n)
 {
@@ -668,7 +716,7 @@ extern ""C"" __global__ void parallel_reduction(
         atomicAdd(output, sdata[0]);
 }";
 
-        private string GetPrefixSumKernel() => @"
+        private static string GetPrefixSumKernel() => @"
 extern ""C"" __global__ void prefix_sum(
     const float* input, float* output, int n)
 {
@@ -704,7 +752,7 @@ extern ""C"" __global__ void prefix_sum(
         output[idx] = temp[tid];
 }";
 
-        private string GetBitonicSortKernel() => @"
+        private static string GetBitonicSortKernel() => @"
 extern ""C"" __global__ void bitonic_sort_step(
     float* data, int n, int j, int k)
 {
@@ -728,7 +776,7 @@ extern ""C"" __global__ void bitonic_sort_step(
     }
 }";
 
-        private string GetFFTKernel() => @"
+        private static string GetFFTKernel() => @"
 #define PI 3.14159265358979323846f
 
 extern ""C"" __global__ void fft_radix2(
@@ -751,7 +799,7 @@ extern ""C"" __global__ void fft_radix2(
     output[idx * 2 + 1] = imag;
 }";
 
-        private string GetHeatDiffusionKernel() => @"
+        private static string GetHeatDiffusionKernel() => @"
 extern ""C"" __global__ void heat_diffusion_step(
     const float* temp_in, float* temp_out,
     int width, int height, float alpha)
@@ -776,7 +824,7 @@ extern ""C"" __global__ void heat_diffusion_step(
     }
 }";
 
-        private string GetBFSKernel() => @"
+        private static string GetBFSKernel() => @"
 extern ""C"" __global__ void bfs_kernel(
     const int* edges, const int* offsets, int* distances,
     int num_nodes, int current_level)

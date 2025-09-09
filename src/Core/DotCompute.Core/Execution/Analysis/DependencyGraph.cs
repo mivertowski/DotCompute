@@ -155,7 +155,8 @@ namespace DotCompute.Core.Execution.Analysis
         public DependencyGraph Clone()
         {
             var clone = new DependencyGraph();
-            
+
+
             foreach (var kvp in _dependencies)
             {
                 var targetNode = kvp.Key;

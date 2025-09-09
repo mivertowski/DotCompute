@@ -15,13 +15,15 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
 {
     private readonly IUnifiedMemoryBuffer _underlyingBuffer;
     private readonly int _length;
-    
+
+
     public TypedMemoryBufferWrapper(IUnifiedMemoryBuffer underlyingBuffer, int length)
     {
         _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
         _length = length;
     }
-    
+
+
     public int Length => _length;
     public long SizeInBytes => _underlyingBuffer.SizeInBytes;
     public IAccelerator Accelerator => null!; // Will be set by specific implementations
@@ -45,33 +47,39 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
 
 
 
-    public void EnsureOnHost() 
-    { 
+    public void EnsureOnHost()
+    {
         // State management is handled internally
     }
-    
-    public void EnsureOnDevice() 
-    { 
+
+
+    public void EnsureOnDevice()
+    {
         // State management is handled internally
     }
-    
+
+
     public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
     {
         EnsureOnHost();
         return ValueTask.CompletedTask;
     }
-    
+
+
     public ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
     {
         EnsureOnDevice();
         return ValueTask.CompletedTask;
     }
-    
+
+
     public void Synchronize() { }
-    
+
+
     public ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
-    
+
+
     public void MarkHostDirty() { /* State management is handled internally */ }
     public void MarkDeviceDirty() { /* State management is handled internally */ }
 
@@ -79,23 +87,27 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
         // Copy from host memory to buffer
         // Since the underlying buffer doesn't have typed methods, we'll need to handle this
+
         => await ValueTask.CompletedTask;
 
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         // Copy from buffer to host memory
         // Since the underlying buffer doesn't have typed methods, we'll need to handle this
+
         => await ValueTask.CompletedTask;
 
 
     public void Dispose() => _underlyingBuffer.Dispose();
     public ValueTask DisposeAsync() => _underlyingBuffer.DisposeAsync();
-    
+
     // Additional interface methods
+
     public bool IsDirty => State == BufferState.HostDirty || State == BufferState.DeviceDirty;
 
 
     public DeviceMemory GetDeviceMemory()
         // Return a default device memory handle
+
         => new(IntPtr.Zero, SizeInBytes);
 
     public MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException("Mapping not supported for generic buffer wrapper");
@@ -113,7 +125,8 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
         await CopyToAsync(temp, cancellationToken);
         await destination.CopyFromAsync(temp, cancellationToken);
     }
-    
+
+
     public async ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
     {
         // Copy a range from this buffer to another buffer
@@ -126,11 +139,13 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
 
     public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
         // Default implementation - derived classes can override for better performance
+
         => ValueTask.CompletedTask;
 
 
     public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
         // Default implementation - derived classes can override for better performance
+
         => ValueTask.CompletedTask;
 
 

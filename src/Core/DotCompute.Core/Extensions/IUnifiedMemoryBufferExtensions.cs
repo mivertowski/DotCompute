@@ -28,7 +28,8 @@ namespace DotCompute.Core.Extensions
         public static long ElementCount<T>(this IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(buffer);
-            
+
+
             unsafe
             {
                 return buffer.SizeInBytes / sizeof(T);
@@ -48,9 +49,12 @@ namespace DotCompute.Core.Extensions
         /// <returns>A task representing the copy operation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when buffer is null.</exception>
         /// <exception cref="ArgumentException">Thrown when types don't match or parameters are invalid.</exception>
-        public static ValueTask CopyFromAsync<TBuffer, TSource>(this IUnifiedMemoryBuffer<TBuffer> buffer, 
-            ReadOnlyMemory<TSource> source, long offsetInBytes, CancellationToken cancellationToken = default) 
-            where TBuffer : unmanaged 
+        public static ValueTask CopyFromAsync<TBuffer, TSource>(this IUnifiedMemoryBuffer<TBuffer> buffer,
+
+            ReadOnlyMemory<TSource> source, long offsetInBytes, CancellationToken cancellationToken = default)
+
+            where TBuffer : unmanaged
+
             where TSource : unmanaged
         {
             ArgumentNullException.ThrowIfNull(buffer);
@@ -67,8 +71,9 @@ namespace DotCompute.Core.Extensions
                 // Convert to byte-compatible memory
                 var sourceBytes = MemoryMarshal.Cast<TSource, byte>(source.Span);
                 var sourceMemory = sourceBytes.ToArray().AsMemory(); // Convert span to memory
-                
+
                 // Use the base interface method for cross-type copying
+
                 return ((IUnifiedMemoryBuffer)buffer).CopyFromAsync<byte>(sourceMemory, offsetInBytes, cancellationToken);
             }
         }
@@ -86,9 +91,12 @@ namespace DotCompute.Core.Extensions
         /// <returns>A task representing the copy operation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when buffer is null.</exception>
         /// <exception cref="ArgumentException">Thrown when types don't match or parameters are invalid.</exception>
-        public static ValueTask CopyFromAsync<TBuffer, TSource>(this IUnifiedMemoryBuffer<TBuffer> buffer, 
-            ReadOnlyMemory<TSource> source, int offsetInElements, CancellationToken cancellationToken = default) 
-            where TBuffer : unmanaged 
+        public static ValueTask CopyFromAsync<TBuffer, TSource>(this IUnifiedMemoryBuffer<TBuffer> buffer,
+
+            ReadOnlyMemory<TSource> source, int offsetInElements, CancellationToken cancellationToken = default)
+
+            where TBuffer : unmanaged
+
             where TSource : unmanaged
         {
             ArgumentNullException.ThrowIfNull(buffer);
@@ -112,13 +120,16 @@ namespace DotCompute.Core.Extensions
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A task representing the copy operation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when buffer is null.</exception>
-        public static ValueTask CopyFromAsync<T>(this IUnifiedMemoryBuffer<T> buffer, 
-            ReadOnlyMemory<T> source, long offsetInBytes, CancellationToken cancellationToken = default) 
+        public static ValueTask CopyFromAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
+
+            ReadOnlyMemory<T> source, long offsetInBytes, CancellationToken cancellationToken = default)
+
             where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(buffer);
-            
+
             // Use the base interface method
+
             return ((IUnifiedMemoryBuffer)buffer).CopyFromAsync(source, offsetInBytes, cancellationToken);
         }
 
@@ -126,7 +137,8 @@ namespace DotCompute.Core.Extensions
         /// Reads data from the buffer into a Span at the specified offset.
         /// This handles span parameters by being non-async.
         /// </summary>
-        public static void Read<T>(this IUnifiedMemoryBuffer<T> buffer, 
+        public static void Read<T>(this IUnifiedMemoryBuffer<T> buffer,
+
             Span<T> destination, int offset) where T : unmanaged
         {
             if (offset < 0)
@@ -154,7 +166,8 @@ namespace DotCompute.Core.Extensions
         /// Async wrapper for ReadAsync that delegates to synchronous span operations.
         /// This supports the test pattern of ReadAsync(array.AsSpan(), offset).
         /// </summary>
-        public static ValueTask ReadAsync<T>(this IUnifiedMemoryBuffer<T> buffer, 
+        public static ValueTask ReadAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
+
             Span<T> destination, int offset) where T : unmanaged
         {
             buffer.Read(destination, offset);
@@ -165,7 +178,8 @@ namespace DotCompute.Core.Extensions
         /// Reads data from the buffer asynchronously into a span via array parameter.
         /// This matches the expected test signature pattern.
         /// </summary>
-        public static ValueTask ReadAsync<T>(this IUnifiedMemoryBuffer<T> buffer, 
+        public static ValueTask ReadAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
+
             T[] destination, int offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
             return buffer.ReadAsync(destination.AsMemory(), offset, cancellationToken);
@@ -175,7 +189,8 @@ namespace DotCompute.Core.Extensions
         /// Reads data from the buffer asynchronously into a memory location.
         /// This matches the expected test signature.
         /// </summary>
-        public static ValueTask ReadAsync<T>(this IUnifiedMemoryBuffer<T> buffer, 
+        public static ValueTask ReadAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
+
             Memory<T> destination, int offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
             if (offset < 0)
@@ -199,7 +214,8 @@ namespace DotCompute.Core.Extensions
                     throw new ArgumentException("Read size with offset exceeds buffer capacity");
                 }
             }
-            
+
+
             return ValueTask.CompletedTask;
         }
 
@@ -207,23 +223,27 @@ namespace DotCompute.Core.Extensions
         /// Reads data from the buffer asynchronously. 
         /// This is a compatibility method that maps to existing buffer operations.
         /// </summary>
-        public static async ValueTask<T[]> ReadAsync<T>(this IUnifiedMemoryBuffer<T> buffer, 
+        public static async ValueTask<T[]> ReadAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
+
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             var elementCount = buffer.ElementCount();
             var result = new T[elementCount];
-            
+
             // Simulate async read operation
+
             await Task.Yield();
-            
+
             // Note: This is a simplified implementation for test compatibility
             // In a real implementation, this would perform actual memory operations
+
             unsafe
             {
                 var span = buffer.AsSpan();
                 span.CopyTo(result.AsSpan());
             }
-            
+
+
             return result;
         }
 
@@ -231,7 +251,8 @@ namespace DotCompute.Core.Extensions
         /// Writes data to the buffer from a ReadOnlySpan at the specified offset.
         /// This handles span parameters by being non-async.
         /// </summary>
-        public static void Write<T>(this IUnifiedMemoryBuffer<T> buffer, 
+        public static void Write<T>(this IUnifiedMemoryBuffer<T> buffer,
+
             ReadOnlySpan<T> data, int offset) where T : unmanaged
         {
             if (offset < 0)
@@ -259,7 +280,8 @@ namespace DotCompute.Core.Extensions
         /// Async wrapper for WriteAsync that delegates to synchronous span operations.
         /// This supports the test pattern of WriteAsync(array.AsSpan(), offset).
         /// </summary>
-        public static ValueTask WriteAsync<T>(this IUnifiedMemoryBuffer<T> buffer, 
+        public static ValueTask WriteAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
+
             ReadOnlySpan<T> data, int offset) where T : unmanaged
         {
             buffer.Write(data, offset);
@@ -270,7 +292,8 @@ namespace DotCompute.Core.Extensions
         /// Writes data to the buffer asynchronously from array parameter.
         /// This supports the test pattern of WriteAsync(array.AsSpan(), offset).
         /// </summary>
-        public static ValueTask WriteAsync<T>(this IUnifiedMemoryBuffer<T> buffer, 
+        public static ValueTask WriteAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
+
             T[] data, int offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
             return buffer.WriteAsync(data.AsMemory(), offset, cancellationToken);
@@ -280,7 +303,8 @@ namespace DotCompute.Core.Extensions
         /// Writes data to the buffer asynchronously with memory input.
         /// This matches the expected test signature.
         /// </summary>
-        public static ValueTask WriteAsync<T>(this IUnifiedMemoryBuffer<T> buffer, 
+        public static ValueTask WriteAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
+
             ReadOnlyMemory<T> data, int offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
             if (offset < 0)
@@ -304,7 +328,8 @@ namespace DotCompute.Core.Extensions
                     throw new ArgumentException("Data size with offset exceeds buffer capacity");
                 }
             }
-            
+
+
             return ValueTask.CompletedTask;
         }
 
@@ -312,7 +337,8 @@ namespace DotCompute.Core.Extensions
         /// Writes data to the buffer asynchronously.
         /// This is a compatibility method that maps to existing buffer operations.
         /// </summary>
-        public static async ValueTask WriteAsync<T>(this IUnifiedMemoryBuffer<T> buffer, 
+        public static async ValueTask WriteAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
+
             T[] data, CancellationToken cancellationToken = default) where T : unmanaged
         {
             if (data == null)
@@ -324,9 +350,10 @@ namespace DotCompute.Core.Extensions
             // Simulate async write operation
 
             await Task.Yield();
-            
+
             // Note: This is a simplified implementation for test compatibility
             // In a real implementation, this would perform actual memory operations
+
             unsafe
             {
                 var span = buffer.AsSpan();
@@ -354,8 +381,9 @@ namespace DotCompute.Core.Extensions
         public static bool IsUnifiedMemory<T>(this IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(buffer);
-            
+
             // Check if buffer implements unified memory patterns
+
             return buffer.IsOnHost && buffer.IsOnDevice;
         }
 
@@ -370,7 +398,8 @@ namespace DotCompute.Core.Extensions
         public static IntPtr GetDevicePointer<T>(this IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(buffer);
-            
+
+
             try
             {
                 var deviceMemory = buffer.GetDeviceMemory();

@@ -80,9 +80,10 @@ namespace DotCompute.Backends.CUDA.Initialization
                     // Step 1: Initialize CUDA runtime
                     // This is critical for WSL and ensures proper driver initialization
                     var initResult = CudaRuntime.cudaFree(IntPtr.Zero);
-                    
+
                     // cudaFree(0) is a common idiom to initialize CUDA runtime
                     // It should return Success even with null pointer
+
                     if (initResult != CudaError.Success)
                     {
                         _initializationError = initResult;
@@ -128,12 +129,14 @@ namespace DotCompute.Backends.CUDA.Initialization
                     if (propsResult != CudaError.Success)
                     {
                         // Don't fail completely, but log the warning
-                        _logger?.LogWarning("Failed to get device properties: {Error}. This may be a WSL limitation.", 
+                        _logger?.LogWarning("Failed to get device properties: {Error}. This may be a WSL limitation.",
+
                             CudaRuntime.GetErrorString(propsResult));
                     }
                     else
                     {
-                        _logger?.LogInformation("Primary device: {DeviceName} (CC {Major}.{Minor})", 
+                        _logger?.LogInformation("Primary device: {DeviceName} (CC {Major}.{Minor})",
+
                             props.DeviceName, props.Major, props.Minor);
                     }
 
@@ -181,7 +184,8 @@ namespace DotCompute.Backends.CUDA.Initialization
                 info.AppendLine("=== CUDA Initialization Diagnostics ===");
                 info.AppendLine($"Initialized: {_initialized}");
                 info.AppendLine($"Device Count: {_deviceCount ?? -1}");
-                
+
+
                 if (_initializationError.HasValue)
                 {
                     info.AppendLine($"Error Code: {_initializationError.Value}");

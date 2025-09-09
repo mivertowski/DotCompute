@@ -103,7 +103,8 @@ namespace DotCompute.Core.Execution.Analysis
                 var recencyFactor = IsRecent ? 1.0 : 0.7;
                 var dataFactor = Math.Min(1.0, TotalExecutions / 20.0); // Full confidence at 20+ executions
                 var successFactor = SuccessRate;
-                
+
+
                 return recencyFactor * dataFactor * successFactor;
             }
         }
@@ -119,17 +120,20 @@ namespace DotCompute.Core.Execution.Analysis
         public void UpdateWithExecution(double executionTime, bool succeeded)
         {
             var newTotal = TotalExecutions + 1;
-            
+
             // Update success rate
+
             SuccessRate = (SuccessRate * TotalExecutions + (succeeded ? 1.0 : 0.0)) / newTotal;
-            
+
             // Update execution time statistics (only for successful executions)
+
             if (succeeded && executionTime >= 0)
             {
                 TotalExecutionTime += executionTime;
                 AverageExecutionTime = TotalExecutionTime / newTotal;
             }
-            
+
+
             TotalExecutions = newTotal;
             LastUpdated = DateTime.UtcNow;
         }

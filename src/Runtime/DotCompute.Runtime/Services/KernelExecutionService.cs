@@ -6,6 +6,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Memory;
 using DotCompute.Runtime.Services.Interfaces;
+using DotCompute.Runtime.Services.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Runtime.Services;
@@ -19,16 +20,25 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
 {
     private readonly AcceleratorRuntime _runtime;
     private readonly ILogger<KernelExecutionService> _logger;
+    private readonly IKernelCompiler _compiler;
+    private readonly IKernelCache _cache;
+    private readonly IKernelProfiler _profiler;
     private readonly Dictionary<string, KernelRegistrationInfo> _kernelRegistry;
     private readonly SemaphoreSlim _disposeLock = new(1, 1);
     private bool _disposed;
 
     public KernelExecutionService(
         AcceleratorRuntime runtime,
-        ILogger<KernelExecutionService> logger)
+        ILogger<KernelExecutionService> logger,
+        IKernelCompiler compiler,
+        IKernelCache cache,
+        IKernelProfiler profiler)
     {
         _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+        _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
         _kernelRegistry = [];
     }
 
@@ -42,7 +52,8 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         foreach (var registration in kernelRegistrations)
         {
             _kernelRegistry[registration.FullName] = registration;
-            _logger.LogDebug("Registered kernel: {KernelName} with backends: {Backends}", 
+            _logger.LogDebug("Registered kernel: {KernelName} with backends: {Backends}",
+
                 registration.FullName, string.Join(", ", registration.SupportedBackends));
         }
 
@@ -78,7 +89,8 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
 
         if (accelerators.Count == 0)
         {
-            _logger.LogWarning("Preferred backend {Backend} not available for kernel {KernelName}, falling back to optimal selection", 
+            _logger.LogWarning("Preferred backend {Backend} not available for kernel {KernelName}, falling back to optimal selection",
+
                 preferredBackend, kernelName);
             return await ExecuteAsync<T>(kernelName, args);
         }
@@ -95,7 +107,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
     /// <inheritdoc />
     public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
         {
@@ -115,29 +127,34 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
 
         if (compiledKernel == null)
         {
-            _logger.LogDebug("Compiling kernel {KernelName} for accelerator {AcceleratorType}", 
+            _logger.LogDebug("Compiling kernel {KernelName} for accelerator {AcceleratorType}",
+
                 kernelName, accelerator.Info.DeviceType);
 
             var kernelDefinition = CreateKernelDefinition(registration);
             compiledKernel = await _compiler.CompileAsync(kernelDefinition, accelerator);
-            
+
+
             await _cache.StoreAsync(cacheKey, compiledKernel);
         }
 
         // Execute kernel with performance monitoring
         using var executionSession = _profiler.StartProfiling($"KernelExecution_{kernelName}_{accelerator.Info.DeviceType}");
-        
+
+
         try
         {
             var kernelArgs = await MarshalArgumentsAsync(registration, accelerator, args);
             var result = await compiledKernel.ExecuteAsync(kernelArgs);
-            
+
             // Handle result conversion if needed
+
             return await ConvertResultAsync<T>(result, accelerator);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Kernel execution failed for {KernelName} on {AcceleratorType}", 
+            _logger.LogError(ex, "Kernel execution failed for {KernelName} on {AcceleratorType}",
+
                 kernelName, accelerator.Info.DeviceType);
             throw;
         }
@@ -181,7 +198,8 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
             .ThenBy(GetAcceleratorLoad)
             .FirstOrDefault();
 
-        _logger.LogDebug("Selected {AcceleratorType} for kernel {KernelName}", 
+        _logger.LogDebug("Selected {AcceleratorType} for kernel {KernelName}",
+
             optimalAccelerator?.Info.DeviceType, kernelName);
 
         return optimalAccelerator;
@@ -195,7 +213,8 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
             throw new ArgumentException($"Kernel not found: {kernelName}", nameof(kernelName));
         }
 
-        var acceleratorsToPrecompile = accelerator != null 
+        var acceleratorsToPrecompile = accelerator != null
+
             ? new[] { accelerator }
             : await GetSupportedAcceleratorsAsync(kernelName);
 
@@ -203,10 +222,12 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         {
             var cacheKey = _cache.GenerateCacheKey(CreateKernelDefinition(registration), acc, null);
             var cached = await _cache.GetAsync(cacheKey);
-            
+
+
             if (cached == null)
             {
-                _logger.LogDebug("Pre-compiling kernel {KernelName} for {AcceleratorType}", 
+                _logger.LogDebug("Pre-compiling kernel {KernelName} for {AcceleratorType}",
+
                     kernelName, acc.Info.DeviceType);
 
                 var kernelDefinition = CreateKernelDefinition(registration);
@@ -216,7 +237,8 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         });
 
         await Task.WhenAll(precompileTasks);
-        _logger.LogInformation("Pre-compiled kernel {KernelName} for {Count} accelerators", 
+        _logger.LogInformation("Pre-compiled kernel {KernelName} for {Count} accelerators",
+
             kernelName, acceleratorsToPrecompile.Count());
     }
 
@@ -254,7 +276,8 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
 
         // Additional validation logic would be implemented based on kernel metadata
 
-        return errors.Count > 0 
+        return errors.Count > 0
+
             ? KernelValidationResult.Failure(errors, warnings)
             : KernelValidationResult.Success();
     }
@@ -273,7 +296,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         };
     }
 
-    private string GetKernelSource(KernelRegistrationInfo registration)
+    private static string GetKernelSource(KernelRegistrationInfo registration)
     {
         // This would retrieve the generated kernel source for the target backend
         // Implementation would depend on how the generator stores the source code
@@ -318,7 +341,7 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         throw new NotImplementedException("Array to UnifiedBuffer conversion not yet implemented");
     }
 
-    private async Task<T> ConvertResultAsync<T>(object result, IAccelerator accelerator)
+    private static async Task<T> ConvertResultAsync<T>(object result, IAccelerator accelerator)
     {
         // Handle result type conversion
         if (result is T directResult)
@@ -335,19 +358,20 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         throw new InvalidOperationException($"Cannot convert result type {result.GetType()} to {typeof(T)}");
     }
 
-    private string MapDeviceTypeToBackend(string deviceType)
+    private static string MapDeviceTypeToBackend(string deviceType)
     {
         return deviceType.ToUpperInvariant() switch
         {
             "CUDA" => "CUDA",
-            "CPU" => "CPU", 
+            "CPU" => "CPU",
+
             "METAL" => "Metal",
             "OPENCL" => "OpenCL",
             _ => deviceType
         };
     }
 
-    private int GetBackendPriority(string deviceType)
+    private static int GetBackendPriority(string deviceType)
     {
         return deviceType.ToUpperInvariant() switch
         {
@@ -403,5 +427,6 @@ public class KernelExecutionService : IComputeOrchestrator, IDisposable
         }
     }
 }
+
 
 // KernelRegistrationInfo is now defined in KernelExecutionService_Simplified.cs

@@ -35,7 +35,8 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
     public void StartPipelineExecution(string pipelineId, string executionId)
     {
         _executionStarts[executionId] = DateTime.UtcNow;
-        _logger?.LogInformation("[PROFILER] Pipeline {PipelineId} started with execution ID: {ExecutionId}", 
+        _logger?.LogInformation("[PROFILER] Pipeline {PipelineId} started with execution ID: {ExecutionId}",
+
             pipelineId, executionId);
     }
 
@@ -48,7 +49,8 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
         if (_executionStarts.TryGetValue(executionId, out var startTime))
         {
             var duration = DateTime.UtcNow - startTime;
-            _logger?.LogInformation("[PROFILER] Pipeline {ExecutionId} completed in {Duration:F2}ms", 
+            _logger?.LogInformation("[PROFILER] Pipeline {ExecutionId} completed in {Duration:F2}ms",
+
                 executionId, duration.TotalMilliseconds);
         }
     }
@@ -61,7 +63,8 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
     public void StartStageExecution(string executionId, string stageId)
     {
         _stageStarts[$"{executionId}_{stageId}"] = DateTime.UtcNow;
-        _logger?.LogInformation("[PROFILER] Stage {StageId} started for execution {ExecutionId}", 
+        _logger?.LogInformation("[PROFILER] Stage {StageId} started for execution {ExecutionId}",
+
             stageId, executionId);
     }
 
@@ -76,7 +79,8 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
         if (_stageStarts.TryGetValue(key, out var startTime))
         {
             var duration = DateTime.UtcNow - startTime;
-            _logger?.LogInformation("[PROFILER] Stage {StageId} completed in {Duration:F2}ms for execution {ExecutionId}", 
+            _logger?.LogInformation("[PROFILER] Stage {StageId} completed in {Duration:F2}ms for execution {ExecutionId}",
+
                 stageId, duration.TotalMilliseconds, executionId);
         }
     }
@@ -128,7 +132,8 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
     {
         _logger?.LogInformation(
             "[PROFILER] Kernel {KernelName}: {Duration:F2}ms, {WorkItems} items, {Utilization:P} utilization (Execution: {ExecutionId})",
-            stats.KernelName, stats.ExecutionTime.TotalMilliseconds, stats.WorkItemsProcessed, 
+            stats.KernelName, stats.ExecutionTime.TotalMilliseconds, stats.WorkItemsProcessed,
+
             stats.ComputeUtilization, executionId);
     }
 
@@ -140,7 +145,8 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
     /// <param name="value">The metric value.</param>
     public void RecordCustomMetric(string executionId, string name, double value)
     {
-        _logger?.LogInformation("[PROFILER] Custom metric - {MetricName}: {Value} (Execution: {ExecutionId})", 
+        _logger?.LogInformation("[PROFILER] Custom metric - {MetricName}: {Value} (Execution: {ExecutionId})",
+
             name, value, executionId);
     }
 

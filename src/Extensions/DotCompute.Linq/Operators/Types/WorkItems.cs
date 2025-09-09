@@ -13,7 +13,7 @@ public class WorkItems
     /// <summary>
     /// Gets or sets the global work size dimensions.
     /// </summary>
-    public int[] GlobalWorkSize { get; set; } = new[] { 1 };
+    public int[] GlobalWorkSize { get; set; } = [1];
 
     /// <summary>
     /// Gets or sets the local work size dimensions.

@@ -39,7 +39,8 @@ public sealed class CudaErrorHandler : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options ?? new ErrorRecoveryOptions();
         _errorStats = new ConcurrentDictionary<CudaError, ErrorStatistics>();
-        
+
+
         _retryPolicy = CreateRetryPolicy();
         _memoryRetryPolicy = CreateMemoryRetryPolicy();
         _circuitBreakerPolicy = CreateCircuitBreakerPolicy();
@@ -73,7 +74,8 @@ public sealed class CudaErrorHandler : IDisposable
                         "Retry {RetryCount}/{MaxRetries} after {Delay}ms for error: {Error}",
                         retryCount, _options.MaxRetryAttempts, timespan.TotalMilliseconds,
                         ex?.ErrorCode ?? CudaError.Unknown);
-                    
+
+
                     RecordError(ex?.ErrorCode ?? CudaError.Unknown);
                 });
     }
@@ -93,8 +95,9 @@ public sealed class CudaErrorHandler : IDisposable
                     _logger.LogWarning(
                         "Memory allocation retry {RetryCount}, attempting cleanup...",
                         retryCount);
-                    
+
                     // Trigger memory cleanup
+
                     await TriggerMemoryCleanupAsync();
                 });
     }
@@ -140,7 +143,8 @@ public sealed class CudaErrorHandler : IDisposable
             // Check circuit breaker
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
             var canExecute = await _circuitBreakerPolicy.ExecuteAsync(
-                async () => 
+                async () =>
+
                 {
                     // Quick GPU health check
                     if (!_gpuAvailable)
@@ -163,16 +167,20 @@ public sealed class CudaErrorHandler : IDisposable
 
             // Execute with retry
             var stopwatch = Stopwatch.StartNew();
-            
+
+
             var result = await _retryPolicy.ExecuteAsync(
                 async ct => await operation(), cancellationToken);
-            
+
+
             stopwatch.Stop();
-            
+
             // Record success
+
             _lastSuccessfulOperation = DateTimeOffset.UtcNow;
             RecordSuccess(operationName, stopwatch.ElapsedMilliseconds);
-            
+
+
             return result;
         }
         catch (CudaException cudaEx)
@@ -203,12 +211,14 @@ public sealed class CudaErrorHandler : IDisposable
         {
             return await HandleMemoryErrorAsync(operation, operationName, cancellationToken);
         }
-        
+
+
         if (IsDeviceError(cudaEx.ErrorCode))
         {
             return await HandleDeviceErrorAsync(operation, operationName, cancellationToken);
         }
-        
+
+
         if (_options.EnableCpuFallback && CanFallbackToCpu(operationName))
         {
             return await FallbackToCpuAsync<T>(operationName);
@@ -236,8 +246,9 @@ public sealed class CudaErrorHandler : IDisposable
                     // Force garbage collection
                     GC.Collect(2, GCCollectionMode.Forced, true);
                     GC.WaitForPendingFinalizers();
-                    
+
                     // Retry operation
+
                     return await operation();
                 },
                 cancellationToken);
@@ -245,12 +256,14 @@ public sealed class CudaErrorHandler : IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Memory error recovery failed for {Operation}", operationName);
-            
+
+
             if (_options.EnableCpuFallback)
             {
                 return await FallbackToCpuAsync<T>(operationName);
             }
-            
+
+
             throw;
         }
     }
@@ -271,8 +284,9 @@ public sealed class CudaErrorHandler : IDisposable
             if (_options.AllowDeviceReset)
             {
                 await ResetDeviceAsync();
-                
+
                 // Retry operation after reset
+
                 return await operation();
             }
         }
@@ -289,6 +303,7 @@ public sealed class CudaErrorHandler : IDisposable
         throw new CudaDeviceException($"Device error in operation '{operationName}'");
     }
 
+
     /// <summary>
     /// Falls back to CPU execution when GPU fails.
     /// </summary>
@@ -296,9 +311,10 @@ public sealed class CudaErrorHandler : IDisposable
     private async Task<T> FallbackToCpuAsync<T>(string operationName)
     {
         _logger.LogInformation("Falling back to CPU for {Operation}", operationName);
-        
+
         // This would invoke CPU-based implementation
         // For now, throw to indicate fallback is needed
+
         throw new CpuFallbackRequiredException(
             $"Operation '{operationName}' requires CPU fallback");
     }
@@ -315,15 +331,18 @@ public sealed class CudaErrorHandler : IDisposable
             {
                 // Clear error state
                 _ = CudaRuntime.cudaGetLastError();
-                
+
                 // Synchronize device
+
                 var result = CudaRuntime.cudaDeviceSynchronize();
-                
+
+
                 if (result == CudaError.Success)
                 {
                     // Trigger memory compaction if available
                     _ = CudaRuntime.cudaMemGetInfo(out var free, out var total);
-                    
+
+
                     _logger.LogInformation(
                         "Memory cleanup completed. Free: {Free:N0} MB, Total: {Total:N0} MB",
                         free / (1024 * 1024), total / (1024 * 1024));
@@ -346,9 +365,11 @@ public sealed class CudaErrorHandler : IDisposable
             try
             {
                 _logger.LogWarning("Resetting CUDA device...");
-                
+
+
                 var result = CudaRuntime.cudaDeviceReset();
-                
+
+
                 if (result == CudaError.Success)
                 {
                     _logger.LogInformation("Device reset successful");
@@ -440,8 +461,10 @@ public sealed class CudaErrorHandler : IDisposable
             "matmul", "reduce", "scan", "sort", "fft",
             "convolution", "pooling", "activation"
         };
-        
-        return cpuSupportedOps.Any(op => 
+
+
+        return cpuSupportedOps.Any(op =>
+
             operationName.Contains(op, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -458,7 +481,8 @@ public sealed class CudaErrorHandler : IDisposable
                 existing.LastOccurrence = DateTimeOffset.UtcNow;
                 return existing;
             });
-        
+
+
         stats.Count++;
     }
 
@@ -491,6 +515,7 @@ public sealed class CudaErrorHandler : IDisposable
     public void Dispose()
         // CudaErrorHandler doesn't hold disposable resources directly,
         // but we clear statistics as cleanup
+
         => ClearStatistics();
 
     /// <summary>

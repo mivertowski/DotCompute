@@ -27,7 +27,8 @@ public class GeneratorSettings
     /// and other stylistic aspects of generated code.
     /// </value>
     public CodeStyle CodeStyle { get; set; } = new();
-    
+
+
     /// <summary>
     /// Gets or sets the optimization level for generated code.
     /// </summary>
@@ -36,7 +37,8 @@ public class GeneratorSettings
     /// code size, and debuggability in the generated code.
     /// </value>
     public Enums.OptimizationLevel OptimizationLevel { get; set; } = Enums.OptimizationLevel.Balanced;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to generate debug information.
     /// </summary>
@@ -46,7 +48,8 @@ public class GeneratorSettings
     /// additional metadata for debugging purposes.
     /// </value>
     public bool GenerateDebugInfo { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to include performance counters.
     /// </summary>
@@ -55,7 +58,8 @@ public class GeneratorSettings
     /// for runtime performance monitoring; otherwise, <c>false</c>.
     /// </value>
     public bool IncludePerformanceCounters { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to generate XML documentation.
     /// </summary>
@@ -64,7 +68,8 @@ public class GeneratorSettings
     /// public members in the generated code; otherwise, <c>false</c>.
     /// </value>
     public bool GenerateXmlDocs { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets the target runtime for optimization.
     /// </summary>
@@ -73,7 +78,8 @@ public class GeneratorSettings
     /// and feature availability in the generated code.
     /// </value>
     public Enums.TargetRuntime TargetRuntime { get; set; } = Enums.TargetRuntime.Auto;
-    
+
+
     /// <summary>
     /// Gets or sets feature flags for selective code generation.
     /// </summary>
@@ -82,7 +88,8 @@ public class GeneratorSettings
     /// are enabled in the generated code.
     /// </value>
     public Features.FeatureFlags Features { get; set; } = new();
-    
+
+
     /// <summary>
     /// Gets or sets the validation settings.
     /// </summary>

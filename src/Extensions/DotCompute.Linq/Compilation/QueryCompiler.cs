@@ -410,18 +410,21 @@ public class QueryCompiler : IQueryCompiler
 
         [RequiresDynamicCode("MakeArrayType requires dynamic code generation")]
         private static Type CreateArrayType(Type elementType) => elementType.MakeArrayType();
-        
+
+
         private Operators.Interfaces.IKernel CreateKernelFromDefinition(Operators.Types.KernelDefinition kernelDefinition)
         {
             // Convert LINQ KernelDefinition to Core KernelDefinition
             var coreDefinition = Operators.Adapters.KernelDefinitionAdapter.ConvertToCoreDefinition(kernelDefinition);
-            
+
             // Create a GeneratedKernel from the definition
+
             var generatedKernel = new Operators.Generation.GeneratedKernel
             {
                 Name = kernelDefinition.Name,
                 Source = kernelDefinition.Source ?? string.Empty,
-                Parameters = kernelDefinition.Parameters.Select(p => new Operators.Generation.GeneratedKernelParameter 
+                Parameters = kernelDefinition.Parameters.Select(p => new Operators.Generation.GeneratedKernelParameter
+
                 {
                     Name = p.Name,
                     Type = p.Type,
@@ -429,7 +432,8 @@ public class QueryCompiler : IQueryCompiler
                     IsOutput = p.Direction != Operators.Parameters.ParameterDirection.In
                 }).ToArray()
             };
-            
+
+
             return new Operators.Kernels.DynamicCompiledKernel(generatedKernel, _accelerator, _logger);
         }
     }

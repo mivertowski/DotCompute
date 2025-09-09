@@ -32,10 +32,12 @@ public class MemoryPressureMonitor : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         var interval = updateInterval ?? TimeSpan.FromSeconds(5);
-        
+
+
         _currentPressure = CalculateMemoryPressure();
         _monitoringTimer = new Timer(UpdateMemoryPressure, null, interval, interval);
-        
+
+
         _logger.LogInformation("Memory pressure monitor initialized with {Interval}s update interval", interval.TotalSeconds);
     }
 
@@ -66,11 +68,13 @@ public class MemoryPressureMonitor : IDisposable
         try
         {
             _currentPressure = CalculateMemoryPressure();
-            
+
             // Log if pressure has increased significantly
+
             if (_currentPressure.Level >= MemoryPressureLevel.High)
             {
-                _logger.LogWarning("High memory pressure detected: {Level} ({Ratio:P1})", 
+                _logger.LogWarning("High memory pressure detected: {Level} ({Ratio:P1})",
+
                     _currentPressure.Level, _currentPressure.PressureRatio);
             }
         }
@@ -85,22 +89,27 @@ public class MemoryPressureMonitor : IDisposable
         var managedMemory = GC.GetTotalMemory(false);
         var totalMemory = Environment.WorkingSet;
         var availableMemory = totalMemory - managedMemory;
-        
+
         // Calculate various memory metrics
+
         var usedMemory = totalMemory - availableMemory;
         var memoryLoadRatio = (double)usedMemory / totalMemory;
         var managedRatio = (double)managedMemory / totalMemory;
         var fragmentationRatio = 0.0; // Simplified for compatibility
-        
+
         // Determine pressure level based on multiple factors
+
         var pressureLevel = DeterminePressureLevel(memoryLoadRatio, managedRatio, fragmentationRatio);
-        
+
         // Calculate pressure trend
+
         var trend = CalculatePressureTrend(totalMemory, availableMemory);
-        
+
+
         _lastTotalMemory = totalMemory;
         _lastAvailableMemory = availableMemory;
-        
+
+
         return new MemoryPressureInfo
         {
             Level = pressureLevel,
@@ -127,7 +136,8 @@ public class MemoryPressureMonitor : IDisposable
     {
         // Weighted pressure calculation
         var weightedPressure = (memoryLoadRatio * 0.5) + (managedRatio * 0.3) + (fragmentationRatio * 0.2);
-        
+
+
         return weightedPressure switch
         {
             < 0.5 => MemoryPressureLevel.Low,
@@ -148,10 +158,12 @@ public class MemoryPressureMonitor : IDisposable
         var previousUsed = _lastTotalMemory - _lastAvailableMemory;
         var currentUsed = currentTotal - currentAvailable;
         var usedDelta = currentUsed - previousUsed;
-        
+
         // Consider a 5% change as significant
+
         var threshold = _lastTotalMemory * 0.05;
-        
+
+
         if (Math.Abs(usedDelta) < threshold)
         {
 
@@ -185,17 +197,18 @@ public enum MemoryPressureTrend
     /// Memory pressure is decreasing.
     /// </summary>
     Decreasing,
-    
+
     /// <summary>
     /// Memory pressure is stable.
     /// </summary>
     Stable,
-    
+
     /// <summary>
     /// Memory pressure is increasing.
     /// </summary>
     Increasing,
-    
+
+
     /// <summary>
     /// Memory pressure is rapidly increasing.
     /// </summary>

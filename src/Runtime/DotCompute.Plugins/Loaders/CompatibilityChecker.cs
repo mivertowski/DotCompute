@@ -563,7 +563,7 @@ public class CompatibilityChecker
     /// <summary>
     /// Checks compatibility for a specific dependency.
     /// </summary>
-    private async Task<DependencyCompatibilityInfo> CheckDependencyCompatibilityAsync(NuGetPackageDependency dependency, CancellationToken cancellationToken)
+    private static async Task<DependencyCompatibilityInfo> CheckDependencyCompatibilityAsync(NuGetPackageDependency dependency, CancellationToken cancellationToken)
     {
         await Task.CompletedTask; // Placeholder for async signature
 

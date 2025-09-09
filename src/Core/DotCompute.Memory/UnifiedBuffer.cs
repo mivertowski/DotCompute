@@ -85,13 +85,15 @@ public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanag
         _memoryManager = memoryManager;
         Length = length;
         SizeInBytes = length * Unsafe.SizeOf<T>();
-        
+
         // Check allocation limits
+
         if (memoryManager.MaxAllocationSize > 0 && SizeInBytes > memoryManager.MaxAllocationSize)
         {
             throw new InvalidOperationException($"Requested allocation of {SizeInBytes} bytes exceeds maximum allowed size of {memoryManager.MaxAllocationSize} bytes");
         }
-        
+
+
         _state = BufferState.Uninitialized;
         _deviceMemory = DeviceMemory.Invalid;
 
@@ -556,8 +558,9 @@ public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanag
             _hostArray = null;
             _state = BufferState.Uninitialized;
         }
-        
+
         // Dispose async lock outside of the lock to avoid deadlocks
+
         _asyncLock.Dispose();
     }
 
@@ -1063,7 +1066,8 @@ public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanag
         var elementOffset = (int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
         return WriteAsync(typedSource.ToArray().AsMemory(), elementOffset, cancellationToken);
     }
-    
+
+
     ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken)
     {
         if (typeof(U) != typeof(T))
@@ -1075,7 +1079,8 @@ public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanag
 
         var elementOffset = (int)(offset / global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
         var typedDest = new T[destination.Length];
-        return new ValueTask(ReadAsync(elementOffset, destination.Length, cancellationToken).AsTask().ContinueWith(t => {
+        return new ValueTask(ReadAsync(elementOffset, destination.Length, cancellationToken).AsTask().ContinueWith(t =>
+        {
             var sourceData = t.Result;
             var typedDestination = MemoryMarshal.Cast<U, T>(destination.Span);
             sourceData.AsSpan().CopyTo(typedDestination);

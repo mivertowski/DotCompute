@@ -32,21 +32,24 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
             // Simplified memory pool test using available memory manager
+
             const int threadCount = 20;
             const int allocationsPerThread = 100;
             const int minSize = 1024;
             const int maxSize = 1024 * 1024; // 1MB
             var random = new Random(42);
             var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
-            
+
             // Act
+
             var tasks = Enumerable.Range(0, threadCount).Select(threadId => Task.Run(async () =>
             {
                 var allocations = new List<IDisposable>();
                 var localRandom = new Random(threadId);
-                
+
+
                 try
                 {
                     for (var i = 0; i < allocationsPerThread && !cts.Token.IsCancellationRequested; i++)
@@ -54,11 +57,13 @@ namespace DotCompute.Hardware.Cuda.Tests
                         var size = localRandom.Next(minSize, maxSize);
                         var buffer = await accelerator.Memory.AllocateAsync<byte>(size);
                         allocations.Add(buffer);
-                        
+
                         // Simulate work
+
                         await Task.Delay(localRandom.Next(1, 10), cts.Token);
-                        
+
                         // Randomly free some allocations
+
                         if (allocations.Count > 10 && localRandom.NextDouble() > 0.5)
                         {
                             var index = localRandom.Next(allocations.Count);
@@ -75,7 +80,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                         buffer.Dispose();
                     }
                 }
-                
+
+
                 return allocations.Count;
             })).ToArray();
 
@@ -94,8 +100,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
             // Arrange
+
             const int dataSize = 10 * 1024 * 1024; // 10MB (reduced for stability)
             const int iterations = 10;
             var hostData = new float[dataSize / sizeof(float)];
@@ -104,13 +111,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Test with regular memory
             var regularBuffer = await accelerator.Memory.AllocateAsync<float>(hostData.Length);
             var regularStopwatch = Stopwatch.StartNew();
-            
+
+
             for (var i = 0; i < iterations; i++)
             {
                 await regularBuffer.CopyFromAsync(hostData.AsMemory());
                 await regularBuffer.CopyToAsync(hostData.AsMemory());
             }
-            
+
+
             regularStopwatch.Stop();
             var regularBandwidth = (dataSize * 2.0 * iterations) / regularStopwatch.Elapsed.TotalSeconds / (1024 * 1024 * 1024);
 
@@ -132,8 +141,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
             // Arrange
+
             const int operationCount = 100;
             var successCount = 0;
             var failureCount = 0;
@@ -161,16 +171,19 @@ namespace DotCompute.Hardware.Cuda.Tests
                 try
                 {
                     using var buffer = await accelerator.Memory.AllocateAsync<float>(1024);
-                    
+
+
                     var (grid, block) = CudaTestHelpers.CreateLaunchConfig(4, 1, 1, 256, 1, 1);
-                    
+
+
                     var kernelArgs = CudaTestHelpers.CreateKernelArguments(
                         [buffer, 1024],
                         grid,
                         block
                     );
                     await kernel.ExecuteAsync(kernelArgs);
-                    
+
+
                     await accelerator.SynchronizeAsync();
                     successCount++;
                 }
@@ -185,7 +198,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Success Count: {successCount}/{operationCount}");
             Output.WriteLine($"  Failure Count: {failureCount}");
 
-            successCount.Should().BeGreaterThan((int)(operationCount * 0.9), 
+            successCount.Should().BeGreaterThan((int)(operationCount * 0.9),
+
                 "Most operations should succeed");
         }
 
@@ -196,13 +210,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
             // Arrange
+
             const int iterations = 100; // Reduced for test stability
             const int dataSize = 1024 * 256; // 256K elements
             var hostData = new float[dataSize];
-            
+
             // Create a simple iterative kernel
+
             var kernelCode = @"
                 extern ""C"" __global__ void iterative_kernel(float* data, int n)
                 {
@@ -224,8 +240,9 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             using var buffer = await accelerator.Memory.AllocateAsync<float>(dataSize);
-            
+
             // Initialize data
+
             for (var i = 0; i < dataSize; i++)
             {
                 hostData[i] = i * 0.001f;
@@ -244,13 +261,15 @@ namespace DotCompute.Hardware.Cuda.Tests
                     block
                 );
                 await kernel.ExecuteAsync(kernelArgs);
-                
+
                 // Periodic validation
+
                 if (iter % 20 == 0)
                 {
                     await buffer.CopyToAsync(hostData.AsMemory());
                     hostData[0].Should().BeGreaterThan(0, "Data should be computed");
-                    
+
+
                     Output.WriteLine($"Iteration {iter}: First value = {hostData[0]:F6}");
                 }
             }
@@ -261,7 +280,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert
             await buffer.CopyToAsync(hostData.AsMemory());
             var throughput = (iterations * dataSize * sizeof(float)) / stopwatch.Elapsed.TotalSeconds / (1024 * 1024);
-            
+
+
             Output.WriteLine($"Long-running kernel performance:");
             Output.WriteLine($"  Total iterations: {iterations}");
             Output.WriteLine($"  Total time: {stopwatch.Elapsed.TotalSeconds:F2} seconds");
@@ -278,14 +298,17 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
             // Arrange
+
             const int bufferCount = 5; // Reduced for stability
             const int bufferSize = 1 * 1024 * 1024; // 1MB each
-            
+
+
             var stopwatch = Stopwatch.StartNew();
-            
+
             // Test sequential memory allocations and access
+
             for (var i = 0; i < bufferCount; i++)
             {
                 await using var buffer = await accelerator.Memory.AllocateAsync<float>(bufferSize / sizeof(float));
@@ -293,7 +316,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await buffer.CopyFromAsync(data.AsMemory());
                 await buffer.CopyToAsync(data.AsMemory());
             }
-            
+
+
             stopwatch.Stop();
 
             // Assert
@@ -313,8 +337,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
             using var accelerator = _factory.CreateProductionAccelerator(0);
-            
+
             // This test combines multiple operations under a mixed workload
+
             var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)); // Reduced duration
             var tasks = new List<Task>();
             var errors = 0;
@@ -348,21 +373,25 @@ namespace DotCompute.Hardware.Cuda.Tests
                         int tid = blockIdx.x * blockDim.x + threadIdx.x;
                         if (tid < n) data[tid] *= 2.0f;
                     }";
-                
+
+
                 var kernelDef = CudaTestHelpers.CreateTestKernelDefinition(
                     "simple_kernel",
                     kernelCode
                 );
-                
+
+
                 var kernel = await accelerator.CompileKernelAsync(kernelDef);
-                
+
+
                 while (!cts.Token.IsCancellationRequested)
                 {
                     try
                     {
                         using var buffer = await accelerator.Memory.AllocateAsync<float>(1000);
                         var (grid, block) = CudaTestHelpers.CreateLaunchConfig(4, 1, 1, 256, 1, 1);
-                        
+
+
                         var kernelArgs = CudaTestHelpers.CreateKernelArguments(
                             [buffer, 1000],
                             grid,
@@ -421,7 +450,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             public IDisposable BeginScope<TState>(TState state) => null!;
             public bool IsEnabled(LogLevel logLevel) => true;
 
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, 
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
+
                 Exception? exception, Func<TState, Exception?, string> formatter)
             {
                 var message = formatter(state, exception);

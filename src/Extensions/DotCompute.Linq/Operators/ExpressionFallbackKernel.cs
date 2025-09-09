@@ -28,8 +28,9 @@ public class ExpressionFallbackKernel : Interfaces.IKernel
     {
         _expression = expression ?? throw new ArgumentNullException(nameof(expression));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
         // Try to compile the expression to a delegate for CPU execution
+
         if (expression is LambdaExpression lambda)
         {
             try
@@ -60,14 +61,16 @@ public class ExpressionFallbackKernel : Interfaces.IKernel
     /// <inheritdoc/>
     public Task CompileAsync(CancellationToken cancellationToken = default)
         // Already compiled or interpreted
+
         => Task.CompletedTask;
 
     /// <inheritdoc/>
     public async Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Executing fallback kernel for expression type: {ExpressionType}", _expression.NodeType);
-        
+
         // This is a simplified fallback - in production you'd implement proper CPU execution
+
         if (_compiledFunc != null && parameters.Count > 0)
         {
             var args = parameters.Values.ToArray();
@@ -90,7 +93,8 @@ public class ExpressionFallbackKernel : Interfaces.IKernel
                 ParameterDirection.In
             )).ToList();
         }
-        
+
+
         return Array.Empty<Parameters.KernelParameter>();
     }
 

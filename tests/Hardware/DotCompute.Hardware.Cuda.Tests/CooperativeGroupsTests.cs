@@ -36,8 +36,9 @@ public class CooperativeGroupsTests : IDisposable
         }
 
         using var accelerator = _factory.CreateProductionAccelerator(0);
-        
+
         // Create cooperative groups reduction kernel
+
         const string kernelCode = @"
 #include <cooperative_groups.h>
 using namespace cooperative_groups;
@@ -83,7 +84,8 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
             "cooperativeReduction",
             kernelCode
         );
-        
+
+
         var options = CudaTestHelpers.CreateTestCompilationOptions(
             CudaOptimizationLevel.O3,
             enableRegisterSpilling: true
@@ -95,21 +97,25 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
         const int size = 1024;
         const int blockSize = 256;
         const int gridSize = (size + blockSize - 1) / blockSize;
-        
+
+
         float[] inputData = new float[size];
         for (int i = 0; i < size; i++)
         {
             inputData[i] = i + 1.0f; // 1, 2, 3, ..., 1024
         }
-        
+
         // Allocate device memory
+
         using var input = await accelerator.Memory.AllocateAsync<float>(size);
         using var output = await accelerator.Memory.AllocateAsync<float>(gridSize);
-        
+
         // Copy input data to device
+
         await input.CopyFromAsync(inputData.AsMemory());
-        
+
         // Execute kernel with cooperative groups
+
         var (grid, block) = CudaTestHelpers.CreateLaunchConfig(gridSize, 1, 1, blockSize, 1, 1);
         var kernelArgs = CudaTestHelpers.CreateKernelArguments(
             [input, output, size],
@@ -119,20 +125,24 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
         await kernel.ExecuteAsync(kernelArgs);
 
         await accelerator.SynchronizeAsync();
-        
+
         // Copy results back
+
         float[] results = new float[gridSize];
         await output.CopyToAsync(results.AsMemory());
-        
+
         // Calculate expected sum: 1 + 2 + ... + 1024 = (1024 * 1025) / 2 = 524800
+
         float expectedSum = (size * (size + 1)) / 2.0f;
         float actualSum = results.Sum();
-        
+
+
         _output.WriteLine($"Expected sum: {expectedSum}");
         _output.WriteLine($"Actual sum: {actualSum}");
         _output.WriteLine($"Per-block sums: {string.Join(", ", results)}");
-        
+
         // Allow small floating-point tolerance
+
         Assert.True(Math.Abs(expectedSum - actualSum) < 0.01f,
             $"Sum mismatch: expected {expectedSum}, got {actualSum}");
     }
@@ -204,47 +214,56 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
 
         // Test with simple array
         const int size = 1024;
-        
+
         // Allocate device memory
+
         using var dOutput = await accelerator.Memory.AllocateAsync<float>(size);
-        
+
         // Launch kernel with 512 threads per block (matches shared memory size)
+
         var (grid, block) = CudaTestHelpers.CreateLaunchConfig(
             2, 1, 1,  // 2 blocks
             512, 1, 1  // 512 threads per block
         );
-        
+
+
         var kernelArgs = CudaTestHelpers.CreateKernelArguments(
             [dOutput, size],
             grid,
             block
         );
         await kernel.ExecuteAsync(kernelArgs);
-        
+
+
         await accelerator.SynchronizeAsync();
-        
+
         // Download and verify results
+
         float[] results = new float[size];
         await dOutput.CopyToAsync(results.AsMemory());
 
         // Basic verification - check that kernel executed and produced non-zero results
         bool hasValidResults = false;
         float sumResults = 0.0f;
-        
+
+
         for (int i = 0; i < Math.Min(10, size); i++)
         {
             float result = results[i];
             _output.WriteLine($"Element {i}: {result:F3}");
-            
+
+
             if (result != 0.0f && !float.IsNaN(result) && !float.IsInfinity(result))
             {
                 hasValidResults = true;
                 sumResults += result;
             }
         }
-        
+
+
         _output.WriteLine($"Total sum of first 10 elements: {sumResults:F3}");
-        
+
+
         Assert.True(hasValidResults, "Kernel should produce valid non-zero results with shared memory spilling");
     }
 
@@ -267,7 +286,8 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
         public IDisposable BeginScope<TState>(TState state) => null!;
         public bool IsEnabled(LogLevel logLevel) => true;
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, 
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
+
             Exception? exception, Func<TState, Exception?, string> formatter)
         {
             var message = formatter(state, exception);

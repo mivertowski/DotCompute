@@ -245,6 +245,7 @@ public static class AdvancedPolynomialSolver
         // Ferrari's method - for now, delegate to high-degree solver
         // Full Ferrari implementation would be quite complex
 
+
         => SolveHighDegree(coeffs, 1e-10f, 1000);
 
     private static float[] SolveHighDegree(float[] coeffs, float tolerance, int maxIterations)

@@ -22,19 +22,24 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     private long _peakAllocatedBytes;
     private int _allocationCount;
     private volatile bool _disposed;
-    
+
+
     /// <inheritdoc/>
     public abstract IAccelerator Accelerator { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract DotCompute.Abstractions.Memory.MemoryStatistics Statistics { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract long MaxAllocationSize { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract long TotalAvailableMemory { get; }
-    
+
+
     /// <inheritdoc/>
     public abstract long CurrentAllocatedMemory { get; }
 
@@ -75,7 +80,8 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
         return new TypedMemoryBufferWrapper<T>(buffer, count);
     }
-    
+
+
     /// <inheritdoc/>
     public virtual async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
         ReadOnlyMemory<T> source,
@@ -100,13 +106,15 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         IUnifiedMemoryBuffer<T> buffer,
         int offset,
         int length) where T : unmanaged;
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         IUnifiedMemoryBuffer<T> destination,
         CancellationToken cancellationToken = default) where T : unmanaged;
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
@@ -115,28 +123,34 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         int destinationOffset,
         int length,
         CancellationToken cancellationToken = default) where T : unmanaged;
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyToDeviceAsync<T>(
         ReadOnlyMemory<T> source,
         IUnifiedMemoryBuffer<T> destination,
         CancellationToken cancellationToken = default) where T : unmanaged;
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask CopyFromDeviceAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         Memory<T> destination,
         CancellationToken cancellationToken = default) where T : unmanaged;
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract ValueTask OptimizeAsync(CancellationToken cancellationToken = default);
-    
+
+
     /// <inheritdoc/>
     public abstract void Clear();
-    
+
+
     /// <inheritdoc/>
     public virtual async ValueTask<IUnifiedMemoryBuffer> AllocateAsync(
         long sizeInBytes,
@@ -150,12 +164,15 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         {
             // Delegate to backend-specific allocation
             var buffer = await AllocateBufferCoreAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
-            
+
             // Track the allocation
+
             TrackBuffer(buffer, sizeInBytes);
-            
+
+
             _logger.LogDebug("Allocated {Size} bytes with options {Options}", sizeInBytes, options);
-            
+
+
             return buffer;
         }
         catch (Exception ex)
@@ -180,10 +197,12 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
-        
+
+
         if (offset + length > buffer.SizeInBytes)
         {
-            throw new ArgumentOutOfRangeException(nameof(length), 
+            throw new ArgumentOutOfRangeException(nameof(length),
+
                 $"View exceeds buffer bounds. Buffer size: {buffer.SizeInBytes}, requested view: offset={offset}, length={length}");
         }
 
@@ -196,7 +215,8 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     {
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
-        
+
+
         var sizeInBytes = count * Unsafe.SizeOf<T>();
         return await AllocateAsync(sizeInBytes, MemoryOptions.Aligned, CancellationToken.None).ConfigureAwait(false);
     }
@@ -206,8 +226,9 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(buffer);
-        
+
         // Cast to generic buffer for typed operations
+
         if (buffer is IUnifiedMemoryBuffer<T> typedBuffer)
         {
             // Use async method synchronously for compatibility
@@ -227,8 +248,9 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(buffer);
-        
+
         // Cast to generic buffer for typed operations
+
         if (buffer is IUnifiedMemoryBuffer<T> typedBuffer)
         {
             // Use async method synchronously for compatibility
@@ -256,7 +278,8 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
             _ = Interlocked.Add(ref _totalAllocatedBytes, -size);
             _logger.LogDebug("Freed buffer of {Size} bytes", size);
         }
-        
+
+
         buffer.Dispose();
     }
 
@@ -279,11 +302,13 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     protected virtual void TrackBuffer(IUnifiedMemoryBuffer buffer, long sizeInBytes)
     {
         _ = _activeBuffers.TryAdd(buffer, new WeakReference<IUnifiedMemoryBuffer>(buffer));
-        
+
+
         var newTotal = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
         _ = Interlocked.Increment(ref _allocationCount);
-        
+
         // Update peak if necessary
+
         long currentPeak;
         do
         {
@@ -301,7 +326,8 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     protected virtual void CleanupUnusedBuffers()
     {
         var toRemove = new List<IUnifiedMemoryBuffer>();
-        
+
+
         foreach (var kvp in _activeBuffers)
         {
             if (!kvp.Value.TryGetTarget(out _))
@@ -309,12 +335,14 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
                 toRemove.Add(kvp.Key);
             }
         }
-        
+
+
         foreach (var buffer in toRemove)
         {
             _ = _activeBuffers.TryRemove(buffer, out _);
         }
-        
+
+
         if (toRemove.Count > 0)
         {
             _logger.LogDebug("Cleaned up {Count} unused buffer references", toRemove.Count);
@@ -327,7 +355,8 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     public virtual DotCompute.Abstractions.Memory.MemoryStatistics GetStatistics()
     {
         CleanupUnusedBuffers();
-        
+
+
         return new DotCompute.Abstractions.Memory.MemoryStatistics
         {
             TotalAllocated = TotalAllocatedBytes,
@@ -365,10 +394,12 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
                         }
                     }
                 }
-                
+
+
                 _activeBuffers.Clear();
             }
-            
+
+
             _disposed = true;
         }
     }
@@ -385,7 +416,8 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
         {
             // Dispose all active buffers asynchronously
             var disposeTasks = new List<ValueTask>();
-            
+
+
             foreach (var kvp in _activeBuffers)
             {
                 if (kvp.Value.TryGetTarget(out var buffer))
@@ -393,7 +425,8 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
                     disposeTasks.Add(buffer.DisposeAsync());
                 }
             }
-            
+
+
             foreach (var task in disposeTasks)
             {
                 try
@@ -405,12 +438,15 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
                     _logger.LogWarning(ex, "Error disposing buffer during async memory manager cleanup");
                 }
             }
-            
+
+
             _activeBuffers.Clear();
-            
+
+
             Dispose(false);
         }
-        
+
+
         GC.SuppressFinalize(this);
     }
 }

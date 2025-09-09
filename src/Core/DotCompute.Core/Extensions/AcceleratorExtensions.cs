@@ -34,9 +34,10 @@ public static class AcceleratorExtensions
     public static object? CreateGraph(this IAccelerator accelerator)
     {
         ArgumentNullException.ThrowIfNull(accelerator);
-        
+
         // For now, return null for unsupported backends
         // CUDA backend would override this with actual implementation
+
         return null;
     }
 
@@ -48,8 +49,9 @@ public static class AcceleratorExtensions
     public static MemoryStatistics GetMemoryStatistics(this IAccelerator accelerator)
     {
         ArgumentNullException.ThrowIfNull(accelerator);
-        
+
         // Try to get statistics from the memory manager
+
         if (accelerator.Memory is IUnifiedMemoryManager memoryManager)
         {
             try
@@ -65,8 +67,9 @@ public static class AcceleratorExtensions
         else
         {
         }
-        
+
         // Return default statistics
+
         return new MemoryStatistics
         {
             TotalMemoryBytes = accelerator.Info.TotalMemory,

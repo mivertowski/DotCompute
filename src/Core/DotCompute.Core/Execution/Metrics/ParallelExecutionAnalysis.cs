@@ -110,8 +110,9 @@ namespace DotCompute.Core.Execution.Metrics
                 var mean = values.Average();
                 var variance = values.Select(v => Math.Pow(v - mean, 2)).Average();
                 var standardDeviation = Math.Sqrt(variance);
-                
+
                 // Consider load balancing optimal if standard deviation is less than 15%
+
                 return standardDeviation < 15.0;
             }
         }
@@ -161,8 +162,9 @@ namespace DotCompute.Core.Execution.Metrics
         {
             ArgumentNullException.ThrowIfNull(bottleneck);
             Bottlenecks.Add(bottleneck);
-            
+
             // Sort bottlenecks by severity (highest first)
+
             Bottlenecks.Sort((a, b) => b.Severity.CompareTo(a.Severity));
         }
 
@@ -177,7 +179,8 @@ namespace DotCompute.Core.Execution.Metrics
             {
                 throw new ArgumentException("Recommendation cannot be null or whitespace.", nameof(recommendation));
             }
-            
+
+
             OptimizationRecommendations.Add(recommendation);
         }
 
@@ -194,13 +197,16 @@ namespace DotCompute.Core.Execution.Metrics
             {
                 throw new ArgumentException("Device ID cannot be null or whitespace.", nameof(deviceId));
             }
-            
+
+
             if (utilization is < 0.0 or > 100.0)
             {
-                throw new ArgumentOutOfRangeException(nameof(utilization), 
+                throw new ArgumentOutOfRangeException(nameof(utilization),
+
                     "Utilization must be between 0 and 100.");
             }
-            
+
+
             DeviceUtilizationAnalysis[deviceId] = utilization;
         }
 
@@ -210,26 +216,30 @@ namespace DotCompute.Core.Execution.Metrics
         public void GenerateRecommendations()
         {
             OptimizationRecommendations.Clear();
-            
+
             // Recommendations based on overall rating
+
             if (OverallRating < 5.0)
             {
                 AddRecommendation("Consider switching to a different execution strategy for better performance.");
             }
-            
+
             // Recommendations based on bottlenecks
+
             if (CriticalBottleneckCount > 0)
             {
                 AddRecommendation($"Address {CriticalBottleneckCount} critical bottleneck(s) immediately.");
             }
-            
+
             // Recommendations based on load balancing
+
             if (!IsLoadBalancingOptimal)
             {
                 AddRecommendation("Improve load balancing across devices to maximize resource utilization.");
             }
-            
+
             // Recommendations based on device utilization
+
             if (AverageDeviceUtilization < 50.0)
             {
                 AddRecommendation("Device utilization is low. Consider increasing workload size or using fewer devices.");
@@ -238,14 +248,16 @@ namespace DotCompute.Core.Execution.Metrics
             {
                 AddRecommendation("Device utilization is very high. Consider adding more devices or optimizing kernels.");
             }
-            
+
             // Recommendations based on specific bottleneck types
+
             var memoryBottlenecks = Bottlenecks.Where(b => b.Type == BottleneckType.MemoryBandwidth).Count();
             if (memoryBottlenecks > 0)
             {
                 AddRecommendation("Optimize memory access patterns and consider memory pooling strategies.");
             }
-            
+
+
             var communicationBottlenecks = Bottlenecks.Where(b => b.Type == BottleneckType.Communication).Count();
             if (communicationBottlenecks > 0)
             {
@@ -263,7 +275,8 @@ namespace DotCompute.Core.Execution.Metrics
         {
             var criticalCount = CriticalBottleneckCount;
             var attentionCount = BottlenecksRequiringAttention;
-            
+
+
             return $"Performance Rating: {OverallRating:F1}/10, " +
                    $"Bottlenecks: {criticalCount} critical, {attentionCount} requiring attention, " +
                    $"Strategy: {RecommendedStrategy}, " +

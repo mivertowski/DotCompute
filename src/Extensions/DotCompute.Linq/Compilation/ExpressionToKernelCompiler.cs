@@ -308,7 +308,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
             UseSharedMemory = options.EnableMemoryCoalescing,
             UseVectorTypes = true,
             Precision = Operators.PrecisionMode.Single.ToString(),
-            WorkGroupDimensions = new[] { options.MaxThreadsPerBlock, 1, 1 },
+            WorkGroupDimensions = [options.MaxThreadsPerBlock, 1, 1],
             Metadata = new Dictionary<string, object>
             {
                 ["EnableOperatorFusion"] = options.EnableOperatorFusion,

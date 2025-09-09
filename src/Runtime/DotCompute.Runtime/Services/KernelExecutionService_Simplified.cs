@@ -37,7 +37,8 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
         foreach (var registration in kernelRegistrations)
         {
             _kernelRegistry[registration.FullName] = registration;
-            _logger.LogDebug("Registered kernel: {KernelName} with backends: {Backends}", 
+            _logger.LogDebug("Registered kernel: {KernelName} with backends: {Backends}",
+
                 registration.FullName, string.Join(", ", registration.SupportedBackends));
         }
 
@@ -67,7 +68,8 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
 
         if (accelerators.Count == 0)
         {
-            _logger.LogWarning("Preferred backend {Backend} not available, falling back to optimal selection", 
+            _logger.LogWarning("Preferred backend {Backend} not available, falling back to optimal selection",
+
                 preferredBackend);
             return await ExecuteAsync<T>(kernelName, args);
         }
@@ -91,7 +93,8 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
             throw new ArgumentException($"Kernel not found: {kernelName}", nameof(kernelName));
         }
 
-        _logger.LogInformation("Executing kernel {KernelName} on {AcceleratorType} (placeholder implementation)", 
+        _logger.LogInformation("Executing kernel {KernelName} on {AcceleratorType} (placeholder implementation)",
+
             kernelName, accelerator.Info.DeviceType);
 
         // This is a placeholder implementation that demonstrates the integration pattern
@@ -102,8 +105,10 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
         // 4. Return the results
 
         await Task.Delay(10); // Simulate async work
-        
-        _logger.LogDebug("Kernel {KernelName} execution completed on {AcceleratorType}", 
+
+
+        _logger.LogDebug("Kernel {KernelName} execution completed on {AcceleratorType}",
+
             kernelName, accelerator.Info.DeviceType);
 
         return default!; // Placeholder return
@@ -146,7 +151,8 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
             .OrderBy(a => GetBackendPriority(a.Info.DeviceType))
             .FirstOrDefault();
 
-        _logger.LogDebug("Selected {AcceleratorType} for kernel {KernelName}", 
+        _logger.LogDebug("Selected {AcceleratorType} for kernel {KernelName}",
+
             optimalAccelerator?.Info.DeviceType, kernelName);
 
         return optimalAccelerator;
@@ -196,7 +202,8 @@ public class KernelExecutionServiceSimplified : IComputeOrchestrator, IDisposabl
         return deviceType.ToUpperInvariant() switch
         {
             "CUDA" => "CUDA",
-            "CPU" => "CPU", 
+            "CPU" => "CPU",
+
             "METAL" => "Metal",
             "OPENCL" => "OpenCL",
             _ => deviceType

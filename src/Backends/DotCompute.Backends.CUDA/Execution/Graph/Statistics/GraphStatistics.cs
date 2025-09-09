@@ -62,7 +62,8 @@ public sealed class GraphStatistics
     public void UpdateExecutionTime(double executionTimeMs)
     {
         ExecutionCount++;
-        
+
+
         if (executionTimeMs < MinExecutionTimeMs)
         {
             MinExecutionTimeMs = executionTimeMs;

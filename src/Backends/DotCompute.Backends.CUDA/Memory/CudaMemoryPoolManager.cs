@@ -101,7 +101,8 @@ namespace DotCompute.Backends.CUDA.Memory
 
             // Find appropriate pool size (round up to nearest power of 2)
             var poolSize = GetPoolSize(sizeInBytes);
-            
+
+
             if (poolSize > MAX_POOL_SIZE)
             {
                 // Too large for pool, allocate directly
@@ -119,20 +120,25 @@ namespace DotCompute.Backends.CUDA.Memory
 
             // Try to get from pool
             var buffer = await pool.TryGetAsync(cancellationToken);
-            
+
+
             if (buffer != null)
             {
                 _ = Interlocked.Increment(ref _poolHits);
                 _ = Interlocked.Add(ref _totalBytesAllocated, poolSize);
-                
+
+
                 if (zeroMemory)
                 {
                     await ZeroMemoryAsync(buffer.DevicePointer, poolSize, cancellationToken);
                 }
-                
-                _logger.LogTrace("Allocated {Size} bytes from pool (hit rate: {HitRate:P2})", 
+
+
+                _logger.LogTrace("Allocated {Size} bytes from pool (hit rate: {HitRate:P2})",
+
                     poolSize, PoolHitRate);
-                
+
+
                 return new PooledMemoryBuffer(this, buffer, sizeInBytes, poolSize);
             }
 
@@ -177,12 +183,14 @@ namespace DotCompute.Backends.CUDA.Memory
             CancellationToken cancellationToken)
         {
             var devicePtr = IntPtr.Zero;
-            
+
+
             await Task.Run(() =>
             {
                 var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)sizeInBytes);
                 CudaRuntime.CheckError(result, "allocating memory directly");
-                
+
+
                 if (zeroMemory)
                 {
                     result = CudaRuntime.cudaMemset(devicePtr, 0, (nuint)sizeInBytes);
@@ -191,7 +199,8 @@ namespace DotCompute.Backends.CUDA.Memory
             }, cancellationToken);
 
             _ = Interlocked.Add(ref _totalBytesAllocated, sizeInBytes);
-            
+
+
             var block = new MemoryBlock(devicePtr, sizeInBytes);
             return new PooledMemoryBuffer(this, block, sizeInBytes, -1); // -1 indicates no pool
         }
@@ -207,12 +216,14 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 var devicePtr = IntPtr.Zero;
                 var poolSize = pool.BlockSize;
-                
+
+
                 await Task.Run(() =>
                 {
                     var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)poolSize);
                     CudaRuntime.CheckError(result, $"allocating {poolSize} bytes for pool");
-                    
+
+
                     if (zeroMemory)
                     {
                         result = CudaRuntime.cudaMemset(devicePtr, 0, (nuint)poolSize);
@@ -222,11 +233,14 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 _ = Interlocked.Add(ref _totalBytesAllocated, poolSize);
                 _ = Interlocked.Add(ref _totalBytesInPools, poolSize);
-                
+
+
                 var block = new MemoryBlock(devicePtr, poolSize);
-                
+
+
                 _logger.LogDebug("Allocated new {Size} byte block for pool", poolSize);
-                
+
+
                 return new PooledMemoryBuffer(this, block, requestedSize, poolSize);
             }
             finally
@@ -282,7 +296,8 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 size *= POOL_SIZE_MULTIPLIER;
             }
-            
+
+
             return size;
         }
 
@@ -309,7 +324,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (freedBlocks > 0)
                 {
                     _ = Interlocked.Add(ref _totalBytesInPools, -freedBytes);
-                    _logger.LogDebug("Pool maintenance freed {Blocks} blocks ({Bytes:N0} bytes)", 
+                    _logger.LogDebug("Pool maintenance freed {Blocks} blocks ({Bytes:N0} bytes)",
+
                         freedBlocks, freedBytes);
                 }
             }
@@ -325,7 +341,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public MemoryPoolStatistics GetStatistics()
         {
             var poolStats = new List<PoolSizeStatistics>();
-            
+
+
             foreach (var kvp in _pools.OrderBy(p => p.Key))
             {
                 var pool = kvp.Value;
@@ -359,7 +376,8 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 pool.Clear();
             }
-            
+
+
             _totalBytesInPools = 0;
             _logger.LogInformation("Cleared all memory pools");
         }
@@ -373,13 +391,15 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
             _maintenanceTimer?.Dispose();
-            
+
             // Clear and dispose all pools
+
             foreach (var pool in _pools.Values)
             {
                 pool.Dispose();
             }
-            
+
+
             _pools.Clear();
             _allocationSemaphore?.Dispose();
             _disposed = true;
@@ -399,7 +419,8 @@ namespace DotCompute.Backends.CUDA.Memory
             private readonly HashSet<IntPtr> _allBlocks;
             private readonly SemaphoreSlim _lock;
             private readonly ILogger _logger;
-            
+
+
             public int BlockSize { get; }
             public int MaxBlocks { get; }
             public int AvailableCount => _availableBlocks.Count;
@@ -422,7 +443,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 {
                     return Task.FromResult<MemoryBlock?>(block);
                 }
-                
+
+
                 return Task.FromResult<MemoryBlock?>(null);
             }
 
@@ -472,7 +494,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 {
                     _ = CudaRuntime.cudaFree(block.DevicePointer);
                 }
-                
+
+
                 _allBlocks.Clear();
             }
 
@@ -504,9 +527,9 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public interface IPooledMemoryBuffer : IDisposable
     {
-        IntPtr DevicePointer { get; }
-        long Size { get; }
-        long ActualSize { get; }
+        public IntPtr DevicePointer { get; }
+        public long Size { get; }
+        public long ActualSize { get; }
     }
 
     /// <summary>

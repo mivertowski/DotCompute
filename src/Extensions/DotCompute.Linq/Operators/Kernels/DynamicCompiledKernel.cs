@@ -185,8 +185,10 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
     public IReadOnlyList<Parameters.KernelParameter> GetParameterInfo()
     {
         return _generatedKernel.Parameters.Select(p => new Parameters.KernelParameter(
-            p.Name, 
-            p.Type, 
+            p.Name,
+
+            p.Type,
+
             p.IsInput && p.IsOutput ? Parameters.ParameterDirection.InOut :
                        p.IsOutput ? Parameters.ParameterDirection.Out : Parameters.ParameterDirection.In
         )).ToArray();

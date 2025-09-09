@@ -440,4 +440,5 @@ public sealed class GpuRecoveryManager : IDisposable
 }
 
 
+
 // Supporting types would continue in additional files due to length...

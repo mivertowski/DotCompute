@@ -54,11 +54,16 @@ public static class AnalyzerDemo
     [Kernel(Backends = KernelBackends.All, VectorSize = 8)]
     public static void OptimalKernel(ReadOnlySpan<float> input, Span<float> output)
     {
-        int index = Kernel.ThreadId.X;  // ✅ Correct threading model (DC010 compliant)
-        
-        if (index >= output.Length) return;  // ✅ Bounds check (DC011 compliant)
-        
+        int index = ThreadId.X;  // ✅ Correct threading model (DC010 compliant)
+
+
+        if (index >= output.Length)
+        {
+            return;  // ✅ Bounds check (DC011 compliant)
+        }
+
         // Simple, vectorizable operation (DC004 - can benefit from SIMD)
+
         output[index] = input[index] * 2.0f + 1.0f;
     }
 
@@ -71,11 +76,16 @@ public static class AnalyzerDemo
         int width,
         int height)
     {
-        int row = Kernel.ThreadId.Y;    // ✅ 2D threading model
-        int col = Kernel.ThreadId.X;
-        
-        if (row >= height || col >= width) return;  // ✅ Bounds validation
-        
+        int row = ThreadId.Y;    // ✅ 2D threading model
+        int col = ThreadId.X;
+
+
+        if (row >= height || col >= width)
+        {
+            return;  // ✅ Bounds validation
+        }
+
+
         float sum = 0.0f;
         for (int k = 0; k < width; k++)
         {
@@ -95,8 +105,9 @@ public static class AnalyzerDemo
             // DC005: Potential memory access pattern issues
             data[i] = CalculateComplexValue(data[i], data[i + 1]);  // ← Unsafe access
         }
-        
+
         // DC006: Too many local variables (register spilling)
+
         float var1 = 1.0f, var2 = 2.0f, var3 = 3.0f, var4 = 4.0f;
         float var5 = 5.0f, var6 = 6.0f, var7 = 7.0f, var8 = 8.0f;
         float var9 = 9.0f, var10 = 10.0f, var11 = 11.0f, var12 = 12.0f;
@@ -108,7 +119,8 @@ public static class AnalyzerDemo
     private static int GetThreadIndex() => 0; // Placeholder
 
     // Fake Kernel attribute and threading model for demo
-    private class KernelAttribute : Attribute 
+    private class KernelAttribute : Attribute
+
     {
         public KernelBackends Backends { get; set; } = KernelBackends.CPU;
         public int VectorSize { get; set; } = 8;
@@ -131,9 +143,9 @@ public static class AnalyzerDemo
 
     private struct ThreadId
     {
-        public int X => 0;
-        public int Y => 0;
-        public int Z => 0;
+        public static int X => 0;
+        public static int Y => 0;
+        public static int Z => 0;
     }
 }
 
@@ -145,26 +157,37 @@ public static class CodeFixExamples
     // BEFORE: Code that triggers analyzers
     // [Kernel]
     // public void NonStaticMethod(float[] data) { ... }  // ← DC001 + DC002
-    
+
     // AFTER: Code fix applied
+
     [Kernel]
     public static void FixedMethod(Span<float> data)  // ✅ Now static + Span<T>
     {
         int index = Kernel.ThreadId.X;  // ✅ Added by code fixer
-        if (index >= data.Length) return;  // ✅ Added by code fixer
-        
+        if (index >= data.Length)
+        {
+            return;  // ✅ Added by code fixer
+        }
+
+
         data[index] *= 2.0f;
     }
 
     // BEFORE: Missing [Kernel] attribute
     // public static void ProcessData(Span<float> input, Span<float> output) { ... }
-    
+
     // AFTER: Code fixer adds attribute
+
     [Kernel]  // ✅ Added by code fixer
     public static void ProcessData(Span<float> input, Span<float> output)
     {
         int index = Kernel.ThreadId.X;
-        if (index >= output.Length) return;
+        if (index >= output.Length)
+        {
+            return;
+        }
+
+
         output[index] = input[index] * 2.0f;
     }
 }
@@ -178,21 +201,30 @@ public static class PerformanceAnalysisExamples
     [Kernel]
     public static void VectorizableLoop(ReadOnlySpan<float> input, Span<float> output)
     {
-        int index = Kernel.ThreadId.X;
-        if (index >= output.Length) return;
-        
+        int index = ThreadId.X;
+        if (index >= output.Length)
+        {
+            return;
+        }
+
         // ✅ DC004: This pattern can benefit from SIMD vectorization
+
         output[index] = input[index] * 2.0f + 1.0f;
     }
 
     // DC005: This will warn about suboptimal memory access
-    [Kernel] 
+    [Kernel]
+
     public static void SuboptimalMemoryAccess(Span<float> data)
     {
-        int index = Kernel.ThreadId.X;
-        if (index >= data.Length) return;
-        
+        int index = ThreadId.X;
+        if (index >= data.Length)
+        {
+            return;
+        }
+
         // ⚠️ DC005: Non-coalesced memory access pattern
+
         int strideIndex = (index * 7) % data.Length;  // Non-sequential access
         data[strideIndex] = data[index] * 2.0f;
     }
@@ -201,13 +233,18 @@ public static class PerformanceAnalysisExamples
     [Kernel(Backends = KernelBackends.CUDA)]  // ⚠️ DC012: Simple operation doesn't need GPU
     public static void SimpleOperation(Span<float> data)
     {
-        int index = Kernel.ThreadId.X;
-        if (index >= data.Length) return;
-        
+        int index = ThreadId.X;
+        if (index >= data.Length)
+        {
+            return;
+        }
+
+
         data[index] += 1.0f;  // Simple operation - CPU might be better
     }
 
-    private class KernelAttribute : Attribute 
+    private class KernelAttribute : Attribute
+
     {
         public KernelBackends Backends { get; set; } = KernelBackends.CPU;
         public int VectorSize { get; set; } = 8;
@@ -218,7 +255,8 @@ public static class PerformanceAnalysisExamples
     {
         CPU = 1,
         CUDA = 2,
-        Metal = 4, 
+        Metal = 4,
+
         OpenCL = 8,
         All = CPU | CUDA | Metal | OpenCL
     }
@@ -230,6 +268,6 @@ public static class PerformanceAnalysisExamples
 
     private struct ThreadId
     {
-        public int X => 0;
+        public static int X => 0;
     }
 }

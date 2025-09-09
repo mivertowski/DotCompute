@@ -57,8 +57,10 @@ namespace DotCompute.Core.Models
         /// Gets the access ratio (device accesses / total accesses).
         /// </summary>
         public double DeviceAccessRatio
-            => HostAccessCount + DeviceAccessCount > 0 
-                ? (double)DeviceAccessCount / (HostAccessCount + DeviceAccessCount) 
+            => HostAccessCount + DeviceAccessCount > 0
+
+                ? (double)DeviceAccessCount / (HostAccessCount + DeviceAccessCount)
+
                 : 0;
     }
 }

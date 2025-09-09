@@ -20,7 +20,8 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     private readonly NumaTopology _topology;
     private readonly NumaMemoryPolicy _defaultPolicy;
 
-    public CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemoryPolicy? defaultPolicy = null) 
+    public CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemoryPolicy? defaultPolicy = null)
+
         : base(logger)
     {
         _topology = NumaInfo.Topology;
@@ -42,12 +43,13 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         CancellationToken cancellationToken = default)
     {
         _ = policy ?? _defaultPolicy;
-        
+
         // TODO: Production - Implement NUMA-aware allocation
         // Missing: NUMA node selection based on policy
         // Missing: Memory binding to specific NUMA nodes
         // Missing: Cross-node memory access optimization
-        
+
+
         return AllocateAsync(sizeInBytes, options, cancellationToken);
     }
 
@@ -61,18 +63,21 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         _ = Interlocked.Add(ref _currentAllocated, sizeInBytes);
         _ = Interlocked.Increment(ref _activeBuffers);
         _peakMemoryUsage = Math.Max(_peakMemoryUsage, _currentAllocated);
-        
+
         // Determine optimal NUMA node for allocation
+
         var preferredNode = DetermineOptimalNode(_defaultPolicy, sizeInBytes);
-        
+
         // TODO: Production - Implement actual NUMA-aware buffer allocation
         // Missing: libnuma integration for Linux
         // Missing: Windows NUMA API integration
         // Missing: Memory page pinning for performance
-        
+
         // For now, create a simple CPU buffer
+
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this, preferredNode, _defaultPolicy);
-        
+
+
         return await ValueTask.FromResult<IUnifiedMemoryBuffer>(buffer);
     }
 
@@ -80,7 +85,8 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)
     {
         ArgumentNullException.ThrowIfNull(buffer);
-        
+
+
         if (buffer is CpuMemoryBuffer cpuBuffer)
         {
             // TODO: Production - Implement proper memory view creation
@@ -88,7 +94,8 @@ public sealed class CpuMemoryManager : BaseMemoryManager
             // Missing: Copy-on-write semantics
             return new CpuMemoryBufferView(cpuBuffer, offset, length);
         }
-        
+
+
         throw new ArgumentException("Buffer must be a CPU memory buffer", nameof(buffer));
     }
 
@@ -109,19 +116,22 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         // Missing: Memory pressure per node analysis
         // Missing: Inter-node bandwidth consideration
         // Missing: Application-specific hints
-        
+
+
         if (policy.PreferLocalNode)
         {
             // Simple implementation: use node 0
             return 0;
         }
-        
+
+
         if (policy.InterleavingEnabled && _topology.NodeCount > 1)
         {
             // Round-robin across nodes for interleaving
             return (int)(sizeInBytes % _topology.NodeCount);
         }
-        
+
+
         return 0; // Default to first node
     }
 
@@ -144,11 +154,13 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         // Create default options
         var acceleratorOptions = Microsoft.Extensions.Options.Options.Create(new CpuAcceleratorOptions());
         var threadPoolOptions = Microsoft.Extensions.Options.Options.Create(new Threading.CpuThreadPoolOptions());
-        
+
         // Use the same logger but cast to required type - create compatible logger
+
         var loggerFactory = Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
         var acceleratorLogger = loggerFactory.CreateLogger<CpuAccelerator>();
-        
+
+
         return new CpuAccelerator(acceleratorOptions, threadPoolOptions, acceleratorLogger);
     }
 
@@ -170,7 +182,8 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         _ = Interlocked.Add(ref _currentAllocated, sizeInBytes);
         _ = Interlocked.Increment(ref _activeBuffers);
         _peakMemoryUsage = Math.Max(_peakMemoryUsage, _currentAllocated);
-        
+
+
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this, 0, _defaultPolicy);
         return ValueTask.FromResult<IUnifiedMemoryBuffer>(buffer);
     }
@@ -190,26 +203,31 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     /// <inheritdoc/>
     public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
         // Simple CPU memory copy - both buffers are in CPU memory
+
         => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken)
         // Simple CPU memory copy with offsets
+
         => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken)
         // Copy from CPU buffer to host memory - essentially a no-op since both are host memory
+
         => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
         // Copy from host memory to CPU buffer - essentially a no-op since both are host memory
+
         => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
         // Create typed view of the buffer TODO
+
         => throw new NotImplementedException("Typed view creation not yet implemented");
 
     /// <inheritdoc/>
@@ -278,12 +296,14 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
         => CopyToAsync(destination, offset, cancellationToken);
 
-    public void Dispose() 
+    public void Dispose()
+
     {
         // View doesn't own the memory, parent does
     }
 
     public ValueTask DisposeAsync()
         // View doesn't own the memory, parent does
+
         => ValueTask.CompletedTask;
 }

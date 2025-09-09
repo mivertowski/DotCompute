@@ -595,6 +595,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
     private static double CalculateCacheHitRate()
         // This would track actual cache hits/misses in a real implementation
 
+
         => 0.75; // 75% hit rate placeholder
 
     private void CleanupCache(object? state)
@@ -650,6 +651,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         }
     }
 }
+
 
 
 // Supporting types continue in next file...

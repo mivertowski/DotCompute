@@ -7,62 +7,62 @@ using global::System.Runtime.CompilerServices;
 namespace DotCompute.Generators.Utils
 {
 
-/// <summary>
-/// Provides argument validation helpers compatible with netstandard2.0.
-/// These are polyfills for .NET 6+ ArgumentNullException and ArgumentException methods.
-/// </summary>
-internal static class ArgumentValidation
-{
     /// <summary>
-    /// Throws an ArgumentNullException if the argument is null.
+    /// Provides argument validation helpers compatible with netstandard2.0.
+    /// These are polyfills for .NET 6+ ArgumentNullException and ArgumentException methods.
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ThrowIfNull(object? argument, [CallerArgumentExpression("argument")] string? paramName = null)
+    internal static class ArgumentValidation
     {
-        if (argument is null)
+        /// <summary>
+        /// Throws an ArgumentNullException if the argument is null.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ThrowIfNull(object? argument, [CallerArgumentExpression("argument")] string? paramName = null)
         {
-            throw new ArgumentNullException(paramName);
+            if (argument is null)
+            {
+                throw new ArgumentNullException(paramName);
+            }
         }
-    }
 
-    /// <summary>
-    /// Throws an ArgumentException if the string argument is null or empty.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ThrowIfNullOrEmpty(string? argument, [CallerArgumentExpression("argument")] string? paramName = null)
-    {
-        if (string.IsNullOrEmpty(argument))
+        /// <summary>
+        /// Throws an ArgumentException if the string argument is null or empty.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ThrowIfNullOrEmpty(string? argument, [CallerArgumentExpression("argument")] string? paramName = null)
         {
-            throw new ArgumentException("Value cannot be null or empty.", paramName);
+            if (string.IsNullOrEmpty(argument))
+            {
+                throw new ArgumentException("Value cannot be null or empty.", paramName);
+            }
         }
-    }
 
-    /// <summary>
-    /// Throws an ArgumentException if the string argument is null, empty, or whitespace.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ThrowIfNullOrWhiteSpace(string? argument, [CallerArgumentExpression("argument")] string? paramName = null)
-    {
-        if (string.IsNullOrWhiteSpace(argument))
+        /// <summary>
+        /// Throws an ArgumentException if the string argument is null, empty, or whitespace.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ThrowIfNullOrWhiteSpace(string? argument, [CallerArgumentExpression("argument")] string? paramName = null)
         {
-            throw new ArgumentException("Value cannot be null or whitespace.", paramName);
+            if (string.IsNullOrWhiteSpace(argument))
+            {
+                throw new ArgumentException("Value cannot be null or whitespace.", paramName);
+            }
         }
-    }
 
 #if NETSTANDARD2_0
-    /// <summary>
-    /// Provides CallerArgumentExpression attribute for netstandard2.0.
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
-    internal sealed class CallerArgumentExpressionAttribute : Attribute
-    {
-        public CallerArgumentExpressionAttribute(string parameterName)
+        /// <summary>
+        /// Provides CallerArgumentExpression attribute for netstandard2.0.
+        /// </summary>
+        [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+        internal sealed class CallerArgumentExpressionAttribute : Attribute
         {
-            ParameterName = parameterName;
-        }
+            public CallerArgumentExpressionAttribute(string parameterName)
+            {
+                ParameterName = parameterName;
+            }
 
-        public string ParameterName { get; }
-    }
+            public string ParameterName { get; }
+        }
 #endif
-}
+    }
 }

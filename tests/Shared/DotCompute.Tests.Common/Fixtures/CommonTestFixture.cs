@@ -10,52 +10,62 @@ namespace DotCompute.Tests.Common.Fixtures;
 public class CommonTestFixture : IDisposable, IAsyncDisposable
 {
     private bool _disposed;
-    
+
+
     /// <summary>
     /// Gets the test output helper for logging test information.
     /// </summary>
     public ITestOutputHelper? Output { get; private set; }
-    
+
+
     /// <summary>
     /// Gets hardware information detected at fixture creation.
     /// </summary>
     public HardwareDetection.HardwareInfo HardwareInfo { get; }
-    
+
+
     /// <summary>
     /// Gets the temporary directory created for this test fixture.
     /// </summary>
     public string TempDirectory { get; }
-    
+
+
     /// <summary>
     /// Gets a value indicating whether CUDA is available for testing.
     /// </summary>
     public bool IsCudaAvailable => HardwareInfo.CudaAvailable;
-    
+
+
     /// <summary>
     /// Gets a value indicating whether OpenCL is available for testing.
     /// </summary>
     public bool IsOpenCLAvailable => HardwareInfo.OpenCLAvailable;
-    
+
+
     /// <summary>
     /// Gets a value indicating whether GPU testing is available.
     /// </summary>
     public bool IsGpuAvailable => IsCudaAvailable || IsOpenCLAvailable;
-    
+
+
     /// <summary>
     /// Gets a value indicating whether multi-GPU testing is available.
     /// </summary>
     public bool IsMultiGpuAvailable => HardwareInfo.CudaDeviceCount > 1 || HardwareInfo.OpenCLDeviceCount > 1;
-    
+
+
     /// <summary>
     /// Gets a value indicating whether high-performance CPU features are available.
     /// </summary>
     public bool IsHighPerformanceCpuAvailable => HardwareInfo.AvxSupported && HardwareInfo.PhysicalCores >= 4;
-    
+
+
     /// <summary>
     /// Gets a value indicating whether sufficient memory is available for intensive tests.
     /// </summary>
     public bool IsHighMemoryAvailable => HardwareInfo.AvailableMemory >= 4L * 1024 * 1024 * 1024; // 4GB
-    
+
+
     /// <summary>
     /// Initializes a new instance of the CommonTestFixture class.
     /// </summary>
@@ -63,8 +73,9 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
     {
         HardwareInfo = HardwareDetection.Info;
         TempDirectory = CreateTempDirectory();
-        
+
         // Log hardware information for debugging
+
         LogHardwareInfo();
     }
 
@@ -121,13 +132,16 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
     {
         fileName ??= $"temp_{Guid.NewGuid():N}.tmp";
         var filePath = Path.Combine(TempDirectory, fileName);
-        
+
         // Ensure the file is created
+
         File.WriteAllText(filePath, "");
-        
+
+
         return filePath;
     }
-    
+
+
     /// <summary>
     /// Creates a temporary subdirectory in the fixture's temp directory.
     /// </summary>
@@ -139,7 +153,8 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
         var dirPath = Path.Combine(TempDirectory, directoryName);
 
         _ = Directory.CreateDirectory(dirPath);
-        
+
+
         return dirPath;
     }
 
@@ -165,7 +180,8 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
         Log($"Available Memory: {HardwareInfo.AvailableMemory / (1024 * 1024 * 1024):F1} GB");
         Log($"CUDA Available: {HardwareInfo.CudaAvailable} ({HardwareInfo.CudaDeviceCount} devices)");
         Log($"OpenCL Available: {HardwareInfo.OpenCLAvailable} ({HardwareInfo.OpenCLDeviceCount} devices)");
-        
+
+
         if (HardwareInfo.GpuNames.Count > 0)
         {
             Log("GPUs:");
@@ -174,7 +190,8 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
                 Log($"  - {gpu}");
             }
         }
-        
+
+
         Log($"Test Capabilities:");
         Log($"  GPU Testing: {IsGpuAvailable}");
         Log($"  Multi-GPU Testing: {IsMultiGpuAvailable}");
@@ -182,7 +199,8 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
         Log($"  High-Memory Testing: {IsHighMemoryAvailable}");
         Log("===============================");
     }
-    
+
+
     /// <summary>
     /// Creates a temporary directory for the test fixture.
     /// </summary>
@@ -193,7 +211,8 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
         _ = Directory.CreateDirectory(tempDir);
         return tempDir;
     }
-    
+
+
     /// <summary>
     /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
     /// </summary>
@@ -202,7 +221,8 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
         Dispose(true);
         GC.SuppressFinalize(this);
     }
-    
+
+
     /// <summary>
     /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
     /// </summary>
@@ -213,7 +233,8 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
         Dispose(false);
         GC.SuppressFinalize(this);
     }
-    
+
+
     /// <summary>
     /// Releases the unmanaged resources and optionally releases the managed resources.
     /// </summary>
@@ -237,7 +258,8 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
                     // Ignore cleanup errors
                 }
             }
-            
+
+
             _disposed = true;
         }
     }
@@ -249,6 +271,7 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
     /// <returns>A task representing the asynchronous operation.</returns>
     protected virtual ValueTask DisposeAsyncCore()
         // Perform any async cleanup here
+
         => ValueTask.CompletedTask;
 
 

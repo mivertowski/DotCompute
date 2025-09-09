@@ -29,7 +29,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     );
 
     public static readonly DiagnosticDescriptor KernelMethodInvalidParameters = new(
-        "DC002", 
+        "DC002",
+
         "Kernel method has invalid parameters",
         "Kernel method '{0}' has invalid parameter '{1}': {2}",
         "DotCompute.Kernel",
@@ -63,7 +64,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
         "DC005",
         "Kernel has suboptimal memory access pattern",
         "Kernel method '{0}' has memory access pattern that may cause cache misses: {1}",
-        "DotCompute.Performance", 
+        "DotCompute.Performance",
+
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "Memory access patterns should be optimized for cache locality and coalescing."
@@ -143,7 +145,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         KernelMethodMustBeStatic,
-        KernelMethodInvalidParameters, 
+        KernelMethodInvalidParameters,
+
         KernelMethodUnsupportedConstruct,
         KernelCanBeVectorized,
         KernelSuboptimalMemoryAccess,
@@ -160,7 +163,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        
+
+
         context.RegisterSyntaxNodeAction(AnalyzeMethodDeclaration, SyntaxKind.MethodDeclaration);
         context.RegisterSyntaxNodeAction(AnalyzeForStatement, SyntaxKind.ForStatement);
         context.RegisterSyntaxNodeAction(AnalyzeElementAccess, SyntaxKind.ElementAccessExpression);
@@ -169,13 +173,21 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not MethodDeclarationSyntax methodSyntax)
+        {
             return;
+        }
+
 
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodSyntax) as IMethodSymbol;
-        if (methodSymbol == null) return;
+        if (methodSymbol == null)
+        {
+            return;
+        }
+
 
         var hasKernelAttribute = HasKernelAttribute(methodSymbol);
-        
+
+
         if (hasKernelAttribute)
         {
             AnalyzeKernelMethod(context, methodSyntax, methodSymbol);
@@ -235,12 +247,14 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
         foreach (var parameter in methodSymbol.Parameters)
         {
             var parameterType = parameter.Type;
-            
+
+
             if (!IsValidKernelParameterType(parameterType))
             {
                 var parameterNode = methodSyntax.ParameterList.Parameters
                     .FirstOrDefault(p => p.Identifier.ValueText == parameter.Name);
-                
+
+
                 if (parameterNode != null)
                 {
                     var diagnostic = Diagnostic.Create(
@@ -261,7 +275,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
         var unsupportedNodes = methodSyntax.DescendantNodes().Where(node => node switch
         {
             TryStatementSyntax => true,
-            ThrowStatementSyntax => true, 
+            ThrowStatementSyntax => true,
+
             UnsafeStatementSyntax => true,
             DynamicExpressionSyntax => true,
             LinqExpressionSyntax => true,
@@ -293,7 +308,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     private static void CheckVectorizationOpportunities(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
     {
         var forLoops = methodSyntax.DescendantNodes().OfType<ForStatementSyntax>();
-        
+
+
         foreach (var forLoop in forLoops)
         {
             if (CanBeVectorized(forLoop))
@@ -311,7 +327,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMemoryAccessPatterns(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
     {
         var elementAccesses = methodSyntax.DescendantNodes().OfType<ElementAccessExpressionSyntax>();
-        
+
+
         foreach (var access in elementAccesses)
         {
             if (HasSuboptimalAccessPattern(access))
@@ -331,7 +348,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     {
         var localVariables = methodSyntax.DescendantNodes().OfType<VariableDeclarationSyntax>();
         var variableCount = localVariables.SelectMany(v => v.Variables).Count();
-        
+
+
         if (variableCount > 16) // GPU register limit threshold
         {
             var diagnostic = Diagnostic.Create(
@@ -383,9 +401,13 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     private static void ValidateBackendSelection(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
     {
         var kernelAttribute = GetKernelAttribute(methodSymbol);
-        if (kernelAttribute == null) return;
+        if (kernelAttribute == null)
+        {
+            return;
+        }
 
         // Analyze computational complexity to suggest optimal backends
+
         var complexity = AnalyzeComputationalComplexity(methodSyntax);
         var suggestedBackends = GetOptimalBackends(complexity);
         var currentBackends = ExtractBackendsFromAttribute(kernelAttribute);
@@ -429,7 +451,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     {
         var typeName = type.ToDisplayString();
         return typeName.Contains("Span<") ||
-               typeName.Contains("ReadOnlySpan<") || 
+               typeName.Contains("ReadOnlySpan<") ||
+
                type.SpecialType is SpecialType.System_Int32 or SpecialType.System_Single or SpecialType.System_Double;
     }
 
@@ -437,7 +460,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     {
         // Simple heuristic - loops with array access and arithmetic operations
         return forLoop.DescendantNodes().OfType<ElementAccessExpressionSyntax>().Any() &&
-               forLoop.DescendantNodes().OfType<BinaryExpressionSyntax>().Any(b => 
+               forLoop.DescendantNodes().OfType<BinaryExpressionSyntax>().Any(b =>
+
                    b.IsKind(SyntaxKind.AddExpression) || b.IsKind(SyntaxKind.MultiplyExpression));
     }
 
@@ -458,7 +482,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
         return (loopCount, mathOperations) switch
         {
             ( > 1, > 5) => "HighComplexity",
-            ( > 0, > 2) => "MediumComplexity", 
+            ( > 0, > 2) => "MediumComplexity",
+
             _ => "LowComplexity"
         };
     }

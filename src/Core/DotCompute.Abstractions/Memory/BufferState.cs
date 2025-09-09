@@ -12,7 +12,8 @@ public enum BufferState
     /// Buffer is uninitialized.
     /// </summary>
     Uninitialized,
-    
+
+
     /// <summary>
     /// Buffer is allocated and ready for use.
     /// </summary>
@@ -37,47 +38,48 @@ public enum BufferState
     /// Buffer has been disposed.
     /// </summary>
     Disposed,
-    
+
     /// <summary>
     /// Buffer is accessible from both host and device.
     /// </summary>
     Synchronized,
-    
+
     /// <summary>
     /// Buffer is only accessible from host.
     /// </summary>
     HostOnly,
-    
+
     /// <summary>
     /// Buffer is only accessible from device.
     /// </summary>
     DeviceOnly,
-    
+
     /// <summary>
     /// Host has more recent data than device.
     /// </summary>
     HostDirty,
-    
+
     /// <summary>
     /// Device has more recent data than host.
     /// </summary>
     DeviceDirty,
-    
+
     /// <summary>
     /// Buffer data is ready on the host.
     /// </summary>
     HostReady,
-    
+
     /// <summary>
     /// Buffer data is ready on the device.
     /// </summary>
     DeviceReady,
-    
+
     /// <summary>
     /// Buffer has been released and its memory is available for reuse.
     /// </summary>
     Released,
-    
+
+
     /// <summary>
     /// Buffer data is valid and available on the device.
     /// </summary>

@@ -13,7 +13,8 @@ namespace DotCompute.Generators.Backend.CPU;
 public class ParallelCodeGenerator : CpuCodeGeneratorBase
 {
     #region Constructor
-    
+
+
     public ParallelCodeGenerator(
         string methodName,
         IReadOnlyList<KernelParameter> parameters,
@@ -22,25 +23,28 @@ public class ParallelCodeGenerator : CpuCodeGeneratorBase
         : base(methodName, parameters, methodSyntax, vectorizationInfo)
     {
     }
-    
+
     #endregion
-    
+
     #region Public Methods
-    
+
+
     public override void Generate(StringBuilder sb)
     {
         GenerateMethodDocumentation(sb,
             "Parallel implementation using task parallelism.",
             "Automatically partitions work across available CPU cores.");
-        
+
+
         GenerateMethodSignature(sb, "ExecuteParallel", false, includeRange: false, includeLength: true);
         GenerateMethodBody(sb, () => GenerateParallelMethodContent(sb));
     }
-    
+
     #endregion
-    
+
     #region Private Methods
-    
+
+
     private void GenerateParallelMethodContent(StringBuilder sb)
     {
         _ = sb.AppendLine("            int processorCount = Environment.ProcessorCount;");
@@ -53,6 +57,7 @@ public class ParallelCodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine(", range.Item1, range.Item2);");
         _ = sb.AppendLine("            });");
     }
-    
+
+
     #endregion
 }

@@ -50,16 +50,21 @@ namespace DotCompute.Backends.CUDA.Factory
             _serviceProvider = serviceProvider;
             _loggerFactory = serviceProvider?.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance;
             _createdAccelerators = [];
-            
+
             // Initialize core managers
-            var deviceManagerLogger = _serviceProvider?.GetService<ILogger<CudaDeviceManager>>() 
+
+            var deviceManagerLogger = _serviceProvider?.GetService<ILogger<CudaDeviceManager>>()
+
                 ?? new NullLogger<CudaDeviceManager>();
             _deviceManager = new CudaDeviceManager(deviceManagerLogger);
-            
-            var systemInfoLogger = _serviceProvider?.GetService<ILogger<SystemInfoManager>>() 
+
+
+            var systemInfoLogger = _serviceProvider?.GetService<ILogger<SystemInfoManager>>()
+
                 ?? new NullLogger<SystemInfoManager>();
             _systemInfoManager = new SystemInfoManager(systemInfoLogger);
-            
+
+
             _logger.LogInformation("Production CUDA Accelerator Factory initialized");
         }
 
@@ -71,7 +76,8 @@ namespace DotCompute.Backends.CUDA.Factory
             ProductionConfiguration? config = null)
         {
             config ??= ProductionConfiguration.Default;
-            
+
+
             _logger.LogInformation(
                 "Creating production CUDA accelerator for device {DeviceId} with config: {@Config}",
                 deviceId, config);
@@ -83,13 +89,16 @@ namespace DotCompute.Backends.CUDA.Factory
 
             // Initialize all production features
             InitializeProductionFeatures(accelerator, config);
-            
+
+
             _createdAccelerators.Add(accelerator);
-            
+
+
             _logger.LogInformation(
                 "Production accelerator created for device {DeviceId} with {FeatureCount} features enabled",
                 deviceId, accelerator.EnabledFeatures.Count);
-            
+
+
             return accelerator;
         }
 
@@ -101,7 +110,8 @@ namespace DotCompute.Backends.CUDA.Factory
             try
             {
                 var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
-                
+
+
                 if (result != CudaError.Success)
                 {
                     _logger.LogWarning("CUDA runtime error: {Error}", CudaRuntime.GetErrorString(result));
@@ -156,8 +166,9 @@ namespace DotCompute.Backends.CUDA.Factory
             _logger.LogInformation("Creating accelerators for {DeviceCount} CUDA devices", devices.Count);
 
             var accelerators = new List<ProductionCudaAccelerator>();
-            
+
             // Create all accelerators first, collecting successes
+
             foreach (var device in devices)
             {
                 ProductionCudaAccelerator? accelerator = null;
@@ -165,26 +176,32 @@ namespace DotCompute.Backends.CUDA.Factory
                 {
                     // Determine configuration based on device capabilities
                     var config = DetermineOptimalConfiguration(device);
-                    
+
+
                     accelerator = CreateProductionAccelerator(device.DeviceId, config);
-                    
+
+
                     _logger.LogInformation(
                         "Created production accelerator for {DeviceName} (CC {ComputeCapability})",
                         device.Name, $"{device.Major}.{device.Minor}");
-                    
+
+
                     accelerators.Add(accelerator);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, 
+                    _logger.LogError(ex,
+
                         "Failed to create accelerator for device {DeviceId}: {DeviceName}",
                         device.DeviceId, device.Name);
-                    
+
+
                     accelerator?.Dispose();
                 }
             }
-            
+
             // Now yield all successfully created accelerators
+
             foreach (var accelerator in accelerators)
             {
                 yield return accelerator;
@@ -211,11 +228,14 @@ namespace DotCompute.Backends.CUDA.Factory
                     MinComputeCapability = 60, // Pascal or newer
                     PreferLargestMemory = true
                 };
-                
+
+
                 var bestDevice = _deviceManager.SelectBestDevice(criteria);
-                
+
+
                 _logger.LogInformation("Selected device {DeviceId} as default", bestDevice);
-                
+
+
                 var config = ProductionConfiguration.HighPerformance;
                 return CreateProductionAccelerator(bestDevice, config);
             }
@@ -250,7 +270,8 @@ namespace DotCompute.Backends.CUDA.Factory
             // Add system info
             var systemInfo = _systemInfoManager.GetMemoryInfo();
             capabilities.MaxMemory = systemInfo.TotalPhysicalMemory;
-            
+
+
             return capabilities;
         }
 
@@ -376,7 +397,8 @@ namespace DotCompute.Backends.CUDA.Factory
             }
 
             accelerator.EnabledFeatures = enabledFeatures;
-            
+
+
             _logger.LogInformation(
                 "Initialized {FeatureCount} production features for device {DeviceId}: {Features}",
                 enabledFeatures.Count,
@@ -505,19 +527,22 @@ namespace DotCompute.Backends.CUDA.Factory
                 features.Add("Unified Memory");
                 features.Add("Dynamic Parallelism");
             }
-            
+
+
             if (devices.Any(d => d.TensorCoreCount > 0))
             {
                 features.Add("Tensor Cores");
                 features.Add("Mixed Precision");
             }
-            
+
+
             if (devices.Any(d => d.SupportsNVLink))
             {
                 features.Add("NVLink");
                 features.Add("P2P Memory Access");
             }
-            
+
+
             if (devices.Count() > 1)
             {
                 features.Add("Multi-GPU");
@@ -555,11 +580,13 @@ namespace DotCompute.Backends.CUDA.Factory
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error disposing accelerator for device {DeviceId}", 
+                    _logger.LogError(ex, "Error disposing accelerator for device {DeviceId}",
+
                         accelerator.DeviceId);
                 }
             }
-            
+
+
             _createdAccelerators.Clear();
 
             // Dispose managers
@@ -588,14 +615,17 @@ namespace DotCompute.Backends.CUDA.Factory
             public bool EnableProfiling { get; set; }
 
             public bool EnableErrorRecovery { get; set; } = true;
-            
+
+
             public int StreamPoolSize { get; set; } = 4;
             public int MaxStreams { get; set; } = 32;
             public string KernelCacheDirectory { get; set; } = ".cuda_cache";
             public long KernelCacheSize { get; set; } = 256 * 1024 * 1024; // 256MB
-            
+
+
             public static ProductionConfiguration Default => new();
-            
+
+
             public static ProductionConfiguration HighPerformance => new()
             {
                 EnableStreamManagement = true,
@@ -608,7 +638,8 @@ namespace DotCompute.Backends.CUDA.Factory
                 StreamPoolSize = 8,
                 MaxStreams = 64
             };
-            
+
+
             public static ProductionConfiguration Balanced => new()
             {
                 EnableStreamManagement = true,
@@ -620,7 +651,8 @@ namespace DotCompute.Backends.CUDA.Factory
                 StreamPoolSize = 4,
                 MaxStreams = 32
             };
-            
+
+
             public static ProductionConfiguration Compatible => new()
             {
                 EnableStreamManagement = true,
@@ -641,7 +673,8 @@ namespace DotCompute.Backends.CUDA.Factory
         {
             private readonly CudaAccelerator _baseAccelerator;
             private readonly Lazy<IUnifiedMemoryManager> _memoryAdapter;
-            
+
+
             public CudaStreamManagerProduction StreamManager { get; }
             public CudaMemoryManager AsyncMemoryManager { get; }
             public CudaErrorHandler ErrorHandler { get; }
@@ -688,12 +721,14 @@ namespace DotCompute.Backends.CUDA.Factory
                 DeviceManager = deviceManager ?? throw new ArgumentNullException(nameof(deviceManager));
                 SystemInfoManager = systemInfoManager ?? throw new ArgumentNullException(nameof(systemInfoManager));
                 DeviceId = deviceId;
-                
+
                 // Create base accelerator for delegation
                 // Use NullLogger to avoid type conversion issues
+
                 _baseAccelerator = new CudaAccelerator(deviceId, NullLogger<CudaAccelerator>.Instance);
-                
+
                 // Initialize memory adapter with lazy loading to avoid multiple instances
+
                 _memoryAdapter = new Lazy<IUnifiedMemoryManager>(() => new Memory.CudaAsyncMemoryManagerAdapter(UnifiedMemoryManager));
             }
 
@@ -735,8 +770,9 @@ namespace DotCompute.Backends.CUDA.Factory
                 ErrorHandler?.Dispose();
                 AsyncMemoryManager?.Dispose();
                 StreamManager?.Dispose();
-                
+
                 // Dispose base accelerator asynchronously
+
                 if (_baseAccelerator != null)
                 {
                     _baseAccelerator.DisposeAsync().AsTask().Wait();
@@ -750,16 +786,18 @@ namespace DotCompute.Backends.CUDA.Factory
                 {
                     await _baseAccelerator.DisposeAsync().ConfigureAwait(false);
                 }
-                
+
                 // Dispose remaining managers that only support sync disposal
+
                 Profiler?.Dispose();
                 GraphOptimizer?.Dispose();
                 KernelCache?.Dispose();
                 TensorCoreManager?.Dispose();
                 UnifiedMemoryManager?.Dispose();
                 ErrorHandler?.Dispose();
-                
+
                 // Handle async disposal for memory and stream managers if they support it
+
                 if (AsyncMemoryManager is IDisposable syncMemoryManager)
                 {
                     syncMemoryManager.Dispose();
@@ -768,9 +806,11 @@ namespace DotCompute.Backends.CUDA.Factory
                 {
                     AsyncMemoryManager?.Dispose();
                 }
-                
+
+
                 StreamManager?.Dispose();
-                
+
+
                 GC.SuppressFinalize(this);
             }
         }

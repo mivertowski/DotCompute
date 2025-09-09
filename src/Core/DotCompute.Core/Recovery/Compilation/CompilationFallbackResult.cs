@@ -29,38 +29,44 @@ public class CompilationFallbackResult
     /// </summary>
     /// <value>true if any fallback strategy resulted in successful compilation; otherwise, false.</value>
     public bool Success { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the error message if the fallback operation failed completely.
     /// </summary>
     /// <value>The final error message, or null if the operation succeeded.</value>
     public string? Error { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the fallback strategy that ultimately resulted in successful compilation.
     /// </summary>
     /// <value>The successful strategy, or null if no strategy succeeded.</value>
     public CompilationFallbackStrategy? FinalStrategy { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the final compilation options that resulted in successful compilation.
     /// </summary>
     /// <value>The successful compilation configuration, or null if no compilation succeeded.</value>
     public CompilationOptions? FinalOptions { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the successfully compiled kernel object.
     /// </summary>
     /// <value>The compiled kernel instance, or null if compilation failed.</value>
     public object? CompiledKernel { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the list of all compilation attempts made during the fallback process.
     /// This includes both successful and failed attempts.
     /// </summary>
     /// <value>A chronological list of all compilation attempts.</value>
     public List<CompilationAttempt> Attempts { get; set; } = [];
-    
+
+
     /// <summary>
     /// Gets or sets the total duration of the fallback operation in milliseconds.
     /// This includes all compilation attempts and recovery overhead.

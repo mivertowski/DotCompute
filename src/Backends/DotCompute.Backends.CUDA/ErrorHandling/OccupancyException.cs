@@ -14,8 +14,9 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         /// Initializes a new instance of the OccupancyException class.
         /// </summary>
         /// <param name="message">The error message.</param>
-        public OccupancyException(string message) : base(message) 
-        { 
+        public OccupancyException(string message) : base(message)
+        {
+
         }
 
         /// <summary>
@@ -23,9 +24,11 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         /// </summary>
         /// <param name="message">The error message.</param>
         /// <param name="innerException">The inner exception.</param>
-        public OccupancyException(string message, Exception innerException) 
-            : base(message, innerException) 
-        { 
+        public OccupancyException(string message, Exception innerException)
+
+            : base(message, innerException)
+        {
+
         }
         public OccupancyException()
         {

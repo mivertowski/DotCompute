@@ -30,7 +30,8 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _discoveryService = discoveryService ?? throw new ArgumentNullException(nameof(discoveryService));
         _managedPlugins = [];
-        
+
+
         _logger.LogDebug("PluginLifecycleManager initialized");
     }
 
@@ -63,7 +64,8 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
         {
             _managedPlugins[plugin.Id] = plugin;
             _discoveryService.RegisterLoadedPlugin(plugin);
-            
+
+
             _logger.LogInformation("Registered plugin {PluginId} ({PluginName}) for lifecycle management",
                 plugin.Id, plugin.Name);
 
@@ -107,7 +109,8 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
 
                     // Dispose the plugin
                     plugin.Dispose();
-                    
+
+
                     _logger.LogInformation("Successfully unloaded plugin {PluginId}", pluginId);
 
                     try
@@ -124,7 +127,8 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to unload plugin {PluginId}", pluginId);
-                    
+
+
                     try
                     {
                         LifecycleError?.Invoke(this, new PluginLifecycleErrorEventArgs(pluginId, ex, "Unload"));
@@ -183,7 +187,8 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
 
                 // Dispose the plugin
                 plugin.Dispose();
-                
+
+
                 _logger.LogInformation("Successfully unloaded plugin {PluginId}", pluginId);
 
                 try
@@ -201,7 +206,8 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
             {
                 errorMessage = $"Failed to unload plugin {pluginId}: {ex.Message}";
                 _logger.LogError(ex, "Failed to unload plugin {PluginId}", pluginId);
-                
+
+
                 try
                 {
                     LifecycleError?.Invoke(this, new PluginLifecycleErrorEventArgs(pluginId, ex, "Unload"));
@@ -239,7 +245,8 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
                 }
             }
 
-            _logger.LogInformation("Successfully unloaded {UnloadedCount} of {TotalCount} plugins", 
+            _logger.LogInformation("Successfully unloaded {UnloadedCount} of {TotalCount} plugins",
+
                 unloadedCount, pluginIds.Count);
 
             return unloadedCount;

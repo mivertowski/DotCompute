@@ -24,7 +24,8 @@ public enum IndentationStyle
     /// The number of spaces per indentation level is controlled by the IndentSize property.
     /// </remarks>
     Spaces,
-    
+
+
     /// <summary>
     /// Use tab characters for indentation.
     /// </summary>

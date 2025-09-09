@@ -35,12 +35,13 @@ namespace DotCompute.Backends.CUDA.Resilience
         private const int MAX_RETRY_ATTEMPTS = 3;
         private const int CIRCUIT_BREAKER_THRESHOLD = 5;
         private const int CIRCUIT_BREAKER_DURATION_SECONDS = 30;
-        private static readonly TimeSpan[] RetryDelays = 
-        {
+        private static readonly TimeSpan[] RetryDelays =
+
+        [
             TimeSpan.FromMilliseconds(100),
             TimeSpan.FromMilliseconds(500),
             TimeSpan.FromSeconds(2)
-        };
+        ];
 
         // Error counters
         private long _totalErrors;
@@ -158,13 +159,15 @@ namespace DotCompute.Backends.CUDA.Resilience
             catch (BrokenCircuitException)
             {
                 _ = Interlocked.Increment(ref _permanentFailures);
-                throw new CudaException(CudaError.Unknown, 
+                throw new CudaException(CudaError.Unknown,
+
                     $"Circuit breaker is open for operation '{operationName}'. Too many failures detected.");
             }
             catch (CudaException ex)
             {
                 _ = Interlocked.Increment(ref _permanentFailures);
-                _logger.LogError(ex, "Permanent failure for operation '{OperationName}' after all retry attempts", 
+                _logger.LogError(ex, "Permanent failure for operation '{OperationName}' after all retry attempts",
+
                     operationName);
                 throw;
             }
@@ -243,11 +246,13 @@ namespace DotCompute.Backends.CUDA.Resilience
                 if (resetResult == CudaError.Success)
                 {
                     _logger.LogInformation("CUDA device reset successful");
-                    
+
                     // Re-initialize context
+
                     _context.Reinitialize();
-                    
+
                     // Restore state from snapshot
+
                     var restoreResult = await _stateManager.RestoreFromSnapshotAsync(snapshot, cancellationToken);
                     if (restoreResult.Success)
                     {
@@ -322,7 +327,8 @@ namespace DotCompute.Backends.CUDA.Resilience
         public ErrorRecoveryStatistics GetStatistics()
         {
             var operationStats = new Dictionary<string, OperationErrorStatistics>();
-            
+
+
             foreach (var kvp in _errorStats)
             {
                 var stats = kvp.Value;
@@ -357,7 +363,8 @@ namespace DotCompute.Backends.CUDA.Resilience
             _ = Interlocked.Exchange(ref _totalErrors, 0);
             _ = Interlocked.Exchange(ref _recoveredErrors, 0);
             _ = Interlocked.Exchange(ref _permanentFailures, 0);
-            
+
+
             _logger.LogInformation("Error recovery statistics reset");
         }
 
@@ -425,7 +432,8 @@ namespace DotCompute.Backends.CUDA.Resilience
             _logger.LogInformation(
                 "Disposed error recovery manager. Total: {Total}, Recovered: {Recovered}, Failed: {Failed}, " +
                 "Recovery Count: {RecoveryCount}",
-                _totalErrors, _recoveredErrors, _permanentFailures, 
+                _totalErrors, _recoveredErrors, _permanentFailures,
+
                 resourceStats?.RecoveryCount ?? 0);
         }
 
@@ -433,7 +441,8 @@ namespace DotCompute.Backends.CUDA.Resilience
         {
             private readonly ConcurrentDictionary<CudaError, long> _errorCounts;
             private long _totalErrors;
-            
+
+
             public long TotalErrors => _totalErrors;
             public CudaError LastError { get; private set; }
             public DateTime LastErrorTime { get; private set; }
@@ -552,7 +561,8 @@ namespace DotCompute.Backends.CUDA.Resilience
             Error = error;
         }
 
-        public CudaException(CudaError error, string message, Exception innerException) 
+        public CudaException(CudaError error, string message, Exception innerException)
+
             : base(message, innerException)
         {
             Error = error;

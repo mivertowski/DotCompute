@@ -27,7 +27,7 @@ public sealed class LogEnricher : IDisposable
 
     private static readonly Regex[] SensitivePatterns =
 
-    {
+    [
         new(@"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", RegexOptions.Compiled), // Email
         new(@"\b(?:\d{4}[-\s]?){3}\d{4}\b", RegexOptions.Compiled), // Credit card
         new(@"\b\d{3}-\d{2}-\d{4}\b", RegexOptions.Compiled), // SSN
@@ -37,7 +37,7 @@ public sealed class LogEnricher : IDisposable
         new(@"secret[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase),
         new(@"token[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase),
         new(@"key[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)
-    };
+    ];
 
     public LogEnricher(ILogger<LogEnricher> logger, IOptions<LogEnricherOptions> options)
     {
@@ -604,6 +604,7 @@ public sealed class LogEnricher : IDisposable
 
     private static string HashString(string input)
         // Simple hash for user identification (not cryptographically secure)
+
 
         => input.GetHashCode().ToString("X8");
 

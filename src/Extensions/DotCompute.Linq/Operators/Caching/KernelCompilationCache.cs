@@ -35,8 +35,9 @@ internal static class KernelCompilationCache
         _ = keyBuilder.Append('|');
         _ = keyBuilder.Append(request.TargetAccelerator?.Info.Name ?? "CPU");
         _ = keyBuilder.Append('|');
-        
+
         // Hash the source code to keep the key manageable
+
         using var sha256 = SHA256.Create();
         var sourceBytes = Encoding.UTF8.GetBytes(request.Source);
         var hashBytes = sha256.ComputeHash(sourceBytes);

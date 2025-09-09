@@ -349,7 +349,7 @@ namespace DotCompute.Backends.CUDA.Integration
         }
 
 
-        private Task ApplyAdvancedOptimizationsAsync(
+        private static Task ApplyAdvancedOptimizationsAsync(
             CudaCompiledKernel kernel,
             KernelArgument[] arguments,
             CudaExecutionOptions options,
@@ -455,6 +455,7 @@ namespace DotCompute.Backends.CUDA.Integration
 
         private static double CalculatePerformanceHealth(CudaPerformanceMetrics metrics)
             // Simple performance health calculation
+
             => metrics.MemoryUtilization < 0.9 && metrics.ComputeUtilization < 0.95 ? 1.0 : 0.5;
 
         private void PerformHealthCheck(object? state)

@@ -77,11 +77,13 @@ public sealed partial class SystemInfoManager : IDisposable
             var virtMemInfo = GetVirtualMemoryInfo();
             var cpuInfo = GetCpuInfo();
             var diskInfo = GetDiskInfo();
-            
+
             // Get process information
+
             using var process = Process.GetCurrentProcess();
-            
+
             // Create SystemInfo with all properties initialized
+
             var info = new SystemInfo
             {
                 // Platform
@@ -94,18 +96,21 @@ public sealed partial class SystemInfoManager : IDisposable
                 Is64BitOS = Environment.Is64BitOperatingSystem,
                 Is64BitProcess = Environment.Is64BitProcess,
                 Timestamp = DateTimeOffset.UtcNow,
-                
+
                 // Memory
+
                 TotalPhysicalMemory = memInfo.Total,
                 AvailablePhysicalMemory = memInfo.Available,
                 UsedPhysicalMemory = memInfo.Used,
                 MemoryUsagePercentage = memInfo.UsagePercentage,
-                
+
                 // Virtual Memory
+
                 TotalVirtualMemory = virtMemInfo.Total,
                 AvailableVirtualMemory = virtMemInfo.Available,
-                
+
                 // CPU
+
                 CpuName = cpuInfo.Name,
                 CpuFrequencyMHz = cpuInfo.FrequencyMHz,
                 CpuCores = cpuInfo.PhysicalCores,
@@ -113,24 +118,29 @@ public sealed partial class SystemInfoManager : IDisposable
                 CpuUsagePercentage = cpuInfo.UsagePercentage,
                 CpuArchitecture = cpuInfo.Architecture,
                 CpuFeatures = cpuInfo.Features,
-                
+
                 // Process
+
                 ProcessMemory = process.WorkingSet64,
                 ProcessVirtualMemory = process.VirtualMemorySize64,
                 ProcessThreadCount = process.Threads.Count,
                 ProcessHandleCount = process.HandleCount,
                 ProcessUptime = DateTimeOffset.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime(),
-                
+
                 // Disk
+
                 DiskSpaceTotal = diskInfo.Total,
                 DiskSpaceAvailable = diskInfo.Available,
                 DiskSpaceUsed = diskInfo.Used
             };
-            
+
+
             _cachedInfo = info;
-            
+
+
             LogSystemInfo(info);
-            
+
+
             return info;
         }
         catch (Exception ex)
@@ -189,7 +199,8 @@ public sealed partial class SystemInfoManager : IDisposable
     {
         var physicalMemory = GetPhysicalMemoryInfo();
         var virtualMemory = GetVirtualMemoryInfo();
-        
+
+
         return new SystemMemoryInfo
         {
             // Physical memory
@@ -197,22 +208,26 @@ public sealed partial class SystemInfoManager : IDisposable
             AvailablePhysicalMemory = physicalMemory.Available,
             UsedPhysicalMemory = physicalMemory.Used,
             PhysicalMemoryUsagePercentage = physicalMemory.UsagePercentage,
-            
+
             // Virtual memory
+
             TotalVirtualMemory = virtualMemory.Total,
             AvailableVirtualMemory = virtualMemory.Available,
-            
+
             // Process memory
+
             ProcessMemoryUsage = Process.GetCurrentProcess().WorkingSet64,
             ProcessVirtualMemoryUsage = Process.GetCurrentProcess().VirtualMemorySize64,
-            
+
             // GC information
+
             GCTotalMemory = GC.GetTotalMemory(false),
             GCGen0Collections = GC.CollectionCount(0),
             GCGen1Collections = GC.CollectionCount(1),
             GCGen2Collections = GC.CollectionCount(2),
-            
+
             // Timestamp
+
             Timestamp = DateTimeOffset.UtcNow
         };
     }
@@ -223,7 +238,8 @@ public sealed partial class SystemInfoManager : IDisposable
     private MemoryInfo GetPhysicalMemoryInfo()
     {
         var platform = GetPlatform();
-        
+
+
         return platform switch
         {
             PlatformType.Windows => GetWindowsMemoryInfo(),
@@ -239,7 +255,8 @@ public sealed partial class SystemInfoManager : IDisposable
     private MemoryInfo GetWindowsMemoryInfo()
     {
         var info = new MemoryInfo();
-        
+
+
         try
         {
             if (OperatingSystem.IsWindows())
@@ -265,7 +282,8 @@ public sealed partial class SystemInfoManager : IDisposable
                         info.UsagePercentage = (double)info.Used / info.Total * 100;
                         break;
                     }
-                    
+
+
                     collection?.Dispose();
                     searcher?.Dispose();
                 }
@@ -281,7 +299,8 @@ public sealed partial class SystemInfoManager : IDisposable
             _logger.LogWarning(ex, "Failed to get Windows memory info via WMI, using fallback");
             return GetFallbackMemoryInfo();
         }
-        
+
+
         return info;
     }
 
@@ -291,7 +310,8 @@ public sealed partial class SystemInfoManager : IDisposable
     private MemoryInfo GetLinuxMemoryInfo()
     {
         var info = new MemoryInfo();
-        
+
+
         try
         {
             if (!File.Exists("/proc/meminfo"))
@@ -303,7 +323,8 @@ public sealed partial class SystemInfoManager : IDisposable
 
             var lines = File.ReadAllLines("/proc/meminfo");
             var memValues = new Dictionary<string, long>();
-            
+
+
             foreach (var line in lines)
             {
                 var match = MemInfoRegex().Match(line);
@@ -314,7 +335,8 @@ public sealed partial class SystemInfoManager : IDisposable
                     memValues[key] = value;
                 }
             }
-            
+
+
             if (memValues.TryGetValue("MemTotal", out var total))
             {
                 info.Total = total;
@@ -331,7 +353,8 @@ public sealed partial class SystemInfoManager : IDisposable
             {
                 info.Available = free + buffers + cached;
             }
-            
+
+
             info.Used = info.Total - info.Available;
             info.UsagePercentage = info.Total > 0 ? (double)info.Used / info.Total * 100 : 0;
         }
@@ -340,7 +363,8 @@ public sealed partial class SystemInfoManager : IDisposable
             _logger.LogWarning(ex, "Failed to read /proc/meminfo, using fallback");
             return GetFallbackMemoryInfo();
         }
-        
+
+
         return info;
     }
 
@@ -350,7 +374,8 @@ public sealed partial class SystemInfoManager : IDisposable
     private MemoryInfo GetMacOSMemoryInfo()
     {
         var info = new MemoryInfo();
-        
+
+
         try
         {
             // Get total memory using sysctl
@@ -359,17 +384,20 @@ public sealed partial class SystemInfoManager : IDisposable
             {
                 info.Total = total;
             }
-            
+
             // Get memory usage using vm_stat
+
             var vmStatOutput = ExecuteCommand("vm_stat", "");
             var lines = vmStatOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            
+
+
             long pageSize = 4096; // Default page size
             long freePages = 0;
             long inactivePages = 0;
             long activePages = 0;
             long wiredPages = 0;
-            
+
+
             foreach (var line in lines)
             {
                 if (line.Contains("page size of"))
@@ -397,15 +425,18 @@ public sealed partial class SystemInfoManager : IDisposable
                     wiredPages = ParseMacOSPages(line);
                 }
             }
-            
+
+
             info.Available = (freePages + inactivePages) * pageSize;
             info.Used = (activePages + wiredPages) * pageSize;
-            
+
+
             if (info.Total == 0 && info.Available > 0 && info.Used > 0)
             {
                 info.Total = info.Available + info.Used;
             }
-            
+
+
             info.UsagePercentage = info.Total > 0 ? (double)info.Used / info.Total * 100 : 0;
         }
         catch (Exception ex)
@@ -413,7 +444,8 @@ public sealed partial class SystemInfoManager : IDisposable
             _logger.LogWarning(ex, "Failed to get macOS memory info, using fallback");
             return GetFallbackMemoryInfo();
         }
-        
+
+
         return info;
     }
 
@@ -423,14 +455,16 @@ public sealed partial class SystemInfoManager : IDisposable
     private static MemoryInfo GetFallbackMemoryInfo()
     {
         var info = new MemoryInfo();
-        
+
         // Use GC memory info as fallback
+
         var gcMemInfo = GC.GetGCMemoryInfo();
         info.Total = gcMemInfo.TotalAvailableMemoryBytes;
         info.Available = gcMemInfo.TotalAvailableMemoryBytes - gcMemInfo.HeapSizeBytes;
         info.Used = gcMemInfo.HeapSizeBytes;
         info.UsagePercentage = info.Total > 0 ? (double)info.Used / info.Total * 100 : 0;
-        
+
+
         return info;
     }
 
@@ -440,7 +474,8 @@ public sealed partial class SystemInfoManager : IDisposable
     private VirtualMemoryInfo GetVirtualMemoryInfo()
     {
         var info = new VirtualMemoryInfo();
-        
+
+
         try
         {
             using var process = Process.GetCurrentProcess();
@@ -451,7 +486,8 @@ public sealed partial class SystemInfoManager : IDisposable
         {
             _logger.LogWarning(ex, "Failed to get virtual memory info");
         }
-        
+
+
         return info;
     }
 
@@ -464,9 +500,11 @@ public sealed partial class SystemInfoManager : IDisposable
         {
             LogicalCores = Environment.ProcessorCount
         };
-        
+
+
         var platform = GetPlatform();
-        
+
+
         try
         {
             switch (platform)
@@ -481,15 +519,17 @@ public sealed partial class SystemInfoManager : IDisposable
                     GetMacOSCpuInfo(info);
                     break;
             }
-            
+
             // Get CPU usage
+
             info.UsagePercentage = GetCpuUsage();
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to get detailed CPU info");
         }
-        
+
+
         return info;
     }
 
@@ -526,7 +566,8 @@ public sealed partial class SystemInfoManager : IDisposable
                     info.Architecture = mo["Architecture"]?.ToString() ?? "Unknown";
                     break;
                 }
-                
+
+
                 collection?.Dispose();
                 searcher?.Dispose();
             }
@@ -557,7 +598,8 @@ public sealed partial class SystemInfoManager : IDisposable
             var lines = File.ReadAllLines("/proc/cpuinfo");
             var processors = new HashSet<string>();
             var physicalIds = new HashSet<string>();
-            
+
+
             foreach (var line in lines)
             {
                 if (line.StartsWith("model name"))
@@ -585,7 +627,8 @@ public sealed partial class SystemInfoManager : IDisposable
                     info.Features = string.Join(", ", flags.Take(10)); // Take first 10 features
                 }
             }
-            
+
+
             info.PhysicalCores = physicalIds.Count > 0 ? physicalIds.Count : processors.Count;
         }
         catch (Exception ex)
@@ -635,16 +678,20 @@ public sealed partial class SystemInfoManager : IDisposable
             using var process = Process.GetCurrentProcess();
             var startTime = DateTimeOffset.UtcNow;
             var startCpuUsage = process.TotalProcessorTime;
-            
+
+
             Thread.Sleep(100);
-            
+
+
             var endTime = DateTimeOffset.UtcNow;
             var endCpuUsage = process.TotalProcessorTime;
-            
+
+
             var cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
             var totalMsPassed = (endTime - startTime).TotalMilliseconds;
             var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
-            
+
+
             return Math.Min(100, cpuUsageTotal * 100);
         }
         catch
@@ -659,25 +706,29 @@ public sealed partial class SystemInfoManager : IDisposable
     private static DiskInfo GetDiskInfo()
     {
         var info = new DiskInfo();
-        
+
+
         try
         {
             var drives = DriveInfo.GetDrives()
                 .Where(d => d.IsReady && d.DriveType == DriveType.Fixed);
-            
+
+
             foreach (var drive in drives)
             {
                 info.Total += drive.TotalSize;
                 info.Available += drive.AvailableFreeSpace;
             }
-            
+
+
             info.Used = info.Total - info.Available;
         }
         catch (Exception)
         {
             // Ignore disk info errors
         }
-        
+
+
         return info;
     }
 
@@ -701,7 +752,8 @@ public sealed partial class SystemInfoManager : IDisposable
             _ = process.Start();
             var output = process.StandardOutput.ReadToEnd();
             _ = process.WaitForExit(1000);
-            
+
+
             return output;
         }
         catch (Exception ex)
@@ -834,16 +886,18 @@ public sealed class SystemInfo
     public string MachineName { get; init; } = string.Empty;
     public bool Is64BitOS { get; init; }
     public bool Is64BitProcess { get; init; }
-    
+
     // Memory
+
     public long TotalPhysicalMemory { get; init; }
     public long AvailablePhysicalMemory { get; init; }
     public long UsedPhysicalMemory { get; init; }
     public double MemoryUsagePercentage { get; init; }
     public long TotalVirtualMemory { get; init; }
     public long AvailableVirtualMemory { get; init; }
-    
+
     // CPU
+
     public string CpuName { get; init; } = string.Empty;
     public int CpuFrequencyMHz { get; init; }
     public int CpuCores { get; init; }
@@ -851,20 +905,23 @@ public sealed class SystemInfo
     public double CpuUsagePercentage { get; init; }
     public string CpuArchitecture { get; init; } = string.Empty;
     public string CpuFeatures { get; init; } = string.Empty;
-    
+
     // Process
+
     public long ProcessMemory { get; init; }
     public long ProcessVirtualMemory { get; init; }
     public int ProcessThreadCount { get; init; }
     public int ProcessHandleCount { get; init; }
     public TimeSpan ProcessUptime { get; init; }
-    
+
     // Disk
+
     public long DiskSpaceTotal { get; init; }
     public long DiskSpaceAvailable { get; init; }
     public long DiskSpaceUsed { get; init; }
-    
+
     // Timestamp
+
     public DateTimeOffset Timestamp { get; init; }
 }
 
@@ -875,40 +932,52 @@ public sealed class SystemMemoryInfo
 {
     /// <summary>Gets or sets the total physical memory in bytes.</summary>
     public long TotalPhysicalMemory { get; init; }
-    
+
+
     /// <summary>Gets or sets the available physical memory in bytes.</summary>
     public long AvailablePhysicalMemory { get; init; }
-    
+
+
     /// <summary>Gets or sets the used physical memory in bytes.</summary>
     public long UsedPhysicalMemory { get; init; }
-    
+
+
     /// <summary>Gets or sets the physical memory usage percentage.</summary>
     public double PhysicalMemoryUsagePercentage { get; init; }
-    
+
+
     /// <summary>Gets or sets the total virtual memory in bytes.</summary>
     public long TotalVirtualMemory { get; init; }
-    
+
+
     /// <summary>Gets or sets the available virtual memory in bytes.</summary>
     public long AvailableVirtualMemory { get; init; }
-    
+
+
     /// <summary>Gets or sets the current process memory usage in bytes.</summary>
     public long ProcessMemoryUsage { get; init; }
-    
+
+
     /// <summary>Gets or sets the current process virtual memory usage in bytes.</summary>
     public long ProcessVirtualMemoryUsage { get; init; }
-    
+
+
     /// <summary>Gets or sets the total memory allocated by the Garbage Collector.</summary>
     public long GCTotalMemory { get; init; }
-    
+
+
     /// <summary>Gets or sets the number of Generation 0 garbage collections.</summary>
     public int GCGen0Collections { get; init; }
-    
+
+
     /// <summary>Gets or sets the number of Generation 1 garbage collections.</summary>
     public int GCGen1Collections { get; init; }
-    
+
+
     /// <summary>Gets or sets the number of Generation 2 garbage collections.</summary>
     public int GCGen2Collections { get; init; }
-    
+
+
     /// <summary>Gets or sets the timestamp when this information was collected.</summary>
     public DateTimeOffset Timestamp { get; init; }
 }

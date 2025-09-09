@@ -96,7 +96,8 @@ internal static class SseOperationHelpers
             KernelOperation.Add or KernelOperation.Subtract => true,
             KernelOperation.Multiply => elementType == typeof(float) || elementType == typeof(double),
             KernelOperation.Divide => elementType == typeof(float) || elementType == typeof(double),
-            KernelOperation.Maximum or KernelOperation.Minimum => 
+            KernelOperation.Maximum or KernelOperation.Minimum =>
+
                 elementType == typeof(float) || elementType == typeof(double) ||
                 (elementType == typeof(int) && Sse41.IsSupported),
             KernelOperation.FusedMultiplyAdd => false, // Not supported in SSE

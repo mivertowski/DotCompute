@@ -20,14 +20,16 @@ namespace DotCompute.Backends.CUDA.Advanced
         private readonly CudaContext _context;
         private readonly CudaDeviceProperties _deviceProperties;
         private readonly ILogger _logger;
-        
+
         // Internal mutable metrics tracking
+
         private long _childKernelLaunches;
         private double _efficiencyScore;
         private double _launchOverheadMs;
         private long _operationCount;
         private double _totalExecutionTimeMs;
-        
+
+
         private bool _disposed;
 
         public CudaDynamicParallelismManager(
@@ -38,8 +40,9 @@ namespace DotCompute.Backends.CUDA.Advanced
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _deviceProperties = deviceProperties;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
+
             // Initialize internal metrics tracking
+
             _childKernelLaunches = 0;
             _efficiencyScore = 0.0;
             _launchOverheadMs = 0.0;
@@ -157,6 +160,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Missing: Analysis of workload imbalance patterns
             // Missing: Support for device-side kernel launches
             // Simple heuristic: large problem sizes with irregular patterns benefit from dynamic parallelism
+
             => arguments.Any(arg => arg.Value is int size && size > 100000);
 
         public void Dispose()

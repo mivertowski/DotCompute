@@ -308,22 +308,26 @@ public sealed class RuntimeCoalescingProfile
     /// Gets or sets performance counters for detailed profiling metrics.
     /// </summary>
     public Dictionary<string, long> PerformanceCounters { get; set; } = [];
-    
+
+
     /// <summary>
     /// Gets or sets the number of profiling runs executed.
     /// </summary>
     public int ProfileRuns { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the total bytes transferred during profiling.
     /// </summary>
     public long TotalBytesTransferred { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the coalescing efficiency variance across runs.
     /// </summary>
     public double CoalescingVariance { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets additional profiling metadata.
     /// </summary>

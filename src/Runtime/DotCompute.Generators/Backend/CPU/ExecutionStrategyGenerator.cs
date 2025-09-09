@@ -13,7 +13,8 @@ namespace DotCompute.Generators.Backend.CPU;
 public class ExecutionStrategyGenerator : CpuCodeGeneratorBase
 {
     #region Constructor
-    
+
+
     public ExecutionStrategyGenerator(
         string methodName,
         IReadOnlyList<KernelParameter> parameters,
@@ -22,52 +23,60 @@ public class ExecutionStrategyGenerator : CpuCodeGeneratorBase
         : base(methodName, parameters, methodSyntax, vectorizationInfo)
     {
     }
-    
+
     #endregion
-    
+
     #region Public Methods
-    
+
+
     public override void Generate(StringBuilder sb)
     {
         GenerateMainExecuteMethod(sb);
         GenerateConvenienceOverload(sb);
     }
-    
+
     #endregion
-    
+
     #region Private Methods
-    
+
+
     private void GenerateMainExecuteMethod(StringBuilder sb)
     {
         GenerateMethodDocumentation(sb,
             "Main execution method that selects the best implementation.",
             "Automatically chooses between scalar, SIMD, AVX2, and AVX-512 based on hardware support and data size.");
-        
+
+
         _ = sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
         _ = sb.Append($"        public static void Execute(");
         _ = sb.Append(string.Join(", ", Parameters.Select(p => p.GetDeclaration())));
         _ = sb.AppendLine(", int start, int end)");
         _ = sb.AppendLine("        {");
-        
+
+
         GenerateImplementationSelection(sb);
-        
+
+
         _ = sb.AppendLine("        }");
         _ = sb.AppendLine();
     }
-    
+
+
     private void GenerateImplementationSelection(StringBuilder sb)
     {
         _ = sb.AppendLine("            int length = end - start;");
         _ = sb.AppendLine();
         _ = sb.AppendLine("            // Select best implementation based on hardware support and data size");
-        
+
         // Small arrays - use scalar
+
         _ = sb.AppendLine($"            if (length < {SmallArrayThreshold})");
         _ = sb.AppendLine("            {");
         _ = sb.AppendLine("                // Small arrays - use scalar for better cache efficiency");
         GenerateMethodCall(sb, "ExecuteScalar", includeRange: true);
         _ = sb.AppendLine("            }");
-        
+
+
         if (VectorizationInfo.IsVectorizable)
         {
             // AVX-512 path
@@ -76,36 +85,41 @@ public class ExecutionStrategyGenerator : CpuCodeGeneratorBase
             _ = sb.AppendLine("                // Use AVX-512 for maximum throughput on supported hardware");
             GenerateMethodCall(sb, "ExecuteAvx512", includeRange: true);
             _ = sb.AppendLine("            }");
-            
+
             // AVX2 path
+
             _ = sb.AppendLine($"            else if (Avx2.IsSupported && length >= {MinVectorSize})");
             _ = sb.AppendLine("            {");
             _ = sb.AppendLine("                // Use AVX2 for good performance on modern x86/x64");
             GenerateMethodCall(sb, "ExecuteAvx2", includeRange: true);
             _ = sb.AppendLine("            }");
-            
+
             // Generic SIMD path
+
             _ = sb.AppendLine("            else if (Vector.IsHardwareAccelerated)");
             _ = sb.AppendLine("            {");
             _ = sb.AppendLine("                // Use platform-agnostic SIMD");
             GenerateMethodCall(sb, "ExecuteSimd", includeRange: true);
             _ = sb.AppendLine("            }");
         }
-        
+
         // Fallback to scalar
+
         _ = sb.AppendLine("            else");
         _ = sb.AppendLine("            {");
         _ = sb.AppendLine("                // Fallback to scalar implementation");
         GenerateMethodCall(sb, "ExecuteScalar", includeRange: true);
         _ = sb.AppendLine("            }");
     }
-    
+
+
     private void GenerateConvenienceOverload(StringBuilder sb)
     {
         GenerateMethodDocumentation(sb,
             "Convenience overload for full array processing.",
             "Processes the entire array from index 0 to length.");
-        
+
+
         _ = sb.Append($"        public static void Execute(");
         _ = sb.Append(string.Join(", ", Parameters.Select(p => p.GetDeclaration())));
         _ = sb.AppendLine(", int length)");
@@ -115,12 +129,14 @@ public class ExecutionStrategyGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine(", 0, length);");
         _ = sb.AppendLine("        }");
     }
-    
+
+
     private void GenerateMethodCall(StringBuilder sb, string methodName, bool includeRange)
     {
         _ = sb.AppendLine($"                {methodName}(");
         _ = sb.Append(string.Join(", ", Parameters.Select(p => p.Name)));
-        
+
+
         if (includeRange)
         {
             _ = sb.AppendLine(", start, end);");
@@ -130,6 +146,7 @@ public class ExecutionStrategyGenerator : CpuCodeGeneratorBase
             _ = sb.AppendLine(");");
         }
     }
-    
+
+
     #endregion
 }

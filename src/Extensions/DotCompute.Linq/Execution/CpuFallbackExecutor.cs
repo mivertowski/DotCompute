@@ -95,6 +95,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     public DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(IComputePlan plan, IAccelerator accelerator)
         // CPU fallback can always execute plans
 
+
         => DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
 
     /// <summary>
@@ -200,7 +201,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     /// <summary>
     /// Executes an Aggregate operation on CPU with SIMD vectorization.
     /// </summary>
-    public async Task<T> AggregateAsync<T>(
+    public static async Task<T> AggregateAsync<T>(
         T[] source,
         T seed,
         Func<T, T, T> func,

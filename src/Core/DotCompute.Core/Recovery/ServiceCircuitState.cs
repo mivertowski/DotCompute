@@ -311,6 +311,7 @@ public class ServiceCircuitState
     public void Dispose()
         // Clean up any resources if needed
 
+
         => Metrics.Clear();
 
     public override string ToString()

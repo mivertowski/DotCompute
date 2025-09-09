@@ -73,8 +73,9 @@ public sealed class CpuAccelerator : BaseAccelerator
         // Convert to core types for compilation
         var coreDefinition = ConvertToCoreKernelDefinition(definition);
         var coreOptions = ConvertToCoreCompilationOptions(options);
-        
+
         // Create kernel compilation context
+
         var compilationContext = new CpuKernelCompilationContext
         {
             Definition = coreDefinition,
@@ -96,6 +97,7 @@ public sealed class CpuAccelerator : BaseAccelerator
     /// <inheritdoc/>
     protected override ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken)
         // CPU operations are synchronous by default
+
         => ValueTask.CompletedTask;
 
     /// <inheritdoc/>
@@ -185,8 +187,9 @@ public sealed class CpuAccelerator : BaseAccelerator
             {
                 return GetLinuxPhysicalMemory();
             }
-            
+
             // Default fallback
+
             return 4L * 1024 * 1024 * 1024; // 4GB
         }
         catch
@@ -267,7 +270,8 @@ internal sealed class CompiledKernelAdapter(ICompiledKernel coreKernel) : ICompi
     public Guid Id => _coreKernel.Id;
     public string Name => _coreKernel.Name;
 
-    public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) 
+    public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+
         => await _coreKernel.ExecuteAsync(arguments, cancellationToken).ConfigureAwait(false);
 
     public ValueTask DisposeAsync() => _coreKernel.DisposeAsync();

@@ -18,7 +18,8 @@ public abstract class BaseAccelerator : IAccelerator
 {
     private volatile int _disposed;
     private readonly ILogger _logger;
-    
+
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseAccelerator"/> class.
     /// </summary>
@@ -33,7 +34,8 @@ public abstract class BaseAccelerator : IAccelerator
         ArgumentNullException.ThrowIfNull(memory);
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(logger);
-        
+
+
         Info = info;
         Type = type;
         Memory = memory;
@@ -47,24 +49,30 @@ public abstract class BaseAccelerator : IAccelerator
             () => InitializeCore(),
             Info.Name);
     }
-    
+
+
     /// <inheritdoc/>
     public AcceleratorInfo Info { get; }
-    
+
+
     /// <inheritdoc/>
     public AcceleratorType Type { get; }
-    
+
+
     /// <inheritdoc/>
     public IUnifiedMemoryManager Memory { get; }
-    
+
+
     /// <inheritdoc/>
     public AcceleratorContext Context { get; }
-    
+
+
     /// <summary>
     /// Gets whether this accelerator has been disposed.
     /// </summary>
     public bool IsDisposed => _disposed != 0;
-    
+
+
     /// <inheritdoc/>
     public virtual ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
@@ -73,8 +81,9 @@ public abstract class BaseAccelerator : IAccelerator
     {
         ThrowIfDisposed();
         ValidateKernelDefinition(definition);
-        
+
         // Use AcceleratorUtilities for consistent compilation pattern
+
         return AcceleratorUtilities.CompileKernelWithLoggingAsync(
             definition,
             options,
@@ -83,13 +92,15 @@ public abstract class BaseAccelerator : IAccelerator
             CompileKernelCoreAsync,
             cancellationToken);
     }
-    
+
+
     /// <inheritdoc/>
     public virtual ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
         // Use AcceleratorUtilities for consistent synchronization pattern
+
         return AcceleratorUtilities.SynchronizeWithLoggingAsync(
             _logger,
             Type.ToString(),
@@ -104,6 +115,7 @@ public abstract class BaseAccelerator : IAccelerator
     /// <returns>Initialization result (typically null or status object)</returns>
     protected virtual object? InitializeCore()
         // Default implementation - derived classes can override
+
         => null;
 
 
@@ -114,12 +126,14 @@ public abstract class BaseAccelerator : IAccelerator
         KernelDefinition definition,
         CompilationOptions options,
         CancellationToken cancellationToken);
-    
+
+
     /// <summary>
     /// Core synchronization logic to be implemented by derived classes.
     /// </summary>
     protected abstract ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken);
-    
+
+
     /// <summary>
     /// Validates kernel definition parameters.
     /// Common validation logic that was duplicated across implementations.
@@ -127,21 +141,24 @@ public abstract class BaseAccelerator : IAccelerator
     protected virtual void ValidateKernelDefinition(KernelDefinition definition)
     {
         ArgumentNullException.ThrowIfNull(definition);
-        
+
+
         if (string.IsNullOrWhiteSpace(definition.Name))
         {
             throw new InvalidOperationException("Kernel validation failed: Kernel name cannot be empty");
         }
-        
+
+
         if (string.IsNullOrWhiteSpace(definition.Source))
         {
             throw new InvalidOperationException("Kernel validation failed: Kernel source cannot be empty");
         }
-        
+
         // Parameters might be stored in metadata or parsed from source
         // For now, we'll skip this validation as it depends on the specific kernel format
     }
-    
+
+
     /// <summary>
     /// Creates compilation options with defaults if not provided.
     /// </summary>
@@ -153,7 +170,8 @@ public abstract class BaseAccelerator : IAccelerator
             EnableDebugInfo = false
         };
     }
-    
+
+
     /// <summary>
     /// Logs performance metrics for kernel compilation.
     /// </summary>
@@ -185,9 +203,11 @@ public abstract class BaseAccelerator : IAccelerator
                 async () => await SynchronizeAsync().ConfigureAwait(false),
                 Memory,
                 Context).ConfigureAwait(false);
-            
+
+
             await DisposeCoreAsync().ConfigureAwait(false);
-            
+
+
             GC.SuppressFinalize(this);
         }
     }
@@ -198,6 +218,7 @@ public abstract class BaseAccelerator : IAccelerator
     /// </summary>
     protected virtual ValueTask DisposeCoreAsync()
         // Default implementation - derived classes can override
+
         => ValueTask.CompletedTask;
 }
 
@@ -207,12 +228,14 @@ public abstract class BaseAccelerator : IAccelerator
 public abstract class BaseCompiledKernel : ICompiledKernel
 {
     private volatile int _disposed;
-    
+
+
     /// <summary>
     /// Gets the kernel unique identifier.
     /// </summary>
     public Guid Id { get; protected init; } = Guid.NewGuid();
-    
+
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseCompiledKernel"/> class.
     /// </summary>
@@ -224,26 +247,32 @@ public abstract class BaseCompiledKernel : ICompiledKernel
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(accelerator);
-        
+
+
         Name = name;
         Parameters = parameters;
         Accelerator = accelerator;
     }
-    
+
+
     /// <inheritdoc/>
     public string Name { get; }
-    
+
+
     /// <inheritdoc/>
     public IReadOnlyList<KernelParameter> Parameters { get; }
-    
+
+
     /// <inheritdoc/>
     public IAccelerator Accelerator { get; }
-    
+
+
     /// <summary>
     /// Gets whether this kernel has been disposed.
     /// </summary>
     public bool IsDisposed => _disposed != 0;
-    
+
+
     /// <inheritdoc/>
     public virtual ValueTask<KernelExecutionResult> ExecuteAsync(
         KernelArguments arguments,
@@ -252,10 +281,12 @@ public abstract class BaseCompiledKernel : ICompiledKernel
     {
         ThrowIfDisposed();
         ValidateArguments(arguments);
-        
+
+
         return ExecuteCoreAsync(arguments, options ?? new KernelExecutionOptions(), cancellationToken);
     }
-    
+
+
     /// <summary>
     /// Core execution logic to be implemented by derived classes.
     /// </summary>
@@ -263,22 +294,25 @@ public abstract class BaseCompiledKernel : ICompiledKernel
         KernelArguments arguments,
         KernelExecutionOptions options,
         CancellationToken cancellationToken);
-    
+
+
     /// <summary>
     /// Validates kernel arguments against parameters.
     /// </summary>
     protected virtual void ValidateArguments(KernelArguments arguments)
     {
         ArgumentNullException.ThrowIfNull(arguments);
-        
+
+
         if (arguments.Count != Parameters.Count)
         {
             throw new ArgumentException(
                 $"Argument count mismatch. Expected {Parameters.Count}, got {arguments.Count}",
                 nameof(arguments));
         }
-        
+
         // Additional validation can be added by derived classes
+
     }
 
 
@@ -295,7 +329,8 @@ public abstract class BaseCompiledKernel : ICompiledKernel
         Dispose(true);
         GC.SuppressFinalize(this);
     }
-    
+
+
     /// <inheritdoc/>
     public ValueTask DisposeAsync()
     {
@@ -303,7 +338,8 @@ public abstract class BaseCompiledKernel : ICompiledKernel
         GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;
     }
-    
+
+
     /// <summary>
     /// Disposes the kernel.
     /// </summary>
@@ -317,7 +353,8 @@ public abstract class BaseCompiledKernel : ICompiledKernel
             }
         }
     }
-    
+
+
     /// <summary>
     /// Core disposal logic to be implemented by derived classes.
     /// </summary>

@@ -16,10 +16,13 @@ internal class CoreKernelAdapter : DotCompute.Abstractions.IKernel
     }
 
     public string Name => _linqKernel.Name;
-    
+
+
     public string Source => "Generated kernel source";
-    
+
+
     public string EntryPoint => "main";
-    
+
+
     public int RequiredSharedMemory => _linqKernel.Properties.SharedMemorySize;
 }

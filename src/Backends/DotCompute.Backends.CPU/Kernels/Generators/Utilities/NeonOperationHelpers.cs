@@ -94,6 +94,7 @@ internal static class NeonOperationHelpers
     public static Vector128<float> FusedMultiplyAdd(Vector128<float> a, Vector128<float> b, Vector128<float> c)
         // ARM NEON FMLA: result = a * b + c with single rounding
         // Note: ARM order is (accumulator, multiplicand, multiplier)
+
         => AdvSimd.FusedMultiplyAdd(c, a, b);
 
     /// <summary>

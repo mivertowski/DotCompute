@@ -296,6 +296,7 @@ namespace DotCompute.Core.Compute
 
         public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
             // CPU operations are synchronous by default
+
             => ValueTask.CompletedTask;
 
         public ValueTask DisposeAsync()
@@ -316,7 +317,8 @@ namespace DotCompute.Core.Compute
     {
         private readonly KernelDefinition _definition = definition;
         private bool _disposed;
-        
+
+
         /// <summary>
         /// Gets the kernel unique identifier.
         /// </summary>

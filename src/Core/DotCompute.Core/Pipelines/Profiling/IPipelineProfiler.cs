@@ -19,14 +19,14 @@ public interface IPipelineProfiler
     /// </summary>
     /// <param name="pipelineId">The unique identifier for the pipeline being executed.</param>
     /// <param name="executionId">The unique identifier for this specific execution instance.</param>
-    void StartPipelineExecution(string pipelineId, string executionId);
+    public void StartPipelineExecution(string pipelineId, string executionId);
 
     /// <summary>
     /// Ends profiling for a pipeline execution.
     /// Completes the tracking and makes the execution data available for analysis.
     /// </summary>
     /// <param name="executionId">The unique identifier for the execution instance to end.</param>
-    void EndPipelineExecution(string executionId);
+    public void EndPipelineExecution(string executionId);
 
     /// <summary>
     /// Starts profiling a specific stage within a pipeline execution.
@@ -34,7 +34,7 @@ public interface IPipelineProfiler
     /// </summary>
     /// <param name="executionId">The execution instance that contains this stage.</param>
     /// <param name="stageId">The unique identifier for the stage being profiled.</param>
-    void StartStageExecution(string executionId, string stageId);
+    public void StartStageExecution(string executionId, string stageId);
 
     /// <summary>
     /// Ends profiling for a specific stage within a pipeline execution.
@@ -42,7 +42,7 @@ public interface IPipelineProfiler
     /// </summary>
     /// <param name="executionId">The execution instance that contains this stage.</param>
     /// <param name="stageId">The unique identifier for the stage to end profiling.</param>
-    void EndStageExecution(string executionId, string stageId);
+    public void EndStageExecution(string executionId, string stageId);
 
     /// <summary>
     /// Records a memory allocation event during pipeline execution.
@@ -51,7 +51,7 @@ public interface IPipelineProfiler
     /// <param name="executionId">The execution instance where the allocation occurred.</param>
     /// <param name="bytes">The number of bytes allocated.</param>
     /// <param name="purpose">A description of the allocation purpose for analysis.</param>
-    void RecordMemoryAllocation(string executionId, long bytes, string purpose);
+    public void RecordMemoryAllocation(string executionId, long bytes, string purpose);
 
     /// <summary>
     /// Records a memory deallocation event during pipeline execution.
@@ -59,7 +59,7 @@ public interface IPipelineProfiler
     /// </summary>
     /// <param name="executionId">The execution instance where the deallocation occurred.</param>
     /// <param name="bytes">The number of bytes deallocated.</param>
-    void RecordMemoryDeallocation(string executionId, long bytes);
+    public void RecordMemoryDeallocation(string executionId, long bytes);
 
     /// <summary>
     /// Records a data transfer operation during pipeline execution.
@@ -69,7 +69,7 @@ public interface IPipelineProfiler
     /// <param name="bytes">The number of bytes transferred.</param>
     /// <param name="duration">The time taken to complete the transfer.</param>
     /// <param name="type">The type of data transfer (host-to-device, device-to-host, etc.).</param>
-    void RecordDataTransfer(string executionId, long bytes, TimeSpan duration, DataTransferType type);
+    public void RecordDataTransfer(string executionId, long bytes, TimeSpan duration, DataTransferType type);
 
     /// <summary>
     /// Records detailed kernel execution statistics during pipeline execution.
@@ -77,7 +77,7 @@ public interface IPipelineProfiler
     /// </summary>
     /// <param name="executionId">The execution instance where the kernel was executed.</param>
     /// <param name="stats">Detailed statistics about the kernel execution.</param>
-    void RecordKernelExecution(string executionId, KernelExecutionStats stats);
+    public void RecordKernelExecution(string executionId, KernelExecutionStats stats);
 
     /// <summary>
     /// Records a custom metric value during pipeline execution.
@@ -86,7 +86,7 @@ public interface IPipelineProfiler
     /// <param name="executionId">The execution instance where the metric was captured.</param>
     /// <param name="name">The name of the custom metric.</param>
     /// <param name="value">The value of the custom metric.</param>
-    void RecordCustomMetric(string executionId, string name, double value);
+    public void RecordCustomMetric(string executionId, string name, double value);
 
     /// <summary>
     /// Retrieves comprehensive profiling results for a specific execution.
@@ -94,7 +94,7 @@ public interface IPipelineProfiler
     /// </summary>
     /// <param name="executionId">The unique identifier for the execution to analyze.</param>
     /// <returns>Complete profiling results including metrics, timeline, and recommendations.</returns>
-    ProfilingResults GetResults(string executionId);
+    public ProfilingResults GetResults(string executionId);
 
     /// <summary>
     /// Retrieves aggregated profiling results across multiple executions of a pipeline.
@@ -102,5 +102,5 @@ public interface IPipelineProfiler
     /// </summary>
     /// <param name="pipelineId">The unique identifier for the pipeline to analyze.</param>
     /// <returns>Aggregated profiling results including statistics and trend analysis.</returns>
-    AggregatedProfilingResults GetAggregatedResults(string pipelineId);
+    public AggregatedProfilingResults GetAggregatedResults(string pipelineId);
 }

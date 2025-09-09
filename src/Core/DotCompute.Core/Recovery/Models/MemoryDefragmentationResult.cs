@@ -63,8 +63,10 @@ public class MemoryDefragmentationResult
     /// <summary>
     /// Gets or sets the improvement percentage in memory utilization
     /// </summary>
-    public double ImprovementPercentage => FragmentationBefore > 0 
-        ? ((FragmentationBefore - FragmentationAfter) / FragmentationBefore) * 100.0 
+    public double ImprovementPercentage => FragmentationBefore > 0
+
+        ? ((FragmentationBefore - FragmentationAfter) / FragmentationBefore) * 100.0
+
         : 0.0;
 }
 

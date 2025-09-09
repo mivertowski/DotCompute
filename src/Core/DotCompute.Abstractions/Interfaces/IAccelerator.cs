@@ -74,8 +74,9 @@ namespace DotCompute.Abstractions
             LocalMemorySize = memorySize / 8;
             IsUnifiedMemory = type == AcceleratorType.CPU;
             MaxThreadsPerBlock = 1024; // Default value for legacy compatibility
-            
+
             // Initialize new properties based on accelerator type
+
             MaxComputeUnits = type switch
             {
                 AcceleratorType.CPU => Environment.ProcessorCount,
@@ -143,8 +144,9 @@ namespace DotCompute.Abstractions
             IsUnifiedMemory = type == AcceleratorType.CPU;
             MaxThreadsPerBlock = maxThreadsPerBlock;
             ComputeCapability = new Version((int)computeCapability, (int)((computeCapability % 1) * 10));
-            
+
             // Initialize new properties with sensible defaults
+
             MaxComputeUnits = 16; // Reasonable default
             GlobalMemorySize = totalMemory;
             SupportsFloat64 = true; // Assume support for modern devices
@@ -173,8 +175,9 @@ namespace DotCompute.Abstractions
             ComputeUnits = computeUnits;
             MaxClockFrequency = maxClockFrequency;
             ComputeCapability = computeCapability;
-            
+
             // Initialize new properties with sensible defaults
+
             MaxComputeUnits = computeUnits;
             GlobalMemorySize = memorySize;
             SupportsFloat64 = true; // Assume support unless specified otherwise
@@ -248,8 +251,9 @@ namespace DotCompute.Abstractions
             MaxClockFrequency = 1500;
             MaxThreadsPerBlock = 1024;
             ComputeCapability = new Version(7, 5);
-            
+
             // Initialize new properties with sensible defaults
+
             MaxComputeUnits = ComputeUnits; // Use existing ComputeUnits as default
             GlobalMemorySize = TotalMemory; // Use existing TotalMemory as default
             SupportsFloat64 = true;         // Most modern accelerators support double precision

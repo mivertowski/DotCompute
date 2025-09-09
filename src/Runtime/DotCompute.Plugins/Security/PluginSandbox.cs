@@ -195,7 +195,7 @@ public class PluginSandbox : IDisposable
     /// <summary>
     /// Creates a security context for the plugin.
     /// </summary>
-    private async Task<SecurityContext> CreateSecurityContextAsync(
+    private static async Task<SecurityContext> CreateSecurityContextAsync(
         Type pluginType,
         SandboxPermissions permissions,
         CancellationToken cancellationToken)
@@ -261,7 +261,7 @@ public class PluginSandbox : IDisposable
     /// <summary>
     /// Executes an operation in the plugin's security context.
     /// </summary>
-    private async Task<TResult> ExecuteInSecurityContextAsync<TResult>(
+    private static async Task<TResult> ExecuteInSecurityContextAsync<TResult>(
         SandboxedPlugin plugin,
         Func<object, Task<TResult>> operation,
         CancellationToken cancellationToken)

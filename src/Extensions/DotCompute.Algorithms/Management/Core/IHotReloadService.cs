@@ -12,16 +12,16 @@ public interface IHotReloadService
     /// Sets up hot reload monitoring for a plugin assembly.
     /// </summary>
     /// <param name="assemblyPath">The path to the assembly to monitor.</param>
-    void SetupHotReload(string assemblyPath);
+    public void SetupHotReload(string assemblyPath);
 
     /// <summary>
     /// Stops hot reload monitoring for a plugin assembly.
     /// </summary>
     /// <param name="assemblyPath">The path to the assembly to stop monitoring.</param>
-    void StopHotReload(string assemblyPath);
+    public void StopHotReload(string assemblyPath);
 
     /// <summary>
     /// Stops all hot reload monitoring.
     /// </summary>
-    void StopAllHotReload();
+    public void StopAllHotReload();
 }

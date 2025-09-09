@@ -23,7 +23,8 @@ internal sealed class KernelOptimizationAnalyzer
     private readonly SemanticModel _semanticModel;
     private readonly KernelMethodInfo _kernelInfo;
     private readonly KernelAttribute? _kernelAttribute;
-    
+
+
     public SharedMemoryConfiguration SharedMemory { get; private set; }
     public ConstantMemoryConfiguration ConstantMemory { get; private set; }
     public TextureMemoryConfiguration TextureMemory { get; private set; }
@@ -33,38 +34,47 @@ internal sealed class KernelOptimizationAnalyzer
     public WarpOptimizationStrategy WarpStrategy { get; private set; }
 
     public KernelOptimizationAnalyzer(
-        SemanticModel semanticModel, 
+        SemanticModel semanticModel,
+
         KernelMethodInfo kernelInfo,
         KernelAttribute? kernelAttribute = null)
     {
         _semanticModel = semanticModel ?? throw new ArgumentNullException(nameof(semanticModel));
         _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
         _kernelAttribute = kernelAttribute;
-        
+
+
         SharedMemory = new SharedMemoryConfiguration();
         ConstantMemory = new ConstantMemoryConfiguration();
         TextureMemory = new TextureMemoryConfiguration();
         CoalescingStrategy = new MemoryCoalescingStrategy();
         CacheConfig = new CacheConfiguration();
         WarpStrategy = new WarpOptimizationStrategy();
-        
+
+
         Analyze();
     }
 
     private void Analyze()
     {
-        if (_kernelInfo.MethodDeclaration?.Body == null) return;
-        
+        if (_kernelInfo.MethodDeclaration?.Body == null)
+        {
+            return;
+        }
+
         // Extract optimization hints from attribute
+
         if (_kernelAttribute != null)
         {
             Optimizations = _kernelAttribute.Optimizations;
             AnalyzeMemoryPattern(_kernelAttribute.MemoryPattern);
         }
-        
+
         // Analyze the method body
+
         var dataFlow = _semanticModel.AnalyzeDataFlow(_kernelInfo.MethodDeclaration.Body);
-        
+
+
         if (dataFlow != null)
         {
             AnalyzeSharedMemoryUsage(dataFlow);
@@ -86,25 +96,29 @@ internal sealed class KernelOptimizationAnalyzer
                 CacheConfig.PreferL1 = false;
                 CacheConfig.PreferShared = true;
                 break;
-                
+
+
             case MemoryAccessPattern.Strided:
                 CoalescingStrategy.EnableCoalescing = false;
                 CoalescingStrategy.UseTextureMemory = true;
                 CacheConfig.PreferL1 = true;
                 break;
-                
+
+
             case MemoryAccessPattern.Random:
                 CoalescingStrategy.EnableCoalescing = false;
                 CacheConfig.PreferL1 = true;
                 CacheConfig.UseReadOnlyCache = true;
                 break;
-                
+
+
             case MemoryAccessPattern.Tiled:
                 SharedMemory.UseTiling = true;
                 SharedMemory.TileSize = DetermineOptimalTileSize();
                 break;
-                
+
             // Additional patterns
+
             default:
                 break;
         }
@@ -114,26 +128,33 @@ internal sealed class KernelOptimizationAnalyzer
     {
         // Find arrays and buffers that are frequently accessed
         var frequentlyAccessedArrays = new Dictionary<string, int>();
-        
+
+
         if (_kernelInfo.MethodDeclaration?.Body != null)
         {
             var arrayAccesses = _kernelInfo.MethodDeclaration.Body
                 .DescendantNodes()
                 .OfType<ElementAccessExpressionSyntax>();
-            
+
+
             foreach (var access in arrayAccesses)
             {
                 if (access.Expression is IdentifierNameSyntax identifier)
                 {
                     var name = identifier.Identifier.Text;
                     if (!frequentlyAccessedArrays.ContainsKey(name))
+                    {
                         frequentlyAccessedArrays[name] = 0;
+                    }
+
+
                     frequentlyAccessedArrays[name]++;
                 }
             }
         }
-        
+
         // Determine which arrays should use shared memory
+
         foreach (var kvp in frequentlyAccessedArrays)
         {
             var arrayName = kvp.Key;
@@ -157,15 +178,17 @@ internal sealed class KernelOptimizationAnalyzer
                 }
             }
         }
-        
+
         // Check for reduction patterns
+
         if (HasReductionPattern())
         {
             SharedMemory.UseForReduction = true;
             SharedMemory.ReductionBufferSize = 256 * sizeof(float); // Default size
         }
-        
+
         // Check for matrix tiling
+
         if (HasMatrixOperations())
         {
             SharedMemory.UseTiling = true;
@@ -204,29 +227,33 @@ internal sealed class KernelOptimizationAnalyzer
                 }
             }
         }
-        
+
+
         ConstantMemory.Enabled = ConstantMemory.Variables.Count > 0;
     }
 
     private void AnalyzeMemoryAccessPatterns(BlockSyntax body)
     {
         var elementAccesses = body.DescendantNodes().OfType<ElementAccessExpressionSyntax>();
-        
+
+
         foreach (var access in elementAccesses)
         {
             // Analyze index expressions
             foreach (var arg in access.ArgumentList.Arguments)
             {
                 var indexExpr = arg.Expression;
-                
+
                 // Check for coalesced access pattern (consecutive threads access consecutive memory)
+
                 if (IsCoalescedAccess(indexExpr))
                 {
                     CoalescingStrategy.EnableCoalescing = true;
                     CoalescingStrategy.CoalescedLoads++;
                 }
-                
+
                 // Check for strided access
+
                 if (IsStridedAccess(indexExpr))
                 {
                     CoalescingStrategy.StrideSize = DetectStrideSize(indexExpr);
@@ -235,8 +262,9 @@ internal sealed class KernelOptimizationAnalyzer
                         CoalescingStrategy.UseTextureMemory = true;
                     }
                 }
-                
+
                 // Check for 2D/3D access patterns
+
                 if (Is2DAccessPattern(indexExpr))
                 {
                     TextureMemory.Use2DTexture = true;
@@ -248,15 +276,17 @@ internal sealed class KernelOptimizationAnalyzer
     private void AnalyzeLoopPatterns(BlockSyntax body)
     {
         var loops = body.DescendantNodes().OfType<ForStatementSyntax>();
-        
+
+
         foreach (var loop in loops)
         {
             // Check for unrollable loops
             if (IsUnrollableLoop(loop))
             {
                 // Loop unrolling optimization enabled
-                
+
                 // Determine unroll factor
+
                 var unrollFactor = DetermineUnrollFactor(loop);
                 if (unrollFactor > 1)
                 {
@@ -264,8 +294,9 @@ internal sealed class KernelOptimizationAnalyzer
                     SharedMemory.LoopUnrollFactors[GetLoopIdentifier(loop)] = unrollFactor;
                 }
             }
-            
+
             // Check for vectorizable loops
+
             if (IsVectorizableLoop(loop))
             {
                 // Vectorization optimization enabled
@@ -276,27 +307,32 @@ internal sealed class KernelOptimizationAnalyzer
     private void AnalyzeWarpDivergence(BlockSyntax body)
     {
         var ifStatements = body.DescendantNodes().OfType<IfStatementSyntax>();
-        
+
+
         foreach (var ifStmt in ifStatements)
         {
             // Check if condition depends on thread ID
             if (ContainsThreadDependentCondition(ifStmt.Condition))
             {
                 WarpStrategy.HasDivergence = true;
-                
+
                 // Analyze branch complexity
+
                 var thenComplexity = EstimateBranchComplexity(ifStmt.Statement);
-                var elseComplexity = ifStmt.Else != null ? 
+                var elseComplexity = ifStmt.Else != null ?
+
                     EstimateBranchComplexity(ifStmt.Else.Statement) : 0;
-                
+
+
                 if (Math.Abs(thenComplexity - elseComplexity) > 10)
                 {
                     WarpStrategy.RequiresPredication = true;
                 }
             }
         }
-        
+
         // Determine warp-level optimizations
+
         if (!WarpStrategy.HasDivergence)
         {
             WarpStrategy.UseWarpShuffle = true;
@@ -307,7 +343,8 @@ internal sealed class KernelOptimizationAnalyzer
     private void DetermineCacheConfiguration()
     {
         // Based on memory access patterns, determine optimal cache configuration
-        
+
+
         if (SharedMemory.Variables.Count > 0)
         {
             // If using significant shared memory, prefer shared over L1
@@ -318,21 +355,25 @@ internal sealed class KernelOptimizationAnalyzer
                 CacheConfig.PreferL1 = false;
             }
         }
-        
+
+
         if (CoalescingStrategy.EnableCoalescing && CoalescingStrategy.CoalescedLoads > 10)
         {
             // Good memory coalescing, L1 cache helps
             CacheConfig.PreferL1 = true;
         }
-        
+
+
         if (TextureMemory.Use2DTexture || TextureMemory.Use3DTexture)
         {
             // Texture memory has its own cache
             CacheConfig.UseTextureCache = true;
         }
-        
+
         // Read-only data can use read-only cache
-        if (ConstantMemory.Variables.Count > 0 || 
+
+        if (ConstantMemory.Variables.Count > 0 ||
+
             _kernelInfo.Parameters.Any(p => p.IsReadOnly))
         {
             CacheConfig.UseReadOnlyCache = true;
@@ -341,14 +382,20 @@ internal sealed class KernelOptimizationAnalyzer
 
     private bool HasReductionPattern()
     {
-        if (_kernelInfo.MethodDeclaration?.Body == null) return false;
-        
+        if (_kernelInfo.MethodDeclaration?.Body == null)
+        {
+            return false;
+        }
+
         // Look for accumulation patterns
+
         var assignments = _kernelInfo.MethodDeclaration.Body
             .DescendantNodes()
             .OfType<AssignmentExpressionSyntax>();
-        
-        return assignments.Any(a => 
+
+
+        return assignments.Any(a =>
+
             a.Kind() == SyntaxKind.AddAssignmentExpression ||
             a.Kind() == SyntaxKind.MultiplyAssignmentExpression);
     }
@@ -371,30 +418,32 @@ internal sealed class KernelOptimizationAnalyzer
         return 32; // Default tile size
     }
 
-    private bool IsCoalescedAccess(ExpressionSyntax indexExpr)
+    private static bool IsCoalescedAccess(ExpressionSyntax indexExpr)
     {
         // Check if index contains threadIdx.x or similar patterns
         var text = indexExpr.ToString();
-        return text.Contains("threadIdx.x") || 
-               text.Contains("idx") || 
+        return text.Contains("threadIdx.x") ||
+
+               text.Contains("idx") ||
+
                text.Contains("i");
     }
 
-    private bool IsStridedAccess(ExpressionSyntax indexExpr)
+    private static bool IsStridedAccess(ExpressionSyntax indexExpr)
     {
         // Check for multiplication in index
         return indexExpr is BinaryExpressionSyntax binary &&
                binary.Kind() == SyntaxKind.MultiplyExpression;
     }
 
-    private bool Is2DAccessPattern(ExpressionSyntax indexExpr)
+    private static bool Is2DAccessPattern(ExpressionSyntax indexExpr)
     {
         // Check for row*width+col pattern
         var text = indexExpr.ToString();
         return text.Contains("*") && text.Contains("+");
     }
 
-    private int DetectStrideSize(ExpressionSyntax indexExpr)
+    private static int DetectStrideSize(ExpressionSyntax indexExpr)
     {
         // Simple heuristic - look for constant multipliers
         if (indexExpr is BinaryExpressionSyntax binary &&
@@ -409,7 +458,7 @@ internal sealed class KernelOptimizationAnalyzer
         return 1;
     }
 
-    private bool IsUnrollableLoop(ForStatementSyntax loop)
+    private static bool IsUnrollableLoop(ForStatementSyntax loop)
     {
         // Check if loop has constant bounds and simple body
         if (loop.Condition is BinaryExpressionSyntax condition)
@@ -423,34 +472,49 @@ internal sealed class KernelOptimizationAnalyzer
                     BlockSyntax block => block.Statements.Count,
                     _ => 1
                 };
-                
+
+
                 return statements <= 8; // Don't unroll large loops
             }
         }
         return false;
     }
 
-    private int DetermineUnrollFactor(ForStatementSyntax loop)
+    private static int DetermineUnrollFactor(ForStatementSyntax loop)
     {
         // Determine optimal unroll factor based on loop characteristics
         if (loop.Condition is BinaryExpressionSyntax condition &&
             condition.Right is LiteralExpressionSyntax literal &&
             literal.Token.Value is int bound)
         {
-            if (bound <= 4) return bound; // Fully unroll small loops
-            if (bound <= 16) return 4;    // Partial unroll
-            if (bound <= 64) return 8;    // Larger partial unroll
+            if (bound <= 4)
+            {
+                return bound; // Fully unroll small loops
+            }
+
+            if (bound <= 16)
+            {
+                return 4;    // Partial unroll
+            }
+
+
+            if (bound <= 64)
+            {
+                return 8;    // Larger partial unroll
+            }
+
         }
         return 1; // No unrolling
     }
 
-    private bool IsVectorizableLoop(ForStatementSyntax loop)
+    private static bool IsVectorizableLoop(ForStatementSyntax loop)
     {
         // Check if loop body contains vectorizable operations
         if (loop.Statement is BlockSyntax block)
         {
             var expressions = block.DescendantNodes().OfType<BinaryExpressionSyntax>();
-            return expressions.Any(e => 
+            return expressions.Any(e =>
+
                 e.Kind() == SyntaxKind.AddExpression ||
                 e.Kind() == SyntaxKind.MultiplyExpression ||
                 e.Kind() == SyntaxKind.SubtractExpression);
@@ -458,23 +522,24 @@ internal sealed class KernelOptimizationAnalyzer
         return false;
     }
 
-    private string GetLoopIdentifier(ForStatementSyntax loop)
+    private static string GetLoopIdentifier(ForStatementSyntax loop)
     {
         // Generate unique identifier for loop
         var span = loop.GetLocation().GetLineSpan();
         return $"loop_{span.StartLinePosition.Line}";
     }
 
-    private bool ContainsThreadDependentCondition(ExpressionSyntax condition)
+    private static bool ContainsThreadDependentCondition(ExpressionSyntax condition)
     {
         var text = condition.ToString();
-        return text.Contains("threadIdx") || 
+        return text.Contains("threadIdx") ||
+
                text.Contains("blockIdx") ||
                text.Contains("idx") ||
                text.Contains("%"); // Modulo often indicates thread-dependent branching
     }
 
-    private int EstimateBranchComplexity(StatementSyntax statement)
+    private static int EstimateBranchComplexity(StatementSyntax statement)
     {
         // Simple complexity metric based on node count
         return statement.DescendantNodes().Count();
@@ -483,8 +548,9 @@ internal sealed class KernelOptimizationAnalyzer
     private int EstimateArraySize(ISymbol variable)
     {
         var type = variable.GetTypeDisplayString();
-        
+
         // Try to extract array size from type
+
         if (type.Contains("[") && type.Contains("]"))
         {
             var sizeStr = type.Substring(type.IndexOf('[') + 1, type.IndexOf(']') - type.IndexOf('[') - 1);
@@ -493,25 +559,61 @@ internal sealed class KernelOptimizationAnalyzer
                 return size * GetElementSize(type);
             }
         }
-        
+
+
         return 0; // Unknown size
     }
 
-    private int EstimateParameterSize(ParameterInfo param)
+    private static int EstimateParameterSize(ParameterInfo param)
     {
         // Conservative estimate based on type
-        if (param.Type.Contains("float")) return 1024 * sizeof(float);
-        if (param.Type.Contains("double")) return 512 * sizeof(double);
-        if (param.Type.Contains("int")) return 1024 * sizeof(int);
+        if (param.Type.Contains("float"))
+        {
+            return 1024 * sizeof(float);
+        }
+
+
+        if (param.Type.Contains("double"))
+        {
+            return 512 * sizeof(double);
+        }
+
+
+        if (param.Type.Contains("int"))
+        {
+            return 1024 * sizeof(int);
+        }
+
+
         return 0;
     }
 
-    private int GetElementSize(string type)
+    private static int GetElementSize(string type)
     {
-        if (type.Contains("float")) return sizeof(float);
-        if (type.Contains("double")) return sizeof(double);
-        if (type.Contains("int")) return sizeof(int);
-        if (type.Contains("byte")) return sizeof(byte);
+        if (type.Contains("float"))
+        {
+            return sizeof(float);
+        }
+
+
+        if (type.Contains("double"))
+        {
+            return sizeof(double);
+        }
+
+
+        if (type.Contains("int"))
+        {
+            return sizeof(int);
+        }
+
+
+        if (type.Contains("byte"))
+        {
+            return sizeof(byte);
+        }
+
+
         return sizeof(float); // Default
     }
 
@@ -519,13 +621,18 @@ internal sealed class KernelOptimizationAnalyzer
     {
         // Analyze how the array is accessed in the kernel
         // This is a simplified heuristic TODO
-        if (_kernelInfo.MethodDeclaration?.Body == null) return "unknown";
-        
+        if (_kernelInfo.MethodDeclaration?.Body == null)
+        {
+            return "unknown";
+        }
+
+
         var accesses = _kernelInfo.MethodDeclaration.Body
             .DescendantNodes()
             .OfType<ElementAccessExpressionSyntax>()
             .Where(e => e.Expression.ToString() == arrayName);
-        
+
+
         foreach (var access in accesses)
         {
             var indexExpr = access.ArgumentList.Arguments.FirstOrDefault()?.Expression;
@@ -534,7 +641,8 @@ internal sealed class KernelOptimizationAnalyzer
                 return "coalesced";
             }
         }
-        
+
+
         return "random";
     }
 }
@@ -549,7 +657,8 @@ internal sealed class SharedMemoryConfiguration
     public bool UseForReduction { get; set; }
     public int ReductionBufferSize { get; set; }
     public Dictionary<string, int> LoopUnrollFactors { get; } = new();
-    
+
+
     public int TotalSizeInBytes => Variables.Sum(v => v.SizeInBytes);
 }
 
@@ -565,7 +674,8 @@ internal sealed class ConstantMemoryConfiguration
 {
     public bool Enabled { get; set; }
     public List<ConstantMemoryVariable> Variables { get; } = new();
-    
+
+
     public int TotalSizeInBytes => Variables.Sum(v => v.SizeInBytes);
 }
 
@@ -600,11 +710,22 @@ internal sealed class CacheConfiguration
     public bool PreferShared { get; set; }
     public bool UseReadOnlyCache { get; set; }
     public bool UseTextureCache { get; set; }
-    
+
+
     public string GetCudaCacheConfig()
     {
-        if (PreferShared) return "cudaFuncCachePreferShared";
-        if (PreferL1) return "cudaFuncCachePreferL1";
+        if (PreferShared)
+        {
+            return "cudaFuncCachePreferShared";
+        }
+
+
+        if (PreferL1)
+        {
+            return "cudaFuncCachePreferL1";
+        }
+
+
         return "cudaFuncCachePreferNone";
     }
 }

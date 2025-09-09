@@ -36,11 +36,13 @@ public static class ComprehensiveOptimizationExample
                 services.AddDotComputeRuntime();
 
                 // Phase 2: IDE-Integrated Static Analysis (already integrated with generators)
-                
+
                 // Phase 3: Enhanced Debugging with Cross-Backend Validation
+
                 services.AddDevelopmentDebugging();
-                
+
                 // Phase 4: Production Performance Optimizations
+
                 services.AddDevelopmentOptimization(); // Use development profile for demo
 
                 // Add comprehensive logging
@@ -110,7 +112,7 @@ public static class ComprehensiveOptimizationExample
             try
             {
                 logger.LogInformation("  Executing {KernelName}...", kernelName);
-                
+
                 // This execution automatically includes:
                 // ✅ Workload analysis and backend selection
                 // ✅ Pre-execution optimizations
@@ -118,14 +120,17 @@ public static class ComprehensiveOptimizationExample
                 // ✅ Real-time performance monitoring
                 // ✅ Machine learning from results
                 // ✅ Error analysis and debugging hooks
-                
+
+
                 await orchestrator.ExecuteAsync(kernelName, args);
-                
+
+
                 logger.LogInformation("    ✅ {KernelName} completed with optimization", kernelName);
             }
             catch (Exception ex)
             {
-                logger.LogWarning("    ⚠️ {KernelName} failed (expected for demo): {Message}", 
+                logger.LogWarning("    ⚠️ {KernelName} failed (expected for demo): {Message}",
+
                     kernelName, ex.Message);
             }
         }
@@ -140,7 +145,8 @@ public static class ComprehensiveOptimizationExample
         try
         {
             var insights = services.GetPerformanceInsights();
-            
+
+
             logger.LogInformation("System Performance Insights:");
             logger.LogInformation("  📈 Total workload signatures tracked: {Count}", insights.TotalWorkloadSignatures);
             logger.LogInformation("  🖥️  Total backends available: {Count}", insights.TotalBackends);
@@ -191,7 +197,8 @@ public static class ComprehensiveOptimizationExample
         foreach (var (description, kernelName, data) in scenarios)
         {
             logger.LogInformation("  Scenario: {Description}", description);
-            logger.LogInformation("    Kernel: {KernelName}, Data size: {Size} elements", 
+            logger.LogInformation("    Kernel: {KernelName}, Data size: {Size} elements",
+
                 kernelName, GetDataSize(data));
 
             try
@@ -201,7 +208,8 @@ public static class ComprehensiveOptimizationExample
                 // 2. Select optimal backend based on workload pattern
                 // 3. Apply workload-specific optimizations
                 // 4. Learn from execution for future similar workloads
-                
+
+
                 await orchestrator.ExecuteAsync(kernelName, data);
                 logger.LogInformation("    ✅ Optimized for {Description}", description.ToLowerInvariant());
             }
@@ -220,7 +228,8 @@ public static class ComprehensiveOptimizationExample
 
         // Simulate system learning by running same kernel multiple times
         // The system should adapt and improve selection over time
-        
+
+
         var kernelName = "AdaptiveTestKernel";
         var testData = new float[10000];
 
@@ -229,7 +238,7 @@ public static class ComprehensiveOptimizationExample
         for (var iteration = 1; iteration <= 5; iteration++)
         {
             logger.LogInformation("    Iteration {Iteration}/5:", iteration);
-            
+
             try
             {
                 // With each execution, the system:
@@ -237,12 +246,15 @@ public static class ComprehensiveOptimizationExample
                 // ✅ Updates backend performance models
                 // ✅ Improves future selections based on learning
                 // ✅ Adapts to changing system conditions
-                
+
+
                 await orchestrator.ExecuteAsync(kernelName, testData);
-                
+
+
                 logger.LogInformation("      ✅ Execution {Iteration} completed - system learning applied", iteration);
-                
+
                 // Simulate some delay between executions
+
                 await Task.Delay(100);
             }
             catch (Exception ex)
@@ -268,7 +280,8 @@ public static class ComprehensiveOptimizationExample
     /// Example of configuring the complete system for different environments.
     /// </summary>
     public static IServiceCollection ConfigureForEnvironment(
-        this IServiceCollection services, 
+        this IServiceCollection services,
+
         DeploymentEnvironment environment)
     {
         return environment switch
@@ -303,34 +316,39 @@ public static class ComprehensiveOptimizationExample
     public static void PrintSystemOverview()
     {
         Console.WriteLine("=== DotCompute Complete System Architecture ===\n");
-        
+
+
         Console.WriteLine("Phase 1: Generator ↔ Runtime Integration Bridge");
         Console.WriteLine("  ✅ IComputeOrchestrator interface");
         Console.WriteLine("  ✅ KernelExecutionService for runtime integration");
         Console.WriteLine("  ✅ GeneratedKernelDiscoveryService");
         Console.WriteLine("  ✅ ServiceCollectionExtensions for DI");
         Console.WriteLine("  ✅ IntegrationExample demonstrating workflow");
-        
+
+
         Console.WriteLine("\nPhase 2: Roslyn Analyzer Integration");
         Console.WriteLine("  ✅ DotComputeKernelAnalyzer with 12 diagnostic rules");
         Console.WriteLine("  ✅ KernelCodeFixProvider with 5 automated fixes");
         Console.WriteLine("  ✅ IDE integration for real-time feedback");
         Console.WriteLine("  ✅ AnalyzerDemo with comprehensive examples");
-        
+
+
         Console.WriteLine("\nPhase 3: Enhanced Debugging Service");
         Console.WriteLine("  ✅ IKernelDebugService with 8 debugging methods");
         Console.WriteLine("  ✅ KernelDebugService production implementation");
         Console.WriteLine("  ✅ DebugIntegratedOrchestrator with hooks");
         Console.WriteLine("  ✅ Cross-backend validation and analysis");
         Console.WriteLine("  ✅ Multiple debugging profiles (dev/test/prod)");
-        
+
+
         Console.WriteLine("\nPhase 4: Production Optimizations");
         Console.WriteLine("  ✅ AdaptiveBackendSelector with ML capabilities");
         Console.WriteLine("  ✅ PerformanceOptimizedOrchestrator");
         Console.WriteLine("  ✅ Comprehensive workload analysis");
         Console.WriteLine("  ✅ Real-time performance monitoring");
         Console.WriteLine("  ✅ Multiple optimization profiles");
-        
+
+
         Console.WriteLine("\n🏗️  Complete Integrated Architecture:");
         Console.WriteLine("  📝 Source Generator → 🔍 Static Analysis → 🚀 Runtime → 🐛 Debugging → 🔧 Optimization");
         Console.WriteLine("  \nThe system provides:");

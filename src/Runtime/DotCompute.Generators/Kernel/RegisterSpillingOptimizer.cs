@@ -50,10 +50,30 @@ internal sealed class RegisterSpillingOptimizer
     {
         get
         {
-            if (_estimatedRegisterCount <= 32) return 32;
-            if (_estimatedRegisterCount <= 64) return 64;
-            if (_estimatedRegisterCount <= 96) return 96;
-            if (_estimatedRegisterCount <= 128) return 128;
+            if (_estimatedRegisterCount <= 32)
+            {
+                return 32;
+            }
+
+
+            if (_estimatedRegisterCount <= 64)
+            {
+                return 64;
+            }
+
+
+            if (_estimatedRegisterCount <= 96)
+            {
+                return 96;
+            }
+
+
+            if (_estimatedRegisterCount <= 128)
+            {
+                return 128;
+            }
+
+
             return 255; // Maximum allowed
         }
     }
@@ -63,11 +83,16 @@ internal sealed class RegisterSpillingOptimizer
     /// </summary>
     private void AnalyzeRegisterPressure()
     {
-        if (_kernelInfo.MethodDeclaration?.Body == null) return;
+        if (_kernelInfo.MethodDeclaration?.Body == null)
+        {
+            return;
+        }
+
 
         var body = _kernelInfo.MethodDeclaration.Body;
-        
+
         // Count local variables
+
         var localVariables = body.DescendantNodes()
             .OfType<LocalDeclarationStatementSyntax>()
             .SelectMany(ld => ld.Declaration.Variables)
@@ -85,15 +110,17 @@ internal sealed class RegisterSpillingOptimizer
             var variableName = variable.Identifier.Text;
             var declaration = variable.Parent as VariableDeclarationSyntax;
             var typeInfo = declaration != null ? _semanticModel.GetTypeInfo(declaration.Type) : default;
-            
+
             // Estimate registers based on type
+
             int registersNeeded = typeInfo.Type != null ? EstimateRegistersForType(typeInfo.Type) : 1;
             _estimatedRegisterCount += registersNeeded;
 
             // Track variable lifetime for spilling decisions
             AnalyzeVariableLifetime(variable, variableName);
-            
+
             // Mark long-lived variables as spillable
+
             if (_variableLifetimes.ContainsKey(variableName) && _variableLifetimes[variableName] > 10)
             {
                 _spillableVariables.Add(variableName);
@@ -102,25 +129,32 @@ internal sealed class RegisterSpillingOptimizer
 
         // Add overhead for control flow
         var controlFlowStatements = body.DescendantNodes()
-            .Count(n => n is IfStatementSyntax || n is WhileStatementSyntax || 
+            .Count(n => n is IfStatementSyntax || n is WhileStatementSyntax ||
+
                        n is ForStatementSyntax || n is DoStatementSyntax);
-        
+
+
         _estimatedRegisterCount += controlFlowStatements * 3; // Control flow typically needs extra registers
 
         // Add overhead for mathematical operations
         var mathOperations = body.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Count(inv => IsMathOperation(inv));
-        
+
+
         _estimatedRegisterCount += mathOperations * 2; // Math operations need temporary registers
     }
 
     /// <summary>
     /// Estimates the number of registers needed for a type.
     /// </summary>
-    private int EstimateRegistersForType(ITypeSymbol type)
+    private static int EstimateRegistersForType(ITypeSymbol type)
     {
-        if (type == null) return 1;
+        if (type == null)
+        {
+            return 1;
+        }
+
 
         return type.SpecialType switch
         {
@@ -141,7 +175,11 @@ internal sealed class RegisterSpillingOptimizer
     private void AnalyzeVariableLifetime(VariableDeclaratorSyntax variable, string variableName)
     {
         var block = variable.FirstAncestorOrSelf<BlockSyntax>();
-        if (block == null) return;
+        if (block == null)
+        {
+            return;
+        }
+
 
         var references = block.DescendantNodes()
             .OfType<IdentifierNameSyntax>()
@@ -154,10 +192,11 @@ internal sealed class RegisterSpillingOptimizer
     /// <summary>
     /// Checks if an invocation is a math operation.
     /// </summary>
-    private bool IsMathOperation(InvocationExpressionSyntax invocation)
+    private static bool IsMathOperation(InvocationExpressionSyntax invocation)
     {
         var expression = invocation.Expression.ToString();
-        return expression.Contains("Math.") || 
+        return expression.Contains("Math.") ||
+
                expression.Contains("MathF.") ||
                expression.Contains("Sin") ||
                expression.Contains("Cos") ||
@@ -221,9 +260,13 @@ internal sealed class RegisterSpillingOptimizer
     private string ModifyCodeForSpilling(string code)
     {
         if (!HasHighRegisterPressure || _spillableVariables.Count == 0)
+        {
+
             return code;
+        }
 
         // Use a proper code transformation approach with AST-aware modifications
+
         var codeTransformer = new SpillCodeTransformer(_spillableVariables);
         return codeTransformer.Transform(code);
     }
@@ -262,8 +305,9 @@ internal sealed class RegisterSpillingOptimizer
             _output = new StringBuilder();
             _processedDeclarations = new HashSet<string>();
             _blockStack = new Stack<BlockContext>();
-            
+
             // Assign spill slots
+
             int slot = 0;
             foreach (var var in spillableVariables)
             {
@@ -288,13 +332,15 @@ internal sealed class RegisterSpillingOptimizer
         private void ProcessLine(string line)
         {
             var trimmedLine = line.Trim();
-            
+
             // Handle block boundaries
+
             if (trimmedLine.Contains("{"))
             {
                 _blockStack.Push(new BlockContext { StartLine = _currentLine });
             }
-            
+
+
             if (trimmedLine.Contains("}") && _blockStack.Count > 0)
             {
                 var block = _blockStack.Pop();
@@ -345,7 +391,7 @@ internal sealed class RegisterSpillingOptimizer
             _output.AppendLine(processedLine);
         }
 
-        private bool IsLoopConstruct(string line)
+        private static bool IsLoopConstruct(string line)
         {
             return Regex.IsMatch(line, @"\b(for|while|do)\b\s*\(");
         }
@@ -353,8 +399,9 @@ internal sealed class RegisterSpillingOptimizer
         private bool IsVariableDeclaration(string line, out string varName, out string varType, out string initializer)
         {
             varName = varType = initializer = string.Empty;
-            
+
             // Match patterns like: float x = expr; or int y = value;
+
             var match = Regex.Match(line, @"\b(float|double|int|uint32_t|int32_t|half)\s+(\w+)\s*=\s*([^;]+);");
             if (match.Success)
             {
@@ -377,7 +424,7 @@ internal sealed class RegisterSpillingOptimizer
             return false;
         }
 
-        private string GetDefaultInitializer(string type)
+        private static string GetDefaultInitializer(string type)
         {
             return type switch
             {
@@ -388,11 +435,12 @@ internal sealed class RegisterSpillingOptimizer
             };
         }
 
-        private bool IsVariableAssignment(string line, out string varName, out string value)
+        private static bool IsVariableAssignment(string line, out string varName, out string value)
         {
             varName = value = string.Empty;
-            
+
             // Match patterns like: x = expr;
+
             var match = Regex.Match(line, @"\b(\w+)\s*=\s*([^;]+);");
             if (match.Success && !line.Contains("float") && !line.Contains("int") && !line.Contains("double"))
             {
@@ -408,10 +456,12 @@ internal sealed class RegisterSpillingOptimizer
         {
             var info = _spillInfoMap[varName];
             info.Type = varType;
-            
+
             // Determine if we should spill immediately or keep in register
+
             bool shouldSpillImmediately = _blockStack.Any(b => b.IsLoop) || _spillVars.Count > 8;
-            
+
+
             if (shouldSpillImmediately)
             {
                 _output.AppendLine($"    // Spillable variable {varName} - using spill slot {info.SpillSlot}");
@@ -430,7 +480,8 @@ internal sealed class RegisterSpillingOptimizer
         private void ProcessSpillableAssignment(string line, string varName, string value)
         {
             var info = _spillInfoMap[varName];
-            
+
+
             if (info.IsSpilled)
             {
                 // Variable is spilled, need to reload, modify, and spill again
@@ -442,8 +493,9 @@ internal sealed class RegisterSpillingOptimizer
             {
                 // Variable is in register
                 _output.AppendLine($"    {varName} = {value};");
-                
+
                 // Consider spilling if register pressure is high
+
                 if (_blockStack.Any(b => b.IsLoop))
                 {
                     _output.AppendLine($"    SPILL_{varName}({varName}); // Spill in loop context");
@@ -455,21 +507,30 @@ internal sealed class RegisterSpillingOptimizer
         private string ProcessVariableUses(string line)
         {
             var processedLine = line;
-            
+
+
             foreach (var varName in _spillVars)
             {
                 if (!_spillInfoMap.ContainsKey(varName))
+                {
                     continue;
-                    
+                }
+
+
                 var info = _spillInfoMap[varName];
-                
+
                 // Skip if this line is the declaration
+
                 if (line.Contains($"{info.Type} {varName}"))
+                {
                     continue;
-                
+                }
+
                 // Look for uses of the variable (not assignments)
+
                 var usePattern = $@"\b{Regex.Escape(varName)}\b(?!\s*=)";
-                
+
+
                 if (Regex.IsMatch(line, usePattern))
                 {
                     if (info.IsSpilled)
@@ -480,7 +541,8 @@ internal sealed class RegisterSpillingOptimizer
                     }
                 }
             }
-            
+
+
             return processedLine;
         }
     }
@@ -528,12 +590,14 @@ internal sealed class RegisterSpillingOptimizer
     public string GeneratePtxHints()
     {
         var sb = new StringBuilder();
-        
+
+
         if (HasHighRegisterPressure)
         {
             sb.AppendLine("// PTX optimization hints for high register pressure");
             sb.AppendLine($"// .maxnreg {RecommendedMaxRegisters}");
-            
+
+
             if (_spillableVariables.Count > 0)
             {
                 sb.AppendLine("// Consider using .local memory for spilling:");
@@ -542,17 +606,20 @@ internal sealed class RegisterSpillingOptimizer
                     sb.AppendLine($"//   .local .f32 spill_{var};");
                 }
             }
-            
+
+
             sb.AppendLine("// Use .pragma \"nounroll\" for loops to reduce register pressure");
             sb.AppendLine("// Consider .volatile for frequently accessed shared memory");
-            
+
             // Generate specific PTX directives for spilling
+
             sb.AppendLine();
             sb.AppendLine("// PTX directives for explicit spilling:");
             sb.AppendLine("// .reg .f32 %f<N>; // Limit float registers");
             sb.AppendLine("// .reg .b32 %r<N>; // Limit integer registers");
             sb.AppendLine("// .reg .b64 %rd<N>; // Limit 64-bit registers");
-            
+
+
             if (_spillableVariables.Count > 0)
             {
                 sb.AppendLine();
@@ -564,10 +631,12 @@ internal sealed class RegisterSpillingOptimizer
                 }
             }
         }
-        
+
+
         return sb.ToString();
     }
-    
+
+
     /// <summary>
     /// Analyzes data flow to optimize spilling decisions.
     /// </summary>
@@ -575,7 +644,8 @@ internal sealed class RegisterSpillingOptimizer
     {
         private readonly Dictionary<string, VariableFlowInfo> _flowInfo;
         private readonly KernelMethodInfo _kernelInfo;
-        
+
+
         public sealed class VariableFlowInfo
         {
             public string Name { get; set; } = string.Empty;
@@ -586,32 +656,41 @@ internal sealed class RegisterSpillingOptimizer
             public HashSet<string> Dependencies { get; } = new HashSet<string>();
             public int LiveRangeLength => LastUse - FirstUse;
         }
-        
+
+
         public DataFlowAnalyzer(KernelMethodInfo kernelInfo)
         {
             _kernelInfo = kernelInfo;
             _flowInfo = new Dictionary<string, VariableFlowInfo>();
             Analyze();
         }
-        
+
+
         private void Analyze()
         {
-            if (_kernelInfo.MethodDeclaration?.Body == null) return;
-            
+            if (_kernelInfo.MethodDeclaration?.Body == null)
+            {
+                return;
+            }
+
+
             var body = _kernelInfo.MethodDeclaration.Body;
             int lineNumber = 0;
-            
+
             // First pass: collect all variable declarations and uses
+
             foreach (var statement in body.Statements)
             {
                 lineNumber++;
                 AnalyzeStatement(statement, lineNumber);
             }
-            
+
             // Second pass: analyze loop-carried dependencies
+
             AnalyzeLoopCarriedDependencies(body);
         }
-        
+
+
         private void AnalyzeStatement(StatementSyntax statement, int lineNumber)
         {
             // Analyze variable declarations
@@ -632,8 +711,9 @@ internal sealed class RegisterSpillingOptimizer
                     }
                 }
             }
-            
+
             // Analyze variable uses in expressions
+
             var identifiers = statement.DescendantNodes().OfType<IdentifierNameSyntax>();
             foreach (var identifier in identifiers)
             {
@@ -643,8 +723,9 @@ internal sealed class RegisterSpillingOptimizer
                     var info = _flowInfo[name];
                     info.LastUse = Math.Max(info.LastUse, lineNumber);
                     info.UseCount++;
-                    
+
                     // Track dependencies
+
                     var assignment = identifier.FirstAncestorOrSelf<AssignmentExpressionSyntax>();
                     if (assignment != null && assignment.Left.ToString() != name)
                     {
@@ -657,14 +738,19 @@ internal sealed class RegisterSpillingOptimizer
                 }
             }
         }
-        
+
+
         private void AnalyzeLoopCarriedDependencies(BlockSyntax body)
         {
-            var loops = body.DescendantNodes().Where(n => 
-                n is ForStatementSyntax || 
-                n is WhileStatementSyntax || 
+            var loops = body.DescendantNodes().Where(n =>
+
+                n is ForStatementSyntax ||
+
+                n is WhileStatementSyntax ||
+
                 n is DoStatementSyntax);
-            
+
+
             foreach (var loop in loops)
             {
                 var loopBody = loop switch
@@ -674,33 +760,41 @@ internal sealed class RegisterSpillingOptimizer
                     DoStatementSyntax doLoop => doLoop.Statement,
                     _ => null
                 };
-                
-                if (loopBody == null) continue;
-                
+
+
+                if (loopBody == null)
+                {
+                    continue;
+                }
+
                 // Find variables modified in the loop
+
                 var modifiedVars = loopBody.DescendantNodes()
                     .OfType<AssignmentExpressionSyntax>()
                     .Select(a => a.Left.ToString())
                     .Where(v => _flowInfo.ContainsKey(v))
                     .ToList();
                 var modifiedVarsSet = new HashSet<string>(modifiedVars);
-                
+
                 // Find variables used in the loop
+
                 var usedVars = loopBody.DescendantNodes()
                     .OfType<IdentifierNameSyntax>()
                     .Select(i => i.Identifier.Text)
                     .Where(v => _flowInfo.ContainsKey(v))
                     .ToList();
                 var usedVarsSet = new HashSet<string>(usedVars);
-                
+
                 // Mark loop-carried dependencies
+
                 foreach (var var in modifiedVarsSet.Intersect(usedVarsSet))
                 {
                     _flowInfo[var].IsLoopCarried = true;
                 }
             }
         }
-        
+
+
         public IEnumerable<VariableFlowInfo> GetSpillCandidates()
         {
             return _flowInfo.Values

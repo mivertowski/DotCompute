@@ -365,6 +365,7 @@ namespace DotCompute.Core.Execution
             // Implement hierarchical stealing based on device hierarchy
             // For now, fallback to richest victim strategy - TODO
 
+
             => SelectRichestVictim(thiefIndex);
 
         private async Task<double> ExecuteWorkItemAsync(
@@ -428,7 +429,7 @@ namespace DotCompute.Core.Execution
                 // Get or compile kernel for this device
                 var compiledKernel = await kernelManager.GetOrCompileOperationKernelAsync(
                     "work_item_kernel", // This would be determined by the work item type - TODO
-                    new[] { typeof(T) },
+                    [typeof(T)],
                     typeof(T),
                     device,
                     null,

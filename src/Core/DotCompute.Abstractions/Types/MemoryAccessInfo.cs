@@ -50,7 +50,8 @@ namespace DotCompute.Abstractions.Types
         /// Used for bandwidth calculations.
         /// </summary>
         public TimeSpan? ExecutionTime { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the memory access pattern type.
         /// </summary>

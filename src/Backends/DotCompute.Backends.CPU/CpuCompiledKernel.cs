@@ -101,8 +101,9 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
             KernelName = _definition.Name,
             WorkDimensions = new Dim3(1024, 1, 1) // Default work size - should be configurable
         };
-        
+
         // Map arguments to context parameters
+
         if (arguments.Arguments != null)
         {
             for (var i = 0; i < arguments.Arguments.Count; i++)
@@ -570,8 +571,9 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     {
         // Create args array from context for compatibility
         var args = BuildArgumentsArray(context);
-        
+
         // If we have a compiled delegate, use it
+
         if (_compiledDelegate != null)
         {
             try
@@ -605,12 +607,14 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         var maxIndex = Math.Max(
             context.Buffers.Keys.DefaultIfEmpty(-1).Max(),
             context.Scalars.Keys.DefaultIfEmpty(-1).Max());
-        
+
+
         if (maxIndex < 0)
         {
             return; // No parameters to process
         }
-        
+
+
         var args = new object[maxIndex + 1];
         foreach (var (index, buffer) in context.Buffers)
         {
@@ -1240,6 +1244,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     public static KernelPerformanceMetrics GetPerformanceMetrics()
         // KernelPerformanceMetrics doesn't have these properties anymore
         // Return a basic instance for now TODO
+
         => new();
 
     private static object[] BuildArgumentsArray(KernelExecutionContext context)
@@ -1248,12 +1253,14 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         var maxIndex = Math.Max(
             context.Buffers.Keys.DefaultIfEmpty(-1).Max(),
             context.Scalars.Keys.DefaultIfEmpty(-1).Max());
-        
+
+
         if (maxIndex < 0)
         {
             return [];
         }
-        
+
+
         var args = new object[maxIndex + 1];
         foreach (var (index, buffer) in context.Buffers)
         {
@@ -1269,22 +1276,26 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
                 args[index] = scalar;
             }
         }
-        
+
+
         return args;
     }
-    
+
+
     private static KernelArguments ConvertContextToArguments(KernelExecutionContext context)
     {
         // Convert KernelExecutionContext parameters to KernelArguments
         var maxIndex = Math.Max(
             context.Buffers.Keys.DefaultIfEmpty(-1).Max(),
             context.Scalars.Keys.DefaultIfEmpty(-1).Max());
-        
+
+
         if (maxIndex < 0)
         {
             return [];
         }
-        
+
+
         var args = new object[maxIndex + 1];
         foreach (var (index, buffer) in context.Buffers)
         {
@@ -1300,7 +1311,8 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
                 args[index] = scalar;
             }
         }
-        
+
+
         return [.. args];
     }
 

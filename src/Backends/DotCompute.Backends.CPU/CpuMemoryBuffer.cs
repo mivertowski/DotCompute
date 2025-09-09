@@ -25,11 +25,13 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     private readonly int _numaNode;
     private readonly NumaMemoryPolicy _policy;
     private readonly ILogger<CpuMemoryBuffer>? _logger;
-    
+
+
     private IntPtr _nativeHandle;
     private bool _isDisposed;
     private BufferState _state;
-    
+
+
     /// <summary>
     /// Initializes a new instance of the CpuMemoryBuffer class.
     /// </summary>
@@ -40,10 +42,14 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     /// <param name="policy">The NUMA memory policy to use.</param>
     /// <param name="logger">Optional logger for diagnostics.</param>
     public CpuMemoryBuffer(
-        long sizeInBytes, 
-        MemoryOptions options, 
-        CpuMemoryManager memoryManager, 
-        int numaNode, 
+        long sizeInBytes,
+
+        MemoryOptions options,
+
+        CpuMemoryManager memoryManager,
+
+        int numaNode,
+
         NumaMemoryPolicy policy,
         ILogger<CpuMemoryBuffer>? logger = null)
     {
@@ -54,7 +60,8 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         _policy = policy ?? throw new ArgumentNullException(nameof(policy));
         _logger = logger;
         _state = BufferState.HostOnly;
-        
+
+
         AllocateNativeMemory();
     }
 
@@ -68,8 +75,9 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
             {
                 throw new OutOfMemoryException($"Failed to allocate {_sizeInBytes} bytes of CPU memory");
             }
-            
+
             // Initialize memory if requested
+
             if (_options.InitializeToZero())
             {
                 unsafe
@@ -78,8 +86,10 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
                     span.Clear();
                 }
             }
-            
-            _logger?.LogTrace("Allocated {Size} bytes of CPU memory at {Handle} on NUMA node {Node}", 
+
+
+            _logger?.LogTrace("Allocated {Size} bytes of CPU memory at {Handle} on NUMA node {Node}",
+
                 _sizeInBytes, _nativeHandle, _numaNode);
         }
         catch (OutOfMemoryException)
@@ -144,13 +154,15 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 
     public DeviceMemory GetDeviceMemory()
         // For CPU backend, device memory is the same as host memory
+
         => new(_nativeHandle, _sizeInBytes);
 
     public MappedMemory<byte> Map(MapMode mode = MapMode.ReadWrite)
     {
         EnsureNotDisposed();
         var memory = AsMemory();
-        return new MappedMemory<byte>(memory, () => {
+        return new MappedMemory<byte>(memory, () =>
+        {
             if (mode != MapMode.Read)
             {
                 MarkHostDirty();
@@ -169,7 +181,8 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 
 
         var memory = AsMemory().Slice(offset, length);
-        return new MappedMemory<byte>(memory, () => {
+        return new MappedMemory<byte>(memory, () =>
+        {
             if (mode != MapMode.Read)
             {
                 MarkHostDirty();
@@ -181,10 +194,12 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 
     public void EnsureOnHost()
         // CPU buffer is always on host
+
         => _state = BufferState.HostOnly;
 
     public void EnsureOnDevice()
         // CPU buffer is always on host (CPU is the device)
+
         => _state = BufferState.DeviceOnly;
 
     public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)

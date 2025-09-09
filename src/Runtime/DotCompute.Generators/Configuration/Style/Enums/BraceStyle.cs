@@ -30,7 +30,8 @@ public enum BraceStyle
     /// </code>
     /// </remarks>
     SameLine,
-    
+
+
     /// <summary>
     /// Place the opening brace on the next line, aligned with the statement.
     /// </summary>

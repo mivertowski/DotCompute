@@ -47,7 +47,8 @@ public sealed class ValidationContext
         {
             return UnifiedValidationResult.Failure(Errors.First().Message, Errors.First().Code);
         }
-        
+
+
         var result = UnifiedValidationResult.Success();
         foreach (var warning in Warnings)
         {

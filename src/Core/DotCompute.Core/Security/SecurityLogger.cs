@@ -589,6 +589,7 @@ public sealed class SecurityLogger : IDisposable
         // Implement attack pattern analysis logic
         // This could include rate limiting, IP reputation checks, etc.
 
+
         => await Task.CompletedTask; // Placeholder for actual implementation
 
     private void FlushAuditLogs(object? state)
@@ -687,6 +688,7 @@ public sealed class SecurityLogger : IDisposable
         // Implementation for sending critical event alerts
         // This could include email, SMS, webhook notifications, etc.
 
+
         => await Task.CompletedTask; // Placeholder
 
     private void PerformIntegrityCheck(object? state)
@@ -714,16 +716,19 @@ public sealed class SecurityLogger : IDisposable
         // Implementation for audit log integrity verification
         // This could include hash verification, digital signatures, etc.
 
+
         => await Task.CompletedTask; // Placeholder
 
     private static bool IsSecurityCriticalContext()
         // Check if we're running in a security-critical context
         // Note: SecurityManager is obsolete in .NET 9+, always return true for now
 
+
         => true;
 
     private static string GetCurrentIntegrityLevel()
         // Get current process integrity level (Windows-specific)
+
 
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Medium" : "Unknown";
 
@@ -1221,6 +1226,7 @@ public sealed class AuditExportResult
     public int RecordCount { get; set; }
     public string? ErrorMessage { get; set; }
 }
+
 
 
 #endregion

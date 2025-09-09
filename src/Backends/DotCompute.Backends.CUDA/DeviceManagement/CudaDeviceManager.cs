@@ -35,7 +35,8 @@ public sealed class CudaDeviceManager : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _devices = new ConcurrentDictionary<int, CudaDeviceInfo>();
         _p2pCapabilities = new ConcurrentDictionary<(int, int), bool>();
-        
+
+
         EnumerateDevices();
     }
 
@@ -64,7 +65,8 @@ public sealed class CudaDeviceManager : IDisposable
     private void EnumerateDevices()
     {
         _logger.LogInformation("Enumerating CUDA devices...");
-        
+
+
         try
         {
             // Get device count
@@ -84,7 +86,8 @@ public sealed class CudaDeviceManager : IDisposable
                 {
                     var deviceInfo = GetDeviceInfo(deviceId);
                     _ = _devices.TryAdd(deviceId, deviceInfo);
-                    
+
+
                     _logger.LogInformation(
                         "Device {Id}: {Name} - Compute {Major}.{Minor}, {Memory:N0} MB, {Cores} SMs",
                         deviceId, deviceInfo.Name, deviceInfo.ComputeCapabilityMajor,
@@ -216,17 +219,20 @@ public sealed class CudaDeviceManager : IDisposable
                     {
                         var canAccessP2P = canAccess != 0;
                         _ = _p2pCapabilities.TryAdd((device1, device2), canAccessP2P);
-                        
+
+
                         if (canAccessP2P)
                         {
-                            _logger.LogInformation("P2P access available: Device {From} -> Device {To}", 
+                            _logger.LogInformation("P2P access available: Device {From} -> Device {To}",
+
                                 device1, device2);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to check P2P capability between device {From} and {To}", 
+                    _logger.LogWarning(ex, "Failed to check P2P capability between device {From} and {To}",
+
                         device1, device2);
                 }
             }
@@ -239,10 +245,12 @@ public sealed class CudaDeviceManager : IDisposable
     public void SetDevice(int deviceId)
     {
         ThrowIfDisposed();
-        
+
+
         if (!_devices.ContainsKey(deviceId))
         {
-            throw new ArgumentException($"Device {deviceId} not found. Available devices: 0-{DeviceCount - 1}", 
+            throw new ArgumentException($"Device {deviceId} not found. Available devices: 0-{DeviceCount - 1}",
+
                 nameof(deviceId));
         }
 
@@ -256,7 +264,8 @@ public sealed class CudaDeviceManager : IDisposable
 
             var result = CudaRuntime.cudaSetDevice(deviceId);
             CudaRuntime.CheckError(result, $"setting device to {deviceId}");
-            
+
+
             _currentDevice = deviceId;
             _logger.LogDebug("Set current device to {DeviceId}", deviceId);
         }
@@ -268,12 +277,14 @@ public sealed class CudaDeviceManager : IDisposable
     public CudaDeviceInfo GetDevice(int deviceId)
     {
         ThrowIfDisposed();
-        
+
+
         if (_devices.TryGetValue(deviceId, out var device))
         {
             return device;
         }
-        
+
+
         throw new ArgumentException($"Device {deviceId} not found", nameof(deviceId));
     }
 
@@ -283,7 +294,8 @@ public sealed class CudaDeviceManager : IDisposable
     public bool CanAccessPeer(int fromDevice, int toDevice)
     {
         ThrowIfDisposed();
-        
+
+
         if (fromDevice == toDevice)
         {
 
@@ -300,7 +312,8 @@ public sealed class CudaDeviceManager : IDisposable
     public void EnablePeerAccess(int fromDevice, int toDevice)
     {
         ThrowIfDisposed();
-        
+
+
         if (fromDevice == toDevice)
         {
             return;
@@ -315,19 +328,22 @@ public sealed class CudaDeviceManager : IDisposable
 
         // Save current device
         var savedDevice = _currentDevice;
-        
+
+
         try
         {
             // Set source device
             SetDevice(fromDevice);
-            
+
             // Enable peer access
+
             var result = CudaRuntime.cudaDeviceEnablePeerAccess(toDevice, 0);
             if (result != CudaError.Success && result != CudaError.PeerAccessAlreadyEnabled)
             {
                 CudaRuntime.CheckError(result, $"enabling peer access from device {fromDevice} to {toDevice}");
             }
-            
+
+
             _logger.LogInformation("Enabled P2P access: Device {From} -> Device {To}", fromDevice, toDevice);
         }
         finally
@@ -346,7 +362,8 @@ public sealed class CudaDeviceManager : IDisposable
     public void DisablePeerAccess(int fromDevice, int toDevice)
     {
         ThrowIfDisposed();
-        
+
+
         if (fromDevice == toDevice)
         {
             return;
@@ -354,15 +371,18 @@ public sealed class CudaDeviceManager : IDisposable
 
 
         var savedDevice = _currentDevice;
-        
+
+
         try
         {
             SetDevice(fromDevice);
-            
+
+
             var result = CudaRuntime.cudaDeviceDisablePeerAccess(toDevice);
             if (result != CudaError.Success && result != CudaError.PeerAccessNotEnabled)
             {
-                _logger.LogWarning("Failed to disable peer access from device {From} to {To}: {Error}", 
+                _logger.LogWarning("Failed to disable peer access from device {From} to {To}: {Error}",
+
                     fromDevice, toDevice, result);
             }
         }
@@ -381,9 +401,11 @@ public sealed class CudaDeviceManager : IDisposable
     public void SynchronizeAllDevices()
     {
         ThrowIfDisposed();
-        
+
+
         var savedDevice = _currentDevice;
-        
+
+
         try
         {
             foreach (var deviceId in _devices.Keys)
@@ -408,7 +430,8 @@ public sealed class CudaDeviceManager : IDisposable
     public void ResetAllDevices()
     {
         ThrowIfDisposed();
-        
+
+
         foreach (var deviceId in _devices.Keys)
         {
             try
@@ -425,7 +448,8 @@ public sealed class CudaDeviceManager : IDisposable
                 _logger.LogError(ex, "Error resetting device {DeviceId}", deviceId);
             }
         }
-        
+
+
         _currentDevice = -1;
     }
 
@@ -435,7 +459,8 @@ public sealed class CudaDeviceManager : IDisposable
     public int SelectBestDevice(DeviceSelectionCriteria criteria)
     {
         ThrowIfDisposed();
-        
+
+
         if (_devices.IsEmpty)
         {
 
@@ -449,10 +474,12 @@ public sealed class CudaDeviceManager : IDisposable
             .ToList();
 
         var bestDevice = scoredDevices.First();
-        
+
+
         _logger.LogInformation("Selected device {DeviceId} ({Name}) with score {Score:F2}",
             bestDevice.Device.DeviceId, bestDevice.Device.Name, bestDevice.Score);
-        
+
+
         return bestDevice.Device.DeviceId;
     }
 
@@ -483,21 +510,24 @@ public sealed class CudaDeviceManager : IDisposable
         {
             score += 20;
         }
-        
+
         // Additional tensor core preference (softer requirement)
+
         if (criteria.PreferTensorCores && device.ComputeCapabilityMajor >= 7)
         {
             score += 10;
         }
-        
+
         // Check minimum compute capability
+
         var deviceComputeCapability = device.ComputeCapabilityMajor + (device.ComputeCapabilityMinor / 10.0);
         if (deviceComputeCapability < criteria.MinComputeCapability)
         {
             score *= 0.1; // Heavy penalty for not meeting minimum requirement
         }
-        
+
         // Prefer largest memory if requested
+
         if (criteria.PreferLargestMemory)
         {
             score += (device.TotalMemory / (64.0 * 1024 * 1024 * 1024)) * 25; // Normalize to 64GB
@@ -628,18 +658,21 @@ public sealed class DeviceSelectionCriteria
     /// The minimum memory bytes.
     /// </value>
     public long MinMemoryBytes { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets whether to prefer devices with Tensor Cores.
     /// </summary>
     public bool PreferTensorCores { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the minimum compute capability (major.minor) as a decimal.
     /// For example, 7.5 for compute capability 7.5.
     /// </summary>
     public double MinComputeCapability { get; init; } = 3.5;
-    
+
+
     /// <summary>
     /// Gets or sets whether to prefer the device with the largest memory.
     /// </summary>

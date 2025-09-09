@@ -417,17 +417,17 @@ public sealed class LinqToGpuKernelCompiler
 
         // Math functions
         var mathType = typeof(Math);
-        dict[mathType.GetMethod(nameof(Math.Abs), new[] { typeof(float) })!] = "fabsf";
-        dict[mathType.GetMethod(nameof(Math.Abs), new[] { typeof(double) })!] = "fabs";
-        dict[mathType.GetMethod(nameof(Math.Sqrt), new[] { typeof(double) })!] = "sqrt";
-        dict[mathType.GetMethod(nameof(Math.Sin), new[] { typeof(double) })!] = "sin";
-        dict[mathType.GetMethod(nameof(Math.Cos), new[] { typeof(double) })!] = "cos";
-        dict[mathType.GetMethod(nameof(Math.Tan), new[] { typeof(double) })!] = "tan";
-        dict[mathType.GetMethod(nameof(Math.Exp), new[] { typeof(double) })!] = "exp";
-        dict[mathType.GetMethod(nameof(Math.Log), new[] { typeof(double) })!] = "log";
-        dict[mathType.GetMethod(nameof(Math.Pow), new[] { typeof(double), typeof(double) })!] = "pow";
-        dict[mathType.GetMethod(nameof(Math.Min), new[] { typeof(float), typeof(float) })!] = "fminf";
-        dict[mathType.GetMethod(nameof(Math.Max), new[] { typeof(float), typeof(float) })!] = "fmaxf";
+        dict[mathType.GetMethod(nameof(Math.Abs), [typeof(float)])!] = "fabsf";
+        dict[mathType.GetMethod(nameof(Math.Abs), [typeof(double)])!] = "fabs";
+        dict[mathType.GetMethod(nameof(Math.Sqrt), [typeof(double)])!] = "sqrt";
+        dict[mathType.GetMethod(nameof(Math.Sin), [typeof(double)])!] = "sin";
+        dict[mathType.GetMethod(nameof(Math.Cos), [typeof(double)])!] = "cos";
+        dict[mathType.GetMethod(nameof(Math.Tan), [typeof(double)])!] = "tan";
+        dict[mathType.GetMethod(nameof(Math.Exp), [typeof(double)])!] = "exp";
+        dict[mathType.GetMethod(nameof(Math.Log), [typeof(double)])!] = "log";
+        dict[mathType.GetMethod(nameof(Math.Pow), [typeof(double), typeof(double)])!] = "pow";
+        dict[mathType.GetMethod(nameof(Math.Min), [typeof(float), typeof(float)])!] = "fminf";
+        dict[mathType.GetMethod(nameof(Math.Max), [typeof(float), typeof(float)])!] = "fmaxf";
 
         return dict;
     }

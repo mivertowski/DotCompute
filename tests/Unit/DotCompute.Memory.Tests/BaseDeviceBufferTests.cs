@@ -19,8 +19,9 @@ public class BaseDeviceBufferTests
     {
         // Arrange
         var accelerator = new TestAccelerator();
-        
+
         // Act
+
         using var buffer = new TestDeviceBuffer<float>(accelerator, 1024);
 
         // Assert
@@ -30,7 +31,8 @@ public class BaseDeviceBufferTests
         _ = buffer.SizeInBytes.Should().Be(1024);
         _ = buffer.Length.Should().Be(256); // 1024 bytes / 4 bytes per float
     }
-    
+
+
     [Theory]
     [InlineData(MemoryType.Device)]
     [InlineData(MemoryType.Shared)]
@@ -40,15 +42,17 @@ public class BaseDeviceBufferTests
     {
         // Arrange
         var accelerator = new TestAccelerator();
-        
+
         // Act
+
         using var buffer = new TestDeviceBuffer<int>(accelerator, 512, memoryType);
 
         // Assert
         _ = buffer.MemoryType.Should().Be(memoryType);
         _ = buffer.State.Should().Be(BufferState.Allocated);
     }
-    
+
+
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void DeviceBuffer_ThrowsOnHostOperations()
@@ -56,15 +60,17 @@ public class BaseDeviceBufferTests
         // Arrange
         var accelerator = new TestAccelerator();
         using var buffer = new TestDeviceBuffer<double>(accelerator, 800);
-        
+
         // Act & Assert
+
         Action spanAccess = () => buffer.AsSpan();
         Action readOnlySpanAccess = () => buffer.AsReadOnlySpan();
 
         _ = spanAccess.Should().Throw<NotSupportedException>("device buffers don't support direct span access");
         _ = readOnlySpanAccess.Should().Throw<NotSupportedException>("device buffers don't support direct span access");
     }
-    
+
+
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void DeviceBuffer_TracksDisposalState()
@@ -72,8 +78,9 @@ public class BaseDeviceBufferTests
         // Arrange
         var accelerator = new TestAccelerator();
         var buffer = new TestDeviceBuffer<float>(accelerator, 256);
-        
+
         // Act
+
         buffer.Dispose();
 
         // Assert

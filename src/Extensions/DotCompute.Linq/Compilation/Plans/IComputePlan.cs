@@ -19,7 +19,7 @@ public interface IComputePlan
     /// <value>
     /// A unique GUID that identifies this specific compute plan instance.
     /// </value>
-    Guid Id { get; }
+    public Guid Id { get; }
 
     /// <summary>
     /// Gets the stages in the compute plan.
@@ -28,7 +28,7 @@ public interface IComputePlan
     /// An ordered list of compute stages that will be executed sequentially
     /// or in parallel as determined by their dependencies.
     /// </value>
-    IReadOnlyList<IComputeStage> Stages { get; }
+    public IReadOnlyList<IComputeStage> Stages { get; }
 
     /// <summary>
     /// Gets the input parameters required by the plan.
@@ -40,7 +40,7 @@ public interface IComputePlan
     /// These parameters must be provided when executing the compute plan
     /// and typically correspond to constants and external data from the original expression.
     /// </remarks>
-    IReadOnlyDictionary<string, Type> InputParameters { get; }
+    public IReadOnlyDictionary<string, Type> InputParameters { get; }
 
     /// <summary>
     /// Gets the output type of the compute plan.
@@ -48,7 +48,7 @@ public interface IComputePlan
     /// <value>
     /// The type of data that will be produced by executing this compute plan.
     /// </value>
-    Type OutputType { get; }
+    public Type OutputType { get; }
 
     /// <summary>
     /// Gets the estimated memory requirements in bytes.
@@ -60,7 +60,7 @@ public interface IComputePlan
     /// This estimate includes input buffers, output buffers, intermediate storage,
     /// and any temporary memory needed during execution.
     /// </remarks>
-    long EstimatedMemoryUsage { get; }
+    public long EstimatedMemoryUsage { get; }
 
     /// <summary>
     /// Gets metadata about the compute plan.
@@ -69,5 +69,5 @@ public interface IComputePlan
     /// A dictionary containing additional information about the plan,
     /// such as optimization settings, performance hints, and debug information.
     /// </value>
-    IReadOnlyDictionary<string, object> Metadata { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
 }

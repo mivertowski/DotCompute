@@ -44,29 +44,37 @@ internal sealed class MemoryBuffer : IUnifiedMemoryBuffer<byte>
     public ReadOnlySpan<byte> AsReadOnlySpan() => _data.AsSpan();
     public Memory<byte> AsMemory() => _data.AsMemory();
     public ReadOnlyMemory<byte> AsReadOnlyMemory() => _data.AsMemory();
-    
+
+
     public DeviceMemory GetDeviceMemory() => DeviceMemory.Invalid;
-    
-    public MappedMemory<byte> Map(MapMode mode = MapMode.ReadWrite) 
+
+
+    public MappedMemory<byte> Map(MapMode mode = MapMode.ReadWrite)
+
         => throw new NotSupportedException("Memory mapping not supported");
-    
+
+
     public MappedMemory<byte> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
         => throw new NotSupportedException("Memory mapping not supported");
-    
+
+
     public ValueTask<MappedMemory<byte>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
         => throw new NotSupportedException("Memory mapping not supported");
 
     public void EnsureOnHost() { }
     public void EnsureOnDevice() { }
-    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) 
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+
         => ValueTask.CompletedTask;
     public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
-    
+
+
     public void Synchronize() { }
     public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
-    
+
+
     public void MarkHostDirty() { }
     public void MarkDeviceDirty() { }
 

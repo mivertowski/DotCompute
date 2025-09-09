@@ -105,7 +105,8 @@ namespace DotCompute.Core.Execution.Metrics
             {
                 return $"Device {DeviceId}: Failed - {ErrorMessage}";
             }
-            
+
+
             return $"Device {DeviceId}: {ExecutionTimeMs:F2}ms, {ThroughputGFLOPS:F2} GFLOPS, {MemoryBandwidthGBps:F2} GB/s";
         }
     }

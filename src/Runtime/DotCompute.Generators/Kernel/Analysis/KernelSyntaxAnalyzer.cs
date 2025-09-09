@@ -111,7 +111,7 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
         };
     }
 
-    private List<ParameterInfo> GetParameterInfo(IMethodSymbol method)
+    private static List<ParameterInfo> GetParameterInfo(IMethodSymbol method)
     {
         return method.Parameters.Select(p => new ParameterInfo
         {

@@ -24,7 +24,8 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     private readonly ConcurrentDictionary<string, ICompiledKernel> _compilationCache;
     private readonly ConcurrentDictionary<string, CompilationMetrics> _metricsCache;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<ICompiledKernel>> _compilationTasks;
-    
+
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseKernelCompiler"/> class.
     /// </summary>
@@ -36,12 +37,14 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         _metricsCache = new ConcurrentDictionary<string, CompilationMetrics>();
         _compilationTasks = new ConcurrentDictionary<string, TaskCompletionSource<ICompiledKernel>>();
     }
-    
+
+
     /// <summary>
     /// Gets the compiler name for logging purposes.
     /// </summary>
     protected abstract string CompilerName { get; }
-    
+
+
     /// <summary>
     /// Gets whether compilation caching is enabled.
     /// </summary>
@@ -68,26 +71,31 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(definition);
-        
+
         // Validate kernel definition
+
         var validationResult = ValidateKernelDefinition(definition);
         if (!validationResult.IsValid)
         {
             throw new InvalidOperationException($"Kernel validation failed: {validationResult.ErrorMessage}");
         }
-        
+
+
         options ??= GetDefaultCompilationOptions();
-        
+
         // Check cache if enabled
+
         var cacheKey = GenerateCacheKey(definition, options);
         if (EnableCaching && _compilationCache.TryGetValue(cacheKey, out var cachedKernel))
         {
-            _logger.LogDebug("{CompilerName}: Using cached compilation for kernel '{KernelName}'", 
+            _logger.LogDebug("{CompilerName}: Using cached compilation for kernel '{KernelName}'",
+
                 CompilerName, definition.Name);
             return cachedKernel;
         }
-        
+
         // Check if compilation is already in progress for this kernel
+
         if (EnableCaching)
         {
             var tcs = new TaskCompletionSource<ICompiledKernel>();
@@ -96,27 +104,34 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
                 // Another thread is already compiling this kernel, wait for it
                 if (_compilationTasks.TryGetValue(cacheKey, out var existingTcs))
                 {
-                    _logger.LogDebug("{CompilerName}: Waiting for concurrent compilation of kernel '{KernelName}'", 
+                    _logger.LogDebug("{CompilerName}: Waiting for concurrent compilation of kernel '{KernelName}'",
+
                         CompilerName, definition.Name);
                     return await existingTcs.Task.ConfigureAwait(false);
                 }
             }
         }
-        
-        _logger.LogDebug("{CompilerName}: Starting compilation of kernel '{KernelName}'", 
+
+
+        _logger.LogDebug("{CompilerName}: Starting compilation of kernel '{KernelName}'",
+
             CompilerName, definition.Name);
-        
+
+
         var stopwatch = Stopwatch.StartNew();
-        
+
+
         try
         {
             // Perform the actual compilation
             var compiledKernel = await CompileKernelCoreAsync(definition, options, cancellationToken)
                 .ConfigureAwait(false);
-            
+
+
             stopwatch.Stop();
-            
+
             // Record metrics
+
             var metrics = new CompilationMetrics
             {
                 KernelName = definition.Name,
@@ -126,23 +141,27 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
                 Timestamp = DateTime.UtcNow
             };
             _ = _metricsCache.TryAdd(cacheKey, metrics);
-            
+
             // Cache the result if enabled
+
             if (EnableCaching)
             {
                 _ = _compilationCache.TryAdd(cacheKey, compiledKernel);
-                
+
                 // Signal waiting threads
+
                 if (_compilationTasks.TryRemove(cacheKey, out var tcs))
                 {
                     tcs.SetResult(compiledKernel);
                 }
             }
-            
+
+
             _logger.LogInformation(
                 "{CompilerName}: Successfully compiled kernel '{KernelName}' in {ElapsedMs}ms with {OptimizationLevel} optimization",
                 CompilerName, definition.Name, stopwatch.ElapsedMilliseconds, options.OptimizationLevel);
-            
+
+
             return compiledKernel;
         }
         catch (Exception ex)
@@ -152,18 +171,22 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             {
                 tcs.SetException(ex);
             }
-            
+
+
             if (ex is OperationCanceledException)
             {
                 throw;
             }
-            
-            _logger.LogError(ex, "{CompilerName}: Failed to compile kernel '{KernelName}'", 
+
+
+            _logger.LogError(ex, "{CompilerName}: Failed to compile kernel '{KernelName}'",
+
                 CompilerName, definition.Name);
             throw new KernelCompilationException($"Failed to compile kernel '{definition.Name}'", ex);
         }
     }
-    
+
+
     /// <summary>
     /// Core compilation logic to be implemented by derived classes.
     /// </summary>
@@ -171,7 +194,8 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         KernelDefinition definition,
         CompilationOptions options,
         CancellationToken cancellationToken);
-    
+
+
     /// <summary>
     /// Validates kernel definition parameters.
     /// Common validation logic that was duplicated across implementations.
@@ -179,20 +203,23 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     protected virtual DotCompute.Abstractions.Validation.UnifiedValidationResult ValidateKernelDefinition(KernelDefinition definition)
     {
         var result = new DotCompute.Abstractions.Validation.UnifiedValidationResult();
-        
+
+
         if (string.IsNullOrWhiteSpace(definition.Name))
         {
             result.AddError("Kernel name cannot be empty");
             return result;
         }
-        
+
+
         if (definition.Code == null || definition.Code.Length == 0)
         {
             result.AddError("Kernel code cannot be null or empty");
             return result;
         }
-        
+
         // Validate work dimensions if available
+
         if (definition.Metadata?.TryGetValue("WorkDimensions", out var workDimsObj) == true)
         {
             if (workDimsObj is int workDimensions && (workDimensions < 1 || workDimensions > 3))
@@ -201,8 +228,9 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
                 return result;
             }
         }
-        
+
         // Validate parameters if available
+
         if (definition.Metadata?.TryGetValue("Parameters", out var paramsObj) == true)
         {
             if (paramsObj is IList<object> parameters && parameters.Count == 0)
@@ -211,8 +239,9 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
                 return result;
             }
         }
-        
+
         // Additional validation can be added by derived classes
+
         return AdditionalValidation(definition);
     }
 
@@ -229,13 +258,16 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     protected virtual string GenerateCacheKey(KernelDefinition definition, CompilationOptions options)
     {
         // Use kernel name, code hash, and optimization level for cache key
-        var codeHash = definition.Code != null 
+        var codeHash = definition.Code != null
+
             ? BitConverter.ToString(global::System.Security.Cryptography.SHA256.HashData(global::System.Text.Encoding.UTF8.GetBytes(definition.Code))).Replace("-", "")
             : "empty";
-        
+
+
         return $"{definition.Name}_{codeHash}_{options.OptimizationLevel}_{CompilerName}";
     }
-    
+
+
     /// <summary>
     /// Gets default compilation options.
     /// </summary>
@@ -245,11 +277,12 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false,
-            EnableProfileGuidedOptimizations =false,
+            EnableProfileGuidedOptimizations = false,
             MaxRegisters = null
         };
     }
-    
+
+
     /// <summary>
     /// Clears the compilation cache.
     /// </summary>
@@ -280,7 +313,8 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             compilationTime.TotalMilliseconds,
             byteCodeSize?.ToString() ?? "N/A");
     }
-    
+
+
     /// <summary>
     /// Enriches kernel definition with compilation metadata.
     /// </summary>
@@ -289,18 +323,21 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         Dictionary<string, object> additionalMetadata)
     {
         var metadata = definition.Metadata ?? [];
-        
+
         // Add compilation metadata
+
         metadata["Compiler"] = CompilerName;
         metadata["CompilationTimestamp"] = DateTime.UtcNow;
-        
+
         // Add additional metadata from derived compiler
+
         foreach (var kvp in additionalMetadata)
         {
             metadata[kvp.Key] = kvp.Value;
         }
-        
+
         // Create new definition with enriched metadata
+
         return new KernelDefinition(definition.Name, definition.Code ?? string.Empty, definition.EntryPoint)
         {
             Metadata = metadata
@@ -313,8 +350,9 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     public virtual DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(KernelDefinition source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        
+
         // Use the existing validation logic
+
         return ValidateKernelDefinition(source);
     }
 
@@ -325,6 +363,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         CancellationToken cancellationToken = default)
         // For base implementation, use synchronous validation
         // Derived classes can override for async validation
+
         => await ValueTask.FromResult(Validate(source));
 
 
@@ -335,12 +374,15 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(kernel);
-        
-        _logger.LogDebug("{CompilerName}: Optimizing kernel '{KernelName}' at level {Level}", 
+
+
+        _logger.LogDebug("{CompilerName}: Optimizing kernel '{KernelName}' at level {Level}",
+
             CompilerName, kernel.Name, level);
-        
+
         // Base implementation returns the same kernel
         // Derived classes should override for actual optimization
+
         return await OptimizeKernelCore(kernel, level, cancellationToken);
     }
 
@@ -353,6 +395,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         OptimizationLevel level,
         CancellationToken cancellationToken)
         // Default: no optimization
+
         => ValueTask.FromResult(kernel);
 }
 

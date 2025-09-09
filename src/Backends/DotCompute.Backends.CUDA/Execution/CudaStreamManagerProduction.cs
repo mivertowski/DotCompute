@@ -76,7 +76,8 @@ public sealed class CudaStreamManagerProduction : IDisposable
     {
         var result = CudaRuntime.cudaDeviceGetStreamPriorityRange(
             out _lowestPriority, out _highestPriority);
-        
+
+
         if (result == CudaError.Success && _lowestPriority != _highestPriority)
         {
             _logger.LogInformation("Stream priorities supported: [{Lowest}, {Highest}]",
@@ -96,8 +97,9 @@ public sealed class CudaStreamManagerProduction : IDisposable
     private void InitializeStreamPool()
     {
         _logger.LogDebug("Initializing stream pool with {Size} streams", _maxPoolSize / 2);
-        
+
         // Pre-allocate half the max pool size
+
         for (var i = 0; i < _maxPoolSize / 2; i++)
         {
             try
@@ -126,7 +128,8 @@ public sealed class CudaStreamManagerProduction : IDisposable
         // Check for named stream
         if (!string.IsNullOrEmpty(name))
         {
-            return _namedStreams.GetOrAdd(name, _ => 
+            return _namedStreams.GetOrAdd(name, _ =>
+
             {
                 var stream = GetOrCreateStream(priority, flags);
                 return new StreamInfo
@@ -180,10 +183,12 @@ public sealed class CudaStreamManagerProduction : IDisposable
         }
 
         CudaRuntime.CheckError(result, "creating stream");
-        
+
+
         _logger.LogDebug("Created new stream with priority {Priority}, flags {Flags}",
             priority, flags);
-        
+
+
         return stream;
     }
 
@@ -209,7 +214,8 @@ public sealed class CudaStreamManagerProduction : IDisposable
     public void ReturnStream(IntPtr stream)
     {
         ThrowIfDisposed();
-        
+
+
         if (stream == IntPtr.Zero)
         {
             return;
@@ -245,7 +251,8 @@ public sealed class CudaStreamManagerProduction : IDisposable
     public void SynchronizeStream(IntPtr stream)
     {
         ThrowIfDisposed();
-        
+
+
         var result = CudaRuntime.cudaStreamSynchronize(stream);
         CudaRuntime.CheckError(result, "synchronizing stream");
     }
@@ -258,19 +265,22 @@ public sealed class CudaStreamManagerProduction : IDisposable
     public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         await Task.Run(() =>
         {
             // Synchronize all named streams
             foreach (var streamInfo in _namedStreams.Values)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                
+
+
                 try
                 {
                     var result = CudaRuntime.cudaStreamSynchronize(streamInfo.Stream);
                     CudaRuntime.CheckError(result, $"synchronizing named stream '{streamInfo.Name}'");
-                    
+
+
                     _logger.LogDebug("Synchronized stream '{StreamName}'", streamInfo.Name);
                 }
                 catch (Exception ex)
@@ -279,13 +289,15 @@ public sealed class CudaStreamManagerProduction : IDisposable
                     throw;
                 }
             }
-            
+
             // Synchronize all pooled streams
+
             var pooledStreams = _streamPool.ToArray();
             foreach (var stream in pooledStreams)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                
+
+
                 try
                 {
                     var result = CudaRuntime.cudaStreamSynchronize(stream);
@@ -297,17 +309,20 @@ public sealed class CudaStreamManagerProduction : IDisposable
                     // Continue with other streams - don't fail the entire operation
                 }
             }
-            
+
             // If graph capture is active, synchronize the capture stream
+
             if (_isCapturing && _captureStream != IntPtr.Zero)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                
+
+
                 try
                 {
                     var result = CudaRuntime.cudaStreamSynchronize(_captureStream);
                     CudaRuntime.CheckError(result, "synchronizing graph capture stream");
-                    
+
+
                     _logger.LogDebug("Synchronized graph capture stream");
                 }
                 catch (Exception ex)
@@ -316,13 +331,16 @@ public sealed class CudaStreamManagerProduction : IDisposable
                     throw;
                 }
             }
-            
+
             // Finally, synchronize the device to ensure all operations complete
+
             var deviceResult = CudaRuntime.cudaDeviceSynchronize();
             CudaRuntime.CheckError(deviceResult, "synchronizing device");
-            
+
+
             _logger.LogDebug("Successfully synchronized all streams and device");
-            
+
+
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -346,7 +364,8 @@ public sealed class CudaStreamManagerProduction : IDisposable
 
         // Create GC handle to pass to native callback
         var handle = GCHandle.Alloc(callbackInfo);
-        
+
+
         try
         {
             // Add callback to stream
@@ -356,9 +375,11 @@ public sealed class CudaStreamManagerProduction : IDisposable
                 callbackPtr,
                 GCHandle.ToIntPtr(handle),
                 0); // flags must be 0
-                
+
+
             CudaRuntime.CheckError(result, "adding stream callback");
-            
+
+
             _logger.LogDebug("Added callback to stream: {Description}", description);
         }
         catch
@@ -407,7 +428,8 @@ public sealed class CudaStreamManagerProduction : IDisposable
     public void BeginCapture(IntPtr stream, CudaGraphCaptureMode mode = CudaGraphCaptureMode.Global)
     {
         ThrowIfDisposed();
-        
+
+
         if (_isCapturing)
         {
 
@@ -417,10 +439,12 @@ public sealed class CudaStreamManagerProduction : IDisposable
 
         var result = CudaRuntime.cudaStreamBeginCapture(stream, (uint)mode);
         CudaRuntime.CheckError(result, "beginning graph capture");
-        
+
+
         _captureStream = stream;
         _isCapturing = true;
-        
+
+
         _logger.LogInformation("Started graph capture on stream with mode {Mode}", mode);
     }
 
@@ -430,7 +454,8 @@ public sealed class CudaStreamManagerProduction : IDisposable
     public IntPtr EndCapture()
     {
         ThrowIfDisposed();
-        
+
+
         if (!_isCapturing)
         {
 
@@ -441,13 +466,16 @@ public sealed class CudaStreamManagerProduction : IDisposable
         var result = CudaRuntime.cudaStreamEndCapture(_captureStream, ref _currentGraph);
         var graph = _currentGraph;
         CudaRuntime.CheckError(result, "ending graph capture");
-        
+
+
         _currentGraph = graph;
         _isCapturing = false;
         _captureStream = IntPtr.Zero;
-        
+
+
         _logger.LogInformation("Completed graph capture");
-        
+
+
         return graph;
     }
 
@@ -457,14 +485,17 @@ public sealed class CudaStreamManagerProduction : IDisposable
     public IntPtr InstantiateGraph(IntPtr graph)
     {
         ThrowIfDisposed();
-        
+
+
         var graphExec = IntPtr.Zero;
         var result = CudaRuntime.cudaGraphInstantiate(
             ref graphExec, graph, IntPtr.Zero, IntPtr.Zero, 0);
         CudaRuntime.CheckError(result, "instantiating graph");
-        
+
+
         _logger.LogDebug("Created executable graph instance");
-        
+
+
         return graphExec;
     }
 
@@ -474,10 +505,12 @@ public sealed class CudaStreamManagerProduction : IDisposable
     public void LaunchGraph(IntPtr graphExec, IntPtr stream)
     {
         ThrowIfDisposed();
-        
+
+
         var result = CudaRuntime.cudaGraphLaunch(graphExec, stream);
         CudaRuntime.CheckError(result, "launching graph");
-        
+
+
         _logger.LogDebug("Launched graph on stream");
     }
 
@@ -487,7 +520,8 @@ public sealed class CudaStreamManagerProduction : IDisposable
     public void WaitEvent(IntPtr stream, IntPtr eventHandle)
     {
         ThrowIfDisposed();
-        
+
+
         var result = CudaRuntime.cudaStreamWaitEvent(stream, eventHandle, 0);
         CudaRuntime.CheckError(result, "stream waiting for event");
     }
@@ -498,7 +532,8 @@ public sealed class CudaStreamManagerProduction : IDisposable
     public void RecordEvent(IntPtr eventHandle, IntPtr stream)
     {
         ThrowIfDisposed();
-        
+
+
         var result = CudaRuntime.cudaEventRecord(eventHandle, stream);
         CudaRuntime.CheckError(result, "recording event on stream");
     }
@@ -509,9 +544,11 @@ public sealed class CudaStreamManagerProduction : IDisposable
     public bool IsStreamComplete(IntPtr stream)
     {
         ThrowIfDisposed();
-        
+
+
         var result = CudaRuntime.cudaStreamQuery(stream);
-        
+
+
         if (result == CudaError.Success)
         {
             return true;

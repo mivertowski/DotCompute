@@ -227,8 +227,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 // Create a new collection without the removed node
 
                 var remainingNodes = _nodes.Where(n => n.Id != nodeId).ToList();
-                
+
                 // Remove dependencies to the deleted node
+
                 foreach (var node in remainingNodes)
                 {
                     _ = node.Dependencies.RemoveAll(dep => dep.Id == nodeId);

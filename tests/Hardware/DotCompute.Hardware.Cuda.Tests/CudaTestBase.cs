@@ -26,7 +26,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 return false;
             }
-            
+
+
             try
             {
                 // Additional validation: try to use the factory
@@ -35,10 +36,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                 {
                     return false;
                 }
-                
+
                 // Try to create an accelerator to verify everything works
+
                 using var accelerator = factory.CreateProductionAccelerator(0);
-                
+
+
                 return accelerator != null;
             }
             catch
@@ -56,15 +59,19 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 return false;
             }
-            
+
+
             try
             {
                 var factory = new CudaAcceleratorFactory();
                 using var accelerator = factory.CreateProductionAccelerator(0);
-                
+
+
                 var deviceInfo = accelerator.Info;
-                return deviceInfo.IsRTX2000Ada() && 
-                       deviceInfo.ComputeCapability!.Major == 8 && 
+                return deviceInfo.IsRTX2000Ada() &&
+
+                       deviceInfo.ComputeCapability!.Major == 8 &&
+
                        deviceInfo.ComputeCapability.Minor == 9 &&
                        deviceInfo.ArchitectureGeneration().Contains("Ada");
             }
@@ -83,12 +90,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 return false;
             }
-            
+
+
             try
             {
                 var factory = new CudaAcceleratorFactory();
                 using var accelerator = factory.CreateProductionAccelerator(0);
-                
+
+
                 var cc = accelerator.Info.ComputeCapability;
                 return cc.Major > majorMin || (cc.Major == majorMin && cc.Minor >= minorMin);
             }
@@ -107,12 +116,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 return "CUDA not available";
             }
-            
+
+
             try
             {
                 var factory = new CudaAcceleratorFactory();
                 using var accelerator = factory.CreateProductionAccelerator(0);
-                
+
+
                 var info = accelerator.Info;
                 return $"{info.Name} (CC {info.ComputeCapability?.Major}.{info.ComputeCapability?.Minor}, " +
                        $"{info.GlobalMemorySize / (1024 * 1024 * 1024):F1} GB, " +
@@ -133,7 +144,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             private readonly Stopwatch _stopwatch = new();
             private readonly string _operationName;
             private readonly ITestOutputHelper _output;
-            
+
+
             public PerformanceMeasurement(string operationName, ITestOutputHelper output)
             {
                 _operationName = operationName;
@@ -147,15 +159,18 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             public TimeSpan ElapsedTime => _stopwatch.Elapsed;
-            
+
+
             public void LogResults(long dataSize = 0, int operationCount = 1)
             {
                 var avgTime = _stopwatch.Elapsed.TotalMilliseconds / operationCount;
-                
+
+
                 _output.WriteLine($"{_operationName} Performance:");
                 _output.WriteLine($"  Total Time: {_stopwatch.Elapsed.TotalMilliseconds:F2} ms");
                 _output.WriteLine($"  Average Time: {avgTime:F2} ms");
-                
+
+
                 if (dataSize > 0)
                 {
                     var throughputGBps = dataSize / (_stopwatch.Elapsed.TotalSeconds * 1024 * 1024 * 1024);
@@ -178,7 +193,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
                 return data;
             }
-            
+
+
             public static float[] CreateSinusoidalData(int count, double frequency = 0.01, float amplitude = 1.0f)
             {
                 var data = new float[count];
@@ -188,20 +204,23 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
                 return data;
             }
-            
+
+
             public static float[] CreateRandomData(int count, int seed = 42, float min = -1.0f, float max = 1.0f)
             {
                 var random = new Random(seed);
                 var data = new float[count];
                 var range = max - min;
-                
+
+
                 for (var i = 0; i < count; i++)
                 {
                     data[i] = min + (float)random.NextDouble() * range;
                 }
                 return data;
             }
-            
+
+
             public static float[] CreateConstantData(int count, float value)
             {
                 var data = new float[count];
@@ -218,30 +237,35 @@ namespace DotCompute.Hardware.Cuda.Tests
             private readonly long _initialGCMemory;
             private readonly ITestOutputHelper _output;
             private bool _disposed;
-            
+
+
             public MemoryTracker(ITestOutputHelper output)
             {
                 _output = output;
                 _initialGCMemory = GC.GetTotalMemory(true);
                 _output.WriteLine($"Memory tracking started - Initial: {_initialGCMemory / (1024 * 1024):F1} MB");
             }
-            
+
+
             public void LogCurrentUsage(string label = "Current")
             {
                 var currentMemory = GC.GetTotalMemory(false);
                 var deltaMemory = currentMemory - _initialGCMemory;
-                
+
+
                 _output.WriteLine($"{label} Memory: {currentMemory / (1024 * 1024):F1} MB " +
                                 $"(Δ{deltaMemory / (1024 * 1024):+F1;-F1;+0.0} MB)");
             }
-            
+
+
             public void Dispose()
             {
                 if (!_disposed)
                 {
                     var finalMemory = GC.GetTotalMemory(true);
                     var totalDelta = finalMemory - _initialGCMemory;
-                    
+
+
                     _output.WriteLine($"Memory tracking ended - Final: {finalMemory / (1024 * 1024):F1} MB " +
                                     $"(Total Δ{totalDelta / (1024 * 1024):+F1;-F1;+0.0} MB)");
                     _disposed = true;
@@ -252,18 +276,21 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// <summary>
         /// Verify floating point results with appropriate tolerance
         /// </summary>
-        protected static void VerifyFloatArraysMatch(float[] expected, float[] actual, float tolerance = 0.0001f, 
+        protected static void VerifyFloatArraysMatch(float[] expected, float[] actual, float tolerance = 0.0001f,
+
             int maxElementsToCheck = 1000, string? context = null)
         {
             if (expected.Length != actual.Length)
             {
                 throw new InvalidOperationException($"Array length mismatch: expected {expected.Length}, actual {actual.Length}");
             }
-            
+
+
             var elementsToCheck = Math.Min(maxElementsToCheck, expected.Length);
             var errorCount = 0;
             const int maxErrorsToReport = 10;
-            
+
+
             for (var i = 0; i < elementsToCheck; i++)
             {
                 var diff = Math.Abs(expected[i] - actual[i]);
@@ -281,7 +308,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                     errorCount++;
                 }
             }
-            
+
+
             if (errorCount > 0)
             {
                 var message = $"Found {errorCount} mismatches out of {elementsToCheck} elements checked (tolerance: {tolerance})";
@@ -303,14 +331,17 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine("CUDA not available");
                 return;
             }
-            
+
+
             try
             {
                 var factory = new CudaAcceleratorFactory();
                 using var accelerator = factory.CreateProductionAccelerator(0);
-                
+
+
                 var info = accelerator.Info;
-                
+
+
                 Output.WriteLine("CUDA Device Capabilities:");
                 Output.WriteLine($"  Name: {info.Name}");
                 Output.WriteLine($"  Architecture: {info.ArchitectureGeneration()}");

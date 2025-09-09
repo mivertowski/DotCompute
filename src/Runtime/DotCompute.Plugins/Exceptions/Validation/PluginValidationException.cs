@@ -24,16 +24,18 @@ public class PluginValidationException : PluginException
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginValidationException"/> class.
     /// </summary>
-    public PluginValidationException() 
-    { 
+    public PluginValidationException()
+    {
+
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginValidationException"/> class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
-    public PluginValidationException(string message) : base(message) 
-    { 
+    public PluginValidationException(string message) : base(message)
+    {
+
     }
 
     /// <summary>
@@ -43,8 +45,9 @@ public class PluginValidationException : PluginException
     /// <param name="message">The error message that explains the reason for the exception.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
     public PluginValidationException(string message, Exception innerException)
-        : base(message, innerException) 
-    { 
+        : base(message, innerException)
+    {
+
     }
 
     /// <summary>

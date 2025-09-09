@@ -21,5 +21,5 @@ public interface ICompiledKernel : IDisposable
     /// <param name="parameters">The kernel execution parameters.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous execution.</returns>
-    Task ExecuteAsync(KernelExecutionParameters parameters, CancellationToken cancellationToken = default);
+    public Task ExecuteAsync(KernelExecutionParameters parameters, CancellationToken cancellationToken = default);
 }

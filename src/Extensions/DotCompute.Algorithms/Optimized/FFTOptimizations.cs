@@ -22,7 +22,7 @@ public static class FFTOptimizations
 
     // Optimized radix factors for mixed-radix FFT
 
-    private static readonly int[] OptimalRadices = { 8, 4, 2 };
+    private static readonly int[] OptimalRadices = [8, 4, 2];
 
     // Pre-computed twiddle factor cache
 

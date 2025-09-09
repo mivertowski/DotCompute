@@ -52,8 +52,9 @@ namespace DotCompute.Backends.CUDA.Memory
                 // Also include memory tracked by the underlying manager
                 var managerUsedMemory = _memoryManager.UsedMemory;
                 var totalUsed = Math.Max(_totalAllocatedBytes, managerUsedMemory);
-                
-                
+
+
+
                 return new MemoryStatistics
                 {
                     TotalMemoryBytes = _memoryManager.TotalMemory,
@@ -74,22 +75,26 @@ namespace DotCompute.Backends.CUDA.Memory
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ThrowIfDisposed();
-            
+
+
             return new ValueTask<IUnifiedMemoryBuffer<T>>(Task.Run(() =>
             {
                 var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
                 var devicePtr = IntPtr.Zero;
-                
+
                 // Use unified memory for better host/device interop
                 // CudaMemAttachFlags.Global = 0x01
+
                 var result = CudaRuntime.cudaMallocManaged(ref devicePtr, (nuint)sizeInBytes, 0x01);
                 CudaRuntime.CheckError(result, "allocating unified memory");
-                
+
                 // Create simplified buffer for the adapter
                 // We'll need to create a simpler version that doesn't depend on CudaUnifiedMemoryManagerProduction
+
                 var buffer = new SimpleCudaUnifiedMemoryBuffer<T>(devicePtr, count);
-                
+
                 // Track allocation
+
                 if (_bufferSizes.TryAdd(buffer, sizeInBytes))
                 {
                     _ = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
@@ -97,7 +102,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 else
                 {
                 }
-                
+
+
                 return (IUnifiedMemoryBuffer<T>)buffer;
             }, cancellationToken));
         }
@@ -118,7 +124,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 {
                     _ = Interlocked.Add(ref _totalAllocatedBytes, -size);
                 }
-                
+
+
                 buffer.Dispose();
             }, cancellationToken));
         }
@@ -131,7 +138,8 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(buffer);
-            
+
+
             if (offset < 0 || count < 0 || offset + count > buffer.Length)
             {
 
@@ -158,7 +166,8 @@ namespace DotCompute.Backends.CUDA.Memory
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(destination);
-            
+
+
             if (source.Length != destination.Length)
             {
 
@@ -171,7 +180,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
                 var result = CudaRuntime.cudaMemcpy(
                     destination.GetDeviceMemory().Handle,
-                    source.GetDeviceMemory().Handle, 
+                    source.GetDeviceMemory().Handle,
+
                     (nuint)sizeInBytes,
                     CudaMemcpyKind.DeviceToDevice
                 );
@@ -187,7 +197,8 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(destination);
-            
+
+
             if (source.Length != destination.Length)
             {
 
@@ -220,7 +231,8 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(source);
-            
+
+
             if (source.Length != destination.Length)
             {
 
@@ -250,8 +262,9 @@ namespace DotCompute.Backends.CUDA.Memory
         public void Clear()
         {
             ThrowIfDisposed();
-            
+
             // Free all tracked buffers
+
             foreach (var kvp in _bufferSizes)
             {
                 kvp.Key.Dispose();
@@ -263,6 +276,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
             // Optimization not implemented
+
             => ValueTask.CompletedTask;
 
 
@@ -273,7 +287,8 @@ namespace DotCompute.Backends.CUDA.Memory
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ThrowIfDisposed();
-            
+
+
             return Task.Run(async () =>
             {
                 var buffer = await AllocateAsync<T>(data.Length, options, cancellationToken).ConfigureAwait(false);
@@ -290,24 +305,29 @@ namespace DotCompute.Backends.CUDA.Memory
             CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            
+
+
             return Task.Run(() =>
             {
                 var devicePtr = IntPtr.Zero;
-                
+
                 // Use unified memory for better host/device interop
                 // CudaMemAttachFlags.Global = 0x01
+
                 var result = CudaRuntime.cudaMallocManaged(ref devicePtr, (nuint)sizeInBytes, 0x01);
                 CudaRuntime.CheckError(result, "allocating unified memory");
-                
+
+
                 var buffer = new CudaRawMemoryBuffer(devicePtr, sizeInBytes);
-                
+
                 // Track allocation
+
                 if (_bufferSizes.TryAdd(buffer, sizeInBytes))
                 {
                     _ = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
                 }
-                
+
+
                 return (IUnifiedMemoryBuffer)buffer;
             }, cancellationToken).AsValueTask();
         }
@@ -325,7 +345,8 @@ namespace DotCompute.Backends.CUDA.Memory
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(destination);
-            
+
+
             if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
             {
 
@@ -350,7 +371,8 @@ namespace DotCompute.Backends.CUDA.Memory
                     var srcPtr = IntPtr.Add(srcMemory.Handle, sourceOffset * elementSize);
                     var dstPtr = IntPtr.Add(dstMemory.Handle, destinationOffset * elementSize);
                     var sizeInBytes = count * elementSize;
-                    
+
+
                     var result = CudaRuntime.cudaMemcpy(
                         dstPtr,
                         srcPtr,
@@ -376,7 +398,8 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 _ = Interlocked.Add(ref _totalAllocatedBytes, -size);
             }
-            
+
+
             buffer.Dispose();
         }
 
@@ -400,7 +423,8 @@ namespace DotCompute.Backends.CUDA.Memory
             Dispose();
             return ValueTask.CompletedTask;
         }
-        
+
+
         private void ThrowIfDisposed()
         {
             ObjectDisposedException.ThrowIf(_disposed, this);

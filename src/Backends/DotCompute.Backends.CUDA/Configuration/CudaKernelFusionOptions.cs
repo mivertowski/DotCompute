@@ -23,7 +23,8 @@ public sealed class CudaKernelFusionOptions
     /// </summary>
     /// <param name="kernel">The kernel to get arguments for.</param>
     /// <returns>The kernel arguments or empty arguments if not configured.</returns>
-    public CudaKernelArguments GetArgumentsForKernel(CudaCompiledKernel kernel) 
+    public CudaKernelArguments GetArgumentsForKernel(CudaCompiledKernel kernel)
+
         => _arguments.TryGetValue(kernel, out var args) ? args : new CudaKernelArguments([]);
 
     /// <summary>
@@ -32,7 +33,8 @@ public sealed class CudaKernelFusionOptions
     /// </summary>
     /// <param name="kernel">The kernel to get launch configuration for.</param>
     /// <returns>The launch configuration or default if not configured.</returns>
-    public CudaLaunchConfig GetLaunchConfigForKernel(CudaCompiledKernel kernel) 
+    public CudaLaunchConfig GetLaunchConfigForKernel(CudaCompiledKernel kernel)
+
         => _configs.TryGetValue(kernel, out var config) ? config : new CudaLaunchConfig(1, 1, 1, 256, 1, 1, 0);
 
     /// <summary>
@@ -40,7 +42,8 @@ public sealed class CudaKernelFusionOptions
     /// </summary>
     /// <param name="kernel">The kernel to configure.</param>
     /// <param name="arguments">The arguments to set.</param>
-    public void SetCudaKernelArguments(CudaCompiledKernel kernel, CudaKernelArguments arguments) 
+    public void SetCudaKernelArguments(CudaCompiledKernel kernel, CudaKernelArguments arguments)
+
         => _arguments[kernel] = arguments;
 
     /// <summary>
@@ -48,6 +51,7 @@ public sealed class CudaKernelFusionOptions
     /// </summary>
     /// <param name="kernel">The kernel to configure.</param>
     /// <param name="config">The launch configuration to set.</param>
-    public void SetKernelLaunchConfig(CudaCompiledKernel kernel, CudaLaunchConfig config) 
+    public void SetKernelLaunchConfig(CudaCompiledKernel kernel, CudaLaunchConfig config)
+
         => _configs[kernel] = config;
 }

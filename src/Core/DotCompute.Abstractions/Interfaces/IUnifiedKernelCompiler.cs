@@ -20,18 +20,18 @@ public interface IUnifiedKernelCompiler<in TSource, TCompiled>
     /// <summary>
     /// Gets the name of the compiler.
     /// </summary>
-    string Name { get; }
-    
+    public string Name { get; }
+
     /// <summary>
     /// Gets the supported source types this compiler can handle.
     /// </summary>
-    IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; }
-    
+    public IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; }
+
     /// <summary>
     /// Gets compiler capabilities as a dictionary of feature flags.
     /// </summary>
-    IReadOnlyDictionary<string, object> Capabilities { get; }
-    
+    public IReadOnlyDictionary<string, object> Capabilities { get; }
+
     /// <summary>
     /// Compiles a kernel source to executable form.
     /// </summary>
@@ -39,28 +39,28 @@ public interface IUnifiedKernelCompiler<in TSource, TCompiled>
     /// <param name="options">Optional compilation options.</param>
     /// <param name="cancellationToken">Token to cancel the compilation.</param>
     /// <returns>A task that represents the asynchronous compilation operation.</returns>
-    ValueTask<TCompiled> CompileAsync(
+    public ValueTask<TCompiled> CompileAsync(
         TSource source,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Validates a kernel source without compiling.
     /// </summary>
     /// <param name="source">The kernel source to validate.</param>
     /// <returns>A validation result indicating whether compilation is possible.</returns>
-    UnifiedValidationResult Validate(TSource source);
-    
+    public UnifiedValidationResult Validate(TSource source);
+
     /// <summary>
     /// Asynchronously validates a kernel source with detailed analysis.
     /// </summary>
     /// <param name="source">The kernel source to validate.</param>
     /// <param name="cancellationToken">Token to cancel the validation operation.</param>
     /// <returns>A task that represents the asynchronous validation operation.</returns>
-    ValueTask<UnifiedValidationResult> ValidateAsync(
+    public ValueTask<UnifiedValidationResult> ValidateAsync(
         TSource source,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Optimizes an already compiled kernel for better performance.
     /// </summary>
@@ -68,7 +68,7 @@ public interface IUnifiedKernelCompiler<in TSource, TCompiled>
     /// <param name="level">The optimization level to apply.</param>
     /// <param name="cancellationToken">Token to cancel the optimization.</param>
     /// <returns>A task that represents the asynchronous optimization operation.</returns>
-    ValueTask<TCompiled> OptimizeAsync(
+    public ValueTask<TCompiled> OptimizeAsync(
         TCompiled kernel,
         OptimizationLevel level,
         CancellationToken cancellationToken = default);

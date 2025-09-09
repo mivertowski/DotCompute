@@ -31,7 +31,8 @@ public class CudaMemoryManagementTests : CudaTestBase
     {
         _output = output;
         _mockLogger = new Mock<ILogger<CudaMemoryManager>>();
-        
+
+
         if (IsCudaAvailable())
         {
             var acceleratorLogger = new Mock<ILogger<CudaAccelerator>>();
@@ -135,8 +136,9 @@ public class CudaMemoryManagementTests : CudaTestBase
         // Assert
         _ = deviceBuffer.Should().NotBeNull();
         _ = deviceBuffer.Length.Should().Be(elementCount);
-        
+
         // Copy back and verify
+
         var resultData = new float[elementCount];
         await deviceBuffer.CopyToAsync(resultData);
         _ = resultData.Should().BeEquivalentTo(hostData);
@@ -182,8 +184,9 @@ public class CudaMemoryManagementTests : CudaTestBase
         // Act
         // Copy would need to be device-to-device
         // await destBuffer.CopyFromAsync(sourceBuffer); // Not supported with current API
-        
+
         // Simulate by copying to host then to dest
+
         var tempData = new float[elementCount];
         await sourceBuffer.CopyToAsync(tempData);
         await destBuffer.CopyFromAsync(tempData);

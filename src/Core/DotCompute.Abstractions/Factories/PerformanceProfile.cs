@@ -12,17 +12,18 @@ public enum PerformanceProfile
     /// Balanced performance and power consumption.
     /// </summary>
     Balanced,
-    
+
     /// <summary>
     /// Maximum performance, higher power consumption.
     /// </summary>
     MaxPerformance,
-    
+
     /// <summary>
     /// Low latency optimization for real-time workloads.
     /// </summary>
     LowLatency,
-    
+
+
     /// <summary>
     /// Power-efficient mode, reduced performance.
     /// </summary>

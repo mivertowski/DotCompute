@@ -16,7 +16,8 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
         private static readonly object _lockObject = new();
         private static bool? _cachedAvailability;
         private static string? _cachedDiagnosticInfo;
-        
+
+
         /// <summary>
         /// Checks if CUDA is available on the system with detailed diagnostics.
         /// </summary>
@@ -29,12 +30,14 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                 {
                     return _cachedAvailability.Value;
                 }
-                
+
+
                 _cachedAvailability = CheckCudaAvailability();
                 return _cachedAvailability.Value;
             }
         }
-        
+
+
         /// <summary>
         /// Gets detailed diagnostic information about CUDA availability.
         /// </summary>
@@ -47,21 +50,25 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                 {
                     return _cachedDiagnosticInfo;
                 }
-                
+
+
                 _ = IsCudaAvailable(); // Ensure detection has run
                 return _cachedDiagnosticInfo ?? "No diagnostic information available";
             }
         }
-        
+
+
         private static bool CheckCudaAvailability()
         {
             var diagnostics = new System.Text.StringBuilder();
             diagnostics.AppendLine("=== CUDA Detection Diagnostics ===");
-            
+
             // Step 1: Check for CUDA runtime libraries
+
             bool hasRuntimeLibrary = false;
             diagnostics.AppendLine("\n1. CUDA Runtime Library Check:");
-            
+
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var windowsLibs = new[] { "cudart64_13.dll", "cudart64_12.dll", "cudart64_11.dll" };
@@ -87,7 +94,8 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                     "/usr/lib/wsl/lib/libcudart.so.1",
                     "/usr/local/cuda-12/targets/x86_64-linux/lib/libcudart.so.12"
                 };
-                
+
+
                 foreach (var path in linuxPaths)
                 {
                     bool exists = File.Exists(path);
@@ -98,55 +106,66 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                     }
                 }
             }
-            
+
+
             if (!hasRuntimeLibrary)
             {
                 diagnostics.AppendLine("\n❌ No CUDA runtime library found");
                 _cachedDiagnosticInfo = diagnostics.ToString();
                 return false;
             }
-            
+
             // Step 2: Check CUDA device count using P/Invoke
+
             diagnostics.AppendLine("\n2. CUDA Device Detection:");
-            
+
+
             try
             {
                 int deviceCount = 0;
                 var result = CudaRuntime.cudaGetDeviceCount(out deviceCount);
-                
+
+
                 diagnostics.AppendLine($"   cudaGetDeviceCount result: {result}");
                 diagnostics.AppendLine($"   Device count: {deviceCount}");
-                
+
+
                 if (result != CudaError.Success)
                 {
                     diagnostics.AppendLine($"   Error: {CudaRuntime.GetErrorString(result)}");
                     _cachedDiagnosticInfo = diagnostics.ToString();
                     return false;
                 }
-                
+
+
                 if (deviceCount == 0)
                 {
                     diagnostics.AppendLine("   ❌ No CUDA devices found");
                     _cachedDiagnosticInfo = diagnostics.ToString();
                     return false;
                 }
-                
+
                 // Step 3: Get driver and runtime versions
+
                 diagnostics.AppendLine("\n3. CUDA Version Information:");
-                
+
+
                 if (CudaRuntime.cudaDriverGetVersion(out var driverVersion) == CudaError.Success)
                 {
                     diagnostics.AppendLine($"   Driver Version: {FormatCudaVersion(driverVersion)}");
                 }
-                
+
+
                 if (CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion) == CudaError.Success)
                 {
                     diagnostics.AppendLine($"   Runtime Version: {FormatCudaVersion(runtimeVersion)}");
                 }
-                
+
                 // Step 4: Get device properties for first device
+
                 diagnostics.AppendLine("\n4. Primary Device Properties:");
-                
+
+
                 var props = new CudaDeviceProperties();
                 if (CudaRuntime.cudaGetDeviceProperties(ref props, 0) == CudaError.Success)
                 {
@@ -155,7 +174,8 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                     diagnostics.AppendLine($"   Total Memory: {props.TotalGlobalMem / (1024 * 1024 * 1024):F2} GB");
                     diagnostics.AppendLine($"   Multiprocessors: {props.MultiProcessorCount}");
                 }
-                
+
+
                 diagnostics.AppendLine("\n✓ CUDA is available and functional");
                 _cachedDiagnosticInfo = diagnostics.ToString();
                 return true;
@@ -179,14 +199,16 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                 return false;
             }
         }
-        
+
+
         private static string FormatCudaVersion(int version)
         {
             int major = version / 1000;
             int minor = (version % 1000) / 10;
             return $"{major}.{minor}";
         }
-        
+
+
         /// <summary>
         /// Clears the cached availability status, forcing a fresh check on next call.
         /// </summary>

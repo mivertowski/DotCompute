@@ -25,7 +25,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// <summary>
         /// Adds a kernel node to the graph.
         /// </summary>
-        public object AddKernel(ICompiledKernel kernel, LaunchConfiguration config, params object[] arguments)
+        public static object AddKernel(ICompiledKernel kernel, LaunchConfiguration config, params object[] arguments)
         {
             // Store kernel information for later execution
             // In a real implementation, this would add a kernel node to the CUDA graph
@@ -36,7 +36,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// <summary>
         /// Adds a memory copy operation to the graph.
         /// </summary>
-        public void AddMemoryCopy<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, long count = 0) where T : unmanaged
+        public static void AddMemoryCopy<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, long count = 0) where T : unmanaged
         {
             // Store memory copy information for later execution
             // In a real implementation, this would add a memory copy node to the CUDA graph
@@ -45,7 +45,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// <summary>
         /// Adds a memory set operation to the graph.
         /// </summary>
-        public object AddMemset<T>(IUnifiedMemoryBuffer<T> buffer, T value) where T : unmanaged
+        public static object AddMemset<T>(IUnifiedMemoryBuffer<T> buffer, T value) where T : unmanaged
         {
             // Store memory set information for later execution
             return new GraphNode { NodeType = "Memset" };
@@ -75,7 +75,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// <summary>
         /// Updates a kernel node in the executable graph.
         /// </summary>
-        public void UpdateKernelNode(object node, params object[] arguments)
+        public static void UpdateKernelNode(object node, params object[] arguments)
         {
             // Mock implementation for testing
         }
@@ -88,7 +88,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// <summary>
         /// Launches the graph for execution.
         /// </summary>
-        public async ValueTask LaunchAsync(object? stream = null)
+        public static async ValueTask LaunchAsync(object? stream = null)
         {
             // In a real implementation, this would execute the CUDA graph
             // For testing, we'll simulate execution
@@ -98,7 +98,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// <summary>
         /// Launches the graph with specific arguments.
         /// </summary>
-        public async ValueTask LaunchAsync(params object[] arguments)
+        public static async ValueTask LaunchAsync(params object[] arguments)
         {
             // In a real implementation, this would execute the CUDA graph with updated arguments
             await Task.Delay(1).ConfigureAwait(false);
@@ -133,7 +133,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         public static object AddKernel(this object graphObject, ICompiledKernel kernel, LaunchConfiguration config, params object[] arguments)
         {
             var wrapper = new CudaGraphTestWrapper(graphObject);
-            return wrapper.AddKernel(kernel, config, arguments);
+            return CudaGraphTestWrapper.AddKernel(kernel, config, arguments);
         }
 
         /// <summary>
@@ -150,7 +150,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         public static void AddMemoryCopy<T>(this object graphObject, IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, long count = 0) where T : unmanaged
         {
             var wrapper = new CudaGraphTestWrapper(graphObject);
-            wrapper.AddMemoryCopy(source, destination, count);
+            CudaGraphTestWrapper.AddMemoryCopy(source, destination, count);
         }
 
         /// <summary>

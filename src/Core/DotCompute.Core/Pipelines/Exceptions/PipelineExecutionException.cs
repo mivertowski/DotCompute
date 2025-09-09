@@ -38,7 +38,8 @@ public sealed class PipelineExecutionException : PipelineException
     /// Initializes a new instance of the PipelineExecutionException class with a message.
     /// </summary>
     /// <param name="message">The error message.</param>
-    public PipelineExecutionException(string message) 
+    public PipelineExecutionException(string message)
+
         : base(message, "PIPELINE_EXECUTION_FAILED")
     {
         Errors = [];
@@ -49,7 +50,8 @@ public sealed class PipelineExecutionException : PipelineException
     /// </summary>
     /// <param name="message">The error message.</param>
     /// <param name="innerException">The inner exception.</param>
-    public PipelineExecutionException(string message, Exception innerException) 
+    public PipelineExecutionException(string message, Exception innerException)
+
         : base(message, "PIPELINE_EXECUTION_FAILED", innerException)
     {
         Errors = [];

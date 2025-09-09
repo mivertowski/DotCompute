@@ -59,19 +59,22 @@ namespace DotCompute.Backends.CUDA.Persistent
             CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            
+
+
             config.Validate();
 
             var kernelId = Guid.NewGuid().ToString();
-            
+
             // Allocate wave ring buffer
+
             var waveBuffer = await _ringBufferAllocator.AllocateWaveBufferAsync<float>(
                 gridWidth, gridHeight, gridDepth, config.RingBufferDepth);
 
             // Create control buffer for kernel state
             var controlBuffer = await _memoryManager.AllocateAsync<int>(4, cancellationToken);
-            
+
             // Initialize control values: [running=1, iteration=0, errorCode=0, reserved=0]
+
             var controlData = new int[] { 1, 0, 0, 0 };
             // IUnifiedMemoryBuffer doesn't have CopyFromHostAsync - cast to concrete type
             if (controlBuffer is CudaMemoryBuffer<int> cudaBuffer)
@@ -87,7 +90,8 @@ namespace DotCompute.Backends.CUDA.Persistent
             var totalElements = gridWidth * gridHeight * gridDepth;
             var blockSize = config.BlockSize;
             var gridSize = (totalElements + blockSize - 1) / blockSize;
-            
+
+
             if (config.GridResident && config.SMCount > 0)
             {
                 // Limit grid size to number of SMs for persistent kernels
@@ -127,8 +131,8 @@ namespace DotCompute.Backends.CUDA.Persistent
                     // This would require proper kernel launching implementation
                     _logger.LogWarning("Persistent kernel launching needs full implementation");
                     // Synchronize stream
-            result = Native.CudaRuntime.cudaStreamSynchronize(streamHandle);
-            Native.CudaRuntime.CheckError(result, "synchronizing persistent kernel stream");
+                    result = Native.CudaRuntime.cudaStreamSynchronize(streamHandle);
+                    Native.CudaRuntime.CheckError(result, "synchronizing persistent kernel stream");
                 }
                 catch (Exception ex)
                 {
@@ -268,7 +272,8 @@ namespace DotCompute.Backends.CUDA.Persistent
 
             var data = new float[waveBuffer.ElementsPerSlice];
             await waveBuffer.CopyFromSliceAsync(timeSlice, data);
-            
+
+
             return data;
         }
 
@@ -338,11 +343,11 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// </summary>
     public interface IPersistentKernelHandle : IDisposable
     {
-        string KernelId { get; }
-        Task StopAsync(CancellationToken cancellationToken = default);
-        Task<PersistentKernelStatus> GetStatusAsync(CancellationToken cancellationToken = default);
-        Task UpdateDataAsync(float[] data, int timeSlice = 0, CancellationToken cancellationToken = default);
-        Task<float[]> GetDataAsync(int timeSlice = 0, CancellationToken cancellationToken = default);
+        public string KernelId { get; }
+        public Task StopAsync(CancellationToken cancellationToken = default);
+        public Task<PersistentKernelStatus> GetStatusAsync(CancellationToken cancellationToken = default);
+        public Task UpdateDataAsync(float[] data, int timeSlice = 0, CancellationToken cancellationToken = default);
+        public Task<float[]> GetDataAsync(int timeSlice = 0, CancellationToken cancellationToken = default);
     }
 
     /// <summary>

@@ -17,7 +17,7 @@ public interface IPluginLifecycleManager
     /// <summary>
     /// Gets the registered plugin IDs.
     /// </summary>
-    IEnumerable<string> RegisteredPlugins { get; }
+    public IEnumerable<string> RegisteredPlugins { get; }
 
     /// <summary>
     /// Registers a plugin instance with full context information.
@@ -28,7 +28,7 @@ public interface IPluginLifecycleManager
     /// <param name="metadata">The plugin metadata.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the registration operation.</returns>
-    Task RegisterPluginAsync(
+    public Task RegisterPluginAsync(
         IAlgorithmPlugin plugin,
         PluginAssemblyLoadContext loadContext,
         System.Reflection.Assembly assembly,
@@ -41,14 +41,14 @@ public interface IPluginLifecycleManager
     /// <param name="plugin">The plugin to register.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the registration operation.</returns>
-    Task RegisterPluginAsync(IAlgorithmPlugin plugin, CancellationToken cancellationToken = default);
+    public Task RegisterPluginAsync(IAlgorithmPlugin plugin, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Unregisters a plugin with proper cleanup and isolation handling.
     /// </summary>
     /// <param name="pluginId">The plugin ID to unregister.</param>
     /// <returns>True if the plugin was unregistered; otherwise, false.</returns>
-    Task<bool> UnregisterPluginAsync(string pluginId);
+    public Task<bool> UnregisterPluginAsync(string pluginId);
 
     /// <summary>
     /// Reloads a plugin (hot reload).
@@ -56,45 +56,45 @@ public interface IPluginLifecycleManager
     /// <param name="pluginId">The plugin ID to reload.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>True if the plugin was reloaded successfully; otherwise, false.</returns>
-    Task<bool> ReloadPluginAsync(string pluginId, CancellationToken cancellationToken = default);
+    public Task<bool> ReloadPluginAsync(string pluginId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a registered plugin by ID.
     /// </summary>
     /// <param name="pluginId">The plugin ID.</param>
     /// <returns>The plugin instance if found; otherwise, null.</returns>
-    IAlgorithmPlugin? GetPlugin(string pluginId);
+    public IAlgorithmPlugin? GetPlugin(string pluginId);
 
     /// <summary>
     /// Gets detailed information about a loaded plugin.
     /// </summary>
     /// <param name="pluginId">The plugin ID.</param>
     /// <returns>The loaded plugin information if found; otherwise, null.</returns>
-    LoadedPluginInfo? GetLoadedPluginInfo(string pluginId);
+    public LoadedPluginInfo? GetLoadedPluginInfo(string pluginId);
 
     /// <summary>
     /// Gets information about all registered plugins.
     /// </summary>
     /// <returns>Collection of plugin information.</returns>
-    IEnumerable<AlgorithmPluginInfo> GetPluginInfo();
+    public IEnumerable<AlgorithmPluginInfo> GetPluginInfo();
 
     /// <summary>
     /// Gets all plugins that support the specified accelerator type.
     /// </summary>
     /// <param name="acceleratorType">The accelerator type.</param>
     /// <returns>Collection of compatible plugins.</returns>
-    IEnumerable<IAlgorithmPlugin> GetPluginsByAcceleratorType(AcceleratorType acceleratorType);
+    public IEnumerable<IAlgorithmPlugin> GetPluginsByAcceleratorType(AcceleratorType acceleratorType);
 
     /// <summary>
     /// Gets all plugins that can process the specified input type.
     /// </summary>
     /// <param name="inputType">The input type.</param>
     /// <returns>Collection of compatible plugins.</returns>
-    IEnumerable<IAlgorithmPlugin> GetPluginsByInputType(Type inputType);
+    public IEnumerable<IAlgorithmPlugin> GetPluginsByInputType(Type inputType);
 
     /// <summary>
     /// Gets all healthy and running plugins.
     /// </summary>
     /// <returns>Collection of healthy plugins.</returns>
-    IEnumerable<IAlgorithmPlugin> GetHealthyPlugins();
+    public IEnumerable<IAlgorithmPlugin> GetHealthyPlugins();
 }

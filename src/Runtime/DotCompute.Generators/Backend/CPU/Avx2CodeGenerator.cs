@@ -13,7 +13,8 @@ namespace DotCompute.Generators.Backend.CPU;
 public class Avx2CodeGenerator : CpuCodeGeneratorBase
 {
     #region Constructor
-    
+
+
     public Avx2CodeGenerator(
         string methodName,
         IReadOnlyList<KernelParameter> parameters,
@@ -22,35 +23,40 @@ public class Avx2CodeGenerator : CpuCodeGeneratorBase
         : base(methodName, parameters, methodSyntax, vectorizationInfo)
     {
     }
-    
+
     #endregion
-    
+
     #region Public Methods
-    
+
+
     public override void Generate(StringBuilder sb)
     {
         GenerateMethodDocumentation(sb,
             "AVX2 optimized implementation for x86/x64 processors.",
             "Uses 256-bit vector operations for improved performance.");
-        
+
+
         GenerateMethodSignature(sb, "ExecuteAvx2", true, includeRange: true);
         GenerateMethodBody(sb, () => GenerateAvx2MethodContent(sb));
     }
-    
+
     #endregion
-    
+
     #region Private Methods
-    
+
+
     private void GenerateAvx2MethodContent(StringBuilder sb)
     {
         _ = sb.AppendLine($"            const int vectorSize = {Avx2VectorSize}; // 256-bit / 32-bit");
         _ = sb.AppendLine("            int alignedEnd = start + ((end - start) / vectorSize) * vectorSize;");
         _ = sb.AppendLine();
-        
+
+
         GenerateAvx2ProcessingLoop(sb);
         GenerateRemainderHandling(sb, "ExecuteScalar");
     }
-    
+
+
     private void GenerateAvx2ProcessingLoop(StringBuilder sb)
     {
         _ = sb.AppendLine("            // Process AVX2 vectors");
@@ -60,13 +66,15 @@ public class Avx2CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("            }");
         _ = sb.AppendLine();
     }
-    
+
+
     private void GenerateAvx2Operations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // AVX2 256-bit vector operations");
         _ = sb.AppendLine("                unsafe");
         _ = sb.AppendLine("                {");
-        
+
+
         if (VectorizationInfo.IsArithmetic)
         {
             GenerateAvx2ArithmeticOperations(sb);
@@ -79,10 +87,12 @@ public class Avx2CodeGenerator : CpuCodeGeneratorBase
         {
             GenerateAvx2GenericOperations(sb);
         }
-        
+
+
         _ = sb.AppendLine("                }");
     }
-    
+
+
     private static void GenerateAvx2ArithmeticOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX2 arithmetic operations");
@@ -94,7 +104,8 @@ public class Avx2CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                        Avx.Store(pOutput, result);");
         _ = sb.AppendLine("                    }");
     }
-    
+
+
     private static void GenerateAvx2MemoryOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX2 memory operations");
@@ -104,7 +115,8 @@ public class Avx2CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                        Avx.Store(pOutput, vec);");
         _ = sb.AppendLine("                    }");
     }
-    
+
+
     private static void GenerateAvx2GenericOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX2 generic operations");
@@ -116,6 +128,7 @@ public class Avx2CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                        Avx.Store(pOutput, processed);");
         _ = sb.AppendLine("                    }");
     }
-    
+
+
     #endregion
 }

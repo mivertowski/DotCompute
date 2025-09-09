@@ -356,14 +356,16 @@ public class KernelArguments : IEnumerable<object?>
     private void SyncArgumentsFromBuffersAndScalars()
     {
         _arguments.Clear();
-        
+
         // Add buffers first
+
         foreach (var buffer in _buffers)
         {
             _arguments.Add(buffer);
         }
-        
+
         // Add scalar arguments
+
         foreach (var scalar in _scalarArguments)
         {
             _arguments.Add(scalar);

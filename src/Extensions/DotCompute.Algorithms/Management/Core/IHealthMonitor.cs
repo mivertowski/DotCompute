@@ -11,23 +11,23 @@ public interface IHealthMonitor
     /// <summary>
     /// Starts health monitoring for all loaded plugins.
     /// </summary>
-    void StartHealthMonitoring();
+    public void StartHealthMonitoring();
 
     /// <summary>
     /// Stops health monitoring.
     /// </summary>
-    void StopHealthMonitoring();
+    public void StopHealthMonitoring();
 
     /// <summary>
     /// Performs health checks on all loaded plugins.
     /// </summary>
     /// <returns>A task representing the health check operation.</returns>
-    Task PerformHealthChecksAsync();
+    public Task PerformHealthChecksAsync();
 
     /// <summary>
     /// Checks the health of a single plugin.
     /// </summary>
     /// <param name="pluginId">The plugin ID to check.</param>
     /// <returns>A task representing the health check operation.</returns>
-    Task CheckPluginHealthAsync(string pluginId);
+    public Task CheckPluginHealthAsync(string pluginId);
 }

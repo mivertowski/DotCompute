@@ -614,9 +614,9 @@ public sealed class CryptographicSecurity : IDisposable
         var validSizes = keyType switch
         {
             KeyType.AES => new[] { 128, 192, 256 },
-            KeyType.RSA => new[] { 2048, 3072, 4096 },
-            KeyType.ECDSA => new[] { 256, 384, 521 },
-            KeyType.ChaCha20 => new[] { 256 },
+            KeyType.RSA => [2048, 3072, 4096],
+            KeyType.ECDSA => [256, 384, 521],
+            KeyType.ChaCha20 => [256],
             _ => []
         };
 
@@ -1365,6 +1365,7 @@ public sealed class KeyRotationResult
     public List<string> SuccessfulRotations { get; } = [];
     public Dictionary<string, string> FailedRotations { get; } = [];
 }
+
 
 
 #endregion

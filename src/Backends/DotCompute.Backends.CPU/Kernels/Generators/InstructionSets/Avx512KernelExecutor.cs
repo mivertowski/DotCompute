@@ -181,7 +181,8 @@ internal sealed class Avx512KernelExecutor(KernelDefinition definition, KernelEx
     /// </summary>
     private static unsafe void ProcessRemainder(
         ref float input1Ref,
-        ref float input2Ref, 
+        ref float input2Ref,
+
         ref float outputRef,
         int offset,
         long remainder,
@@ -198,7 +199,8 @@ internal sealed class Avx512KernelExecutor(KernelDefinition definition, KernelEx
             offset += 8;
             remainder -= 8;
         }
-        
+
+
         if (remainder >= 4 && Sse.IsSupported)
         {
             // Use SSE for 4-element remainder
@@ -218,7 +220,8 @@ internal sealed class Avx512KernelExecutor(KernelDefinition definition, KernelEx
             {
                 var idx = offset + i;
                 Unsafe.Add(ref outputRef, (int)idx) = scalarOp(
-                    Unsafe.Add(ref input1Ref, (int)idx), 
+                    Unsafe.Add(ref input1Ref, (int)idx),
+
                     Unsafe.Add(ref input2Ref, (int)idx));
             }
         }

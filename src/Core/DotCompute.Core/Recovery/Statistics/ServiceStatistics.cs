@@ -24,37 +24,43 @@ public class ServiceStatistics
     /// </summary>
     /// <value>The unique service identifier.</value>
     public string ServiceName { get; set; } = string.Empty;
-    
+
+
     /// <summary>
     /// Gets or sets the current circuit breaker state for this specific service.
     /// </summary>
     /// <value>The service's circuit breaker state (Closed, Open, or HalfOpen).</value>
     public CircuitState State { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the failure rate for this service as a percentage (0.0 to 1.0).
     /// </summary>
     /// <value>The ratio of failed requests to total requests for this service.</value>
     public double FailureRate { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the total number of requests processed by this service.
     /// </summary>
     /// <value>The cumulative count of all requests to this service.</value>
     public long TotalRequests { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the number of failed requests for this service.
     /// </summary>
     /// <value>The cumulative count of failed requests to this service.</value>
     public long FailedRequests { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the average response time for successful requests to this service.
     /// </summary>
     /// <value>The mean duration of successful service calls.</value>
     public TimeSpan AverageResponseTime { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the timestamp of the most recent failure for this service.
     /// </summary>

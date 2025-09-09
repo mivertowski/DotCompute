@@ -99,8 +99,9 @@ namespace DotCompute.Core.Execution
                 // 5. Estimate execution time based on performance history
                 // TODO: Fix method resolution issue with PerformanceMonitor
                 var estimatedExecutionTime = 10.0; // _performanceMonitor.EstimateExecutionTime(
-                    // kernelName, [.. selectedDevices.Select(d => d.Info.DeviceType)],
-                    // inputBuffers.Sum(b => (int)b.Length));
+                                                   // kernelName, [.. selectedDevices.Select(d => d.Info.DeviceType)],
+                                                   // inputBuffers.Sum(b => (int)b.Length));
+
 
                 var plan = new DataParallelExecutionPlan<T>
                 {
@@ -173,7 +174,8 @@ namespace DotCompute.Core.Execution
                 // 4. Estimate execution time for the model
                 // TODO: Fix method resolution issue with PerformanceMonitor
                 var estimatedExecutionTime = 15.0; // _performanceMonitor.EstimateModelParallelExecutionTime(
-                    // workload, layerAssignments);
+                                                   // workload, layerAssignments);
+
 
                 var plan = new ModelParallelExecutionPlan<T>
                 {
@@ -257,7 +259,8 @@ namespace DotCompute.Core.Execution
 
                 // TODO: Fix method resolution issue with PerformanceMonitor
                 var estimatedExecutionTime = 20.0; // _performanceMonitor.EstimatePipelineExecutionTime(
-                    // pipelineStages, microbatchConfig);
+                                                   // pipelineStages, microbatchConfig);
+
 
                 var plan = new PipelineExecutionPlan<T>
                 {
@@ -423,7 +426,8 @@ namespace DotCompute.Core.Execution
                 // Estimate processing time based on stage complexity and device performance
                 // TODO: Fix method resolution issue with PerformanceMonitor
                 var estimatedProcessingTime = 5.0; // _performanceMonitor.EstimateStageProcessingTime(
-                    // stageDef.KernelName, device.Info.DeviceType);
+                                                   // stageDef.KernelName, device.Info.DeviceType);
+
 
                 stages.Add(new PipelineStage<T>
                 {

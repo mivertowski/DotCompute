@@ -94,38 +94,46 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Vector_Add_Kernel_Should_Execute_Correctly()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int elementCount = 1024 * 1024; // 1M elements
-            
+
             // Prepare test data
+
             var hostA = new float[elementCount];
             var hostB = new float[elementCount];
             var hostResult = new float[elementCount];
-            
+
+
             for (var i = 0; i < elementCount; i++)
             {
                 hostA[i] = i * 0.5f;
                 hostB[i] = i * 0.3f;
             }
-            
+
             // Allocate device memory
+
             await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
-            
+
             // Transfer data to device
+
             await deviceA.WriteAsync(hostA.AsSpan(), 0);
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
-            
+
             // Compile kernel
+
             var kernelDef = new KernelDefinition("vectorAdd", VectorAddKernel, "vectorAdd");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             _ = kernel.Should().NotBeNull();
-            
+
             // Configure launch parameters
+
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
             var launchConfig = new LaunchConfiguration
@@ -133,24 +141,29 @@ namespace DotCompute.Hardware.Cuda.Tests
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
             };
-            
+
             // Execute kernel
+
             var stopwatch = Stopwatch.StartNew();
             await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, elementCount);
             stopwatch.Stop();
-            
+
             // Read results
+
             await deviceC.ReadAsync(hostResult.AsSpan(), 0);
-            
+
             // Verify results
+
             for (var i = 0; i < Math.Min(1000, elementCount); i++) // Check first 1000 elements
             {
                 var expected = hostA[i] + hostB[i];
                 _ = hostResult[i].Should().BeApproximately(expected, 0.0001f, $"at index {i}");
             }
-            
+
+
             var throughput = (elementCount * 3 * sizeof(float)) / (stopwatch.Elapsed.TotalSeconds * 1024 * 1024 * 1024);
-            
+
+
             Output.WriteLine($"Vector Add Performance:");
             Output.WriteLine($"  Elements: {elementCount:N0}");
             Output.WriteLine($"  Execution Time: {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
@@ -162,64 +175,77 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Matrix_Multiply_Kernel_Should_Execute_Correctly()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int matrixSize = 128; // 128x128 matrices - reduced for stability testing
             const int elementCount = matrixSize * matrixSize;
-            
+
             // Prepare test data
+
             var hostA = new float[elementCount];
             var hostB = new float[elementCount];
             var hostResult = new float[elementCount];
-            
+
+
             var random = new Random(42);
             for (var i = 0; i < elementCount; i++)
             {
                 hostA[i] = (float)(random.NextDouble() * 2.0 - 1.0);
                 hostB[i] = (float)(random.NextDouble() * 2.0 - 1.0);
             }
-            
+
             // Allocate device memory
+
             await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
-            
+
             // Transfer data to device
+
             await deviceA.WriteAsync(hostA.AsSpan(), 0);
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
-            
+
             // Compile kernel
+
             var kernelDef = new KernelDefinition("matrixMultiply", MatrixMultiplyKernel, "matrixMultiply");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
-            
+
             // Configure launch parameters - 2D grid for matrix operations
+
             const int blockDim = 16;
             var gridDim = (matrixSize + blockDim - 1) / blockDim;
-            
+
             // Debug output
+
             Output.WriteLine($"Matrix size: {matrixSize}x{matrixSize}");
             Output.WriteLine($"Grid dimensions: {gridDim}x{gridDim}");
             Output.WriteLine($"Block dimensions: {blockDim}x{blockDim}");
             Output.WriteLine($"Total threads: {gridDim * gridDim * blockDim * blockDim}");
             Output.WriteLine($"Device pointers - A: 0x{deviceA.GetHashCode():X}, B: 0x{deviceB.GetHashCode():X}, C: 0x{deviceC.GetHashCode():X}");
-            
+
+
             var launchConfig = new LaunchConfiguration
             {
                 GridSize = new Dim3(gridDim, gridDim),
                 BlockSize = new Dim3(blockDim, blockDim)
             };
-            
+
             // Execute kernel
+
             var stopwatch = Stopwatch.StartNew();
             await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, matrixSize);
             stopwatch.Stop();
-            
+
             // Read results
+
             await deviceC.ReadAsync(hostResult.AsSpan(), 0);
-            
+
             // Verify a few elements (full verification would be expensive)
+
             for (var row = 0; row < Math.Min(10, matrixSize); row++)
             {
                 for (var col = 0; col < Math.Min(10, matrixSize); col++)
@@ -229,16 +255,19 @@ namespace DotCompute.Hardware.Cuda.Tests
                     {
                         expected += hostA[row * matrixSize + k] * hostB[k * matrixSize + col];
                     }
-                    
+
+
                     var actual = hostResult[row * matrixSize + col];
                     _ = actual.Should().BeApproximately(expected, 0.001f,
 
                         $"at position ({row}, {col})");
                 }
             }
-            
+
+
             var gflops = (2.0 * matrixSize * matrixSize * matrixSize) / (stopwatch.Elapsed.TotalSeconds * 1e9);
-            
+
+
             Output.WriteLine($"Matrix Multiply Performance:");
             Output.WriteLine($"  Matrix Size: {matrixSize}x{matrixSize}");
             Output.WriteLine($"  Execution Time: {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
@@ -250,57 +279,69 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Shared_Memory_Kernel_Should_Execute_Correctly()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int elementCount = 1024 * 256; // Multiple blocks
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            
+
             // Prepare test data
+
             var hostInput = new float[elementCount];
             var hostOutput = new float[gridSize];
-            
+
+
             for (var i = 0; i < elementCount; i++)
             {
                 hostInput[i] = 1.0f; // All ones for easy verification
             }
-            
+
             // Allocate device memory
+
             await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await using var deviceOutput = await accelerator.Memory.AllocateAsync<float>(gridSize);
-            
+
             // Transfer data to device
+
             await deviceInput.WriteAsync(hostInput.AsSpan(), 0);
-            
+
             // Compile kernel
+
             var kernelDef = new KernelDefinition("sharedMemoryReduce", SharedMemoryKernel, "sharedMemoryReduce");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
-            
+
             // Configure launch parameters with shared memory
+
             var launchConfig = new LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize),
                 SharedMemoryBytes = (ulong)(blockSize * sizeof(float))
             };
-            
+
             // Execute kernel
+
             var stopwatch = Stopwatch.StartNew();
             await kernel.LaunchAsync<float>(launchConfig, deviceInput, deviceOutput, elementCount);
             stopwatch.Stop();
-            
+
             // Read results
+
             await deviceOutput.ReadAsync(hostOutput.AsSpan(), 0);
-            
+
             // Verify results - each block should sum to blockSize (all elements are 1.0f)
+
             for (var i = 0; i < gridSize; i++)
             {
                 var expectedSum = Math.Min(blockSize, elementCount - i * blockSize);
                 _ = hostOutput[i].Should().BeApproximately(expectedSum, 0.0001f, $"block {i}");
             }
-            
+
+
             var totalSum = 0.0f;
             foreach (var blockSum in hostOutput)
             {
@@ -308,7 +349,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
 
             _ = totalSum.Should().BeApproximately(elementCount, 0.0001f);
-            
+
+
             Output.WriteLine($"Shared Memory Reduction Performance:");
             Output.WriteLine($"  Elements: {elementCount:N0}");
             Output.WriteLine($"  Blocks: {gridSize}, Block Size: {blockSize}");
@@ -320,31 +362,37 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Dynamic_Parallelism_Should_Work_If_Supported()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
             // Check if dynamic parallelism is supported (compute capability >= 3.5)
+
             var computeCapability = accelerator.Info.ComputeCapability;
             if (computeCapability.Major < 3 || (computeCapability.Major == 3 && computeCapability.Minor < 5))
             {
                 Output.WriteLine($"Dynamic parallelism not supported (compute capability {computeCapability.Major}.{computeCapability.Minor})");
                 return;
             }
-            
+
+
             const int elementCount = 1024;
-            
+
             // Prepare test data
+
             var hostData = new float[elementCount];
             for (var i = 0; i < elementCount; i++)
             {
                 hostData[i] = i + 1.0f;
             }
-            
+
+
             await using var deviceData = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await deviceData.WriteAsync(hostData.AsSpan(), 0);
-            
+
             // Compile kernel with dynamic parallelism
+
             var kernelDef = new KernelDefinition("parentKernel", DynamicParallelismKernel, "parentKernel");
             var compilationOptions = new DotCompute.Abstractions.CompilationOptions
             {
@@ -352,22 +400,26 @@ namespace DotCompute.Hardware.Cuda.Tests
                 OptimizationLevel = OptimizationLevel.Default
             };
             var kernel = await accelerator.CompileKernelAsync(kernelDef, compilationOptions);
-            
+
+
             var launchConfig = new LaunchConfiguration
             {
                 GridSize = new Dim3(4),
                 BlockSize = new Dim3(8)
             };
-            
+
+
             var stopwatch = Stopwatch.StartNew();
             await kernel.LaunchAsync<float>(launchConfig, deviceData, elementCount);
             stopwatch.Stop();
-            
+
             // Read results
+
             var resultData = new float[elementCount];
             await deviceData.ReadAsync(resultData.AsSpan(), 0);
-            
+
             // Verify some elements were doubled
+
             var elementsProcessed = 0;
             for (var i = 0; i < elementCount; i++)
             {
@@ -378,7 +430,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
 
             _ = elementsProcessed.Should().BeGreaterThan(0, "Some elements should have been processed by child kernels");
-            
+
+
             Output.WriteLine($"Dynamic Parallelism Test:");
             Output.WriteLine($"  Compute Capability: {computeCapability.Major}.{computeCapability.Minor}");
             Output.WriteLine($"  Elements Processed: {elementsProcessed}/{elementCount}");
@@ -389,32 +442,40 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Kernel_Performance_Should_Meet_Expectations()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             const int iterations = 10;
             const int elementCount = 1024 * 1024;
-            
+
+
             var hostA = new float[elementCount];
             var hostB = new float[elementCount];
-            
+
+
             for (var i = 0; i < elementCount; i++)
             {
                 hostA[i] = i * 0.5f;
                 hostB[i] = i * 0.3f;
             }
-            
+
+
             await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await using var deviceB = await accelerator.Memory.AllocateAsync<float>(elementCount);
             await using var deviceC = await accelerator.Memory.AllocateAsync<float>(elementCount);
-            
+
+
             await deviceA.WriteAsync(hostA.AsSpan(), 0);
             await deviceB.WriteAsync(hostB.AsSpan(), 0);
-            
+
+
             var kernelDef = new KernelDefinition("vectorAdd", VectorAddKernel, "vectorAdd");
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
-            
+
+
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
             var launchConfig = new LaunchConfiguration
@@ -422,12 +483,15 @@ namespace DotCompute.Hardware.Cuda.Tests
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
             };
-            
+
             // Warmup
+
             await kernel.LaunchAsync<float>(launchConfig, deviceA, deviceB, deviceC, elementCount);
-            
+
+
             var times = new double[iterations];
-            
+
+
             for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
@@ -435,13 +499,16 @@ namespace DotCompute.Hardware.Cuda.Tests
                 stopwatch.Stop();
                 times[i] = stopwatch.Elapsed.TotalMilliseconds;
             }
-            
+
+
             var averageTime = times.Sum() / iterations;
             var minTime = times.Min();
             var maxTime = times.Max();
-            
+
+
             var throughput = (elementCount * 3 * sizeof(float)) / (averageTime / 1000.0 * 1024 * 1024 * 1024);
-            
+
+
             Output.WriteLine($"Kernel Performance Benchmark ({iterations} iterations):");
             Output.WriteLine($"  Average Time: {averageTime:F2} ms");
             Output.WriteLine($"  Min Time: {minTime:F2} ms");
@@ -457,25 +524,31 @@ namespace DotCompute.Hardware.Cuda.Tests
         public async Task Grid_Block_Configuration_Should_Be_Optimized()
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
-            
+
+
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
-            
+
+
             var deviceInfo = accelerator.Info;
-            
+
             // Test different block sizes for optimal performance
+
             var blockSizes = new[] { 32, 64, 128, 256, 512, 1024 };
-            
+
+
             foreach (var blockSize in blockSizes)
             {
                 if (blockSize <= deviceInfo.MaxThreadsPerBlock)
                 {
                     const int totalThreads = 1024 * 1024;
                     var gridSize = (totalThreads + blockSize - 1) / blockSize;
-                    
+
                     // Ensure we don't exceed device limits
+
                     var maxGridSize = Math.Min(gridSize, 65535); // CUDA grid dimension limit
-                    
+
+
                     Output.WriteLine($"Block Size: {blockSize}, Grid Size: {maxGridSize}");
 
                     _ = blockSize.Should().BeGreaterThan(0);
@@ -484,7 +557,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                     _ = maxGridSize.Should().BeLessThanOrEqualTo(65535);
                 }
             }
-            
+
+
             Output.WriteLine($"Device Limits:");
             Output.WriteLine($"  Max Threads/Block: {deviceInfo.MaxThreadsPerBlock}");
             Output.WriteLine($"  Multiprocessors: {deviceInfo.MultiprocessorCount}");

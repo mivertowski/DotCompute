@@ -81,14 +81,16 @@ namespace DotCompute.Backends.CUDA.Graphs
             _graphs = new ConcurrentDictionary<string, GraphInstance>();
             _statistics = new ConcurrentDictionary<string, GraphStatistics>();
             _graphCreationLock = new SemaphoreSlim(1, 1);
-            
+
             // Start optimization timer to periodically analyze and optimize graphs
+
             _optimizationTimer = new Timer(
                 OptimizeGraphs,
                 null,
                 TimeSpan.FromMinutes(1),
                 TimeSpan.FromMinutes(5));
-            
+
+
             _logger.LogInformation("CUDA Graph Optimization Manager initialized");
         }
 
@@ -108,12 +110,14 @@ namespace DotCompute.Backends.CUDA.Graphs
             try
             {
                 _logger.LogDebug("Beginning graph capture for {GraphName}", graphName);
-                
+
                 // Start capture
+
                 var captureMode = options.AllowInvalidation
                     ? CudaGraphCaptureMode.Global
                     : CudaGraphCaptureMode.ThreadLocal;
-                
+
+
                 var error = cudaStreamBeginCapture(stream, captureMode);
                 if (error != CudaError.Success)
                 {
@@ -121,7 +125,8 @@ namespace DotCompute.Backends.CUDA.Graphs
                 }
 
                 var captureStartTime = Stopwatch.GetTimestamp();
-                
+
+
                 try
                 {
                     // Execute the operations to be captured
@@ -142,18 +147,21 @@ namespace DotCompute.Backends.CUDA.Graphs
                 }
 
                 var captureElapsed = Stopwatch.GetElapsedTime(captureStartTime);
-                
+
                 // Analyze graph structure
+
                 var analysis = await AnalyzeGraphAsync(graph);
-                
+
                 // Instantiate graph for execution
+
                 error = cudaGraphInstantiate(
                     out var graphExec,
                     graph,
                     IntPtr.Zero,
                     IntPtr.Zero,
                     0);
-                
+
+
                 if (error != CudaError.Success)
                 {
                     _ = cudaGraphDestroy(graph);
@@ -174,8 +182,9 @@ namespace DotCompute.Backends.CUDA.Graphs
                 };
 
                 _graphs[graphName] = instance;
-                
+
                 // Initialize statistics
+
                 _statistics[graphName] = new GraphStatistics
                 {
                     GraphName = graphName,
@@ -213,7 +222,8 @@ namespace DotCompute.Backends.CUDA.Graphs
             }
 
             var launchStart = Stopwatch.GetTimestamp();
-            
+
+
             var error = cudaGraphLaunch(instance.GraphExec, stream);
             if (error != CudaError.Success)
             {
@@ -222,14 +232,16 @@ namespace DotCompute.Backends.CUDA.Graphs
             }
 
             var launchElapsed = Stopwatch.GetElapsedTime(launchStart);
-            
+
             // Update statistics
+
             var stats = _statistics[graphName];
             stats.LaunchCount++;
             stats.TotalLaunchTime += launchElapsed;
             stats.LastLaunchTime = launchElapsed;
             stats.LastUsedAt = DateTimeOffset.UtcNow;
-            
+
+
             if (launchElapsed < stats.MinLaunchTime || stats.MinLaunchTime == TimeSpan.Zero)
             {
                 stats.MinLaunchTime = launchElapsed;
@@ -268,8 +280,9 @@ namespace DotCompute.Backends.CUDA.Graphs
             try
             {
                 _logger.LogDebug("Updating graph {GraphName}", graphName);
-                
+
                 // Capture new graph
+
                 var error = cudaStreamBeginCapture(stream, CudaGraphCaptureMode.Global);
                 if (error != CudaError.Success)
                 {
@@ -297,7 +310,8 @@ namespace DotCompute.Backends.CUDA.Graphs
                     _ = cudaGraphDestroy(instance.Graph);
                     instance.Graph = newGraph;
                     instance.LastUpdatedAt = DateTimeOffset.UtcNow;
-                    
+
+
                     _statistics[graphName].UpdateCount++;
                     _logger.LogInformation("Successfully updated graph {GraphName} in-place", graphName);
                     return true;
@@ -312,15 +326,17 @@ namespace DotCompute.Backends.CUDA.Graphs
                     // Destroy old resources
                     _ = cudaGraphExecDestroy(instance.GraphExec);
                     _ = cudaGraphDestroy(instance.Graph);
-                    
+
                     // Create new executable
+
                     error = cudaGraphInstantiate(
                         out var newGraphExec,
                         newGraph,
                         IntPtr.Zero,
                         IntPtr.Zero,
                         0);
-                    
+
+
                     if (error != CudaError.Success)
                     {
                         _ = cudaGraphDestroy(newGraph);
@@ -331,7 +347,8 @@ namespace DotCompute.Backends.CUDA.Graphs
                     instance.Graph = newGraph;
                     instance.GraphExec = newGraphExec;
                     instance.LastUpdatedAt = DateTimeOffset.UtcNow;
-                    
+
+
                     _statistics[graphName].RecreateCount++;
                     return false;
                 }
@@ -369,7 +386,8 @@ namespace DotCompute.Backends.CUDA.Graphs
                     IntPtr.Zero,
                     IntPtr.Zero,
                     0);
-                
+
+
                 if (error != CudaError.Success)
                 {
                     _ = cudaGraphDestroy(clonedGraph);
@@ -472,7 +490,8 @@ namespace DotCompute.Backends.CUDA.Graphs
             {
                 var dotFile = $"graph_{graphName}_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}.dot";
                 var error = cudaGraphDebugDotPrint(graph, dotFile, 0);
-                
+
+
                 if (error == CudaError.Success)
                 {
                     _logger.LogInformation("Exported graph visualization to {DotFile}", dotFile);
@@ -503,7 +522,8 @@ namespace DotCompute.Backends.CUDA.Graphs
                 foreach (var (name, stats) in _statistics)
                 {
                     // Remove graphs not used in last hour
-                    if (stats.LastUsedAt.HasValue && 
+                    if (stats.LastUsedAt.HasValue &&
+
                         now - stats.LastUsedAt.Value > TimeSpan.FromHours(1))
                     {
                         graphsToRemove.Add(name);
@@ -511,7 +531,8 @@ namespace DotCompute.Backends.CUDA.Graphs
                     }
 
                     // Log performance degradation
-                    if (stats.LaunchCount > 100 && 
+                    if (stats.LaunchCount > 100 &&
+
                         stats.LastLaunchTime > stats.AverageLaunchTime * 1.5)
                     {
                         _logger.LogWarning(
@@ -542,7 +563,8 @@ namespace DotCompute.Backends.CUDA.Graphs
                         _ = cudaGraphExecDestroy(instance.GraphExec);
                         _ = cudaGraphDestroy(instance.Graph);
                         _ = _statistics.TryRemove(name, out _);
-                        
+
+
                         _logger.LogInformation(
                             "Removed unused graph {GraphName} (last used: {LastUsed})",
                             name, instance.LastUsedAt?.ToString() ?? "never");
@@ -580,7 +602,8 @@ namespace DotCompute.Backends.CUDA.Graphs
                 _ = cudaGraphExecDestroy(instance.GraphExec);
                 _ = cudaGraphDestroy(instance.Graph);
                 _ = _statistics.TryRemove(graphName, out _);
-                
+
+
                 _logger.LogInformation("Removed graph {GraphName}", graphName);
                 return true;
             }
@@ -649,7 +672,8 @@ namespace DotCompute.Backends.CUDA.Graphs
             public TimeSpan MaxLaunchTime { get; set; }
             public required int NodeCount { get; init; }
             public required int EdgeCount { get; init; }
-            
+
+
             public TimeSpan AverageLaunchTime
                 => LaunchCount > 0 ? TotalLaunchTime / LaunchCount : TimeSpan.Zero;
         }
@@ -667,7 +691,8 @@ namespace DotCompute.Backends.CUDA.Graphs
             public bool ExportDebugVisualization { get; set; }
 
             public int MaxNodeCount { get; set; } = 10000;
-            
+
+
             public static GraphCaptureOptions Default => new();
         }
 

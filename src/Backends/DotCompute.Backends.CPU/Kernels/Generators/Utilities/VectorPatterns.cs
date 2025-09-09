@@ -745,10 +745,14 @@ public static class VectorPatterns
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ProcessVectorizedOperation<T>(
-        ReadOnlySpan<T> a, 
-        ReadOnlySpan<T> b, 
-        Span<T> result, 
-        int vectorSize, 
+        ReadOnlySpan<T> a,
+
+        ReadOnlySpan<T> b,
+
+        Span<T> result,
+
+        int vectorSize,
+
         long vectorCount,
         Func<T, T, T> vectorOp) where T : unmanaged, INumber<T>
     {

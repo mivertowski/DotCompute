@@ -33,8 +33,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var productionAccelerator = factory.CreateProductionAccelerator(0);
                 _accelerator = new CudaAccelerator(0, NullLogger<CudaAccelerator>.Instance);
                 productionAccelerator.Dispose();
-                
-                using var loggerFactory = LoggerFactory.Create(builder => 
+
+
+                using var loggerFactory = LoggerFactory.Create(builder =>
+
                     builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
                 _logger = loggerFactory.CreateLogger<KernelGeneratorCudaTests>();
             }
@@ -61,8 +63,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             var b = TestDataGenerator.CreateLinearSequence(size, 10.0f, 2.0f);
             var result = new float[size];
             var expected = new float[size];
-            
+
             // Calculate expected results
+
             for (int i = 0; i < size; i++)
             {
                 expected[i] = a[i] + b[i];
@@ -141,7 +144,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int inputSize = 1000;
             const int kernelSize = 5;
             const int outputSize = inputSize - kernelSize + 1;
-            
+
+
             var input = TestDataGenerator.CreateSinusoidalData(inputSize, 0.01, 1.0f);
             var kernel = new float[] { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f }; // Simple averaging kernel
             var result = new float[outputSize];
@@ -178,14 +182,17 @@ namespace DotCompute.Hardware.Cuda.Tests
             var timeToExpiry = TestDataGenerator.CreateRandomData(numOptions, 44, 0.1f, 2.0f);
             var riskFreeRate = 0.05f;
             var volatility = 0.3f;
-            
+
+
             var callPrices = new float[numOptions];
             var putPrices = new float[numOptions];
 
             // Act
             await ExecuteBlackScholesKernel(
-                stockPrices, strikePrices, timeToExpiry, 
-                riskFreeRate, volatility, 
+                stockPrices, strikePrices, timeToExpiry,
+
+                riskFreeRate, volatility,
+
                 callPrices, putPrices);
 
             // Assert - Basic validation
@@ -193,8 +200,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 callPrices[i].Should().BeGreaterThan(0);
                 putPrices[i].Should().BeGreaterThan(0);
-                
+
                 // Call-Put parity check (approximate)
+
                 var parity = callPrices[i] - putPrices[i];
                 var expected = stockPrices[i] - strikePrices[i] * MathF.Exp(-riskFreeRate * timeToExpiry[i]);
                 parity.Should().BeApproximately(expected, 1.0f);
@@ -206,7 +214,8 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             if (_accelerator == null)
                 throw new InvalidOperationException("CUDA accelerator not initialized");
-            
+
+
             await using var bufferA = await _accelerator.Memory.AllocateAsync<float>(a.Length);
             await using var bufferB = await _accelerator.Memory.AllocateAsync<float>(b.Length);
             await using var bufferResult = await _accelerator.Memory.AllocateAsync<float>(result.Length);
@@ -216,7 +225,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernel = new VectorAddKernel();
             var compiled = await _accelerator.CompileKernelAsync(kernel.GetKernelDefinition());
-            
+
+
             var args = new KernelArguments
             {
                 Buffers = new[] { bufferA, bufferB, bufferResult },
@@ -232,7 +242,8 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             if (_accelerator == null)
                 throw new InvalidOperationException("CUDA accelerator not initialized");
-            
+
+
             await using var bufferA = await _accelerator.Memory.AllocateAsync<float>(a.Length);
             await using var bufferB = await _accelerator.Memory.AllocateAsync<float>(b.Length);
             await using var bufferResult = await _accelerator.Memory.AllocateAsync<float>(result.Length);
@@ -242,7 +253,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernel = new MatrixMultiplyKernel();
             var compiled = await _accelerator.CompileKernelAsync(kernel.GetKernelDefinition());
-            
+
+
             var args = new KernelArguments
             {
                 Buffers = new[] { bufferA, bufferB, bufferResult },
@@ -258,7 +270,8 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             if (_accelerator == null)
                 throw new InvalidOperationException("CUDA accelerator not initialized");
-            
+
+
             await using var bufferData = await _accelerator.Memory.AllocateAsync<float>(data.Length);
             await using var bufferResult = await _accelerator.Memory.AllocateAsync<float>(1);
 
@@ -267,11 +280,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernel = new ReductionKernel();
             var compiled = await _accelerator.CompileKernelAsync(kernel.GetKernelDefinition());
-            
+
+
             const int blockSize = 256;
             var gridSize = (data.Length + blockSize - 1) / blockSize;
             const int sharedMemorySize = blockSize * sizeof(float);
-            
+
+
             var args = new KernelArguments
             {
                 Buffers = new[] { bufferData, bufferResult },
@@ -286,7 +301,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             await compiled.ExecuteAsync(args);
             await _accelerator.SynchronizeAsync();
-            
+
+
             var result = new float[1];
             await bufferResult.CopyToAsync(result);
             return result[0];
@@ -296,7 +312,8 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             if (_accelerator == null)
                 throw new InvalidOperationException("CUDA accelerator not initialized");
-            
+
+
             await using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);
             await using var bufferKernel = await _accelerator.Memory.AllocateAsync<float>(kernel.Length);
             await using var bufferResult = await _accelerator.Memory.AllocateAsync<float>(result.Length);
@@ -306,7 +323,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var convKernel = new ConvolutionKernel();
             var compiled = await _accelerator.CompileKernelAsync(convKernel.GetKernelDefinition());
-            
+
+
             var args = new KernelArguments
             {
                 Buffers = new[] { bufferInput, bufferKernel, bufferResult },
@@ -325,7 +343,8 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             if (_accelerator == null)
                 throw new InvalidOperationException("CUDA accelerator not initialized");
-            
+
+
             await using var bufferStock = await _accelerator.Memory.AllocateAsync<float>(stockPrices.Length);
             await using var bufferStrike = await _accelerator.Memory.AllocateAsync<float>(strikePrices.Length);
             await using var bufferTime = await _accelerator.Memory.AllocateAsync<float>(timeToExpiry.Length);
@@ -338,7 +357,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernel = new BlackScholesKernel();
             var compiled = await _accelerator.CompileKernelAsync(kernel.GetKernelDefinition());
-            
+
+
             var args = new KernelArguments
             {
                 Buffers = new[] { bufferStock, bufferStrike, bufferTime, bufferCall, bufferPut },
@@ -347,7 +367,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             await compiled.ExecuteAsync(args);
             await _accelerator.SynchronizeAsync();
-            
+
+
             await bufferCall.CopyToAsync(callPrices);
             await bufferPut.CopyToAsync(putPrices);
         }
@@ -426,17 +447,20 @@ namespace DotCompute.Hardware.Cuda.Tests
                 float timeToExpiryValue = timeToExpiry[i];
                 float r = riskFreeRate;
                 float sigma = volatility;
-                
+
+
                 float sqrtT = MathF.Sqrt(timeToExpiryValue);
                 float d1 = (MathF.Log(stockPriceValue / strikePriceValue) + (r + 0.5f * sigma * sigma) * timeToExpiryValue) / (sigma * sqrtT);
                 float d2 = d1 - sigma * sqrtT;
-                
+
                 // Approximation of normal CDF
+
                 float nD1 = 0.5f * (1.0f + MathF.Tanh(d1 * 0.7071067811865476f));
                 float nD2 = 0.5f * (1.0f + MathF.Tanh(d2 * 0.7071067811865476f));
                 float nNegD1 = 1.0f - nD1;
                 float nNegD2 = 1.0f - nD2;
-                
+
+
                 callPrice[i] = stockPriceValue * nD1 - strikePriceValue * MathF.Exp(-r * timeToExpiryValue) * nD2;
                 putPrice[i] = strikePriceValue * MathF.Exp(-r * timeToExpiryValue) * nNegD2 - stockPriceValue * nNegD1;
             }

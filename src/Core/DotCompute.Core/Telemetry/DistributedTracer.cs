@@ -536,6 +536,7 @@ public sealed class DistributedTracer : IDisposable
     private static List<SpanData> IdentifyCriticalPath(List<SpanData> spans)
         // Simplified critical path analysis - find the longest sequential chain
 
+
         => [.. spans.OrderByDescending(s => s.Duration).Take(5)];
 
     private static Dictionary<string, double> AnalyzeDeviceUtilization(
@@ -756,6 +757,7 @@ public sealed class DistributedTracer : IDisposable
         ActivitySource.Dispose();
     }
 }
+
 
 
 // Supporting classes and enums continue in next part due to length...

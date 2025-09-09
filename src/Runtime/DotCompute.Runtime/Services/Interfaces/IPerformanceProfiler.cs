@@ -22,7 +22,7 @@ public interface IPerformanceProfiler
     /// <param name="operationName">The name of the operation to profile.</param>
     /// <param name="metadata">Additional metadata about the operation.</param>
     /// <returns>A profiling session token for tracking the operation.</returns>
-    IProfilingSession StartProfiling(string operationName, Dictionary<string, object>? metadata = null);
+    public IProfilingSession StartProfiling(string operationName, Dictionary<string, object>? metadata = null);
 
     /// <summary>
     /// Gets performance metrics for a specific time period.
@@ -31,14 +31,14 @@ public interface IPerformanceProfiler
     /// <param name="startTime">The start time of the period.</param>
     /// <param name="endTime">The end time of the period.</param>
     /// <returns>Performance metrics for the specified period.</returns>
-    Task<PerformanceMetrics> GetMetricsAsync(DateTime startTime, DateTime endTime);
+    public Task<PerformanceMetrics> GetMetricsAsync(DateTime startTime, DateTime endTime);
 
     /// <summary>
     /// Gets real-time performance data.
     /// Provides current performance metrics and system status.
     /// </summary>
     /// <returns>Current real-time performance data.</returns>
-    Task<RealTimePerformanceData> GetRealTimeDataAsync();
+    public Task<RealTimePerformanceData> GetRealTimeDataAsync();
 
     /// <summary>
     /// Exports performance data to a file.
@@ -47,12 +47,12 @@ public interface IPerformanceProfiler
     /// <param name="filePath">The output file path.</param>
     /// <param name="format">The export format for the data.</param>
     /// <returns>A task representing the export operation.</returns>
-    Task ExportDataAsync(string filePath, PerformanceExportFormat format);
+    public Task ExportDataAsync(string filePath, PerformanceExportFormat format);
 
     /// <summary>
     /// Gets performance summary for all operations.
     /// Provides an overview of system performance across all tracked operations.
     /// </summary>
     /// <returns>Comprehensive performance summary.</returns>
-    Task<PerformanceSummary> GetSummaryAsync();
+    public Task<PerformanceSummary> GetSummaryAsync();
 }

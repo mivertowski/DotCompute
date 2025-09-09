@@ -45,8 +45,9 @@ namespace DotCompute.Backends.CUDA.Types
         public int AllocationCount { get; set; }
         public int DeallocationCount { get; set; }
         public long PeakMemoryUsageBytes { get; set; }
-        
+
         // CUDA-specific extensions
+
         public long PinnedMemoryBytes { get; set; }
         public long UnifiedMemoryBytes { get; set; }
         public long PooledMemoryBytes { get; set; }
@@ -396,8 +397,9 @@ namespace DotCompute.Backends.CUDA.Types
             DeviceIndex = context?.DeviceId ?? 0;
             _logger = logger;
             _allocations = new System.Collections.Concurrent.ConcurrentDictionary<nint, MemoryAllocationInfo>();
-            
+
             // Initialize with reasonable defaults
+
             TotalMemory = 8L * 1024 * 1024 * 1024; // 8GB default
             MaxAllocationSize = TotalMemory / 2;
         }
@@ -476,7 +478,8 @@ namespace DotCompute.Backends.CUDA.Types
                 TotalAllocatedBytes = 0;
                 UsedMemory = 0;
 
-                _logger?.LogInformation("Reset complete. Freed {AllocationCount} allocations for device {DeviceIndex}", 
+                _logger?.LogInformation("Reset complete. Freed {AllocationCount} allocations for device {DeviceIndex}",
+
                     allocationCount, DeviceIndex);
             }
             catch (System.Exception ex)

@@ -18,7 +18,7 @@ public interface INuGetPluginService
     /// <param name="targetFramework">Target framework for assembly selection (optional, defaults to current framework).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of plugins loaded.</returns>
-    Task<int> LoadPluginsFromNuGetPackageAsync(
+    public Task<int> LoadPluginsFromNuGetPackageAsync(
         string packageSource,
         string? targetFramework = null,
         CancellationToken cancellationToken = default);
@@ -30,7 +30,7 @@ public interface INuGetPluginService
     /// <param name="targetFramework">Target framework for assembly selection (optional, defaults to current framework).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of plugins loaded from the updated package.</returns>
-    Task<int> UpdateNuGetPackageAsync(
+    public Task<int> UpdateNuGetPackageAsync(
         string packageId,
         string? targetFramework = null,
         CancellationToken cancellationToken = default);
@@ -41,14 +41,14 @@ public interface INuGetPluginService
     /// <param name="olderThan">Optional age filter - only clear packages older than this timespan.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the cache clearing operation.</returns>
-    Task ClearNuGetCacheAsync(TimeSpan? olderThan = null, CancellationToken cancellationToken = default);
+    public Task ClearNuGetCacheAsync(TimeSpan? olderThan = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets information about cached NuGet packages.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Array of cached NuGet package information.</returns>
-    Task<CachedPackageInfo[]> GetCachedNuGetPackagesAsync(CancellationToken cancellationToken = default);
+    public Task<CachedPackageInfo[]> GetCachedNuGetPackagesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Validates a NuGet package before loading it.
@@ -57,7 +57,7 @@ public interface INuGetPluginService
     /// <param name="targetFramework">Target framework for validation.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Validation result with details about the package.</returns>
-    Task<NuGetValidationResult> ValidateNuGetPackageAsync(
+    public Task<NuGetValidationResult> ValidateNuGetPackageAsync(
         string packageSource,
         string? targetFramework = null,
         CancellationToken cancellationToken = default);

@@ -69,9 +69,11 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 DiscoverMetrics(deviceId);
 
                 _initialized = true;
-                _logger.LogInformation("CUPTI initialized successfully with {MetricCount} metrics available", 
+                _logger.LogInformation("CUPTI initialized successfully with {MetricCount} metrics available",
+
                     _availableMetrics.Count);
-                
+
+
                 return true;
             }
             catch (DllNotFoundException)
@@ -102,8 +104,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
             }
 
             var session = new ProfilingSession(metrics ?? GetDefaultMetrics());
-            
+
             // Enable requested metrics
+
             foreach (var metricName in session.RequestedMetrics)
             {
                 if (_availableMetrics.TryGetValue(metricName, out var metric))
@@ -116,7 +119,8 @@ namespace DotCompute.Backends.CUDA.Monitoring
             _ = cuptiActivityEnable(CuptiActivityKind.Kernel);
             _ = cuptiActivityEnable(CuptiActivityKind.MemCpy);
             _ = cuptiActivityEnable(CuptiActivityKind.MemSet);
-            
+
+
             return session;
         }
 
@@ -142,7 +146,8 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 // Read activity records
                 var buffer = IntPtr.Zero;
                 nuint validSize = 0;
-                
+
+
                 var result = cuptiActivityGetNextRecord(buffer, validSize, out var record);
                 while (result == CuptiResult.Success)
                 {
@@ -168,7 +173,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
             return metrics;
         }
 
-        private void EnableActivityTypes()
+        private static void EnableActivityTypes()
         {
             // Enable kernel execution tracking
             _ = cuptiActivityEnable(CuptiActivityKind.Kernel);
@@ -222,10 +227,10 @@ namespace DotCompute.Backends.CUDA.Monitoring
             }
         }
 
-        private string[] GetDefaultMetrics()
+        private static string[] GetDefaultMetrics()
         {
-            return new[]
-            {
+            return
+            [
                 "achieved_occupancy",
                 "sm_efficiency",
                 "dram_read_throughput",
@@ -233,7 +238,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
                 "gld_throughput",
                 "gst_throughput",
                 "flop_sp_efficiency"
-            };
+            ];
         }
 
         private void EnableMetric(CuptiMetric metric)
@@ -242,7 +247,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
             _logger.LogDebug("Enabling metric: {MetricName}", metric.Name);
         }
 
-        private double ReadMetricValue(CuptiMetric metric)
+        private static double ReadMetricValue(CuptiMetric metric)
         {
             // In real implementation, read actual metric value
             // For now, return simulated values
@@ -260,7 +265,8 @@ namespace DotCompute.Backends.CUDA.Monitoring
         {
             // Read activity kind
             var kind = Marshal.ReadInt32(record);
-            
+
+
             switch ((CuptiActivityKind)kind)
             {
                 case CuptiActivityKind.Kernel:
@@ -274,14 +280,14 @@ namespace DotCompute.Backends.CUDA.Monitoring
             }
         }
 
-        private void ProcessKernelActivity(IntPtr record, KernelMetrics metrics)
+        private static void ProcessKernelActivity(IntPtr record, KernelMetrics metrics)
         {
             // Parse kernel execution record
             // This would extract timing, grid/block dimensions, etc. TODO
             metrics.KernelExecutions++;
         }
 
-        private void ProcessMemcpyActivity(IntPtr record, KernelMetrics metrics)
+        private static void ProcessMemcpyActivity(IntPtr record, KernelMetrics metrics)
         {
             // Parse memory copy record
             metrics.MemoryTransfers++;
@@ -306,7 +312,8 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
                     _ = cuptiActivityFlushAll(1);
                     _ = cuptiFinalize();
-                    
+
+
                     _logger.LogInformation("CUPTI shutdown completed");
                 }
                 catch (Exception ex)
@@ -427,7 +434,8 @@ namespace DotCompute.Backends.CUDA.Monitoring
     {
         public string[] RequestedMetrics { get; }
         public DateTime StartTime { get; }
-        
+
+
         internal ProfilingSession(string[] metrics)
         {
             RequestedMetrics = metrics;
@@ -443,7 +451,8 @@ namespace DotCompute.Backends.CUDA.Monitoring
         public int KernelExecutions { get; set; }
         public int MemoryTransfers { get; set; }
         public Dictionary<string, double> MetricValues { get; } = [];
-        
+
+
         public double AchievedOccupancy => MetricValues.GetValueOrDefault("achieved_occupancy", 0);
         public double SmEfficiency => MetricValues.GetValueOrDefault("sm_efficiency", 0);
         public double DramReadThroughput => MetricValues.GetValueOrDefault("dram_read_throughput", 0);

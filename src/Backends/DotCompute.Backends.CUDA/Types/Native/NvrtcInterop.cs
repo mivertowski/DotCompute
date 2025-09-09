@@ -107,14 +107,16 @@ namespace DotCompute.Backends.CUDA.Native
             // Marshal headers and include names manually
             var headerPtrs = new IntPtr[headers.Length];
             var includePtrs = new IntPtr[includeNames.Length];
-            
+
+
             try
             {
                 for (var i = 0; i < headers.Length; i++)
                 {
                     headerPtrs[i] = Marshal.StringToHGlobalAnsi(headers[i]);
                 }
-                
+
+
                 for (var i = 0; i < includeNames.Length; i++)
                 {
                     includePtrs[i] = Marshal.StringToHGlobalAnsi(includeNames[i]);
@@ -125,7 +127,8 @@ namespace DotCompute.Backends.CUDA.Native
                     fixed (IntPtr* hPtr = headerPtrs)
                     fixed (IntPtr* iPtr = includePtrs)
                     {
-                        return nvrtcCreateProgram(out prog, src, name, headers.Length, 
+                        return nvrtcCreateProgram(out prog, src, name, headers.Length,
+
                             new IntPtr(hPtr), new IntPtr(iPtr));
                     }
                 }
@@ -141,7 +144,8 @@ namespace DotCompute.Backends.CUDA.Native
                     }
 
                 }
-                
+
+
                 foreach (var ptr in includePtrs)
                 {
                     if (ptr != IntPtr.Zero)
@@ -165,7 +169,8 @@ namespace DotCompute.Backends.CUDA.Native
 
             // Marshal options manually
             var optionPtrs = new IntPtr[options.Length];
-            
+
+
             try
             {
                 for (var i = 0; i < options.Length; i++)

@@ -9,9 +9,11 @@ namespace DotCompute.Tests.Common;
 public class SkipException : Exception
 {
     public SkipException() : base() { }
-    
+
+
     public SkipException(string message) : base(message) { }
-    
+
+
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
 }
 
@@ -59,7 +61,8 @@ public abstract class GpuTestBase : TestBase
                 // This would typically use CUDA runtime APIs
                 // For now, we'll use basic detection
                 capabilities.HasNvidiaGpu = DetectNvidiaGpu();
-                
+
+
                 if (capabilities.HasNvidiaGpu)
                 {
                     capabilities.ComputeCapability = GetComputeCapability();
@@ -135,7 +138,8 @@ public abstract class GpuTestBase : TestBase
     /// </summary>
     protected static void SkipIfNoCuda()
     {
-        if (!IsCudaAvailable()) 
+        if (!IsCudaAvailable())
+
         {
             throw new SkipException("CUDA is not available on this system");
         }
@@ -146,11 +150,15 @@ public abstract class GpuTestBase : TestBase
     /// </summary>
     protected static void SkipIfNoGpu()
     {
-        var hasAnyGpu = GetNvidiaCapabilities().HasNvidiaGpu || 
-                        IsAmdGpuAvailable() || 
+        var hasAnyGpu = GetNvidiaCapabilities().HasNvidiaGpu ||
+
+                        IsAmdGpuAvailable() ||
+
                         IsIntelGpuAvailable();
-        
-        if (!hasAnyGpu) 
+
+
+        if (!hasAnyGpu)
+
         {
             throw new SkipException("No GPU hardware detected on this system");
         }
@@ -161,7 +169,8 @@ public abstract class GpuTestBase : TestBase
     /// </summary>
     protected static void SkipIfNoOpenCL()
     {
-        if (!IsOpenClAvailable()) 
+        if (!IsOpenClAvailable())
+
         {
             throw new SkipException("OpenCL is not available on this system");
         }
@@ -174,18 +183,22 @@ public abstract class GpuTestBase : TestBase
     protected static void SkipIfInsufficientComputeCapability(string minimumComputeCapability)
     {
         var capabilities = GetNvidiaCapabilities();
-        
+
+
         if (!capabilities.HasNvidiaGpu)
         {
             throw new SkipException("No NVIDIA GPU detected");
         }
 
         // Simple version comparison (would need more sophisticated logic for production)
-        var hasRequiredCapability = string.Compare(capabilities.ComputeCapability, 
-                                                 minimumComputeCapability, 
+        var hasRequiredCapability = string.Compare(capabilities.ComputeCapability,
+                                                 minimumComputeCapability,
+
                                                  StringComparison.Ordinal) >= 0;
-        
-        if (!hasRequiredCapability) 
+
+
+        if (!hasRequiredCapability)
+
         {
             throw new SkipException($"GPU compute capability {capabilities.ComputeCapability} is below required {minimumComputeCapability}");
         }
@@ -198,8 +211,10 @@ public abstract class GpuTestBase : TestBase
     protected static void SkipIfInsufficientGpuMemory(int requiredMemoryMB)
     {
         var capabilities = GetNvidiaCapabilities();
-        
-        if (capabilities.TotalMemoryMB < requiredMemoryMB) 
+
+
+        if (capabilities.TotalMemoryMB < requiredMemoryMB)
+
         {
             throw new SkipException($"Insufficient GPU memory: {capabilities.TotalMemoryMB}MB available, {requiredMemoryMB}MB required");
         }
@@ -227,7 +242,8 @@ public abstract class GpuTestBase : TestBase
             };
 
             _memorySnapshots[name] = snapshot;
-            
+
+
             Output.WriteLine($"GPU Memory Snapshot '{name}': " +
                            $"GPU Used: {snapshot.GpuMemoryUsed:N0} bytes, " +
                            $"GPU Free: {snapshot.GpuMemoryFree:N0} bytes, " +
@@ -341,7 +357,8 @@ public abstract class GpuTestBase : TestBase
             return 0;
 
         var bandwidthGBps = (bytesTransferred / (1024.0 * 1024.0 * 1024.0)) / (elapsedMs / 1000.0);
-        
+
+
         Output.WriteLine($"Bandwidth: {bandwidthGBps:F2} GB/s " +
                         $"({bytesTransferred:N0} bytes in {elapsedMs:F2}ms)");
 
@@ -355,10 +372,12 @@ public abstract class GpuTestBase : TestBase
     private void LogGpuEnvironment()
     {
         var gpuInfo = GetGpuSystemInfo();
-        
+
+
         Output.WriteLine("=== GPU Environment ===");
         Output.WriteLine($"NVIDIA GPU: {gpuInfo.NvidiaCapabilities.HasNvidiaGpu}");
-        
+
+
         if (gpuInfo.NvidiaCapabilities.HasNvidiaGpu)
         {
             Output.WriteLine($"  Compute Capability: {gpuInfo.NvidiaCapabilities.ComputeCapability}");
@@ -366,7 +385,8 @@ public abstract class GpuTestBase : TestBase
             Output.WriteLine($"  Unified Memory: {gpuInfo.NvidiaCapabilities.SupportsUnifiedMemory}");
             Output.WriteLine($"  Dynamic Parallelism: {gpuInfo.NvidiaCapabilities.SupportsDynamicParallelism}");
         }
-        
+
+
         Output.WriteLine($"AMD GPU: {gpuInfo.HasAmdGpu}");
         Output.WriteLine($"Intel GPU: {gpuInfo.HasIntelGpu}");
         Output.WriteLine($"OpenCL: {gpuInfo.OpenClAvailable}");
@@ -376,40 +396,49 @@ public abstract class GpuTestBase : TestBase
     private static bool DetectNvidiaGpu()
         // Placeholder for actual NVIDIA GPU detection logic
         // In production, this would use CUDA runtime APIs
+
         => IsCudaAvailable();
 
     private static bool DetectAmdGpu()
         // Placeholder for AMD GPU detection logic
         // In production, this would check for AMD drivers/runtime
+
         => false;
 
     private static bool DetectIntelGpu()
         // Placeholder for Intel GPU detection logic
         // In production, this would check for Intel GPU drivers
+
         => false;
 
     private static string GetComputeCapability()
         // Placeholder - would query actual compute capability
+
         => "7.5"; // Example compute capability
 
     private static int GetGpuMemoryMB()
         // Placeholder - would query actual GPU memory
+
         => 8192; // Example 8GB
 
     private static bool CheckUnifiedMemorySupport()
         // Placeholder - would check for unified memory support
+
         => true;
 
     private static bool CheckDynamicParallelismSupport()
         // Placeholder - would check for dynamic parallelism support
+
         => true;
 
     private static long GetCurrentGpuMemoryUsage()
         // Placeholder - would query actual GPU memory usage
+
         => 1024 * 1024 * 256; // Example 256MB
 
     private static long GetFreeGpuMemory()
         // Placeholder - would query actual free GPU memory
+
         => 1024L * 1024L * 1024L * 7L; // Example 7GB free
 
     private static void SynchronizeGpu()

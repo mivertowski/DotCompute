@@ -51,6 +51,7 @@ public sealed partial class MetalBackendPlugin : BaseBackendPlugin<MetalAccelera
     protected override void ConfigureBackendOptions(IServiceCollection services, IConfiguration configuration)
         // Configure Metal backend options  
 
+
         => services.Configure<MetalAcceleratorOptions>(configuration.GetSection("MetalBackend:Accelerator"));
 
     /// <inheritdoc/>

@@ -17,15 +17,15 @@ public interface IKernelBackendGenerator
     /// <summary>
     /// Gets the name of the backend this generator supports.
     /// </summary>
-    string BackendName { get; }
+    public string BackendName { get; }
 
     /// <summary>
     /// Determines if this generator supports the specified backend.
     /// </summary>
-    bool SupportsBackend(string backend);
+    public bool SupportsBackend(string backend);
 
     /// <summary>
     /// Generates the backend-specific implementation for a kernel method.
     /// </summary>
-    string? GenerateImplementation(KernelMethodInfo method, Compilation compilation);
+    public string? GenerateImplementation(KernelMethodInfo method, Compilation compilation);
 }

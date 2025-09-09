@@ -76,7 +76,8 @@ namespace DotCompute.Core.Execution
         /// <param name="maxTimeMs">Maximum execution time in milliseconds</param>
         /// <returns>Array of plans within the specified time range</returns>
         public ExecutionPlan<T>[] GetPlansByExecutionTime(double minTimeMs, double maxTimeMs)
-            => AllAlternatives.Where(p => p.EstimatedExecutionTimeMs >= minTimeMs && 
+            => AllAlternatives.Where(p => p.EstimatedExecutionTimeMs >= minTimeMs &&
+
                                       p.EstimatedExecutionTimeMs <= maxTimeMs).ToArray();
     }
 }

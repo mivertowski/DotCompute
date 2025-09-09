@@ -15,22 +15,28 @@ public class WorkloadCharacteristics
 {
     /// <summary>Size of data being processed in bytes</summary>
     public long DataSize { get; set; }
-    
+
+
     /// <summary>Compute intensity from 0.0 (low) to 1.0 (high)</summary>
     public double ComputeIntensity { get; set; }
-    
+
+
     /// <summary>Memory intensity from 0.0 (low) to 1.0 (high)</summary>
     public double MemoryIntensity { get; set; }
-    
+
+
     /// <summary>Parallelism level from 0.0 (sequential) to 1.0 (highly parallel)</summary>
     public double ParallelismLevel { get; set; }
-    
+
+
     /// <summary>Expected number of operations</summary>
     public long OperationCount { get; set; }
-    
+
+
     /// <summary>Memory access pattern classification</summary>
     public MemoryAccessPattern AccessPattern { get; set; }
-    
+
+
     /// <summary>Additional custom characteristics</summary>
     public Dictionary<string, object> CustomCharacteristics { get; set; } = new();
 }
@@ -49,9 +55,18 @@ public class WorkloadSignature : IEquatable<WorkloadSignature>
 
     public bool Equals(WorkloadSignature? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
-        
+        if (other is null)
+        {
+            return false;
+        }
+
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+
         return KernelName == other.KernelName &&
                DataSizeBucket(DataSize) == DataSizeBucket(other.DataSize) &&
                Math.Abs(ComputeIntensity - other.ComputeIntensity) < 0.1 &&
@@ -111,19 +126,24 @@ public class BackendSelection
 {
     /// <summary>Selected backend accelerator</summary>
     public IAccelerator? SelectedBackend { get; set; }
-    
+
+
     /// <summary>Backend identifier</summary>
     public string BackendId { get; set; } = string.Empty;
-    
+
+
     /// <summary>Confidence in the selection from 0.0 to 1.0</summary>
     public float ConfidenceScore { get; set; }
-    
+
+
     /// <summary>Human-readable reason for the selection</summary>
     public string Reason { get; set; } = string.Empty;
-    
+
+
     /// <summary>Strategy used for selection</summary>
     public SelectionStrategy SelectionStrategy { get; set; }
-    
+
+
     /// <summary>Additional metadata about the selection</summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
@@ -148,19 +168,24 @@ public class SelectionConstraints
 {
     /// <summary>Backends that are explicitly allowed</summary>
     public HashSet<string>? AllowedBackends { get; set; }
-    
+
+
     /// <summary>Backends that are explicitly disallowed</summary>
     public HashSet<string>? DisallowedBackends { get; set; }
-    
+
+
     /// <summary>Maximum acceptable execution time in milliseconds</summary>
     public double? MaxExecutionTimeMs { get; set; }
-    
+
+
     /// <summary>Maximum acceptable memory usage in MB</summary>
     public long? MaxMemoryUsageMB { get; set; }
-    
+
+
     /// <summary>Minimum required confidence score</summary>
     public float? MinConfidenceScore { get; set; }
-    
+
+
     /// <summary>Custom constraint predicates</summary>
     public List<Func<string, bool>> CustomConstraints { get; set; } = new();
 
@@ -170,11 +195,18 @@ public class SelectionConstraints
     public bool IsBackendAllowed(string backendId)
     {
         if (DisallowedBackends?.Contains(backendId) == true)
+        {
             return false;
-            
+        }
+
+
         if (AllowedBackends != null && !AllowedBackends.Contains(backendId))
+        {
+
             return false;
-            
+        }
+
+
         return CustomConstraints.All(constraint => constraint(backendId));
     }
 }
@@ -229,11 +261,14 @@ public class BackendPerformanceState
         lock (_lock)
         {
             RecentResults.Enqueue(result);
-            
+
             // Keep only last 100 results
+
             while (RecentResults.Count > 100)
+            {
                 RecentResults.Dequeue();
-                
+            }
+
             UpdateAverages();
             LastExecutionTime = result.Timestamp;
         }
@@ -265,8 +300,12 @@ public class BackendPerformanceState
 
     private void UpdateAverages()
     {
-        if (RecentResults.Count == 0) return;
-        
+        if (RecentResults.Count == 0)
+        {
+            return;
+        }
+
+
         RecentAverageExecutionTimeMs = RecentResults.Average(r => r.ExecutionTimeMs);
         RecentExecutionCount = RecentResults.Count;
     }
@@ -324,13 +363,15 @@ public class PerformanceHistory
                 lock (existing)
                 {
                     existing.Add(result);
-                    
+
                     // Trim old entries if needed
+
                     if (existing.Count > _maxEntries)
                     {
                         existing.RemoveRange(0, existing.Count - _maxEntries);
                     }
-                    
+
+
                     return existing;
                 }
             });
@@ -339,24 +380,36 @@ public class PerformanceHistory
     public Dictionary<string, BackendPerformanceStats> GetPerformanceStats()
     {
         var stats = new Dictionary<string, BackendPerformanceStats>();
-        
+
+
         foreach (var kvp in _backendResults)
         {
             var backendId = kvp.Key;
             var results = kvp.Value;
-            
+
+
             lock (results)
             {
-                if (results.Count == 0) continue;
-                
+                if (results.Count == 0)
+                {
+                    continue;
+                }
+
+
                 var successfulResults = results.Where(r => r.Success).ToList();
-                
-                if (successfulResults.Count == 0) continue;
-                
+
+
+                if (successfulResults.Count == 0)
+                {
+                    continue;
+                }
+
+
                 var executionTimes = successfulResults.Select(r => r.ExecutionTimeMs).ToList();
                 var avgExecutionTime = executionTimes.Average();
                 var stdDev = CalculateStandardDeviation(executionTimes, avgExecutionTime);
-                
+
+
                 stats[backendId] = new BackendPerformanceStats
                 {
                     SampleCount = successfulResults.Count,
@@ -371,14 +424,19 @@ public class PerformanceHistory
                 };
             }
         }
-        
+
+
         return stats;
     }
 
     private static double CalculateStandardDeviation(List<double> values, double mean)
     {
-        if (values.Count <= 1) return 0;
-        
+        if (values.Count <= 1)
+        {
+            return 0;
+        }
+
+
         var sumOfSquares = values.Sum(value => Math.Pow(value - mean, 2));
         return Math.Sqrt(sumOfSquares / values.Count);
     }
@@ -442,19 +500,24 @@ public class AdaptiveSelectionOptions
 {
     /// <summary>Whether to enable machine learning from performance history</summary>
     public bool EnableLearning { get; set; } = true;
-    
+
+
     /// <summary>Minimum confidence threshold for making selections</summary>
     public float MinConfidenceThreshold { get; set; } = 0.6f;
-    
+
+
     /// <summary>Maximum number of historical entries per workload</summary>
     public int MaxHistoryEntries { get; set; } = 1000;
-    
+
+
     /// <summary>Minimum history entries required for learning-based decisions</summary>
     public int MinHistoryForLearning { get; set; } = 5;
-    
+
+
     /// <summary>Minimum samples required for high confidence</summary>
     public int MinSamplesForHighConfidence { get; set; } = 20;
-    
+
+
     /// <summary>Interval in seconds for updating backend performance states</summary>
     public int PerformanceUpdateIntervalSeconds { get; set; } = 10;
 }

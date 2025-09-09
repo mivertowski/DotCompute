@@ -111,9 +111,12 @@ namespace DotCompute.Core.Execution.Metrics
         /// <param name="options">Optional data parallelism configuration options.</param>
         /// <returns>A new <see cref="ExecutionStrategyRecommendation"/> instance.</returns>
         public static ExecutionStrategyRecommendation ForDataParallel(
-            double confidence, 
-            string reasoning, 
-            double improvement = 0.0, 
+            double confidence,
+
+            string reasoning,
+
+            double improvement = 0.0,
+
             DataParallelismOptions? options = null)
         {
             return new ExecutionStrategyRecommendation
@@ -135,9 +138,12 @@ namespace DotCompute.Core.Execution.Metrics
         /// <param name="options">Optional model parallelism configuration options.</param>
         /// <returns>A new <see cref="ExecutionStrategyRecommendation"/> instance.</returns>
         public static ExecutionStrategyRecommendation ForModelParallel(
-            double confidence, 
-            string reasoning, 
-            double improvement = 0.0, 
+            double confidence,
+
+            string reasoning,
+
+            double improvement = 0.0,
+
             ModelParallelismOptions? options = null)
         {
             return new ExecutionStrategyRecommendation
@@ -159,9 +165,12 @@ namespace DotCompute.Core.Execution.Metrics
         /// <param name="options">Optional pipeline parallelism configuration options.</param>
         /// <returns>A new <see cref="ExecutionStrategyRecommendation"/> instance.</returns>
         public static ExecutionStrategyRecommendation ForPipelineParallel(
-            double confidence, 
-            string reasoning, 
-            double improvement = 0.0, 
+            double confidence,
+
+            string reasoning,
+
+            double improvement = 0.0,
+
             PipelineParallelismOptions? options = null)
         {
             return new ExecutionStrategyRecommendation
@@ -183,9 +192,12 @@ namespace DotCompute.Core.Execution.Metrics
         /// <param name="options">Optional work stealing configuration options.</param>
         /// <returns>A new <see cref="ExecutionStrategyRecommendation"/> instance.</returns>
         public static ExecutionStrategyRecommendation ForWorkStealing(
-            double confidence, 
-            string reasoning, 
-            double improvement = 0.0, 
+            double confidence,
+
+            string reasoning,
+
+            double improvement = 0.0,
+
             WorkStealingOptions? options = null)
         {
             return new ExecutionStrategyRecommendation
@@ -206,8 +218,10 @@ namespace DotCompute.Core.Execution.Metrics
         /// <param name="improvement">The expected performance improvement percentage.</param>
         /// <returns>A new <see cref="ExecutionStrategyRecommendation"/> instance.</returns>
         public static ExecutionStrategyRecommendation ForSingle(
-            double confidence, 
-            string reasoning, 
+            double confidence,
+
+            string reasoning,
+
             double improvement = 0.0)
         {
             return new ExecutionStrategyRecommendation
@@ -233,7 +247,8 @@ namespace DotCompute.Core.Execution.Metrics
         {
             if (ConfidenceScore is < 0.0 or > 1.0)
             {
-                throw new ArgumentOutOfRangeException(nameof(ConfidenceScore), 
+                throw new ArgumentOutOfRangeException(nameof(ConfidenceScore),
+
                     "Confidence score must be between 0.0 and 1.0.");
             }
 

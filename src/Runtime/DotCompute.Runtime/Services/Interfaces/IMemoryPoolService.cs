@@ -14,7 +14,7 @@ public interface IMemoryPoolService : IDisposable
     /// <summary>
     /// Gets statistics about pool performance.
     /// </summary>
-    MemoryPoolStatistics Statistics { get; }
+    public MemoryPoolStatistics Statistics { get; }
 
     /// <summary>
     /// Tries to get a buffer from the pool for the specified size.
@@ -23,14 +23,14 @@ public interface IMemoryPoolService : IDisposable
     /// <param name="options">Memory options for the buffer.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A pooled buffer if available, null otherwise.</returns>
-    ValueTask<IUnifiedMemoryBuffer?> TryGetBufferAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default);
+    public ValueTask<IUnifiedMemoryBuffer?> TryGetBufferAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns a buffer to the pool for reuse.
     /// </summary>
     /// <param name="buffer">The buffer to return to the pool.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask ReturnBufferAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default);
+    public ValueTask ReturnBufferAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a new pooled buffer.
@@ -39,11 +39,11 @@ public interface IMemoryPoolService : IDisposable
     /// <param name="options">Memory options for the buffer.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A new pooled buffer.</returns>
-    ValueTask<IUnifiedMemoryBuffer> CreateBufferAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default);
+    public ValueTask<IUnifiedMemoryBuffer> CreateBufferAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Performs cleanup of unused buffers and statistics.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    ValueTask PerformMaintenanceAsync(CancellationToken cancellationToken = default);
+    public ValueTask PerformMaintenanceAsync(CancellationToken cancellationToken = default);
 }

@@ -247,6 +247,7 @@ namespace DotCompute.Core.Pipelines
         private static IPipelineStage CreateFusedKernel(KernelStage stage1, KernelStage stage2)
             // Create a new fused kernel that combines both stages into a single execution unit
             // This optimization reduces kernel launch overhead and intermediate memory transfers
+
             => new FusedKernelStage(stage1, stage2);
 
         private static long EstimateIntermediateBufferSize(KernelStage stage1, KernelStage stage2)
@@ -377,6 +378,7 @@ namespace DotCompute.Core.Pipelines
             // - Memory pooling for reduced allocations
             // - Prefetching for improved cache performance
             // - Alignment optimizations for SIMD operations
+
             => new MemoryOptimizedStageWrapper(stage);
     }
 
@@ -532,10 +534,12 @@ namespace DotCompute.Core.Pipelines
 
         private static HashSet<string> FindUsedOutputs(List<IPipelineStage> stages)
             // Simplified - in practice would analyze data flow
+
             => [.. stages.SelectMany(s => s.Dependencies)];
 
         private static bool HasUsefulOutput(IPipelineStage stage, HashSet<string> usedOutputs)
             // Check if stage produces useful output or has side effects
+
             => usedOutputs.Contains(stage.Id) || stage.Type == PipelineStageType.Kernel;
     }
 
@@ -639,6 +643,7 @@ namespace DotCompute.Core.Pipelines
 
         public IStageMetrics GetMetrics()
             // Combine metrics from both stages
+
             => _stage1.GetMetrics(); // Simplified
 
         private static MemoryUsageStats? CombineMemoryStats(MemoryUsageStats? stats1, MemoryUsageStats? stats2)
@@ -702,10 +707,12 @@ namespace DotCompute.Core.Pipelines
 
         private static async ValueTask OptimizeMemoryAsync(PipelineExecutionContext context)
             // Implement memory layout optimizations
+
             => await context.MemoryManager.CollectAsync();
 
         private static async ValueTask CleanupMemoryAsync(PipelineExecutionContext context)
             // Clean up temporary memory
+
             => await context.MemoryManager.CollectAsync();
     }
 
@@ -772,7 +779,7 @@ namespace DotCompute.Core.Pipelines
             }
         }
 
-        private KernelMemoryAnalysis AnalyzeKernelMemoryRequirements(KernelStage stage1, KernelStage stage2)
+        private static KernelMemoryAnalysis AnalyzeKernelMemoryRequirements(KernelStage stage1, KernelStage stage2)
         {
             var analysis = new KernelMemoryAnalysis();
 
@@ -1045,16 +1052,19 @@ namespace DotCompute.Core.Pipelines
         private static long GetWindowsAvailableMemory()
             // Use performance counters or WMI to get available memory
             // Simplified implementation - in practice would use Windows APIs
+
             => Environment.WorkingSet * 4; // Rough estimate
 
         private static long GetLinuxAvailableMemory()
             // Parse /proc/meminfo for available memory
             // Simplified implementation
+
             => Environment.WorkingSet * 4; // Rough estimate
 
         private static long GetMacOSAvailableMemory()
             // Use system calls to get memory information
             // Simplified implementation
+
             => Environment.WorkingSet * 4; // Rough estimate
 
         private static long ApplyOperationHeuristics(long baseSize, KernelStage stage1, KernelStage stage2)

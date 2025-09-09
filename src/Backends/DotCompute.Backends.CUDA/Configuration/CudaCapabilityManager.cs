@@ -44,12 +44,15 @@ namespace DotCompute.Backends.CUDA.Configuration
                     if (result == CudaError.Success)
                     {
                         var (major, minor) = ComputeCapability.ParseFromDevice(deviceId);
-                        
+
                         // Apply capping based on driver capabilities
+
                         var capped = ApplyDriverCompatibilityCapping(major, minor);
-                        
+
+
                         _cachedCapability = capped;
-                        
+
+
                         if (capped != (major, minor))
                         {
                             _logger.LogInformation(
@@ -61,7 +64,8 @@ namespace DotCompute.Backends.CUDA.Configuration
                         {
                             _logger.LogDebug("Using device compute capability {Major}.{Minor}", major, minor);
                         }
-                        
+
+
                         return capped;
                     }
                 }
@@ -87,7 +91,8 @@ namespace DotCompute.Backends.CUDA.Configuration
             // Check environment variable for forcing compatibility mode
             var forceCompatibilityMode = Environment.GetEnvironmentVariable("DOTCOMPUTE_FORCE_COMPATIBILITY_MODE");
             var shouldForceCompatibility = string.Equals(forceCompatibilityMode, "true", StringComparison.OrdinalIgnoreCase);
-            
+
+
             if (shouldForceCompatibility)
             {
                 // Force fallback mode for maximum compatibility when explicitly requested
@@ -100,8 +105,9 @@ namespace DotCompute.Backends.CUDA.Configuration
                         major, minor);
                     return (8, 6);
                 }
-                
+
                 // Additional Ada Lovelace variants in compatibility mode
+
                 if (major == 8 && minor >= 7) // sm_87, sm_89 and future Ada variants
                 {
                     _logger.LogInformation(
@@ -119,11 +125,13 @@ namespace DotCompute.Backends.CUDA.Configuration
                     "Set DOTCOMPUTE_FORCE_COMPATIBILITY_MODE=true if compilation issues occur.",
                     major, minor);
             }
-            
+
             // Detect CUDA driver version to determine maximum supported capability
+
             var maxCapability = GetMaxSupportedCapability();
-            
+
             // Cap at maximum supported by driver
+
             if (major > maxCapability.major || (major == maxCapability.major && minor > maxCapability.minor))
             {
                 _logger.LogDebug(
@@ -131,7 +139,8 @@ namespace DotCompute.Backends.CUDA.Configuration
                     major, minor, maxCapability.major, maxCapability.minor);
                 return maxCapability;
             }
-            
+
+
             return (major, minor);
         }
 
@@ -148,11 +157,13 @@ namespace DotCompute.Backends.CUDA.Configuration
                 {
                     var majorVersion = driverVersion / 1000;
                     var minorVersion = (driverVersion % 1000) / 10;
-                    
+
+
                     _logger.LogDebug("CUDA Driver version: {Major}.{Minor}", majorVersion, minorVersion);
-                    
+
                     // Map driver version to maximum supported compute capability
                     // Based on NVIDIA documentation
+
                     return majorVersion switch
                     {
                         >= 13 => (9, 0),  // CUDA 13.x supports up to sm_90 (Hopper)
@@ -173,18 +184,22 @@ namespace DotCompute.Backends.CUDA.Configuration
             {
                 _logger.LogWarning(ex, "Failed to detect CUDA driver version");
             }
-            
+
             // For CUDA 13+ systems, default to sm_89 (Ada) as it's widely supported
             // For older systems, sm_86 is a safe fallback
             // Check if we're on a CUDA 13 system by looking for cuda-13 installation
-            if (System.IO.Directory.Exists("/usr/local/cuda-13.0") || 
-                System.IO.Directory.Exists("/usr/local/cuda") && 
+
+            if (System.IO.Directory.Exists("/usr/local/cuda-13.0") ||
+
+                System.IO.Directory.Exists("/usr/local/cuda") &&
+
                 System.IO.File.Exists("/usr/local/cuda/version.json"))
             {
                 return (8, 9);  // CUDA 13 supports Ada (sm_89)
             }
-            
+
             // Conservative default for older systems
+
             return (8, 6);
         }
 
@@ -194,13 +209,15 @@ namespace DotCompute.Backends.CUDA.Configuration
         private static (int major, int minor) GetFallbackCapability()
         {
             // Check for CUDA 13 installation
-            if (System.IO.Directory.Exists("/usr/local/cuda-13.0") || 
+            if (System.IO.Directory.Exists("/usr/local/cuda-13.0") ||
+
                 System.IO.Directory.Exists("/usr/local/cuda"))
             {
                 return (8, 9);  // CUDA 13 supports Ada (sm_89)
             }
-            
+
             // sm_86 (Ampere) is a good fallback for older systems
+
             return (8, 6);
         }
 

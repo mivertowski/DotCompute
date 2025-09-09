@@ -41,7 +41,8 @@ namespace DotCompute.Backends.CUDA.Memory
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _activePrefetches = new ConcurrentDictionary<IntPtr, PrefetchInfo>();
             _prefetchSemaphore = new SemaphoreSlim(1, 1);
-            
+
+
             Initialize();
         }
 
@@ -69,7 +70,8 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             // Check if device supports unified memory and prefetching
             _supportsPrefetch = CheckPrefetchSupport();
-            
+
+
             if (_supportsPrefetch)
             {
                 // Create a dedicated stream for prefetch operations
@@ -97,10 +99,13 @@ namespace DotCompute.Backends.CUDA.Memory
                 // Check for unified memory support
                 var supportsManaged = 0;
                 var result = CudaRuntime.cudaDeviceGetAttribute(
-                    ref supportsManaged, 
-                    CudaDeviceAttribute.ManagedMemory, 
+                    ref supportsManaged,
+
+                    CudaDeviceAttribute.ManagedMemory,
+
                     _device.DeviceId);
-                
+
+
                 if (result != CudaError.Success || supportsManaged == 0)
                 {
                     return false;
@@ -112,7 +117,8 @@ namespace DotCompute.Backends.CUDA.Memory
                     ref supportsConcurrent,
                     CudaDeviceAttribute.ConcurrentManagedAccess,
                     _device.DeviceId);
-                
+
+
                 return result == CudaError.Success && supportsConcurrent != 0;
             }
             catch (Exception ex)
@@ -156,7 +162,8 @@ namespace DotCompute.Backends.CUDA.Memory
             try
             {
                 var result = CudaRuntime.cudaMemPrefetchAsync(ptr, (nuint)sizeInBytes, deviceId, stream);
-                
+
+
                 if (result == CudaError.Success)
                 {
                     var info = new PrefetchInfo(ptr, sizeInBytes, deviceId, PrefetchTarget.Device);
@@ -164,7 +171,8 @@ namespace DotCompute.Backends.CUDA.Memory
 
                     _ = Interlocked.Add(ref _totalPrefetchedBytes, sizeInBytes);
                     _ = Interlocked.Increment(ref _prefetchCount);
-                    
+
+
                     _logger.LogTrace("Prefetched {Size:N0} bytes to device {DeviceId}", sizeInBytes, deviceId);
                     return true;
                 }
@@ -215,7 +223,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 // CPU is specified as device -1 in CUDA
                 const int cpuDevice = -1;
                 var result = CudaRuntime.cudaMemPrefetchAsync(ptr, (nuint)sizeInBytes, cpuDevice, stream);
-                
+
+
                 if (result == CudaError.Success)
                 {
                     var info = new PrefetchInfo(ptr, sizeInBytes, cpuDevice, PrefetchTarget.Host);
@@ -223,7 +232,8 @@ namespace DotCompute.Backends.CUDA.Memory
 
                     _ = Interlocked.Add(ref _totalPrefetchedBytes, sizeInBytes);
                     _ = Interlocked.Increment(ref _prefetchCount);
-                    
+
+
                     _logger.LogTrace("Prefetched {Size:N0} bytes to host", sizeInBytes);
                     return true;
                 }
@@ -266,10 +276,12 @@ namespace DotCompute.Backends.CUDA.Memory
             return await Task.Run(() =>
             {
                 var result = CudaRuntime.cudaMemAdvise(ptr, (nuint)sizeInBytes, (CudaMemoryAdvise)advice, deviceId);
-                
+
+
                 if (result == CudaError.Success)
                 {
-                    _logger.LogTrace("Set memory advice {Advice} for {Size:N0} bytes at {Ptr:X}", 
+                    _logger.LogTrace("Set memory advice {Advice} for {Size:N0} bytes at {Ptr:X}",
+
                         advice, sizeInBytes, ptr);
                     return true;
                 }
@@ -309,7 +321,8 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
             var results = await Task.WhenAll(tasks);
-            
+
+
             foreach (var success in results)
             {
                 if (success)

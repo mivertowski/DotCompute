@@ -13,7 +13,8 @@ namespace DotCompute.Generators.Backend.CPU;
 public class PlatformSimdCodeGenerator : CpuCodeGeneratorBase
 {
     #region Constructor
-    
+
+
     public PlatformSimdCodeGenerator(
         string methodName,
         IReadOnlyList<KernelParameter> parameters,
@@ -22,35 +23,40 @@ public class PlatformSimdCodeGenerator : CpuCodeGeneratorBase
         : base(methodName, parameters, methodSyntax, vectorizationInfo)
     {
     }
-    
+
     #endregion
-    
+
     #region Public Methods
-    
+
+
     public override void Generate(StringBuilder sb)
     {
         GenerateMethodDocumentation(sb,
             "SIMD implementation using platform-agnostic vectors.",
             "Works on any platform with hardware vector support.");
-        
+
+
         GenerateMethodSignature(sb, "ExecuteSimd", true, includeRange: true);
         GenerateMethodBody(sb, () => GenerateSimdMethodContent(sb));
     }
-    
+
     #endregion
-    
+
     #region Private Methods
-    
+
+
     private void GenerateSimdMethodContent(StringBuilder sb)
     {
         _ = sb.AppendLine($"            int vectorSize = Vector<float>.Count;");
         _ = sb.AppendLine("            int alignedEnd = start + ((end - start) / vectorSize) * vectorSize;");
         _ = sb.AppendLine();
-        
+
+
         GenerateSimdProcessingLoop(sb);
         GenerateRemainderHandling(sb, "ExecuteScalar");
     }
-    
+
+
     private void GenerateSimdProcessingLoop(StringBuilder sb)
     {
         _ = sb.AppendLine("            // Process vectors");
@@ -60,11 +66,13 @@ public class PlatformSimdCodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("            }");
         _ = sb.AppendLine();
     }
-    
+
+
     private void GenerateSimdOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // Optimized SIMD vector processing");
-        
+
+
         if (VectorizationInfo.IsArithmetic)
         {
             GenerateSimdArithmeticOperations(sb);
@@ -78,7 +86,8 @@ public class PlatformSimdCodeGenerator : CpuCodeGeneratorBase
             GenerateGenericSimdOperations(sb);
         }
     }
-    
+
+
     private static void GenerateSimdArithmeticOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // Load vectors for arithmetic operation");
@@ -87,14 +96,16 @@ public class PlatformSimdCodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                var result = Vector.Add(vec1, vec2);");
         _ = sb.AppendLine("                result.CopyTo(output, i);");
     }
-    
+
+
     private static void GenerateSimdMemoryOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // Vectorized memory copy");
         _ = sb.AppendLine("                var vec = new Vector<float>(input, i);");
         _ = sb.AppendLine("                vec.CopyTo(output, i);");
     }
-    
+
+
     private static void GenerateGenericSimdOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // Generic vector processing");
@@ -102,6 +113,7 @@ public class PlatformSimdCodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                var processed = ProcessVector(vec);");
         _ = sb.AppendLine("                processed.CopyTo(output, i);");
     }
-    
+
+
     #endregion
 }

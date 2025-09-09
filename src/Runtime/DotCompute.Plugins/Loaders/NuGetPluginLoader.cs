@@ -413,7 +413,7 @@ public class NuGetPluginLoader : IDisposable
         }
     }
 
-    private async Task<NuGetPluginManifest?> ExtractManifestFromPackageAsync(string packagePath, CancellationToken cancellationToken)
+    private static async Task<NuGetPluginManifest?> ExtractManifestFromPackageAsync(string packagePath, CancellationToken cancellationToken)
     {
         using var archive = ZipFile.OpenRead(packagePath);
 
@@ -492,7 +492,7 @@ public class NuGetPluginLoader : IDisposable
         }
     }
 
-    private async Task ValidateDependenciesAsync(NuGetPluginManifest manifest, NuGetPluginValidationResult result, CancellationToken cancellationToken)
+    private static async Task ValidateDependenciesAsync(NuGetPluginManifest manifest, NuGetPluginValidationResult result, CancellationToken cancellationToken)
     {
         if (manifest.Dependencies == null || manifest.Dependencies.Count == 0)
         {

@@ -45,17 +45,20 @@ namespace DotCompute.Core.Compute
         /// Performance hints for optimization.
         /// </summary>
         public Dictionary<string, object> PerformanceHints { get; set; } = [];
-        
+
+
         /// <summary>
         /// Buffer storage for kernel parameters.
         /// </summary>
         private readonly Dictionary<int, IUnifiedMemoryBuffer> _buffers = [];
-        
+
+
         /// <summary>
         /// Scalar storage for kernel parameters.
         /// </summary>
         private readonly Dictionary<int, object> _scalars = [];
-        
+
+
         /// <summary>
         /// Gets a buffer parameter by index.
         /// </summary>
@@ -72,7 +75,8 @@ namespace DotCompute.Core.Compute
 
             throw new ArgumentException($"No buffer found at index {index}", nameof(index));
         }
-        
+
+
         /// <summary>
         /// Gets a scalar parameter by index.
         /// </summary>
@@ -90,7 +94,8 @@ namespace DotCompute.Core.Compute
 
             throw new ArgumentException($"No scalar found at index {index}", nameof(index));
         }
-        
+
+
         /// <summary>
         /// Sets a parameter value.
         /// </summary>

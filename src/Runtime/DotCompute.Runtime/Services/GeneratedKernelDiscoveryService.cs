@@ -29,7 +29,8 @@ public class GeneratedKernelDiscoveryService
     public async Task<int> DiscoverAndRegisterKernelsAsync(KernelExecutionServiceSimplified kernelExecutionService)
     {
         var discoveredKernels = await DiscoverKernelsAsync();
-        
+
+
         if (discoveredKernels.Count > 0)
         {
             kernelExecutionService.RegisterKernels(discoveredKernels);
@@ -60,7 +61,8 @@ public class GeneratedKernelDiscoveryService
                 var kernels = await DiscoverKernelsFromAssemblyAsync(assembly);
                 allKernels.AddRange(kernels);
                 _scannedAssemblies.Add(assembly);
-                
+
+
                 _logger.LogDebug("Discovered {Count} kernels from assembly {AssemblyName}",
                     kernels.Count, assembly.GetName().Name);
             }
@@ -167,12 +169,17 @@ public class GeneratedKernelDiscoveryService
 
     private async Task<KernelRegistrationInfo?> ConvertRegistrationToKernelInfoAsync(object? registration)
     {
-        if (registration == null) return null;
+        if (registration == null)
+        {
+            return null;
+        }
+
 
         try
         {
             var registrationType = registration.GetType();
-            
+
+
             var name = GetPropertyValue<string>(registration, "Name");
             var fullName = GetPropertyValue<string>(registration, "FullName");
             var containingType = GetPropertyValue<Type>(registration, "ContainingType");
@@ -188,7 +195,7 @@ public class GeneratedKernelDiscoveryService
 
             var backendStrings = supportedBackends?.Cast<object>()
                 .Select(b => b.ToString() ?? "Unknown")
-                .ToArray() ?? new[] { "CPU" };
+                .ToArray() ?? ["CPU"];
 
             return new KernelRegistrationInfo
             {
@@ -214,7 +221,11 @@ public class GeneratedKernelDiscoveryService
             var kernelAttribute = method.GetCustomAttributes(false)
                 .FirstOrDefault(attr => attr.GetType().Name == "KernelAttribute");
 
-            if (kernelAttribute == null) return null;
+            if (kernelAttribute == null)
+            {
+                return null;
+            }
+
 
             var backends = ExtractSupportedBackends(kernelAttribute);
             var vectorSize = ExtractVectorSize(kernelAttribute);
@@ -237,19 +248,27 @@ public class GeneratedKernelDiscoveryService
         }
     }
 
-    private T? GetPropertyValue<T>(object obj, string propertyName)
+    private static T? GetPropertyValue<T>(object obj, string propertyName)
     {
         try
         {
             var property = obj.GetType().GetProperty(propertyName);
             var value = property?.GetValue(obj);
-            
+
+
             if (value is T typedValue)
+            {
                 return typedValue;
-            
+            }
+
+
             if (value != null && typeof(T).IsAssignableFrom(value.GetType()))
+            {
+
                 return (T)value;
-                
+            }
+
+
             return default;
         }
         catch
@@ -258,7 +277,7 @@ public class GeneratedKernelDiscoveryService
         }
     }
 
-    private bool HasKernelAttribute(MethodInfo method)
+    private static bool HasKernelAttribute(MethodInfo method)
     {
         return method.GetCustomAttributes(false)
             .Any(attr => attr.GetType().Name == "KernelAttribute");
@@ -270,18 +289,36 @@ public class GeneratedKernelDiscoveryService
         {
             var backendsProperty = kernelAttribute.GetType().GetProperty("Backends");
             var backends = backendsProperty?.GetValue(kernelAttribute);
-            
+
+
             if (backends != null)
             {
                 // Handle enum flags
                 var enumValue = (int)backends;
                 var supportedBackends = new List<string>();
-                
-                if ((enumValue & 1) != 0) supportedBackends.Add("CPU");
-                if ((enumValue & 2) != 0) supportedBackends.Add("CUDA"); 
-                if ((enumValue & 4) != 0) supportedBackends.Add("Metal");
-                if ((enumValue & 8) != 0) supportedBackends.Add("OpenCL");
-                
+
+
+                if ((enumValue & 1) != 0)
+                {
+                    supportedBackends.Add("CPU");
+                }
+
+                if ((enumValue & 2) != 0)
+                {
+                    supportedBackends.Add("CUDA");
+                }
+
+                if ((enumValue & 4) != 0)
+                {
+                    supportedBackends.Add("Metal");
+                }
+
+                if ((enumValue & 8) != 0)
+                {
+                    supportedBackends.Add("OpenCL");
+                }
+
+
                 return supportedBackends.ToArray();
             }
         }
@@ -289,11 +326,12 @@ public class GeneratedKernelDiscoveryService
         {
             _logger.LogWarning(ex, "Failed to extract supported backends from kernel attribute");
         }
-        
-        return new[] { "CPU" }; // Default fallback
+
+
+        return ["CPU"]; // Default fallback
     }
 
-    private int ExtractVectorSize(object kernelAttribute)
+    private static int ExtractVectorSize(object kernelAttribute)
     {
         try
         {
@@ -307,7 +345,7 @@ public class GeneratedKernelDiscoveryService
         }
     }
 
-    private bool ExtractIsParallel(object kernelAttribute)
+    private static bool ExtractIsParallel(object kernelAttribute)
     {
         try
         {
@@ -324,7 +362,8 @@ public class GeneratedKernelDiscoveryService
     private IEnumerable<Assembly> GetScannableAssemblies()
     {
         var assemblies = new List<Assembly>();
-        
+
+
         try
         {
             // Add current domain assemblies

@@ -262,7 +262,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Detects hardware-specific P2P capabilities.
         /// </summary>
-        private async ValueTask<P2PConnectionCapability> DetectHardwareP2PCapabilityAsync(
+        private static async ValueTask<P2PConnectionCapability> DetectHardwareP2PCapabilityAsync(
             IAccelerator device1,
             IAccelerator device2,
             CancellationToken cancellationToken)

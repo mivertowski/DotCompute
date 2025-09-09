@@ -24,7 +24,8 @@ namespace DotCompute.Backends.CUDA
         private const int MinimumComputeCapabilityMajor = 7;
         private const int MinimumComputeCapabilityMinor = 5;
         private const string MinimumArchitecture = "Turing";
-        
+
+
         private readonly ILogger _logger;
         private readonly int _deviceId;
         private readonly CudaDeviceProperties _deviceProperties;
@@ -230,7 +231,8 @@ namespace DotCompute.Backends.CUDA
                 var errorMsg = $"Device {Name} (CC {ComputeCapabilityMajor}.{ComputeCapabilityMinor}, {architecture}) " +
                               $"is not compatible with CUDA 13.0. Minimum requirement: CC {MinimumComputeCapabilityMajor}.{MinimumComputeCapabilityMinor} ({MinimumArchitecture}). " +
                               "Supported architectures: Turing (sm_75), Ampere (sm_80/86), Ada Lovelace (sm_89), Hopper (sm_90).";
-                
+
+
                 _logger.LogError(errorMsg);
                 throw new InvalidOperationException(errorMsg);
             }
@@ -239,8 +241,9 @@ namespace DotCompute.Backends.CUDA
             _capabilities = BuildCapabilities();
 
             // Note: Memory manager must be set externally to avoid circular dependencies
-            
+
             // Log managed memory support for debugging
+
             _logger.LogInformation("Device {DeviceId} ManagedMemory field value: {ManagedMemory}, SupportsManagedMemory: {Supports}",
                 deviceId, _deviceProperties.ManagedMemory, SupportsManagedMemory);
 
@@ -508,8 +511,9 @@ namespace DotCompute.Backends.CUDA
                 ["SupportsCooperativeGroups"] = ComputeCapabilityMajor >= 6,
                 ["SupportsDynamicParallelism"] = ComputeCapabilityMajor >= 3 && ComputeCapabilityMinor >= 5,
                 ["SupportsUnifiedMemory"] = SupportsManagedMemory,
-                
+
                 // CUDA 13.0 specific features
+
                 ["IsCuda13Compatible"] = IsCuda13Compatible(),
                 ["SupportsSharedMemoryRegisterSpilling"] = ComputeCapabilityMajor >= 7 && ComputeCapabilityMinor >= 5,
                 ["SupportsTileBasedProgramming"] = ComputeCapabilityMajor >= 8,

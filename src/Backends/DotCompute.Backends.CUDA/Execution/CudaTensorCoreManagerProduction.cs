@@ -40,7 +40,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         _logger = logger;
         _kernelCache = new ConcurrentDictionary<string, TensorCoreKernel>();
         _profiler = new PerformanceProfiler();
-        
+
+
         _capabilities = DetectTensorCoreCapabilities();
         LogCapabilities();
     }
@@ -62,14 +63,16 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     {
         var device = _deviceManager.GetDevice(_context.DeviceId);
         var capabilities = new TensorCoreCapabilities();
-        
+
         // Tensor cores available on compute capability 7.0+ (Volta and newer)
+
         if (device.ComputeCapabilityMajor >= 7)
         {
             _tensorCoresAvailable = true;
             capabilities.WmmaSupported = true;
-            
+
             // Volta/Turing (7.0, 7.5) - First gen tensor cores
+
             if (device.ComputeCapabilityMajor == 7)
             {
                 capabilities.Fp16Supported = true;
@@ -95,7 +98,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
                 capabilities.SparsitySupported = device.ComputeCapabilityMinor >= 0;
             }
             // Ada Lovelace (8.9) / Hopper (9.0+) - Third/Fourth gen tensor cores
-            else if (device.ComputeCapabilityMajor >= 9 || 
+            else if (device.ComputeCapabilityMajor >= 9 ||
+
                     (device.ComputeCapabilityMajor == 8 && device.ComputeCapabilityMinor >= 9))
             {
                 capabilities.Fp16Supported = true;
@@ -111,11 +115,13 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
                 capabilities.SparsitySupported = true;
                 capabilities.TransformerEngineSupported = device.ComputeCapabilityMajor >= 9;
             }
-            
+
             // Calculate theoretical peak performance
+
             capabilities.PeakTflops = CalculatePeakTensorPerformance(device, capabilities);
         }
-        
+
+
         return capabilities;
     }
 
@@ -135,12 +141,16 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
             9 => 32,  // Hopper: 32x over CUDA cores
             _ => 4
         };
-        
+
         // Base CUDA core TFLOPS (rough estimate)
-        var cudaCoreFlops = device.MultiprocessorCount * 
-                           device.MaxThreadsPerMultiprocessor * 
+
+        var cudaCoreFlops = device.MultiprocessorCount *
+
+                           device.MaxThreadsPerMultiprocessor *
+
                            device.ClockRate * 2.0 / 1e9; // 2 ops per cycle
-        
+
+
         return cudaCoreFlops * tensorcoreMultiplier;
     }
 
@@ -154,7 +164,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
             _logger.LogWarning("Tensor cores not available on this device");
             return;
         }
-        
+
+
         var caps = new StringBuilder();
         _ = caps.AppendLine("Tensor Core Capabilities:");
         _ = caps.AppendLine($"  WMMA: {_capabilities.WmmaSupported}");
@@ -169,7 +180,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         _ = caps.AppendLine($"  Transformer Engine: {_capabilities.TransformerEngineSupported}");
         _ = caps.AppendLine($"  Max Tile: {_capabilities.MaxWmmaM}x{_capabilities.MaxWmmaN}x{_capabilities.MaxWmmaK}");
         _ = caps.AppendLine($"  Peak TFLOPS: {_capabilities.PeakTflops:F2}");
-        
+
+
         _logger.LogInformation(caps.ToString());
     }
 
@@ -189,61 +201,75 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         if (!_tensorCoresAvailable)
         {
             throw new NotSupportedException("Tensor cores are not available on this device");
         }
-        
+
+
         ValidateDataTypes(inputType, outputType);
-        
+
+
         var startTime = DateTimeOffset.UtcNow;
         var kernelKey = GenerateKernelKey(m, n, k, inputType, outputType, layoutA, layoutB);
-        
+
+
         try
         {
             // Get or compile optimized kernel
             var kernel = await GetOrCompileTensorKernelAsync(
                 kernelKey, m, n, k, inputType, outputType, layoutA, layoutB, cancellationToken);
-            
+
             // Calculate grid and block dimensions
+
             var (gridDim, blockDim) = CalculateOptimalDimensions(m, n, k);
-            
+
+
             _logger.LogDebug(
                 "Launching tensor core GEMM: [{M}x{K}] x [{K}x{N}] = [{M}x{N}], Type: {Input}->{Output}",
                 m, k, k, n, m, n, inputType, outputType);
-            
+
             // Launch kernel
+
             var launchResult = LaunchTensorKernel(
                 kernel, a, b, c, m, n, k,
                 alpha, beta, gridDim, blockDim, stream);
-            
+
+
             if (!launchResult)
             {
                 throw new InvalidOperationException("Failed to launch tensor core kernel");
             }
-            
+
             // Synchronize if needed
+
             if (stream == IntPtr.Zero)
             {
                 var syncResult = CudaRuntime.cudaDeviceSynchronize();
                 CudaRuntime.CheckError(syncResult, "synchronizing tensor core operation");
             }
-            
+
+
             var endTime = DateTimeOffset.UtcNow;
             var elapsedMs = (endTime - startTime).TotalMilliseconds;
-            
+
             // Calculate performance metrics
+
             var gflops = CalculateGflops(m, n, k, elapsedMs);
             var efficiency = gflops / _capabilities.PeakTflops * 100;
-            
+
             // Update profiler
+
             _profiler.RecordOperation(kernelKey, elapsedMs, gflops);
-            
+
+
             _logger.LogInformation(
                 "Tensor core GEMM completed in {Time:F2}ms, {GFLOPS:F2} GFLOPS ({Efficiency:F1}% efficiency)",
                 elapsedMs, gflops * 1000, efficiency);
-            
+
+
             return new TensorCoreResult
             {
                 Success = true,
@@ -271,25 +297,29 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         if (!_tensorCoresAvailable)
         {
             throw new NotSupportedException("Tensor cores are not available on this device");
         }
-        
+
+
         _logger.LogDebug(
             "Launching tensor core convolution: Input[{N},{C},{H},{W}], Filter[{K},{C},{R},{S}]",
             parameters.BatchSize, parameters.InputChannels,
             parameters.InputHeight, parameters.InputWidth,
             parameters.OutputChannels, parameters.InputChannels,
             parameters.FilterHeight, parameters.FilterWidth);
-        
+
         // Convert convolution to implicit GEMM for tensor cores
+
         var m = parameters.OutputChannels;
         var n = parameters.OutputHeight * parameters.OutputWidth;
         var k = parameters.InputChannels * parameters.FilterHeight * parameters.FilterWidth;
-        
+
         // Use tensor core GEMM with im2col transformation
+
         var result = await MatrixMultiplyAsync(
             filter, input, output,
             m, n, k,
@@ -299,7 +329,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
             MatrixLayout.ColumnMajor,
             1.0f, 0.0f,
             cancellationToken);
-        
+
+
         result.OperationType = "Convolution";
         return result;
     }
@@ -322,18 +353,22 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
             _logger.LogDebug("Using cached tensor core kernel: {Key}", kernelKey);
             return cached;
         }
-        
+
         // Compile new kernel
+
         _logger.LogInformation("Compiling tensor core kernel: {Key}", kernelKey);
-        
+
+
         var kernel = await Task.Run(() =>
         {
             var ptxCode = GenerateTensorCorePtx(
                 m, n, k, inputType, outputType, layoutA, layoutB);
-            
+
             // Compile PTX to cubin
+
             var cubin = CompilePtxToCubin(ptxCode);
-            
+
+
             return new TensorCoreKernel
             {
                 Key = kernelKey,
@@ -355,7 +390,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     /// <summary>
     /// Generates PTX code for tensor core operations.
     /// </summary>
-    private string GenerateTensorCorePtx(
+    private static string GenerateTensorCorePtx(
         int m, int n, int k,
         DataType inputType,
         DataType outputType,
@@ -387,8 +422,9 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         _ = ptx.AppendLine("    .reg .b32 %r<64>;");
         _ = ptx.AppendLine("    .reg .b64 %rd<16>;");
         _ = ptx.AppendLine("    .reg .f32 %f<32>;");
-        
+
         // WMMA fragment declarations based on data type
+
         var wmmaShape = GetWmmaShape(inputType);
         _ = ptx.AppendLine($"    // WMMA fragments for {wmmaShape.M}x{wmmaShape.N}x{wmmaShape.K}");
 
@@ -397,7 +433,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         GenerateWmmaOperations(ptx, inputType, outputType, wmmaShape);
 
         _ = ptx.AppendLine("}");
-        
+
+
         return ptx.ToString();
     }
 
@@ -433,6 +470,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         // TODO
         // This would use NVRTC to compile PTX to cubin
         // For now, return placeholder
+
         => Encoding.UTF8.GetBytes(ptxCode);
 
     /// <summary>
@@ -453,8 +491,9 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
             "Launching kernel with grid({Gx},{Gy},{Gz}) block({Bx},{By},{Bz})",
             gridDim.x, gridDim.y, gridDim.z,
             blockDim.x, blockDim.y, blockDim.z);
-        
+
         // Placeholder for actual launch
+
         return true;
     }
 
@@ -466,18 +505,22 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         // Tensor cores work on specific tile sizes
         var tileM = Math.Min(_capabilities.MaxWmmaM, 16);
         var tileN = Math.Min(_capabilities.MaxWmmaN, 16);
-        
+
         // Calculate grid dimensions
+
         var gridX = (n + tileN - 1) / tileN;
         var gridY = (m + tileM - 1) / tileM;
-        
+
         // Warp size is always 32 for NVIDIA GPUs
+
         const int warpSize = 32;
-        
+
         // Block dimensions (multiple of warp size)
+
         var blockX = Math.Min(gridX, 8) * warpSize;
         var blockY = Math.Min(gridY, 4);
-        
+
+
         return (
             new dim3((uint)gridX, (uint)gridY, 1),
             new dim3((uint)blockX, (uint)blockY, 1)
@@ -500,7 +543,8 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
             DataType.Float64 => _capabilities.Fp64Supported,
             _ => false
         };
-        
+
+
         if (!supported)
         {
             throw new NotSupportedException($"Data type {inputType} is not supported by tensor cores on this device");
@@ -616,11 +660,13 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         private long _totalOperations;
         private double _totalGFlops;
         private double _peakGFlops;
-        
+
+
         public long TotalOperations => _totalOperations;
         public double AverageGFlops => _totalOperations > 0 ? _totalGFlops / _totalOperations : 0;
         public double PeakGFlops => _peakGFlops;
-        
+
+
         public void RecordOperation(string kernel, double elapsedMs, double gflops)
         {
             _ = Interlocked.Increment(ref _totalOperations);

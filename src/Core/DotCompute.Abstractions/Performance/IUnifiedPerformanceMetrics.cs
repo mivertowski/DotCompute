@@ -15,37 +15,37 @@ public interface IUnifiedPerformanceMetrics
     /// <summary>
     /// Gets the name of the component being measured.
     /// </summary>
-    string ComponentName { get; }
-    
+    public string ComponentName { get; }
+
     /// <summary>
     /// Records a kernel execution.
     /// </summary>
-    void RecordKernelExecution(KernelExecutionMetrics metrics);
-    
+    public void RecordKernelExecution(KernelExecutionMetrics metrics);
+
     /// <summary>
     /// Records a memory operation.
     /// </summary>
-    void RecordMemoryOperation(MemoryOperationMetrics metrics);
-    
+    public void RecordMemoryOperation(MemoryOperationMetrics metrics);
+
     /// <summary>
     /// Records a data transfer.
     /// </summary>
-    void RecordDataTransfer(DataTransferMetrics metrics);
-    
+    public void RecordDataTransfer(DataTransferMetrics metrics);
+
     /// <summary>
     /// Gets a snapshot of current performance metrics.
     /// </summary>
-    PerformanceSnapshot GetSnapshot();
-    
+    public PerformanceSnapshot GetSnapshot();
+
     /// <summary>
     /// Resets all metrics.
     /// </summary>
-    void Reset();
-    
+    public void Reset();
+
     /// <summary>
     /// Exports metrics in the specified format.
     /// </summary>
-    string Export(MetricsExportFormat format);
+    public string Export(MetricsExportFormat format);
 }
 
 /// <summary>
@@ -57,52 +57,62 @@ public sealed class KernelExecutionMetrics
     /// Gets or sets the kernel name.
     /// </summary>
     public required string KernelName { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the execution time in milliseconds.
     /// </summary>
     public double ExecutionTimeMs { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the queue wait time in milliseconds.
     /// </summary>
     public double QueueWaitTimeMs { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the number of threads used.
     /// </summary>
     public int ThreadCount { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the number of blocks/workgroups.
     /// </summary>
     public int BlockCount { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the shared memory used in bytes.
     /// </summary>
     public long SharedMemoryBytes { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the register count per thread.
     /// </summary>
     public int RegistersPerThread { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the achieved occupancy (0.0 to 1.0).
     /// </summary>
     public double Occupancy { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the FLOPS achieved.
     /// </summary>
     public double GigaFlops { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the memory bandwidth achieved in GB/s.
     /// </summary>
     public double MemoryBandwidthGBps { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the timestamp of execution.
     /// </summary>
@@ -118,27 +128,32 @@ public sealed class MemoryOperationMetrics
     /// Gets or sets the operation type.
     /// </summary>
     public required MemoryOperationType OperationType { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the size in bytes.
     /// </summary>
     public long SizeInBytes { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the duration in milliseconds.
     /// </summary>
     public double DurationMs { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets whether the operation was pooled.
     /// </summary>
     public bool WasPooled { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the memory type.
     /// </summary>
     public MemoryType MemoryType { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the timestamp.
     /// </summary>
@@ -154,27 +169,32 @@ public sealed class DataTransferMetrics
     /// Gets or sets the transfer direction.
     /// </summary>
     public required TransferDirection Direction { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the size in bytes.
     /// </summary>
     public long SizeInBytes { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the transfer time in milliseconds.
     /// </summary>
     public double TransferTimeMs { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the bandwidth achieved in GB/s.
     /// </summary>
     public double BandwidthGBps => SizeInBytes / (TransferTimeMs * 1_000_000.0);
-    
+
+
     /// <summary>
     /// Gets or sets whether the transfer was asynchronous.
     /// </summary>
     public bool IsAsync { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the timestamp.
     /// </summary>
@@ -190,13 +210,15 @@ public sealed class PerformanceSnapshot
     /// Gets or sets the snapshot timestamp.
     /// </summary>
     public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
-    
+
+
     /// <summary>
     /// Gets or sets the duration covered by this snapshot.
     /// </summary>
     public TimeSpan Duration { get; init; }
-    
+
     // Kernel Metrics
+
     public long TotalKernelExecutions { get; init; }
     public double AverageKernelTimeMs { get; init; }
     public double MinKernelTimeMs { get; init; }
@@ -204,32 +226,38 @@ public sealed class PerformanceSnapshot
     public double TotalKernelTimeMs { get; init; }
     public double AverageOccupancy { get; init; }
     public double PeakGigaFlops { get; init; }
-    
+
     // Memory Metrics
+
     public long TotalMemoryAllocations { get; init; }
     public long TotalMemoryDeallocations { get; init; }
     public long CurrentMemoryUsageBytes { get; init; }
     public long PeakMemoryUsageBytes { get; init; }
     public double MemoryPoolHitRate { get; init; }
-    
+
     // Transfer Metrics
+
     public long TotalDataTransfers { get; init; }
     public long TotalBytesTransferred { get; init; }
     public double AverageTransferBandwidthGBps { get; init; }
     public double PeakTransferBandwidthGBps { get; init; }
-    
+
     // Throughput Metrics
+
     public double OperationsPerSecond { get; init; }
     public double BytesPerSecond { get; init; }
-    
+
     // Error Metrics
+
     public long ErrorCount { get; init; }
     public long RecoveredErrorCount { get; init; }
-    
+
+
     /// <summary>
     /// Gets detailed kernel statistics by name.
     /// </summary>
-    public IReadOnlyDictionary<string, KernelStatistics> KernelStatistics { get; init; } = 
+    public IReadOnlyDictionary<string, KernelStatistics> KernelStatistics { get; init; } =
+
         new Dictionary<string, KernelStatistics>();
 }
 
@@ -292,18 +320,22 @@ public sealed class PerformanceTimer : IDisposable
     private readonly Stopwatch _stopwatch;
     private readonly IUnifiedPerformanceMetrics? _metrics;
     private readonly string _operationName;
-    
+
+
     public PerformanceTimer(string operationName, IUnifiedPerformanceMetrics? metrics = null)
     {
         _operationName = operationName;
         _metrics = metrics;
         _stopwatch = Stopwatch.StartNew();
     }
-    
+
+
     public TimeSpan Elapsed => _stopwatch.Elapsed;
-    
+
+
     public double ElapsedMilliseconds => _stopwatch.Elapsed.TotalMilliseconds;
-    
+
+
     public void Dispose()
     {
         _stopwatch.Stop();

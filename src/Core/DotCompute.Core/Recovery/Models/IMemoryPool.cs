@@ -11,43 +11,43 @@ namespace DotCompute.Core.Recovery.Models
         /// <summary>
         /// Gets the pool identifier.
         /// </summary>
-        string Id { get; }
+        public string Id { get; }
 
         /// <summary>
         /// Gets the total capacity of the pool in bytes.
         /// </summary>
-        long TotalCapacity { get; }
+        public long TotalCapacity { get; }
 
         /// <summary>
         /// Gets the currently allocated size in bytes.
         /// </summary>
-        long AllocatedSize { get; }
+        public long AllocatedSize { get; }
 
         /// <summary>
         /// Gets the available size in bytes.
         /// </summary>
-        long AvailableSize { get; }
+        public long AvailableSize { get; }
 
         /// <summary>
         /// Gets the fragmentation ratio (0.0 to 1.0).
         /// </summary>
-        double FragmentationRatio { get; }
+        public double FragmentationRatio { get; }
 
         /// <summary>
         /// Attempts to defragment the memory pool.
         /// </summary>
         /// <returns>True if defragmentation was successful.</returns>
-        ValueTask<bool> DefragmentAsync(CancellationToken cancellationToken = default);
+        public ValueTask<bool> DefragmentAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Attempts to reclaim unused memory.
         /// </summary>
         /// <returns>The amount of memory reclaimed in bytes.</returns>
-        ValueTask<long> ReclaimMemoryAsync(CancellationToken cancellationToken = default);
+        public ValueTask<long> ReclaimMemoryAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Resets the pool to its initial state.
         /// </summary>
-        ValueTask ResetAsync(CancellationToken cancellationToken = default);
+        public ValueTask ResetAsync(CancellationToken cancellationToken = default);
     }
 }

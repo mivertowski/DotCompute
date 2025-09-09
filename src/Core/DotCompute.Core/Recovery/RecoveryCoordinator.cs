@@ -390,6 +390,7 @@ public sealed class RecoveryCoordinator : IDisposable
         // Strategies are directly used rather than registered generically
         // due to their specific implementations and contexts
 
+
         => _logger.LogDebug("Default recovery strategies registered");
 
     private IRecoveryStrategy<object>? FindRecoveryStrategy<TContext>(Exception error, TContext context)
@@ -494,6 +495,7 @@ public sealed class RecoveryCoordinator : IDisposable
         }
     }
 }
+
 
 
 // Supporting configuration and result types would continue...

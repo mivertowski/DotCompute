@@ -14,15 +14,15 @@ public interface IVectorOperationGenerator
     /// <summary>
     /// Generates SIMD operations using global::System.Numerics.Vector.
     /// </summary>
-    void GenerateSimdOperations(StringBuilder sb, VectorizationInfo vectorizationInfo);
-    
+    public void GenerateSimdOperations(StringBuilder sb, VectorizationInfo vectorizationInfo);
+
     /// <summary>
     /// Generates AVX2 intrinsic operations.
     /// </summary>
-    void GenerateAvx2Operations(StringBuilder sb, VectorizationInfo vectorizationInfo);
-    
+    public void GenerateAvx2Operations(StringBuilder sb, VectorizationInfo vectorizationInfo);
+
     /// <summary>
     /// Generates AVX-512 intrinsic operations.
     /// </summary>
-    void GenerateAvx512Operations(StringBuilder sb, VectorizationInfo vectorizationInfo);
+    public void GenerateAvx512Operations(StringBuilder sb, VectorizationInfo vectorizationInfo);
 }

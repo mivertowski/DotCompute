@@ -64,6 +64,7 @@ public sealed class CpuBackendPlugin : BaseBackendPlugin<CpuAccelerator, CpuAcce
     protected override void RegisterAccelerator(IServiceCollection services, IConfiguration configuration)
         // Register the CPU accelerator
 
+
         => services.TryAddSingleton<CpuAccelerator>();
 
 

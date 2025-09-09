@@ -330,6 +330,7 @@ namespace DotCompute.Core.Execution
         private static string GetDeviceKey(IAccelerator device)
             // Create a unique key for the device
 
+
             => $"{device.Info.DeviceType}_{device.Info.Id}";
 
         private static string GetDeviceKeyFromMetadata(KernelMetadata metadata) => $"{metadata.DeviceType}_{metadata.DeviceId}";
@@ -359,7 +360,8 @@ namespace DotCompute.Core.Execution
 
         /// <summary>Gets or sets when the kernel was last accessed.</summary>
         public DateTimeOffset LastAccessed { get; set; }
-        
+
+
         /// <summary>Gets or sets the disk path for cached kernel storage.</summary>
         public string DiskPath { get; set; } = string.Empty;
 

@@ -13,7 +13,8 @@ namespace DotCompute.Generators.Backend.CPU;
 public class Avx512CodeGenerator : CpuCodeGeneratorBase
 {
     #region Constructor
-    
+
+
     public Avx512CodeGenerator(
         string methodName,
         IReadOnlyList<KernelParameter> parameters,
@@ -22,35 +23,40 @@ public class Avx512CodeGenerator : CpuCodeGeneratorBase
         : base(methodName, parameters, methodSyntax, vectorizationInfo)
     {
     }
-    
+
     #endregion
-    
+
     #region Public Methods
-    
+
+
     public override void Generate(StringBuilder sb)
     {
         GenerateMethodDocumentation(sb,
             "AVX-512 optimized implementation for latest x86/x64 processors.",
             "Uses 512-bit vector operations for maximum throughput.");
-        
+
+
         GenerateMethodSignature(sb, "ExecuteAvx512", true, includeRange: true);
         GenerateMethodBody(sb, () => GenerateAvx512MethodContent(sb));
     }
-    
+
     #endregion
-    
+
     #region Private Methods
-    
+
+
     private void GenerateAvx512MethodContent(StringBuilder sb)
     {
         _ = sb.AppendLine($"            const int vectorSize = {Avx512VectorSize}; // 512-bit / 32-bit");
         _ = sb.AppendLine("            int alignedEnd = start + ((end - start) / vectorSize) * vectorSize;");
         _ = sb.AppendLine();
-        
+
+
         GenerateAvx512ProcessingLoop(sb);
         GenerateRemainderHandling(sb, "ExecuteAvx2");
     }
-    
+
+
     private void GenerateAvx512ProcessingLoop(StringBuilder sb)
     {
         _ = sb.AppendLine("            // Process AVX-512 vectors");
@@ -60,13 +66,15 @@ public class Avx512CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("            }");
         _ = sb.AppendLine();
     }
-    
+
+
     private void GenerateAvx512Operations(StringBuilder sb)
     {
         _ = sb.AppendLine("                // AVX-512 512-bit vector operations");
         _ = sb.AppendLine("                unsafe");
         _ = sb.AppendLine("                {");
-        
+
+
         if (VectorizationInfo.IsArithmetic)
         {
             GenerateAvx512ArithmeticOperations(sb);
@@ -79,10 +87,12 @@ public class Avx512CodeGenerator : CpuCodeGeneratorBase
         {
             GenerateAvx512GenericOperations(sb);
         }
-        
+
+
         _ = sb.AppendLine("                }");
     }
-    
+
+
     private static void GenerateAvx512ArithmeticOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX-512 arithmetic operations");
@@ -94,7 +104,8 @@ public class Avx512CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                        Avx512F.Store(pOutput, result);");
         _ = sb.AppendLine("                    }");
     }
-    
+
+
     private static void GenerateAvx512MemoryOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX-512 memory operations");
@@ -104,7 +115,8 @@ public class Avx512CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                        Avx512F.Store(pOutput, vec);");
         _ = sb.AppendLine("                    }");
     }
-    
+
+
     private static void GenerateAvx512GenericOperations(StringBuilder sb)
     {
         _ = sb.AppendLine("                    // AVX-512 generic operations");
@@ -116,6 +128,7 @@ public class Avx512CodeGenerator : CpuCodeGeneratorBase
         _ = sb.AppendLine("                        Avx512F.Store(pOutput, processed);");
         _ = sb.AppendLine("                    }");
     }
-    
+
+
     #endregion
 }

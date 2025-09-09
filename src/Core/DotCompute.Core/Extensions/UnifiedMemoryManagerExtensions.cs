@@ -250,7 +250,7 @@ namespace DotCompute.Core.Extensions
             }
 
 
-            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            string[] suffixes = ["B", "KB", "MB", "GB", "TB"];
             var order = 0;
             double size = bytes;
 
@@ -282,13 +282,14 @@ namespace DotCompute.Core.Extensions
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(memoryManager);
-            
+
             // Try to use native implementation if available
-            var method = memoryManager.GetType().GetMethod("AllocateUnifiedAsync", new[] { typeof(int), typeof(CancellationToken) });
+
+            var method = memoryManager.GetType().GetMethod("AllocateUnifiedAsync", [typeof(int), typeof(CancellationToken)]);
             if (method != null && method.IsGenericMethodDefinition)
             {
                 var genericMethod = method.MakeGenericMethod(typeof(T));
-                var result = genericMethod.Invoke(memoryManager, new object[] { count, cancellationToken });
+                var result = genericMethod.Invoke(memoryManager, [count, cancellationToken]);
                 if (result is ValueTask<IUnifiedMemoryBuffer<T>> valueTask)
                 {
 
@@ -296,8 +297,9 @@ namespace DotCompute.Core.Extensions
                 }
 
             }
-            
+
             // Fall back to regular allocation with unified memory flag
+
             return memoryManager.AllocateAsync<T>(count, MemoryOptions.Unified, cancellationToken);
         }
 
@@ -316,13 +318,14 @@ namespace DotCompute.Core.Extensions
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(memoryManager);
-            
+
             // Try to use native implementation if available
-            var method = memoryManager.GetType().GetMethod("AllocatePinnedAsync", new[] { typeof(int), typeof(CancellationToken) });
+
+            var method = memoryManager.GetType().GetMethod("AllocatePinnedAsync", [typeof(int), typeof(CancellationToken)]);
             if (method != null && method.IsGenericMethodDefinition)
             {
                 var genericMethod = method.MakeGenericMethod(typeof(T));
-                var result = genericMethod.Invoke(memoryManager, new object[] { count, cancellationToken });
+                var result = genericMethod.Invoke(memoryManager, [count, cancellationToken]);
                 if (result is ValueTask<IUnifiedMemoryBuffer<T>> valueTask)
                 {
 
@@ -330,8 +333,9 @@ namespace DotCompute.Core.Extensions
                 }
 
             }
-            
+
             // Fall back to regular allocation with pinned memory flag
+
             return memoryManager.AllocateAsync<T>(count, MemoryOptions.Pinned, cancellationToken);
         }
 

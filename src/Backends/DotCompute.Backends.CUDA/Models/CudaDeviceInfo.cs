@@ -50,21 +50,24 @@ namespace DotCompute.Backends.CUDA.Models
             MaxBlockDimX = 1024; // Standard max block dimension
             MaxBlockDimY = 1024; // Standard max block dimension
             MaxBlockDimZ = 64;   // Standard max block dimension
-            
+
             // Initialize grid dimensions to sensible defaults
+
             MaxGridDimX = 2147483647; // Max int32 value for most GPUs
             MaxGridDimY = 65535;     // Standard max grid dimension
             MaxGridDimZ = 65535;     // Standard max grid dimension
-            
+
             // Initialize texture dimensions to defaults
+
             MaxTexture1DSize = 131072; // 128K default
             MaxTexture2DWidth = 131072;
             MaxTexture2DHeight = 65536;
             MaxTexture3DWidth = 16384;
             MaxTexture3DHeight = 16384;
             MaxTexture3DDepth = 16384;
-            
+
             // Initialize feature flags to reasonable defaults
+
             KernelExecutionTimeout = false;
             EccEnabled = false;
             TccDriver = false;
@@ -95,8 +98,9 @@ namespace DotCompute.Backends.CUDA.Models
         public CudaDeviceInfo()
         {
             _device = null;
-            
+
             // Initialize new properties with sensible defaults for parameterless constructor
+
             TensorCoreCount = 0;
             SupportsNVLink = false;
         }
@@ -341,146 +345,174 @@ namespace DotCompute.Backends.CUDA.Models
         public string PciInfo => $"{PciDomainId:X4}:{PciBusId:X2}:{PciDeviceId:X2}";
 
         // Missing grid dimension properties
-        
+
+
         /// <summary>
         /// Gets or sets the maximum X dimension of a grid.
         /// </summary>
         public int MaxGridDimX { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the maximum Y dimension of a grid.
         /// </summary>
         public int MaxGridDimY { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the maximum Z dimension of a grid.
         /// </summary>
         public int MaxGridDimZ { get; set; }
-        
+
         // Missing texture properties
-        
+
+
         /// <summary>
         /// Gets or sets the maximum 1D texture size.
         /// </summary>
         public int MaxTexture1DSize { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the maximum 2D texture width.
         /// </summary>
         public int MaxTexture2DWidth { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the maximum 2D texture height.
         /// </summary>
         public int MaxTexture2DHeight { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the maximum 3D texture width.
         /// </summary>
         public int MaxTexture3DWidth { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the maximum 3D texture height.
         /// </summary>
         public int MaxTexture3DHeight { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the maximum 3D texture depth.
         /// </summary>
         public int MaxTexture3DDepth { get; set; }
-        
+
         // Missing execution and feature properties
-        
+
+
         /// <summary>
         /// Gets or sets whether kernel execution has timeout enabled.
         /// </summary>
         public bool KernelExecutionTimeout { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether ECC (error correction) is enabled.
         /// </summary>
         public bool EccEnabled { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether TCC driver is enabled.
         /// </summary>
         public bool TccDriver { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the number of asynchronous copy engines.
         /// </summary>
         public int AsyncEngineCount { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the maximum threads per multiprocessor.
         /// </summary>
         public int MaxThreadsPerMultiProcessor { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether stream priorities are supported.
         /// </summary>
         public bool StreamPrioritiesSupported { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether global L1 cache is supported.
         /// </summary>
         public bool GlobalL1CacheSupported { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether local L1 cache is supported.
         /// </summary>
         public bool LocalL1CacheSupported { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether this is a multi-GPU board.
         /// </summary>
         public bool IsMultiGpuBoard { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the multi-GPU board group identifier.
         /// </summary>
         public int MultiGpuBoardGroupId { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether host native atomic operations are supported.
         /// </summary>
         public bool HostNativeAtomicSupported { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the single to double precision performance ratio.
         /// </summary>
         public int SingleToDoublePrecisionPerfRatio { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether compute preemption is supported.
         /// </summary>
         public bool ComputePreemptionSupported { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether host pointers can be used for registered memory.
         /// </summary>
         public bool CanUseHostPointerForRegisteredMem { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether cooperative kernel launches are supported.
         /// </summary>
         public bool CooperativeLaunch { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether cooperative multi-device launches are supported.
         /// </summary>
         public bool CooperativeMultiDeviceLaunch { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets the maximum shared memory per multiprocessor.
         /// </summary>
         public int MaxSharedMemoryPerMultiprocessor { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether pageable memory access uses host page tables.
         /// </summary>
         public bool PageableMemoryAccessUsesHostPageTables { get; set; }
-        
+
+
         /// <summary>
         /// Gets or sets whether direct managed memory access from host is supported.
         /// </summary>
@@ -496,10 +528,13 @@ namespace DotCompute.Backends.CUDA.Models
         /// Gets or sets the total global memory size in bytes.
         /// This is an alias for TotalMemory to provide consistency with CUDA terminology.
         /// </summary>
-        public long TotalGlobalMemory 
-        { 
-            get => TotalMemory; 
-            set => TotalMemory = value; 
+        public long TotalGlobalMemory
+        {
+
+            get => TotalMemory;
+
+            set => TotalMemory = value;
+
         }
 
         /// <summary>

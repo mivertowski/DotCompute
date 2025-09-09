@@ -19,7 +19,8 @@ namespace DotCompute.Hardware.Cuda.Tests
     public class SharedMemorySpillingTests : CudaTestBase
     {
         private readonly ILogger<SharedMemorySpillingTests> _logger;
-        
+
+
         public SharedMemorySpillingTests(ITestOutputHelper output) : base(output)
         {
             _logger = new TestLogger(output) as ILogger<SharedMemorySpillingTests>;
@@ -35,8 +36,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
             var kernelCode = CreateRegisterIntensiveKernel();
-            
+
             // Test with spilling disabled
+
             var optionsNoSpilling = CudaTestHelpers.CreateTestCompilationOptions(
                 CudaOptimizationLevel.O2,
                 enableRegisterSpilling: false
@@ -67,7 +69,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                 new DotCompute.Abstractions.CompilationOptions());
 
             Output.WriteLine("Successfully compiled kernel with both spilling configurations");
-            
+
+
             await kernelNoSpilling.DisposeAsync();
             await kernelWithSpilling.DisposeAsync();
         }
@@ -129,7 +132,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Check if occupancy improves with spilling (this is theoretical as we need profiling)
             Output.WriteLine("Kernel compiled with and without register spilling");
             Output.WriteLine("Register spilling can improve occupancy for register-heavy kernels");
-            
+
+
             await kernelNoSpilling.DisposeAsync();
             await kernelWithSpilling.DisposeAsync();
         }
@@ -211,9 +215,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Performance without spilling: {timeNoSpilling}ms");
             Output.WriteLine($"Performance with spilling: {timeWithSpilling}ms");
             Output.WriteLine($"Performance difference: {improvement:F2}%");
-            
+
             // Note: Performance may vary based on kernel characteristics
             // Register spilling is beneficial when it improves occupancy
+
             Output.WriteLine("Note: Register spilling improves performance when occupancy increases");
 
             await kernelNoSpilling.DisposeAsync();
@@ -266,7 +271,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await kernelWithSpilling.DisposeAsync();
         }
 
-        private string CreateRegisterIntensiveKernel()
+        private static string CreateRegisterIntensiveKernel()
         {
             return @"
                 extern ""C"" __global__ void registerIntensive(float* data, int n) {
@@ -296,7 +301,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }";
         }
 
-        private string CreateComplexKernel()
+        private static string CreateComplexKernel()
         {
             return @"
                 extern ""C"" __global__ void complexKernel(float* input, float* output, int n) {

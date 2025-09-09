@@ -21,7 +21,8 @@ public static class VectorizationAnalyzer
     public static VectorizationInfo AnalyzeVectorization(MethodDeclarationSyntax method)
     {
         ArgumentValidation.ThrowIfNull(method);
-        
+
+
         var info = new VectorizationInfo();
         var body = method.Body;
 
@@ -60,8 +61,9 @@ public static class VectorizationAnalyzer
 
         // Analyze data dependencies
         AnalyzeDataDependencies(body, info);
-        
+
         // Detect specific vectorization patterns
+
         DetectVectorizationPatterns(body, info);
 
         return info;
@@ -75,8 +77,9 @@ public static class VectorizationAnalyzer
     public static bool IsVectorizableLoop(ForStatementSyntax loop)
     {
         ArgumentValidation.ThrowIfNull(loop);
-        
+
         // Check for simple increment pattern
+
         if (!HasSimpleIncrement(loop))
         {
             return false;
@@ -130,7 +133,8 @@ public static class VectorizationAnalyzer
     {
         ArgumentValidation.ThrowIfNull(block);
         ArgumentValidation.ThrowIfNull(info);
-        
+
+
         var assignments = block.DescendantNodes().OfType<AssignmentExpressionSyntax>().ToList();
         var readVariables = new HashSet<string>();
         var writeVariables = new HashSet<string>();
@@ -147,7 +151,8 @@ public static class VectorizationAnalyzer
             var rightSideIdentifiers = assignment.Right.DescendantNodes()
                 .OfType<IdentifierNameSyntax>()
                 .Select(id => id.Identifier.Text);
-            
+
+
             foreach (var id in rightSideIdentifiers)
             {
                 _ = readVariables.Add(id);
@@ -167,17 +172,21 @@ public static class VectorizationAnalyzer
     {
         ArgumentValidation.ThrowIfNull(node);
         ArgumentValidation.ThrowIfNull(info);
-        
+
         // Detect reduction patterns (sum, min, max, etc.)
+
         DetectReductionPattern(node, info);
-        
+
         // Detect dot product pattern
+
         DetectDotProductPattern(node, info);
-        
+
         // Detect matrix multiplication pattern
+
         DetectMatrixMultiplicationPattern(node, info);
-        
+
         // Detect broadcast patterns
+
         DetectBroadcastPattern(node, info);
     }
 
@@ -212,7 +221,8 @@ public static class VectorizationAnalyzer
 
         var arrayAccesses = body.DescendantNodes().OfType<ElementAccessExpressionSyntax>();
         var loopVariable = GetLoopVariable(loop);
-        
+
+
         if (string.IsNullOrEmpty(loopVariable))
         {
             return false;
@@ -244,7 +254,8 @@ public static class VectorizationAnalyzer
             return loop.Declaration.Variables[0].Identifier.Text;
         }
 
-        if (loop.Initializers.Count > 0 && 
+        if (loop.Initializers.Count > 0 &&
+
             loop.Initializers[0] is AssignmentExpressionSyntax assignment &&
             assignment.Left is IdentifierNameSyntax id)
         {
@@ -262,9 +273,11 @@ public static class VectorizationAnalyzer
         var hasLoopVar = binary.DescendantNodes()
             .OfType<IdentifierNameSyntax>()
             .Any(id => id.Identifier.Text == loopVariable);
-        
+
+
         var hasOffset = binary.Kind() is SyntaxKind.AddExpression or SyntaxKind.SubtractExpression;
-        
+
+
         return hasLoopVar && hasOffset;
     }
 
@@ -276,7 +289,8 @@ public static class VectorizationAnalyzer
         var hasArrayAccess = block.DescendantNodes().OfType<ElementAccessExpressionSyntax>().Any();
         var hasArithmetic = block.DescendantNodes().OfType<BinaryExpressionSyntax>()
             .Any(b => IsArithmeticOperation(b.Kind()));
-        
+
+
         return hasArrayAccess && hasArithmetic;
     }
 
@@ -309,14 +323,17 @@ public static class VectorizationAnalyzer
     private static VectorizationInfo AnalyzeExpressionBody(ArrowExpressionClauseSyntax expressionBody)
     {
         var info = new VectorizationInfo();
-        
+
+
         var binaryOps = expressionBody.Expression.DescendantNodesAndSelf()
             .OfType<BinaryExpressionSyntax>()
             .Where(b => IsArithmeticOperation(b.Kind()))
             .ToList();
-        
+
+
         info.ArithmeticOperationCount = binaryOps.Count;
-        
+
+
         return info;
     }
 
@@ -326,10 +343,12 @@ public static class VectorizationAnalyzer
     private static void DetectReductionPattern(SyntaxNode node, VectorizationInfo info)
     {
         var assignments = node.DescendantNodes().OfType<AssignmentExpressionSyntax>()
-            .Where(a => a.Kind() is SyntaxKind.AddAssignmentExpression or 
+            .Where(a => a.Kind() is SyntaxKind.AddAssignmentExpression or
+
                        SyntaxKind.SubtractAssignmentExpression or
                        SyntaxKind.MultiplyAssignmentExpression);
-        
+
+
         info.HasReductionPattern = assignments.Any();
     }
 
@@ -342,14 +361,16 @@ public static class VectorizationAnalyzer
         var addAssignments = node.DescendantNodes()
             .OfType<AssignmentExpressionSyntax>()
             .Where(a => a.Kind() == SyntaxKind.AddAssignmentExpression);
-        
+
+
         foreach (var assignment in addAssignments)
         {
             if (assignment.Right is BinaryExpressionSyntax multiply && multiply.Kind() == SyntaxKind.MultiplyExpression)
             {
                 var leftAccess = multiply.Left is ElementAccessExpressionSyntax;
                 var rightAccess = multiply.Right is ElementAccessExpressionSyntax;
-                
+
+
                 if (leftAccess && rightAccess)
                 {
                     info.HasDotProductPattern = true;
@@ -366,7 +387,8 @@ public static class VectorizationAnalyzer
     {
         // Look for nested loops with accumulation
         var forLoops = node.DescendantNodes().OfType<ForStatementSyntax>().ToList();
-        
+
+
         foreach (var outerLoop in forLoops)
         {
             var innerLoops = outerLoop.Statement?.DescendantNodes().OfType<ForStatementSyntax>().ToList();
@@ -379,7 +401,8 @@ public static class VectorizationAnalyzer
                     var hasAccumulation = innermostLoop.Statement.DescendantNodes()
                         .OfType<AssignmentExpressionSyntax>()
                         .Any(a => a.Kind() == SyntaxKind.AddAssignmentExpression);
-                    
+
+
                     if (hasAccumulation)
                     {
                         info.HasMatrixPattern = true;
@@ -397,20 +420,24 @@ public static class VectorizationAnalyzer
     {
         // Look for patterns where a scalar is applied to multiple array elements
         var assignments = node.DescendantNodes().OfType<AssignmentExpressionSyntax>();
-        
+
+
         foreach (var assignment in assignments)
         {
             if (assignment.Left is ElementAccessExpressionSyntax &&
                 assignment.Right is BinaryExpressionSyntax binary)
             {
-                var hasScalar = binary.Left is IdentifierNameSyntax || 
+                var hasScalar = binary.Left is IdentifierNameSyntax ||
+
                                binary.Right is IdentifierNameSyntax ||
                                binary.Left is LiteralExpressionSyntax ||
                                binary.Right is LiteralExpressionSyntax;
-                
+
+
                 var hasArray = binary.Left is ElementAccessExpressionSyntax ||
                               binary.Right is ElementAccessExpressionSyntax;
-                
+
+
                 if (hasScalar && hasArray)
                 {
                     info.HasBroadcastPattern = true;

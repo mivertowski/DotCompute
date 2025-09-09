@@ -26,7 +26,8 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
     private bool _disposed;
 
     private readonly ConcurrentDictionary<string, AcceleratorMemoryPool> _acceleratorPools = new();
-    
+
+
     /// <summary>
     /// Gets a memory pool for the specified accelerator
     /// </summary>
@@ -37,7 +38,8 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
         ArgumentException.ThrowIfNullOrWhiteSpace(acceleratorId);
         return _acceleratorPools.GetOrAdd(acceleratorId, id => new AcceleratorMemoryPool(id, _logger));
     }
-    
+
+
     /// <summary>
     /// Creates a new memory pool for an accelerator
     /// </summary>
@@ -50,13 +52,15 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
         ArgumentException.ThrowIfNullOrWhiteSpace(acceleratorId);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(initialSize);
         ArgumentOutOfRangeException.ThrowIfLessThan(maxSize, initialSize);
-        
+
+
         await Task.CompletedTask;
         var pool = new AcceleratorMemoryPool(acceleratorId, _logger, initialSize, maxSize);
         _acceleratorPools[acceleratorId] = pool;
         return pool;
     }
-    
+
+
     /// <summary>
     /// Gets memory usage statistics across all pools
     /// </summary>
@@ -79,7 +83,8 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
                     LargestAvailableBlock = pool.AvailableSize
                 };
             }
-            
+
+
             return new MemoryUsageStatistics
             {
                 TotalAllocated = _totalBytesPooled,
@@ -89,7 +94,8 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
             };
         }
     }
-    
+
+
     /// <summary>
     /// Optimizes memory usage across all pools
     /// </summary>
@@ -100,7 +106,8 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
         await Task.WhenAll(defragmentTasks);
         await PerformMaintenanceAsync();
     }
-    
+
+
     /// <summary>
     /// Releases unused memory from all pools
     /// </summary>
@@ -108,14 +115,16 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
     public async Task<long> ReleaseUnusedMemoryAsync()
     {
         long totalReleased = 0;
-        
+
+
         foreach (var pool in _acceleratorPools.Values)
         {
             // For this implementation, defragmentation acts as memory release
             await pool.DefragmentAsync();
             totalReleased += pool.TotalSize - pool.UsedSize;
         }
-        
+
+
         await PerformMaintenanceAsync();
         return totalReleased;
     }
@@ -123,10 +132,12 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
     public MemoryPoolService(ILogger<MemoryPoolService> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
         // Start periodic cleanup every 5 minutes
+
         _cleanupTimer = new Timer(PerformCleanup, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
-        
+
+
         _logger.LogInformation("Memory pool service initialized");
     }
 
@@ -157,7 +168,8 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
         if (_sizePools.TryGetValue(poolSize, out var queue))
         {
             PooledBuffer? buffer = null;
-            
+
+
             lock (queue)
             {
                 if (queue.Count > 0)
@@ -212,7 +224,8 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
                     {
                         _totalBytesPooled += buffer.SizeInBytes;
                     }
-                    
+
+
                     _logger.LogTrace("Returned buffer {BufferId} of size {Size} to pool", pooledBuffer.Id, buffer.SizeInBytes);
                 }
                 else
@@ -308,7 +321,8 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
             }
         }, cancellationToken);
     }
-    
+
+
     private double CalculateFragmentationPercentage()
     {
         if (_acceleratorPools.Count == 0)
@@ -319,7 +333,8 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
 
         var totalSize = _acceleratorPools.Values.Sum(p => p.TotalSize);
         var totalUsed = _acceleratorPools.Values.Sum(p => p.UsedSize);
-        
+
+
         if (totalSize == 0)
         {
             return 0.0;
@@ -493,7 +508,8 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
         {
             IsDisposed = true;
             State = BufferState.Disposed;
-            
+
+
             try
             {
                 FreeMemory();
@@ -613,7 +629,8 @@ internal sealed class AcceleratorMemoryPool : IMemoryPool, IDisposable
             await buffer.DisposeAsync();
         }
 
-        _logger.LogDebug("Defragmented memory pool for accelerator {AcceleratorId}, disposed {Count} unused buffers", 
+        _logger.LogDebug("Defragmented memory pool for accelerator {AcceleratorId}, disposed {Count} unused buffers",
+
             AcceleratorId, toDispose.Count);
     }
 

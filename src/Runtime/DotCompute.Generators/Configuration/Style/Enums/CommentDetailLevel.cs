@@ -29,7 +29,7 @@ public enum CommentDetailLevel
     /// critical scenarios or when code size is a concern.
     /// </remarks>
     Minimal,
-    
+
     /// <summary>
     /// Generate a normal level of comments with standard documentation.
     /// </summary>
@@ -46,7 +46,8 @@ public enum CommentDetailLevel
     /// IntelliSense support and maintains professional code standards.
     /// </remarks>
     Normal,
-    
+
+
     /// <summary>
     /// Generate verbose comments with detailed explanations and examples.
     /// </summary>

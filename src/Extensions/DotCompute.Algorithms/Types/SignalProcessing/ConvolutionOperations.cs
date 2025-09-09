@@ -33,6 +33,7 @@ public class ConvolutionOperations : IDisposable
     public static float[] Convolve1D(float[] signal, float[] kernel)
         // Placeholder implementation
 
+
         => new float[signal.Length];
 
     /// <summary>
@@ -40,6 +41,7 @@ public class ConvolutionOperations : IDisposable
     /// </summary>
     public static float[,] Convolve2D(float[,] image, float[,] kernel)
         // Placeholder implementation
+
 
         => new float[image.GetLength(0), image.GetLength(1)];
 
@@ -66,6 +68,7 @@ public static class StaticConvolutionOperations
     public static float[] Convolve1D(float[] signal, float[] kernel)
         // Placeholder implementation
 
+
         => new float[signal.Length];
 
     /// <summary>
@@ -73,6 +76,7 @@ public static class StaticConvolutionOperations
     /// </summary>
     public static float[,] Convolve2D(float[,] image, float[,] kernel)
         // Placeholder implementation
+
 
         => new float[image.GetLength(0), image.GetLength(1)];
 }

@@ -44,15 +44,24 @@ public class KernelParameter
         IsInput = isInput;
         IsOutput = isOutput;
         IsConstant = isConstant;
-        
+
         // Determine direction from input/output flags
+
         if (isInput && isOutput)
+        {
             Direction = ParameterDirection.InOut;
+        }
+
         else if (isOutput)
+        {
             Direction = ParameterDirection.Out;
+        }
         else
+        {
             Direction = ParameterDirection.In;
-            
+        }
+
+
         MemorySpace = MemorySpace.Global;
     }
 
@@ -70,7 +79,8 @@ public class KernelParameter
     /// Gets the parameter direction.
     /// </summary>
     public ParameterDirection Direction { get; }
-    
+
+
     /// <summary>
     /// Gets whether this is an input parameter.
     /// </summary>

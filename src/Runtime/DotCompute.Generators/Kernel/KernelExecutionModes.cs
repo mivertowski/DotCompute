@@ -15,37 +15,38 @@ public enum KernelExecutionMode
     /// Standard kernel execution with global memory access.
     /// </summary>
     Standard,
-    
+
     /// <summary>
     /// Persistent kernel that stays resident and processes multiple work items.
     /// </summary>
     Persistent,
-    
+
     /// <summary>
     /// Dynamic parallelism enabled kernel that can launch child kernels.
     /// </summary>
     Dynamic,
-    
+
     /// <summary>
     /// Cooperative groups enabled for advanced synchronization.
     /// </summary>
     Cooperative,
-    
+
     /// <summary>
     /// Graph-based execution for optimized kernel chains.
     /// </summary>
     Graph,
-    
+
     /// <summary>
     /// Tensor core optimized for matrix operations.
     /// </summary>
     TensorCore,
-    
+
     /// <summary>
     /// Warp-specialized execution with divergence optimization.
     /// </summary>
     WarpSpecialized,
-    
+
+
     /// <summary>
     /// Stream-based concurrent execution.
     /// </summary>
@@ -62,7 +63,8 @@ internal sealed class KernelExecutionModeHandler
     private readonly Dictionary<string, object> _configuration;
 
     public KernelExecutionModeHandler(
-        KernelMethodInfo kernelInfo, 
+        KernelMethodInfo kernelInfo,
+
         KernelExecutionMode mode,
         Dictionary<string, object>? configuration = null)
     {
@@ -70,7 +72,8 @@ internal sealed class KernelExecutionModeHandler
         _mode = mode;
         _configuration = configuration ?? new Dictionary<string, object>();
     }
-    
+
+
     /// <summary>
     /// Handles register spilling configuration for kernels with high register pressure.
     /// </summary>
@@ -78,29 +81,35 @@ internal sealed class KernelExecutionModeHandler
     {
         // Check if kernel has MaxRegisters attribute or configuration
         int maxRegisters = _configuration.ContainsKey("maxRegisters") ? (int)_configuration["maxRegisters"] : 0;
-        
+
         // Also check for explicit register pressure hints
+
         bool hasHighRegisterPressure = _configuration.ContainsKey("highRegisterPressure") &&
                                       (bool)_configuration["highRegisterPressure"];
-        
+
+
         if (maxRegisters > 0 || hasHighRegisterPressure)
         {
             sb.AppendLine("// Register spilling configuration");
-            
+
+
             if (maxRegisters > 0)
             {
                 sb.AppendLine($"// Limiting to {maxRegisters} registers per thread");
                 sb.AppendLine($"#define MAX_REGISTERS {maxRegisters}");
-                
+
                 // Calculate optimal occupancy based on register limit
+
                 int registersPerSM = 65536; // For compute capability 7.0+
                 int maxThreadsPerSM = registersPerSM / maxRegisters;
                 int maxBlocksPerSM = Math.Min(maxThreadsPerSM / 256, 32);
-                
+
+
                 sb.AppendLine($"// Estimated max occupancy: {maxBlocksPerSM} blocks per SM");
             }
-            
+
             // Enable shared memory register spilling for Turing and newer (CC 7.5+)
+
             sb.AppendLine("#if __CUDA_ARCH__ >= 750");
             sb.AppendLine("  // Enable shared memory register spilling on Turing and newer");
             sb.AppendLine("  // This allows the compiler to spill registers to shared memory");
@@ -112,8 +121,9 @@ internal sealed class KernelExecutionModeHandler
             sb.AppendLine("  #define USE_SHARED_MEM_SPILLING 0");
             sb.AppendLine("#endif");
             sb.AppendLine();
-            
+
             // Add shared memory buffer for manual register spilling if needed
+
             if (hasHighRegisterPressure)
             {
                 sb.AppendLine("// Shared memory buffer for manual register spilling");
@@ -131,11 +141,13 @@ internal sealed class KernelExecutionModeHandler
     public string GenerateKernelHeader()
     {
         var sb = new StringBuilder();
-        
+
         // Handle register spilling configuration
+
         HandleRegisterSpilling(sb);
-        
+
         // Add mode-specific attributes
+
         switch (_mode)
         {
             case KernelExecutionMode.Cooperative:
@@ -143,52 +155,63 @@ internal sealed class KernelExecutionModeHandler
                 sb.AppendLine("namespace cg = cooperative_groups;");
                 sb.AppendLine();
                 break;
-                
+
+
             case KernelExecutionMode.TensorCore:
                 sb.AppendLine("#include <mma.h>");
                 sb.AppendLine("using namespace nvcuda;");
                 sb.AppendLine();
                 break;
-                
+
+
             case KernelExecutionMode.Dynamic:
                 sb.AppendLine("#define CUDA_DYNAMIC_PARALLELISM");
                 sb.AppendLine();
                 break;
         }
-        
+
         // Generate kernel signature with mode-specific modifiers
+
         sb.Append("extern \"C\" ");
-        
+
         // Apply launch_bounds for register limiting or mode-specific requirements
+
         int maxRegisters = _configuration.ContainsKey("maxRegisters") ? (int)_configuration["maxRegisters"] : 0;
-        bool needsLaunchBounds = _mode == KernelExecutionMode.Cooperative || 
+        bool needsLaunchBounds = _mode == KernelExecutionMode.Cooperative ||
+
                                 _mode == KernelExecutionMode.Persistent ||
                                 maxRegisters > 0;
-        
+
+
         if (needsLaunchBounds)
         {
             sb.Append("__global__ void ");
-            
+
             // Add launch_bounds attribute
+
             int maxThreadsPerBlock = _configuration.ContainsKey("maxThreadsPerBlock") ? (int)_configuration["maxThreadsPerBlock"] : 256;
             int minBlocksPerSM = _configuration.ContainsKey("minBlocksPerMultiprocessor") ? (int)_configuration["minBlocksPerMultiprocessor"] : 2;
-            
+
             // Adjust for register pressure
+
             if (maxRegisters > 0 && maxRegisters < 64)
             {
                 // Lower occupancy for kernels with high register pressure
                 minBlocksPerSM = Math.Min(minBlocksPerSM, 65536 / (maxRegisters * maxThreadsPerBlock));
             }
-            
+
+
             sb.Append($"__launch_bounds__({maxThreadsPerBlock}, {minBlocksPerSM}) ");
         }
         else
         {
             sb.Append("__global__ void ");
         }
-        
+
+
         sb.Append($"{_kernelInfo.Name}_cuda_kernel");
-        
+
+
         return sb.ToString();
     }
 
@@ -198,39 +221,48 @@ internal sealed class KernelExecutionModeHandler
     public string GenerateKernelBody(string baseBody)
     {
         var sb = new StringBuilder();
-        
+
+
         switch (_mode)
         {
             case KernelExecutionMode.Standard:
                 return GenerateStandardKernelBody(baseBody);
-                
+
+
             case KernelExecutionMode.Persistent:
                 return GeneratePersistentKernelBody(baseBody);
-                
+
+
             case KernelExecutionMode.Cooperative:
                 return GenerateCooperativeKernelBody(baseBody);
-                
+
+
             case KernelExecutionMode.Dynamic:
                 return GenerateDynamicKernelBody(baseBody);
-                
+
+
             case KernelExecutionMode.Graph:
                 return GenerateGraphKernelBody(baseBody);
-                
+
+
             case KernelExecutionMode.TensorCore:
                 return GenerateTensorCoreKernelBody(baseBody);
-                
+
+
             case KernelExecutionMode.WarpSpecialized:
                 return GenerateWarpSpecializedKernelBody(baseBody);
-                
+
+
             case KernelExecutionMode.Streaming:
                 return GenerateStreamingKernelBody(baseBody);
-                
+
+
             default:
                 return baseBody;
         }
     }
 
-    private string GenerateStandardKernelBody(string baseBody)
+    private static string GenerateStandardKernelBody(string baseBody)
     {
         var sb = new StringBuilder();
         sb.AppendLine("{");
@@ -245,7 +277,7 @@ internal sealed class KernelExecutionModeHandler
         return sb.ToString();
     }
 
-    private string GeneratePersistentKernelBody(string baseBody)
+    private static string GeneratePersistentKernelBody(string baseBody)
     {
         var sb = new StringBuilder();
         sb.AppendLine("{");
@@ -287,7 +319,7 @@ internal sealed class KernelExecutionModeHandler
         return sb.ToString();
     }
 
-    private string GenerateCooperativeKernelBody(string baseBody)
+    private static string GenerateCooperativeKernelBody(string baseBody)
     {
         var sb = new StringBuilder();
         sb.AppendLine("{");
@@ -336,7 +368,7 @@ internal sealed class KernelExecutionModeHandler
         return sb.ToString();
     }
 
-    private string GenerateGraphKernelBody(string baseBody)
+    private static string GenerateGraphKernelBody(string baseBody)
     {
         var sb = new StringBuilder();
         sb.AppendLine("{");
@@ -353,7 +385,7 @@ internal sealed class KernelExecutionModeHandler
         return sb.ToString();
     }
 
-    private string GenerateTensorCoreKernelBody(string baseBody)
+    private static string GenerateTensorCoreKernelBody(string baseBody)
     {
         var sb = new StringBuilder();
         sb.AppendLine("{");
@@ -388,7 +420,7 @@ internal sealed class KernelExecutionModeHandler
         return sb.ToString();
     }
 
-    private string GenerateWarpSpecializedKernelBody(string baseBody)
+    private static string GenerateWarpSpecializedKernelBody(string baseBody)
     {
         var sb = new StringBuilder();
         sb.AppendLine("{");
@@ -419,7 +451,7 @@ internal sealed class KernelExecutionModeHandler
         return sb.ToString();
     }
 
-    private string GenerateStreamingKernelBody(string baseBody)
+    private static string GenerateStreamingKernelBody(string baseBody)
     {
         var sb = new StringBuilder();
         sb.AppendLine("{");
@@ -446,9 +478,11 @@ internal sealed class KernelExecutionModeHandler
     public string GenerateLaunchConfiguration()
     {
         var sb = new StringBuilder();
-        
+
+
         sb.AppendLine("// Launch configuration for " + _mode + " mode");
-        
+
+
         switch (_mode)
         {
             case KernelExecutionMode.Persistent:
@@ -457,7 +491,8 @@ internal sealed class KernelExecutionModeHandler
                 sb.AppendLine("dim3 grid(persistent_blocks);");
                 sb.AppendLine("dim3 block(block_size);");
                 break;
-                
+
+
             case KernelExecutionMode.Cooperative:
                 sb.AppendLine("int block_size = 256;");
                 sb.AppendLine("int grid_size = 0;");
@@ -467,7 +502,8 @@ internal sealed class KernelExecutionModeHandler
                 sb.AppendLine("dim3 grid(grid_size);");
                 sb.AppendLine("dim3 block(block_size);");
                 break;
-                
+
+
             case KernelExecutionMode.TensorCore:
                 sb.AppendLine("// Tensor cores require multiples of 16");
                 sb.AppendLine("const int warp_size = 32;");
@@ -477,7 +513,8 @@ internal sealed class KernelExecutionModeHandler
                 sb.AppendLine("dim3 grid(grid_size);");
                 sb.AppendLine("dim3 block(block_size);");
                 break;
-                
+
+
             case KernelExecutionMode.Streaming:
                 sb.AppendLine("const int num_streams = 4;  // Configurable");
                 sb.AppendLine("const int block_size = 256;");
@@ -485,7 +522,8 @@ internal sealed class KernelExecutionModeHandler
                 sb.AppendLine("dim3 grid(blocks_per_stream, num_streams);");
                 sb.AppendLine("dim3 block(block_size);");
                 break;
-                
+
+
             default:
                 sb.AppendLine("// Standard launch configuration");
                 sb.AppendLine("int block_size = 256;");
@@ -494,7 +532,8 @@ internal sealed class KernelExecutionModeHandler
                 sb.AppendLine("dim3 block(block_size);");
                 break;
         }
-        
+
+
         return sb.ToString();
     }
 
@@ -504,32 +543,37 @@ internal sealed class KernelExecutionModeHandler
     public static KernelExecutionMode DetermineOptimalMode(KernelMethodInfo kernelInfo)
     {
         // Analyze kernel attributes and characteristics
-        
+
         // Check for tensor operations
+
         if (kernelInfo.Parameters.Any(p => p.Type.Contains("Matrix") || p.Type.Contains("Tensor")))
         {
             return KernelExecutionMode.TensorCore;
         }
-        
+
         // Check for reduction patterns
+
         if (kernelInfo.Name.Contains("Reduce") || kernelInfo.Name.Contains("Sum"))
         {
             return KernelExecutionMode.WarpSpecialized;
         }
-        
+
         // Check for iterative patterns
+
         if (kernelInfo.Name.Contains("Iterate") || kernelInfo.Name.Contains("Loop"))
         {
             return KernelExecutionMode.Persistent;
         }
-        
+
         // Check for graph patterns
+
         if (kernelInfo.Name.Contains("Chain") || kernelInfo.Name.Contains("Pipeline"))
         {
             return KernelExecutionMode.Graph;
         }
-        
+
         // Default to standard mode
+
         return KernelExecutionMode.Standard;
     }
 }

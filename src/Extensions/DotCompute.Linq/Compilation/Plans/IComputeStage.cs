@@ -24,7 +24,7 @@ public interface IComputeStage
     /// <value>
     /// A unique string identifier for this stage within the compute plan.
     /// </value>
-    string Id { get; }
+    public string Id { get; }
 
     /// <summary>
     /// Gets the executable kernel for this stage.
@@ -36,7 +36,7 @@ public interface IComputeStage
     /// This kernel must implement ExecuteAsync functionality, typically through
     /// implementations like DynamicCompiledKernel that wrap ICompiledKernel.
     /// </remarks>
-    DotCompute.Linq.Operators.Interfaces.IKernel Kernel { get; }
+    public DotCompute.Linq.Operators.Interfaces.IKernel Kernel { get; }
 
     /// <summary>
     /// Gets the input buffers for this stage.
@@ -48,7 +48,7 @@ public interface IComputeStage
     /// These buffer identifiers correspond to either the original input parameters
     /// or the output buffers of previous stages in the compute plan.
     /// </remarks>
-    IReadOnlyList<string> InputBuffers { get; }
+    public IReadOnlyList<string> InputBuffers { get; }
 
     /// <summary>
     /// Gets the output buffer for this stage.
@@ -56,7 +56,7 @@ public interface IComputeStage
     /// <value>
     /// The identifier of the buffer where this stage will write its results.
     /// </value>
-    string OutputBuffer { get; }
+    public string OutputBuffer { get; }
 
     /// <summary>
     /// Gets the execution configuration for this stage.
@@ -64,5 +64,5 @@ public interface IComputeStage
     /// <value>
     /// Configuration parameters that control how the kernel is launched and executed.
     /// </value>
-    ExecutionConfiguration Configuration { get; }
+    public ExecutionConfiguration Configuration { get; }
 }

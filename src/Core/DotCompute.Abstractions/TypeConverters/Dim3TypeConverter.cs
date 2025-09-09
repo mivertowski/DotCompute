@@ -53,7 +53,7 @@ public class Dim3TypeConverter : TypeConverter
 
             // Split by comma or space
 
-            var parts = stringValue.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var parts = stringValue.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries);
 
 
             try

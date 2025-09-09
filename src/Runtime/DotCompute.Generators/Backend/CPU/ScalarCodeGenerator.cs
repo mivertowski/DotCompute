@@ -15,7 +15,8 @@ namespace DotCompute.Generators.Backend.CPU;
 public class ScalarCodeGenerator : CpuCodeGeneratorBase
 {
     #region Constructor
-    
+
+
     public ScalarCodeGenerator(
         string methodName,
         IReadOnlyList<KernelParameter> parameters,
@@ -24,25 +25,28 @@ public class ScalarCodeGenerator : CpuCodeGeneratorBase
         : base(methodName, parameters, methodSyntax, vectorizationInfo)
     {
     }
-    
+
     #endregion
-    
+
     #region Public Methods
-    
+
+
     public override void Generate(StringBuilder sb)
     {
         GenerateMethodDocumentation(sb,
             "Scalar implementation for compatibility and remainder handling.",
             "This implementation is used for small arrays and processors without SIMD support.");
-        
+
+
         GenerateMethodSignature(sb, "ExecuteScalar", true, includeRange: true);
         GenerateMethodBody(sb, () => GenerateScalarMethodContent(sb));
     }
-    
+
     #endregion
-    
+
     #region Private Methods
-    
+
+
     private void GenerateScalarMethodContent(StringBuilder sb)
     {
         // Generate parameter validation
@@ -51,8 +55,9 @@ public class ScalarCodeGenerator : CpuCodeGeneratorBase
         {
             _ = sb.Append(CodeFormatter.Indent(validation, MethodBodyIndentLevel));
         }
-        
+
         // Generate scalar processing loop
+
         var methodBody = MethodBodyExtractor.ExtractMethodBody(MethodSyntax);
         if (!string.IsNullOrEmpty(methodBody))
         {
@@ -63,20 +68,23 @@ public class ScalarCodeGenerator : CpuCodeGeneratorBase
             GenerateDefaultScalarLoop(sb);
         }
     }
-    
+
+
     private static void GenerateTransformedScalarLoop(StringBuilder sb, string methodBody)
     {
         _ = sb.AppendLine("            // Transformed scalar implementation:");
         var transformedBody = TransformMethodBodyForScalar(methodBody);
         _ = sb.AppendLine(transformedBody);
     }
-    
+
+
     private void GenerateDefaultScalarLoop(StringBuilder sb)
     {
         _ = sb.AppendLine("            // Default scalar implementation based on operation type");
         _ = sb.AppendLine("            for (int i = start; i < end; i++)");
         _ = sb.AppendLine("            {");
-        
+
+
         if (VectorizationInfo.IsArithmetic)
         {
             _ = sb.AppendLine("                // Perform arithmetic operation on elements");
@@ -92,23 +100,27 @@ public class ScalarCodeGenerator : CpuCodeGeneratorBase
             _ = sb.AppendLine("                // Generic element processing");
             _ = sb.AppendLine("                ProcessElement(i);");
         }
-        
+
+
         _ = sb.AppendLine("            }");
     }
-    
+
+
     private static string TransformMethodBodyForScalar(string methodBody)
     {
         if (string.IsNullOrEmpty(methodBody))
         {
             return string.Empty;
         }
-        
+
+
         var transformedBody = methodBody
             .Replace("{", "")
             .Replace("}", "")
             .Trim();
-        
+
         // Handle common patterns
+
         if (transformedBody.Contains("for") && transformedBody.Contains("++"))
         {
             // Already has loop structure - adapt for range
@@ -125,6 +137,7 @@ public class ScalarCodeGenerator : CpuCodeGeneratorBase
             return $"            for (int i = start; i < end; i++)\n            {{\n                {transformedBody}\n            }}";
         }
     }
-    
+
+
     #endregion
 }

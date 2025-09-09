@@ -244,9 +244,9 @@ namespace DotCompute.Backends.CUDA.Execution
             var fallbackQueues = priority switch
             {
                 CudaStreamPriority.High => new[] { _normalPriorityStreams, _lowPriorityStreams },
-                CudaStreamPriority.Normal => new[] { _highPriorityStreams, _lowPriorityStreams },
-                CudaStreamPriority.Low => new[] { _normalPriorityStreams, _highPriorityStreams },
-                _ => new[] { _normalPriorityStreams, _highPriorityStreams }
+                CudaStreamPriority.Normal => [_highPriorityStreams, _lowPriorityStreams],
+                CudaStreamPriority.Low => [_normalPriorityStreams, _highPriorityStreams],
+                _ => [_normalPriorityStreams, _highPriorityStreams]
             };
 
             foreach (var queue in fallbackQueues)

@@ -165,6 +165,7 @@ public class PluginServiceProvider : IPluginServiceProvider, IDisposable
         // Simple fallback implementation - return the parent provider for now
         // TODO: Implement proper plugin service isolation when ServiceCollection extensions are available
 
+
         => parentProvider;
 
     private static IEnumerable<ServiceDescriptor> GetServiceDescriptors(IServiceProvider provider)

@@ -143,7 +143,8 @@ public sealed class AcceleratorValidationResult
         int deviceIndex = 0)
     {
         var result = new UnifiedValidationResult();
-        
+
+
         foreach (var error in errors)
         {
             result.AddError(error, "ACCELERATOR_VALIDATION", "AcceleratorFactory");
@@ -294,7 +295,8 @@ public sealed class AcceleratorPerformanceMetrics
     /// <summary>
     /// Gets additional custom metrics.
     /// </summary>
-    public IReadOnlyDictionary<string, object> CustomMetrics { get; init; } = 
+    public IReadOnlyDictionary<string, object> CustomMetrics { get; init; } =
+
         new Dictionary<string, object>();
 
     /// <summary>

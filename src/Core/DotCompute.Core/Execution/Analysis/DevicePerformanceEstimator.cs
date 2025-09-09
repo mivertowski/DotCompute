@@ -82,9 +82,12 @@ namespace DotCompute.Core.Execution.Analysis
         /// Thrown when <paramref name="workloadSize"/> is less than or equal to zero.
         /// </exception>
         public async ValueTask<double> EstimateExecutionTimeAsync(
-            IAccelerator device, 
-            long workloadSize, 
-            string workloadType, 
+            IAccelerator device,
+
+            long workloadSize,
+
+            string workloadType,
+
             CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(device);
@@ -103,11 +106,13 @@ namespace DotCompute.Core.Execution.Analysis
 
             var deviceScore = await CalculateDeviceScoreAsync(device, cancellationToken);
             var workloadFactor = GetWorkloadTypeFactor(workloadType);
-            
+
             // Base estimation: workload size / (device performance * workload efficiency)
+
             var baseTime = workloadSize / (deviceScore * workloadFactor * 1000.0);
-            
+
             // Apply overhead factors
+
             var overheadFactor = GetOverheadFactor(device.Info.DeviceType);
             var estimatedTime = baseTime * overheadFactor;
 
@@ -192,8 +197,9 @@ namespace DotCompute.Core.Execution.Analysis
 
             // Combine success rate and efficiency for historical factor
             var factor = (cache.SuccessRate * 0.6) + (cache.AverageEfficiency / 100.0 * 0.4);
-            
+
             // Clamp to reasonable bounds
+
             return Math.Max(0.1, Math.Min(1.5, factor));
         }
 

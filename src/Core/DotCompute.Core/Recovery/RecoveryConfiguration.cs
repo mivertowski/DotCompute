@@ -21,4 +21,5 @@ namespace DotCompute.Core.Recovery;
 // Statistics (src/Core/DotCompute.Core/Recovery/Statistics/):
 // - RecoveryStatistics.cs
 //
+
 // This file is preserved as a placeholder and documentation of the refactoring.

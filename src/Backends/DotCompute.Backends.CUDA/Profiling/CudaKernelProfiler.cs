@@ -37,11 +37,13 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Get device properties for Ada-specific optimizations
             var result = CudaRuntime.cudaGetDeviceProperties(ref _deviceProps, context.DeviceId);
             CudaRuntime.CheckError(result, "getting device properties");
-            
+
             // Initialize monitoring wrappers
+
             _nvml = new NvmlWrapper(_logger);
             _ = _nvml.Initialize();
-            
+
+
             _cupti = new CuptiWrapper(_logger);
             _ = _cupti.Initialize(context.DeviceId);
         }
@@ -91,11 +93,13 @@ namespace DotCompute.Backends.CUDA.Advanced
                 // Calculate statistics
                 var stats = CalculateStatistics(timings);
                 var occupancy = CalculateOccupancy(launchConfig);
-                
+
                 // Get real metrics from NVML and CUPTI
+
                 var gpuMetrics = _nvml.GetDeviceMetrics(_context.DeviceId);
                 var cuptiSession = _cupti.StartProfiling();
-                
+
+
                 KernelMetrics kernelMetrics;
                 if (cuptiSession != null)
                 {
@@ -107,24 +111,28 @@ namespace DotCompute.Backends.CUDA.Advanced
                 {
                     kernelMetrics = new KernelMetrics();
                 }
-                
+
                 // Use real metrics if available, fallback to calculated
+
                 var throughput = new ThroughputMetrics
                 {
-                    MemoryBandwidth = kernelMetrics.DramReadThroughput > 0 
+                    MemoryBandwidth = kernelMetrics.DramReadThroughput > 0
+
                         ? (kernelMetrics.DramReadThroughput + kernelMetrics.DramWriteThroughput) / 1024.0 // Convert to GB/s
                         : CalculateThroughput(stats.AverageTime, arguments).MemoryBandwidth,
                     ComputePerformance = kernelMetrics.FlopEfficiency > 0
                         ? _deviceProps.MultiProcessorCount * (_deviceProps.ClockRate / 1000.0) * 128 * kernelMetrics.FlopEfficiency
                         : CalculateThroughput(stats.AverageTime, arguments).ComputePerformance
                 };
-                
+
                 // Update occupancy with real metrics
+
                 if (kernelMetrics.AchievedOccupancy > 0)
                 {
                     occupancy.TheoreticalOccupancy = kernelMetrics.AchievedOccupancy;
                 }
-                
+
+
                 var (bottlenecks, optimizationSuggestions) = AnalyzeBottlenecks(stats, occupancy, gpuMetrics, kernelMetrics);
 
                 // Store profile data for future analysis
@@ -309,7 +317,8 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// Analyzes potential bottlenecks and generates optimization suggestions using real metrics
         /// </summary>
         private (Core.Kernels.BottleneckAnalysis bottleneck, List<string> suggestions) AnalyzeBottlenecks(
-            ProfilingStatistics stats, 
+            ProfilingStatistics stats,
+
             OccupancyMetrics occupancy,
             GpuMetrics gpuMetrics,
             KernelMetrics kernelMetrics)
@@ -364,12 +373,14 @@ namespace DotCompute.Backends.CUDA.Advanced
                 {
                     suggestions.Add($"High GPU temperature ({gpuMetrics.Temperature}°C). Consider improving cooling");
                 }
-                
+
+
                 if (gpuMetrics.MemoryUtilization > 90)
                 {
                     suggestions.Add($"High memory usage ({gpuMetrics.MemoryUtilization:F1}%). Consider memory optimization");
                 }
-                
+
+
                 if (gpuMetrics.GpuUtilization < 50)
                 {
                     suggestions.Add($"Low GPU utilization ({gpuMetrics.GpuUtilization}%). Consider increasing parallelism");
@@ -423,6 +434,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         private static IntPtr PrepareKernelArguments(KernelArguments arguments)
             // KernelArguments is a wrapper for kernel parameters
             // For now, return a placeholder since actual implementation depends on the structure
+
             => IntPtr.Zero;
 
 

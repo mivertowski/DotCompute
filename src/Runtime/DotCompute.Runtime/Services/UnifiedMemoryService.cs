@@ -51,7 +51,8 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _poolService = poolService;
-        
+
+
         _logger.LogInformation("Unified memory service initialized");
     }
 
@@ -72,7 +73,8 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
         ArgumentNullException.ThrowIfNull(acceleratorIds);
 
         await _allocationSemaphore.WaitAsync();
-        
+
+
         try
         {
             var bufferId = Guid.NewGuid();
@@ -144,12 +146,14 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
                 _totalTransfers++;
             }
 
-            _logger.LogDebug("Migrated buffer from {SourceId} to {TargetId} in {ElapsedMs:F2}ms", 
+            _logger.LogDebug("Migrated buffer from {SourceId} to {TargetId} in {ElapsedMs:F2}ms",
+
                 sourceAcceleratorId, targetAcceleratorId, elapsedMs);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to migrate buffer from {SourceId} to {TargetId}", 
+            _logger.LogError(ex, "Failed to migrate buffer from {SourceId} to {TargetId}",
+
                 sourceAcceleratorId, targetAcceleratorId);
             throw;
         }
@@ -173,8 +177,10 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
 
         // Simulate synchronization with a small delay
         await Task.Delay(Random.Shared.Next(1, 10));
-        
-        _logger.LogDebug("Synchronized coherence for buffer across {AcceleratorIds}", 
+
+
+        _logger.LogDebug("Synchronized coherence for buffer across {AcceleratorIds}",
+
             string.Join(", ", acceleratorIds));
     }
 
@@ -186,14 +192,16 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
     public MemoryCoherenceStatus GetCoherenceStatus(IUnifiedMemoryBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(buffer);
-        
+
         // For production implementation, this would check actual coherence state
         // For now, return a simple status based on whether buffer is tracked
+
         if (buffer is UnifiedMemoryBuffer umb && _activeBuffers.ContainsKey(umb.Id))
         {
             return MemoryCoherenceStatus.Coherent;
         }
-        
+
+
         return MemoryCoherenceStatus.Unknown;
     }
 
@@ -233,7 +241,8 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
                 _totalTransfers++;
             }
 
-            _logger.LogTrace("Transferred {Size} bytes between unified buffers in {ElapsedMs:F2}ms", 
+            _logger.LogTrace("Transferred {Size} bytes between unified buffers in {ElapsedMs:F2}ms",
+
                 sourceBuffer.SizeInBytes, elapsedMs);
         }
         catch (Exception ex)
@@ -259,7 +268,8 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
 
         // For production implementation, this would ensure all devices have the latest data
         await Task.Delay(1, cancellationToken);
-        _logger.LogTrace("Ensured coherency for buffer {BufferId}", 
+        _logger.LogTrace("Ensured coherency for buffer {BufferId}",
+
             buffer is UnifiedMemoryBuffer umb ? umb.Id : "unknown");
     }
 
@@ -277,9 +287,11 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
             {
                 await _poolService.ReturnBufferAsync(umb.PooledBuffer, cancellationToken);
             }
-            
+
+
             await umb.DisposeAsync();
-            
+
+
             _logger.LogTrace("Released unified buffer {BufferId}", umb.Id);
         }
         else if (buffer != null)
@@ -291,7 +303,8 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
     internal void NotifyBufferAccess(Guid bufferId, IAccelerator? accelerator)
     {
         // Track buffer access patterns for optimization
-        _logger.LogTrace("Buffer {BufferId} accessed from device {DeviceId}", 
+        _logger.LogTrace("Buffer {BufferId} accessed from device {DeviceId}",
+
             bufferId, accelerator?.Info.Id ?? "host");
     }
 
@@ -354,7 +367,8 @@ internal abstract class UnifiedMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
     protected readonly UnifiedMemoryService _service;
     protected readonly ILogger _logger;
 
-    protected UnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options, 
+    protected UnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options,
+
         IUnifiedMemoryBuffer? pooledBuffer, UnifiedMemoryService service, ILogger logger)
     {
         Id = id;
@@ -365,7 +379,8 @@ internal abstract class UnifiedMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    protected UnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options, 
+    protected UnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options,
+
         UnifiedMemoryService service, ILogger logger)
         : this(id, sizeInBytes, options, null, service, logger)
     {
@@ -396,13 +411,15 @@ internal abstract class UnifiedMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
 /// </summary>
 internal sealed class ConcreteUnifiedMemoryBuffer : UnifiedMemoryBuffer
 {
-    public ConcreteUnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options, 
+    public ConcreteUnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options,
+
         IUnifiedMemoryBuffer? pooledBuffer, UnifiedMemoryService service, ILogger logger)
         : base(id, sizeInBytes, options, pooledBuffer, service, logger)
     {
     }
 
-    public ConcreteUnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options, 
+    public ConcreteUnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options,
+
         UnifiedMemoryService service, ILogger logger)
         : base(id, sizeInBytes, options, null, service, logger)
     {
@@ -433,14 +450,16 @@ internal sealed class UnifiedMemoryBuffer<T> : UnifiedMemoryBuffer, IUnifiedMemo
     public bool IsOnDevice => false;
     public bool IsDirty => false;
 
-    public UnifiedMemoryBuffer(Guid id, int count, MemoryOptions options, 
+    public UnifiedMemoryBuffer(Guid id, int count, MemoryOptions options,
+
         IUnifiedMemoryBuffer? pooledBuffer, UnifiedMemoryService service, ILogger logger)
         : base(id, count * Unsafe.SizeOf<T>(), options, pooledBuffer, service, logger)
     {
         Length = count;
     }
 
-    public UnifiedMemoryBuffer(Guid id, int count, MemoryOptions options, 
+    public UnifiedMemoryBuffer(Guid id, int count, MemoryOptions options,
+
         UnifiedMemoryService service, ILogger logger)
         : base(id, count * Unsafe.SizeOf<T>(), options, service, logger)
     {

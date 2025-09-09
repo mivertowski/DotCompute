@@ -110,7 +110,8 @@ public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         if (!IsCompiled)
         {
             throw new InvalidOperationException($"Kernel '{Name}' is not compiled and cannot be executed.");

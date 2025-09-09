@@ -349,6 +349,7 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
     private static bool IsWellAligned(Type type)
         // Simple check for alignment - more sophisticated logic would be needed in practice
 
+
         => type.IsPrimitive || (type.IsValueType && CalculateTypeSize(type) % 4 == 0);
 
     private static int CalculateTypeSize(Type type)

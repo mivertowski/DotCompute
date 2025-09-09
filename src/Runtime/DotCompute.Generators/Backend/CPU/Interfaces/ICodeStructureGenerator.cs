@@ -13,15 +13,15 @@ public interface ICodeStructureGenerator
     /// <summary>
     /// Generates file header with required using statements.
     /// </summary>
-    void GenerateFileHeader(StringBuilder sb);
-    
+    public void GenerateFileHeader(StringBuilder sb);
+
     /// <summary>
     /// Generates namespace declaration and class opening.
     /// </summary>
-    void GenerateNamespaceAndClass(StringBuilder sb, string methodName);
-    
+    public void GenerateNamespaceAndClass(StringBuilder sb, string methodName);
+
     /// <summary>
     /// Generates closing braces for class and namespace.
     /// </summary>
-    void GenerateClassClosing(StringBuilder sb);
+    public void GenerateClassClosing(StringBuilder sb);
 }

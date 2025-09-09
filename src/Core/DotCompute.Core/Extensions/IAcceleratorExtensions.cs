@@ -89,14 +89,14 @@ namespace DotCompute.Core.Extensions
         /// <summary>
         /// Synchronizes the stream, waiting for all operations to complete.
         /// </summary>
-        void Synchronize();
+        public void Synchronize();
 
         /// <summary>
         /// Asynchronously synchronizes the stream.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A task representing the synchronization operation.</returns>
-        ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
+        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -113,8 +113,9 @@ namespace DotCompute.Core.Extensions
         public static ValueTask BeginCapture(this IComputeStream stream)
         {
             ArgumentNullException.ThrowIfNull(stream);
-            
+
             // For CUDA streams, try to use reflection to call the native BeginCapture method
+
             var method = stream.GetType().GetMethod("BeginCapture");
             if (method != null)
             {
@@ -132,8 +133,9 @@ namespace DotCompute.Core.Extensions
                 }
 
             }
-            
+
             // For other stream types, return completed task
+
             return ValueTask.CompletedTask;
         }
 
@@ -146,8 +148,9 @@ namespace DotCompute.Core.Extensions
         public static ValueTask<object?> EndCapture(this IComputeStream stream)
         {
             ArgumentNullException.ThrowIfNull(stream);
-            
+
             // For CUDA streams, try to use reflection to call the native EndCapture method
+
             var method = stream.GetType().GetMethod("EndCapture");
             if (method != null)
             {
@@ -179,8 +182,9 @@ namespace DotCompute.Core.Extensions
                 }
 
             }
-            
+
             // For other stream types, return null
+
             return ValueTask.FromResult<object?>(null);
         }
     }
@@ -193,27 +197,27 @@ namespace DotCompute.Core.Extensions
         /// <summary>
         /// Gets the number of kernel executions performed.
         /// </summary>
-        long KernelExecutions { get; }
+        public long KernelExecutions { get; }
 
         /// <summary>
         /// Gets the number of memory transfer operations performed.
         /// </summary>
-        long MemoryTransfers { get; }
+        public long MemoryTransfers { get; }
 
         /// <summary>
         /// Gets the total execution time for all operations.
         /// </summary>
-        TimeSpan TotalExecutionTime { get; }
+        public TimeSpan TotalExecutionTime { get; }
 
         /// <summary>
         /// Gets the average kernel execution time.
         /// </summary>
-        TimeSpan AverageKernelTime { get; }
+        public TimeSpan AverageKernelTime { get; }
 
         /// <summary>
         /// Gets the total bytes transferred to/from device memory.
         /// </summary>
-        long TotalBytesTransferred { get; }
+        public long TotalBytesTransferred { get; }
     }
 
     /// <summary>

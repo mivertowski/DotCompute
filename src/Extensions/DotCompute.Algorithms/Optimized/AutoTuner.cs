@@ -626,8 +626,8 @@ public sealed class AutoTuner : IDisposable
         {
             tasks.Add(algorithmName switch
             {
-                "MatrixMultiplication" => TuneMatrixMultiplicationAsync(new[] { 256, 512, 1024 }),
-                "FFT" => TuneFFTAsync(new[] { 256, 512, 1024, 2048 }),
+                "MatrixMultiplication" => TuneMatrixMultiplicationAsync([256, 512, 1024]),
+                "FFT" => TuneFFTAsync([256, 512, 1024, 2048]),
                 _ => Task.CompletedTask
             });
         }
@@ -868,10 +868,10 @@ public sealed class AutoTuner : IDisposable
                         switch (algorithmName)
                         {
                             case "MatrixMultiplication":
-                                _ = await TuneMatrixMultiplicationAsync(new[] { 512, 1024 });
+                                _ = await TuneMatrixMultiplicationAsync([512, 1024]);
                                 break;
                             case "FFT":
-                                _ = await TuneFFTAsync(new[] { 512, 1024 });
+                                _ = await TuneFFTAsync([512, 1024]);
                                 break;
                         }
                     }

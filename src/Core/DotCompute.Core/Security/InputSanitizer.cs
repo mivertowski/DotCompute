@@ -684,6 +684,7 @@ public sealed class InputSanitizer : IDisposable
     private static string SanitizeEmail(string input)
         // Basic email sanitization - remove dangerous characters
 
+
         => Regex.Replace(input, @"[^\w@.-]", "", RegexOptions.Compiled);
 
     private static string SanitizeAlphaNumeric(string input) => Regex.Replace(input, @"[^a-zA-Z0-9]", "", RegexOptions.Compiled);
@@ -1061,6 +1062,7 @@ public sealed class ValidationStatistics
     public ConcurrentDictionary<SanitizationType, long> ValidationsByType { get; } = new();
     public ConcurrentDictionary<ThreatType, long> ThreatsByType { get; } = new();
 }
+
 
 
 #endregion

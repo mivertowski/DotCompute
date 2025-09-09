@@ -20,5 +20,5 @@ public interface IUnifiedKernelCompiler
     /// <param name="request">The kernel compilation request containing source code and configuration.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task containing the kernel compilation result.</returns>
-    Task<KernelCompilationResult> CompileKernelAsync(KernelCompilationRequest request, CancellationToken cancellationToken = default);
+    public Task<KernelCompilationResult> CompileKernelAsync(KernelCompilationRequest request, CancellationToken cancellationToken = default);
 }

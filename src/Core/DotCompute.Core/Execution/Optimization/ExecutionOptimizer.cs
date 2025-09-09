@@ -153,7 +153,8 @@ namespace DotCompute.Core.Execution.Optimization
         {
             // Minimize synchronization overhead by analyzing dependency patterns
             var taskDependencies = plan.DeviceTasks.SelectMany(t => t.Dependencies).ToList();
-            
+
+
             _logger.LogTrace("Analyzing {DependencyCount} task dependencies for synchronization optimization", taskDependencies.Count);
 
             // Additional synchronization optimization logic would go here - TODO

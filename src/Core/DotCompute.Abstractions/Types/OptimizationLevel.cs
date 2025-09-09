@@ -12,7 +12,8 @@ public enum OptimizationLevel
     /// No optimization - fastest compilation (equivalent to -O0).
     /// </summary>
     None = 0,
-    
+
+
     /// <summary>
     /// No optimization - fastest compilation (equivalent to -O0).
     /// </summary>
@@ -22,7 +23,8 @@ public enum OptimizationLevel
     /// Minimal optimization - fastest compilation with basic optimizations (equivalent to -O1).
     /// </summary>
     Minimal = 1,
-    
+
+
     /// <summary>
     /// Basic optimization - minimal performance improvements (equivalent to -O1).
     /// </summary>
@@ -32,7 +34,8 @@ public enum OptimizationLevel
     /// Default optimization - balanced compilation time and performance (equivalent to -O2).
     /// </summary>
     Default = 2,
-    
+
+
     /// <summary>
     /// Standard optimization - good performance with reasonable compilation time (equivalent to -O2).
     /// </summary>
@@ -47,7 +50,8 @@ public enum OptimizationLevel
     /// Aggressive optimization - maximum performance, slower compilation (equivalent to -O3).
     /// </summary>
     Aggressive = 4,
-    
+
+
     /// <summary>
     /// Maximum optimization - best performance, longest compilation time (equivalent to -O3).
     /// </summary>

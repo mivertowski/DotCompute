@@ -145,6 +145,7 @@ public class SandboxedPlugin : IDisposable
         // This would terminate any active threads or tasks within the plugin
         // Implementation would depend on the specific threading model used
 
+
         => await Task.CompletedTask.ConfigureAwait(false);
 
     /// <summary>

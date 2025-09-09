@@ -19,16 +19,18 @@ public class PluginInitializationException : PluginException
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginInitializationException"/> class.
     /// </summary>
-    public PluginInitializationException() 
-    { 
+    public PluginInitializationException()
+    {
+
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginInitializationException"/> class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
-    public PluginInitializationException(string message) : base(message) 
-    { 
+    public PluginInitializationException(string message) : base(message)
+    {
+
     }
 
     /// <summary>
@@ -38,8 +40,9 @@ public class PluginInitializationException : PluginException
     /// <param name="message">The error message that explains the reason for the exception.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
     public PluginInitializationException(string message, Exception innerException)
-        : base(message, innerException) 
-    { 
+        : base(message, innerException)
+    {
+
     }
 
     /// <summary>
@@ -49,8 +52,9 @@ public class PluginInitializationException : PluginException
     /// <param name="message">The message that describes the error.</param>
     /// <param name="pluginId">The unique identifier of the plugin.</param>
     public PluginInitializationException(string message, string pluginId)
-        : base(message, pluginId) 
-    { 
+        : base(message, pluginId)
+    {
+
     }
 
     /// <summary>
@@ -61,8 +65,9 @@ public class PluginInitializationException : PluginException
     /// <param name="pluginId">The unique identifier of the plugin.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
     public PluginInitializationException(string message, string pluginId, Exception innerException)
-        : base(message, pluginId, innerException) 
-    { 
+        : base(message, pluginId, innerException)
+    {
+
     }
 
     /// <summary>
@@ -72,7 +77,8 @@ public class PluginInitializationException : PluginException
     /// <param name="context">The contextual information about the source or destination.</param>
     [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
     protected PluginInitializationException(SerializationInfo info, StreamingContext context)
-        : base(info, context) 
-    { 
+        : base(info, context)
+    {
+
     }
 }

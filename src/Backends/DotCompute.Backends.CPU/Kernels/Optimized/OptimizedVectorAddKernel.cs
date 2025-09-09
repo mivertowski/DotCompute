@@ -72,6 +72,7 @@ internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
         // Use generic implementation since we don't have direct access to HighPerformanceMemoryBuffer here
         // This could be optimized further by exposing unsafe pointers through IUnifiedMemoryBuffer
 
+
         => await ExecuteVectorAddGenericAsync(bufferA, bufferB, bufferResult, elementCount);
 
     /// <summary>

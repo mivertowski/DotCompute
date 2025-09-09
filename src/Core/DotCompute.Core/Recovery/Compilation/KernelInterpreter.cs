@@ -79,7 +79,8 @@ public class KernelInterpreter : IDisposable
         // - Building an abstract syntax tree
         // - Validating kernel structure and syntax
         // - Setting up execution environment
-        
+
+
         await Task.Delay(100, cancellationToken);
         _prepared = true;
         _logger.LogDebug("Kernel interpreter prepared for source code length {Length}", _sourceCode.Length);
@@ -101,7 +102,8 @@ public class KernelInterpreter : IDisposable
             // - Freeing parsed syntax trees
             // - Cleaning up execution context
             // - Releasing any native resources
-            
+
+
             _disposed = true;
         }
     }

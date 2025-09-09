@@ -20,12 +20,12 @@ public interface IUnifiedAcceleratorFactory
     /// <param name="serviceProvider">Optional service provider for dependency injection.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created accelerator instance.</returns>
-    ValueTask<IAccelerator> CreateAsync(
+    public ValueTask<IAccelerator> CreateAsync(
         AcceleratorType type,
         AcceleratorConfiguration? configuration = null,
         IServiceProvider? serviceProvider = null,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Creates an accelerator instance with a specific backend.
     /// </summary>
@@ -34,12 +34,12 @@ public interface IUnifiedAcceleratorFactory
     /// <param name="serviceProvider">Optional service provider for dependency injection.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created accelerator instance.</returns>
-    ValueTask<IAccelerator> CreateAsync(
+    public ValueTask<IAccelerator> CreateAsync(
         string backendName,
         AcceleratorConfiguration? configuration = null,
         IServiceProvider? serviceProvider = null,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Creates an accelerator instance with specific device info.
     /// </summary>
@@ -47,11 +47,11 @@ public interface IUnifiedAcceleratorFactory
     /// <param name="serviceProvider">Optional service provider for dependency injection.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created accelerator instance.</returns>
-    ValueTask<IAccelerator> CreateAsync(
+    public ValueTask<IAccelerator> CreateAsync(
         AcceleratorInfo acceleratorInfo,
         IServiceProvider? serviceProvider = null,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Creates an accelerator provider with DI support.
     /// </summary>
@@ -59,46 +59,47 @@ public interface IUnifiedAcceleratorFactory
     /// <param name="serviceProvider">The service provider.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created accelerator provider.</returns>
-    ValueTask<TProvider> CreateProviderAsync<TProvider>(
+    public ValueTask<TProvider> CreateProviderAsync<TProvider>(
         IServiceProvider serviceProvider,
-        CancellationToken cancellationToken = default) 
+        CancellationToken cancellationToken = default)
+
         where TProvider : class, IAcceleratorProvider;
-    
+
     /// <summary>
     /// Gets available accelerator types on the current system.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of available accelerator types.</returns>
-    ValueTask<IReadOnlyList<AcceleratorType>> GetAvailableTypesAsync(
+    public ValueTask<IReadOnlyList<AcceleratorType>> GetAvailableTypesAsync(
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Gets information about available accelerator devices.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of available accelerator information.</returns>
-    ValueTask<IReadOnlyList<AcceleratorInfo>> GetAvailableDevicesAsync(
+    public ValueTask<IReadOnlyList<AcceleratorInfo>> GetAvailableDevicesAsync(
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Checks if an accelerator type can be created.
     /// </summary>
     /// <param name="acceleratorType">The accelerator type.</param>
     /// <returns>True if the accelerator can be created.</returns>
-    bool CanCreateAccelerator(AcceleratorType acceleratorType);
-    
+    public bool CanCreateAccelerator(AcceleratorType acceleratorType);
+
     /// <summary>
     /// Registers a custom accelerator provider type.
     /// </summary>
     /// <param name="providerType">The provider type.</param>
     /// <param name="supportedTypes">The accelerator types supported by this provider.</param>
-    void RegisterProvider(Type providerType, params AcceleratorType[] supportedTypes);
-    
+    public void RegisterProvider(Type providerType, params AcceleratorType[] supportedTypes);
+
     /// <summary>
     /// Unregisters a custom accelerator provider type.
     /// </summary>
     /// <param name="providerType">The provider type to unregister.</param>
-    bool UnregisterProvider(Type providerType);
+    public bool UnregisterProvider(Type providerType);
 }
 
 /// <summary>
@@ -110,32 +111,38 @@ public class AcceleratorConfiguration
     /// Gets or sets the device index to use (for multi-device systems).
     /// </summary>
     public int DeviceIndex { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets whether to enable debug mode.
     /// </summary>
     public bool EnableDebugMode { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets whether to enable profiling.
     /// </summary>
     public bool EnableProfiling { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the memory allocation strategy.
     /// </summary>
     public MemoryAllocationStrategy MemoryStrategy { get; set; } = MemoryAllocationStrategy.Default;
-    
+
+
     /// <summary>
     /// Gets or sets whether to enable NUMA optimization for CPU.
     /// </summary>
     public bool EnableNumaOptimization { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the performance profile.
     /// </summary>
     public PerformanceProfile PerformanceProfile { get; set; } = PerformanceProfile.Balanced;
-    
+
+
     /// <summary>
     /// Gets or sets custom properties for backend-specific configuration.
     /// </summary>
@@ -151,27 +158,28 @@ public enum MemoryAllocationStrategy
     /// Default allocation strategy.
     /// </summary>
     Default,
-    
+
     /// <summary>
     /// Pooled memory allocation.
     /// </summary>
     Pooled,
-    
+
     /// <summary>
     /// Optimized pooled memory allocation with lock-free structures.
     /// </summary>
     OptimizedPooled,
-    
+
     /// <summary>
     /// Unified memory allocation.
     /// </summary>
     Unified,
-    
+
     /// <summary>
     /// Aggressive caching strategy.
     /// </summary>
     AggressiveCaching,
-    
+
+
     /// <summary>
     /// Conservative memory usage.
     /// </summary>

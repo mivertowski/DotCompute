@@ -315,7 +315,8 @@ internal sealed class KernelMetadata
     public required bool SupportsVectorization { get; init; }
     public required int PreferredVectorWidth { get; init; }
     public required MemoryAccessPattern MemoryPattern { get; init; }
-    
+
+
     /// <summary>
     /// Gets or sets the disk path for cached kernel storage.
     /// </summary>

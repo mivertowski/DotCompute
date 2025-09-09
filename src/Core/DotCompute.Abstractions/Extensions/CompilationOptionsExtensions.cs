@@ -72,7 +72,8 @@ public static class CompilationOptionsExtensions
         options.EnableInlining = true;
         options.UnrollLoops = true;
         options.EnableVectorization = true;
-        
+
+
         return options;
     }
 
@@ -90,7 +91,8 @@ public static class CompilationOptionsExtensions
         options.AggressiveOptimizations = false;
         options.EnableFastMath = false;
         options.FloatingPointMode = FloatingPointMode.Strict;
-        
+
+
         return options;
     }
 
@@ -110,7 +112,8 @@ public static class CompilationOptionsExtensions
         options.UnrollLoops = true;
         options.EnableInlining = true;
         options.FloatingPointMode = FloatingPointMode.Fast;
-        
+
+
         return options;
     }
 

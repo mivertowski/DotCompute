@@ -21,22 +21,22 @@ internal static class PrometheusMetricsStub
 
 internal interface ICounter
 {
-    ICounter WithLabels(params string[] labels);
-    void Inc(double increment = 1);
+    public ICounter WithLabels(params string[] labels);
+    public void Inc(double increment = 1);
 }
 
 internal interface IHistogram
 {
-    IHistogram WithLabels(params string[] labels);
-    void Observe(double value);
+    public IHistogram WithLabels(params string[] labels);
+    public void Observe(double value);
 }
 
 internal interface IGauge
 {
-    IGauge WithLabels(params string[] labels);
-    void Set(double value);
-    void Inc(double increment = 1);
-    void Dec(double decrement = 1);
+    public IGauge WithLabels(params string[] labels);
+    public void Set(double value);
+    public void Inc(double increment = 1);
+    public void Dec(double decrement = 1);
 }
 
 internal class StubCounter : ICounter

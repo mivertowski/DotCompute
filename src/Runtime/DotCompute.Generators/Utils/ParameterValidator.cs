@@ -20,7 +20,8 @@ public static class ParameterValidator
     public static string GenerateParameterValidation(IEnumerable<KernelParameter> parameters)
     {
         ArgumentValidation.ThrowIfNull(parameters);
-        
+
+
         var sb = new StringBuilder();
 
         foreach (var param in parameters)
@@ -43,7 +44,8 @@ public static class ParameterValidator
     public static string ValidateBufferParameter(KernelParameter parameter)
     {
         ArgumentValidation.ThrowIfNull(parameter);
-        
+
+
         if (!parameter.IsBuffer)
         {
             throw new ArgumentException("Parameter is not a buffer type", nameof(parameter));
@@ -60,7 +62,8 @@ public static class ParameterValidator
     public static string ValidateSpanParameter(KernelParameter parameter)
     {
         ArgumentValidation.ThrowIfNull(parameter);
-        
+
+
         if (!IsSpanOrMemoryType(parameter.Type))
         {
             throw new ArgumentException("Parameter is not a Span or Memory type", nameof(parameter));
@@ -78,7 +81,8 @@ public static class ParameterValidator
         {
             return ValidateBufferParameter(param);
         }
-        
+
+
         if (IsSpanOrMemoryType(param.Type))
         {
             return ValidateSpanParameter(param);
@@ -93,7 +97,8 @@ public static class ParameterValidator
     /// </summary>
     private static bool IsSpanOrMemoryType(string type)
     {
-        return type.IndexOf("Span", StringComparison.OrdinalIgnoreCase) >= 0 || 
+        return type.IndexOf("Span", StringComparison.OrdinalIgnoreCase) >= 0 ||
+
                type.IndexOf("Memory", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
@@ -107,19 +112,23 @@ public static class ParameterValidator
     public static string ValidateNumericRange(KernelParameter parameter, double? min = null, double? max = null)
     {
         ArgumentValidation.ThrowIfNull(parameter);
-        
+
+
         var sb = new StringBuilder();
-        
+
+
         if (min.HasValue)
         {
             _ = sb.AppendLine($"if ({parameter.Name} < {min.Value}) throw new ArgumentOutOfRangeException(nameof({parameter.Name}), \"{parameter.Name} must be >= {min.Value}\");");
         }
-        
+
+
         if (max.HasValue)
         {
             _ = sb.AppendLine($"if ({parameter.Name} > {max.Value}) throw new ArgumentOutOfRangeException(nameof({parameter.Name}), \"{parameter.Name} must be <= {max.Value}\");");
         }
-        
+
+
         return sb.ToString();
     }
 
@@ -131,23 +140,28 @@ public static class ParameterValidator
     public static string ValidateDimensionCompatibility(IEnumerable<KernelParameter> parameters)
     {
         ArgumentValidation.ThrowIfNull(parameters);
-        
+
+
         var bufferParams = parameters.Where(p => p.IsBuffer || IsSpanOrMemoryType(p.Type)).ToList();
-        
+
+
         if (bufferParams.Count < 2)
         {
             return string.Empty;
         }
-        
+
+
         var sb = new StringBuilder();
         var firstParam = bufferParams[0];
-        
+
+
         for (var i = 1; i < bufferParams.Count; i++)
         {
             var param = bufferParams[i];
             _ = sb.AppendLine($"if ({firstParam.Name}.Length != {param.Name}.Length) throw new ArgumentException(\"Buffer dimensions must match\", nameof({param.Name}));");
         }
-        
+
+
         return sb.ToString();
     }
 }

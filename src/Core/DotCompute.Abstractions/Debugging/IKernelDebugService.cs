@@ -22,9 +22,11 @@ public interface IKernelDebugService
     /// <param name="inputs">Input parameters for the kernel</param>
     /// <param name="tolerance">Numerical tolerance for floating-point comparisons (default: 1e-6f)</param>
     /// <returns>Validation result containing comparison data and potential issues</returns>
-    Task<KernelValidationResult> ValidateKernelAsync(
-        string kernelName, 
-        object[] inputs, 
+    public Task<KernelValidationResult> ValidateKernelAsync(
+        string kernelName,
+
+        object[] inputs,
+
         float tolerance = 1e-6f);
 
     /// <summary>
@@ -35,9 +37,11 @@ public interface IKernelDebugService
     /// <param name="backendType">Specific backend to use for execution</param>
     /// <param name="inputs">Input parameters for the kernel</param>
     /// <returns>Execution result with timing, memory usage, and output data</returns>
-    Task<KernelExecutionResult> ExecuteOnBackendAsync(
-        string kernelName, 
-        string backendType, 
+    public Task<KernelExecutionResult> ExecuteOnBackendAsync(
+        string kernelName,
+
+        string backendType,
+
         object[] inputs);
 
     /// <summary>
@@ -47,7 +51,7 @@ public interface IKernelDebugService
     /// <param name="results">Collection of execution results from different backends</param>
     /// <param name="comparisonStrategy">Strategy for comparing the results</param>
     /// <returns>Comparison result highlighting differences and similarities</returns>
-    Task<ResultComparisonReport> CompareResultsAsync(
+    public Task<ResultComparisonReport> CompareResultsAsync(
         IEnumerable<KernelExecutionResult> results,
         ComparisonStrategy comparisonStrategy = ComparisonStrategy.Tolerance);
 
@@ -59,7 +63,7 @@ public interface IKernelDebugService
     /// <param name="inputs">Input parameters for the kernel</param>
     /// <param name="tracePoints">Specific points in the kernel to capture state</param>
     /// <returns>Execution trace with intermediate values</returns>
-    Task<KernelExecutionTrace> TraceKernelExecutionAsync(
+    public Task<KernelExecutionTrace> TraceKernelExecutionAsync(
         string kernelName,
         object[] inputs,
         string[] tracePoints);
@@ -72,7 +76,7 @@ public interface IKernelDebugService
     /// <param name="inputs">Input parameters for the kernel</param>
     /// <param name="iterations">Number of executions to perform (default: 10)</param>
     /// <returns>Determinism report showing consistency across executions</returns>
-    Task<DeterminismReport> ValidateDeterminismAsync(
+    public Task<DeterminismReport> ValidateDeterminismAsync(
         string kernelName,
         object[] inputs,
         int iterations = 10);
@@ -84,7 +88,7 @@ public interface IKernelDebugService
     /// <param name="kernelName">Name of the kernel to analyze</param>
     /// <param name="inputs">Input parameters for the kernel</param>
     /// <returns>Memory analysis report with optimization suggestions</returns>
-    Task<MemoryAnalysisReport> AnalyzeMemoryPatternsAsync(
+    public Task<MemoryAnalysisReport> AnalyzeMemoryPatternsAsync(
         string kernelName,
         object[] inputs);
 
@@ -93,13 +97,13 @@ public interface IKernelDebugService
     /// Useful for understanding why certain backends might be selected or rejected.
     /// </summary>
     /// <returns>Information about all available backends and their current status</returns>
-    Task<IEnumerable<BackendInfo>> GetAvailableBackendsAsync();
+    public Task<IEnumerable<BackendInfo>> GetAvailableBackendsAsync();
 
     /// <summary>
     /// Configures debugging options such as verbosity level, output formats, etc.
     /// </summary>
     /// <param name="options">Debugging configuration options</param>
-    void Configure(DebugServiceOptions options);
+    public void Configure(DebugServiceOptions options);
 }
 
 /// <summary>

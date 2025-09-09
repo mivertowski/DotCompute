@@ -68,7 +68,8 @@ public class PipelineException : Exception
     /// </summary>
     /// <param name="message">The error message.</param>
     /// <param name="innerException">The inner exception.</param>
-    public PipelineException(string message, Exception innerException) 
+    public PipelineException(string message, Exception innerException)
+
         : base(message, innerException)
     {
         ErrorCode = "UNKNOWN_ERROR";

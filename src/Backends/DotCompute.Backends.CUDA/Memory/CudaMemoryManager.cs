@@ -37,7 +37,8 @@ namespace DotCompute.Backends.CUDA.Memory
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _allocations = new ConcurrentDictionary<IntPtr, long>();
             _pinnedAllocator = new CudaPinnedMemoryAllocator(context, logger);
-            
+
+
             InitializeMemoryInfo();
         }
 
@@ -75,7 +76,8 @@ namespace DotCompute.Backends.CUDA.Memory
 
             var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             var devicePtr = IntPtr.Zero;
-            
+
+
             var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)sizeInBytes);
             CudaRuntime.CheckError(result, "allocating device memory");
 
@@ -97,7 +99,8 @@ namespace DotCompute.Backends.CUDA.Memory
             return await Task.Run(() =>
             {
                 var devicePtr = IntPtr.Zero;
-                
+
+
                 var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)sizeInBytes);
                 CudaRuntime.CheckError(result, "allocating device memory");
 
@@ -128,14 +131,24 @@ namespace DotCompute.Backends.CUDA.Memory
             if ((options & MemoryOptions.Pinned) != 0)
             {
                 var flags = CudaHostAllocFlags.Default;
-                
+
                 // Configure flags based on options
+
                 if ((options & MemoryOptions.Mapped) != 0)
+                {
                     flags |= CudaHostAllocFlags.Mapped;
+                }
+
                 if ((options & MemoryOptions.WriteCombined) != 0)
+                {
                     flags |= CudaHostAllocFlags.WriteCombined;
+                }
+
                 if ((options & MemoryOptions.Portable) != 0)
+                {
                     flags |= CudaHostAllocFlags.Portable;
+                }
+
 
                 var pinnedBuffer = await _pinnedAllocator.AllocatePinnedAsync<T>(count, flags, cancellationToken);
                 return (IUnifiedMemoryBuffer<T>)pinnedBuffer;
@@ -153,14 +166,16 @@ namespace DotCompute.Backends.CUDA.Memory
             return await Task.Run(() =>
             {
                 var devicePtr = IntPtr.Zero;
-                
+
+
                 var result = CudaRuntime.cudaMalloc(ref devicePtr, (ulong)sizeInBytes);
                 CudaRuntime.CheckError(result, "allocating device memory");
 
                 _allocations[devicePtr] = sizeInBytes;
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                _logger.LogDebug("Allocated {Size} bytes at {Address:X} for type {Type} with options {Options}", 
+                _logger.LogDebug("Allocated {Size} bytes at {Address:X} for type {Type} with options {Options}",
+
                     sizeInBytes, devicePtr, typeof(T).Name, options);
 
                 return (IUnifiedMemoryBuffer<T>)new CudaMemoryBuffer<T>(devicePtr, count, _context);
@@ -177,14 +192,16 @@ namespace DotCompute.Backends.CUDA.Memory
             return await Task.Run(() =>
             {
                 var unifiedPtr = IntPtr.Zero;
-                
+
+
                 var result = CudaRuntime.cudaMallocManaged(ref unifiedPtr, (ulong)sizeInBytes, 1); // Global attach
                 CudaRuntime.CheckError(result, "allocating unified memory");
 
                 _allocations[unifiedPtr] = sizeInBytes;
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                _logger.LogDebug("Allocated {Size} bytes unified memory at {Address:X} for type {Type}", 
+                _logger.LogDebug("Allocated {Size} bytes unified memory at {Address:X} for type {Type}",
+
                     sizeInBytes, unifiedPtr, typeof(T).Name);
 
                 return (IUnifiedMemoryBuffer<T>)new SimpleCudaUnifiedMemoryBuffer<T>(unifiedPtr, (int)count, true);
@@ -230,7 +247,8 @@ namespace DotCompute.Backends.CUDA.Memory
                     _totalMemory = (long)total;
                     // Set max allocation size to 90% of total memory to leave room for other operations
                     _maxAllocationSize = (long)(total * 0.9);
-                    _logger.LogDebug("Initialized CUDA memory info - Total: {Total:N0} bytes, Max allocation: {Max:N0} bytes", 
+                    _logger.LogDebug("Initialized CUDA memory info - Total: {Total:N0} bytes, Max allocation: {Max:N0} bytes",
+
                         _totalMemory, _maxAllocationSize);
                 }
                 else
@@ -256,19 +274,23 @@ namespace DotCompute.Backends.CUDA.Memory
         public void Reset()
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            
+
             // Free all existing allocations
+
             foreach (var allocation in _allocations.Keys.ToList())
             {
                 Free(allocation);
             }
-            
+
+
             _allocations.Clear();
             _ = Interlocked.Exchange(ref _totalAllocated, 0);
-            
+
             // Re-initialize memory info
+
             InitializeMemoryInfo();
-            
+
+
             _logger.LogInformation("CUDA memory manager reset completed");
         }
 
@@ -303,10 +325,12 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
             _allocations.Clear();
-            
+
             // Dispose pinned memory allocator
+
             _pinnedAllocator?.Dispose();
-            
+
+
             _disposed = true;
         }
     }

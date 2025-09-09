@@ -20,27 +20,32 @@ public class CpuAcceleratorTests : IDisposable
 {
     private readonly ILogger<CpuAccelerator> _logger;
     private readonly CpuAccelerator _accelerator;
-    
+
+
     public CpuAcceleratorTests()
     {
         var loggerFactory = new LoggerFactory();
         _logger = loggerFactory.CreateLogger<CpuAccelerator>();
-        
+
+
         var acceleratorOptions = Options.Create(new CpuAcceleratorOptions
         {
             EnableAutoVectorization = true,
             PreferPerformanceOverPower = true,
             MaxWorkGroupSize = Environment.ProcessorCount
         });
-        
+
+
         var threadPoolOptions = Options.Create(new CpuThreadPoolOptions
         {
             WorkerThreads = Environment.ProcessorCount
         });
-        
+
+
         _accelerator = new CpuAccelerator(acceleratorOptions, threadPoolOptions, _logger);
     }
-    
+
+
     [Fact]
     public void Constructor_WithValidOptions_InitializesSuccessfully()
     {
@@ -51,7 +56,8 @@ public class CpuAcceleratorTests : IDisposable
         _ = _accelerator.Type.Should().Be(AcceleratorType.CPU);
         _ = _accelerator.IsDisposed.Should().BeFalse();
     }
-    
+
+
     [Fact]
     public void AcceleratorInfo_ContainsExpectedProperties()
     {
@@ -70,7 +76,8 @@ public class CpuAcceleratorTests : IDisposable
         _ = info.Capabilities!.Should().ContainKey("NumaNodes");
         _ = info.Capabilities!.Should().ContainKey("CacheLineSize");
     }
-    
+
+
     [Fact]
     public void AcceleratorInfo_SimdCapabilities_AreDetectedCorrectly()
     {
@@ -87,7 +94,8 @@ public class CpuAcceleratorTests : IDisposable
         _ = supportedSets.Should().NotBeNull();
         _ = supportedSets.Should().NotBeEmpty();
     }
-    
+
+
     [Fact]
     public void ThreadCount_MatchesProcessorCount()
     {
@@ -97,7 +105,8 @@ public class CpuAcceleratorTests : IDisposable
         // Assert
         _ = threadCount!.Should().Be(Environment.ProcessorCount);
     }
-    
+
+
     [Fact]
     public async Task CompileKernelAsync_WithSimpleKernel_CompilesSuccessfully()
     {
@@ -106,31 +115,36 @@ public class CpuAcceleratorTests : IDisposable
             "simple_add",
             "__kernel void simple_add(__global float* a, __global float* b, __global float* c) { int i = get_global_id(0); c[i] = a[i] + b[i]; }",
             "simple_add");
-        
+
+
         var options = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
-        
+
         // Act
+
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be("simple_add");
         _ = compiledKernel.Id.Should().NotBe(Guid.Empty);
-        
+
         // Cleanup
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task CompileKernelAsync_WithOptimization_EnablesVectorization()
     {
         // Arrange
         var kernelDefinition = new KernelDefinition(
-            "vector_add", 
+            "vector_add",
+
             "__kernel void vector_add(__global float* a, __global float* b, __global float* c) { int i = get_global_id(0); c[i] = a[i] + b[i]; }",
             "vector_add")
         {
@@ -141,43 +155,50 @@ public class CpuAcceleratorTests : IDisposable
                 ["ParameterAccess"] = new[] { "ReadOnly", "ReadOnly", "WriteOnly" }
             }
         };
-        
+
+
         var options = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Maximum,
             EnableDebugInfo = false
         };
-        
+
         // Act
+
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be("vector_add");
-        
+
         // Check if SIMD capabilities are noted in metadata (if available)
+
         var metadata = kernelDefinition.Metadata;
         if (metadata?.ContainsKey("SimdCapabilities") == true)
         {
             _ = metadata["SimdCapabilities"].Should().NotBeNull();
         }
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task CompileKernelAsync_WithInvalidKernel_ThrowsException()
     {
         // Arrange
         var invalidKernel = new KernelDefinition("invalid", "", "");
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
-        
+
         // Act & Assert
+
         Func<Task> act = async () => await _accelerator.CompileKernelAsync(invalidKernel, options);
         _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Kernel*validation*failed*");
     }
-    
+
+
     [Theory]
     [InlineData(OptimizationLevel.None)]
     [InlineData(OptimizationLevel.Default)]
@@ -189,23 +210,27 @@ public class CpuAcceleratorTests : IDisposable
             $"test_kernel_{level}",
             "__kernel void test_kernel(__global float* data) { int i = get_global_id(0); data[i] *= 2.0f; }",
             "test_kernel");
-        
+
+
         var options = new CompilationOptions
         {
             OptimizationLevel = level,
             EnableDebugInfo = level == OptimizationLevel.None
         };
-        
+
         // Act
+
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be($"test_kernel_{level}");
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     public async Task SynchronizeAsync_CompletesSuccessfully()
     {
@@ -217,7 +242,8 @@ public class CpuAcceleratorTests : IDisposable
         await synchronizeTask;
         _ = synchronizeTask.IsCompleted.Should().BeTrue();
     }
-    
+
+
     [Fact]
     public void MemoryManager_IsNotNull()
     {
@@ -228,7 +254,8 @@ public class CpuAcceleratorTests : IDisposable
         _ = memoryManager.Should().NotBeNull();
         _ = memoryManager.Should().BeOfType<CpuMemoryManager>();
     }
-    
+
+
     [Fact]
     public void Context_IsValid()
     {
@@ -240,7 +267,8 @@ public class CpuAcceleratorTests : IDisposable
         // CPU context uses IntPtr.Zero as it doesn't require a specific context
         _ = context.DeviceId.Should().Be(0);
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.Performance)]
     public async Task CompileKernelAsync_PerformanceBenchmark_MeasuresCompilationTime()
@@ -250,21 +278,25 @@ public class CpuAcceleratorTests : IDisposable
             "performance_test",
             "__kernel void performance_test(__global float* a, __global float* b, __global float* c) { int i = get_global_id(0); c[i] = sqrt(a[i] * a[i] + b[i] * b[i]); }",
             "performance_test");
-        
+
+
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         // Act
+
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
         stopwatch.Stop();
 
         // Assert
         _ = compiledKernel.Should().NotBeNull();
         _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); // Should compile within 5 seconds
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.ErrorHandling)]
     public async Task CompileKernelAsync_WithNullKernel_ThrowsArgumentNullException()
@@ -272,12 +304,14 @@ public class CpuAcceleratorTests : IDisposable
         // Arrange
         KernelDefinition? nullKernel = null;
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
-        
+
         // Act & Assert
+
         Func<Task> act = async () => await _accelerator.CompileKernelAsync(nullKernel!, options);
         _ = await act.Should().ThrowExactlyAsync<ArgumentNullException>();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.ErrorHandling)]
     public async Task CompileKernelAsync_WithNullOptions_UsesDefaultOptions()
@@ -285,42 +319,51 @@ public class CpuAcceleratorTests : IDisposable
         // Arrange
         var kernelDefinition = new KernelDefinition("test", "test code", "test");
         CompilationOptions? nullOptions = null;
-        
+
         // Act
+
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, nullOptions);
-        
+
         // Assert
+
         _ = compiledKernel.Should().NotBeNull();
         _ = compiledKernel.Name.Should().Be("test");
-        
+
+
         await compiledKernel.DisposeAsync();
     }
-    
+
+
     [Fact]
     [Trait("Category", TestCategories.Concurrency)]
     public async Task CompileKernelAsync_ConcurrentCompilation_HandlesMultipleKernels()
     {
         // Arrange
-        var kernels = Enumerable.Range(0, 5).Select(i => 
+        var kernels = Enumerable.Range(0, 5).Select(i =>
+
             new KernelDefinition(
                 $"concurrent_kernel_{i}",
                 $"__kernel void concurrent_kernel_{i}(__global float* data) {{ int id = get_global_id(0); data[id] += {i}; }}",
                 $"concurrent_kernel_{i}")).ToArray();
-        
+
+
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
-        
+
         // Act
+
         var compilationTasks = kernels.Select(k => _accelerator.CompileKernelAsync(k, options).AsTask()).ToArray();
         var compiledKernels = await Task.WhenAll(compilationTasks);
 
         // Assert
         _ = compiledKernels.Should().HaveCount(5);
         _ = compiledKernels.Should().OnlyContain(k => k != null);
-        
+
         // Cleanup
+
         await Task.WhenAll(compiledKernels.Select(k => k.DisposeAsync().AsTask()));
     }
-    
+
+
     [Fact]
     public void SimdCapabilities_AreAccessibleThroughAcceleratorInfo()
     {
@@ -332,15 +375,17 @@ public class CpuAcceleratorTests : IDisposable
         // Assert
         _ = instructionSets.Should().NotBeNull();
         _ = vectorWidth.Should().NotBeNull();
-        
+
         // Should contain at least basic instruction set information
+
         if (SimdCapabilities.IsSupported)
         {
             _ = instructionSets!.Should().NotBeEmpty();
             _ = ((int)vectorWidth!).Should().BeGreaterThan(0);
         }
     }
-    
+
+
     [Theory]
     [InlineData(true, true)]   // Enable vectorization, prefer performance
     [InlineData(true, false)]  // Enable vectorization, don't prefer performance
@@ -354,17 +399,20 @@ public class CpuAcceleratorTests : IDisposable
             EnableAutoVectorization = enableVectorization,
             PreferPerformanceOverPower = preferPerformance
         });
-        
+
+
         var threadPoolOptions = Options.Create(new CpuThreadPoolOptions());
-        
+
         // Act
+
         await using var accelerator = new CpuAccelerator(acceleratorOptions, threadPoolOptions, _logger);
 
         // Assert
         _ = accelerator.Should().NotBeNull();
         _ = accelerator.Type.Should().Be(AcceleratorType.CPU);
     }
-    
+
+
     [Fact]
     public async Task DisposeAsync_ReleasesResources()
     {
@@ -372,14 +420,16 @@ public class CpuAcceleratorTests : IDisposable
         var acceleratorOptions = Options.Create(new CpuAcceleratorOptions());
         var threadPoolOptions = Options.Create(new CpuThreadPoolOptions());
         var accelerator = new CpuAccelerator(acceleratorOptions, threadPoolOptions, _logger);
-        
+
         // Act
+
         await accelerator.DisposeAsync();
 
         // Assert
         _ = accelerator.IsDisposed.Should().BeTrue();
     }
-    
+
+
     public void Dispose()
     {
         _accelerator?.DisposeAsync().AsTask().Wait();

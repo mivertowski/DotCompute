@@ -38,7 +38,8 @@ namespace DotCompute.Backends.CUDA.Persistent
         /// <param name="depth">Number of temporal slices in the ring buffer</param>
         /// <param name="elementsPerSlice">Number of elements in each slice</param>
         /// <returns>A ring buffer allocation</returns>
-        public async ValueTask<IRingBuffer<T>> AllocateRingBufferAsync<T>(int depth, long elementsPerSlice) 
+        public async ValueTask<IRingBuffer<T>> AllocateRingBufferAsync<T>(int depth, long elementsPerSlice)
+
             where T : unmanaged
         {
             ThrowIfDisposed();
@@ -94,14 +95,17 @@ namespace DotCompute.Backends.CUDA.Persistent
         /// Creates a specialized ring buffer for wave propagation simulations.
         /// </summary>
         public async ValueTask<IWaveRingBuffer<T>> AllocateWaveBufferAsync<T>(
-            int gridWidth, 
-            int gridHeight = 1, 
+            int gridWidth,
+
+            int gridHeight = 1,
+
             int gridDepth = 1,
             int temporalDepth = 3) where T : unmanaged
         {
             var elementsPerSlice = (long)gridWidth * gridHeight * gridDepth;
             var ringBuffer = await AllocateRingBufferAsync<T>(temporalDepth, elementsPerSlice);
-            
+
+
             return new WaveRingBuffer<T>(
                 ringBuffer,
                 gridWidth,
@@ -179,37 +183,37 @@ namespace DotCompute.Backends.CUDA.Persistent
         /// <summary>
         /// Gets the depth (number of temporal slices) of the ring buffer.
         /// </summary>
-        int Depth { get; }
+        public int Depth { get; }
 
         /// <summary>
         /// Gets the number of elements per slice.
         /// </summary>
-        long ElementsPerSlice { get; }
+        public long ElementsPerSlice { get; }
 
         /// <summary>
         /// Gets the device pointer to a specific slice.
         /// </summary>
-        IntPtr GetSlicePointer(int sliceIndex);
+        public IntPtr GetSlicePointer(int sliceIndex);
 
         /// <summary>
         /// Advances the ring buffer by one time step.
         /// </summary>
-        void Advance();
+        public void Advance();
 
         /// <summary>
         /// Gets the current time step index.
         /// </summary>
-        int CurrentTimeStep { get; }
+        public int CurrentTimeStep { get; }
 
         /// <summary>
         /// Copies data to a specific slice.
         /// </summary>
-        ValueTask CopyToSliceAsync(int sliceIndex, ReadOnlyMemory<T> data);
+        public ValueTask CopyToSliceAsync(int sliceIndex, ReadOnlyMemory<T> data);
 
         /// <summary>
         /// Copies data from a specific slice.
         /// </summary>
-        ValueTask CopyFromSliceAsync(int sliceIndex, Memory<T> data);
+        public ValueTask CopyFromSliceAsync(int sliceIndex, Memory<T> data);
     }
 
     /// <summary>
@@ -220,27 +224,27 @@ namespace DotCompute.Backends.CUDA.Persistent
         /// <summary>
         /// Gets the grid dimensions.
         /// </summary>
-        (int Width, int Height, int Depth) GridDimensions { get; }
+        public (int Width, int Height, int Depth) GridDimensions { get; }
 
         /// <summary>
         /// Gets pointer to current time step data (u^n).
         /// </summary>
-        IntPtr Current { get; }
+        public IntPtr Current { get; }
 
         /// <summary>
         /// Gets pointer to previous time step data (u^{n-1}).
         /// </summary>
-        IntPtr Previous { get; }
+        public IntPtr Previous { get; }
 
         /// <summary>
         /// Gets pointer to two time steps ago data (u^{n-2}).
         /// </summary>
-        IntPtr TwoStepsAgo { get; }
+        public IntPtr TwoStepsAgo { get; }
 
         /// <summary>
         /// Swaps buffers for next time step.
         /// </summary>
-        void SwapBuffers();
+        public void SwapBuffers();
     }
 
     /// <summary>
@@ -380,7 +384,8 @@ namespace DotCompute.Backends.CUDA.Persistent
         public int Depth => _ringBuffer.Depth;
         public long ElementsPerSlice => _ringBuffer.ElementsPerSlice;
         public int CurrentTimeStep => _ringBuffer.CurrentTimeStep;
-        
+
+
         public (int Width, int Height, int Depth) GridDimensions => (_width, _height, _depth);
 
         public IntPtr Current => _ringBuffer.GetSlicePointer(0);

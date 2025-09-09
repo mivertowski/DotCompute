@@ -22,8 +22,9 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets the maximum register count per thread (CUDA-specific).
         /// </summary>
-        public new int? MaxRegistersPerThread 
-        { 
+        public new int? MaxRegistersPerThread
+        {
+
             get => MaxRegisters;
             set => MaxRegisters = value;
         }
@@ -31,8 +32,9 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets include directories for CUDA compilation.
         /// </summary>
-        public List<string> IncludeDirectories 
-        { 
+        public List<string> IncludeDirectories
+        {
+
             get => IncludePaths;
             set => IncludePaths = value;
         }
@@ -77,10 +79,13 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets the target compute capability version for compilation.
         /// </summary>
-        public new Version ComputeCapability 
-        { 
-            get => base.ComputeCapability; 
-            set => base.ComputeCapability = value; 
+        public new Version ComputeCapability
+        {
+
+            get => base.ComputeCapability;
+
+            set => base.ComputeCapability = value;
+
         }
 
         /// <summary>

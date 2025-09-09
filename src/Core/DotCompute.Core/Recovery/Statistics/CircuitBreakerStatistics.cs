@@ -24,45 +24,52 @@ public class CircuitBreakerStatistics
     /// </summary>
     /// <value>The overall circuit breaker state for the system.</value>
     public CircuitState GlobalState { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the overall failure rate across all monitored services as a percentage (0.0 to 1.0).
     /// </summary>
     /// <value>The ratio of failed requests to total requests across all services.</value>
     public double OverallFailureRate { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the total number of requests processed across all services.
     /// </summary>
     /// <value>The cumulative count of all service requests.</value>
     public long TotalRequests { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the total number of failed requests across all services.
     /// </summary>
     /// <value>The cumulative count of all failed service requests.</value>
     public long FailedRequests { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the current number of consecutive failures across the system.
     /// This metric is used to trigger global circuit breaker state changes.
     /// </summary>
     /// <value>The count of consecutive failures without a successful request.</value>
     public int ConsecutiveFailures { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the detailed statistics for individual services.
     /// Maps service names to their specific performance and health metrics.
     /// </summary>
     /// <value>A dictionary of service names and their corresponding statistics.</value>
     public Dictionary<string, ServiceStatistics> ServiceStatistics { get; set; } = [];
-    
+
+
     /// <summary>
     /// Gets or sets the timestamp of the last circuit breaker state change.
     /// </summary>
     /// <value>The UTC timestamp when the global state was last modified.</value>
     public DateTimeOffset LastStateChange { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the number of services currently being monitored by circuit breakers.
     /// </summary>

@@ -350,6 +350,7 @@ public static class AdvancedIntegration
         // Simplified Kronrod extension - in practice would use 15 specific nodes
         // For now, use a weighted average that extends Gauss-Legendre
 
+
         => GaussLegendre7Point(values, a, b) * 1.05f; // Rough approximation
 
     /// <summary>

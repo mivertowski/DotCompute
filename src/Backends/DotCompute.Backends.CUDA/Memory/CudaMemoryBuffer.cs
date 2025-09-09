@@ -46,10 +46,12 @@ namespace DotCompute.Backends.CUDA.Memory
 
         /// <inheritdoc/>
         public BufferState State => _disposed ? BufferState.Disposed : BufferState.Allocated;
-        
+
+
         /// <inheritdoc/>
         public MemoryOptions Options { get; }
-        
+
+
         /// <inheritdoc/>
         public bool IsDisposed => _disposed;
 
@@ -137,7 +139,8 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 var sourceSpan = source.Span;
                 var bytesToCopy = sourceSpan.Length * Unsafe.SizeOf<T>();
-                
+
+
                 if (offset + bytesToCopy > SizeInBytes)
                 {
 
@@ -169,7 +172,8 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 var destinationSpan = destination.Span;
                 var bytesToCopy = destinationSpan.Length * Unsafe.SizeOf<T>();
-                
+
+
                 if (offset + bytesToCopy > SizeInBytes)
                 {
 
@@ -201,7 +205,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 _disposed = true;
             }
         }
-        
+
+
         /// <inheritdoc/>
         public ValueTask DisposeAsync()
         {
@@ -259,10 +264,12 @@ namespace DotCompute.Backends.CUDA.Memory
 
         /// <inheritdoc/>
         public BufferState State => _disposed ? BufferState.Disposed : BufferState.Allocated;
-        
+
+
         /// <inheritdoc/>
         public MemoryOptions Options { get; }
-        
+
+
         /// <inheritdoc/>
         public bool IsDisposed => _disposed;
 
@@ -303,7 +310,8 @@ namespace DotCompute.Backends.CUDA.Memory
             // Use CUDA runtime to copy
 
             _context.MakeCurrent();
-            var result = CudaRuntime.cudaMemcpy(destination.DevicePointer, DevicePointer, 
+            var result = CudaRuntime.cudaMemcpy(destination.DevicePointer, DevicePointer,
+
                 (nuint)SizeInBytes, CudaMemcpyKind.DeviceToDevice);
             CudaRuntime.CheckError(result, "copying between device buffers");
         }
@@ -319,7 +327,8 @@ namespace DotCompute.Backends.CUDA.Memory
             _context.MakeCurrent();
             fixed (T* ptr = source)
             {
-                var result = CudaRuntime.cudaMemcpy(DevicePointer, (nint)ptr, 
+                var result = CudaRuntime.cudaMemcpy(DevicePointer, (nint)ptr,
+
                     (nuint)bytesToCopy, CudaMemcpyKind.HostToDevice);
                 CudaRuntime.CheckError(result, "copying from host to device");
             }
@@ -336,7 +345,8 @@ namespace DotCompute.Backends.CUDA.Memory
             _context.MakeCurrent();
             fixed (T* ptr = destination)
             {
-                var result = CudaRuntime.cudaMemcpy((nint)ptr, DevicePointer, 
+                var result = CudaRuntime.cudaMemcpy((nint)ptr, DevicePointer,
+
                     (nuint)bytesToCopy, CudaMemcpyKind.DeviceToHost);
                 CudaRuntime.CheckError(result, "copying from device to host");
             }
@@ -362,7 +372,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 var sourceSpan = source.Span;
                 var elementsToCopy = Math.Min(sourceSpan.Length, Count - offset);
                 var bytesToCopy = elementsToCopy * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-                
+
+
                 if (offset + elementsToCopy > Count)
                 {
 
@@ -375,7 +386,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 {
                     fixed (TSource* ptr = sourceSpan)
                     {
-                        var result = CudaRuntime.cudaMemcpy(_devicePointer + (nint)(offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()), 
+                        var result = CudaRuntime.cudaMemcpy(_devicePointer + (nint)(offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()),
+
                             (nint)ptr, (nuint)bytesToCopy, CudaMemcpyKind.HostToDevice);
                         CudaRuntime.CheckError(result, "async copying from host to device");
                     }
@@ -403,7 +415,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 var destinationSpan = destination.Span;
                 var elementsToCopy = Math.Min(destinationSpan.Length, Count - offset);
                 var bytesToCopy = elementsToCopy * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-                
+
+
                 if (offset + elementsToCopy > Count)
                 {
 
@@ -416,8 +429,10 @@ namespace DotCompute.Backends.CUDA.Memory
                 {
                     fixed (TDest* ptr = destinationSpan)
                     {
-                        var result = CudaRuntime.cudaMemcpy((nint)ptr, 
-                            _devicePointer + (nint)(offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()), 
+                        var result = CudaRuntime.cudaMemcpy((nint)ptr,
+
+                            _devicePointer + (nint)(offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()),
+
                             (nuint)bytesToCopy, CudaMemcpyKind.DeviceToHost);
                         CudaRuntime.CheckError(result, "async copying from device to host");
                     }
@@ -435,7 +450,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public unsafe void CopyRangeTo(CudaMemoryBuffer<T> destination, long sourceOffset, long destinationOffset, long count)
         {
             ArgumentNullException.ThrowIfNull(destination);
-            
+
+
             if (sourceOffset < 0 || sourceOffset >= Count)
             {
 
@@ -467,28 +483,35 @@ namespace DotCompute.Backends.CUDA.Memory
             var bytesToCopy = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
             var sourcePtr = _devicePointer + (nint)(sourceOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
             var destPtr = destination.DevicePointer + (nint)(destinationOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
-            
+
+
             _context.MakeCurrent();
             var result = CudaRuntime.cudaMemcpy(destPtr, sourcePtr, (nuint)bytesToCopy, CudaMemcpyKind.DeviceToDevice);
             CudaRuntime.CheckError(result, "copying range between device buffers");
-            
+
             // Mark destination buffer as dirty
+
             destination.MarkRangeDirty(destinationOffset, destinationOffset + count);
         }
-        
+
+
         /// <summary>
         /// Asynchronously copies a range of data from this buffer to another device buffer.
         /// </summary>
         public async ValueTask CopyRangeToAsync(
-            CudaMemoryBuffer<T> destination, 
-            long sourceOffset, 
-            long destinationOffset, 
+            CudaMemoryBuffer<T> destination,
+
+            long sourceOffset,
+
+            long destinationOffset,
+
             long count,
             IntPtr stream = default,
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(destination);
-            
+
+
             if (sourceOffset < 0 || sourceOffset >= Count)
             {
 
@@ -522,24 +545,29 @@ namespace DotCompute.Backends.CUDA.Memory
                 var bytesToCopy = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
                 var sourcePtr = _devicePointer + (nint)(sourceOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
                 var destPtr = destination.DevicePointer + (nint)(destinationOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
-                
+
+
                 _context.MakeCurrent();
-                var result = stream == IntPtr.Zero 
+                var result = stream == IntPtr.Zero
+
                     ? CudaRuntime.cudaMemcpy(destPtr, sourcePtr, (nuint)bytesToCopy, CudaMemcpyKind.DeviceToDevice)
                     : CudaRuntime.cudaMemcpyAsync(destPtr, sourcePtr, (nuint)bytesToCopy, CudaMemcpyKind.DeviceToDevice, stream);
                 CudaRuntime.CheckError(result, "async copying range between device buffers");
-                
+
+
                 if (stream != IntPtr.Zero)
                 {
                     result = CudaRuntime.cudaStreamSynchronize(stream);
                     CudaRuntime.CheckError(result, "synchronizing stream after async copy");
                 }
-                
+
                 // Mark destination buffer as dirty
+
                 destination.MarkRangeDirty(destinationOffset, destinationOffset + count);
             }, cancellationToken);
         }
-        
+
+
         /// <summary>
         /// Marks the entire buffer as dirty.
         /// </summary>
@@ -552,7 +580,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 _ = _dirtyRanges.Add((0, Count));
             }
         }
-        
+
+
         /// <summary>
         /// Marks a specific range of the buffer as dirty.
         /// </summary>
@@ -577,18 +606,21 @@ namespace DotCompute.Backends.CUDA.Memory
             lock (_dirtyLock)
             {
                 _isDirty = true;
-                
+
                 // Merge overlapping ranges
+
                 var newRange = (start, end);
                 var overlapping = _dirtyRanges.Where(r => r.start <= end && r.end >= start).ToList();
-                
+
+
                 if (overlapping.Any())
                 {
                     foreach (var range in overlapping)
                     {
                         _ = _dirtyRanges.Remove(range);
                     }
-                    
+
+
                     var mergedStart = Math.Min(start, overlapping.Min(r => r.start));
                     var mergedEnd = Math.Max(end, overlapping.Max(r => r.end));
                     _ = _dirtyRanges.Add((mergedStart, mergedEnd));
@@ -599,7 +631,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
             }
         }
-        
+
+
         /// <summary>
         /// Clears the dirty flag and all dirty ranges.
         /// </summary>
@@ -611,7 +644,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 _dirtyRanges.Clear();
             }
         }
-        
+
+
         /// <summary>
         /// Gets the dirty ranges in the buffer.
         /// </summary>
@@ -623,7 +657,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 return _dirtyRanges.ToArray();
             }
         }
-        
+
+
         /// <summary>
         /// Synchronizes only the dirty ranges from device to host.
         /// </summary>
@@ -649,13 +684,15 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 _context.MakeCurrent();
                 var destSpan = destination.Span;
-                
+
+
                 foreach (var (start, end) in dirtyRanges)
                 {
                     var count = end - start;
                     var bytesToCopy = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
                     var sourcePtr = _devicePointer + (nint)(start * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
-                    
+
+
                     if (start + count > destSpan.Length)
                     {
 
@@ -672,7 +709,8 @@ namespace DotCompute.Backends.CUDA.Memory
                         }
                     }
                 }
-                
+
+
                 ClearDirty();
             }, cancellationToken);
         }
@@ -708,6 +746,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public void EnsureOnHost()
             // CUDA buffers are device-only, so this would require explicit copy
+
             => throw new NotSupportedException("CUDA buffers are device-only. Use CopyToHost for host access.");
 
         /// <inheritdoc/>
@@ -722,6 +761,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
             // Already on device
+
             => ValueTask.CompletedTask;
 
         /// <inheritdoc/>
@@ -846,7 +886,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 _disposed = true;
             }
         }
-        
+
+
         /// <inheritdoc/>
         public ValueTask DisposeAsync()
         {

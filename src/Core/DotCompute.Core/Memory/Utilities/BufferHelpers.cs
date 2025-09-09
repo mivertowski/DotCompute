@@ -24,13 +24,16 @@ internal static class BufferHelpers
     public static void ValidateBufferParameters<T>(int count) where T : unmanaged
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
-        
+
+
         var elementSize = Unsafe.SizeOf<T>();
         var totalSize = (long)count * elementSize;
-        
+
+
         if (totalSize > int.MaxValue)
         {
-            throw new ArgumentOutOfRangeException(nameof(count), 
+            throw new ArgumentOutOfRangeException(nameof(count),
+
                 $"Buffer size ({totalSize} bytes) exceeds maximum allowed size.");
         }
     }
@@ -64,22 +67,27 @@ internal static class BufferHelpers
     /// Validates transfer parameters.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ValidateTransferParameters<T>(int sourceLength, int sourceOffset, 
+    public static void ValidateTransferParameters<T>(int sourceLength, int sourceOffset,
+
         int destinationLength, int destinationOffset, int count) where T : unmanaged
     {
         ArgumentOutOfRangeException.ThrowIfNegative(sourceOffset);
         ArgumentOutOfRangeException.ThrowIfNegative(destinationOffset);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
-        
+
+
         if (sourceOffset + count > sourceLength)
         {
-            throw new ArgumentOutOfRangeException(nameof(count), 
+            throw new ArgumentOutOfRangeException(nameof(count),
+
                 "Source range exceeds buffer bounds.");
         }
-        
+
+
         if (destinationOffset + count > destinationLength)
         {
-            throw new ArgumentOutOfRangeException(nameof(count), 
+            throw new ArgumentOutOfRangeException(nameof(count),
+
                 "Destination range exceeds buffer bounds.");
         }
     }

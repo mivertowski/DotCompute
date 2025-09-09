@@ -15,5 +15,5 @@ public interface ICodeGeneratorOrchestrator
     /// </summary>
     /// <param name="context">The generation context containing all necessary information.</param>
     /// <returns>The generated C# code as a string.</returns>
-    string GenerateCode(KernelGenerationContext context);
+    public string GenerateCode(KernelGenerationContext context);
 }

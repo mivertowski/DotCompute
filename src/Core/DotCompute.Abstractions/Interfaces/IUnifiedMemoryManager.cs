@@ -14,28 +14,28 @@ public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
     /// <summary>
     /// Gets the accelerator this memory manager is associated with.
     /// </summary>
-    IAccelerator Accelerator { get; }
-    
+    public IAccelerator Accelerator { get; }
+
     /// <summary>
     /// Gets memory usage statistics.
     /// </summary>
-    MemoryStatistics Statistics { get; }
-    
+    public MemoryStatistics Statistics { get; }
+
     /// <summary>
     /// Gets the maximum memory allocation size in bytes.
     /// </summary>
-    long MaxAllocationSize { get; }
-    
+    public long MaxAllocationSize { get; }
+
     /// <summary>
     /// Gets the total available memory in bytes.
     /// </summary>
-    long TotalAvailableMemory { get; }
-    
+    public long TotalAvailableMemory { get; }
+
     /// <summary>
     /// Gets the current allocated memory in bytes.
     /// </summary>
-    long CurrentAllocatedMemory { get; }
-    
+    public long CurrentAllocatedMemory { get; }
+
     /// <summary>
     /// Allocates a memory buffer for a specific number of elements.
     /// </summary>
@@ -44,11 +44,11 @@ public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
     /// <param name="options">Memory allocation options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A newly allocated memory buffer.</returns>
-    ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
+    public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
         int count,
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged;
-    
+
     /// <summary>
     /// Allocates memory and copies data from host.
     /// </summary>
@@ -57,11 +57,11 @@ public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
     /// <param name="options">Memory allocation options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A newly allocated and initialized memory buffer.</returns>
-    ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
+    public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
         ReadOnlyMemory<T> source,
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged;
-    
+
     /// <summary>
     /// Allocates memory by size in bytes (for advanced scenarios).
     /// </summary>
@@ -69,11 +69,11 @@ public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
     /// <param name="options">Memory allocation options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A newly allocated memory buffer.</returns>
-    ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
+    public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
         long sizeInBytes,
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Creates a view over existing memory.
     /// </summary>
@@ -82,11 +82,11 @@ public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
     /// <param name="offset">The offset in elements.</param>
     /// <param name="length">The length of the view in elements.</param>
     /// <returns>A view over the existing buffer.</returns>
-    IUnifiedMemoryBuffer<T> CreateView<T>(
+    public IUnifiedMemoryBuffer<T> CreateView<T>(
         IUnifiedMemoryBuffer<T> buffer,
         int offset,
         int length) where T : unmanaged;
-    
+
     /// <summary>
     /// Copies data between buffers.
     /// </summary>
@@ -95,11 +95,11 @@ public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
     /// <param name="destination">The destination buffer.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the copy operation.</returns>
-    ValueTask CopyAsync<T>(
+    public ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         IUnifiedMemoryBuffer<T> destination,
         CancellationToken cancellationToken = default) where T : unmanaged;
-    
+
     /// <summary>
     /// Copies data between buffers with specified ranges.
     /// </summary>
@@ -111,14 +111,14 @@ public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
     /// <param name="count">The number of elements to copy.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the copy operation.</returns>
-    ValueTask CopyAsync<T>(
+    public ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         int sourceOffset,
         IUnifiedMemoryBuffer<T> destination,
         int destinationOffset,
         int count,
         CancellationToken cancellationToken = default) where T : unmanaged;
-    
+
     /// <summary>
     /// Copies data from host memory to a device buffer.
     /// </summary>
@@ -127,11 +127,11 @@ public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
     /// <param name="destination">The destination buffer.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the copy operation.</returns>
-    ValueTask CopyToDeviceAsync<T>(
+    public ValueTask CopyToDeviceAsync<T>(
         ReadOnlyMemory<T> source,
         IUnifiedMemoryBuffer<T> destination,
         CancellationToken cancellationToken = default) where T : unmanaged;
-    
+
     /// <summary>
     /// Copies data from a device buffer to host memory.
     /// </summary>
@@ -140,34 +140,34 @@ public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
     /// <param name="destination">The destination memory.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the copy operation.</returns>
-    ValueTask CopyFromDeviceAsync<T>(
+    public ValueTask CopyFromDeviceAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         Memory<T> destination,
         CancellationToken cancellationToken = default) where T : unmanaged;
-    
+
     /// <summary>
     /// Frees a memory buffer.
     /// </summary>
     /// <param name="buffer">The buffer to free.</param>
-    void Free(IUnifiedMemoryBuffer buffer);
-    
+    public void Free(IUnifiedMemoryBuffer buffer);
+
     /// <summary>
     /// Asynchronously frees a memory buffer.
     /// </summary>
     /// <param name="buffer">The buffer to free.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the free operation.</returns>
-    ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default);
-    
+    public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Optimizes memory by defragmenting and releasing unused memory.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the optimization operation.</returns>
-    ValueTask OptimizeAsync(CancellationToken cancellationToken = default);
-    
+    public ValueTask OptimizeAsync(CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Clears all allocated memory and resets the manager.
     /// </summary>
-    void Clear();
+    public void Clear();
 }

@@ -169,27 +169,32 @@ namespace DotCompute.Core.Execution.Metrics
             ArgumentNullException.ThrowIfNull(result);
 
             TotalExecutions++;
-            
+
             // Update average execution time
+
             var totalTime = (AverageExecutionTimeMs * (TotalExecutions - 1)) + result.TotalExecutionTimeMs;
             AverageExecutionTimeMs = totalTime / TotalExecutions;
-            
+
             // Update average efficiency
+
             var totalEfficiency = (AverageEfficiencyPercentage * (TotalExecutions - 1)) + result.EfficiencyPercentage;
             AverageEfficiencyPercentage = totalEfficiency / TotalExecutions;
-            
+
             // Update GFLOPS-hours
+
             TotalGFLOPSHours += result.ThroughputGFLOPS * (result.TotalExecutionTimeMs / (1000.0 * 3600.0));
-            
+
             // Update strategy metrics
+
             if (!MetricsByStrategy.TryGetValue(result.Strategy, out var strategyMetrics))
             {
                 strategyMetrics = new StrategyMetrics();
                 MetricsByStrategy[result.Strategy] = strategyMetrics;
             }
             strategyMetrics.AddExecution(result);
-            
+
             // Update device metrics
+
             foreach (var deviceResult in result.DeviceResults)
             {
                 if (!MetricsByDevice.TryGetValue(deviceResult.DeviceId, out var deviceMetrics))

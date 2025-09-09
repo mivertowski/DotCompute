@@ -23,33 +23,38 @@ public class CompilationFallbackConfiguration
     /// </summary>
     /// <value>The default value is 4 hours.</value>
     public TimeSpan CacheExpiration { get; set; } = TimeSpan.FromHours(4);
-    
+
+
     /// <summary>
     /// Gets or sets the interval at which expired cache entries are cleaned up.
     /// </summary>
     /// <value>The default value is 1 hour.</value>
     public TimeSpan CacheCleanupInterval { get; set; } = TimeSpan.FromHours(1);
-    
+
+
     /// <summary>
     /// Gets or sets the maximum number of entries allowed in the compilation cache.
     /// </summary>
     /// <value>The default value is 1000.</value>
     public int MaxCacheEntries { get; set; } = 1000;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether progressive fallback is enabled.
     /// When enabled, the system will try multiple fallback strategies in sequence.
     /// </summary>
     /// <value>The default value is true.</value>
     public bool EnableProgressiveFallback { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether kernel simplification is enabled.
     /// When enabled, complex kernels may be simplified to improve compilation success.
     /// </summary>
     /// <value>The default value is true.</value>
     public bool EnableKernelSimplification { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether interpreter mode is enabled as a fallback.
     /// When enabled, kernels that cannot be compiled may be executed in interpreter mode.

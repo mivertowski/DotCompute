@@ -58,7 +58,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 CreatedAt = DateTimeOffset.UtcNow
             };
             var graphHandle = IntPtr.Zero;
-            
+
+
             var result = CudaRuntime.cuGraphCreate(ref graphHandle, 0);
             CudaRuntime.CheckError(result, "creating CUDA graph");
 
@@ -84,7 +85,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 CudaRuntime.CheckError(result, "beginning stream capture");
 
                 _logger.LogDebug("Started graph capture for '{GraphName}' with mode {Mode}", graphName, mode);
-                
+
+
                 return new GraphCaptureContext(stream, graphName, mode, EndCapture);
             }
         }
@@ -109,9 +111,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 };
 
                 _graphs[graphName] = graph;
-                _statistics[graphName] = new Types.GraphStatistics 
-                { 
-                    Name = graphName, 
+                _statistics[graphName] = new Types.GraphStatistics
+                {
+
+                    Name = graphName,
+
                     CreatedAt = DateTime.UtcNow,
                     CaptureMode = CudaGraphCaptureMode.Global
                 };
@@ -135,7 +139,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
             var nodeHandle = IntPtr.Zero;
             var depHandles = dependencies?.Select(d => d.Handle).ToArray() ?? [];
-            
+
+
             var cudaParams = new CudaKernelNodeParams
             {
                 func = nodeParams.Function,
@@ -557,7 +562,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                     s.LastExecutedAt = DateTime.UtcNow;
                 });
 
-                _logger.LogDebug("Graph '{GraphName}' executed in {Time}ms", 
+                _logger.LogDebug("Graph '{GraphName}' executed in {Time}ms",
+
                     executable.Graph.Name, elapsedMs);
 
                 return executionResult;
@@ -601,12 +607,14 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 executable.Graph = newGraph;
                 executable.UpdatedAt = DateTime.UtcNow;
                 UpdateStatistics(newGraph.Name, s => s.UpdateCount++);
-                
+
+
                 _logger.LogInformation("Updated graph executable for '{GraphName}'", newGraph.Name);
                 return true;
             }
 
-            _logger.LogWarning("Failed to update graph executable for '{GraphName}': {Error}", 
+            _logger.LogWarning("Failed to update graph executable for '{GraphName}': {Error}",
+
                 newGraph.Name, result);
             return false;
         }
@@ -646,7 +654,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 ClonedFrom = sourceGraph.Name
             };
 
-            _logger.LogInformation("Cloned graph '{SourceName}' to '{NewName}'", 
+            _logger.LogInformation("Cloned graph '{SourceName}' to '{NewName}'",
+
                 sourceGraph.Name, newName);
             return clonedGraph;
         }
@@ -780,7 +789,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
 
                 _ = visited.Add(node.Id);
-                
+
+
                 var maxDepPath = node.Dependencies.Count > 0
                     ? node.Dependencies.Max(d => CalculatePathLength(d))
                     : 0;
@@ -789,7 +799,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 return pathLengths[node.Id];
             }
 
-            return graph.Nodes.Count > 0 
+            return graph.Nodes.Count > 0
+
                 ? graph.Nodes.Max(n => CalculatePathLength(n))
                 : 0;
         }
@@ -820,7 +831,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             return opportunities;
         }
 
-        private int FindFusionOpportunities(CudaGraph graph)
+        private static int FindFusionOpportunities(CudaGraph graph)
         {
             // Find kernel nodes that can be fused
             var opportunities = 0;

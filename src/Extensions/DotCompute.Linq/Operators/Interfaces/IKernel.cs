@@ -20,19 +20,19 @@ public interface IKernel : IDisposable
     /// <summary>
     /// Gets the kernel name.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>
     /// Gets the kernel properties.
     /// </summary>
-    KernelProperties Properties { get; }
+    public KernelProperties Properties { get; }
 
     /// <summary>
     /// Compiles the kernel asynchronously.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the compilation operation.</returns>
-    Task CompileAsync(CancellationToken cancellationToken = default);
+    public Task CompileAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Executes the kernel with the specified work items and parameters.
@@ -41,11 +41,11 @@ public interface IKernel : IDisposable
     /// <param name="parameters">The kernel parameters.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the execution operation.</returns>
-    Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default);
+    public Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets information about the kernel parameters.
     /// </summary>
     /// <returns>A read-only list of kernel parameters.</returns>
-    IReadOnlyList<KernelParameter> GetParameterInfo();
+    public IReadOnlyList<KernelParameter> GetParameterInfo();
 }

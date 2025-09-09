@@ -24,7 +24,7 @@ public enum TargetRuntime
     /// and select the most appropriate optimizations and API usage patterns.
     /// </remarks>
     Auto,
-    
+
     /// <summary>
     /// Target .NET Framework runtime (legacy Windows-only runtime).
     /// </summary>
@@ -34,7 +34,7 @@ public enum TargetRuntime
     /// characteristics and API availability compared to modern .NET runtimes.
     /// </remarks>
     NetFramework,
-    
+
     /// <summary>
     /// Target .NET Core or .NET 5+ runtime (cross-platform modern runtime).
     /// </summary>
@@ -44,7 +44,7 @@ public enum TargetRuntime
     /// to the latest runtime optimizations and APIs.
     /// </remarks>
     NetCore,
-    
+
     /// <summary>
     /// Target Unity game engine runtime environment.
     /// </summary>
@@ -54,7 +54,8 @@ public enum TargetRuntime
     /// and platform-specific considerations for game development scenarios.
     /// </remarks>
     Unity,
-    
+
+
     /// <summary>
     /// Target Xamarin/MAUI mobile runtime environments.
     /// </summary>

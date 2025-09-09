@@ -38,7 +38,8 @@ public class NamingConventions
     /// </code>
     /// </remarks>
     public string PrivateFieldPrefix { get; set; } = "_";
-    
+
+
     /// <summary>
     /// Gets or sets the suffix used for asynchronous method names.
     /// </summary>
@@ -61,7 +62,8 @@ public class NamingConventions
     /// guidelines and is expected by most .NET developers.
     /// </remarks>
     public string AsyncMethodSuffix { get; set; } = "Async";
-    
+
+
     /// <summary>
     /// Gets or sets the prefix used for interface names.
     /// </summary>
@@ -84,7 +86,8 @@ public class NamingConventions
     /// for interfaces remains standard and expected in C# development.
     /// </remarks>
     public string InterfacePrefix { get; set; } = "I";
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to use PascalCase for public members.
     /// </summary>
@@ -108,7 +111,8 @@ public class NamingConventions
     /// to maintain consistency with .NET Framework conventions and developer expectations.
     /// </remarks>
     public bool UsePascalCaseForPublic { get; set; } = true;
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether to use camelCase for parameters and local variables.
     /// </summary>

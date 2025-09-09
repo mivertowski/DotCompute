@@ -25,7 +25,8 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// </summary>
         [FieldOffset(0)]
         public unsafe fixed sbyte Name[256];
-        
+
+
         /// <summary>
         /// Gets the device name as a managed string.
         /// </summary>
@@ -121,7 +122,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
             get
             {
                 var ptr = MaxThreadsDimPtr;
-                return new int[] { ptr[0], ptr[1], ptr[2] };
+                return [ptr[0], ptr[1], ptr[2]];
             }
         }
 
@@ -156,7 +157,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
             get
             {
                 var ptr = MaxGridSizePtr;
-                return new int[] { ptr[0], ptr[1], ptr[2] };
+                return [ptr[0], ptr[1], ptr[2]];
             }
         }
 
@@ -439,71 +440,82 @@ namespace DotCompute.Backends.CUDA.Types.Native
         public int DirectManagedMemAccessFromHost;
 
         // Additional missing fields for texture limits
-        
+
+
         /// <summary>
         /// Maximum 1D texture size.
         /// </summary>
         [FieldOffset(408)]
         public int MaxTexture1D;
-        
+
+
         /// <summary>
         /// Maximum 2D texture dimensions [width, height].
         /// </summary>
         [FieldOffset(412)]
         public int MaxTexture2DWidth;
-        
+
+
         /// <summary>
         /// Maximum 2D texture height.
         /// </summary>
         [FieldOffset(416)]
         public int MaxTexture2DHeight;
-        
+
+
         /// <summary>
         /// Maximum 2D texture dimensions as array.
         /// </summary>
         public unsafe int[] MaxTexture2D
         {
-            get => new int[] { MaxTexture2DWidth, MaxTexture2DHeight };
+            get => [MaxTexture2DWidth, MaxTexture2DHeight];
         }
-        
+
+
         /// <summary>
         /// Maximum 3D texture width.
         /// </summary>
         [FieldOffset(420)]
         public int MaxTexture3DWidth;
-        
+
+
         /// <summary>
         /// Maximum 3D texture height.
         /// </summary>
         [FieldOffset(424)]
         public int MaxTexture3DHeight;
-        
+
+
         /// <summary>
         /// Maximum 3D texture depth.
         /// </summary>
         [FieldOffset(428)]
         public int MaxTexture3DDepth;
-        
+
+
         /// <summary>
         /// Maximum 3D texture dimensions as array.
         /// </summary>
         public unsafe int[] MaxTexture3D
         {
-            get => new int[] { MaxTexture3DWidth, MaxTexture3DHeight, MaxTexture3DDepth };
+            get => [MaxTexture3DWidth, MaxTexture3DHeight, MaxTexture3DDepth];
         }
-        
+
+
         /// <summary>
         /// 1 if there is a TCC driver model, 0 otherwise.
         /// </summary>
         [FieldOffset(596)]
         public int TccDriver;
-        
+
+
         /// <summary>
         /// 1 if device supports host-native atomic operations, 0 otherwise.
         /// </summary>
         [FieldOffset(664)]
         public int HostNativeAtomicSupported;
-        
+
+
         /// <summary>
         /// Validates and corrects managed memory detection for RTX 2000 Ada and similar devices.
         /// This method provides a robust fallback when the struct field returns incorrect values.
@@ -517,39 +529,45 @@ namespace DotCompute.Backends.CUDA.Types.Native
                 {
                     return true;
                 }
-                
+
                 // RTX 2000 Ada Generation issue: ManagedMemory field may incorrectly return 0
                 // For Ada Lovelace (compute capability 8.9) and newer, managed memory is always supported
+
                 if (Major == 8 && Minor == 9)
                 {
                     return true; // Ada Lovelace always supports managed memory
                 }
-                
+
                 // For Ampere (8.0, 8.6) and newer architectures, managed memory is typically supported
+
                 if (Major >= 8)
                 {
                     return true;
                 }
-                
+
                 // For Turing (7.5) and newer, check unified addressing as an indicator
+
                 if (Major == 7 && Minor >= 5 && UnifiedAddressing == 1)
                 {
                     return true;
                 }
-                
+
                 // For Volta (7.0, 7.2) and newer with unified addressing
+
                 if (Major == 7 && UnifiedAddressing == 1)
                 {
                     return true;
                 }
-                
+
                 // Pascal (6.x) and newer with unified addressing typically support managed memory
+
                 if (Major >= 6 && UnifiedAddressing == 1)
                 {
                     return true;
                 }
-                
+
                 // Fallback to the original field value
+
                 return ManagedMemory == 1;
             }
             catch
@@ -558,7 +576,8 @@ namespace DotCompute.Backends.CUDA.Types.Native
                 return ManagedMemory == 1;
             }
         }
-        
+
+
         /// <summary>
         /// Gets a corrected managed memory value that accounts for known device issues.
         /// Use this property instead of the raw ManagedMemory field for accurate detection.

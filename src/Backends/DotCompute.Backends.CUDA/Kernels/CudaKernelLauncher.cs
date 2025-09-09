@@ -135,14 +135,17 @@ namespace DotCompute.Backends.CUDA.Compilation
                 for (var i = 0; i < arguments.Count; i++)
                 {
                     var arg = arguments.Get(i) ?? throw new ArgumentNullException($"Argument at index {i} is null");
-                    
+
                     // Enhanced diagnostic logging for debugging scale kernel issues
+
                     _logger.LogInformation("Preparing kernel argument {Index}: Type={Type}, Value={Value}, FullName={FullName}",
                         i, arg.GetType().Name, arg, arg.GetType().FullName);
-                    
+
+
                     var argPtr = PrepareKernelArgument(arg, handles, unmanagedAllocations, _logger);
                     argPointers.Add(argPtr);
-                    
+
+
                     _logger.LogDebug("Kernel argument {Index} prepared: Pointer=0x{Pointer:X}",
                         i, argPtr.ToInt64());
                 }
@@ -157,14 +160,17 @@ namespace DotCompute.Backends.CUDA.Compilation
                         launchConfig.GridX, launchConfig.GridY, launchConfig.GridZ,
                         launchConfig.BlockX, launchConfig.BlockY, launchConfig.BlockZ,
                         launchConfig.SharedMemoryBytes, argPointers.Count);
-                    
+
                     // Additional diagnostic logging for debugging
+
                     _logger.LogDebug("Total threads: {TotalThreads}, Function ptr: 0x{FuncPtr:X}, Stream: 0x{Stream:X}",
-                        launchConfig.GridX * launchConfig.GridY * launchConfig.GridZ * 
+                        launchConfig.GridX * launchConfig.GridY * launchConfig.GridZ *
+
                         launchConfig.BlockX * launchConfig.BlockY * launchConfig.BlockZ,
                         function.ToInt64(), _context.Stream.ToInt64());
-                    
+
                     // Log first few argument pointers for debugging
+
                     for (var i = 0; i < Math.Min(5, argPointers.Count); i++)
                     {
                         unsafe
@@ -182,7 +188,8 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                     // Launch the kernel
                     CudaError result;
-                    
+
+
                     if (useCooperativeLaunch)
                     {
                         // Check if device supports cooperative launches
@@ -192,7 +199,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                         }
 
                         _logger.LogDebug("Launching cooperative kernel for grid-wide synchronization");
-                        
+
+
                         result = CudaRuntime.cuLaunchCooperativeKernel(
                             function,
                             launchConfig.GridX, launchConfig.GridY, launchConfig.GridZ,
@@ -230,8 +238,9 @@ namespace DotCompute.Backends.CUDA.Compilation
                 {
                     handle.Free();
                 }
-                
+
                 // Clean up unmanaged memory allocations
+
                 foreach (var ptr in unmanagedAllocations)
                 {
                     if (ptr != IntPtr.Zero)
@@ -372,18 +381,22 @@ namespace DotCompute.Backends.CUDA.Compilation
             {
                 throw new ArgumentNullException(nameof(argValue), "Kernel argument cannot be null");
             }
-            
+
             // ILGPU-inspired blittable type validation for better error reporting
+
             var argType = argValue.GetType();
             if (!IsValidKernelParameterType(argType))
             {
                 logger?.LogWarning("Potentially invalid kernel parameter type: {Type}. " +
                     "CUDA kernels prefer blittable value types for optimal performance.", argType.FullName);
             }
-            
+
             // First, check for SimpleCudaUnifiedMemoryBuffer<T> specifically
-            if (argType.IsGenericType && 
-                argType.FullName != null && 
+
+            if (argType.IsGenericType &&
+
+                argType.FullName != null &&
+
                 argType.FullName.Contains("SimpleCudaUnifiedMemoryBuffer"))
             {
                 // Use reflection to get DevicePointer property
@@ -395,24 +408,31 @@ namespace DotCompute.Backends.CUDA.Compilation
                         var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
                         *(IntPtr*)ptrStorage = devicePtr;
                         unmanagedAllocations.Add(ptrStorage);
-                        
+
+
                         logger?.LogInformation("SimpleCudaUnifiedMemoryBuffer (first check): DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
                             devicePtr.ToInt64(), ptrStorage.ToInt64());
-                        
+
+
                         return ptrStorage;
                     }
                 }
             }
-            
+
             // Second, check for other CudaMemoryBuffer<T> types
-            if (argType.IsGenericType && 
-                argType.FullName != null && 
+
+            if (argType.IsGenericType &&
+
+                argType.FullName != null &&
+
                 argType.FullName.Contains("CudaMemoryBuffer"))
             {
                 // Try to get the DevicePointer property (internal)
-                var devicePtrProp = argType.GetProperty("DevicePointer", 
+                var devicePtrProp = argType.GetProperty("DevicePointer",
+
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                
+
+
                 if (devicePtrProp != null && devicePtrProp.GetValue(argValue) is IntPtr devicePtr && devicePtr != IntPtr.Zero)
                 {
                     // CRITICAL: We need to store the device pointer value and return a pointer TO it
@@ -424,18 +444,23 @@ namespace DotCompute.Backends.CUDA.Compilation
                         *(IntPtr*)ptrStorage = devicePtr;
                         // Track this allocation for cleanup
                         unmanagedAllocations.Add(ptrStorage);
-                        
+
+
                         logger?.LogDebug("CudaMemoryBuffer: DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
                             devicePtr.ToInt64(), ptrStorage.ToInt64());
-                        
+
+
                         return ptrStorage;
                     }
                 }
-                
+
                 // Fallback to field if property not found
-                var devicePtrField = argType.GetField("_devicePtr", 
+
+                var devicePtrField = argType.GetField("_devicePtr",
+
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                
+
+
                 if (devicePtrField != null && devicePtrField.GetValue(argValue) is IntPtr fieldPtr && fieldPtr != IntPtr.Zero)
                 {
                     // CRITICAL: We need to store the device pointer value and return a pointer TO it
@@ -446,10 +471,12 @@ namespace DotCompute.Backends.CUDA.Compilation
                         *(IntPtr*)ptrStorage = fieldPtr;
                         // Track this allocation for cleanup
                         unmanagedAllocations.Add(ptrStorage);
-                        
+
+
                         logger?.LogDebug("CudaMemoryBuffer (field): DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
                             fieldPtr.ToInt64(), ptrStorage.ToInt64());
-                        
+
+
                         return ptrStorage;
                     }
                 }
@@ -468,17 +495,20 @@ namespace DotCompute.Backends.CUDA.Compilation
                         var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
                         *(IntPtr*)ptrStorage = devicePtr;
                         unmanagedAllocations.Add(ptrStorage);
-                        
+
+
                         logger?.LogDebug("CudaMemoryBuffer: DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
                             devicePtr.ToInt64(), ptrStorage.ToInt64());
-                        
+
+
                         return ptrStorage;
                     }
                 }
-                
+
                 // This code was moved above the ISyncMemoryBuffer check
-                
+
                 // Handle SimpleCudaUnifiedMemoryBuffer<T> specifically
+
                 if (argValue.GetType().Name.StartsWith("SimpleCudaUnifiedMemoryBuffer"))
                 {
                     // Use reflection to get DevicePointer property
@@ -490,10 +520,12 @@ namespace DotCompute.Backends.CUDA.Compilation
                             var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
                             *(IntPtr*)ptrStorage = devicePtr;
                             unmanagedAllocations.Add(ptrStorage);
-                            
+
+
                             logger?.LogDebug("SimpleCudaUnifiedMemoryBuffer: DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
                                 devicePtr.ToInt64(), ptrStorage.ToInt64());
-                            
+
+
                             return ptrStorage;
                         }
                     }
@@ -506,7 +538,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                     // For now, try to get the device pointer if available through dynamic access
                     var bufferType = unifiedBuffer.GetType();
                     var devicePtrProperty = bufferType.GetProperty("DevicePointer");
-                    
+
+
                     if (devicePtrProperty != null && devicePtrProperty.GetValue(unifiedBuffer) is IntPtr devicePtr)
                     {
                         // CRITICAL: Store the device pointer value and return a pointer TO it
@@ -515,10 +548,12 @@ namespace DotCompute.Backends.CUDA.Compilation
                             var ptrStorage = Marshal.AllocHGlobal(sizeof(IntPtr));
                             *(IntPtr*)ptrStorage = devicePtr;
                             unmanagedAllocations.Add(ptrStorage);
-                            
+
+
                             logger?.LogDebug("IUnifiedMemoryBuffer: DevicePtr=0x{DevicePtr:X}, Storage=0x{Storage:X}",
                                 devicePtr.ToInt64(), ptrStorage.ToInt64());
-                            
+
+
                             return ptrStorage;
                         }
                     }
@@ -535,15 +570,19 @@ namespace DotCompute.Backends.CUDA.Compilation
                     var valueType = argValue.GetType();
                     var size = Marshal.SizeOf(valueType);
                     var ptrStorage = Marshal.AllocHGlobal(size);
-                    
+
                     // Copy the value to unmanaged memory
+
                     Marshal.StructureToPtr(argValue, ptrStorage, false);
-                    
+
+
                     unmanagedAllocations.Add(ptrStorage);
-                    
+
+
                     logger?.LogInformation("Scalar argument: Type={Type}, Value={Value}, Size={Size}, Ptr=0x{Ptr:X}",
                         valueType.Name, argValue, size, ptrStorage.ToInt64());
-                    
+
+
                     return ptrStorage;
                 }
             }
@@ -580,7 +619,8 @@ namespace DotCompute.Backends.CUDA.Compilation
 
             // For other objects, throw a more descriptive exception
             throw new ArgumentException($"Cannot marshal argument of type '{argValue.GetType().FullName}' for CUDA kernel. " +
-                                      "Supported types: primitives, blittable structs, arrays of blittable types, memory buffers, and IntPtr.", 
+                                      "Supported types: primitives, blittable structs, arrays of blittable types, memory buffers, and IntPtr.",
+
                                       nameof(argValue));
         }
 
@@ -624,7 +664,8 @@ namespace DotCompute.Backends.CUDA.Compilation
             {
                 _ = type.GetGenericTypeDefinition();
                 // Allow memory buffer types - they'll be converted to device pointers
-                if (type.FullName?.Contains("MemoryBuffer") == true || 
+                if (type.FullName?.Contains("MemoryBuffer") == true ||
+
                     type.FullName?.Contains("ArrayView") == true)
                 {
 
@@ -632,9 +673,10 @@ namespace DotCompute.Backends.CUDA.Compilation
                 }
 
             }
-                
+
             // For other structs, check if they're likely blittable
             // This is a heuristic - true blittable checking requires runtime marshaling validation
+
             return type.IsValueType && !type.IsGenericType;
         }
 
@@ -649,8 +691,9 @@ namespace DotCompute.Backends.CUDA.Compilation
             }
 
             var type = value.GetType();
-            
+
             // Primitive types can be pinned
+
             if (type.IsPrimitive)
             {
                 return true;
@@ -704,8 +747,10 @@ namespace DotCompute.Backends.CUDA.Compilation
             if (type.IsValueType)
             {
                 // Common blittable structs
-                if (type == typeof(Guid) || 
-                    type == typeof(DateTime) || 
+                if (type == typeof(Guid) ||
+
+                    type == typeof(DateTime) ||
+
                     type == typeof(decimal))
                 {
                     return false; // These have special layouts
@@ -723,7 +768,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                 }
                 return true;
             }
-            
+
+
             return false;
         }
 
@@ -733,8 +779,9 @@ namespace DotCompute.Backends.CUDA.Compilation
         private static bool TryExtractPinnableValue(object obj, out object pinnableValue)
         {
             pinnableValue = obj;
-            
+
             // Check for common patterns like wrapper objects with Value properties
+
             var objType = obj.GetType();
             var valueProperty = objType.GetProperty("Value");
             if (valueProperty != null && CanPinDirectly(valueProperty.GetValue(obj)!))
@@ -742,8 +789,9 @@ namespace DotCompute.Backends.CUDA.Compilation
                 pinnableValue = valueProperty.GetValue(obj)!;
                 return true;
             }
-            
+
             // Check for data properties
+
             var dataProperty = objType.GetProperty("Data");
             if (dataProperty != null)
             {
@@ -754,7 +802,8 @@ namespace DotCompute.Backends.CUDA.Compilation
                     return true;
                 }
             }
-            
+
+
             return false;
         }
 

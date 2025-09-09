@@ -39,8 +39,9 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         _config = config ?? Models.MemoryRecoveryConfiguration.Default;
         _memoryPools = new ConcurrentDictionary<string, Models.MemoryPoolState>();
         _recoveryLock = new SemaphoreSlim(1, 1);
-        
+
         // Create a logger for MemoryPressureMonitor using LoggerFactory
+
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         _pressureMonitor = new Models.MemoryPressureMonitor(loggerFactory.CreateLogger<Models.MemoryPressureMonitor>());
 
@@ -361,8 +362,8 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
                     try
                     {
                         // TODO: Implement emergency cleanup for memory pool
-                    // await pool.PerformEmergencyCleanupAsync(cancellationToken);
-                    await Task.CompletedTask;
+                        // await pool.PerformEmergencyCleanupAsync(cancellationToken);
+                        await Task.CompletedTask;
                     }
                     catch (Exception ex)
                     {
@@ -553,6 +554,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         }
     }
 }
+
 
 
 // Additional supporting types continue in next file due to length...

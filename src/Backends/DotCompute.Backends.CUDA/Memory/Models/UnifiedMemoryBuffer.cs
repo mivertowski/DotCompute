@@ -45,10 +45,12 @@ namespace DotCompute.Backends.CUDA.Memory.Models
         /// Gets whether the buffer has been disposed.
         /// </summary>
         public bool IsDisposed { get; private set; }
-        
+
+
         /// <inheritdoc/>
         public MemoryOptions Options { get; private set; } = MemoryOptions.None;
-        
+
+
         /// <inheritdoc/>
         public BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
 
@@ -61,8 +63,10 @@ namespace DotCompute.Backends.CUDA.Memory.Models
             SizeInBytes = sizeInBytes;
             DeviceId = deviceId;
             Flags = flags;
-            CurrentResidence = flags.HasFlag(ManagedMemoryFlags.PreferDeviceNative) 
-                ? MemoryResidence.Device 
+            CurrentResidence = flags.HasFlag(ManagedMemoryFlags.PreferDeviceNative)
+
+                ? MemoryResidence.Device
+
                 : MemoryResidence.Host;
         }
 
@@ -78,7 +82,8 @@ namespace DotCompute.Backends.CUDA.Memory.Models
                 GC.SuppressFinalize(this);
             }
         }
-        
+
+
         /// <summary>
         /// Asynchronously copies data from host memory to this buffer.
         /// </summary>
@@ -91,7 +96,8 @@ namespace DotCompute.Backends.CUDA.Memory.Models
             {
                 var sourceSpan = source.Span;
                 var bytesToCopy = sourceSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-                
+
+
                 if (offset + bytesToCopy > SizeInBytes)
                 {
 
@@ -123,7 +129,8 @@ namespace DotCompute.Backends.CUDA.Memory.Models
             {
                 var destinationSpan = destination.Span;
                 var bytesToCopy = destinationSpan.Length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-                
+
+
                 if (offset + bytesToCopy > SizeInBytes)
                 {
 

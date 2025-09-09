@@ -141,8 +141,9 @@ internal sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T>, IDisposab
         ArgumentOutOfRangeException.ThrowIfGreaterThan(sourceOffset + count, _length);
 
         var data = await _parent.ReadAsync(_offset + sourceOffset, count, cancellationToken).ConfigureAwait(false);
-        
+
         // Create a temporary buffer to use CopyFromAsync with proper offset
+
         var tempDest = destination.Slice(destinationOffset, count);
         await tempDest.CopyFromAsync(data.AsMemory(), cancellationToken).ConfigureAwait(false);
     }
@@ -384,7 +385,8 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
         var tempArray = new TOriginal[(_length * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>() + global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>() - 1) / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>()];
         var destSpan = MemoryMarshal.Cast<TOriginal, TNew>(tempArray.AsSpan()).Slice(0, source.Length);
         source.Span.CopyTo(destSpan);
-        
+
+
         await _parent.WriteAsync(tempArray.AsMemory(0, tempArray.Length), _offset, cancellationToken).ConfigureAwait(false);
     }
 
@@ -413,16 +415,19 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
         ArgumentOutOfRangeException.ThrowIfGreaterThan(sourceOffset + count, _length);
 
         var tempData = new TNew[count];
-        
+
         // Calculate original offsets
+
         var originalOffset = _offset + (sourceOffset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>() / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>());
         var originalCount = (count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>() + global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>() - 1) / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
-        
+
+
         var data = await _parent.ReadAsync(originalOffset, originalCount, cancellationToken).ConfigureAwait(false);
         var viewSpan = MemoryMarshal.Cast<TOriginal, TNew>(data.AsSpan()).Slice(0, count);
         viewSpan.CopyTo(tempData);
-        
+
         // Use slice to handle destination offset
+
         var destSlice = destination.Slice(destinationOffset, count);
         await destSlice.CopyFromAsync(tempData.AsMemory(), cancellationToken).ConfigureAwait(false);
     }
@@ -447,11 +452,13 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
         // Read current data
         var currentData = new TNew[_length];
         await CopyToAsync(currentData.AsMemory(), cancellationToken).ConfigureAwait(false);
-        
+
         // Fill the specified range
+
         Array.Fill(currentData, value, offset, count);
-        
+
         // Write back
+
         await CopyFromAsync(currentData.AsMemory(), cancellationToken).ConfigureAwait(false);
     }
 
@@ -466,10 +473,12 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IUnifiedMemoryBuffer<
         ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, _length);
 
         // Calculate new offset in original type
-        var newOffsetBytes = (_offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>()) + 
+        var newOffsetBytes = (_offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>()) +
+
                             (offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
         var newOffset = newOffsetBytes / global::System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
-        
+
+
         return new UnifiedBufferView<TOriginal, TNew>(_parent, length, newOffset);
     }
 

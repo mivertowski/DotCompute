@@ -20,7 +20,7 @@ internal sealed class ExtendedKernelExecutionContext
         _innerContext = new KernelExecutionContext
         {
             Name = "CPU Kernel",
-            WorkDimensions = new[] { 1L }
+            WorkDimensions = [1L]
         };
     }
 

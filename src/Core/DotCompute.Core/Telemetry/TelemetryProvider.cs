@@ -373,6 +373,7 @@ public sealed class TelemetryProvider : IDisposable
         // This would typically use a sliding window calculation
         // For now, return 0 as a placeholder
 
+
         => 0.0;
 
     private static async Task ExportPrometheusMetricsAsync(CollectedMetrics metrics,
@@ -380,17 +381,20 @@ public sealed class TelemetryProvider : IDisposable
         CancellationToken cancellationToken)
         // Implementation for Prometheus export
 
+
         => await Task.Delay(1, cancellationToken); // Placeholder
 
     private static async Task ExportOpenTelemetryMetricsAsync(CollectedMetrics metrics,
         CancellationToken cancellationToken)
         // Implementation for OpenTelemetry export
 
+
         => await Task.Delay(1, cancellationToken); // Placeholder
 
     private static async Task ExportJsonMetricsAsync(CollectedMetrics metrics,
         CancellationToken cancellationToken)
         // Implementation for JSON export
+
 
         => await Task.Delay(1, cancellationToken); // Placeholder
 

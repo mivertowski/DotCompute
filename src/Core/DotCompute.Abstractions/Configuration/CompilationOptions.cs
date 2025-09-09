@@ -20,11 +20,13 @@ public class CompilationOptions
     /// Enable debug information generation
     /// </summary>
     public bool EnableDebugInfo { get; set; }
-    
+
+
     /// <summary>
     /// Generate debug information (alias for EnableDebugInfo)
     /// </summary>
-    public bool GenerateDebugInfo 
+    public bool GenerateDebugInfo
+
     {
         get => EnableDebugInfo;
         set => EnableDebugInfo = value;
@@ -50,7 +52,8 @@ public class CompilationOptions
         get => EnableFastMath;
         set => EnableFastMath = value;
     }
-    
+
+
     /// <summary>
     /// Use fast math optimizations (alias for EnableFastMath)
     /// </summary>
@@ -248,12 +251,14 @@ public class CompilationOptions
     /// Whether to compile to CUBIN format instead of PTX
     /// </summary>
     public bool CompileToCubin { get; set; }
-    
+
+
     /// <summary>
     /// Enable fused multiply-add operations
     /// </summary>
     public bool FusedMultiplyAdd { get; set; } = true;
-    
+
+
     /// <summary>
     /// Generate relocatable device code
     /// </summary>

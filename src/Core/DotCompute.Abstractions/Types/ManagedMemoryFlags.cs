@@ -15,7 +15,8 @@ namespace DotCompute.Backends.CUDA.Types
         /// Memory should be initially resident on the device.
         /// </summary>
         PreferDevice = 0x01,
-        
+
+
         /// <summary>
         /// Memory should be initially resident on the device (CUDA native value).
         /// </summary>

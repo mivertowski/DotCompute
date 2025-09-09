@@ -77,7 +77,8 @@ public static class IntegrationExample
                 var optimal = await orchestrator.GetOptimalAcceleratorAsync("DemoKernel");
                 if (optimal != null)
                 {
-                    logger.LogInformation("Optimal accelerator selected: {AcceleratorType} - {Name}", 
+                    logger.LogInformation("Optimal accelerator selected: {AcceleratorType} - {Name}",
+
                         optimal.Info.DeviceType, optimal.Info.Name);
                 }
             }
@@ -97,12 +98,14 @@ public static class IntegrationExample
     public static async Task RunFullExampleAsync()
     {
         var serviceProvider = await SetupRuntimeAsync();
-        
+
         // Register a sample kernel to demonstrate discovery
+
         var discoveryService = serviceProvider.GetRequiredService<GeneratedKernelDiscoveryService>();
         var executionService = serviceProvider.GetRequiredService<KernelExecutionServiceSimplified>();
-        
+
         // Manually register a demo kernel (normally this would be done by the generator)
+
         var demoKernel = new KernelRegistrationInfo
         {
             Name = "DemoKernel",
@@ -112,10 +115,12 @@ public static class IntegrationExample
             VectorSize = 8,
             IsParallel = true
         };
-        
+
+
         executionService.RegisterKernels([demoKernel]);
-        
+
         // Now demonstrate kernel execution
+
         await ExecuteExampleKernelAsync(serviceProvider);
     }
 }
@@ -134,7 +139,8 @@ public static class ExampleKernels
     //     if (index < result.Length)
     //         result[index] = a[index] + b[index];
     // }
-    
+
+
     /// <summary>
     /// Demonstrates the usage pattern for the generated wrapper.
     /// </summary>
@@ -142,12 +148,15 @@ public static class ExampleKernels
     {
         // In the generated wrapper, this would be available:
         // await VectorAddKernelExecutor.ExecuteAsync(inputA, inputB, output, length, serviceProvider);
-        
+
         // The generated code would internally call:
+
         var orchestrator = serviceProvider.GetRequiredService<IComputeOrchestrator>();
-        
+
         // This demonstrates the integration pattern:
-        await orchestrator.ExecuteAsync<object>("MyNamespace.VectorAdd", 
+
+        await orchestrator.ExecuteAsync<object>("MyNamespace.VectorAdd",
+
             /* inputA, inputB, output, length */);
     }
 }

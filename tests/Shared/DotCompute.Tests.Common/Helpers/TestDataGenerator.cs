@@ -10,9 +10,10 @@ namespace DotCompute.Tests.Common.Helpers;
 public static class TestDataGenerator
 {
     private static readonly Random _random = new(42); // Fixed seed for reproducible tests
-    
+
     #region Array Generation
-    
+
+
     /// <summary>
     /// Generates an array of random integers within the specified range.
     /// </summary>
@@ -25,7 +26,8 @@ public static class TestDataGenerator
         }
         return array;
     }
-    
+
+
     /// <summary>
     /// Generates an array of random single-precision floating-point numbers.
     /// </summary>
@@ -38,7 +40,8 @@ public static class TestDataGenerator
         }
         return array;
     }
-    
+
+
     /// <summary>
     /// Generates an array of random double-precision floating-point numbers.
     /// </summary>
@@ -68,11 +71,12 @@ public static class TestDataGenerator
         Array.Fill(array, value);
         return array;
     }
-    
+
     #endregion
-    
+
     #region Matrix Generation
-    
+
+
     /// <summary>
     /// Generates a 2D matrix of random integers.
     /// </summary>
@@ -88,7 +92,8 @@ public static class TestDataGenerator
         }
         return matrix;
     }
-    
+
+
     /// <summary>
     /// Generates a 2D matrix of random single-precision floating-point numbers.
     /// </summary>
@@ -104,7 +109,8 @@ public static class TestDataGenerator
         }
         return matrix;
     }
-    
+
+
     /// <summary>
     /// Generates an identity matrix of the specified size.
     /// </summary>
@@ -117,7 +123,8 @@ public static class TestDataGenerator
         }
         return matrix;
     }
-    
+
+
     /// <summary>
     /// Generates a jagged array representing a matrix.
     /// </summary>
@@ -130,11 +137,12 @@ public static class TestDataGenerator
         }
         return matrix;
     }
-    
+
     #endregion
-    
+
     #region Complex Data Types
-    
+
+
     /// <summary>
     /// Generates an array of Vector2 structures.
     /// </summary>
@@ -150,7 +158,8 @@ public static class TestDataGenerator
         }
         return vectors;
     }
-    
+
+
     /// <summary>
     /// Generates an array of Vector3 structures.
     /// </summary>
@@ -167,7 +176,8 @@ public static class TestDataGenerator
         }
         return vectors;
     }
-    
+
+
     /// <summary>
     /// Generates an array of Vector4 structures.
     /// </summary>
@@ -185,11 +195,12 @@ public static class TestDataGenerator
         }
         return vectors;
     }
-    
+
     #endregion
-    
+
     #region Sparse Data Generation
-    
+
+
     /// <summary>
     /// Generates a sparse array where only a percentage of elements are non-zero.
     /// </summary>
@@ -197,21 +208,25 @@ public static class TestDataGenerator
     {
         var array = new float[length];
         var nonZeroCount = (int)(length * sparsity);
-        
+
+
         var indices = Enumerable.Range(0, length).OrderBy(_ => _random.Next()).Take(nonZeroCount);
-        
+
+
         foreach (var index in indices)
         {
             array[index] = min + (float)_random.NextDouble() * (max - min);
         }
-        
+
+
         return array;
     }
-    
+
     #endregion
-    
+
     #region Performance Testing Data
-    
+
+
     /// <summary>
     /// Generates test data suitable for performance benchmarks.
     /// </summary>
@@ -233,11 +248,12 @@ public static class TestDataGenerator
         /// </summary>
         public static (float[,] matrix1, float[,] matrix2) GenerateLargeMatrixData(int size) => (GenerateFloatMatrix(size, size, -10.0f, 10.0f), GenerateFloatMatrix(size, size, -10.0f, 10.0f));
     }
-    
+
     #endregion
-    
+
     #region Edge Cases
-    
+
+
     /// <summary>
     /// Generates arrays containing edge case values for floating-point testing.
     /// </summary>
@@ -272,11 +288,12 @@ public static class TestDataGenerator
             0, 1, -1, int.MinValue, int.MaxValue
         ];
     }
-    
+
     #endregion
-    
+
     #region Memory Alignment
-    
+
+
     /// <summary>
     /// Generates arrays with specific memory alignment requirements.
     /// </summary>
@@ -286,11 +303,12 @@ public static class TestDataGenerator
         var alignedLength = (length * elementSize + alignment - 1) / alignment * alignment / elementSize;
         return new T[alignedLength];
     }
-    
+
     #endregion
-    
+
     #region String Generation
-    
+
+
     /// <summary>
     /// Generates random strings for testing purposes.
     /// </summary>
@@ -303,7 +321,8 @@ public static class TestDataGenerator
         }
         return new string(result);
     }
-    
+
+
     /// <summary>
     /// Generates an array of random strings.
     /// </summary>
@@ -317,6 +336,7 @@ public static class TestDataGenerator
         }
         return strings;
     }
-    
+
+
     #endregion
 }

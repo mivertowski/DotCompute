@@ -494,6 +494,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
 
         private static double CalculateRecoverySuccessRate()
             // Simplified calculation - would track actual recovery attempts in production
+
             => 0.85; // 85% success rate
 
         private void AnalyzeErrorPatterns(object? state)

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Runtime;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Core.Debugging;
 
@@ -26,6 +27,14 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory;
     private DebugServiceOptions _options;
     private bool _disposed;
+    private static readonly string[] _collection =
+            [
+                "Check for race conditions in parallel execution",
+                "Verify that random number generators use fixed seeds",
+                "Ensure atomic operations where required",
+                "Consider thread-local storage for mutable state"
+            ];
+
 
     public KernelDebugService(
         IAcceleratorRuntime runtime,
@@ -39,8 +48,10 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     }
 
     public async Task<KernelValidationResult> ValidateKernelAsync(
-        string kernelName, 
-        object[] inputs, 
+        string kernelName,
+
+        object[] inputs,
+
         float tolerance = 1e-6f)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -94,7 +105,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             if (!comparisonReport.ResultsMatch)
             {
                 maxDifference = comparisonReport.Differences.Max(d => d.Difference);
-                
+
+
                 if (maxDifference > tolerance)
                 {
                     issues.Add(new ValidationIssue
@@ -139,7 +151,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during kernel validation for {KernelName}", kernelName);
-            
+
+
             return new KernelValidationResult
             {
                 KernelName = kernelName,
@@ -159,8 +172,10 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     }
 
     public async Task<KernelExecutionResult> ExecuteOnBackendAsync(
-        string kernelName, 
-        string backendType, 
+        string kernelName,
+
+        string backendType,
+
         object[] inputs)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -222,7 +237,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             BackendsCompared = backendNames,
             Differences = differences,
             Strategy = comparisonStrategy,
-            Tolerance = _options.VerbosityLevel == LogLevel.Trace ? 1e-8f : 1e-6f,
+            Tolerance = _options.VerbosityLevel == Abstractions.Debugging.LogLevel.Trace ? 1e-8f : 1e-6f,
             PerformanceComparison = performanceComparison
         };
     }
@@ -261,8 +276,9 @@ public class KernelDebugService : IKernelDebugService, IDisposable
 
             // Execute with instrumentation (placeholder implementation) TODO
             var result = await ExecuteKernelSafelyAsync(kernelName, "CPU", inputs, accelerator);
-            
+
             // Create trace points based on execution
+
             for (var i = 0; i < tracePoints.Length; i++)
             {
                 tracePointsList.Add(new TracePoint
@@ -307,9 +323,14 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         ArgumentNullException.ThrowIfNull(inputs);
 
         if (iterations <= 1)
-            throw new ArgumentOutOfRangeException(nameof(iterations), "At least 2 iterations required");
+        {
 
-        _logger.LogInformation("Testing determinism of kernel {KernelName} with {Iterations} iterations", 
+            throw new ArgumentOutOfRangeException(nameof(iterations), "At least 2 iterations required");
+        }
+
+
+        _logger.LogInformation("Testing determinism of kernel {KernelName} with {Iterations} iterations",
+
             kernelName, iterations);
 
         var accelerator = await GetOrCreateAcceleratorAsync("CPU");
@@ -355,13 +376,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         var recommendations = new List<string>();
         if (!isDeterministic)
         {
-            recommendations.AddRange(new[]
-            {
-                "Check for race conditions in parallel execution",
-                "Verify that random number generators use fixed seeds",
-                "Ensure atomic operations where required",
-                "Consider thread-local storage for mutable state"
-            });
+            recommendations.AddRange(_collection);
         }
 
         return new DeterminismReport
@@ -425,7 +440,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             PatternType = "Sequential",
             AccessCount = totalMemoryAccessed / sizeof(float), // Assuming float data
             CoalescingEfficiency = backendType == "CUDA" ? 0.85f : 1.0f,
-            Issues = backendType == "CUDA" && memoryEfficiency < 0.8f 
+            Issues = backendType == "CUDA" && memoryEfficiency < 0.8f
+
                 ? new List<string> { "Consider memory coalescing optimizations" }
                 : new List<string>()
         });
@@ -468,7 +484,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         try
         {
             var availableAccelerators = await _runtime.GetAvailableAcceleratorsAsync();
-            
+
+
             foreach (var acceleratorInfo in availableAccelerators)
             {
                 backendInfos.Add(new BackendInfo
@@ -507,11 +524,13 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     private async Task<Dictionary<string, IAccelerator>> GetAvailableAcceleratorsAsync()
     {
         var accelerators = new Dictionary<string, IAccelerator>();
-        
+
+
         try
         {
             var availableAccelerators = await _runtime.GetAvailableAcceleratorsAsync();
-            
+
+
             foreach (var acceleratorInfo in availableAccelerators)
             {
                 var accelerator = await _runtime.GetAcceleratorAsync(acceleratorInfo.DeviceType);
@@ -553,9 +572,12 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     }
 
     private async Task<KernelExecutionResult> ExecuteKernelSafelyAsync(
-        string kernelName, 
-        string backendType, 
-        object[] inputs, 
+        string kernelName,
+
+        string backendType,
+
+        object[] inputs,
+
         IAccelerator accelerator)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -573,11 +595,13 @@ public class KernelDebugService : IKernelDebugService, IDisposable
 
             // Simulate kernel execution (replace with actual execution logic) TODO
             await Task.Delay(10); // Simulate some work
-            
+
+
             result.Success = true;
             result.Result = $"ExecutionResult_{backendType}_{DateTime.UtcNow.Ticks}";
             result.MemoryUsed = EstimateMemoryUsage(inputs);
-            
+
+
             _executionHistory.Enqueue(result);
 
             // Limit history size
@@ -600,7 +624,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         return result;
     }
 
-    private async Task<bool> CompareResultsByStrategyAsync(
+    private static async Task<bool> CompareResultsByStrategyAsync(
         List<KernelExecutionResult> results,
         ComparisonStrategy strategy,
         List<ResultDifference> differences)
@@ -609,14 +633,19 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         // In production, this would need sophisticated comparison logic
         // based on the data types and comparison strategy TODO
 
-        if (results.Count < 2) return true;
+        if (results.Count < 2)
+        {
+            return true;
+        }
+
 
         var baseResult = results[0];
         for (var i = 1; i < results.Count; i++)
         {
             var compareResult = results[i];
-            
+
             // For demonstration, we'll assume results are different if backends differ
+
             if (baseResult.BackendType != compareResult.BackendType)
             {
                 differences.Add(new ResultDifference
@@ -625,7 +654,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
                     ExpectedValue = baseResult.Result ?? new object(),
                     ActualValue = compareResult.Result ?? new object(),
                     Difference = 0.001f, // Simulated small difference
-                    BackendsInvolved = new[] { baseResult.BackendType, compareResult.BackendType }
+                    BackendsInvolved = [baseResult.BackendType, compareResult.BackendType]
                 });
             }
         }
@@ -634,11 +663,16 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         return differences.Count == 0;
     }
 
-    private List<ValidationIssue> AnalyzePerformanceCharacteristics(KernelExecutionResult[] results)
+    private static List<ValidationIssue> AnalyzePerformanceCharacteristics(KernelExecutionResult[] results)
     {
         var issues = new List<ValidationIssue>();
-        
-        if (results.Length < 2) return issues;
+
+
+        if (results.Length < 2)
+        {
+            return issues;
+        }
+
 
         var executionTimes = results.Select(r => r.ExecutionTime.TotalMilliseconds).ToArray();
         var maxTime = executionTimes.Max();
@@ -649,7 +683,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         {
             var slowBackend = results.First(r => r.ExecutionTime.TotalMilliseconds == maxTime).BackendType;
             var fastBackend = results.First(r => r.ExecutionTime.TotalMilliseconds == minTime).BackendType;
-            
+
+
             issues.Add(new ValidationIssue
             {
                 Severity = ValidationSeverity.Warning,
@@ -662,11 +697,15 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         return issues;
     }
 
-    private string DetermineRecommendedBackend(KernelExecutionResult[] results)
+    private static string DetermineRecommendedBackend(KernelExecutionResult[] results)
     {
-        if (results.Length == 0) return "None";
+        if (results.Length == 0)
+        {
+            return "None";
+        }
 
         // Recommend based on performance and success rate
+
         return results
             .Where(r => r.Success)
             .OrderBy(r => GetBackendPriority(r.BackendType))
@@ -684,22 +723,22 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         _ => 999
     };
 
-    private int CalculateThroughput(KernelExecutionResult result)
+    private static int CalculateThroughput(KernelExecutionResult result)
     {
         // Simplified throughput calculation
         var operations = 1000; // Placeholder - would be calculated based on actual kernel operations TODO
         return (int)(operations / result.ExecutionTime.TotalSeconds);
     }
 
-    private long EstimateMemoryUsage(object[] inputs)
+    private static long EstimateMemoryUsage(object[] inputs)
     {
-        // Simplified memory estimation
+        // Simplified memory estimation TODO
         return inputs.Length * 1024; // 1KB per input as placeholder
     }
 
-    private float CalculateMemoryEfficiency(object[] inputs, string backendType)
+    private static float CalculateMemoryEfficiency(object[] inputs, string backendType)
     {
-        // Simplified efficiency calculation
+        // Simplified efficiency calculation TODO
         var baseEfficiency = backendType switch
         {
             "CUDA" => 0.8f,
@@ -712,7 +751,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         return baseEfficiency * (0.5f + 0.5f * inputSizeFactor);
     }
 
-    private bool AnalyzeResultConsistency(List<object> results, out float maxVariation, out string? source)
+    private static bool AnalyzeResultConsistency(List<object> results, out float maxVariation, out string? source)
     {
         maxVariation = 0f;
         source = null;
@@ -740,7 +779,11 @@ public class KernelDebugService : IKernelDebugService, IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         foreach (var accelerator in _accelerators.Values)
         {

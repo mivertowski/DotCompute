@@ -23,16 +23,18 @@ public class PluginNotFoundException : PluginException
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginNotFoundException"/> class.
     /// </summary>
-    public PluginNotFoundException() 
-    { 
+    public PluginNotFoundException()
+    {
+
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginNotFoundException"/> class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
-    public PluginNotFoundException(string message) : base(message) 
-    { 
+    public PluginNotFoundException(string message) : base(message)
+    {
+
     }
 
     /// <summary>
@@ -42,8 +44,9 @@ public class PluginNotFoundException : PluginException
     /// <param name="message">The error message that explains the reason for the exception.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
     public PluginNotFoundException(string message, Exception innerException)
-        : base(message, innerException) 
-    { 
+        : base(message, innerException)
+    {
+
     }
 
     /// <summary>
@@ -53,8 +56,9 @@ public class PluginNotFoundException : PluginException
     /// <param name="message">The message that describes the error.</param>
     /// <param name="pluginId">The unique identifier of the plugin.</param>
     public PluginNotFoundException(string message, string pluginId)
-        : base(message, pluginId) 
-    { 
+        : base(message, pluginId)
+    {
+
     }
 
     /// <summary>
@@ -65,8 +69,9 @@ public class PluginNotFoundException : PluginException
     /// <param name="pluginId">The unique identifier of the plugin.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
     public PluginNotFoundException(string message, string pluginId, Exception innerException)
-        : base(message, pluginId, innerException) 
-    { 
+        : base(message, pluginId, innerException)
+    {
+
     }
 
     /// <summary>

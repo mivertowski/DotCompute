@@ -65,7 +65,8 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             ThrowIfDisposed();
             EnsureOnHost();
-            
+
+
             unsafe
             {
                 return new ReadOnlySpan<T>(_devicePtr.ToPointer(), _length);
@@ -77,7 +78,8 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             ThrowIfDisposed();
             EnsureOnHost();
-            
+
+
             unsafe
             {
                 return new Span<T>(_devicePtr.ToPointer(), _length);
@@ -89,8 +91,9 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             ThrowIfDisposed();
             EnsureOnHost();
-            
+
             // Create a memory manager for unified memory
+
             return new UnmanagedMemoryManager<T>(_devicePtr, _length).Memory;
         }
 
@@ -104,7 +107,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public void CopyTo(IUnifiedMemoryBuffer<T> destination)
         {
             ArgumentNullException.ThrowIfNull(destination);
-            
+
+
             if (destination.Length != _length)
             {
 
@@ -127,7 +131,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public void CopyFrom(IUnifiedMemoryBuffer<T> source)
         {
             ArgumentNullException.ThrowIfNull(source);
-            
+
+
             if (source.Length != _length)
             {
 
@@ -191,7 +196,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public MappedMemory<T> MapRange(int offset, int length, MapMode mode)
         {
             ThrowIfDisposed();
-            
+
+
             if (offset < 0 || length < 0 || offset + length > _length)
             {
 
@@ -235,7 +241,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
         {
             ThrowIfDisposed();
-            
+
+
             if (offset < 0 || length < 0 || offset + length > _length)
             {
 
@@ -335,7 +342,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(destination);
-            
+
+
             if (destination.Length != _length)
             {
 
@@ -350,7 +358,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(destination);
-            
+
+
             if (sourceOffset < 0 || destinationOffset < 0 || length < 0)
             {
 
@@ -373,7 +382,8 @@ namespace DotCompute.Backends.CUDA.Memory
                     var destMemory = destination.GetDeviceMemory();
                     var dstPtr = destMemory.Handle + (destinationOffset * Unsafe.SizeOf<T>());
                     var sizeInBytes = (nuint)(length * Unsafe.SizeOf<T>());
-                    
+
+
                     var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, sizeInBytes, CudaMemcpyKind.DeviceToDevice);
                     CudaRuntime.CheckError(result, "partial copy");
                 }
@@ -411,17 +421,20 @@ namespace DotCompute.Backends.CUDA.Memory
         public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
         {
             ThrowIfDisposed();
-            
+
+
             var sizeInBytes = SizeInBytes;
             var newElementSize = Unsafe.SizeOf<TNew>();
-            
+
+
             if (sizeInBytes % newElementSize != 0)
             {
                 throw new InvalidOperationException(
                     $"Cannot reinterpret buffer of {sizeInBytes} bytes as {typeof(TNew).Name} " +
                     $"(element size {newElementSize} bytes) - size mismatch");
             }
-            
+
+
             var newLength = (int)(sizeInBytes / newElementSize);
             return new SimpleCudaUnifiedMemoryBuffer<TNew>(_devicePtr, newLength, _ownsMemory);
         }
@@ -438,8 +451,9 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             var device = deviceId >= 0 ? deviceId : -1; // -1 represents CPU
             var result = CudaRuntime.cudaMemPrefetchAsync(_devicePtr, (nuint)SizeInBytes, device, IntPtr.Zero);
-            
+
             // Prefetch is optional, so we don't throw on error
+
             if (result != CudaError.Success && result != CudaError.NotSupported)
             {
                 // Log warning but don't fail
@@ -454,10 +468,12 @@ namespace DotCompute.Backends.CUDA.Memory
             CancellationToken cancellationToken = default) where TSource : unmanaged
         {
             ThrowIfDisposed();
-            
+
+
             var sourceSizeInBytes = source.Length * Unsafe.SizeOf<TSource>();
             var totalSizeInBytes = _length * Unsafe.SizeOf<T>();
-            
+
+
             if (destinationOffset + sourceSizeInBytes > totalSizeInBytes)
             {
 
@@ -473,7 +489,8 @@ namespace DotCompute.Backends.CUDA.Memory
                     fixed (TSource* srcPtr = sourceSpan)
                     {
                         var destPtr = _devicePtr + (nint)destinationOffset;
-                        Buffer.MemoryCopy(srcPtr, destPtr.ToPointer(), 
+                        Buffer.MemoryCopy(srcPtr, destPtr.ToPointer(),
+
                             totalSizeInBytes - destinationOffset, sourceSizeInBytes);
                     }
                 }
@@ -487,10 +504,12 @@ namespace DotCompute.Backends.CUDA.Memory
             CancellationToken cancellationToken = default) where TDest : unmanaged
         {
             ThrowIfDisposed();
-            
+
+
             var destSizeInBytes = destination.Length * Unsafe.SizeOf<TDest>();
             var totalSizeInBytes = _length * Unsafe.SizeOf<T>();
-            
+
+
             if (sourceOffset + destSizeInBytes > totalSizeInBytes)
             {
 

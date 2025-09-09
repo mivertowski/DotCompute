@@ -20,7 +20,7 @@ public interface IComputeOrchestrator
     /// <param name="kernelName">The fully qualified kernel name</param>
     /// <param name="args">The kernel arguments</param>
     /// <returns>The execution result</returns>
-    Task<T> ExecuteAsync<T>(string kernelName, params object[] args);
+    public Task<T> ExecuteAsync<T>(string kernelName, params object[] args);
 
     /// <summary>
     /// Executes a kernel with explicit backend preference.
@@ -30,7 +30,7 @@ public interface IComputeOrchestrator
     /// <param name="preferredBackend">The preferred backend for execution</param>
     /// <param name="args">The kernel arguments</param>
     /// <returns>The execution result</returns>
-    Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args);
+    public Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args);
 
     /// <summary>
     /// Executes a kernel on a specific accelerator instance.
@@ -40,7 +40,7 @@ public interface IComputeOrchestrator
     /// <param name="accelerator">The specific accelerator to use</param>
     /// <param name="args">The kernel arguments</param>
     /// <returns>The execution result</returns>
-    Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args);
+    public Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args);
 
     /// <summary>
     /// Executes a kernel with unified buffer parameters for zero-copy optimization.
@@ -50,14 +50,14 @@ public interface IComputeOrchestrator
     /// <param name="buffers">Unified buffers for zero-copy execution</param>
     /// <param name="scalarArgs">Scalar arguments</param>
     /// <returns>The execution result</returns>
-    Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs);
+    public Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs);
 
     /// <summary>
     /// Gets the optimal accelerator for a specific kernel.
     /// </summary>
     /// <param name="kernelName">The kernel name</param>
     /// <returns>The optimal accelerator or null if none suitable</returns>
-    Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName);
+    public Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName);
 
     /// <summary>
     /// Pre-compiles a kernel for improved runtime performance.
@@ -65,14 +65,14 @@ public interface IComputeOrchestrator
     /// <param name="kernelName">The kernel name to pre-compile</param>
     /// <param name="accelerator">Optional specific accelerator, or null for all suitable accelerators</param>
     /// <returns>A task representing the pre-compilation operation</returns>
-    Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null);
+    public Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null);
 
     /// <summary>
     /// Gets available accelerators that support a specific kernel.
     /// </summary>
     /// <param name="kernelName">The kernel name</param>
     /// <returns>Available accelerators supporting the kernel</returns>
-    Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName);
+    public Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName);
 
     /// <summary>
     /// Validates kernel arguments before execution.
@@ -80,5 +80,5 @@ public interface IComputeOrchestrator
     /// <param name="kernelName">The kernel name</param>
     /// <param name="args">The arguments to validate</param>
     /// <returns>Validation result with any errors or warnings</returns>
-    Task<KernelValidationResult> ValidateKernelArgsAsync(string kernelName, params object[] args);
+    public Task<KernelValidationResult> ValidateKernelArgsAsync(string kernelName, params object[] args);
 }

@@ -74,7 +74,8 @@ namespace DotCompute.Backends.CUDA.Types
         ThreadLocal,
         Relaxed
     }
-    
+
+
     /// <summary>
     /// CUDA cache configuration.
     /// </summary>
@@ -85,7 +86,8 @@ namespace DotCompute.Backends.CUDA.Types
         PreferL1,
         PreferEqual
     }
-    
+
+
     /// <summary>
     /// Options for CUDA graph optimization.
     /// </summary>
@@ -132,12 +134,14 @@ namespace DotCompute.Backends.CUDA.Types
         public double MemoryUtilization { get; set; }
         public long OperationsPerSecond { get; set; }
         public string Operation { get; set; } = string.Empty;
-        
+
+
         /// <summary>
         /// Total floating point operations performed.
         /// </summary>
         public long TotalFlops { get; set; }
-        
+
+
         /// <summary>
         /// Number of times this operation was called.
         /// </summary>
@@ -166,7 +170,8 @@ namespace DotCompute.Backends.CUDA.Types
         public int MaxFusedKernels { get; set; } = 4;
         public double MinimumBenefitThreshold { get; set; } = 0.2;
     }
-    
+
+
     /// <summary>
     /// CUDA graph update parameters.
     /// </summary>
@@ -177,7 +182,8 @@ namespace DotCompute.Backends.CUDA.Types
         public bool PreserveTopology { get; set; } = true;
         public IntPtr SourceGraph { get; set; }
     }
-    
+
+
     /// <summary>
     /// CUDA graph statistics.
     /// </summary>
@@ -195,7 +201,8 @@ namespace DotCompute.Backends.CUDA.Types
         public DateTimeOffset? LastExecutedAt { get; set; }
         public bool IsOptimized { get; set; }
     }
-    
+
+
     /// <summary>
     /// CUDA unified memory buffer implementation.
     /// </summary>

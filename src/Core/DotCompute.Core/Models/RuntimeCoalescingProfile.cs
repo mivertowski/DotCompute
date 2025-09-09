@@ -137,7 +137,8 @@ namespace DotCompute.Core.Models
                 _totalMemoryTransferred = 0;
                 _totalMemoryTransactions = 0;
                 _coalescedTransactions = 0;
-                
+
+
                 EstimatedBandwidth = 0.0;
                 EstimatedCoalescingEfficiency = 0.0;
                 AverageExecutionTime = TimeSpan.Zero;
@@ -157,10 +158,12 @@ namespace DotCompute.Core.Models
                 _totalMemoryTransferred += memoryTransferred;
                 _coalescedTransactions += coalescedTransactions;
                 _totalMemoryTransactions += totalTransactions;
-                
+
                 // Update TimeSpan properties
+
                 var executionTime = TimeSpan.FromMilliseconds(executionTimeMs);
-                
+
+
                 if (_executionTimes.Count == 1)
                 {
                     MinExecutionTime = executionTime;
@@ -179,10 +182,12 @@ namespace DotCompute.Core.Models
                         MaxExecutionTime = executionTime;
                     }
                 }
-                
+
+
                 AverageExecutionTime = TimeSpan.FromMilliseconds(_executionTimes.Average());
-                
+
                 // Update calculated values
+
                 EstimatedBandwidth = CalculatedBandwidth;
                 EstimatedCoalescingEfficiency = CalculatedCoalescingEfficiency;
             }
@@ -250,7 +255,8 @@ namespace DotCompute.Core.Models
 
             var sorted = _executionTimes.OrderBy(x => x).ToArray();
             var mid = sorted.Length / 2;
-            
+
+
             return sorted.Length % 2 == 0
                 ? (sorted[mid - 1] + sorted[mid]) / 2.0
                 : sorted[mid];

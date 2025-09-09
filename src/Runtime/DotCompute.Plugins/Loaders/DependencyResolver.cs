@@ -222,7 +222,7 @@ public class DependencyResolver
     /// <summary>
     /// Selects the best version from available versions based on version range.
     /// </summary>
-    private string? SelectBestVersion(string versionRange, List<string> availableVersions)
+    private static string? SelectBestVersion(string versionRange, List<string> availableVersions)
     {
         if (availableVersions.Count == 0)
         {
@@ -468,7 +468,7 @@ public class DependencyResolver
     /// <summary>
     /// Validates the final dependency graph for consistency.
     /// </summary>
-    private async Task ValidateDependencyGraphAsync(DependencyGraph graph, CancellationToken cancellationToken)
+    private static async Task ValidateDependencyGraphAsync(DependencyGraph graph, CancellationToken cancellationToken)
     {
         await Task.CompletedTask; // Placeholder for async signature
 
@@ -497,6 +497,7 @@ public class DependencyResolver
     private static bool IsPlatformCompatible(ResolvedDependency dependency)
         // Simplified platform compatibility check
         // In a real implementation, this would check the package's supported frameworks
+
 
         => true;
 }

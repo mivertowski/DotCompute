@@ -818,3 +818,5 @@ reorganize_files.sh
 test_new_properties.cs
 CLAUDE.md
 RELEASE_INSTRUCTIONS.md
+test_disposed.cs
+tests/Unit/DotCompute.Memory.Tests/test_buffer.csx

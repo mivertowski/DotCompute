@@ -29,38 +29,44 @@ public class CompilationAttempt
     /// </summary>
     /// <value>The specific strategy used for this attempt.</value>
     public CompilationFallbackStrategy Strategy { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the compilation options that were used for this attempt.
     /// These options may have been modified by the fallback strategy.
     /// </summary>
     /// <value>The compilation configuration for this attempt.</value>
     public CompilationOptions Options { get; set; } = null!;
-    
+
+
     /// <summary>
     /// Gets or sets the timestamp when this compilation attempt started.
     /// </summary>
     /// <value>The UTC timestamp marking the beginning of the attempt.</value>
     public DateTimeOffset StartTime { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the timestamp when this compilation attempt completed.
     /// </summary>
     /// <value>The UTC timestamp marking the end of the attempt.</value>
     public DateTimeOffset EndTime { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the duration of this compilation attempt.
     /// </summary>
     /// <value>The time span from start to completion of the attempt.</value>
     public TimeSpan Duration { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets a value indicating whether this compilation attempt succeeded.
     /// </summary>
     /// <value>true if the attempt resulted in successful compilation; otherwise, false.</value>
     public bool Success { get; set; }
-    
+
+
     /// <summary>
     /// Gets or sets the error message if this compilation attempt failed.
     /// </summary>

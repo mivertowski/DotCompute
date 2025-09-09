@@ -39,7 +39,8 @@ namespace DotCompute.Backends.CUDA.Memory
             _allocations = new ConcurrentDictionary<IntPtr, PinnedAllocation>();
             _allocationSemaphore = new SemaphoreSlim(1, 1);
             _maxPinnedMemory = maxPinnedMemory;
-            
+
+
             _logger.LogInformation("Initialized pinned memory allocator with {MaxMemory:N0} bytes limit", _maxPinnedMemory);
         }
 
@@ -62,15 +63,17 @@ namespace DotCompute.Backends.CUDA.Memory
         /// Allocates pinned host memory for high-bandwidth transfers.
         /// </summary>
         public async Task<IPinnedMemoryBuffer<T>> AllocatePinnedAsync<T>(
-            long count, 
+            long count,
+
             CudaHostAllocFlags flags = CudaHostAllocFlags.Default,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
 
             var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            
+
             // Align size to ALLOCATION_ALIGNMENT
+
             var alignedSize = (sizeInBytes + ALLOCATION_ALIGNMENT - 1) & ~(ALLOCATION_ALIGNMENT - 1);
 
             await _allocationSemaphore.WaitAsync(cancellationToken);
@@ -175,7 +178,8 @@ namespace DotCompute.Backends.CUDA.Memory
             }, cancellationToken);
 
             _logger.LogDebug("Registered {Size:N0} bytes of host memory at {Ptr:X}", sizeInBytes, hostPtr);
-            
+
+
             return new PinnedMemoryRegistration(hostPtr, sizeInBytes, this);
         }
 
@@ -298,13 +302,13 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public interface IPinnedMemoryBuffer<T> : IDisposable where T : unmanaged
     {
-        IntPtr HostPointer { get; }
-        IntPtr DevicePointer { get; }
-        long Count { get; }
-        Span<T> AsSpan();
-        Memory<T> AsMemory();
-        Task CopyToDeviceAsync(IntPtr devicePtr, CancellationToken cancellationToken = default);
-        Task CopyFromDeviceAsync(IntPtr devicePtr, CancellationToken cancellationToken = default);
+        public IntPtr HostPointer { get; }
+        public IntPtr DevicePointer { get; }
+        public long Count { get; }
+        public Span<T> AsSpan();
+        public Memory<T> AsMemory();
+        public Task CopyToDeviceAsync(IntPtr devicePtr, CancellationToken cancellationToken = default);
+        public Task CopyFromDeviceAsync(IntPtr devicePtr, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -312,8 +316,8 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public interface IPinnedMemoryRegistration : IDisposable
     {
-        IntPtr HostPointer { get; }
-        long Size { get; }
+        public IntPtr HostPointer { get; }
+        public long Size { get; }
     }
 
     /// <summary>

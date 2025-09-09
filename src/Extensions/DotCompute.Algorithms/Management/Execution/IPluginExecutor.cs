@@ -18,7 +18,7 @@ public interface IPluginExecutor
     /// <param name="parameters">Optional parameters.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The execution result.</returns>
-    Task<object> ExecutePluginAsync(
+    public Task<object> ExecutePluginAsync(
         string pluginId,
         object[] inputs,
         Dictionary<string, object>? parameters = null,
@@ -32,7 +32,7 @@ public interface IPluginExecutor
     /// <param name="parameters">Optional parameters.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The execution result.</returns>
-    Task<object> ExecuteWithRetryAsync(
+    public Task<object> ExecuteWithRetryAsync(
         IAlgorithmPlugin plugin,
         object[] inputs,
         Dictionary<string, object>? parameters,
