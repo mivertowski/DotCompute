@@ -9,6 +9,10 @@ using DotCompute.Abstractions;
 using DotCompute.Runtime.Services.Performance.Metrics;
 using DotCompute.Runtime.Services.Performance.Results;
 using DotCompute.Runtime.Services.Performance.Types;
+using DotCompute.Core.Pipelines;
+using DotCompute.Core.Pipelines.Services;
+using DotCompute.Core.Pipelines.Services.Implementation;
+using DotCompute.Core.Pipelines.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -133,13 +137,101 @@ public static class ServiceCollectionExtensions
 
         // Discover and register kernels
         var kernelDiscovery = serviceProvider.GetRequiredService<GeneratedKernelDiscoveryService>();
-        var kernelExecution = serviceProvider.GetRequiredService<KernelExecutionServiceSimplified>();
+        var kernelExecution = serviceProvider.GetRequiredService<KernelExecutionService>();
         
         var kernelCount = await kernelDiscovery.DiscoverAndRegisterKernelsAsync(kernelExecution);
         
         // Log successful initialization
         var logger = serviceProvider.GetService<Microsoft.Extensions.Logging.ILogger<AcceleratorRuntime>>();
         logger?.LogInformation("DotCompute runtime initialized successfully with {KernelCount} kernels", kernelCount);
+    }
+
+    /// <summary>
+    /// Adds fluent kernel chaining services to the service collection.
+    /// This enables the KernelChain fluent API for intuitive kernel operation chaining.
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddKernelChaining(this IServiceCollection services)
+    {
+        // Add memory caching for kernel chain cache service
+        services.AddMemoryCache();
+        
+        // Add kernel chaining services
+        services.AddSingleton<IKernelResolver, DefaultKernelResolver>();
+        services.AddSingleton<IKernelChainValidator, DefaultKernelChainValidator>();
+        services.AddSingleton<IKernelChainProfiler, DefaultKernelChainProfiler>();
+        services.AddSingleton<IKernelChainCacheService, DefaultKernelChainCacheService>();
+
+        // Register factory for creating kernel chain builders
+        services.AddTransient<IKernelChainBuilder>(provider => 
+        {
+            var orchestrator = provider.GetRequiredService<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>();
+            var kernelResolver = provider.GetService<IKernelResolver>();
+            var profiler = provider.GetService<IKernelChainProfiler>();
+            var validator = provider.GetService<IKernelChainValidator>();
+            var cacheService = provider.GetService<IKernelChainCacheService>();
+            var logger = provider.GetService<ILogger<KernelChainBuilder>>();
+
+            return new KernelChainBuilder(
+                orchestrator,
+                kernelResolver,
+                profiler,
+                validator,
+                cacheService,
+                logger);
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds fluent kernel chaining services with custom configuration.
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="configureOptions">Action to configure kernel chaining options</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddKernelChaining(
+        this IServiceCollection services,
+        Action<KernelChainingOptions> configureOptions)
+    {
+        services.Configure(configureOptions);
+        return services.AddKernelChaining();
+    }
+
+    /// <summary>
+    /// Adds the complete DotCompute runtime with kernel chaining support.
+    /// This is a convenience method that adds both runtime and chaining services.
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="configuration">Configuration for runtime options</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddDotComputeWithKernelChaining(
+        this IServiceCollection services,
+        IConfiguration? configuration = null)
+    {
+        services.AddDotComputeRuntime(configuration);
+        services.AddKernelChaining();
+        return services;
+    }
+
+    /// <summary>
+    /// Initializes the DotCompute runtime with kernel chaining support.
+    /// This configures the KernelChain static class with the service provider.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider</param>
+    /// <returns>A task representing the initialization operation</returns>
+    public static async Task InitializeDotComputeWithKernelChainingAsync(this IServiceProvider serviceProvider)
+    {
+        // Initialize the standard runtime
+        await serviceProvider.InitializeDotComputeRuntimeAsync();
+
+        // Configure the KernelChain static class
+        KernelChain.Configure(serviceProvider);
+
+        // Log kernel chaining initialization
+        var logger = serviceProvider.GetService<ILogger<KernelChainBuilder>>();
+        logger?.LogInformation("Kernel chaining initialized successfully");
     }
 }
 

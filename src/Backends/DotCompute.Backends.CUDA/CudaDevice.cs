@@ -21,10 +21,26 @@ namespace DotCompute.Backends.CUDA
     /// </summary>
     public sealed class CudaDevice : IDisposable
     {
-        // CUDA 13.0 minimum requirements
-        private const int MinimumComputeCapabilityMajor = 7;
-        private const int MinimumComputeCapabilityMinor = 5;
-        private const string MinimumArchitecture = "Turing";
+        // Dynamic minimum requirements based on CUDA version detection
+        private static readonly Lazy<(int major, int minor, string arch)> _minimumRequirements = new(() => 
+        {
+            // Use CudaCapabilityManager to get dynamic requirements
+            var targetCapability = DotCompute.Backends.CUDA.Configuration.CudaCapabilityManager.GetTargetComputeCapability();
+            var arch = targetCapability.major switch
+            {
+                >= 9 => "Hopper",
+                8 => targetCapability.minor >= 9 ? "Ada Lovelace" : "Ampere",
+                7 => targetCapability.minor >= 5 ? "Turing" : "Volta",
+                6 => "Pascal",
+                5 => "Maxwell",
+                _ => "Legacy"
+            };
+            return (targetCapability.major, targetCapability.minor, arch);
+        });
+
+        private static int MinimumComputeCapabilityMajor => _minimumRequirements.Value.major;
+        private static int MinimumComputeCapabilityMinor => _minimumRequirements.Value.minor;
+        private static string MinimumArchitecture => _minimumRequirements.Value.arch;
 
 
         private readonly ILogger _logger;

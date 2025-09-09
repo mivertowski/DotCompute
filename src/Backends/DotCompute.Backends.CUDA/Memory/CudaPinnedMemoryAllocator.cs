@@ -360,9 +360,9 @@ namespace DotCompute.Backends.CUDA.Memory
         public unsafe Memory<T> AsMemory()
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            // Note: This requires special handling as Memory<T> can't directly wrap unmanaged memory
-            // In production, you'd use a custom MemoryManager<T> implementation TODO
-            throw new NotImplementedException("Memory<T> wrapper for pinned memory requires custom MemoryManager implementation");
+            
+            // Create a custom MemoryManager that wraps the pinned memory
+            return new PinnedMemoryManager<T>(_pinnedPtr, Count, this).Memory;
         }
 
         public async Task CopyToDeviceAsync(IntPtr devicePtr, CancellationToken cancellationToken = default)

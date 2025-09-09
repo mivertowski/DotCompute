@@ -20,7 +20,7 @@ using DotCompute.Backends.CUDA.Execution.Graph.Statistics;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Backends.CUDA.Execution.Types;
+using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Execution.Optimization;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
@@ -340,7 +340,7 @@ namespace DotCompute.Backends.CUDA.Execution
         public async Task<string> CaptureGraphAsync(
             string graphId,
             Func<IntPtr, Task> operations,
-            DotCompute.Backends.CUDA.Execution.Types.CudaGraphCaptureMode mode = DotCompute.Backends.CUDA.Execution.Types.CudaGraphCaptureMode.Global,
+            DotCompute.Backends.CUDA.Types.CudaGraphCaptureMode mode = DotCompute.Backends.CUDA.Types.CudaGraphCaptureMode.Global,
             CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -432,7 +432,7 @@ namespace DotCompute.Backends.CUDA.Execution
         public async Task<string> FuseKernelsAsync(
             string graphId,
             IEnumerable<CudaCompiledKernel> kernels,
-            CudaKernelFusionOptions fusionOptions,
+            Configuration.CudaKernelFusionOptions fusionOptions,
             CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -767,7 +767,7 @@ namespace DotCompute.Backends.CUDA.Execution
             // This would use CUDA's tensor core APIs for Ada architecture
             await Task.Delay(1, cancellationToken).ConfigureAwait(false);
 
-            foreach (var op in graph.Operations.Where(o => o.Type == DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.MatrixMultiply))
+            foreach (var op in graph.Operations.Where(o => o.Type == DotCompute.Backends.CUDA.Types.CudaKernelType.MatrixMultiply))
             {
                 // Configure for tensor core usage
                 op.UseTensorCores = true;
@@ -833,8 +833,8 @@ namespace DotCompute.Backends.CUDA.Execution
         {
             // Check if kernels are compatible for fusion
             // Element-wise operations with the same dimensions are good candidates
-            return first.Type == DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.ElementWise &&
-                   second.Type == DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.ElementWise &&
+            return first.Type == DotCompute.Backends.CUDA.Types.CudaKernelType.ElementWise &&
+                   second.Type == DotCompute.Backends.CUDA.Types.CudaKernelType.ElementWise &&
                    first.OutputDimensions == second.InputDimensions;
         }
 
@@ -855,7 +855,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 var fusedKernel = new CudaKernelOperation
                 {
                     Name = $"{candidate.FirstKernel.Name}_fused_{candidate.SecondKernel.Name}",
-                    Type = DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.Fused,
+                    Type = DotCompute.Backends.CUDA.Types.CudaKernelType.Fused,
                     IsFused = true,
                     OriginalOperations = [candidate.FirstKernel, candidate.SecondKernel]
                 };

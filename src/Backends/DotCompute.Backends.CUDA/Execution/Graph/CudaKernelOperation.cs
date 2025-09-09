@@ -3,7 +3,6 @@
 
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Types;
-using DotCompute.Backends.CUDA.Execution.Types;
 
 namespace DotCompute.Backends.CUDA.Execution.Graph
 {
@@ -45,7 +44,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// Gets or sets the type classification of this kernel operation.
         /// </summary>
         /// <value>A CudaKernelType value indicating the operation category.</value>
-        public DotCompute.Backends.CUDA.Execution.Types.CudaKernelType Type { get; set; } = DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.Custom;
+        public DotCompute.Backends.CUDA.Types.CudaKernelType Type { get; set; } = DotCompute.Backends.CUDA.Types.CudaKernelType.Custom;
 
         /// <summary>
         /// Gets or sets a value indicating whether this operation should utilize tensor cores.

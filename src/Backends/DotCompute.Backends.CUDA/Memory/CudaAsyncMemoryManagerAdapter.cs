@@ -22,6 +22,7 @@ namespace DotCompute.Backends.CUDA.Memory
         private long _totalAllocatedBytes;
         private bool _disposed;
         private readonly string _instanceId;
+        private IAccelerator? _accelerator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaAsyncMemoryManagerAdapter"/> class.
@@ -405,7 +406,16 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
         /// <inheritdoc/>
-        public IAccelerator Accelerator => throw new NotImplementedException("Accelerator reference will be set by CudaAccelerator");
+        public IAccelerator Accelerator => _accelerator ?? throw new InvalidOperationException("Accelerator has not been set. This should be called by CudaAccelerator during initialization.");
+
+        /// <summary>
+        /// Sets the accelerator reference. This should only be called by CudaAccelerator during initialization.
+        /// </summary>
+        /// <param name="accelerator">The accelerator instance.</param>
+        internal void SetAccelerator(IAccelerator accelerator)
+        {
+            _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+        }
 
         /// <inheritdoc/>
         public void Dispose()

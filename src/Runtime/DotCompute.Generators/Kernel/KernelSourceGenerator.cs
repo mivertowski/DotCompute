@@ -1384,8 +1384,16 @@ public class KernelSourceGenerator : IIncrementalGenerator
             case "CPU":
                 GenerateCpuExecutionLogic(source, method);
                 break;
+            case "Metal":
+                GenerateMetalExecutionLogic(source, method);
+                break;
+            case "OpenCL":
+                GenerateOpenCLExecutionLogic(source, method);
+                break;
             default:
-                _ = source.AppendLine($"            throw new NotImplementedException(\"{backend} execution not implemented\");");
+                _ = source.AppendLine($"            // {backend} backend not yet implemented - falling back to CPU");
+                _ = source.AppendLine($"            var cpuAccelerator = new DotCompute.Backends.CPU.CpuAccelerator();");
+                _ = source.AppendLine($"            return await ExecuteCPUAsync({string.Join(", ", method.Parameters.Select(p => p.Name))}, cpuAccelerator);");
                 break;
         }
 
@@ -1447,13 +1455,40 @@ public class KernelSourceGenerator : IIncrementalGenerator
         if (method.IsParallel)
         {
             _ = source.AppendLine("            // Execute with parallel processing");
-            _ = source.AppendLine($"            await {method.ContainingType}Generated.ExecuteParallelAsync({string.Join(", ", method.Parameters.Select(p => $"{p.Name}.HostSpan"))}, length);");
+            _ = source.AppendLine($"            await Task.Run(() => {method.ContainingType}Generated.{method.Name}CpuKernel.ExecuteParallel({GenerateParameterList(method)}));");
         }
         else
         {
             _ = source.AppendLine("            // Execute with SIMD vectorization");
-            _ = source.AppendLine($"            await Task.Run(() => {method.ContainingType}Generated.ExecuteSIMD({string.Join(", ", method.Parameters.Select(p => $"{p.Name}.HostSpan"))}, length));");
+            _ = source.AppendLine($"            await Task.Run(() => {method.ContainingType}Generated.{method.Name}CpuKernel.ExecuteSIMD({GenerateParameterList(method)}));");
         }
+    }
+
+    private static void GenerateMetalExecutionLogic(StringBuilder source, KernelMethodInfo method)
+    {
+        _ = source.AppendLine("            // Metal execution (macOS/iOS GPU)");
+        _ = source.AppendLine("            if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))");
+        _ = source.AppendLine("            {");
+        _ = source.AppendLine("                throw new PlatformNotSupportedException(\"Metal backend is only supported on macOS/iOS\");");
+        _ = source.AppendLine("            }");
+        _ = source.AppendLine("            throw new NotImplementedException(\"Metal backend integration pending\");");
+    }
+
+    private static void GenerateOpenCLExecutionLogic(StringBuilder source, KernelMethodInfo method)
+    {
+        _ = source.AppendLine("            // OpenCL execution (cross-platform)");
+        _ = source.AppendLine("            throw new NotImplementedException(\"OpenCL backend integration pending\");");
+    }
+
+    private static string GenerateParameterList(KernelMethodInfo method)
+    {
+        var parameters = method.Parameters.Select(p => $"{p.Name}.HostSpan");
+        var hasLengthParam = method.Parameters.Any(p => p.Name == "length" && p.Type == "int");
+        if (!hasLengthParam)
+        {
+            parameters = parameters.Concat(new[] { "length" });
+        }
+        return string.Join(", ", parameters);
     }
 
 

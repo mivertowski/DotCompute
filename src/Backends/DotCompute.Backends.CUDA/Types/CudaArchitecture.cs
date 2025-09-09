@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace DotCompute.Backends.CUDA.Execution.Types;
+namespace DotCompute.Backends.CUDA.Types;
 
 /// <summary>
 /// Represents NVIDIA GPU architectures for optimization targeting.

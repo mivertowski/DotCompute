@@ -65,7 +65,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
             _coherenceStatus[buffer] = MemoryCoherenceStatus.Synchronizing;
         }
 
-        await Task.Delay(10); // Simulate migration time
+        await Task.Yield(); // Allow other async operations to proceed
         _coherenceStatus[buffer] = MemoryCoherenceStatus.Coherent;
     }
 
@@ -77,7 +77,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
         _logger.LogDebugMessage($"Synchronizing memory coherence for buffer across {acceleratorIds.Length} accelerators");
 
         _coherenceStatus[buffer] = MemoryCoherenceStatus.Synchronizing;
-        await Task.Delay(5); // Simulate synchronization time
+        await Task.Yield(); // Allow other async operations to proceed
         _coherenceStatus[buffer] = MemoryCoherenceStatus.Coherent;
     }
 

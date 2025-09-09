@@ -27,7 +27,7 @@ public class GeneratedKernelDiscoveryService
     /// </summary>
     /// <param name="kernelExecutionService">The service to register kernels with</param>
     /// <returns>The number of kernels discovered and registered</returns>
-    public async Task<int> DiscoverAndRegisterKernelsAsync(KernelExecutionServiceSimplified kernelExecutionService)
+    public async Task<int> DiscoverAndRegisterKernelsAsync(KernelExecutionService kernelExecutionService)
     {
         var discoveredKernels = await DiscoverKernelsAsync();
 

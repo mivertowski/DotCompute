@@ -3,32 +3,53 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces;
+using DotCompute.Linq.Interfaces;
 using DotCompute.Linq.Providers;
-using DotCompute.Linq.Compilation;
-using DotCompute.Linq.Execution;
-using DotCompute.Linq.Expressions;
-using DotCompute.Linq.Operators.Generation;
-using DotCompute.Linq.Operators.Types;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using DotCompute.Memory;
+
 namespace DotCompute.Linq;
 
 
 /// <summary>
-/// Extension methods for creating and executing GPU-accelerated LINQ queries.
+/// Extension methods to create compute-accelerated queryables from collections.
+/// Provides the primary user-facing API for LINQ-to-GPU functionality.
 /// </summary>
 public static class ComputeQueryableExtensions
 {
     /// <summary>
-    /// Converts an enumerable to a GPU-accelerated queryable.
+    /// Converts an enumerable to a GPU-accelerated queryable using the integrated runtime.
+    /// This is the recommended approach that provides full integration with the DotCompute runtime.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="source">The source enumerable.</param>
+    /// <param name="serviceProvider">The service provider for accessing runtime services.</param>
+    /// <param name="accelerator">Optional specific accelerator to use.</param>
+    /// <returns>A GPU-accelerated queryable.</returns>
+    public static IQueryable<T> AsComputeQueryable<T>(
+        this IEnumerable<T> source,
+        IServiceProvider serviceProvider,
+        IAccelerator? accelerator = null)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+
+        var linqProvider = serviceProvider.GetRequiredService<IComputeLinqProvider>();
+        return linqProvider.CreateQueryable(source, accelerator);
+    }
+
+    /// <summary>
+    /// Converts an enumerable to a GPU-accelerated queryable (legacy method).
+    /// Use the overload with IServiceProvider for full runtime integration.
     /// </summary>
     /// <typeparam name="T">The type of elements in the sequence.</typeparam>
     /// <param name="source">The source enumerable.</param>
     /// <param name="accelerator">The accelerator to use for query execution.</param>
     /// <param name="options">Optional query options.</param>
     /// <returns>A GPU-accelerated queryable.</returns>
+    [Obsolete("Use the overload with IServiceProvider for full runtime integration. This method will be removed in a future version.")]
     public static IQueryable<T> AsComputeQueryable<T>(
         this IEnumerable<T> source,
         IAccelerator accelerator,
@@ -38,10 +59,9 @@ public static class ComputeQueryableExtensions
         ArgumentNullException.ThrowIfNull(accelerator);
 
         var actualOptions = options ?? new ComputeQueryOptions();
-        var provider = CreateQueryProvider(accelerator, actualOptions);
+        var provider = CreateLegacyQueryProvider(accelerator, actualOptions);
 
         // Create a constant expression for the source
-        // Use alternative to AsQueryable to avoid AOT issues
         IQueryable queryableSource;
         if (source is IQueryable alreadyQueryable)
         {
@@ -57,20 +77,88 @@ public static class ComputeQueryableExtensions
     }
 
     /// <summary>
-    /// Converts an array to a GPU-accelerated queryable.
+    /// Converts an array to a GPU-accelerated queryable with optimized memory transfer.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="source">The source array.</param>
+    /// <param name="serviceProvider">The service provider for accessing runtime services.</param>
+    /// <param name="accelerator">Optional specific accelerator to use.</param>
+    /// <returns>A GPU-accelerated queryable.</returns>
+    public static IQueryable<T> AsComputeQueryable<T>(
+        this T[] source,
+        IServiceProvider serviceProvider,
+        IAccelerator? accelerator = null)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+
+        var linqProvider = serviceProvider.GetRequiredService<IComputeLinqProvider>();
+        return linqProvider.CreateQueryable(source, accelerator);
+    }
+
+    /// <summary>
+    /// Converts an array to a GPU-accelerated queryable (legacy method).
     /// </summary>
     /// <typeparam name="T">The type of elements in the array.</typeparam>
     /// <param name="source">The source array.</param>
     /// <param name="accelerator">The accelerator to use for query execution.</param>
     /// <param name="options">Optional query options.</param>
     /// <returns>A GPU-accelerated queryable.</returns>
+    [Obsolete("Use the overload with IServiceProvider for full runtime integration.")]
     public static IQueryable<T> AsComputeQueryable<T>(
         this T[] source,
         IAccelerator accelerator,
         ComputeQueryOptions? options = null) => ((IEnumerable<T>)source).AsComputeQueryable(accelerator, options);
 
     /// <summary>
-    /// Executes a query on the GPU and returns the results.
+    /// Executes a compute queryable asynchronously and returns the results.
+    /// This is the recommended way to execute GPU-accelerated queries.
+    /// </summary>
+    /// <typeparam name="T">The result element type.</typeparam>
+    /// <param name="queryable">The queryable to execute.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The query results.</returns>
+    public static async Task<IEnumerable<T>> ExecuteAsync<T>(
+        this IQueryable<T> queryable,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(queryable);
+
+        return queryable switch
+        {
+            IntegratedComputeQueryable<T> integrated => await integrated.ExecuteAsync(),
+            AcceleratorSpecificQueryable<T> specific => await specific.ExecuteOnBoundAcceleratorAsync(),
+            _ => await Task.Run(() => queryable.AsEnumerable(), cancellationToken) // Fallback to standard LINQ
+        };
+    }
+
+    /// <summary>
+    /// Executes a compute queryable asynchronously with a preferred backend.
+    /// </summary>
+    /// <typeparam name="T">The result element type.</typeparam>
+    /// <param name="queryable">The queryable to execute.</param>
+    /// <param name="preferredBackend">The preferred backend (e.g., "CUDA", "CPU").</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The query results.</returns>
+    public static async Task<IEnumerable<T>> ExecuteAsync<T>(
+        this IQueryable<T> queryable, 
+        string preferredBackend,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(queryable);
+        ArgumentNullException.ThrowIfNull(preferredBackend);
+
+        if (queryable is IntegratedComputeQueryable<T> integrated)
+        {
+            return await integrated.ExecuteAsync(preferredBackend);
+        }
+
+        // Fallback to normal execution if not integrated
+        return await ExecuteAsync(queryable, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes a query on the GPU and returns the results as an array.
     /// </summary>
     /// <typeparam name="T">The type of elements in the result.</typeparam>
     /// <param name="source">The compute queryable.</param>
@@ -85,12 +173,19 @@ public static class ComputeQueryableExtensions
             return result ?? [];
         }
 
+        // Try the integrated approach
+        if (source is IntegratedComputeQueryable<T> integrated)
+        {
+            var asyncResult = integrated.ExecuteAsync().GetAwaiter().GetResult();
+            return asyncResult.ToArray();
+        }
+
         // Fallback to regular LINQ
         return [.. source];
     }
 
     /// <summary>
-    /// Executes a query on the GPU asynchronously and returns the results.
+    /// Executes a query on the GPU asynchronously and returns the results as an array.
     /// </summary>
     /// <typeparam name="T">The type of elements in the result.</typeparam>
     /// <param name="source">The compute queryable.</param>
@@ -102,16 +197,8 @@ public static class ComputeQueryableExtensions
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        if (source.Provider is ComputeQueryProvider computeProvider)
-        {
-            // For async execution, we'd need to extend the provider
-            // For now, run synchronously on a background thread
-            return await Task.Run(() => computeProvider.Execute<T[]>(source.Expression) ?? [],
-                cancellationToken);
-        }
-
-        // Fallback to regular LINQ
-        return await Task.Run(() => source.ToArray(), cancellationToken);
+        var results = await source.ExecuteAsync(cancellationToken);
+        return results.ToArray();
     }
 
     /// <summary>
@@ -223,25 +310,54 @@ public static class ComputeQueryableExtensions
     }
 
     /// <summary>
-    /// Gets optimization suggestions for a query.
+    /// Gets optimization suggestions for a queryable expression.
     /// </summary>
-    /// <typeparam name="T">The element type.</typeparam>
-    /// <param name="source">The queryable source.</param>
-    /// <returns>A collection of optimization suggestions.</returns>
-    public static IEnumerable<OptimizationSuggestion> GetOptimizationSuggestions<T>(
-        this IQueryable<T> source)
+    /// <param name="queryable">The queryable to analyze.</param>
+    /// <param name="serviceProvider">The service provider for accessing runtime services.</param>
+    /// <returns>Optimization suggestions.</returns>
+    public static IEnumerable<OptimizationSuggestion> GetOptimizationSuggestions(
+        this IQueryable queryable,
+        IServiceProvider serviceProvider)
     {
-        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(queryable);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        if (source.Provider is ComputeQueryProvider)
-        {
-            // Access the optimizer through the provider
-            // This would require exposing it through the provider interface
-            var optimizer = new ExpressionOptimizer(NullLogger<ExpressionOptimizer>.Instance);
-            return optimizer.Analyze(source.Expression);
-        }
+        var linqProvider = serviceProvider.GetRequiredService<IComputeLinqProvider>();
+        return linqProvider.GetOptimizationSuggestions(queryable.Expression);
+    }
 
-        return [];
+    /// <summary>
+    /// Checks if a queryable expression is GPU-compatible.
+    /// </summary>
+    /// <param name="queryable">The queryable to check.</param>
+    /// <param name="serviceProvider">The service provider for accessing runtime services.</param>
+    /// <returns>True if GPU-compatible, false otherwise.</returns>
+    public static bool IsGpuCompatible(
+        this IQueryable queryable,
+        IServiceProvider serviceProvider)
+    {
+        ArgumentNullException.ThrowIfNull(queryable);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+
+        var linqProvider = serviceProvider.GetRequiredService<IComputeLinqProvider>();
+        return linqProvider.IsGpuCompatible(queryable.Expression);
+    }
+
+    /// <summary>
+    /// Pre-compiles a queryable expression for improved runtime performance.
+    /// </summary>
+    /// <param name="queryable">The queryable to pre-compile.</param>
+    /// <param name="serviceProvider">The service provider for accessing runtime services.</param>
+    /// <returns>A task representing the pre-compilation operation.</returns>
+    public static async Task PrecompileAsync(
+        this IQueryable queryable,
+        IServiceProvider serviceProvider)
+    {
+        ArgumentNullException.ThrowIfNull(queryable);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+
+        var linqProvider = serviceProvider.GetRequiredService<IComputeLinqProvider>();
+        await linqProvider.PrecompileExpressionsAsync(new[] { queryable.Expression });
     }
 
     /// <summary>
@@ -275,7 +391,7 @@ public static class ComputeQueryableExtensions
         return source;
     }
 
-    private static ComputeQueryProvider CreateQueryProvider(
+    private static ComputeQueryProvider CreateLegacyQueryProvider(
         IAccelerator accelerator,
         ComputeQueryOptions options)
     {
@@ -287,31 +403,31 @@ public static class ComputeQueryableExtensions
             loggerFactory.CreateLogger<Operators.DefaultKernelFactory>());
 
         // Create components
-        var optimizer = new ExpressionOptimizer(
-            loggerFactory.CreateLogger<ExpressionOptimizer>());
+        var optimizer = new Expressions.ExpressionOptimizer(
+            loggerFactory.CreateLogger<Expressions.ExpressionOptimizer>());
 
-        var compiler = new QueryCompiler(
+        var compiler = new Compilation.QueryCompiler(
             kernelFactory,
             optimizer,
-            loggerFactory.CreateLogger<QueryCompiler>());
+            loggerFactory.CreateLogger<Compilation.QueryCompiler>());
 
-        var memoryManagerFactory = new DefaultMemoryManagerFactory(
-            loggerFactory.CreateLogger<IUnifiedMemoryManager>());
+        var memoryManagerFactory = new Services.DefaultMemoryManagerFactory(
+            loggerFactory.CreateLogger<Memory.IUnifiedMemoryManager>());
 
-        var executor = new QueryExecutor(
+        var executor = new Execution.QueryExecutor(
             memoryManagerFactory,
-            loggerFactory.CreateLogger<QueryExecutor>());
+            loggerFactory.CreateLogger<Execution.QueryExecutor>());
 
-        var cacheOptions = new QueryCacheOptions
+        var cacheOptions = new Execution.QueryCacheOptions
         {
             MaxEntries = options.CacheMaxEntries,
             EnableExpiration = options.EnableCacheExpiration,
             DefaultExpiration = options.CacheExpiration
         };
 
-        var cache = new QueryCache(
+        var cache = new Execution.QueryCache(
             cacheOptions,
-            loggerFactory.CreateLogger<QueryCache>());
+            loggerFactory.CreateLogger<Execution.QueryCache>());
 
         return new ComputeQueryProvider(
             accelerator,
@@ -365,19 +481,50 @@ public static class ComputeQueryableExtensions
         /// Gets or sets a value indicating whether to enable profiling.
         /// </summary>
         public bool EnableProfiling { get; set; }
+
+        /// <summary>
+        /// Gets or sets the execution timeout for long-running queries.
+        /// </summary>
+        public TimeSpan? ExecutionTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to enable detailed performance profiling.
+        /// </summary>
+        public bool EnableDetailedProfiling { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the preferred backend name (e.g., "CUDA", "CPU", "Metal").
+        /// </summary>
+        public string? PreferredBackend { get; set; }
+
+        /// <summary>
+        /// Gets or sets the preferred work group size for GPU kernels.
+        /// </summary>
+        public int PreferredWorkGroupSize { get; set; } = 256;
+
+        /// <summary>
+        /// Gets or sets the maximum memory usage threshold (in bytes) before spilling to host memory.
+        /// </summary>
+        public long MaxGpuMemoryUsage { get; set; } = 1024 * 1024 * 512; // 512MB
     }
 
     /// <summary>
-    /// Interface for kernel factories.
+    /// Creates a GPU-accelerated queryable from a span.
     /// </summary>
-    public interface IKernelFactory
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="source">The source span.</param>
+    /// <param name="serviceProvider">The service provider for accessing runtime services.</param>
+    /// <param name="accelerator">Optional specific accelerator to use.</param>
+    /// <returns>A GPU-accelerated queryable.</returns>
+    public static IQueryable<T> AsComputeQueryable<T>(
+        this ReadOnlySpan<T> source,
+        IServiceProvider serviceProvider,
+        IAccelerator? accelerator = null) where T : unmanaged
     {
-        /// <summary>
-        /// Creates a kernel from a definition.
-        /// </summary>
-        /// <param name="accelerator">The target accelerator.</param>
-        /// <param name="definition">The kernel definition.</param>
-        /// <returns>The created kernel.</returns>
-        public IKernel CreateKernel(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+
+        // Convert span to array for queryable interface
+        var array = source.ToArray();
+        return array.AsComputeQueryable(serviceProvider, accelerator);
     }
 }

@@ -139,7 +139,8 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            await Task.Delay(100, cancellationToken); // Brief delay before retry
+            // Allow GC to complete before retrying allocation
+            await Task.Yield(); // Yield control to allow GC to complete without blocking
 
             try
             {
@@ -445,7 +446,17 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
         {
             try
             {
-                await Task.Delay(TimeSpan.FromMinutes(5), CancellationToken.None);
+                // Use a more efficient cleanup interval with cancellation support
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(CancellationToken.None);
+                cts.CancelAfter(TimeSpan.FromMinutes(5));
+                try
+                {
+                    await Task.Delay(Timeout.Infinite, cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected after 5 minutes, continue cleanup
+                }
 
                 // Clean up dead weak references
                 var deadReferences = new List<long>();

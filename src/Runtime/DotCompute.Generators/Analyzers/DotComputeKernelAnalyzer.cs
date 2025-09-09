@@ -21,32 +21,31 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor KernelMethodMustBeStatic = new(
         "DC001",
         "Kernel methods must be static",
-        "Kernel method '{0}' must be declared as static",
+        "Kernel method '{0}' must be declared as static for GPU execution. Add 'static' modifier to the method declaration.",
         "DotCompute.Kernel",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Kernel methods must be static to be compatible with compute backends."
+        description: "Kernel methods must be static to be compatible with compute backends. Instance methods cannot be executed on GPU devices as they require object context that doesn't exist in kernel execution. Example: public static void MyKernel(Span<float> data) {{ }}"
     );
 
     public static readonly DiagnosticDescriptor KernelMethodInvalidParameters = new(
         "DC002",
-
         "Kernel method has invalid parameters",
-        "Kernel method '{0}' has invalid parameter '{1}': {2}",
+        "Kernel method '{0}' has invalid parameter '{1}': {2}. Use Span<T> or ReadOnlySpan<T> instead of arrays for better performance.",
         "DotCompute.Kernel",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Kernel methods can only use supported parameter types like Span<T>, ReadOnlySpan<T>, and primitive types."
+        description: "Kernel methods can only use supported parameter types like Span<T>, ReadOnlySpan<T>, and primitive types (int, float, double). Arrays should be converted to Span<T> for zero-copy memory access and better performance. Example: Use 'Span<float>' instead of 'float[]'."
     );
 
     public static readonly DiagnosticDescriptor KernelMethodUnsupportedConstruct = new(
         "DC003",
         "Kernel method uses unsupported language construct",
-        "Kernel method '{0}' uses unsupported construct '{1}' at line {2}",
+        "Kernel method '{0}' uses unsupported construct '{1}' at line {2}. Remove this construct as it cannot be translated to GPU code.",
         "DotCompute.Kernel",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Kernel methods cannot use certain C# constructs like exception handling, dynamic types, or unsafe code."
+        description: "Kernel methods cannot use certain C# constructs like exception handling (try-catch), dynamic types, unsafe code, or LINQ expressions. These features are not available on GPU backends and will cause compilation failures. Use simple control flow and arithmetic operations instead."
     );
 
     // Performance Optimization Suggestions (DC004-DC006)
@@ -85,11 +84,11 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor KernelMissingKernelAttribute = new(
         "DC007",
         "Method should have [Kernel] attribute",
-        "Method '{0}' appears to be a kernel but is missing the [Kernel] attribute",
+        "Method '{0}' appears to be a compute kernel but is missing the [Kernel] attribute. Add '[Kernel]' above the method declaration to enable GPU execution.",
         "DotCompute.Usage",
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: "Methods that perform compute operations should be marked with [Kernel] attribute for code generation."
+        description: "Methods that perform compute operations on Span<T> parameters should be marked with [Kernel] attribute for automatic code generation and GPU compilation. The attribute enables the source generator to create optimized CPU and GPU versions of your code."
     );
 
     public static readonly DiagnosticDescriptor KernelUnnecessaryComplexity = new(
@@ -116,21 +115,21 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor KernelIncorrectIndexing = new(
         "DC010",
         "Kernel uses incorrect threading model",
-        "Kernel method '{0}' should use Kernel.ThreadId for indexing instead of loop variables",
+        "Kernel method '{0}' should use Kernel.ThreadId.X for indexing instead of loop variables for optimal GPU performance. Replace 'for' loops with 'int index = Kernel.ThreadId.X;'.",
         "DotCompute.Usage",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Kernels should use the threading model provided by Kernel.ThreadId for optimal performance."
+        description: "Kernels should use the threading model provided by Kernel.ThreadId for optimal performance. GPU threads execute in parallel, so traditional for-loops should be replaced with thread-based indexing. Example: 'int index = Kernel.ThreadId.X; if (index < data.Length) data[index] = ...'."
     );
 
     public static readonly DiagnosticDescriptor KernelMissingBoundsCheck = new(
         "DC011",
         "Kernel missing bounds check",
-        "Kernel method '{0}' should check array bounds before accessing elements",
+        "Kernel method '{0}' should check array bounds before accessing elements. Add 'if (index < data.Length)' to prevent out-of-bounds access.",
         "DotCompute.Reliability",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Kernels should validate array bounds to prevent runtime errors."
+        description: "Kernels should validate array bounds to prevent runtime errors and undefined behavior on GPU. GPU memory access violations can crash the entire system. Example: 'if (index < data.Length) {{ data[index] = value; }}'."
     );
 
     public static readonly DiagnosticDescriptor KernelSuboptimalBackendSelection = new(
@@ -240,6 +239,12 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
 
         // DC012: Validate backend selection
         ValidateBackendSelection(context, methodSyntax, methodSymbol);
+
+        // DC008: Check for unnecessary complexity
+        CheckUnnecessaryComplexity(context, methodSyntax, methodSymbol);
+
+        // DC009: Check for thread safety issues
+        CheckThreadSafety(context, methodSyntax, methodSymbol);
     }
 
     private static void ValidateKernelParameters(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
@@ -424,12 +429,88 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeForStatement(SyntaxNodeAnalysisContext context)
     {
-        // Additional analysis for for-loops can be added here TODO
+        if (context.Node is not ForStatementSyntax forLoop)
+        {
+            return;
+        }
+
+        var parentMethod = forLoop.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+        if (parentMethod == null)
+        {
+            return;
+        }
+
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(parentMethod) as IMethodSymbol;
+        if (methodSymbol == null || !HasKernelAttribute(methodSymbol))
+        {
+            return;
+        }
+
+        // Check for vectorization opportunities in for loops
+        if (CanBeVectorized(forLoop))
+        {
+            var diagnostic = Diagnostic.Create(
+                KernelCanBeVectorized,
+                forLoop.ForKeyword.GetLocation(),
+                methodSymbol.Name
+            );
+            context.ReportDiagnostic(diagnostic);
+        }
+
+        // Check for incorrect loop variable usage
+        var loopVariable = ExtractLoopVariable(forLoop);
+        if (loopVariable != null && !UsesKernelThreading(parentMethod))
+        {
+            var diagnostic = Diagnostic.Create(
+                KernelIncorrectIndexing,
+                forLoop.GetLocation(),
+                methodSymbol.Name
+            );
+            context.ReportDiagnostic(diagnostic);
+        }
     }
 
     private static void AnalyzeElementAccess(SyntaxNodeAnalysisContext context)
     {
-        // Additional analysis for array access can be added here TODO
+        if (context.Node is not ElementAccessExpressionSyntax elementAccess)
+        {
+            return;
+        }
+
+        var parentMethod = elementAccess.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+        if (parentMethod == null)
+        {
+            return;
+        }
+
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(parentMethod) as IMethodSymbol;
+        if (methodSymbol == null || !HasKernelAttribute(methodSymbol))
+        {
+            return;
+        }
+
+        // Check for bounds validation
+        if (!HasBoundsCheckForAccess(parentMethod, elementAccess))
+        {
+            var diagnostic = Diagnostic.Create(
+                KernelMissingBoundsCheck,
+                elementAccess.GetLocation(),
+                methodSymbol.Name
+            );
+            context.ReportDiagnostic(diagnostic);
+        }
+
+        // Check for suboptimal memory access patterns
+        if (HasSuboptimalAccessPattern(elementAccess))
+        {
+            var diagnostic = Diagnostic.Create(
+                KernelSuboptimalMemoryAccess,
+                elementAccess.GetLocation(),
+                methodSymbol.Name,
+                "Non-sequential array access pattern detected"
+            );
+            context.ReportDiagnostic(diagnostic);
+        }
     }
 
     // Helper methods
@@ -495,7 +576,150 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
 
     private static string[]? ExtractBackendsFromAttribute(AttributeData attribute)
     {
-        // Extract backend flags from KernelAttribute - simplified implementation
-        return ["CPU", "CUDA"]; // Placeholder TODO
+        if (attribute.AttributeClass?.Name != "KernelAttribute")
+        {
+            return null;
+        }
+
+        var backends = new List<string>();
+        
+        // Look for named arguments with 'Backends' parameter
+        foreach (var namedArg in attribute.NamedArguments)
+        {
+            if (namedArg.Key == "Backends" && namedArg.Value.Value is int backendFlags)
+            {
+                // Parse backend flags (assuming flags enum)
+                if ((backendFlags & 1) != 0) backends.Add("CPU");
+                if ((backendFlags & 2) != 0) backends.Add("CUDA");
+                if ((backendFlags & 4) != 0) backends.Add("Metal");
+                if ((backendFlags & 8) != 0) backends.Add("OpenCL");
+                return backends.ToArray();
+            }
+        }
+
+        // Look for constructor arguments
+        if (attribute.ConstructorArguments.Length > 0)
+        {
+            var firstArg = attribute.ConstructorArguments[0];
+            if (firstArg.Value is int flags)
+            {
+                if ((flags & 1) != 0) backends.Add("CPU");
+                if ((flags & 2) != 0) backends.Add("CUDA");
+                if ((flags & 4) != 0) backends.Add("Metal");
+                if ((flags & 8) != 0) backends.Add("OpenCL");
+                return backends.ToArray();
+            }
+        }
+
+        // Default to CPU and CUDA if no specific backends specified
+        return ["CPU", "CUDA"];
+    }
+
+    // Additional helper methods for enhanced analysis
+    private static string? ExtractLoopVariable(ForStatementSyntax forLoop)
+    {
+        if (forLoop.Declaration?.Variables.FirstOrDefault() is VariableDeclaratorSyntax variable)
+        {
+            return variable.Identifier.ValueText;
+        }
+        return null;
+    }
+
+    private static bool UsesKernelThreading(MethodDeclarationSyntax method)
+    {
+        return method.DescendantNodes()
+            .OfType<MemberAccessExpressionSyntax>()
+            .Any(m => m.ToString().Contains("Kernel.ThreadId") || m.ToString().Contains("ThreadId."));
+    }
+
+    private static bool HasBoundsCheckForAccess(MethodDeclarationSyntax method, ElementAccessExpressionSyntax elementAccess)
+    {
+        // Look for bounds check patterns in the method
+        var boundsChecks = method.DescendantNodes()
+            .OfType<BinaryExpressionSyntax>()
+            .Where(b => (b.IsKind(SyntaxKind.LessThanExpression) || 
+                        b.IsKind(SyntaxKind.LessThanOrEqualExpression) ||
+                        b.IsKind(SyntaxKind.GreaterThanOrEqualExpression)) &&
+                       (b.ToString().Contains("Length") || b.ToString().Contains(".Count")));
+        
+        return boundsChecks.Any();
+    }
+
+    private static void CheckUnnecessaryComplexity(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
+    {
+        // Check for nested loops (potential complexity issue)
+        var nestedLoops = methodSyntax.DescendantNodes()
+            .OfType<ForStatementSyntax>()
+            .Where(loop => loop.Ancestors().OfType<ForStatementSyntax>().Any());
+
+        if (nestedLoops.Any())
+        {
+            var diagnostic = Diagnostic.Create(
+                KernelUnnecessaryComplexity,
+                methodSyntax.Identifier.GetLocation(),
+                methodSymbol.Name,
+                "Nested loops detected - consider vectorization or simplification"
+            );
+            context.ReportDiagnostic(diagnostic);
+        }
+
+        // Check for complex conditional logic
+        var complexConditionals = methodSyntax.DescendantNodes()
+            .OfType<IfStatementSyntax>()
+            .Where(ifStmt => ifStmt.DescendantNodes().OfType<BinaryExpressionSyntax>()
+                .Count(b => b.IsKind(SyntaxKind.LogicalAndExpression) || b.IsKind(SyntaxKind.LogicalOrExpression)) > 2);
+
+        if (complexConditionals.Any())
+        {
+            var diagnostic = Diagnostic.Create(
+                KernelUnnecessaryComplexity,
+                methodSyntax.Identifier.GetLocation(),
+                methodSymbol.Name,
+                "Complex conditional logic detected - consider simplification"
+            );
+            context.ReportDiagnostic(diagnostic);
+        }
+    }
+
+    private static void CheckThreadSafety(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
+    {
+        // Check for potential race conditions - shared variable access without synchronization
+        var memberAccesses = methodSyntax.DescendantNodes()
+            .OfType<MemberAccessExpressionSyntax>()
+            .Where(m => !m.ToString().Contains("ThreadId") && !m.ToString().Contains("Length"));
+
+        var assignments = methodSyntax.DescendantNodes()
+            .OfType<AssignmentExpressionSyntax>()
+            .Where(a => !a.Left.ToString().Contains("[") && 
+                       !a.Left.ToString().Contains("ThreadId"));
+
+        if (assignments.Count() > 1)
+        {
+            var diagnostic = Diagnostic.Create(
+                KernelThreadSafetyWarning,
+                methodSyntax.Identifier.GetLocation(),
+                methodSymbol.Name,
+                "Multiple assignments to non-indexed variables may cause race conditions"
+            );
+            context.ReportDiagnostic(diagnostic);
+        }
+
+        // Check for method calls that might not be thread-safe
+        var methodCalls = methodSyntax.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Where(inv => !inv.ToString().Contains("Math.") && 
+                         !inv.ToString().Contains("MathF.") &&
+                         !inv.ToString().StartsWith("System."));
+
+        if (methodCalls.Any())
+        {
+            var diagnostic = Diagnostic.Create(
+                KernelThreadSafetyWarning,
+                methodSyntax.Identifier.GetLocation(),
+                methodSymbol.Name,
+                "External method calls may not be thread-safe in parallel execution"
+            );
+            context.ReportDiagnostic(diagnostic);
+        }
     }
 }

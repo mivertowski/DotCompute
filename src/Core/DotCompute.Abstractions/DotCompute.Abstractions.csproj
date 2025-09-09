@@ -53,6 +53,16 @@
   <ItemGroup>
     <!-- Exclude test projects from compilation -->
     <Compile Remove="tests/**" />
+    
+    <!-- Temporarily exclude complex pipeline interfaces that need more dependencies -->
+    <Compile Remove="Pipelines/IPipelineDataFlowManager.cs" />
+    <Compile Remove="Pipelines/IPipelineDependencyResolver.cs" />
+    <Compile Remove="Pipelines/IPipelineExecutionEngine.cs" />
+    <Compile Remove="Pipelines/IPipelineResourceManager.cs" />
+    <Compile Remove="Pipelines/IKernelPipeline.cs" />
+    <Compile Remove="Pipelines/IKernelPipelineBuilder.cs" />
+    <Compile Remove="Pipelines/PipelineTypes.cs" />
+    <Compile Remove="Pipelines/PipelineInterfaces.cs" />
   </ItemGroup>
 
   <PropertyGroup>

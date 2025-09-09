@@ -78,6 +78,9 @@ namespace DotCompute.Backends.CUDA
             {
                 _graphManager = new CudaGraphManager(_context, actualLogger as ILogger<CudaGraphManager> ?? NullLogger<CudaGraphManager>.Instance);
             }
+
+            // Set accelerator reference in memory manager
+            InitializeMemoryManagerReference();
         }
 
         /// <inheritdoc/>
@@ -214,6 +217,17 @@ namespace DotCompute.Backends.CUDA
             device = new CudaDevice(deviceId, logger);
             memoryManager = new CudaMemoryManager(context, device, logger);
             return new CudaAsyncMemoryManagerAdapter(memoryManager);
+        }
+
+        /// <summary>
+        /// Sets the accelerator reference in the memory manager after initialization.
+        /// </summary>
+        private void InitializeMemoryManagerReference()
+        {
+            if (Memory is CudaAsyncMemoryManagerAdapter adapter)
+            {
+                adapter.SetAccelerator(this);
+            }
         }
     }
 }

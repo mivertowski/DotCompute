@@ -309,15 +309,26 @@ public class KernelCodeFixProvider : CodeFixProvider
 
         var newMethodDecl = methodDecl;
 
+        // Analyze method to find array/span parameters and create appropriate bounds check
+        var parameters = methodDecl.ParameterList.Parameters
+            .Where(p => p.Type?.ToString().Contains("Span") == true)
+            .ToList();
+        
+        if (parameters.Count == 0)
+        {
+            return document;
+        }
+
+        var firstSpanParameter = parameters.First().Identifier.ValueText;
+        
         // Add bounds check at the start of the method
-        // Assuming we have an 'index' variable and arrays with Length property
         var boundsCheck = SyntaxFactory.IfStatement(
             SyntaxFactory.BinaryExpression(
                 SyntaxKind.GreaterThanOrEqualExpression,
                 SyntaxFactory.IdentifierName("index"),
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.IdentifierName("result"), // Assuming 'result' is the output array
+                    SyntaxFactory.IdentifierName(firstSpanParameter),
                     SyntaxFactory.IdentifierName("Length"))),
             SyntaxFactory.ReturnStatement());
 

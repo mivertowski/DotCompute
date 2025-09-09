@@ -100,7 +100,7 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
         // 3. Execute the kernel on the accelerator
         // 4. Return the results
 
-        await Task.Delay(10); // Simulate async work
+        await Task.Yield(); // Allow other tasks to execute
 
 
         _logger.LogDebugMessage($"Kernel {kernelName} execution completed on {accelerator.Info.DeviceType}");

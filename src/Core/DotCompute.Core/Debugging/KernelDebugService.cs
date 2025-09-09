@@ -590,7 +590,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             _logger.LogDebugMessage("Executing kernel {KernelName} on {kernelName, backendType}");
 
             // Simulate kernel execution (replace with actual execution logic) TODO
-            await Task.Delay(10); // Simulate some work
+            await Task.Yield(); // Allow other tasks to execute without blocking
 
 
             result = result with {

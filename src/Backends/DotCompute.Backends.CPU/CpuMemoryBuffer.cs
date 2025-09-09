@@ -298,14 +298,31 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     public IUnifiedMemoryBuffer<byte> Slice(int offset, int length)
     {
         EnsureNotDisposed();
-        // For simplicity, create a new buffer view - in production this should be a proper slice
-        throw new NotImplementedException("Buffer slicing not yet implemented");
+        
+        if (offset < 0)
+            throw new ArgumentOutOfRangeException(nameof(offset), "Offset cannot be negative");
+        if (length < 0)
+            throw new ArgumentOutOfRangeException(nameof(length), "Length cannot be negative");
+        if (offset + length > _sizeInBytes)
+            throw new ArgumentOutOfRangeException(nameof(length), "Slice extends beyond buffer boundaries");
+
+        // Create a view of the existing buffer
+        return new CpuMemoryBufferSlice(this, offset, length, _memoryManager, _logger);
     }
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         EnsureNotDisposed();
-        throw new NotImplementedException("Type casting not yet implemented");
+        
+        int elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
+        if (_sizeInBytes % elementSize != 0)
+            throw new InvalidOperationException($"Buffer size {_sizeInBytes} is not compatible with element size {elementSize}");
+
+        // Calculate new element count
+        int elementCount = (int)(_sizeInBytes / elementSize);
+        
+        // Create a typed wrapper around the same memory
+        return new CpuMemoryBufferTyped<TNew>(this, elementCount, _memoryManager, _logger);
     }
 
     #endregion

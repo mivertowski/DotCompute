@@ -365,10 +365,12 @@ public abstract class BaseCompiledKernel : ICompiledKernel
 
     /// <summary>
     /// Executes the kernel with given arguments.
+    /// Derived classes must implement this to provide their specific execution logic.
     /// </summary>
-    /// <param name="arguments"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
-    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    /// <param name="arguments">The kernel arguments for execution.</param>
+    /// <param name="cancellationToken">A cancellation token for the operation.</param>
+    /// <returns>A task representing the asynchronous execution operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when arguments is null.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the accelerator has been disposed.</exception>
+    public abstract ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default);
 }

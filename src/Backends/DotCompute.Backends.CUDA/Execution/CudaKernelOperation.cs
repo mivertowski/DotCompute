@@ -5,7 +5,6 @@
 
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Types;
-using DotCompute.Backends.CUDA.Execution.Types;
 
 namespace DotCompute.Backends.CUDA.Execution.Operations;
 
@@ -40,7 +39,7 @@ public sealed class CudaKernelOperation
     /// Gets or sets the type of kernel operation.
     /// Used for optimization and fusion decisions.
     /// </summary>
-    public DotCompute.Backends.CUDA.Execution.Types.CudaKernelType Type { get; set; } = DotCompute.Backends.CUDA.Execution.Types.CudaKernelType.Custom;
+    public DotCompute.Backends.CUDA.Types.CudaKernelType Type { get; set; } = DotCompute.Backends.CUDA.Types.CudaKernelType.Custom;
 
     /// <summary>
     /// Gets or sets whether this kernel should use Tensor Cores if available.

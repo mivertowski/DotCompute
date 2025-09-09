@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
     <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
     <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Generators\DotCompute.Generators.csproj" />
+    <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Runtime\DotCompute.Runtime.csproj" />
   </ItemGroup>
 
 </Project>

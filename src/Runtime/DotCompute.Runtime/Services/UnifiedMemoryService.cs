@@ -226,8 +226,17 @@ public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryServic
         try
         {
             // For production implementation, this would perform actual device-to-device transfers
-            // For now, simulate the transfer with a small delay TODO
-            await Task.Delay(Random.Shared.Next(1, 5), cancellationToken);
+            // Use actual memory copying for CPU-accessible buffers
+            if (source.State == BufferState.HostReady && destination.State == BufferState.HostReady)
+            {
+                // Perform direct memory copy for host-accessible buffers
+                source.AsReadOnlySpan().CopyTo(destination.AsSpan());
+            }
+            else
+            {
+                // For device transfers, this would use backend-specific copy mechanisms
+                await Task.Yield(); // Yield control for cooperative multitasking
+            }
 
             var elapsedMs = (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
 

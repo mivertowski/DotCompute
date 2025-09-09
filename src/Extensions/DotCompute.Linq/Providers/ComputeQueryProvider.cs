@@ -47,6 +47,11 @@ public class ComputeQueryProvider : IQueryProvider
     }
 
     /// <summary>
+    /// Gets the accelerator associated with this provider.
+    /// </summary>
+    public IAccelerator Accelerator => _accelerator;
+
+    /// <summary>
     /// Creates a new query with the specified expression.
     /// </summary>
     /// <param name="expression">The expression tree representing the query.</param>
@@ -218,6 +223,11 @@ public class ComputeQueryable<T> : IOrderedQueryable<T>
     /// Gets the query provider associated with this data source.
     /// </summary>
     public IQueryProvider Provider => _provider;
+
+    /// <summary>
+    /// Gets the accelerator associated with this provider.
+    /// </summary>
+    internal IAccelerator Accelerator => ((ComputeQueryProvider)_provider).Accelerator;
 
     /// <summary>
     /// Returns an enumerator that iterates through the collection.
