@@ -1,15 +1,20 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Linq.Expressions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Pipelines;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Pipelines;
 using DotCompute.Linq.Interfaces;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Pipelines.Optimization;
 using DotCompute.Linq.Pipelines.Providers;
+using DotCompute.Linq.Pipelines.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using AdvancedPipelineOptimizer = DotCompute.Linq.Pipelines.Optimization.IAdvancedPipelineOptimizer;
 
 namespace DotCompute.Linq.Pipelines.Integration;
 
@@ -29,7 +34,7 @@ public static class PipelineLinqIntegration
         // Core pipeline services
         services.AddSingleton<IPipelineExpressionAnalyzer, PipelineExpressionAnalyzer>();
         services.AddSingleton<IPipelinePerformanceAnalyzer, PipelinePerformanceAnalyzer>();
-        services.AddSingleton<IAdvancedPipelineOptimizer, AdvancedPipelineOptimizer>();
+        services.AddSingleton<AdvancedPipelineOptimizer, Optimization.AdvancedPipelineOptimizer>();
         
         // LINQ provider services
         services.AddScoped<PipelineOptimizedProvider>();
@@ -122,7 +127,7 @@ public class PipelineOrchestrationService : IPipelineOrchestrationService
 {
     private readonly IComputeOrchestrator _orchestrator;
     private readonly IPipelinePerformanceAnalyzer _performanceAnalyzer;
-    private readonly IAdvancedPipelineOptimizer _optimizer;
+    private readonly AdvancedPipelineOptimizer _optimizer;
     private readonly ILogger<PipelineOrchestrationService> _logger;
     private readonly PipelineLinqOptions _options;
 
@@ -132,7 +137,7 @@ public class PipelineOrchestrationService : IPipelineOrchestrationService
     public PipelineOrchestrationService(
         IComputeOrchestrator orchestrator,
         IPipelinePerformanceAnalyzer performanceAnalyzer,
-        IAdvancedPipelineOptimizer optimizer,
+        AdvancedPipelineOptimizer optimizer,
         ILogger<PipelineOrchestrationService> logger,
         PipelineLinqOptions options)
     {
@@ -273,14 +278,14 @@ public class PipelineMemoryIntegration : IPipelineMemoryIntegration
     }
 
     /// <inheritdoc />
-    public async Task<IUnifiedMemoryBuffer<T>> OptimizeMemoryLayoutAsync<T>(IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
+    public Task<IUnifiedMemoryBuffer<T>> OptimizeMemoryLayoutAsync<T>(IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
     {
         _logger.LogDebug("Optimizing memory layout for buffer");
 
         // Apply memory layout optimizations
         // This would involve reordering data for better cache locality
         // For now, return the same buffer (placeholder)
-        return buffer;
+        return Task.FromResult(buffer);
     }
 }
 
@@ -414,12 +419,65 @@ public class IntegratedPipelineLinqProvider : IComputeLinqProvider
     }
 
     /// <inheritdoc />
-    public async Task PrecompileExpressionsAsync(Expression[] expressions)
+    public IQueryable<T> CreateQueryable<T>(T[] source, IAccelerator? accelerator = null)
     {
-        _logger.LogInformation("Precompiling {ExpressionCount} expressions", expressions.Length);
+        _logger.LogDebug("Creating integrated pipeline queryable for array of {Type}", typeof(T));
+
+        // Use the pipeline optimized provider with orchestration integration
+        var queryable = source.AsQueryable();
+        return new IntegratedComputeQueryable<T>(_pipelineProvider, queryable.Expression);
+    }
+
+    /// <inheritdoc />
+    public async Task<T> ExecuteAsync<T>(Expression expression)
+    {
+        return await ExecuteAsync<T>(expression, CancellationToken.None);
+    }
+
+    /// <inheritdoc />
+    public async Task<T> ExecuteAsync<T>(Expression expression, CancellationToken cancellationToken)
+    {
+        _logger.LogDebug("Executing expression asynchronously for {Type}", typeof(T));
+
+        if (_pipelineProvider is PipelineOptimizedProvider optimizedProvider)
+        {
+            return await optimizedProvider.ExecuteAsync<T>(expression);
+        }
+
+        return _pipelineProvider.Execute<T>(expression);
+    }
+
+    /// <inheritdoc />
+    public async Task<T> ExecuteAsync<T>(Expression expression, IAccelerator preferredAccelerator)
+    {
+        return await ExecuteAsync<T>(expression, preferredAccelerator, CancellationToken.None);
+    }
+
+    /// <inheritdoc />
+    public async Task<T> ExecuteAsync<T>(Expression expression, IAccelerator preferredAccelerator, CancellationToken cancellationToken)
+    {
+        _logger.LogDebug("Executing expression asynchronously for {Type} with accelerator {Accelerator}", 
+            typeof(T), preferredAccelerator.GetType().Name);
+
+        // For now, ignore the preferred accelerator and use the standard execution
+        return await ExecuteAsync<T>(expression, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task PrecompileExpressionsAsync(IEnumerable<Expression> expressions)
+    {
+        await PrecompileExpressionsAsync(expressions, CancellationToken.None);
+    }
+
+    /// <inheritdoc />
+    public async Task PrecompileExpressionsAsync(IEnumerable<Expression> expressions, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Precompiling {ExpressionCount} expressions", expressions.Count());
 
         foreach (var expression in expressions)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             try
             {
                 var queryable = Expression.Lambda(expression).Compile().DynamicInvoke() as IQueryable;
@@ -447,10 +505,10 @@ public class IntegratedPipelineLinqProvider : IComputeLinqProvider
                 var recommendation = _orchestrationService.AnalyzeQueryAsync(queryable).Result;
                 return recommendation.OptimizationRecommendations.Select(r => new OptimizationSuggestion
                 {
-                    Type = OptimizationType.Performance,
-                    Description = r,
-                    Impact = OptimizationImpact.Medium,
-                    Complexity = ImplementationComplexity.Medium
+                    Category = "Performance",
+                    Message = r,
+                    Severity = SuggestionSeverity.Info,
+                    EstimatedImpact = 0.5
                 });
             }
         }

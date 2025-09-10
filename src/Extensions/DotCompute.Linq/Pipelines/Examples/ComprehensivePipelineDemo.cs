@@ -4,6 +4,7 @@
 using System.Linq.Expressions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Pipelines;
+using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Pipelines.Complex;
 using DotCompute.Linq.Pipelines.Diagnostics;
@@ -494,33 +495,42 @@ public class ComprehensivePipelineDemo
     /// <summary>
     /// Sample data structure for pipeline demonstrations.
     /// </summary>
-    public class SampleData
+    public struct SampleData
     {
         public int Id { get; set; }
         public float Value { get; set; }
         public int Category { get; set; }
         public bool IsActive { get; set; }
-        public byte[] Data { get; set; } = Array.Empty<byte>();
+        // Note: Arrays are not unmanaged, so we remove this field for pipeline compatibility
+        // Use separate arrays if needed for specific operations
     }
 
     /// <summary>
     /// Processed data structure for transformation demonstrations.
     /// </summary>
-    public class ProcessedData
+    public struct ProcessedData
     {
         public int Id { get; set; }
         public float ComputedValue { get; set; }
         public int Category { get; set; }
-        public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
+        // DateTime is not unmanaged, so we use a timestamp instead
+        public long ProcessedAtTicks { get; set; }
+        
+        public DateTime ProcessedAt 
+        { 
+            get => new DateTime(ProcessedAtTicks);
+            set => ProcessedAtTicks = value.Ticks;
+        }
     }
 
     /// <summary>
     /// Category data for join operations.
     /// </summary>
-    public class CategoryData
+    public struct CategoryData
     {
         public int CategoryId { get; set; }
-        public string CategoryName { get; set; } = string.Empty;
+        // String is not unmanaged, so we use a fixed-size char array or remove it
+        // For pipeline operations, we'll work with CategoryId only
         public float Multiplier { get; set; }
         public bool IsEnabled { get; set; }
     }
@@ -528,11 +538,12 @@ public class ComprehensivePipelineDemo
     /// <summary>
     /// Joined data structure for join demonstrations.
     /// </summary>
-    public class JoinedData
+    public struct JoinedData
     {
         public int Id { get; set; }
         public float Value { get; set; }
-        public string CategoryName { get; set; } = string.Empty;
+        // String is not unmanaged, using category ID instead
+        public int CategoryId { get; set; }
         public float Multiplier { get; set; }
     }
 
@@ -547,6 +558,11 @@ public class ComprehensivePipelineDemo
         public long MaxMemoryUsage { get; set; }
         public bool EnableProfiling { get; set; }
         public ExecutionPriority Priority { get; set; } = ExecutionPriority.Normal;
+        
+        // IPipelineExecutionContext interface properties
+        public bool EnableDetailedMetrics { get; set; } = true;
+        public bool TrackMemoryUsage { get; set; } = true;
+        public bool CollectTimingData { get; set; } = true;
         
         // Interface implementations (simplified for demo)
         public IPipelineConfiguration Configuration => throw new NotImplementedException();

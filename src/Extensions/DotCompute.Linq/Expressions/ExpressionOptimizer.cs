@@ -134,7 +134,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
                     // Check if we can fuse with the previous operation
                     if (source is MethodCallExpression sourceMethod && CanFuse(node, sourceMethod))
                     {
-                        _logger.LogDebugMessage("Fusing {Method1} with {sourceMethod.Method.Name, node.Method.Name}");
+                        _logger.LogDebugMessage($"Fusing {sourceMethod.Method.Name} with {node.Method.Name}");
                         return CreateFusedExpression(sourceMethod, node);
                     }
                 }

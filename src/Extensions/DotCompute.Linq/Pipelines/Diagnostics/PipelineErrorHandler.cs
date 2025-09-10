@@ -3,6 +3,9 @@
 
 using System.Linq.Expressions;
 using DotCompute.Core.Pipelines;
+using DotCompute.Core.Pipelines.Analysis;
+using DotCompute.Core.Pipelines.Exceptions;
+using DotCompute.Linq.Pipelines.Integration;
 using DotCompute.Linq.Pipelines.Models;
 using Microsoft.Extensions.Logging;
 
@@ -122,7 +125,7 @@ public class PipelineErrorHandler : IPipelineErrorHandler
     }
 
     /// <inheritdoc />
-    public async Task<List<RecoveryStrategy>> GetRecoveryStrategiesAsync(PipelineErrorType errorType, PipelineExecutionContext context)
+    public Task<List<RecoveryStrategy>> GetRecoveryStrategiesAsync(PipelineErrorType errorType, PipelineExecutionContext context)
     {
         _logger.LogDebug("Getting recovery strategies for error type: {ErrorType}", errorType);
 
@@ -138,7 +141,7 @@ public class PipelineErrorHandler : IPipelineErrorHandler
             .OrderByDescending(s => s.Success)
             .ToList();
 
-        return applicableStrategies;
+        return Task.FromResult(applicableStrategies);
     }
 
     /// <inheritdoc />
@@ -281,7 +284,7 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         };
     }
 
-    private async Task<Dictionary<string, object>> CollectDiagnosticInfoAsync(Exception exception, PipelineExecutionContext context)
+    private Task<Dictionary<string, object>> CollectDiagnosticInfoAsync(Exception exception, PipelineExecutionContext context)
     {
         var diagnostics = new Dictionary<string, object>
         {
@@ -306,9 +309,12 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         {
             try
             {
-                var pipelineDiagnostics = await context.Pipeline.GetDiagnosticsAsync();
-                diagnostics["PipelineStages"] = pipelineDiagnostics.StageCount;
-                diagnostics["PipelineMemoryUsage"] = pipelineDiagnostics.PeakMemoryUsage;
+                // Use the available methods from the actual IKernelPipeline interface
+                var metrics = context.Pipeline.GetMetrics();
+                diagnostics["PipelineStages"] = context.Pipeline.Stages?.Count ?? 0;
+                diagnostics["PipelineMemoryUsage"] = metrics?.PeakMemoryUsage ?? 0;
+                diagnostics["PipelineName"] = context.Pipeline.Name;
+                diagnostics["PipelineId"] = context.Pipeline.Id;
             }
             catch (Exception ex)
             {
@@ -316,7 +322,7 @@ public class PipelineErrorHandler : IPipelineErrorHandler
             }
         }
 
-        return diagnostics;
+        return Task.FromResult(diagnostics);
     }
 
     private void LogErrorDetails(PipelineErrorResult result)
@@ -389,24 +395,270 @@ public class PipelineErrorHandler : IPipelineErrorHandler
     }
 
     // Recovery strategy implementations
-    private async Task<bool> EnableStreamingRecoveryAsync(PipelineExecutionContext context) => true; // Placeholder
-    private async Task<bool> FallbackToCpuRecoveryAsync(PipelineExecutionContext context) => true; // Placeholder
-    private async Task<bool> IncreaseTimeoutRecoveryAsync(PipelineExecutionContext context) => true; // Placeholder
-    private async Task<bool> OptimizeQueryRecoveryAsync(PipelineExecutionContext context) => true; // Placeholder
-    private async Task<bool> FallbackImplementationRecoveryAsync(PipelineExecutionContext context) => true; // Placeholder
-    private async Task<bool> RetryExecutionRecoveryAsync(PipelineExecutionContext context) => true; // Placeholder
+    private Task<bool> EnableStreamingRecoveryAsync(PipelineExecutionContext context)
+    {
+        // TODO: Implement streaming recovery logic
+        _logger.LogDebug("Attempting streaming recovery for context: {ContextId}", context.ContextId);
+        return Task.FromResult(true);
+    }
+
+    private Task<bool> FallbackToCpuRecoveryAsync(PipelineExecutionContext context)
+    {
+        // TODO: Implement CPU fallback recovery logic
+        _logger.LogDebug("Attempting CPU fallback recovery for context: {ContextId}", context.ContextId);
+        return Task.FromResult(true);
+    }
+
+    private Task<bool> IncreaseTimeoutRecoveryAsync(PipelineExecutionContext context)
+    {
+        // TODO: Implement timeout increase recovery logic
+        _logger.LogDebug("Attempting timeout increase recovery for context: {ContextId}", context.ContextId);
+        return Task.FromResult(true);
+    }
+
+    private Task<bool> OptimizeQueryRecoveryAsync(PipelineExecutionContext context)
+    {
+        // TODO: Implement query optimization recovery logic
+        _logger.LogDebug("Attempting query optimization recovery for context: {ContextId}", context.ContextId);
+        return Task.FromResult(true);
+    }
+
+    private Task<bool> FallbackImplementationRecoveryAsync(PipelineExecutionContext context)
+    {
+        // TODO: Implement fallback implementation recovery logic
+        _logger.LogDebug("Attempting fallback implementation recovery for context: {ContextId}", context.ContextId);
+        return Task.FromResult(true);
+    }
+
+    private Task<bool> RetryExecutionRecoveryAsync(PipelineExecutionContext context)
+    {
+        // TODO: Implement retry execution recovery logic
+        _logger.LogDebug("Attempting retry execution recovery for context: {ContextId}", context.ContextId);
+        return Task.FromResult(true);
+    }
 
     // Validation methods
-    private async Task ValidatePipelineStructureAsync(IKernelPipeline pipeline, PipelineValidationResult result) { }
-    private async Task ValidateResourceRequirementsAsync(IKernelPipeline pipeline, PipelineValidationResult result) { }
-    private async Task ValidateBackendCompatibilityAsync(IKernelPipeline pipeline, PipelineValidationResult result) { }
-    private async Task ValidatePerformanceCharacteristicsAsync(IKernelPipeline pipeline, PipelineValidationResult result) { }
+    private Task ValidatePipelineStructureAsync(IKernelPipeline pipeline, PipelineValidationResult result)
+    {
+        // TODO: Implement pipeline structure validation
+        _logger.LogDebug("Validating pipeline structure for pipeline: {PipelineId}", pipeline.Id);
+        
+        // Basic structure validation - check if pipeline has stages
+        if (pipeline.Stages?.Count == 0)
+        {
+            result.Errors.Add(new ValidationError
+            {
+                Severity = ErrorSeverity.High,
+                Message = "Pipeline has no stages defined",
+                Details = "A valid pipeline must contain at least one execution stage",
+                ErrorCode = "PIPELINE_EMPTY"
+            });
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    private Task ValidateResourceRequirementsAsync(IKernelPipeline pipeline, PipelineValidationResult result)
+    {
+        // TODO: Implement resource requirements validation
+        _logger.LogDebug("Validating resource requirements for pipeline: {PipelineId}", pipeline.Id);
+        
+        // Basic resource validation - check if optimization settings are reasonable
+        var settings = pipeline.OptimizationSettings;
+        if (settings.EnableKernelFusion && settings.EnableStageReordering)
+        {
+            result.Warnings.Add(new ValidationWarning
+            {
+                Message = "Kernel fusion with stage reordering may cause unexpected behavior",
+                Details = "Consider using these optimizations separately for better predictability",
+                WarningCode = "OPTIMIZATION_CONFLICT"
+            });
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    private Task ValidateBackendCompatibilityAsync(IKernelPipeline pipeline, PipelineValidationResult result)
+    {
+        // TODO: Implement backend compatibility validation
+        _logger.LogDebug("Validating backend compatibility for pipeline: {PipelineId}", pipeline.Id);
+        
+        // Basic backend validation - log warning about potential compatibility issues
+        result.Recommendations.Add("Verify backend compatibility for all pipeline stages");
+        result.Recommendations.Add("Consider fallback strategies for unsupported operations");
+        
+        return Task.CompletedTask;
+    }
+
+    private Task ValidatePerformanceCharacteristicsAsync(IKernelPipeline pipeline, PipelineValidationResult result)
+    {
+        // TODO: Implement performance characteristics validation
+        _logger.LogDebug("Validating performance characteristics for pipeline: {PipelineId}", pipeline.Id);
+        
+        // Basic performance validation - check stage count
+        var stageCount = pipeline.Stages?.Count ?? 0;
+        if (stageCount > 100)
+        {
+            result.Warnings.Add(new ValidationWarning
+            {
+                Message = "Pipeline has a large number of stages",
+                Details = $"Pipeline contains {stageCount} stages, which may impact performance",
+                WarningCode = "HIGH_STAGE_COUNT"
+            });
+        }
+        
+        return Task.CompletedTask;
+    }
 
     // Helper methods
-    private ExpressionErrorCategory CategorizeExpressionError(Exception exception) => ExpressionErrorCategory.Runtime;
-    private async Task<List<string>> IdentifyProblemAreasAsync(Expression expression, Exception exception) => new();
-    private async Task<List<string>> GenerateExpressionSuggestionsAsync(Expression expression, Exception exception) => new();
-    private async Task<List<string>> FindAlternativeApproachesAsync(Expression expression) => new();
+    private ExpressionErrorCategory CategorizeExpressionError(Exception exception)
+    {
+        return exception switch
+        {
+            ArgumentException => ExpressionErrorCategory.Compilation,
+            NotSupportedException => ExpressionErrorCategory.Compatibility,
+            InvalidOperationException => ExpressionErrorCategory.Runtime,
+            OutOfMemoryException => ExpressionErrorCategory.Performance,
+            _ => ExpressionErrorCategory.Runtime
+        };
+    }
+
+    private Task<List<string>> IdentifyProblemAreasAsync(Expression expression, Exception exception)
+    {
+        var problemAreas = new List<string>();
+        
+        try
+        {
+            // Analyze expression structure for common issues
+            if (expression == null)
+            {
+                problemAreas.Add("Null expression detected");
+            }
+            else
+            {
+                switch (expression.NodeType)
+                {
+                    case ExpressionType.Call:
+                        problemAreas.Add("Method call expression - check parameter types and method availability");
+                        break;
+                    case ExpressionType.Lambda:
+                        problemAreas.Add("Lambda expression - verify closure variable capture");
+                        break;
+                    case ExpressionType.MemberAccess:
+                        problemAreas.Add("Member access - check property/field accessibility");
+                        break;
+                    default:
+                        problemAreas.Add($"Expression type: {expression.NodeType} - review expression structure");
+                        break;
+                }
+            }
+            
+            // Add exception-specific problem areas
+            problemAreas.Add($"Exception type: {exception.GetType().Name} - {exception.Message}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error analyzing expression problem areas");
+            problemAreas.Add("Unable to analyze expression structure");
+        }
+        
+        return Task.FromResult(problemAreas);
+    }
+
+    private Task<List<string>> GenerateExpressionSuggestionsAsync(Expression expression, Exception exception)
+    {
+        var suggestions = new List<string>();
+        
+        try
+        {
+            // Generate suggestions based on exception type
+            switch (exception)
+            {
+                case ArgumentNullException:
+                    suggestions.Add("Add null checks for expression parameters");
+                    suggestions.Add("Verify all required inputs are provided");
+                    break;
+                    
+                case NotSupportedException:
+                    suggestions.Add("Consider using CPU backend for unsupported operations");
+                    suggestions.Add("Break complex expressions into simpler parts");
+                    break;
+                    
+                case OutOfMemoryException:
+                    suggestions.Add("Enable streaming processing for large datasets");
+                    suggestions.Add("Reduce batch size or enable memory pooling");
+                    break;
+                    
+                case TimeoutException:
+                    suggestions.Add("Increase timeout values for complex operations");
+                    suggestions.Add("Consider parallel processing strategies");
+                    break;
+                    
+                default:
+                    suggestions.Add("Review expression complexity and simplify if possible");
+                    suggestions.Add("Add proper error handling and recovery logic");
+                    break;
+            }
+            
+            // Add general suggestions
+            suggestions.Add("Enable detailed logging to get more diagnostic information");
+            suggestions.Add("Consider using alternative backends if current one fails");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error generating expression suggestions");
+            suggestions.Add("Unable to generate specific suggestions - consult documentation");
+        }
+        
+        return Task.FromResult(suggestions);
+    }
+
+    private Task<List<string>> FindAlternativeApproachesAsync(Expression expression)
+    {
+        var alternatives = new List<string>();
+        
+        try
+        {
+            if (expression != null)
+            {
+                // Suggest alternatives based on expression type
+                switch (expression.NodeType)
+                {
+                    case ExpressionType.Call:
+                        alternatives.Add("Use direct kernel invocation instead of expression trees");
+                        alternatives.Add("Consider pre-compiled delegate caching");
+                        break;
+                        
+                    case ExpressionType.Lambda:
+                        alternatives.Add("Use explicit parameter passing instead of closures");
+                        alternatives.Add("Consider compile-time code generation");
+                        break;
+                        
+                    case ExpressionType.Conditional:
+                        alternatives.Add("Use branching pipeline stages for conditional logic");
+                        alternatives.Add("Consider separate kernels for different conditions");
+                        break;
+                        
+                    default:
+                        alternatives.Add("Use simpler expression structures");
+                        alternatives.Add("Consider manual kernel parameter binding");
+                        break;
+                }
+            }
+            
+            // Add general alternatives
+            alternatives.Add("Use CPU backend as fallback option");
+            alternatives.Add("Implement custom pipeline stages for complex operations");
+            alternatives.Add("Consider using pre-built algorithm implementations");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error finding alternative approaches");
+            alternatives.Add("Consult documentation for alternative implementation patterns");
+        }
+        
+        return Task.FromResult(alternatives);
+    }
     private PerformanceImpact AssessPerformanceImpact(Exception exception) => PerformanceImpact.Medium;
     private List<RecoveryStrategy> GetDefaultRecoveryStrategies() => new();
     private bool IsStrategyApplicable(RecoveryStrategy strategy, PipelineExecutionContext context) => true;

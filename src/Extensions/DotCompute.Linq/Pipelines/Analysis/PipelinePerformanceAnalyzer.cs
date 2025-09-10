@@ -591,11 +591,29 @@ public partial class PipelinePerformanceAnalyzer
     private List<string> AnalyzeKernelFusionOpportunities(PipelineExecutionPlan pipeline) => new();
     private List<string> AnalyzeParallelizationOpportunities(PipelineExecutionPlan pipeline) => new();
     private List<string> AnalyzeMemoryOptimizationOpportunities(PipelineExecutionPlan pipeline) => new();
-    private async Task<List<string>> AnalyzeBackendOptimizations(PipelineExecutionPlan pipeline) => new();
+    private Task<List<string>> AnalyzeBackendOptimizations(PipelineExecutionPlan pipeline) => Task.FromResult(new List<string>());
     private List<string> AnalyzeCachingOpportunities(PipelineExecutionPlan pipeline) => new();
     private double CalculateConfidenceLevel(PipelineExecutionPlan plan) => 0.85;
     private List<ExecutionStrategy> GenerateAlternativeStrategies(PipelineExecutionPlan plan, List<BottleneckInfo> bottlenecks) => new();
-    private async Task<Dictionary<string, BackendPerformanceEstimate>> GenerateBackendEstimates(PipelineExecutionPlan plan) => new();
+    private Task<Dictionary<string, BackendEstimate>> GenerateBackendEstimates(PipelineExecutionPlan plan)
+    {
+        var estimates = new Dictionary<string, BackendEstimate>
+        {
+            ["CPU"] = new BackendEstimate 
+            { 
+                EstimatedExecutionTime = TimeSpan.FromMilliseconds(100),
+                EstimatedMemory = 1024 * 1024,
+                PerformanceScore = 0.7
+            },
+            ["GPU"] = new BackendEstimate 
+            { 
+                EstimatedExecutionTime = TimeSpan.FromMilliseconds(50),
+                EstimatedMemory = 2048 * 1024,
+                PerformanceScore = 0.9
+            }
+        };
+        return Task.FromResult(estimates);
+    }
     private string GenerateRecommendationReasoning(string backend, BackendScore score, PipelineExecutionPlan plan) => $"Selected {backend} based on compatibility and performance scores";
     private long CalculatePeakMemoryAtStage(List<PipelineStageInfo> stages, int stageId) => stages.Where(s => s.StageId <= stageId).Sum(s => s.RequiredMemory);
     private List<string> IdentifyMemoryOptimizationOpportunities(PipelineExecutionPlan plan) => new();

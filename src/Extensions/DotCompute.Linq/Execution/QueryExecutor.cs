@@ -79,12 +79,12 @@ public class QueryExecutor : IQueryExecutor
                 result = await ExecuteStageAsync(stage, context, memoryManager, linkedCts.Token);
             }
 
-            _logger.LogInfoMessage("Successfully executed compute plan {context.Plan.Id} asynchronously");
+            _logger.LogInfoMessage($"Successfully executed compute plan {context.Plan.Id} asynchronously");
             return result;
         }
         catch (OperationCanceledException) when (timeoutCts?.IsCancellationRequested == true)
         {
-            _logger.LogWarningMessage("Compute plan {context.Plan.Id} execution timed out");
+            _logger.LogWarningMessage($"Compute plan {context.Plan.Id} execution timed out");
             throw new TimeoutException($"Compute plan execution timed out after {context.Options.Timeout}");
         }
         catch (Exception ex)
@@ -149,14 +149,14 @@ public class QueryExecutor : IQueryExecutor
     {
         return _memoryManagers.GetOrAdd(accelerator, acc =>
         {
-            _logger.LogDebugMessage("Creating memory manager for accelerator {acc.Info.Id}");
+            _logger.LogDebugMessage($"Creating memory manager for accelerator {acc.Info.Id}");
             return _memoryManagerFactory.CreateMemoryManager(acc);
         });
     }
 
     private async Task<object?> ExecuteStage(IComputeStage stage, ExecutionContext context, IUnifiedMemoryManager memoryManager)
     {
-        _logger.LogDebugMessage("Executing stage {stage.Id}");
+        _logger.LogDebugMessage($"Executing stage {stage.Id}");
 
         // Allocate output buffer
         var outputBuffer = await context.BufferPool.GetOrCreateAsync(
@@ -204,7 +204,7 @@ public class QueryExecutor : IQueryExecutor
         IUnifiedMemoryManager memoryManager,
         CancellationToken cancellationToken)
     {
-        _logger.LogDebugMessage("Executing stage {stage.Id} asynchronously");
+        _logger.LogDebugMessage($"Executing stage {stage.Id} asynchronously");
 
         // Allocate output buffer
         var outputBuffer = await context.BufferPool.GetOrCreateAsync(

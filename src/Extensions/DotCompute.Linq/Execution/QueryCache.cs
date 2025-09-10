@@ -61,7 +61,7 @@ public class QueryCache : IQueryCache
             // Check if entry has expired
             if (_options.EnableExpiration && DateTime.UtcNow > entry.ExpirationTime)
             {
-                _logger.LogDebugMessage("Cache entry {key} has expired");
+                _logger.LogDebugMessage($"Cache entry {key} has expired");
                 _ = _cache.TryRemove(key, out _);
                 result = null;
                 _ = Interlocked.Increment(ref _misses);
@@ -75,14 +75,14 @@ public class QueryCache : IQueryCache
             result = entry.Value;
             _ = Interlocked.Increment(ref _hits);
 
-            _logger.LogDebugMessage("Cache hit for key {key}");
+            _logger.LogDebugMessage($"Cache hit for key {key}");
             return true;
         }
 
         result = null;
         _ = Interlocked.Increment(ref _misses);
 
-        _logger.LogDebugMessage("Cache miss for key {key}");
+        _logger.LogDebugMessage($"Cache miss for key {key}");
         return false;
     }
 
@@ -111,7 +111,7 @@ public class QueryCache : IQueryCache
 
         _cache[key] = entry;
 
-        _logger.LogDebugMessage("Cached result for key {Key}, size: {key, entry.Size} bytes");
+        _logger.LogDebugMessage($"Cached result for key {key}, size: {entry.Size} bytes");
     }
 
     /// <inheritdoc/>
@@ -154,7 +154,7 @@ public class QueryCache : IQueryCache
         if (lruEntry != null)
         {
             _ = _cache.TryRemove(lruEntry.Key, out _);
-            _logger.LogDebugMessage("Evicted cache entry {lruEntry.Key} (LRU)");
+            _logger.LogDebugMessage($"Evicted cache entry {lruEntry.Key} (LRU)");
         }
     }
 

@@ -95,7 +95,7 @@ public class ComputeQueryProvider : IQueryProvider
     {
         ArgumentNullException.ThrowIfNull(expression);
 
-        _logger.LogDebugMessage("Executing query expression of type {expression.Type}");
+        _logger.LogDebugMessage($"Executing query expression of type {expression.Type}");
 
         // Check cache first
         var cacheKey = _cache.GenerateKey(expression);

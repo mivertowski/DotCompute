@@ -27,6 +27,9 @@ namespace DotCompute.Core.Pipelines
         private TimeSpan _maxExecutionTime = TimeSpan.MinValue;
         private long _totalMemoryUsage;
         private long _peakMemoryUsage;
+        private long _totalItemsProcessed;
+        private long _totalCacheRequests;
+        private long _cacheHits;
 
         /// <inheritdoc/>
         public string PipelineId { get; } = pipelineId;
@@ -107,6 +110,21 @@ namespace DotCompute.Core.Pipelines
             }
         }
 
+        /// <inheritdoc/>
+        public int StageCount => _stageMetrics.Count;
+
+        /// <inheritdoc/>
+        public double ItemThroughputPerSecond
+            => _totalExecutionTime.TotalSeconds > 0 
+                ? _totalItemsProcessed / _totalExecutionTime.TotalSeconds 
+                : 0;
+
+        /// <inheritdoc/>
+        public double CacheHitRatio
+            => _totalCacheRequests > 0 
+                ? (double)_cacheHits / _totalCacheRequests 
+                : 0;
+
         /// <summary>
         /// Records a pipeline execution.
         /// </summary>
@@ -169,6 +187,36 @@ namespace DotCompute.Core.Pipelines
             RecordTimeSeriesMetric(name, value, DateTime.UtcNow);
         }
 
+        /// <summary>
+        /// Records cache access statistics.
+        /// </summary>
+        public void RecordCacheAccess(bool hit)
+        {
+            lock (_lock)
+            {
+                _totalCacheRequests++;
+                if (hit)
+                {
+                    _cacheHits++;
+                }
+            }
+            
+            RecordTimeSeriesMetric("CacheHitRate", CacheHitRatio, DateTime.UtcNow);
+        }
+
+        /// <summary>
+        /// Records items processed for throughput calculation.
+        /// </summary>
+        public void RecordItemsProcessed(long itemCount)
+        {
+            lock (_lock)
+            {
+                _totalItemsProcessed += itemCount;
+            }
+            
+            RecordTimeSeriesMetric("ItemThroughput", ItemThroughputPerSecond, DateTime.UtcNow);
+        }
+
         /// <inheritdoc/>
         public void Reset()
         {
@@ -191,6 +239,9 @@ namespace DotCompute.Core.Pipelines
                 _maxExecutionTime = TimeSpan.MinValue;
                 _totalMemoryUsage = 0;
                 _peakMemoryUsage = 0;
+                _totalItemsProcessed = 0;
+                _totalCacheRequests = 0;
+                _cacheHits = 0;
             }
         }
 

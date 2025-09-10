@@ -19,6 +19,8 @@ namespace DotCompute.Core.Aot
     [JsonSerializable(typeof(OpenTelemetryGauge))]
     [JsonSerializable(typeof(OpenTelemetryHistogram))]
     [JsonSerializable(typeof(OpenTelemetryDataPoint))]
+    [JsonSerializable(typeof(PipelineTelemetryData))]
+    [JsonSerializable(typeof(OpenTelemetryData))]
     [JsonSerializable(typeof(Dictionary<string, object>))]
     [JsonSerializable(typeof(Dictionary<string, string>))]
     [JsonSerializable(typeof(Dictionary<string, double>))]
@@ -426,5 +428,42 @@ namespace DotCompute.Core.Aot
         /// The sum.
         /// </value>
         public double? Sum { get; set; }
+    }
+
+    /// <summary>
+    /// AOT-compatible pipeline telemetry data structure.
+    /// </summary>
+    public sealed class PipelineTelemetryData
+    {
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        public DateTime Timestamp { get; set; }
+
+        /// <summary>
+        /// Gets or sets the pipeline metrics.
+        /// </summary>
+        public object[] PipelineMetrics { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the stage metrics.
+        /// </summary>
+        public object[] StageMetrics { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the global stats.
+        /// </summary>
+        public object GlobalStats { get; set; } = new();
+    }
+
+    /// <summary>
+    /// AOT-compatible OpenTelemetry data structure.
+    /// </summary>
+    public sealed class OpenTelemetryData
+    {
+        /// <summary>
+        /// Gets or sets the resource metrics.
+        /// </summary>
+        public object[] ResourceMetrics { get; set; } = [];
     }
 }

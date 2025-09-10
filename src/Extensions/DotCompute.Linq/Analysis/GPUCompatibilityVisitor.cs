@@ -146,4 +146,25 @@ internal sealed class GPUCompatibilityVisitor : ExpressionVisitor
         _analysis.OutputType = node.ReturnType;
         return base.VisitLambda(node);
     }
+
+    /// <summary>
+    /// Analyzes an expression for GPU compatibility.
+    /// </summary>
+    /// <param name="expression">The expression to analyze.</param>
+    /// <returns>True if the expression is GPU compatible; otherwise, false.</returns>
+    public bool IsGpuCompatible(Expression expression)
+    {
+        ArgumentNullException.ThrowIfNull(expression);
+        
+        // Reset state for new analysis
+        _analysis.CanExecuteOnGPU = true;
+        _analysis.Reason = null;
+        _inputTypes.Clear();
+        _complexity = 0;
+        
+        // Visit the expression tree
+        Visit(expression);
+        
+        return _analysis.CanExecuteOnGPU;
+    }
 }

@@ -236,12 +236,12 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
         };
     }
 
-    private async Task<IKernelPipeline> ApplyPredicatePushdownAsync(
+    private Task<IKernelPipeline> ApplyPredicatePushdownAsync(
         IKernelPipeline pipeline, 
         PipelineStructureAnalysis analysis)
     {
         if (!analysis.HasFilterOperations)
-            return pipeline;
+            return Task.FromResult(pipeline);
 
         _logger.LogDebug("Applying predicate pushdown optimization");
 
@@ -249,51 +249,51 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
         // as early as possible in the execution plan to reduce data volume
         
         // For now, return the pipeline unchanged (placeholder)
-        return pipeline;
+        return Task.FromResult(pipeline);
     }
 
-    private async Task<IKernelPipeline> ApplyProjectionPushdownAsync(
+    private Task<IKernelPipeline> ApplyProjectionPushdownAsync(
         IKernelPipeline pipeline, 
         PipelineStructureAnalysis analysis)
     {
         if (!analysis.HasProjectionOperations)
-            return pipeline;
+            return Task.FromResult(pipeline);
 
         _logger.LogDebug("Applying projection pushdown optimization");
 
         // Implementation would move projection operations earlier to reduce
         // the amount of data flowing through subsequent stages
         
-        return pipeline;
+        return Task.FromResult(pipeline);
     }
 
-    private async Task<IKernelPipeline> OptimizeJoinOrderAsync(
+    private Task<IKernelPipeline> OptimizeJoinOrderAsync(
         IKernelPipeline pipeline, 
         PipelineStructureAnalysis analysis)
     {
         if (!analysis.HasJoinOperations)
-            return pipeline;
+            return Task.FromResult(pipeline);
 
         _logger.LogDebug("Optimizing join order");
 
         // Implementation would reorder joins to minimize intermediate result sizes
         // using cost-based optimization
         
-        return pipeline;
+        return Task.FromResult(pipeline);
     }
 
-    private async Task<IKernelPipeline> ApplyConstantFoldingAsync(IKernelPipeline pipeline)
+    private Task<IKernelPipeline> ApplyConstantFoldingAsync(IKernelPipeline pipeline)
     {
         _logger.LogDebug("Applying constant folding optimization");
 
         // Implementation would identify and pre-compute constant expressions
         
-        return pipeline;
+        return Task.FromResult(pipeline);
     }
 
-    private async Task<IKernelPipeline> ApplyAggressiveCachingAsync(IKernelPipeline pipeline)
+    private Task<IKernelPipeline> ApplyAggressiveCachingAsync(IKernelPipeline pipeline)
     {
-        return pipeline
+        var result = pipeline
             .Cache<object>("aggressive_stage_1", new CachePolicy { TimeToLive = TimeSpan.FromHours(1) })
             .AdaptiveCache(new AdaptiveCacheOptions
             {
@@ -301,44 +301,49 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
                 PolicyAdaptation = true,
                 PerformanceThreshold = 0.05 // Cache if 5% improvement
             });
+        return Task.FromResult(result);
     }
 
-    private async Task<IKernelPipeline> ApplySelectiveCachingAsync(IKernelPipeline pipeline)
+    private Task<IKernelPipeline> ApplySelectiveCachingAsync(IKernelPipeline pipeline)
     {
         // Only cache expensive operations
-        return pipeline.AdaptiveCache(new AdaptiveCacheOptions
+        var result = pipeline.AdaptiveCache(new AdaptiveCacheOptions
         {
             AutoKeyGeneration = true,
             PolicyAdaptation = true,
             PerformanceThreshold = 0.2 // Cache if 20% improvement
         });
+        return Task.FromResult(result);
     }
 
-    private async Task<IKernelPipeline> ApplyResultOnlyCachingAsync(IKernelPipeline pipeline)
+    private Task<IKernelPipeline> ApplyResultOnlyCachingAsync(IKernelPipeline pipeline)
     {
-        return pipeline.Cache<object>("final_result", CachePolicy.Default);
+        var result = pipeline.Cache<object>("final_result", CachePolicy.Default);
+        return Task.FromResult(result);
     }
 
-    private async Task<IKernelPipeline> ApplyIntermediateResultsCachingAsync(IKernelPipeline pipeline)
+    private Task<IKernelPipeline> ApplyIntermediateResultsCachingAsync(IKernelPipeline pipeline)
     {
         // Cache intermediate results of expensive stages
-        return pipeline.AdaptiveCache(new AdaptiveCacheOptions
+        var result = pipeline.AdaptiveCache(new AdaptiveCacheOptions
         {
             AutoKeyGeneration = true,
             CacheIntermediateResults = true,
             PerformanceThreshold = 0.15
         });
+        return Task.FromResult(result);
     }
 
-    private async Task<IKernelPipeline> ApplyAdaptiveCachingAsync(IKernelPipeline pipeline)
+    private Task<IKernelPipeline> ApplyAdaptiveCachingAsync(IKernelPipeline pipeline)
     {
-        return pipeline.AdaptiveCache(new AdaptiveCacheOptions
+        var result = pipeline.AdaptiveCache(new AdaptiveCacheOptions
         {
             AutoKeyGeneration = true,
             PolicyAdaptation = true,
             PerformanceThreshold = 0.1,
             AdaptiveThresholds = true
         });
+        return Task.FromResult(result);
     }
 
     private async Task<MemoryPatternAnalysis> AnalyzeMemoryPatternsAsync(IKernelPipeline pipeline)
@@ -420,12 +425,12 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
     private bool ContainsOperationType(IPipelineExecutionGraph graph, string operationType) => false;
     private double CalculateParallelizationPotential(IPipelineExecutionGraph graph) => 0.5;
     private List<string> IdentifyMemoryIntensiveOperations(IPipelineExecutionGraph graph) => new();
-    private async Task<StageDependencyAnalysis> AnalyzeStageDependenciesAsync(IKernelPipeline pipeline) => new();
+    private Task<StageDependencyAnalysis> AnalyzeStageDependenciesAsync(IKernelPipeline pipeline) => Task.FromResult(new StageDependencyAnalysis());
     private List<ParallelizationOpportunity> IdentifyParallelizationOpportunities(StageDependencyAnalysis analysis) => new();
-    private async Task<IKernelPipeline> GenerateParallelPipelineAsync(IKernelPipeline pipeline, List<ParallelizationOpportunity> opportunities) => pipeline;
-    private async Task<IKernelPipeline> ApplyLoadBalancingAsync(IKernelPipeline pipeline) => pipeline;
-    private async Task<List<FusionOpportunity>> AnalyzeFusionOpportunitiesAsync(IKernelPipeline pipeline) => new();
-    private async Task<IKernelPipeline> FuseKernelsAsync(IKernelPipeline pipeline, FusionOpportunity opportunity) => pipeline;
+    private Task<IKernelPipeline> GenerateParallelPipelineAsync(IKernelPipeline pipeline, List<ParallelizationOpportunity> opportunities) => Task.FromResult(pipeline);
+    private Task<IKernelPipeline> ApplyLoadBalancingAsync(IKernelPipeline pipeline) => Task.FromResult(pipeline);
+    private Task<List<FusionOpportunity>> AnalyzeFusionOpportunitiesAsync(IKernelPipeline pipeline) => Task.FromResult(new List<FusionOpportunity>());
+    private Task<IKernelPipeline> FuseKernelsAsync(IKernelPipeline pipeline, FusionOpportunity opportunity) => Task.FromResult(pipeline);
 
     #endregion
 }

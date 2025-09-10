@@ -1,7 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Kernels;
 
 namespace DotCompute.Tests.Common.Mocks;
@@ -49,10 +53,9 @@ public class MockComputeOrchestrator : IComputeOrchestrator
         _executionHistory.Clear();
     }
 
-    public async Task<T> ExecuteKernelAsync<T>(
-        string kernelName, 
-        object[] arguments, 
-        CancellationToken cancellationToken = default)
+    #region IComputeOrchestrator Implementation
+
+    public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
     {
         var startTime = DateTime.UtcNow;
         
@@ -63,13 +66,13 @@ public class MockComputeOrchestrator : IComputeOrchestrator
                 throw new InvalidOperationException($"Mock kernel '{kernelName}' not registered");
             }
 
-            var result = await mockImplementation(arguments);
+            var result = await mockImplementation(args);
             
             // Record successful execution
             _executionHistory.Add(new KernelExecutionRecord
             {
                 KernelName = kernelName,
-                Arguments = arguments,
+                Arguments = args,
                 StartTime = startTime,
                 EndTime = DateTime.UtcNow,
                 Success = true,
@@ -84,7 +87,7 @@ public class MockComputeOrchestrator : IComputeOrchestrator
             _executionHistory.Add(new KernelExecutionRecord
             {
                 KernelName = kernelName,
-                Arguments = arguments,
+                Arguments = args,
                 StartTime = startTime,
                 EndTime = DateTime.UtcNow,
                 Success = false,
@@ -95,23 +98,96 @@ public class MockComputeOrchestrator : IComputeOrchestrator
         }
     }
 
+    public async Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args)
+    {
+        // Mock implementation ignores preferred backend for simplicity
+        return await ExecuteAsync<T>(kernelName, args);
+    }
+
+    public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
+    {
+        // Mock implementation ignores specific accelerator for simplicity
+        return await ExecuteAsync<T>(kernelName, args);
+    }
+
+    public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
+    {
+        // Convert buffers to objects for mock execution
+        var allArgs = buffers.Cast<object>().Concat(scalarArgs).ToArray();
+        return await ExecuteAsync<T>(kernelName, allArgs);
+    }
+
+    public Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
+    {
+        // Mock returns null (no specific accelerator preference)
+        return Task.FromResult<IAccelerator?>(null);
+    }
+
+    public Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
+    {
+        // Mock pre-compilation does nothing
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
+    {
+        // Mock returns empty list
+        return Task.FromResult<IReadOnlyList<IAccelerator>>(Array.Empty<IAccelerator>());
+    }
+
+    public Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args)
+    {
+        // Mock validation always returns true if kernel is registered
+        return Task.FromResult(_kernelMocks.ContainsKey(kernelName));
+    }
+
+    #endregion
+
+    #region Legacy Methods (for backward compatibility with existing tests)
+
+    /// <summary>
+    /// Legacy method for backward compatibility. Use ExecuteAsync instead.
+    /// </summary>
+    [Obsolete("Use ExecuteAsync instead")]
+    public async Task<T> ExecuteKernelAsync<T>(
+        string kernelName, 
+        object[] arguments, 
+        CancellationToken cancellationToken = default)
+    {
+        return await ExecuteAsync<T>(kernelName, arguments);
+    }
+
+    /// <summary>
+    /// Legacy method for backward compatibility. Use ExecuteAsync instead.
+    /// </summary>
+    [Obsolete("Use ExecuteAsync instead")]
     public async Task<T> ExecuteKernelAsync<T>(
         KernelDefinition kernelDefinition, 
         object[] arguments, 
         CancellationToken cancellationToken = default)
     {
-        return await ExecuteKernelAsync<T>(kernelDefinition.Name, arguments, cancellationToken);
+        return await ExecuteAsync<T>(kernelDefinition.Name, arguments);
     }
 
+    /// <summary>
+    /// Legacy method for backward compatibility. Use ValidateKernelArgsAsync instead.
+    /// </summary>
+    [Obsolete("Use ValidateKernelArgsAsync instead")]
     public Task<bool> IsKernelAvailableAsync(string kernelName, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(_kernelMocks.ContainsKey(kernelName));
     }
 
+    /// <summary>
+    /// Legacy method for backward compatibility. Use GetSupportedAcceleratorsAsync instead.
+    /// </summary>
+    [Obsolete("This method is no longer supported")]
     public Task<IEnumerable<string>> GetAvailableKernelsAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult<IEnumerable<string>>(_kernelMocks.Keys);
     }
+
+    #endregion
 
     /// <summary>
     /// Creates a mock for vector addition operation.
@@ -205,7 +281,7 @@ public class MockComputeOrchestrator : IComputeOrchestrator
     /// <param name="exceptionType">Type of exception to throw</param>
     /// <param name="message">Exception message</param>
     /// <returns>Mock function that throws exception</returns>
-    public static Func<object[], object> CreateErrorMock(Type exceptionType, string message = "Mock error")
+    public static Func<object[], object> CreateErrorMock([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type exceptionType, string message = "Mock error")
     {
         return _ => throw (Exception)Activator.CreateInstance(exceptionType, message)!;
     }

@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Models;
 using DotCompute.Tests.Common.Generators;
+using DotCompute.Tests.Common.Mocks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

@@ -4,6 +4,9 @@
 using System.Linq.Expressions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Pipelines;
+using DotCompute.Abstractions.Types;
+using DotCompute.Linq.Extensions;
+using DotCompute.Linq.Pipelines;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Pipelines.Complex;
 using DotCompute.Linq.Pipelines.Diagnostics;
@@ -127,7 +130,7 @@ public class ComprehensivePipelineDemo
                 });
 
             // Execute with optimization
-            var results = await optimizedPipeline.ExecutePipelineAsync<ProcessedData[]>(OptimizationLevel.Balanced);
+            var results = await optimizedPipeline.ExecutePipelineAsync<ProcessedData[]>(DotCompute.Linq.Pipelines.OptimizationLevel.Balanced);
 
             result.Success = true;
             result.ProcessedCount = results.Length;
@@ -504,8 +507,8 @@ public class ComprehensivePipelineDemo
             Id = i,
             Value = (float)(i * Math.Sin(i) + 10),
             Category = i % 7,
-            IsActive = i % 4 != 0,
-            Name = $"{prefix}_{i}"
+            IsActive = i % 4 != 0
+            // Removed Name field as strings are managed types and incompatible with GPU processing
         }).ToArray();
     }
 
@@ -519,8 +522,8 @@ public class ComprehensivePipelineDemo
                 Id = i,
                 Value = (float)(i * Math.Sin(i * 0.1) + Random.Shared.NextDouble() * 10),
                 Category = i % 5,
-                IsActive = i % 3 == 0,
-                Name = $"Stream_{i}"
+                IsActive = i % 3 == 0
+                // Removed Name field as strings are managed types and incompatible with GPU processing
             };
         }
     }
@@ -534,8 +537,8 @@ public class ComprehensivePipelineDemo
         {
             Id = item.Id,
             ProcessedValue = item.Value * 2.0f,
-            ProcessingTime = DateTime.UtcNow,
-            SourceItem = item
+            ProcessingTimeTicks = DateTime.UtcNow.Ticks,
+            SourceItemId = item.Id
         };
     }
 
@@ -543,35 +546,35 @@ public class ComprehensivePipelineDemo
 
     #region Data Types
 
-    public record SampleData
+    public struct SampleData
     {
         public int Id { get; set; }
         public float Value { get; set; }
         public int Category { get; set; }
         public bool IsActive { get; set; }
-        public string Name { get; set; } = string.Empty;
+        // Removed Name field as strings are managed types and incompatible with GPU processing
     }
 
-    public record ProcessedData
+    public struct ProcessedData
     {
         public int Id { get; set; }
         public float ProcessedValue { get; set; }
         public int Category { get; set; }
     }
 
-    public record JoinedData
+    public struct JoinedData
     {
         public int Id { get; set; }
         public float LeftValue { get; set; }
         public float RightValue { get; set; }
     }
 
-    public record ProcessedStreamData
+    public struct ProcessedStreamData
     {
         public int Id { get; set; }
         public float ProcessedValue { get; set; }
-        public DateTime ProcessingTime { get; set; }
-        public SampleData SourceItem { get; set; } = new();
+        public long ProcessingTimeTicks { get; set; } // Using ticks instead of DateTime
+        public int SourceItemId { get; set; } // Store only the ID instead of the full object
     }
 
     #endregion

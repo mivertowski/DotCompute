@@ -103,7 +103,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     /// </summary>
     public async Task<T> ExecuteAsync<T>(Expression expression, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebugMessage("Executing expression on CPU: {expression.NodeType}");
+        _logger.LogDebugMessage($"Executing expression on CPU: {expression.NodeType}");
 
         try
         {

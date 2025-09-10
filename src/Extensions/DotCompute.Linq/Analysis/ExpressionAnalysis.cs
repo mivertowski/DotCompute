@@ -149,7 +149,6 @@ public sealed class ExpressionAnalysis
     private static int EstimateComplexity(System.Linq.Expressions.Expression expression)
     {
         // Simple heuristic: count the number of nested operations
-        var complexity = 0;
         var visitor = new ComplexityCountingVisitor();
         visitor.Visit(expression);
         return visitor.Complexity;

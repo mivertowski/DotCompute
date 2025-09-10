@@ -8,8 +8,9 @@ namespace DotCompute.Backends.CUDA.Memory;
 
 /// <summary>
 /// A custom MemoryManager implementation that wraps CUDA pinned memory.
-/// Provides safe access to unmanaged memory through the Memory<T> abstraction.
+/// Provides safe access to unmanaged memory through the Memory&lt;T&gt; abstraction.
 /// </summary>
+/// <typeparam name="T">The type of elements in the memory buffer.</typeparam>
 internal sealed unsafe class PinnedMemoryManager<T> : MemoryManager<T>, IDisposable
     where T : unmanaged
 {
@@ -91,6 +92,6 @@ internal sealed unsafe class PinnedMemoryManager<T> : MemoryManager<T>, IDisposa
             }
             _disposed = true;
         }
-        base.Dispose(disposing);
+        // Note: Don't call base.Dispose(disposing) as it's abstract in MemoryManager<T>
     }
 }

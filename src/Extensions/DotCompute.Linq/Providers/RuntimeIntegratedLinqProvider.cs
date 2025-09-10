@@ -49,12 +49,12 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        _logger.LogDebugMessage("Creating queryable for IEnumerable<{ElementType}>", typeof(T).Name);
+        _logger.LogDebugMessage($"Creating queryable for IEnumerable<{typeof(T).Name}>");
 
         // If accelerator is specified, we might need to create a specialized provider
         if (accelerator != null)
         {
-            _logger.LogDebugMessage("Creating queryable with specific accelerator: {AcceleratorType}", accelerator.Info.DeviceType);
+            _logger.LogDebugMessage($"Creating queryable with specific accelerator: {accelerator.Info.DeviceType}");
             return new AcceleratorSpecificQueryable<T>(_queryProvider, source, accelerator);
         }
 
@@ -66,7 +66,7 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        _logger.LogDebugMessage("Creating queryable for array of {ElementType} with {Length} elements", typeof(T).Name, source.Length);
+        _logger.LogDebugMessage($"Creating queryable for array of {typeof(T).Name} with {source.Length} elements");
 
         // Arrays can be optimized for GPU memory transfer
         if (accelerator != null)
@@ -78,7 +78,7 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
     }
 
     /// <inheritdoc />
-    public async Task<T> ExecuteAsync<T>(Expression expression)
+    public async Task<T> ExecuteAsync<T>(Expression expression, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(expression);
 
@@ -86,7 +86,7 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
 
         try
         {
-            return await _queryProvider.ExecuteAsync<T>(expression);
+            return await _queryProvider.ExecuteAsync<T>(expression, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -96,16 +96,16 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
     }
 
     /// <inheritdoc />
-    public async Task<T> ExecuteAsync<T>(Expression expression, IAccelerator preferredAccelerator)
+    public async Task<T> ExecuteAsync<T>(Expression expression, IAccelerator preferredAccelerator, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(expression);
         ArgumentNullException.ThrowIfNull(preferredAccelerator);
 
-        _logger.LogDebugMessage("Executing expression with preferred accelerator: {AcceleratorType}", preferredAccelerator.Info.DeviceType);
+        _logger.LogDebugMessage($"Executing expression with preferred accelerator: {preferredAccelerator.Info.DeviceType}");
 
         try
         {
-            return await _queryProvider.ExecuteAsync<T>(expression, preferredAccelerator.Info.DeviceType);
+            return await _queryProvider.ExecuteAsync<T>(expression, preferredAccelerator.Info.DeviceType, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -115,13 +115,13 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
     }
 
     /// <inheritdoc />
-    public IEnumerable<Interfaces.OptimizationSuggestion> GetOptimizationSuggestions(Expression expression)
+    public IEnumerable<DotCompute.Linq.Interfaces.OptimizationSuggestion> GetOptimizationSuggestions(Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
 
         _logger.LogDebugMessage("Analyzing expression for optimization suggestions");
 
-        var suggestions = new List<Interfaces.OptimizationSuggestion>();
+        var suggestions = new List<DotCompute.Linq.Interfaces.OptimizationSuggestion>();
 
         try
         {
@@ -131,11 +131,11 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
             // Check for CPU-bound operations
             if (!_compatibilityVisitor.IsGpuCompatible(expression))
             {
-                suggestions.Add(new Interfaces.OptimizationSuggestion
+                suggestions.Add(new DotCompute.Linq.Interfaces.OptimizationSuggestion
                 {
                     Category = "GPU Compatibility",
                     Message = "Expression contains operations that are not GPU-compatible and will fall back to CPU execution",
-                    Severity = Interfaces.SuggestionSeverity.Warning,
+                    Severity = DotCompute.Linq.Interfaces.SuggestionSeverity.Warning,
                     EstimatedImpact = 0.3
                 });
             }
@@ -146,21 +146,21 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
             
             if (estimatedSize < 1000) // Less than 1K elements
             {
-                suggestions.Add(new Interfaces.OptimizationSuggestion
+                suggestions.Add(new DotCompute.Linq.Interfaces.OptimizationSuggestion
                 {
                     Category = "Data Size",
                     Message = "Small dataset may not benefit from GPU acceleration due to overhead",
-                    Severity = Interfaces.SuggestionSeverity.Info,
+                    Severity = DotCompute.Linq.Interfaces.SuggestionSeverity.Info,
                     EstimatedImpact = -0.2
                 });
             }
             else if (estimatedSize > 1000000) // More than 1M elements
             {
-                suggestions.Add(new Interfaces.OptimizationSuggestion
+                suggestions.Add(new DotCompute.Linq.Interfaces.OptimizationSuggestion
                 {
                     Category = "Memory",
                     Message = "Large dataset may benefit from memory pooling and streaming",
-                    Severity = Interfaces.SuggestionSeverity.High,
+                    Severity = DotCompute.Linq.Interfaces.SuggestionSeverity.High,
                     EstimatedImpact = 0.4
                 });
             }
@@ -168,11 +168,11 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
             // Check for operation fusion opportunities
             if (analysis.ChainLength > 2)
             {
-                suggestions.Add(new Interfaces.OptimizationSuggestion
+                suggestions.Add(new DotCompute.Linq.Interfaces.OptimizationSuggestion
                 {
                     Category = "Operation Fusion",
                     Message = "Multiple chained operations detected. Consider operation fusion for better performance",
-                    Severity = Interfaces.SuggestionSeverity.High,
+                    Severity = DotCompute.Linq.Interfaces.SuggestionSeverity.High,
                     EstimatedImpact = 0.25
                 });
             }
@@ -181,7 +181,7 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
         }
         catch (Exception ex)
         {
-            _logger.LogWarningMessage("Failed to analyze expression for optimization suggestions: {Error}", ex.Message);
+            _logger.LogWarningMessage($"Failed to analyze expression for optimization suggestions: {ex.Message}");
             return suggestions; // Return what we have
         }
     }
@@ -197,13 +197,13 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
         }
         catch (Exception ex)
         {
-            _logger.LogWarningMessage("GPU compatibility check failed: {Error}", ex.Message);
+            _logger.LogWarningMessage($"GPU compatibility check failed: {ex.Message}");
             return false; // Assume not compatible if analysis fails
         }
     }
 
     /// <inheritdoc />
-    public async Task PrecompileExpressionsAsync(IEnumerable<Expression> expressions)
+    public async Task PrecompileExpressionsAsync(IEnumerable<Expression> expressions, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(expressions);
 
@@ -224,11 +224,11 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
                     await _orchestrator.PrecompileKernelAsync(operation.KernelName);
                 }
 
-                _logger.LogDebugMessage("Pre-compiled expression with {OperationCount} kernel operations", kernelOperations.Count());
+                _logger.LogDebugMessage($"Pre-compiled expression with {kernelOperations.Count()} kernel operations");
             }
             catch (Exception ex)
             {
-                _logger.LogWarningMessage("Failed to pre-compile expression: {Error}", ex.Message);
+                _logger.LogWarningMessage($"Failed to pre-compile expression: {ex.Message}");
             }
         });
 

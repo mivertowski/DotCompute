@@ -482,31 +482,7 @@ public class ExecutionStrategy
     public string Description { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Backend recommendation with performance estimates.
-/// </summary>
-public class BackendRecommendation
-{
-    /// <summary>
-    /// Gets or sets the recommended backend name.
-    /// </summary>
-    public string RecommendedBackend { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the confidence in the recommendation.
-    /// </summary>
-    public double Confidence { get; set; }
-
-    /// <summary>
-    /// Gets or sets performance estimates for each backend.
-    /// </summary>
-    public Dictionary<string, BackendPerformanceEstimate> BackendEstimates { get; set; } = new();
-
-    /// <summary>
-    /// Gets or sets the reasoning for the recommendation.
-    /// </summary>
-    public string Reasoning { get; set; } = string.Empty;
-}
+// BackendRecommendation is defined in MissingInterfaces.cs
 
 /// <summary>
 /// Performance estimate for a specific backend.
@@ -559,3 +535,36 @@ public class MemoryEstimate
     /// </summary>
     public List<string> OptimizationOpportunities { get; set; } = new();
 }
+
+/// <summary>
+/// Configuration options for data pipeline initialization.
+/// </summary>
+public sealed class DataPipelineOptions
+{
+    /// <summary>
+    /// Gets or sets whether to create a copy of the input data.
+    /// </summary>
+    public bool CreateCopy { get; set; }
+}
+
+/// <summary>
+/// Configuration options for streaming pipeline initialization.
+/// </summary>
+public sealed class StreamPipelineOptions
+{
+    /// <summary>
+    /// Gets or sets the batch size for micro-batching operations.
+    /// </summary>
+    public int BatchSize { get; set; } = 1000;
+
+    /// <summary>
+    /// Gets or sets the window size for sliding window operations.
+    /// </summary>
+    public TimeSpan WindowSize { get; set; } = TimeSpan.FromSeconds(1);
+
+    /// <summary>
+    /// Gets or sets whether backpressure handling is enabled.
+    /// </summary>
+    public bool EnableBackpressure { get; set; } = true;
+}
+

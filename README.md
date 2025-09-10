@@ -6,51 +6,51 @@
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/mivertowski/DotCompute)
 [![Coverage](https://img.shields.io/badge/Coverage-75--85%25-green)](https://github.com/mivertowski/DotCompute)
 
-**Production-Ready Universal Compute Framework for .NET 9+**
+**Universal Compute Framework for .NET 9+**
 
-DotCompute delivers enterprise-grade GPU and CPU acceleration through a modern C# API. Write compute kernels using familiar `[Kernel]` attributes and get automatic GPU/CPU optimization, real-time IDE feedback, and sub-10ms startup times.
+DotCompute provides GPU and CPU acceleration capabilities for .NET applications through a modern C# API. Define compute kernels using `[Kernel]` attributes for automatic optimization across different hardware backends, with IDE integration and Native AOT support.
 
-✨ **Now Production Ready** - Complete integration chain, comprehensive testing, and enterprise-quality developer experience.
+## Key Features
 
-## 🚀 **Key Features**
-
-- **🎯 Modern C# API**: Define kernels with `[Kernel]` attributes - no more C-style kernel code
-- **⚡ Automatic Optimization**: Intelligent CPU/GPU backend selection based on workload analysis
-- **🛠️ Exceptional Developer Experience**: Real-time Roslyn analyzer feedback with automated code fixes
-- **🔍 Advanced Debugging**: Cross-backend validation ensuring CPU and GPU results match
-- **📊 Production Monitoring**: Built-in telemetry, performance profiling, and optimization suggestions
-- **⚡ Native AOT Ready**: Sub-10ms startup times with full AOT compatibility
+- **Modern C# API**: Define kernels with `[Kernel]` attributes for cleaner code organization
+- **Automatic Optimization**: CPU/GPU backend selection based on workload characteristics
+- **Developer Tools**: Roslyn analyzer integration with real-time feedback and code fixes
+- **Cross-Backend Debugging**: Validation system to ensure consistent results across backends
+- **Performance Monitoring**: Built-in telemetry and profiling capabilities
+- **Native AOT Support**: Compatible with Native AOT compilation for improved startup times
 
 ## Overview
 
-DotCompute aims to provide compute acceleration capabilities for .NET applications through:
+DotCompute is a compute acceleration framework for .NET applications that provides:
 - CPU SIMD vectorization using AVX2/AVX512 instruction sets
-- CUDA GPU acceleration for NVIDIA hardware
-- Native AOT compilation support for reduced startup times
-- Unified memory management across compute devices
+- CUDA GPU acceleration for NVIDIA hardware (Compute Capability 5.0+)
+- LINQ expression compilation to optimized kernels
+- Reactive Extensions integration for streaming compute
+- Native AOT compilation support
+- Unified memory management with automatic pooling
 
-## 🎯 **Production Ready Status**
+## Production Status
 
-### ✅ **Enterprise-Grade Components**
-- **🔥 Modern Kernel API**: `[Kernel]` attribute-based development with source generators
-- **🚀 CPU Backend**: AVX2/AVX512 SIMD vectorization delivering 8-23x speedup
-- **⚡ CUDA Backend**: Complete NVIDIA GPU support (Compute Capability 5.0+, RTX 2000 Ada validated)
-- **💾 Unified Memory**: Zero-copy buffers with intelligent pooling (90% allocation reduction)
-- **🛠️ Developer Tools**: 12 diagnostic rules + 5 automated IDE code fixes
-- **🔍 Cross-Backend Debugging**: Automatic CPU/GPU result validation
-- **📊 Performance Intelligence**: ML-powered backend selection with real-time optimization
-- **⚙️ Native AOT**: Sub-10ms startup with full trimming support
-- **📋 Comprehensive Testing**: 75-85% code coverage with 60+ integration tests
+### Core Components
+- **Kernel API**: `[Kernel]` attribute-based development with source generators
+- **CPU Backend**: AVX2/AVX512 SIMD vectorization (benchmarked 3.7x speedup on vectorizable operations)
+- **CUDA Backend**: NVIDIA GPU support for Compute Capability 5.0+ devices
+- **Memory Management**: Unified buffers with pooling (measured 90% allocation reduction)
+- **Developer Tools**: 12 Roslyn diagnostic rules with 5 automated code fixes
+- **Debugging**: Cross-backend validation for result consistency
+- **Optimization**: Adaptive backend selection with performance profiling
+- **Native AOT**: Full trimming support with reduced startup times
+- **Testing**: Comprehensive test suite with integration and performance benchmarks
 
-### 🎯 **Backend Ecosystem**
+### Backend Support
 
 | Backend | Status | Performance | Features |
 |---------|--------|-------------|----------|
-| **CPU** | ✅ Production | 8-23x SIMD speedup | AVX2/AVX512, multi-threading |
-| **CUDA** | ✅ Production | GPU acceleration | P2P transfers, unified memory |
-| **Metal** | 🚧 Development | - | macOS GPU support (planned) |
-| **ROCm** | 📋 Planned | - | AMD GPU support (roadmap) |
-| **OpenCL** | 🚧 Experimental | Basic | Cross-vendor GPU support |
+| **CPU** | Production | 3.7x measured speedup | AVX2/AVX512, multi-threading |
+| **CUDA** | Production | GPU acceleration | P2P transfers, unified memory |
+| **Metal** | In Development | - | macOS GPU support (planned) |
+| **ROCm** | Planned | - | AMD GPU support (roadmap) |
+| **OpenCL** | Experimental | - | Cross-vendor GPU support |
 
 ## Installation
 
@@ -227,6 +227,34 @@ Console.WriteLine($"Recommended backend: {metrics.OptimalBackend}");
 Console.WriteLine($"Expected speedup: {metrics.ExpectedSpeedup:F1}x");
 ```
 
+## LINQ Extensions
+
+DotCompute.Linq provides GPU-accelerated LINQ operations through expression compilation:
+
+```csharp
+using DotCompute.Linq;
+
+// Standard LINQ automatically accelerated
+var result = data
+    .AsComputeQueryable()
+    .Where(x => x > threshold)
+    .Select(x => x * factor)
+    .Sum();
+
+// Reactive streaming with GPU acceleration
+var stream = observable
+    .ToComputeObservable()
+    .Window(TimeSpan.FromSeconds(1))
+    .SelectMany(w => w.Average())
+    .Subscribe(avg => Console.WriteLine($"Average: {avg}"));
+```
+
+### Features
+- **Expression Compilation**: Automatic conversion of LINQ expressions to optimized kernels
+- **Streaming Compute**: Reactive Extensions integration with adaptive batching
+- **Kernel Fusion**: Multiple operations combined into single kernel execution
+- **Memory Optimization**: Intelligent caching and buffer reuse
+
 ## Requirements
 
 ### System Requirements
@@ -256,15 +284,15 @@ dotnet test --filter "Category!=Hardware"
 dotnet test
 ```
 
-## 🏗️ **Enterprise Architecture**
+## Architecture
 
-### **Modern Development Stack**
+### Development Stack
 
 ```mermaid
 graph TB
     A[C# Kernel with [Kernel] Attribute] --> B[Source Generator]
     B --> C[Runtime Orchestrator]
-    C --> D[Adaptive Backend Selector]
+    C --> D[Backend Selector]
     D --> E[CPU SIMD Engine]
     D --> F[CUDA GPU Engine]
     D --> G[Future: Metal/ROCm]
@@ -274,157 +302,116 @@ graph TB
     J[Performance Profiler] --> D
 ```
 
-### **Production-Grade Components**
+### Component Layers
 
-#### **🎯 Kernel Development Layer**
-- **Source Generator**: Compile-time kernel wrapper generation from `[Kernel]` attributes
-- **Roslyn Analyzer**: 12 diagnostic rules with automated IDE fixes (DC001-DC012)
-- **IntelliSense Integration**: Real-time feedback in Visual Studio and VS Code
-- **Template System**: Pre-built kernel patterns for common operations
+#### Kernel Development
+- **Source Generator**: Compile-time kernel wrapper generation from attributes
+- **Roslyn Analyzer**: 12 diagnostic rules with automated fixes
+- **IDE Integration**: Real-time feedback in Visual Studio and VS Code
 
-#### **⚡ Runtime Orchestration Layer**
-- **IComputeOrchestrator**: Unified execution interface across all backends
-- **Adaptive Selector**: ML-powered backend selection based on workload analysis
-- **Performance Monitor**: Real-time metrics collection with hardware counters
-- **Memory Manager**: Zero-copy unified buffers with intelligent pooling
+#### Runtime Orchestration
+- **IComputeOrchestrator**: Unified execution interface
+- **Backend Selector**: Workload-based backend selection
+- **Performance Monitor**: Metrics collection with hardware counters
+- **Memory Manager**: Unified buffers with pooling
 
-#### **🚀 Backend Acceleration Layer**
-- **CPU Engine**: AVX2/AVX512 SIMD with automatic vectorization
-- **CUDA Engine**: Complete NVIDIA GPU support with P2P transfers
-- **Future Backends**: Metal (macOS), ROCm (AMD), Vulkan compute
-- **Cross-Backend Validation**: Ensures identical results across all backends
+#### Backend Acceleration
+- **CPU Engine**: AVX2/AVX512 SIMD vectorization
+- **CUDA Engine**: NVIDIA GPU support with memory optimization
+- **Planned Backends**: Metal (macOS), ROCm (AMD)
 
-#### **🔍 Developer Experience Layer**
-- **Debug Service**: CPU/GPU result comparison and validation
-- **Profiling Service**: Bottleneck detection and optimization suggestions
+#### Developer Tools
+- **Debug Service**: Cross-backend result validation
+- **Profiling Service**: Performance analysis and optimization
 - **Telemetry Service**: Performance tracking and historical analysis
 - **Error Reporting**: Comprehensive diagnostics with actionable insights
 
-## 📊 **Performance & Benchmarks**
+## Performance
 
-### **Measured Performance Gains**
+### Benchmarked Performance
 
-| Operation | Dataset Size | CPU Baseline | CPU SIMD | CUDA GPU | Speedup |
-|-----------|--------------|--------------|----------|----------|--------|
-| Vector Add | 1M elements | 12.3ms | 0.9ms | 0.3ms | **41x** |
-| Matrix Multiply | 1024x1024 | 2.1s | 284ms | 47ms | **45x** |
-| Image Convolution | 4K image | 890ms | 89ms | 12ms | **74x** |
-| FFT Transform | 1M points | 445ms | 67ms | 8ms | **56x** |
+| Operation | Dataset Size | Standard .NET | DotCompute CPU | Improvement |
+|-----------|--------------|---------------|----------------|-------------|
+| Vector Operations | 100K elements | 2.14ms | 0.58ms | 3.7x |
+| Sum Reduction | 100K elements | 0.65ms | 0.17ms | 3.8x |
+| Memory Allocations | Per operation | 48 bytes | 0 bytes | 100% reduction |
 
-*Benchmarks: Intel Core Ultra 7 + RTX 2000 Ada, .NET 9 Native AOT*
+*Benchmarks performed with BenchmarkDotNet on .NET 9.0. GPU performance requires CUDA-capable hardware and varies significantly based on data size and operation complexity.*
 
-### **System Performance Features**
+### Performance Features
 
-#### **⚡ Automatic Optimization**
-```csharp
-// The system automatically:
-// 🤖 Selects optimal backend (CPU SIMD vs GPU)
-// 📊 Learns from execution patterns
-// 🎯 Optimizes memory layouts
-// ⚡ Applies vectorization hints
-// 📈 Tracks performance regressions
+- **Automatic Backend Selection**: Chooses between CPU and GPU based on workload
+- **Memory Pooling**: Reduces allocations by reusing buffers
+- **Kernel Caching**: Compiled kernels are cached for reuse
+- **Native AOT Support**: Enables faster startup times
+- **Performance Profiling**: Built-in metrics collection and analysis
 
-// Example: This kernel automatically gets 23x speedup
-[Kernel]
-public static void ComplexMath(Span<float> data)
-{
-    int idx = Kernel.ThreadId.X;
-    if (idx >= data.Length) return;
+## Production Deployment
 
-    // Automatic vectorization + GPU offloading
-    data[idx] = MathF.Sin(data[idx] * 2.0f) + MathF.Cos(data[idx]);
-}
-```
+### System Requirements
 
-#### **🚀 Startup Performance**
-- **Native AOT**: Sub-10ms cold startup
-- **JIT Elimination**: Zero runtime compilation overhead
-- **Kernel Caching**: Pre-compiled kernels for instant execution
-- **Memory Pooling**: 90%+ allocation reduction
-
-#### **📈 Production Monitoring**
-- **Real-time metrics**: Execution time, throughput, memory usage
-- **Performance regression detection**: Automatic alerts for slowdowns
-- **Hardware utilization tracking**: CPU/GPU usage optimization
-- **Bottleneck identification**: Pinpoints performance issues with solutions
-
-## 🎯 **Production Deployment**
-
-### **Enterprise Readiness Checklist**
-
-- ✅ **Complete Integration Chain**: `[Kernel]` → Source Generator → Runtime → Execution
-- ✅ **Comprehensive Testing**: 75-85% code coverage with 60+ integration tests
-- ✅ **Zero Build Errors**: Clean compilation across all production components
-- ✅ **Performance Validated**: Benchmarked on multiple hardware configurations
-- ✅ **Memory Safety**: Unified buffer management with leak detection
-- ✅ **Error Handling**: Comprehensive exception handling with meaningful messages
-- ✅ **Developer Tools**: Complete Roslyn analyzer with real-time IDE feedback
-- ✅ **Cross-Backend Validation**: CPU/GPU result verification in production
-- ✅ **Native AOT Ready**: Full trimming compatibility with sub-10ms startup
-- ✅ **Documentation Complete**: Comprehensive guides and API reference
-
-### **System Requirements**
-
-#### **Minimum Requirements**
+#### Minimum Requirements
 - .NET 9.0 Runtime
 - 64-bit operating system
-- 4GB RAM (8GB recommended)
+- 4GB RAM
 
-#### **Optimal Performance**
-- **CPU**: AVX2/AVX512 support (Intel Core, AMD Ryzen)
-- **GPU**: NVIDIA GPU with Compute Capability 5.0+ (GTX 900 series or newer)
-- **CUDA**: Version 12.0+ with compatible drivers
-- **Memory**: 16GB+ for large dataset processing
+#### For GPU Acceleration
+- NVIDIA GPU with Compute Capability 5.0+
+- CUDA Toolkit 12.0+
+- Compatible NVIDIA drivers
 
-## 🤝 **Contributing**
+#### For Optimal Performance
+- CPU with AVX2/AVX512 support
+- 16GB+ RAM for large datasets
+- NVMe SSD for improved I/O
 
-DotCompute is now production-ready and welcomes contributions! The codebase has been transformed to enterprise-quality standards.
+## Contributing
 
-### **Contributing Areas**
-- 🐛 **Bug Reports**: Help us maintain production quality
-- ⚡ **Performance Optimizations**: Backend-specific improvements
-- 🎯 **New Backends**: Metal, ROCm, Vulkan implementations
-- 📚 **Documentation**: Examples, tutorials, best practices
-- 🧪 **Testing**: Hardware-specific validation and edge cases
+Contributions are welcome in the following areas:
 
-### **Development Setup**
+- Performance optimizations for specific hardware
+- Additional backend implementations (Metal, ROCm)
+- Documentation and examples
+- Bug reports and fixes
+- Test coverage improvements
+
+### Development Setup
 
 ```bash
 git clone https://github.com/mivertowski/DotCompute.git
 cd DotCompute
 
-# Build with zero errors
+# Build the solution
 dotnet build DotCompute.sln --configuration Release
 
-# Run comprehensive test suite (75-85% coverage)
+# Run tests
 dotnet test --configuration Release
 
 # Run hardware-specific tests (requires NVIDIA GPU)
 dotnet test --filter "Category=Hardware"
 ```
 
-## 📄 **License & Support**
+## License
 
-**Copyright (c) 2025 Michael Ivertowski**
+Copyright (c) 2025 Michael Ivertowski
 
 Licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
-### **Production Support**
-- **🐛 Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
-- **📧 Enterprise**: Contact for commercial support and consulting
-- **📚 Documentation**: Complete API reference and guides in `docs/`
+## Support
 
----
+- **Issues**: [GitHub Issues](https://github.com/mivertowski/DotCompute/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mivertowski/DotCompute/discussions)
+- **Documentation**: API reference and guides in the `docs/` directory
 
-## 🚀 **Status: Production Ready**
+## Project Status
 
-**DotCompute v0.2.0-alpha** represents a major milestone - the complete transformation from prototype to enterprise-grade compute framework. The system now provides:
+DotCompute v0.2.0-alpha provides a foundation for GPU and CPU compute acceleration in .NET applications. The framework includes:
 
-- **🎯 Modern Developer Experience**: Write GPU kernels in pure C# with real-time IDE feedback
-- **⚡ Production Performance**: 8-74x speedup with automatic optimization
-- **🛡️ Enterprise Quality**: Comprehensive testing, validation, and monitoring
-- **🔧 Complete Tooling**: Source generators, analyzers, debugging, and profiling
-- **📊 Intelligent Optimization**: ML-powered backend selection and performance optimization
+- Attribute-based kernel definition system
+- CPU SIMD and CUDA GPU backends
+- Source generators and Roslyn analyzers
+- Cross-backend debugging capabilities
+- LINQ expression compilation (experimental)
+- Performance monitoring and profiling tools
 
-*Ready for enterprise deployment with full production support.*
+The project continues to evolve with planned support for additional backends and optimization strategies.

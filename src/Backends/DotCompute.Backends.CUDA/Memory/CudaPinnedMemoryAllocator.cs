@@ -362,7 +362,7 @@ namespace DotCompute.Backends.CUDA.Memory
             ObjectDisposedException.ThrowIf(_disposed, this);
             
             // Create a custom MemoryManager that wraps the pinned memory
-            return new PinnedMemoryManager<T>(_pinnedPtr, Count, this).Memory;
+            return new PinnedMemoryManager<T>(HostPointer, (int)Count, this).Memory;
         }
 
         public async Task CopyToDeviceAsync(IntPtr devicePtr, CancellationToken cancellationToken = default)

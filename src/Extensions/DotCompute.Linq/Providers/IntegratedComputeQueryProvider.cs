@@ -11,6 +11,7 @@ using DotCompute.Linq.Compilation.Plans;
 using DotCompute.Linq.Expressions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
+using DotCompute.Linq.Compilation;
 
 namespace DotCompute.Linq.Providers;
 
@@ -81,14 +82,14 @@ public class IntegratedComputeQueryProvider : IQueryProvider
         _logger.LogDebugMessage("Executing query expression via orchestrator");
 
         // Use async-over-sync pattern for synchronous interface
-        return ExecuteAsync<object>(expression).GetAwaiter().GetResult();
+        return ExecuteAsync<object>(expression, CancellationToken.None).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc />
     public TResult Execute<TResult>(Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
-        return ExecuteAsync<TResult>(expression).GetAwaiter().GetResult();
+        return ExecuteAsync<TResult>(expression, CancellationToken.None).GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -96,13 +97,16 @@ public class IntegratedComputeQueryProvider : IQueryProvider
     /// </summary>
     /// <typeparam name="TResult">The result type</typeparam>
     /// <param name="expression">The expression to execute</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The execution result</returns>
-    public async Task<TResult> ExecuteAsync<TResult>(Expression expression)
+    public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(expression);
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             // Optimize the expression
             var optimizedExpression = OptimizeExpression(expression);
             
@@ -113,11 +117,16 @@ public class IntegratedComputeQueryProvider : IQueryProvider
             object? result = null;
             foreach (var operation in kernelOperations)
             {
-                result = await ExecuteKernelOperationAsync(operation);
+                cancellationToken.ThrowIfCancellationRequested();
+                result = await ExecuteKernelOperationAsync(operation, null, cancellationToken);
             }
             
             // Convert result to expected type
-            return await ConvertResultAsync<TResult>(result);
+            return await ConvertResultAsync<TResult>(result, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -132,14 +141,17 @@ public class IntegratedComputeQueryProvider : IQueryProvider
     /// <typeparam name="TResult">The result type</typeparam>
     /// <param name="expression">The expression to execute</param>
     /// <param name="preferredBackend">The preferred backend name</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The execution result</returns>
-    public async Task<TResult> ExecuteAsync<TResult>(Expression expression, string preferredBackend)
+    public async Task<TResult> ExecuteAsync<TResult>(Expression expression, string preferredBackend, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(expression);
         ArgumentNullException.ThrowIfNull(preferredBackend);
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             // Optimize the expression
             var optimizedExpression = OptimizeExpression(expression);
             
@@ -150,10 +162,15 @@ public class IntegratedComputeQueryProvider : IQueryProvider
             object? result = null;
             foreach (var operation in kernelOperations)
             {
-                result = await ExecuteKernelOperationAsync(operation, preferredBackend);
+                cancellationToken.ThrowIfCancellationRequested();
+                result = await ExecuteKernelOperationAsync(operation, preferredBackend, cancellationToken);
             }
             
-            return await ConvertResultAsync<TResult>(result);
+            return await ConvertResultAsync<TResult>(result, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -164,7 +181,7 @@ public class IntegratedComputeQueryProvider : IQueryProvider
 
     private Expression OptimizeExpression(Expression expression)
     {
-        var options = new Compilation.CompilationOptions
+        var options = new CompilationOptions
         {
             EnableOptimizations = true,
             UseSharedMemory = true,
@@ -174,16 +191,22 @@ public class IntegratedComputeQueryProvider : IQueryProvider
         return _optimizer.Optimize(expression, options);
     }
 
-    private async Task<object?> ExecuteKernelOperationAsync(KernelOperation operation, string? preferredBackend = null)
+    private async Task<object?> ExecuteKernelOperationAsync(KernelOperation operation, string? preferredBackend = null, CancellationToken cancellationToken = default)
     {
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             if (preferredBackend != null)
             {
-                return await _orchestrator.ExecuteAsync<object>(operation.KernelName, preferredBackend, operation.Arguments);
+                return await _orchestrator.ExecuteAsync<object>(operation.KernelName, preferredBackend, operation.Arguments, cancellationToken);
             }
             
-            return await _orchestrator.ExecuteAsync<object>(operation.KernelName, operation.Arguments);
+            return await _orchestrator.ExecuteAsync<object>(operation.KernelName, operation.Arguments, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -192,16 +215,28 @@ public class IntegratedComputeQueryProvider : IQueryProvider
             // Attempt CPU fallback
             if (preferredBackend != "CPU")
             {
-                return await _orchestrator.ExecuteAsync<object>(operation.KernelName, "CPU", operation.Arguments);
+                try
+                {
+                    return await _orchestrator.ExecuteAsync<object>(operation.KernelName, "CPU", operation.Arguments, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    // Fallback failed, rethrow original exception
+                }
             }
             
             throw new InvalidOperationException($"Failed to execute kernel operation: {operation.KernelName}", ex);
         }
     }
 
-    private static async Task<TResult> ConvertResultAsync<TResult>(object? result)
+    private static async Task<TResult> ConvertResultAsync<TResult>(object? result, CancellationToken cancellationToken = default)
     {
-        await Task.CompletedTask;
+        await Task.CompletedTask.ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         
         if (result is TResult directResult)
         {
@@ -321,20 +356,22 @@ public class IntegratedComputeQueryable<T> : IOrderedQueryable<T>
     /// <summary>
     /// Executes the query asynchronously.
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The query result</returns>
-    public async Task<IEnumerable<T>> ExecuteAsync()
+    public async Task<IEnumerable<T>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        return await _provider.ExecuteAsync<IEnumerable<T>>(_expression);
+        return await _provider.ExecuteAsync<IEnumerable<T>>(_expression, cancellationToken);
     }
 
     /// <summary>
     /// Executes the query asynchronously with a preferred backend.
     /// </summary>
     /// <param name="preferredBackend">The preferred backend</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The query result</returns>
-    public async Task<IEnumerable<T>> ExecuteAsync(string preferredBackend)
+    public async Task<IEnumerable<T>> ExecuteAsync(string preferredBackend, CancellationToken cancellationToken = default)
     {
-        return await _provider.ExecuteAsync<IEnumerable<T>>(_expression, preferredBackend);
+        return await _provider.ExecuteAsync<IEnumerable<T>>(_expression, preferredBackend, cancellationToken);
     }
 }
 
@@ -415,7 +452,7 @@ public class LinqToKernelTranslator
         {
             if (IsLinqMethod(node))
             {
-                _logger.LogDebugMessage("Translating LINQ method: {MethodName}", node.Method.Name);
+                _logger.LogDebugMessage($"Translating LINQ method: {node.Method.Name}");
 
                 switch (node.Method.Name)
                 {
@@ -437,7 +474,7 @@ public class LinqToKernelTranslator
                         TranslateOrderBy(node);
                         break;
                     default:
-                        _logger.LogWarningMessage("Unsupported LINQ method: {MethodName}", node.Method.Name);
+                        _logger.LogWarningMessage($"Unsupported LINQ method: {node.Method.Name}");
                         break;
                 }
             }

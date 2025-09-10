@@ -72,13 +72,13 @@ internal class MockCompiledKernel : ICompiledKernel
                 totalWork *= dimension;
             }
 
-            _logger.LogDebugMessage("Mock kernel {KernelName} processed {_name, totalWork} work items");
+            _logger.LogDebugMessage($"Mock kernel {_name} processed {totalWork} work items");
         }
 
         // Simulate handling arguments
         if (parameters.Arguments != null)
         {
-            _logger.LogDebugMessage("Mock kernel {KernelName} received {_name, parameters.Arguments.Count} arguments");
+            _logger.LogDebugMessage($"Mock kernel {_name} received {parameters.Arguments.Count} arguments");
         }
     }
 

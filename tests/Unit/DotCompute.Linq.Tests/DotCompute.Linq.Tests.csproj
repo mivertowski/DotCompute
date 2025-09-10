@@ -13,12 +13,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Extensions\DotCompute.Linq\DotCompute.Linq.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
-    <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Runtime\DotCompute.Runtime.csproj" />
-    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Shared\DotCompute.Tests.Shared.csproj" />
-  </ItemGroup>
+  <!-- No project references - completely standalone tests -->
 
 </Project>

@@ -73,7 +73,7 @@ public class DefaultKernelFactory : IKernelFactory
                 // Check if expression can be compiled
                 if (!generator.CanCompile(expression))
                 {
-                    _logger.LogWarningMessage("Expression cannot be compiled for {accelerator.Type}, using fallback");
+                    _logger.LogWarningMessage($"Expression cannot be compiled for {accelerator.Type}, using fallback");
                     return new ExpressionFallbackKernel(expression, _logger);
                 }
 

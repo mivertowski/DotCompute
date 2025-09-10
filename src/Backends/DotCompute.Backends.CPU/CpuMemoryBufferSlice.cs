@@ -39,9 +39,14 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
 
     public long SizeInBytes => _length;
     public int Count => _length;
+    public int Length => _length;
     public BufferState State => _parentBuffer.State;
     public bool IsDisposed => _isDisposed || _parentBuffer.IsDisposed;
     public IAccelerator Accelerator => _parentBuffer.Accelerator;
+    public bool IsOnHost => _parentBuffer.State == BufferState.HostOnly || _parentBuffer.State == BufferState.Synchronized;
+    public bool IsOnDevice => _parentBuffer.State == BufferState.DeviceOnly || _parentBuffer.State == BufferState.Synchronized;
+    public bool IsDirty => _parentBuffer.State == BufferState.HostDirty || _parentBuffer.State == BufferState.DeviceDirty;
+    public MemoryOptions Options => _parentBuffer.Options;
 
     public Span<byte> AsSpan()
     {
@@ -67,6 +72,52 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
         return _parentBuffer.AsReadOnlyMemory().Slice(_offset, _length);
     }
 
+    // Device memory and mapping methods
+
+    public DeviceMemory GetDeviceMemory()
+    {
+        EnsureNotDisposed();
+        // For CPU backend with slicing, we need to adjust the pointer
+        var parentDeviceMemory = _parentBuffer.GetDeviceMemory();
+        return new DeviceMemory(parentDeviceMemory.Handle + _offset, _length);
+    }
+
+    public MappedMemory<byte> Map(MapMode mode = MapMode.ReadWrite)
+    {
+        EnsureNotDisposed();
+        var memory = AsMemory();
+        return new MappedMemory<byte>(memory, () =>
+        {
+            if (mode != MapMode.Read)
+            {
+                MarkHostDirty();
+            }
+        });
+    }
+
+    public MappedMemory<byte> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+    {
+        EnsureNotDisposed();
+        if (offset < 0 || length < 0 || offset + length > _length)
+        {
+            throw new ArgumentOutOfRangeException();
+        }
+
+        var memory = AsMemory().Slice(offset, length);
+        return new MappedMemory<byte>(memory, () =>
+        {
+            if (mode != MapMode.Read)
+            {
+                MarkHostDirty();
+            }
+        });
+    }
+
+    public ValueTask<MappedMemory<byte>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(Map(mode));
+    }
+
     public void EnsureOnHost() => _parentBuffer.EnsureOnHost();
     public void EnsureOnDevice() => _parentBuffer.EnsureOnDevice();
 
@@ -90,7 +141,11 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
         if (source.Length > _length)
             throw new ArgumentException("Source is larger than slice bounds", nameof(source));
         
-        return _parentBuffer.CopyFromAsync(source, _offset, cancellationToken);
+        // The parent buffer's CopyFromAsync doesn't take offset parameter directly
+        var destSpan = AsSpan();
+        source.Span.CopyTo(destSpan);
+        MarkHostDirty();
+        return ValueTask.CompletedTask;
     }
 
     public ValueTask CopyToAsync(Memory<byte> destination, CancellationToken cancellationToken = default)
@@ -99,7 +154,45 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
         if (destination.Length < _length)
             throw new ArgumentException("Destination is smaller than slice size", nameof(destination));
         
-        return _parentBuffer.CopyToAsync(destination, _offset, _length, cancellationToken);
+        // Copy our slice data to the destination
+        var sourceSpan = AsReadOnlySpan();
+        sourceSpan.CopyTo(destination.Span);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<byte> destination, CancellationToken cancellationToken = default)
+    {
+        EnsureNotDisposed();
+        if (destination.Length < _length)
+            throw new ArgumentException("Destination buffer has insufficient capacity", nameof(destination));
+
+        var sourceSpan = AsReadOnlySpan();
+        var destSpan = destination.AsSpan();
+        sourceSpan.CopyTo(destSpan);
+        destination.MarkHostDirty();
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask CopyToAsync(
+        int sourceOffset,
+        IUnifiedMemoryBuffer<byte> destination,
+        int destinationOffset,
+        int count,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureNotDisposed();
+        if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
+            throw new ArgumentOutOfRangeException();
+        if (sourceOffset + count > _length)
+            throw new ArgumentOutOfRangeException(nameof(count), "Copy extends beyond source slice boundaries");
+        if (destinationOffset + count > destination.Length)
+            throw new ArgumentOutOfRangeException(nameof(count), "Copy extends beyond destination buffer boundaries");
+
+        var sourceSpan = AsReadOnlySpan().Slice(sourceOffset, count);
+        var destSpan = destination.AsSpan().Slice(destinationOffset, count);
+        sourceSpan.CopyTo(destSpan);
+        destination.MarkHostDirty();
+        return ValueTask.CompletedTask;
     }
 
     public ValueTask FillAsync(byte value, CancellationToken cancellationToken = default)
@@ -164,4 +257,28 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
             // Note: We don't dispose the parent buffer as we don't own it
         }
     }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    #region IUnifiedMemoryBuffer Base Implementation
+
+    ValueTask IUnifiedMemoryBuffer.CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken)
+    {
+        var byteSource = System.Runtime.InteropServices.MemoryMarshal.AsBytes(source.Span);
+        var sourceMem = new ReadOnlyMemory<byte>(byteSource.ToArray());
+        return ((IUnifiedMemoryBuffer)_parentBuffer).CopyFromAsync(sourceMem, _offset + offset, cancellationToken);
+    }
+
+    ValueTask IUnifiedMemoryBuffer.CopyToAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken)
+    {
+        var byteDestination = System.Runtime.InteropServices.MemoryMarshal.AsBytes(destination.Span);
+        var destMem = new Memory<byte>(byteDestination.ToArray());
+        return ((IUnifiedMemoryBuffer)_parentBuffer).CopyToAsync(destMem, _offset + offset, cancellationToken);
+    }
+
+    #endregion
 }

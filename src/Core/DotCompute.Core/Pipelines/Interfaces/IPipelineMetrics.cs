@@ -118,6 +118,27 @@ public interface IPipelineMetrics
     public IReadOnlyList<TimeSeriesMetric> TimeSeries { get; }
 
     /// <summary>
+    /// Gets the total number of stages in the pipeline.
+    /// Used for complexity analysis and performance optimization decisions.
+    /// </summary>
+    /// <value>The number of pipeline stages as an integer.</value>
+    public int StageCount { get; }
+
+    /// <summary>
+    /// Gets the items processed per second across the entire pipeline.
+    /// Provides high-level throughput measurement for capacity planning.
+    /// </summary>
+    /// <value>The throughput as items processed per second.</value>
+    public double ItemThroughputPerSecond { get; }
+
+    /// <summary>
+    /// Gets the cache hit rate as a percentage (0.0 to 1.0).
+    /// Indicates the effectiveness of caching strategies.
+    /// </summary>
+    /// <value>The cache hit ratio as a double between 0.0 and 1.0.</value>
+    public double CacheHitRatio { get; }
+
+    /// <summary>
     /// Resets all collected metrics to their initial state.
     /// Useful for starting fresh measurement periods.
     /// </summary>

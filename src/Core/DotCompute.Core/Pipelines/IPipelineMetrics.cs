@@ -85,6 +85,11 @@ namespace DotCompute.Core.Pipelines
         public IReadOnlyList<TimeSeriesMetric> TimeSeries { get; }
 
         /// <summary>
+        /// Gets the number of stages in the pipeline.
+        /// </summary>
+        public int StageCount { get; }
+
+        /// <summary>
         /// Resets all metrics.
         /// </summary>
         public void Reset();

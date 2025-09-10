@@ -167,7 +167,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         CompilationOptions options,
         CancellationToken cancellationToken)
     {
-        _logger.LogDebugMessage("Compiling simple expression {expression.NodeType}");
+        _logger.LogDebugMessage($"Compiling simple expression {expression.NodeType}");
 
         // Check for template match
         var templateKey = GenerateTemplateKey(analysis);

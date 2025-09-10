@@ -35,7 +35,7 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
     {
         ArgumentNullException.ThrowIfNull(expression);
 
-        _logger.LogDebugMessage("Starting type inference for expression: {expression.NodeType}");
+        _logger.LogDebugMessage($"Starting type inference for expression: {expression.NodeType}");
 
         var visitor = new TypeInferenceVisitor(_supportedTypes, _typeCapabilities, _logger);
         var result = visitor.AnalyzeExpression(expression);

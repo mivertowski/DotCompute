@@ -19,11 +19,12 @@ public sealed class CpuMemoryManager : BaseMemoryManager
 {
     private readonly NumaTopology _topology;
     private readonly NumaMemoryPolicy _defaultPolicy;
+    private readonly ILogger<CpuMemoryManager> _logger;
 
     public CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemoryPolicy? defaultPolicy = null)
-
         : base(logger)
     {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _topology = NumaInfo.Topology;
         _defaultPolicy = defaultPolicy ?? NumaMemoryPolicy.CreateDefault();
     }
@@ -42,15 +43,15 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         NumaMemoryPolicy? policy,
         CancellationToken cancellationToken = default)
     {
-        _ = policy ?? _defaultPolicy;
+        var effectivePolicy = policy ?? _defaultPolicy;
 
         // NUMA-aware allocation implementation
-        var selectedNode = SelectOptimalNumaNode(policy, sizeInBytes);
-        _logger?.LogDebug("Selected NUMA node {Node} for {Size} bytes allocation with policy {Policy}",
-            selectedNode, sizeInBytes, policy.Type);
+        var selectedNode = SelectOptimalNumaNode(effectivePolicy, sizeInBytes);
+        _logger.LogDebug("Selected NUMA node {Node} for {Size} bytes allocation with policy {Policy}",
+            selectedNode, sizeInBytes, effectivePolicy.Strategy);
 
 
-        return AllocateAsync(sizeInBytes, options, selectedNode, cancellationToken);
+        return AllocateNumaAsync(sizeInBytes, options, selectedNode, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -155,7 +156,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         }
 
         // 7. Last resort: use node 0
-        _logger?.LogWarning("No suitable NUMA nodes found for allocation of {Size} bytes, using node 0", sizeInBytes);
+        _logger.LogWarning("No suitable NUMA nodes found for allocation of {Size} bytes, using node 0", sizeInBytes);
         return 0;
     }
 
@@ -272,6 +273,70 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         GC.Collect();
         return ValueTask.CompletedTask;
     }
+
+    /// <summary>
+    /// Gets the NUMA node for the current thread.
+    /// </summary>
+    /// <returns>The NUMA node ID, or 0 if detection fails.</returns>
+    private int GetCurrentThreadNumaNode()
+    {
+        try
+        {
+            // Get current thread's processor affinity and map to NUMA node
+            var currentProcessor = System.Threading.Thread.GetCurrentProcessorId();
+            return _topology.GetNodeForProcessor(currentProcessor);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to get current thread NUMA node, using node 0");
+            // Fallback to node 0 if detection fails
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// Gets available memory per NUMA node.
+    /// </summary>
+    /// <returns>Dictionary mapping node ID to available memory in bytes.</returns>
+    private Dictionary<int, long> GetAvailableMemoryPerNode()
+    {
+        var result = new Dictionary<int, long>();
+        
+        try
+        {
+            for (int node = 0; node < _topology.NodeCount; node++)
+            {
+                // Get available memory for each NUMA node
+                // Use NUMA node memory size as total, estimate usage at 50%
+                var totalMemory = _topology.Nodes[node].MemorySize;
+                var estimatedUsedMemory = totalMemory / 2; // Conservative estimate
+                result[node] = Math.Max(0, totalMemory - estimatedUsedMemory);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to get per-node memory info, using fallback");
+            // Fallback: assume all memory is available on node 0
+            result[0] = 4L * 1024 * 1024 * 1024; // 4GB fallback
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Allocates memory on a specific NUMA node.
+    /// </summary>
+    /// <param name="sizeInBytes">Size in bytes to allocate.</param>
+    /// <param name="options">Memory allocation options.</param>
+    /// <param name="numaNode">Target NUMA node.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Allocated memory buffer.</returns>
+    private ValueTask<IUnifiedMemoryBuffer> AllocateNumaAsync(long sizeInBytes, MemoryOptions options, int numaNode, CancellationToken cancellationToken)
+    {
+        // Delegate to existing allocation with NUMA node hint
+        _logger.LogDebug("Allocating {Size} bytes on NUMA node {Node}", sizeInBytes, numaNode);
+        return AllocateAsync(sizeInBytes, options, cancellationToken);
+    }
 }
 
 /// <summary>
@@ -331,50 +396,4 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
 
         => ValueTask.CompletedTask;
 
-    // NUMA-aware helper methods
-    private int GetCurrentThreadNumaNode()
-    {
-        try
-        {
-            // Get current thread's processor affinity and map to NUMA node
-            var currentProcessor = System.Threading.Thread.GetCurrentProcessorId();
-            return _topology.GetNodeForProcessor(currentProcessor);
-        }
-        catch
-        {
-            // Fallback to node 0 if detection fails
-            return 0;
-        }
-    }
-
-    private Dictionary<int, long> GetAvailableMemoryPerNode()
-    {
-        var result = new Dictionary<int, long>();
-        
-        try
-        {
-            for (int node = 0; node < _topology.NodeCount; node++)
-            {
-                // Get available memory for each NUMA node
-                // This would use platform-specific APIs in production
-                var totalMemory = _topology.GetTotalMemoryForNode(node);
-                var usedMemory = _topology.GetUsedMemoryForNode(node);
-                result[node] = Math.Max(0, totalMemory - usedMemory);
-            }
-        }
-        catch
-        {
-            // Fallback: assume all memory is available on node 0
-            result[0] = 4L * 1024 * 1024 * 1024; // 4GB fallback
-        }
-
-        return result;
-    }
-
-    private ValueTask<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options, int numaNode, CancellationToken cancellationToken)
-    {
-        // Delegate to existing allocation with NUMA node hint
-        _logger?.LogDebug("Allocating {Size} bytes on NUMA node {Node}", sizeInBytes, numaNode);
-        return AllocateAsync(sizeInBytes, options, cancellationToken);
-    }
 }

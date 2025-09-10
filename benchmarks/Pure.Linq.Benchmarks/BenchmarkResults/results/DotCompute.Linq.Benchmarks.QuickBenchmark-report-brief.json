@@ -1,0 +1,285 @@
+{
+   "Title":"DotCompute.Linq.Benchmarks.QuickBenchmark-20250910-214856",
+   "HostEnvironmentInfo":{
+      "BenchmarkDotNetCaption":"BenchmarkDotNet",
+      "BenchmarkDotNetVersion":"0.15.2",
+      "OsVersion":"Linux Ubuntu 22.04.5 LTS (Jammy Jellyfish)",
+      "ProcessorName":"Intel Core Ultra 7 165H",
+      "PhysicalProcessorCount":1,
+      "PhysicalCoreCount":11,
+      "LogicalCoreCount":22,
+      "RuntimeVersion":".NET 9.0.4 (9.0.425.16305)",
+      "Architecture":"X64",
+      "HasAttachedDebugger":false,
+      "HasRyuJit":true,
+      "Configuration":"RELEASE",
+      "DotNetCliVersion":"9.0.203",
+      "ChronometerFrequency":{
+         "Hertz":1000000000
+      },
+      "HardwareTimerKind":"Unknown"
+   },
+   "Benchmarks":[
+      {
+         "DisplayInfo":"QuickBenchmark.StandardLinq: Job-OIOVDM(IterationCount=3, RunStrategy=ColdStart, WarmupCount=1) [DataSize=10000]",
+         "Namespace":"DotCompute.Linq.Benchmarks",
+         "Type":"QuickBenchmark",
+         "Method":"StandardLinq",
+         "MethodTitle":"StandardLinq",
+         "Parameters":"DataSize=10000",
+         "FullName":"DotCompute.Linq.Benchmarks.QuickBenchmark.StandardLinq(DataSize: 10000)",
+         "HardwareIntrinsics":"AVX2,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT,AvxVnni,SERIALIZE VectorSize=256",
+         "Statistics":{
+            "OriginalValues":[
+               6204751,123928,95179
+            ],
+            "N":3,
+            "Min":95179,
+            "LowerFence":-4472625.5,
+            "Q1":109553.5,
+            "Median":123928,
+            "Mean":2141286,
+            "Q3":3164339.5,
+            "UpperFence":7746518.5,
+            "Max":6204751,
+            "InterquartileRange":3054786,
+            "LowerOutliers":[
+               
+            ],
+            "UpperOutliers":[
+               
+            ],
+            "AllOutliers":[
+               
+            ],
+            "StandardError":2031749.4498517776,
+            "Variance":12384017480919,
+            "StandardDeviation":3519093.2753933934,
+            "Skewness":0.38487128054418424,
+            "Kurtosis":0.6666666666666666,
+            "ConfidenceInterval":{
+               "N":3,
+               "Mean":2141286,
+               "StandardError":2031749.4498517776,
+               "Level":12,
+               "Margin":64201361.491721936,
+               "Lower":-62060075.491721936,
+               "Upper":66342647.491721936
+            },
+            "Percentiles":{
+               "P0":95179,
+               "P25":109553.5,
+               "P50":123928,
+               "P67":2191407.819999999,
+               "P80":3772421.8000000007,
+               "P85":4380504.1000000015,
+               "P90":4988586.3999999985,
+               "P95":5596668.699999999,
+               "P100":6204751
+            }
+         },
+         "Memory":{
+            "Gen0Collections":0,
+            "Gen1Collections":0,
+            "Gen2Collections":0,
+            "TotalOperations":1,
+            "BytesAllocatedPerOperation":48
+         }
+      },{
+         "DisplayInfo":"QuickBenchmark.ParallelLinq: Job-OIOVDM(IterationCount=3, RunStrategy=ColdStart, WarmupCount=1) [DataSize=10000]",
+         "Namespace":"DotCompute.Linq.Benchmarks",
+         "Type":"QuickBenchmark",
+         "Method":"ParallelLinq",
+         "MethodTitle":"ParallelLinq",
+         "Parameters":"DataSize=10000",
+         "FullName":"DotCompute.Linq.Benchmarks.QuickBenchmark.ParallelLinq(DataSize: 10000)",
+         "HardwareIntrinsics":"AVX2,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT,AvxVnni,SERIALIZE VectorSize=256",
+         "Statistics":{
+            "OriginalValues":[
+               12240138,768974,841573
+            ],
+            "N":3,
+            "Min":768974,
+            "LowerFence":-7798099.5,
+            "Q1":805273.5,
+            "Median":841573,
+            "Mean":4616895,
+            "Q3":6540855.5,
+            "UpperFence":15144228.5,
+            "Max":12240138,
+            "InterquartileRange":5735582,
+            "LowerOutliers":[
+               
+            ],
+            "UpperOutliers":[
+               
+            ],
+            "AllOutliers":[
+               
+            ],
+            "StandardError":3811679.1151882573,
+            "Variance":43586693031487,
+            "StandardDeviation":6602021.889655245,
+            "Skewness":0.38484781911191684,
+            "Kurtosis":0.6666666666666666,
+            "ConfidenceInterval":{
+               "N":3,
+               "Mean":4616895,
+               "StandardError":3811679.1151882573,
+               "Level":12,
+               "Margin":120445455.90131739,
+               "Lower":-115828560.90131739,
+               "Upper":125062350.90131739
+            },
+            "Percentiles":{
+               "P0":768974,
+               "P25":805273.5,
+               "P50":841573,
+               "P67":4717085.099999998,
+               "P80":7680712.000000001,
+               "P85":8820568.500000002,
+               "P90":9960424.999999998,
+               "P95":11100281.5,
+               "P100":12240138
+            }
+         },
+         "Memory":{
+            "Gen0Collections":0,
+            "Gen1Collections":0,
+            "Gen2Collections":0,
+            "TotalOperations":1,
+            "BytesAllocatedPerOperation":12696
+         }
+      },{
+         "DisplayInfo":"QuickBenchmark.SimdOptimized: Job-OIOVDM(IterationCount=3, RunStrategy=ColdStart, WarmupCount=1) [DataSize=10000]",
+         "Namespace":"DotCompute.Linq.Benchmarks",
+         "Type":"QuickBenchmark",
+         "Method":"SimdOptimized",
+         "MethodTitle":"SimdOptimized",
+         "Parameters":"DataSize=10000",
+         "FullName":"DotCompute.Linq.Benchmarks.QuickBenchmark.SimdOptimized(DataSize: 10000)",
+         "HardwareIntrinsics":"AVX2,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT,AvxVnni,SERIALIZE VectorSize=256",
+         "Statistics":{
+            "OriginalValues":[
+               1688610,30989,32332
+            ],
+            "N":3,
+            "Min":30989,
+            "LowerFence":-1211555.25,
+            "Q1":31660.5,
+            "Median":32332,
+            "Mean":583977,
+            "Q3":860471,
+            "UpperFence":2103686.75,
+            "Max":1688610,
+            "InterquartileRange":828810.5,
+            "LowerOutliers":[
+               
+            ],
+            "UpperOutliers":[
+               
+            ],
+            "AllOutliers":[
+               
+            ],
+            "StandardError":552316.6360669696,
+            "Variance":915160999429,
+            "StandardDeviation":956640.4755335203,
+            "Skewness":0.38489932605497595,
+            "Kurtosis":0.6666666666666667,
+            "ConfidenceInterval":{
+               "N":3,
+               "Mean":583977,
+               "StandardError":552316.6360669696,
+               "Level":12,
+               "Margin":17452683.455932137,
+               "Lower":-16868706.455932137,
+               "Upper":18036660.455932137
+            },
+            "Percentiles":{
+               "P0":30989,
+               "P25":31660.5,
+               "P50":32332,
+               "P67":595466.5199999998,
+               "P80":1026098.8000000002,
+               "P85":1191726.6000000003,
+               "P90":1357354.3999999997,
+               "P95":1522982.1999999997,
+               "P100":1688610
+            }
+         },
+         "Memory":{
+            "Gen0Collections":0,
+            "Gen1Collections":0,
+            "Gen2Collections":0,
+            "TotalOperations":1,
+            "BytesAllocatedPerOperation":0
+         }
+      },{
+         "DisplayInfo":"QuickBenchmark.TheoreticalGpu: Job-OIOVDM(IterationCount=3, RunStrategy=ColdStart, WarmupCount=1) [DataSize=10000]",
+         "Namespace":"DotCompute.Linq.Benchmarks",
+         "Type":"QuickBenchmark",
+         "Method":"TheoreticalGpu",
+         "MethodTitle":"TheoreticalGpu",
+         "Parameters":"DataSize=10000",
+         "FullName":"DotCompute.Linq.Benchmarks.QuickBenchmark.TheoreticalGpu(DataSize: 10000)",
+         "HardwareIntrinsics":"AVX2,AES,BMI1,BMI2,FMA,LZCNT,PCLMUL,POPCNT,AvxVnni,SERIALIZE VectorSize=256",
+         "Statistics":{
+            "OriginalValues":[
+               1755935,37439,35966
+            ],
+            "N":3,
+            "Min":35966,
+            "LowerFence":-1253274.25,
+            "Q1":36702.5,
+            "Median":37439,
+            "Mean":609780,
+            "Q3":896687,
+            "UpperFence":2186663.75,
+            "Max":1755935,
+            "InterquartileRange":859984.5,
+            "LowerOutliers":[
+               
+            ],
+            "UpperOutliers":[
+               
+            ],
+            "AllOutliers":[
+               
+            ],
+            "StandardError":573077.6577541651,
+            "Variance":985254005451,
+            "StandardDeviation":992599.6199127823,
+            "Skewness":0.3848992258782417,
+            "Kurtosis":0.6666666666666666,
+            "ConfidenceInterval":{
+               "N":3,
+               "Mean":609780,
+               "StandardError":573077.6577541651,
+               "Level":12,
+               "Margin":18108712.11063381,
+               "Lower":-17498932.11063381,
+               "Upper":18718492.11063381
+            },
+            "Percentiles":{
+               "P0":35966,
+               "P25":36702.5,
+               "P50":37439,
+               "P67":621727.6399999998,
+               "P80":1068536.6000000003,
+               "P85":1240386.2000000002,
+               "P90":1412235.7999999998,
+               "P95":1584085.3999999997,
+               "P100":1755935
+            }
+         },
+         "Memory":{
+            "Gen0Collections":0,
+            "Gen1Collections":0,
+            "Gen2Collections":0,
+            "TotalOperations":1,
+            "BytesAllocatedPerOperation":0
+         }
+      }
+   ]
+}
