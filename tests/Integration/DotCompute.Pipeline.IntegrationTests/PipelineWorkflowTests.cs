@@ -8,6 +8,7 @@ using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Generators;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Xunit;
 
 namespace DotCompute.Pipeline.IntegrationTests;
 

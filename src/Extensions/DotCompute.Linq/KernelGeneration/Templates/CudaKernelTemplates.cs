@@ -104,7 +104,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
     {
         public MapKernelTemplate(ILogger logger) : base(logger) { }
 
-        public override async Task<string> GenerateKernelAsync(
+        public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
         {
@@ -135,7 +135,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
             builder.AppendLine("}");
 
             Logger.LogDebug("Generated map kernel for {KernelName}", analysis.KernelName);
-            return builder.ToString();
+            return Task.FromResult(builder.ToString());
         }
 
         public override int GetOptimalBlockSize(ExpressionAnalysisResult analysis)
@@ -157,7 +157,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
     {
         public FilterKernelTemplate(ILogger logger) : base(logger) { }
 
-        public override async Task<string> GenerateKernelAsync(
+        public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
         {
@@ -235,7 +235,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
             builder.AppendLine("}");
 
             Logger.LogDebug("Generated filter kernel for {KernelName}", analysis.KernelName);
-            return builder.ToString();
+            return Task.FromResult(builder.ToString());
         }
     }
 
@@ -246,7 +246,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
     {
         public ReductionKernelTemplate(ILogger logger) : base(logger) { }
 
-        public override async Task<string> GenerateKernelAsync(
+        public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
         {
@@ -322,7 +322,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
             AddReductionFunctions(builder, analysis);
 
             Logger.LogDebug("Generated reduction kernel for {KernelName}", analysis.KernelName);
-            return builder.ToString();
+            return Task.FromResult(builder.ToString());
         }
 
         private void AddReductionFunctions(StringBuilder builder, ExpressionAnalysisResult analysis)
@@ -361,7 +361,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
     {
         public ScanKernelTemplate(ILogger logger) : base(logger) { }
 
-        public override async Task<string> GenerateKernelAsync(
+        public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
         {
@@ -427,7 +427,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
             builder.AppendLine("}");
 
             Logger.LogDebug("Generated scan kernel for {KernelName}", analysis.KernelName);
-            return builder.ToString();
+            return Task.FromResult(builder.ToString());
         }
 
         public override int GetOptimalBlockSize(ExpressionAnalysisResult analysis)
@@ -444,7 +444,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
     {
         public JoinKernelTemplate(ILogger logger) : base(logger) { }
 
-        public override async Task<string> GenerateKernelAsync(
+        public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
         {
@@ -492,7 +492,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
             builder.AppendLine("}");
 
             Logger.LogDebug("Generated join kernel for {KernelName}", analysis.KernelName);
-            return builder.ToString();
+            return Task.FromResult(builder.ToString());
         }
     }
 
@@ -503,7 +503,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
     {
         public GroupByKernelTemplate(ILogger logger) : base(logger) { }
 
-        public override async Task<string> GenerateKernelAsync(
+        public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
         {
@@ -550,7 +550,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
             builder.AppendLine("}");
 
             Logger.LogDebug("Generated group by kernel for {KernelName}", analysis.KernelName);
-            return builder.ToString();
+            return Task.FromResult(builder.ToString());
         }
     }
 
@@ -561,7 +561,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
     {
         public SortKernelTemplate(ILogger logger) : base(logger) { }
 
-        public override async Task<string> GenerateKernelAsync(
+        public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
         {
@@ -603,7 +603,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
             builder.AppendLine("}");
 
             Logger.LogDebug("Generated sort kernel for {KernelName}", analysis.KernelName);
-            return builder.ToString();
+            return Task.FromResult(builder.ToString());
         }
     }
 
@@ -614,7 +614,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
     {
         public CustomKernelTemplate(ILogger logger) : base(logger) { }
 
-        public override async Task<string> GenerateKernelAsync(
+        public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
         {
@@ -645,7 +645,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
             builder.AppendLine("}");
 
             Logger.LogDebug("Generated custom kernel for {KernelName}", analysis.KernelName);
-            return builder.ToString();
+            return Task.FromResult(builder.ToString());
         }
     }
 }

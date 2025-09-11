@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Models;
@@ -23,7 +24,7 @@ public abstract class PipelineTestBase : IDisposable
     protected PipelineTestBase()
     {
         var services = new ServiceCollection();
-        ConfigureServices(services);
+        ConfigureServicesInternal(services);
         _serviceProvider = services.BuildServiceProvider();
         
         Services = _serviceProvider;
@@ -62,6 +63,7 @@ public abstract class PipelineTestBase : IDisposable
     /// <param name="input">Input data for the pipeline</param>
     /// <param name="expected">Expected output results</param>
     /// <param name="tolerance">Tolerance for floating-point comparisons</param>
+    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code.", Justification = "Test code uses dynamic for type-specific floating point comparison.")]
     protected static void AssertPipelineExecution<T>(T[] input, T[] expected, double tolerance = 1e-6) 
         where T : IEquatable<T>
     {
@@ -212,10 +214,10 @@ public abstract class PipelineTestBase : IDisposable
     }
 
     /// <summary>
-    /// Configures services for the test environment. Override to customize.
+    /// Configures services for the test environment internally (non-virtual).
     /// </summary>
     /// <param name="services">Service collection to configure</param>
-    protected virtual void ConfigureServices(IServiceCollection services)
+    private void ConfigureServicesInternal(IServiceCollection services)
     {
         services.AddLogging(builder => builder.AddDebug().SetMinimumLevel(LogLevel.Debug));
         services.AddSingleton<PipelineTestDataGenerator>();
@@ -225,6 +227,18 @@ public abstract class PipelineTestBase : IDisposable
         
         // Mock services for testing
         services.AddSingleton<IComputeOrchestrator, MockComputeOrchestrator>();
+        
+        // Call virtual method for derived class customization
+        ConfigureAdditionalServices(services);
+    }
+
+    /// <summary>
+    /// Override this method to configure additional services. Called after base services are configured.
+    /// </summary>
+    /// <param name="services">Service collection to configure</param>
+    protected virtual void ConfigureAdditionalServices(IServiceCollection services)
+    {
+        // Default implementation does nothing
     }
 
     private static void AssertFloatingPointEqual(float expected, float actual, double tolerance)

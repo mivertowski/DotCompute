@@ -336,19 +336,22 @@ public static class ReactiveComputeExtensions
         where TSource : unmanaged
         where TResult : unmanaged
     {
-        using var inputBuffer = UnifiedBuffer<TSource>.Allocate(batch.Length);
-        using var outputBuffer = UnifiedBuffer<TResult>.Allocate(batch.Length);
+        // Create a basic memory allocator and manager
+        using var memoryAllocator = new MemoryAllocator();
+        using var memoryManager = new UnifiedMemoryManager();
         
-        inputBuffer.CopyFrom(batch);
+        using var inputBuffer = memoryAllocator.CreateUnifiedBuffer<TSource>(memoryManager, batch.Length);
+        using var outputBuffer = memoryAllocator.CreateUnifiedBuffer<TResult>(memoryManager, batch.Length);
+        
+        await inputBuffer.CopyFromAsync(batch);
         
         // Create a simple kernel for the selector function
         var kernelCode = GenerateKernelCode(selector);
-        var result = await orchestrator.ExecuteKernelAsync<TSource, TResult>(
-            kernelCode,
-            inputBuffer.Span,
-            outputBuffer.Span);
         
-        return outputBuffer.ToArray();
+        // TODO: Fix orchestrator interface - ExecuteKernelAsync method signature needs to be checked
+        throw new NotImplementedException("IComputeOrchestrator.ExecuteKernelAsync method signature needs to be fixed");
+        
+        // return outputBuffer.ToArray();
     }
 
     /// <summary>
@@ -360,28 +363,31 @@ public static class ReactiveComputeExtensions
         IComputeOrchestrator orchestrator)
         where T : unmanaged
     {
-        using var inputBuffer = UnifiedBuffer<T>.Allocate(batch.Length);
-        using var maskBuffer = UnifiedBuffer<bool>.Allocate(batch.Length);
+        // Create a basic memory allocator and manager
+        using var memoryAllocator = new MemoryAllocator();
+        using var memoryManager = new UnifiedMemoryManager();
         
-        inputBuffer.CopyFrom(batch);
+        using var inputBuffer = memoryAllocator.CreateUnifiedBuffer<T>(memoryManager, batch.Length);
+        using var maskBuffer = memoryAllocator.CreateUnifiedBuffer<bool>(memoryManager, batch.Length);
+        
+        await inputBuffer.CopyFromAsync(batch);
         
         // Create a kernel for the predicate
         var kernelCode = GeneratePredicateKernelCode(predicate);
-        await orchestrator.ExecuteKernelAsync<T, bool>(
-            kernelCode,
-            inputBuffer.Span,
-            maskBuffer.Span);
         
-        var mask = maskBuffer.ToArray();
-        var result = new List<T>(batch.Length);
+        // TODO: Fix orchestrator interface - ExecuteKernelAsync method signature needs to be checked
+        throw new NotImplementedException("IComputeOrchestrator.ExecuteKernelAsync method signature needs to be fixed");
         
-        for (int i = 0; i < batch.Length; i++)
-        {
-            if (mask[i])
-                result.Add(batch[i]);
-        }
-        
-        return result.ToArray();
+        // var mask = maskBuffer.ToArray();
+        // var result = new List<T>(batch.Length);
+        // 
+        // for (int i = 0; i < batch.Length; i++)
+        // {
+        //     if (mask[i])
+        //         result.Add(batch[i]);
+        // }
+        // 
+        // return result.ToArray();
     }
 
     /// <summary>

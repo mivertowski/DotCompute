@@ -325,19 +325,21 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
 
     public async ValueTask DisposeAsync()
     {
+        await Task.Run(Dispose).ConfigureAwait(false);
+    }
+
+    public void Dispose()
+    {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
             return;
         }
 
-        await Task.Run(() =>
+        // Release pipeline state
+        if (_pipelineState != IntPtr.Zero)
         {
-            // Release pipeline state
-            if (_pipelineState != IntPtr.Zero)
-            {
-                MetalNative.ReleasePipelineState(_pipelineState);
-            }
-        }).ConfigureAwait(false);
+            MetalNative.ReleasePipelineState(_pipelineState);
+        }
 
         GC.SuppressFinalize(this);
     }

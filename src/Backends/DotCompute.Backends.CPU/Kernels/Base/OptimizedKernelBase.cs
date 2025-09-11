@@ -75,8 +75,13 @@ internal abstract class OptimizedKernelBase : ICompiledKernel
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous disposal operation.</returns>
     public ValueTask DisposeAsync()
     {
-        Disposed = true;
+        Dispose();
         return ValueTask.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        Disposed = true;
     }
 
     /// <summary>

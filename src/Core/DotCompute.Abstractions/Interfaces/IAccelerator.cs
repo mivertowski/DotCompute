@@ -298,7 +298,7 @@ namespace DotCompute.Abstractions
     /// <summary>
     /// Represents a compiled kernel ready for execution.
     /// </summary>
-    public interface ICompiledKernel : IAsyncDisposable
+    public interface ICompiledKernel : IAsyncDisposable, IDisposable
     {
         /// <summary>Gets the kernel unique identifier.</summary>
         public Guid Id { get; }

@@ -80,6 +80,38 @@ public class ExecutionContext
     /// Gets or sets the execution options.
     /// </summary>
     public ExecutionOptions Options { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets GPU information for optimization.
+    /// </summary>
+    public GpuInfo? GpuInfo { get; set; }
+
+    /// <summary>
+    /// Gets the target backend type.
+    /// </summary>
+    public DotCompute.Linq.Types.BackendType TargetBackend => Accelerator switch
+    {
+        _ when Accelerator.Name.Contains("CUDA") => DotCompute.Linq.Types.BackendType.CUDA,
+        _ when Accelerator.Name.Contains("GPU") => DotCompute.Linq.Types.BackendType.CUDA,
+        _ => DotCompute.Linq.Types.BackendType.CPU
+    };
+
+    /// <summary>
+    /// Gets the cache size for the target backend.
+    /// </summary>
+    public long CacheSize => TargetBackend == DotCompute.Linq.Types.BackendType.CUDA
+        ? (GpuInfo?.SharedMemoryPerBlock ?? 49152)
+        : Environment.ProcessorCount * 32 * 1024; // Assume 32KB L1 per core
+
+    /// <summary>
+    /// Gets a value indicating whether AVX2 is supported.
+    /// </summary>
+    public bool HasAvx2 => System.Runtime.Intrinsics.X86.Avx2.IsSupported;
+
+    /// <summary>
+    /// Gets a value indicating whether AVX512F is supported.
+    /// </summary>
+    public bool HasAvx512 => System.Runtime.Intrinsics.X86.Avx512F.IsSupported;
 }
 
 /// <summary>
@@ -247,4 +279,55 @@ public class CacheStatistics
     /// Gets the cache hit ratio.
     /// </summary>
     public double HitRatio => Hits + Misses > 0 ? (double)Hits / (Hits + Misses) : 0;
+}
+
+/// <summary>
+/// Contains GPU information for optimization purposes.
+/// </summary>
+public class GpuInfo
+{
+    /// <summary>
+    /// Gets or sets the GPU name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the compute capability version.
+    /// </summary>
+    public Version ComputeCapability { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the number of streaming multiprocessors.
+    /// </summary>
+    public int StreamingMultiprocessors { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum threads per block.
+    /// </summary>
+    public int MaxThreadsPerBlock { get; set; } = 1024;
+
+    /// <summary>
+    /// Gets or sets the maximum threads per multiprocessor.
+    /// </summary>
+    public int MaxThreadsPerMultiprocessor { get; set; } = 2048;
+
+    /// <summary>
+    /// Gets or sets the global memory size in bytes.
+    /// </summary>
+    public long GlobalMemorySize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the shared memory per block in bytes.
+    /// </summary>
+    public int SharedMemoryPerBlock { get; set; } = 49152;
+
+    /// <summary>
+    /// Gets or sets the number of registers per block.
+    /// </summary>
+    public int RegistersPerBlock { get; set; } = 65536;
+
+    /// <summary>
+    /// Gets or sets the memory bandwidth in bytes per second.
+    /// </summary>
+    public long MemoryBandwidth { get; set; }
 }

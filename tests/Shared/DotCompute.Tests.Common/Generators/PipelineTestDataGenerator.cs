@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Numerics;
 
@@ -62,7 +63,8 @@ public class PipelineTestDataGenerator
     /// </summary>
     /// <param name="complexity">Complexity level of the generated query</param>
     /// <returns>Expression representing complex LINQ operations</returns>
-    public Expression<Func<IQueryable<float>, IQueryable<float>>> GenerateComplexLinqQuery(int complexity)
+    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "Test code that generates dynamic expressions for testing purposes.")]
+    public static Expression<Func<IQueryable<float>, IQueryable<float>>> GenerateComplexLinqQuery(int complexity)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(complexity);
 
@@ -234,7 +236,7 @@ public class PipelineTestDataGenerator
         }
     }
 
-    private void GenerateSequentialData<T>(T[] data) where T : struct
+    private static void GenerateSequentialData<T>(T[] data) where T : struct
     {
         for (int i = 0; i < data.Length; i++)
         {
@@ -271,7 +273,7 @@ public class PipelineTestDataGenerator
         }
     }
 
-    private void GenerateEdgeCaseData<T>(T[] data) where T : struct
+    private static void GenerateEdgeCaseData<T>(T[] data) where T : struct
     {
         var minValue = GetMinValue<T>();
         var maxValue = GetMaxValue<T>();
@@ -362,7 +364,7 @@ public class PipelineTestDataGenerator
 /// <summary>
 /// Represents a financial transaction for testing financial analysis pipelines.
 /// </summary>
-public struct FinancialTransaction
+public struct FinancialTransaction : IEquatable<FinancialTransaction>
 {
     public int Id { get; set; }
     public DateTime Timestamp { get; set; }
@@ -370,6 +372,40 @@ public struct FinancialTransaction
     public int Volume { get; set; }
     public string Symbol { get; set; }
     public TransactionType Type { get; set; }
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current transaction.
+    /// </summary>
+    public override readonly bool Equals(object? obj) => obj is FinancialTransaction transaction && Equals(transaction);
+
+    /// <summary>
+    /// Determines whether the specified transaction is equal to the current transaction.
+    /// </summary>
+    public readonly bool Equals(FinancialTransaction other)
+    {
+        return Id == other.Id &&
+               Timestamp.Equals(other.Timestamp) &&
+               Price.Equals(other.Price) &&
+               Volume == other.Volume &&
+               Symbol == other.Symbol &&
+               Type == other.Type;
+    }
+    /// <summary>
+    /// Returns the hash code for this transaction.
+    /// </summary>
+    public override readonly int GetHashCode()
+    {
+        return HashCode.Combine(Id, Timestamp, Price, Volume, Symbol, Type);
+    }
+    /// <summary>
+    /// Determines whether two transactions are equal.
+    /// </summary>
+    public static bool operator ==(FinancialTransaction left, FinancialTransaction right) => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two transactions are not equal.
+    /// </summary>
+    public static bool operator !=(FinancialTransaction left, FinancialTransaction right) => !(left == right);
 }
 
 /// <summary>

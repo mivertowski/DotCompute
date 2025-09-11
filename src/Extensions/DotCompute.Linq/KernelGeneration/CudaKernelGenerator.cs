@@ -9,8 +9,12 @@ using System.Reflection;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Compilation;
+using AbstractionsKernelLanguage = DotCompute.Abstractions.Types.KernelLanguage;
+using CudaKernelLanguage = DotCompute.Backends.CUDA.Compilation.KernelLanguage;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates;
 using DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Optimization;
@@ -197,7 +201,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
                 Name = kernelName,
                 Code = sourceCode,
                 EntryPoint = kernelName,
-                Language = KernelLanguage.Cuda
+                Language = AbstractionsKernelLanguage.Cuda
             };
 
             var compilationOptions = CreateCompilationOptions(options);
@@ -346,14 +350,14 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
         /// <summary>
         /// Creates compilation options based on kernel generation options.
         /// </summary>
-        private CompilationOptions CreateCompilationOptions(KernelGenerationOptions options)
+        private CudaCompilationOptions CreateCompilationOptions(KernelGenerationOptions options)
         {
-            return new CompilationOptions
+            return new CudaCompilationOptions
             {
                 OptimizationLevel = options.OptimizationLevel,
                 EnableDebugInfo = options.EnableDebugInfo,
                 EnableDynamicParallelism = options.EnableDynamicParallelism,
-                AdditionalFlags = BuildAdditionalFlags(options)
+                AdditionalFlags = new List<string>(BuildAdditionalFlags(options))
             };
         }
 

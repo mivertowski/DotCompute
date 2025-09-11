@@ -523,7 +523,7 @@ internal class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
 
     public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
-    public static void Dispose() { }
+    public void Dispose() { }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

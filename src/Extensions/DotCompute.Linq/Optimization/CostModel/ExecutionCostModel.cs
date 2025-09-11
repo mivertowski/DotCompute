@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Optimization;
 using DotCompute.Linq.Execution;
+using DotCompute.Linq.Optimization.Models;
+using DotCompute.Linq.Types;
+using ExecutionContext = DotCompute.Linq.Execution.ExecutionContext;
 
 namespace DotCompute.Linq.Optimization.CostModel;
 
@@ -87,13 +90,13 @@ public sealed class ExecutionCostModel
     public async Task<BackendRecommendation> RecommendBackend(QueryOperation operation, ExecutionContext context)
     {
         var cpuCost = await EstimateCostForBackend(operation, context, BackendType.CPU);
-        var gpuCost = await EstimateCostForBackend(operation, context, BackendType.GPU);
+        var gpuCost = await EstimateCostForBackend(operation, context, BackendType.CUDA);
         
         var recommendation = new BackendRecommendation();
         
         if (gpuCost < cpuCost * 0.8) // GPU must be significantly better
         {
-            recommendation.RecommendedBackend = BackendType.GPU;
+            recommendation.RecommendedBackend = BackendType.CUDA;
             recommendation.ConfidenceScore = CalculateConfidenceScore(gpuCost, cpuCost);
             recommendation.ExpectedSpeedup = cpuCost / gpuCost;
         }
@@ -271,7 +274,7 @@ public sealed class ExecutionCostModel
         ExecutionContext context)
     {
         var totalOperations = operation.InputSize * model.ComputeComplexity;
-        var baseOpsPerSecond = context.TargetBackend == BackendType.GPU 
+        var baseOpsPerSecond = context.TargetBackend == BackendType.CUDA 
             ? GpuFloatOpsPerSecond 
             : CpuFloatOpsPerSecond;
         
@@ -295,7 +298,7 @@ public sealed class ExecutionCostModel
         ExecutionContext context)
     {
         var memoryAccesses = EstimateMemoryAccesses(operation, model);
-        var baseBandwidth = context.TargetBackend == BackendType.GPU 
+        var baseBandwidth = context.TargetBackend == BackendType.CUDA 
             ? MemoryBandwidthGpuGBps 
             : MemoryBandwidthCpuGBps;
         
@@ -384,7 +387,7 @@ public sealed class ExecutionCostModel
         }
         
         var synchronizationEvents = EstimateSynchronizationEvents(operation, parallelismDegree);
-        var synchronizationLatency = context.TargetBackend == BackendType.GPU ? 0.001 : 0.0001; // GPU vs CPU latency
+        var synchronizationLatency = context.TargetBackend == BackendType.CUDA ? 0.001 : 0.0001; // GPU vs CPU latency
         
         return synchronizationEvents * synchronizationLatency;
     }
@@ -546,7 +549,7 @@ public sealed class ExecutionCostModel
         }
         
         // Estimate per-thread memory overhead
-        var perThreadOverhead = context.TargetBackend == BackendType.GPU ? 1024 : 8192; // GPU vs CPU stack size
+        var perThreadOverhead = context.TargetBackend == BackendType.CUDA ? 1024 : 8192; // GPU vs CPU stack size
         return parallelismDegree * perThreadOverhead;
     }
 
@@ -637,7 +640,7 @@ public sealed class ExecutionCostModel
     {
         var recommendations = new List<OptimizationRecommendation>();
         
-        if (context.TargetBackend == BackendType.GPU)
+        if (context.TargetBackend == BackendType.CUDA)
         {
             recommendations.Add(new OptimizationRecommendation
             {
@@ -734,17 +737,20 @@ public class HardwareProfiler
     private async Task<double> MeasureComputeCapability(ExecutionContext context)
     {
         // Simplified compute capability measurement
-        return context.TargetBackend == BackendType.GPU ? GpuFloatOpsPerSecond : CpuFloatOpsPerSecond;
+        await Task.Yield(); // Make truly async
+        return context.TargetBackend == BackendType.CUDA ? GpuFloatOpsPerSecond : CpuFloatOpsPerSecond;
     }
 
     private async Task<double> MeasureMemoryBandwidth(ExecutionContext context)
     {
         // Simplified memory bandwidth measurement
-        return context.TargetBackend == BackendType.GPU ? MemoryBandwidthGpuGBps : MemoryBandwidthCpuGBps;
+        await Task.Yield(); // Make truly async
+        return context.TargetBackend == BackendType.CUDA ? MemoryBandwidthGpuGBps : MemoryBandwidthCpuGBps;
     }
 
     private async Task<CacheHierarchy> AnalyzeCacheHierarchy(ExecutionContext context)
     {
+        await Task.Yield(); // Make truly async
         return new CacheHierarchy
         {
             L1CacheSize = 32 * 1024,
@@ -755,6 +761,7 @@ public class HardwareProfiler
 
     private async Task<VectorCapabilities> DetectVectorCapabilities(ExecutionContext context)
     {
+        await Task.Yield(); // Make truly async
         return new VectorCapabilities
         {
             HasSSE = true,

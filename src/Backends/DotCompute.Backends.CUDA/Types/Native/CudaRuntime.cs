@@ -724,6 +724,30 @@ namespace DotCompute.Backends.CUDA.Native
             ulong dynamicSMemSize,
             uint flags);
 
+        // Public Stream Management Wrappers
+        public static CudaError CreateStream(out IntPtr stream)
+        {
+            stream = IntPtr.Zero;
+            return cudaStreamCreate(ref stream);
+        }
+
+        public static CudaError DestroyStream(IntPtr stream)
+        {
+            return cudaStreamDestroy(stream);
+        }
+
+        public static CudaError SynchronizeStream(IntPtr stream)
+        {
+            return cudaStreamSynchronize(stream);
+        }
+
+        // Public Memory Management Wrappers
+        public static CudaError AllocateManaged(out IntPtr devPtr, ulong size, uint flags = 1)
+        {
+            devPtr = IntPtr.Zero;
+            return cudaMallocManaged(ref devPtr, size, flags);
+        }
+
         // Helper Methods
         public static string GetErrorString(CudaError error)
         {

@@ -74,11 +74,19 @@ internal class CpuFallbackCompiledKernel : DotCompute.Abstractions.ICompiledKern
     /// <returns>A value task representing the asynchronous operation.</returns>
     public ValueTask DisposeAsync()
     {
+        Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Disposes the compiled kernel synchronously.
+    /// </summary>
+    public void Dispose()
+    {
         if (!_disposed)
         {
             _disposed = true;
             _logger.LogDebugMessage("Disposed CPU fallback kernel {Name}");
         }
-        return ValueTask.CompletedTask;
     }
 }

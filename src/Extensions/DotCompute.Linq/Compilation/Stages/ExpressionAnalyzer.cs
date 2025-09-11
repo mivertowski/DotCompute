@@ -7,6 +7,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Expressions;
+using DotCompute.Linq.Compilation.Analysis;
+using DotCompute.Linq.Pipelines.Analysis;
+using CompilationOperatorInfo = DotCompute.Linq.Compilation.Analysis.OperatorInfo;
+using PipelineOperatorInfo = DotCompute.Linq.Pipelines.Analysis.OperatorInfo;
+using PipelineComplexityMetrics = DotCompute.Linq.Pipelines.Analysis.ComplexityMetrics;
 
 namespace DotCompute.Linq.Compilation.Stages;
 
@@ -239,15 +244,15 @@ public sealed class ExpressionAnalyzer
 internal class AnalysisContext
 {
     public CompilationOptions Options { get; }
-    public List<OperatorInfo> OperatorChain { get; } = new();
+    public List<PipelineOperatorInfo> OperatorChain { get; } = new();
     public Dictionary<Type, TypeUsageInfo> TypeUsage { get; } = new();
     public HashSet<DependencyInfo> Dependencies { get; } = new();
-    public Dictionary<OperatorInfo, ParallelizationOpportunity> ParallelizationOpportunities { get; set; } = new();
-    public Dictionary<OperatorInfo, MemoryAccessPattern> MemoryAccessPatterns { get; } = new();
+    public Dictionary<PipelineOperatorInfo, ParallelizationOpportunity> ParallelizationOpportunities { get; set; } = new();
+    public Dictionary<PipelineOperatorInfo, MemoryAccessPattern> MemoryAccessPatterns { get; } = new();
     public DataFlowGraph DataFlowGraph { get; set; } = new();
     public List<DataFlowBottleneck> DataFlowBottlenecks { get; set; } = new();
     public GlobalMemoryAccessPattern GlobalMemoryPattern { get; set; } = new();
-    public ComplexityMetrics ComplexityMetrics { get; set; } = new();
+    public PipelineComplexityMetrics ComplexityMetrics { get; set; } = new();
 
     public AnalysisContext(CompilationOptions options)
     {
@@ -393,7 +398,7 @@ internal class AnalysisVisitor : ExpressionVisitor
 /// </summary>
 internal class OperationSignatureBuilder
 {
-    public string Build(Expression expression, IReadOnlyList<OperatorInfo> operatorChain)
+    public string Build(Expression expression, IReadOnlyList<PipelineOperatorInfo> operatorChain)
     {
         var parts = new List<string>
         {

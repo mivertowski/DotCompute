@@ -6,6 +6,8 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Optimization;
 using DotCompute.Linq.Execution;
 using DotCompute.Linq.Optimization.CostModel;
+using DotCompute.Linq.Optimization.Models;
+using ExecutionContext = DotCompute.Linq.Execution.ExecutionContext;
 
 namespace DotCompute.Linq.Optimization.Strategies;
 
@@ -55,7 +57,7 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
         await ApplyLoadBalancing(optimizedPlan, workloadProfile, context);
         
         // Optimize for target backend (CPU vs GPU)
-        if (context.TargetBackend == BackendType.GPU)
+        if (context.TargetBackend == BackendType.CUDA)
         {
             await OptimizeForGpu(optimizedPlan, workloadProfile, context);
         }
@@ -128,12 +130,12 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
         
         return operation.Type switch
         {
-            OperationType.Map => true,
-            OperationType.Filter => true,
-            OperationType.Reduce => operation.IsAssociative,
-            OperationType.GroupBy => true,
-            OperationType.Join => workload.DataSize > MinParallelizationThreshold * 10,
-            OperationType.Aggregate => operation.IsAssociative,
+            Models.OperationType.Map => true,
+            Models.OperationType.Filter => true,
+            Models.OperationType.Reduce => operation.IsAssociative,
+            Models.OperationType.GroupBy => true,
+            Models.OperationType.Join => workload.DataSize > MinParallelizationThreshold * 10,
+            Models.OperationType.CustomKernel => operation.IsAssociative,
             _ => false
         };
     }
@@ -157,7 +159,7 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
         ExecutionContext context)
     {
         // Start with hardware-based upper bound
-        var maxDegree = context.TargetBackend == BackendType.GPU 
+        var maxDegree = context.TargetBackend == BackendType.CUDA 
             ? context.GpuInfo?.MaxThreadsPerBlock ?? 256
             : context.AvailableCores;
         
@@ -217,12 +219,12 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
     {
         return operation.Type switch
         {
-            OperationType.Map => 0.05, // Highly parallel
-            OperationType.Filter => 0.10,
-            OperationType.Reduce => 0.20, // Some reduction overhead
-            OperationType.GroupBy => 0.30, // Grouping coordination
-            OperationType.Join => 0.25, // Join coordination
-            OperationType.Aggregate => 0.15,
+            Models.OperationType.Map => 0.05, // Highly parallel
+            Models.OperationType.Filter => 0.10,
+            Models.OperationType.Reduce => 0.20, // Some reduction overhead
+            Models.OperationType.GroupBy => 0.30, // Grouping coordination
+            Models.OperationType.Join => 0.25, // Join coordination
+            Models.OperationType.CustomKernel => 0.15,
             _ => 0.50 // Conservative default
         };
     }
@@ -234,12 +236,12 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
     {
         return operation.Type switch
         {
-            OperationType.Map => ParallelizationPattern.DataParallel,
-            OperationType.Filter => ParallelizationPattern.DataParallel,
-            OperationType.Reduce => SelectReducePattern(workload, context),
-            OperationType.GroupBy => ParallelizationPattern.TaskParallel,
-            OperationType.Join => SelectJoinPattern(workload, context),
-            OperationType.Aggregate => SelectAggregatePattern(workload, context),
+            Models.OperationType.Map => ParallelizationPattern.DataParallel,
+            Models.OperationType.Filter => ParallelizationPattern.DataParallel,
+            Models.OperationType.Reduce => SelectReducePattern(workload, context),
+            Models.OperationType.GroupBy => ParallelizationPattern.TaskParallel,
+            Models.OperationType.Join => SelectJoinPattern(workload, context),
+            Models.OperationType.CustomKernel => SelectAggregatePattern(workload, context),
             _ => ParallelizationPattern.Sequential
         };
     }
@@ -248,7 +250,7 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
         WorkloadCharacteristics workload,
         ExecutionContext context)
     {
-        if (context.TargetBackend == BackendType.GPU)
+        if (context.TargetBackend == BackendType.CUDA)
         {
             return ParallelizationPattern.TreeReduction;
         }
@@ -277,7 +279,7 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
         WorkloadCharacteristics workload,
         ExecutionContext context)
     {
-        return context.TargetBackend == BackendType.GPU
+        return context.TargetBackend == BackendType.CUDA
             ? ParallelizationPattern.TreeReduction
             : ParallelizationPattern.MapReduce;
     }
@@ -378,10 +380,10 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
         
         return operation.Type switch
         {
-            OperationType.Map => LoadBalancingStrategy.WorkStealing,
-            OperationType.Filter => LoadBalancingStrategy.Dynamic,
-            OperationType.GroupBy => LoadBalancingStrategy.WorkStealing,
-            OperationType.Join => LoadBalancingStrategy.Dynamic,
+            Models.OperationType.Map => LoadBalancingStrategy.WorkStealing,
+            Models.OperationType.Filter => LoadBalancingStrategy.Dynamic,
+            Models.OperationType.GroupBy => LoadBalancingStrategy.WorkStealing,
+            Models.OperationType.Join => LoadBalancingStrategy.Dynamic,
             _ => LoadBalancingStrategy.Static
         };
     }
@@ -413,11 +415,11 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
         // Apply computational complexity scaling
         var complexityScaling = operation.Type switch
         {
-            OperationType.Map => 1.0,
-            OperationType.Filter => 0.8,
-            OperationType.Reduce => 2.0,
-            OperationType.GroupBy => 1.5,
-            OperationType.Join => 3.0,
+            Models.OperationType.Map => 1.0,
+            Models.OperationType.Filter => 0.8,
+            Models.OperationType.Reduce => 2.0,
+            Models.OperationType.GroupBy => 1.5,
+            Models.OperationType.Join => 3.0,
             _ => 1.0
         };
         
@@ -548,9 +550,9 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
     {
         return operation.Type switch
         {
-            OperationType.Map => true,
-            OperationType.Reduce => true,
-            OperationType.Aggregate => true,
+            Models.OperationType.Map => true,
+            Models.OperationType.Reduce => true,
+            Models.OperationType.CustomKernel => true,
             _ => false
         };
     }
@@ -580,9 +582,9 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
         // Check if operation can benefit from vectorization
         return operation.Type switch
         {
-            OperationType.Map => true,
-            OperationType.Filter => true,
-            OperationType.Reduce => operation.IsAssociative,
+            Models.OperationType.Map => true,
+            Models.OperationType.Filter => true,
+            Models.OperationType.Reduce => operation.IsAssociative,
             _ => false
         };
     }
@@ -733,12 +735,12 @@ public class WorkloadAnalyzer
     {
         return operation.Type switch
         {
-            OperationType.Map => 0.8,
-            OperationType.Filter => 0.4,
-            OperationType.Reduce => 0.9,
-            OperationType.GroupBy => 0.6,
-            OperationType.Join => 0.7,
-            OperationType.Aggregate => 0.8,
+            Models.OperationType.Map => 0.8,
+            Models.OperationType.Filter => 0.4,
+            Models.OperationType.Reduce => 0.9,
+            Models.OperationType.GroupBy => 0.6,
+            Models.OperationType.Join => 0.7,
+            Models.OperationType.CustomKernel => 0.8,
             _ => 0.5
         };
     }
@@ -747,12 +749,12 @@ public class WorkloadAnalyzer
     {
         return operation.Type switch
         {
-            OperationType.Map => 0.3,
-            OperationType.Filter => 0.6,
-            OperationType.Reduce => 0.4,
-            OperationType.GroupBy => 0.8,
-            OperationType.Join => 0.9,
-            OperationType.Aggregate => 0.5,
+            Models.OperationType.Map => 0.3,
+            Models.OperationType.Filter => 0.6,
+            Models.OperationType.Reduce => 0.4,
+            Models.OperationType.GroupBy => 0.8,
+            Models.OperationType.Join => 0.9,
+            Models.OperationType.CustomKernel => 0.5,
             _ => 0.5
         };
     }
@@ -762,16 +764,16 @@ public class WorkloadAnalyzer
         // Estimate variance in work per element
         return operation.Type switch
         {
-            OperationType.Filter => 0.3, // High variance due to selectivity
-            OperationType.GroupBy => 0.4, // Variance in group sizes
-            OperationType.Join => 0.5, // Variance in join cardinality
+            Models.OperationType.Filter => 0.3, // High variance due to selectivity
+            Models.OperationType.GroupBy => 0.4, // Variance in group sizes
+            Models.OperationType.Join => 0.5, // Variance in join cardinality
             _ => 0.1 // Low variance for uniform operations
         };
     }
 
     private long EstimateSecondaryDataSize(QueryOperation operation)
     {
-        return operation.Type == OperationType.Join ? operation.InputSize / 2 : 0;
+        return operation.Type == Models.OperationType.Join ? operation.InputSize / 2 : 0;
     }
 }
 
@@ -801,24 +803,24 @@ public class LoadBalancer
 
 public class GpuOccupancyOptimizer
 {
-    public async Task<GpuOptimizationConfig> OptimizeForGpu(
+    public Task<GpuOptimizationConfig> OptimizeForGpu(
         QueryOperation operation,
         WorkloadProfile profile,
         ExecutionContext context)
     {
         var workload = profile.GetWorkloadCharacteristics(operation);
         
-        return new GpuOptimizationConfig
+        return Task.FromResult(new GpuOptimizationConfig
         {
             BlockSize = CalculateOptimalBlockSize(operation, context),
             GridSize = CalculateOptimalGridSize(operation, context),
             SharedMemoryUsage = CalculateSharedMemoryUsage(operation, workload),
             RegisterUsage = EstimateRegisterUsage(operation),
             OccupancyTarget = OptimalGpuOccupancy
-        };
+        });
     }
 
-    public async Task OptimizeOccupancy(QueryOperation operation, ExecutionContext context)
+    public void OptimizeOccupancy(QueryOperation operation, ExecutionContext context)
     {
         if (operation.GpuOptimizationConfig == null) return;
         
@@ -828,7 +830,7 @@ public class GpuOccupancyOptimizer
         
         if (maxOccupancy < OptimalGpuOccupancy)
         {
-            await AdjustConfigurationForOccupancy(config, context);
+            AdjustConfigurationForOccupancy(config, context);
         }
     }
 
@@ -882,8 +884,8 @@ public class GpuOccupancyOptimizer
         // Estimate shared memory requirements
         return operation.Type switch
         {
-            OperationType.Reduce => 1024, // For reduction trees
-            OperationType.GroupBy => 2048, // For hash tables
+            Models.OperationType.Reduce => 1024, // For reduction trees
+            Models.OperationType.GroupBy => 2048, // For hash tables
             _ => 0
         };
     }
@@ -893,11 +895,11 @@ public class GpuOccupancyOptimizer
         // Estimate register requirements per thread
         return operation.Type switch
         {
-            OperationType.Map => 16,
-            OperationType.Filter => 12,
-            OperationType.Reduce => 24,
-            OperationType.GroupBy => 32,
-            OperationType.Join => 40,
+            Models.OperationType.Map => 16,
+            Models.OperationType.Filter => 12,
+            Models.OperationType.Reduce => 24,
+            Models.OperationType.GroupBy => 32,
+            Models.OperationType.Join => 40,
             _ => 16
         };
     }
@@ -908,7 +910,7 @@ public class GpuOccupancyOptimizer
         return OptimalGpuOccupancy * 0.8; // Assume 80% of optimal
     }
 
-    private async Task AdjustConfigurationForOccupancy(GpuOptimizationConfig config, ExecutionContext context)
+    private void AdjustConfigurationForOccupancy(GpuOptimizationConfig config, ExecutionContext context)
     {
         // Adjust block size to improve occupancy
         config.BlockSize = Math.Max(32, config.BlockSize - 32);
@@ -920,15 +922,15 @@ public class GpuOccupancyOptimizer
 
 public class DynamicScheduler
 {
-    public async Task<DynamicSchedule> CreateSchedule(QueryPlan plan, ExecutionContext context)
+    public Task<DynamicSchedule> CreateSchedule(QueryPlan plan, ExecutionContext context)
     {
-        return new DynamicSchedule
+        return Task.FromResult(new DynamicSchedule
         {
             SchedulingPolicy = SchedulingPolicy.Adaptive,
             PreemptionEnabled = true,
             PriorityLevels = 3,
             TimeSliceMs = 10
-        };
+        });
     }
 }
 
@@ -945,20 +947,11 @@ public class WorkloadProfile
     }
 }
 
-public class WorkloadCharacteristics
-{
-    public long DataSize { get; set; }
-    public double ComputeIntensity { get; set; }
-    public double MemoryIntensity { get; set; }
-    public double WorkloadVariance { get; set; }
-    public long SecondaryDataSize { get; set; }
-}
-
 public class ParallelizationConfig
 {
     public int Degree { get; set; }
     public ParallelizationPattern Pattern { get; set; }
-    public WorkDistribution WorkDistribution { get; set; }
+    public WorkDistribution WorkDistribution { get; set; } = new();
     public LoadBalancingStrategy LoadBalancingStrategy { get; set; }
     public SynchronizationStrategy SynchronizationStrategy { get; set; }
     public int GrainSize { get; set; }

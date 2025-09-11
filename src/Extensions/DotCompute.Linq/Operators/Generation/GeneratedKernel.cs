@@ -63,4 +63,23 @@ public class GeneratedKernel
     /// Gets or sets the required shared memory size in bytes.
     /// </summary>
     public int RequiredSharedMemory { get; set; }
+
+    /// <summary>
+    /// Gets or sets the kernel source code (alias for Source).
+    /// </summary>
+    public string SourceCode 
+    { 
+        get => Source; 
+        set => Source = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets the kernel metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the target backend for this kernel.
+    /// </summary>
+    public string TargetBackend { get; set; } = string.Empty;
 }

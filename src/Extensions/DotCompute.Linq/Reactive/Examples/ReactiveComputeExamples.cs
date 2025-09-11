@@ -87,7 +87,7 @@ public class ReactiveComputeExamples
             .Take(5000)
             .Select(i => new SignalPoint
             {
-                Timestamp = DateTime.UtcNow.AddMilliseconds(i * 5),
+                TimestampTicks = DateTime.UtcNow.AddMilliseconds(i * 5).Ticks,
                 Value = (float)(Math.Sin(i * 0.05) + Random.Shared.NextGaussian() * 0.3),
                 Quality = Random.Shared.NextSingle()
             });
@@ -398,7 +398,7 @@ public class ReactiveComputeExamples
                 return new TimeSeriesPoint
                 {
                     Value = (float)(Math.Sin(i * 0.02) * 10 + random.NextGaussian() * 2),
-                    Timestamp = baseTime.AddMilliseconds(i * 100).Add(timeOffset)
+                    TimestampTicks = baseTime.AddMilliseconds(i * 100).Add(timeOffset).Ticks
                 };
             });
     }
@@ -408,18 +408,22 @@ public class ReactiveComputeExamples
 
 #region Data Models
 
-public record SignalPoint
+public readonly struct SignalPoint
 {
-    public DateTime Timestamp { get; init; }
-    public float Value { get; init; }
-    public float Quality { get; init; }
+    public readonly long TimestampTicks { get; init; }
+    public readonly float Value { get; init; }
+    public readonly float Quality { get; init; }
+
+    public DateTime Timestamp => new(TimestampTicks);
 }
 
-public record MarketTick
+public readonly struct MarketTick
 {
-    public float Price { get; init; }
-    public int Volume { get; init; }
-    public DateTime Timestamp { get; init; }
+    public readonly float Price { get; init; }
+    public readonly int Volume { get; init; }
+    public readonly long TimestampTicks { get; init; }
+
+    public DateTime Timestamp => new(TimestampTicks);
 }
 
 public record MarketStatistics
@@ -456,10 +460,12 @@ public record AggregatedSensorData
     public int SampleCount { get; init; }
 }
 
-public record TimeSeriesPoint
+public readonly struct TimeSeriesPoint
 {
-    public float Value { get; init; }
-    public DateTime Timestamp { get; init; }
+    public readonly float Value { get; init; }
+    public readonly long TimestampTicks { get; init; }
+
+    public DateTime Timestamp => new(TimestampTicks);
 }
 
 public record TimeSeriesStatistics

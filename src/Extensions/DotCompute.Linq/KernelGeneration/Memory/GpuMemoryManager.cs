@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -50,6 +51,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
             int inputSize,
             int estimatedOutputSize,
             CancellationToken cancellationToken = default)
+            where T : unmanaged
         {
             _logger.LogDebug("Allocating memory for kernel: input={InputSize}, output={EstimatedOutputSize}",
                 inputSize, estimatedOutputSize);
@@ -351,6 +353,44 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
         }
 
         /// <summary>
+        /// Deallocates a generic GPU buffer through the interface.
+        /// </summary>
+        /// <param name="buffer">The buffer to deallocate.</param>
+        public async Task DeallocateGenericBufferAsync(IGpuBuffer buffer)
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+
+            try
+            {
+                // Unregister buffer using the device pointer
+                UnregisterGenericBuffer(buffer);
+
+                // Free device memory
+                await Task.Run(() =>
+                {
+                    var result = CudaRuntime.cudaFree(buffer.DevicePointer);
+                    if (result != CudaError.Success)
+                    {
+                        _logger.LogWarning("Failed to free device memory: {Error}", CudaRuntime.GetErrorString(result));
+                    }
+                });
+
+                lock (_allocationLock)
+                {
+                    _activeAllocations--;
+                    _totalAllocatedBytes -= buffer.SizeInBytes;
+                }
+
+                _logger.LogDebug("Deallocated generic GPU buffer of {SizeInBytes} bytes", buffer.SizeInBytes);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to deallocate generic GPU buffer");
+                // Don't throw in deallocation to avoid resource leaks
+            }
+        }
+
+        /// <summary>
         /// Gets current memory statistics.
         /// </summary>
         public MemoryStatistics GetMemoryStatistics()
@@ -506,6 +546,11 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
             _allocatedBuffers.TryRemove(buffer.DevicePointer, out _);
         }
 
+        private void UnregisterGenericBuffer(IGpuBuffer buffer)
+        {
+            _allocatedBuffers.TryRemove(buffer.DevicePointer, out _);
+        }
+
         private (ulong freeMemory, ulong totalMemory) GetDeviceMemoryInfo()
         {
             var result = CudaRuntime.cudaMemGetInfo(out var freeMemory, out var totalMemory);
@@ -566,18 +611,18 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
     /// </summary>
     public class MemoryContext : IAsyncDisposable
     {
-        public required GpuBuffer<object> InputBuffer { get; set; }
-        public required GpuBuffer<object> OutputBuffer { get; set; }
+        public required IGpuBuffer InputBuffer { get; set; }
+        public required IGpuBuffer OutputBuffer { get; set; }
         public GpuBuffer<int>? OutputCountBuffer { get; set; }
         public required GpuMemoryManager MemoryManager { get; set; }
 
         public async ValueTask DisposeAsync()
         {
             if (InputBuffer != null)
-                await MemoryManager.DeallocateBufferAsync(InputBuffer);
+                await MemoryManager.DeallocateGenericBufferAsync(InputBuffer);
             
             if (OutputBuffer != null)
-                await MemoryManager.DeallocateBufferAsync(OutputBuffer);
+                await MemoryManager.DeallocateGenericBufferAsync(OutputBuffer);
             
             if (OutputCountBuffer != null)
                 await MemoryManager.DeallocateBufferAsync(OutputCountBuffer);
@@ -585,9 +630,20 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
     }
 
     /// <summary>
+    /// Base interface for GPU buffers.
+    /// </summary>
+    public interface IGpuBuffer
+    {
+        IntPtr DevicePointer { get; }
+        int Size { get; }
+        int SizeInBytes { get; }
+        MemoryType MemoryType { get; }
+    }
+
+    /// <summary>
     /// GPU buffer wrapper.
     /// </summary>
-    public class GpuBuffer<T> where T : unmanaged
+    public class GpuBuffer<T> : IGpuBuffer where T : unmanaged
     {
         public IntPtr DevicePointer { get; }
         public int Size { get; }
@@ -854,7 +910,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
 
             return await Task.Run(() =>
             {
-                var result = CudaRuntime.cudaMallocManaged(out var pointer, (UIntPtr)sizeInBytes, 0);
+                var result = CudaRuntime.AllocateManaged(out var pointer, (UIntPtr)sizeInBytes, 0);
                 if (result != CudaError.Success)
                 {
                     throw new MemoryAllocationException(

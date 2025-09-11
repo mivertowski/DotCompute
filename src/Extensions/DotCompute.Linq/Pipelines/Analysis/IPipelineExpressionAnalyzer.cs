@@ -151,6 +151,14 @@ public class PipelineConfiguration
 /// </summary>
 public class ExpressionAnalysisResult
 {
+    private readonly List<string> _supportedOperations = [];
+    private readonly List<Type> _parameterTypes = [];
+
+    /// <summary>
+    /// Gets or sets whether the expression can be compiled.
+    /// </summary>
+    public bool IsCompilable { get; set; } = true;
+
     /// <summary>
     /// Gets or sets whether the expression is compatible with GPU execution.
     /// </summary>
@@ -159,7 +167,7 @@ public class ExpressionAnalysisResult
     /// <summary>
     /// Gets or sets whether the expression is compatible with CPU execution.
     /// </summary>
-    public bool IsCpuCompatible { get; set; }
+    public bool IsCpuCompatible { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the complexity score of the expression.
@@ -190,6 +198,46 @@ public class ExpressionAnalysisResult
     /// Gets or sets alternative execution strategies.
     /// </summary>
     public List<string> AlternativeStrategies { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the operator chain analysis for the expression.
+    /// </summary>
+    public List<OperatorInfo> OperatorChain { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the complexity metrics for the expression.
+    /// </summary>
+    public ComplexityMetrics ComplexityMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Gets the supported operations in this expression.
+    /// </summary>
+    public IReadOnlyList<string> SupportedOperations => _supportedOperations;
+
+    /// <summary>
+    /// Gets the parameter types used in this expression.
+    /// </summary>
+    public IReadOnlyList<Type> ParameterTypes => _parameterTypes;
+
+    /// <summary>
+    /// Gets or sets the output type of the expression.
+    /// </summary>
+    public Type OutputType { get; set; } = typeof(object);
+
+    /// <summary>
+    /// Gets or sets additional metadata for the analysis.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Internal access to supported operations for modification.
+    /// </summary>
+    internal List<string> SupportedOperationsInternal => _supportedOperations;
+
+    /// <summary>
+    /// Internal access to parameter types for modification.
+    /// </summary>
+    internal List<Type> ParameterTypesInternal => _parameterTypes;
 }
 
 /// <summary>
@@ -391,4 +439,207 @@ internal class RedundancyEliminator : ExpressionVisitor
 
         return false;
     }
+}
+
+/// <summary>
+/// Information about an operator in the expression analysis.
+/// </summary>
+public class OperatorInfo
+{
+    /// <summary>
+    /// Gets or sets the type of operator.
+    /// </summary>
+    public OperatorType OperatorType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the input types for this operator.
+    /// </summary>
+    public List<Type> InputTypes { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the output type for this operator.
+    /// </summary>
+    public Type? OutputType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the operation name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the complexity score for this operator.
+    /// </summary>
+    public int ComplexityScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether this operator supports GPU execution.
+    /// </summary>
+    public bool SupportsGpu { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether this operator supports CPU execution.
+    /// </summary>
+    public bool SupportsCpu { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets additional properties for this operator.
+    /// </summary>
+    public Dictionary<string, object> Properties { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets whether this operator is natively supported by the backend.
+    /// </summary>
+    public bool IsNativelySupported { get; set; }
+
+    /// <summary>
+    /// Gets or sets the implementation strategy for this operator.
+    /// </summary>
+    public DotCompute.Linq.Analysis.ImplementationMethod Implementation { get; set; } = DotCompute.Linq.Analysis.ImplementationMethod.Library;
+
+    /// <summary>
+    /// Gets or sets the performance cost score for this operator.
+    /// </summary>
+    public double PerformanceCost { get; set; }
+
+    /// <summary>
+    /// Gets or sets the accuracy information for this operator.
+    /// </summary>
+    public DotCompute.Linq.Analysis.AccuracyInfo Accuracy { get; set; } = new();
+}
+
+/// <summary>
+/// Types of operators that can be analyzed.
+/// </summary>
+public enum OperatorType
+{
+    /// <summary>
+    /// Unknown or unspecified operator type.
+    /// </summary>
+    Unknown,
+
+    /// <summary>
+    /// Filtering operation (Where).
+    /// </summary>
+    Filter,
+
+    /// <summary>
+    /// Projection operation (Select).
+    /// </summary>
+    Projection,
+
+    /// <summary>
+    /// Aggregation operation (Sum, Count, etc.).
+    /// </summary>
+    Aggregation,
+
+    /// <summary>
+    /// Sorting operation (OrderBy).
+    /// </summary>
+    Sort,
+
+    /// <summary>
+    /// Grouping operation (GroupBy).
+    /// </summary>
+    Group,
+
+    /// <summary>
+    /// Join operation.
+    /// </summary>
+    Join,
+
+    /// <summary>
+    /// Mathematical operation.
+    /// </summary>
+    Mathematical,
+
+    /// <summary>
+    /// Logical operation.
+    /// </summary>
+    Logical,
+
+    /// <summary>
+    /// Comparison operation.
+    /// </summary>
+    Comparison,
+
+    /// <summary>
+    /// Conversion operation.
+    /// </summary>
+    Conversion,
+
+    /// <summary>
+    /// Memory operation.
+    /// </summary>
+    Memory,
+
+    /// <summary>
+    /// Reduction operation.
+    /// </summary>
+    Reduction,
+
+    /// <summary>
+    /// Transformation operation.
+    /// </summary>
+    Transformation,
+
+    /// <summary>
+    /// Custom operation.
+    /// </summary>
+    Custom
+}
+
+/// <summary>
+/// Complexity metrics for expression analysis.
+/// </summary>
+public class ComplexityMetrics
+{
+    /// <summary>
+    /// Gets or sets the computational complexity score.
+    /// </summary>
+    public int ComputationalComplexity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the memory complexity score.
+    /// </summary>
+    public int MemoryComplexity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the parallelization complexity score.
+    /// </summary>
+    public int ParallelizationComplexity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the overall complexity score.
+    /// </summary>
+    public int OverallComplexity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the estimated operations count.
+    /// </summary>
+    public long OperationsCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the estimated memory usage in bytes.
+    /// </summary>
+    public long MemoryUsage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the parallelization potential (0-100).
+    /// </summary>
+    public int ParallelizationPotential { get; set; }
+
+    /// <summary>
+    /// Gets or sets complexity factors that contribute to the overall score.
+    /// </summary>
+    public Dictionary<string, int> ComplexityFactors { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets performance bottlenecks identified in the analysis.
+    /// </summary>
+    public List<string> Bottlenecks { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets optimization opportunities.
+    /// </summary>
+    public List<string> OptimizationOpportunities { get; set; } = new();
 }

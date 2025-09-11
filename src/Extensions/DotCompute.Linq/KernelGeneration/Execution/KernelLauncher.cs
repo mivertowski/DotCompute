@@ -3,7 +3,9 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
@@ -50,6 +52,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
             T[] inputData,
             LaunchOptions? options = null,
             CancellationToken cancellationToken = default)
+            where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(inputData);
@@ -122,6 +125,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
             IEnumerable<(ICompiledKernel kernel, T[] data)> kernelBatch,
             LaunchOptions? options = null,
             CancellationToken cancellationToken = default)
+            where T : unmanaged
         {
             var kernelArray = kernelBatch.ToArray();
             var launchOptions = options ?? new LaunchOptions { EnableBatchOptimization = true };
@@ -646,7 +650,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
             
             if (isAsync)
             {
-                var result = CudaRuntime.cudaStreamCreate(out _streamPointer);
+                var result = CudaRuntime.CreateStream(out _streamPointer);
                 if (result != CudaError.Success)
                 {
                     throw new InvalidOperationException($"Failed to create CUDA stream: {result}");
@@ -664,7 +668,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
             {
                 await Task.Run(() =>
                 {
-                    var result = CudaRuntime.cudaStreamSynchronize(_streamPointer);
+                    var result = CudaRuntime.SynchronizeStream(_streamPointer);
                     if (result != CudaError.Success)
                     {
                         throw new InvalidOperationException($"Stream synchronization failed: {result}");
@@ -680,7 +684,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
 
             if (_streamPointer != IntPtr.Zero)
             {
-                var result = CudaRuntime.cudaStreamDestroy(_streamPointer);
+                var result = CudaRuntime.DestroyStream(_streamPointer);
                 if (result != CudaError.Success)
                 {
                     // Log error but don't throw in Dispose

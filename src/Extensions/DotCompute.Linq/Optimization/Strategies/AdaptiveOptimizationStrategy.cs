@@ -8,6 +8,9 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Optimization;
 using DotCompute.Linq.Execution;
 using DotCompute.Linq.Optimization.CostModel;
+using DotCompute.Linq.Optimization.Models;
+using DotCompute.Linq.KernelGeneration;
+using ExecutionContext = DotCompute.Linq.Execution.ExecutionContext;
 
 namespace DotCompute.Linq.Optimization.Strategies;
 
@@ -28,7 +31,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     private const int MinSamplesForLearning = 10;
     private const int MaxHistorySize = 1000;
     private const double LearningRate = 0.01;
-    private const TimeSpan AdaptationInterval = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan AdaptationInterval = TimeSpan.FromMinutes(5);
 
     public AdaptiveOptimizationStrategy(
         IComputeOrchestrator orchestrator,
@@ -175,7 +178,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         
         // Predict backend preference
         var backendScore = PredictBackendScore(model, context);
-        optimizedPlan.PreferredBackend = backendScore > 0.5 ? BackendType.GPU : BackendType.CPU;
+        optimizedPlan.PreferredBackend = backendScore > 0.5 ? BackendType.CUDA : BackendType.CPU;
         
         // Predict optimal parallelism
         var parallelismFactor = PredictParallelismFactor(model, context);
@@ -421,7 +424,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         {
             // Update predictions based on best configuration
             UpdatePrediction(model, "BackendPreference", 
-                bestExecution.Configuration.BackendType == BackendType.GPU ? 1.0 : 0.0);
+                bestExecution.Configuration.BackendType == BackendType.CUDA ? 1.0 : 0.0);
             
             UpdatePrediction(model, "ParallelismFactor", 
                 (double)bestExecution.Configuration.ParallelismDegree / Environment.ProcessorCount);

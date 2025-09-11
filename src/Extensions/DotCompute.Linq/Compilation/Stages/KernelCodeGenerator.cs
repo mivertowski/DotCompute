@@ -6,6 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Expressions;
+using DotCompute.Linq.Types;
+using DotCompute.Linq.Compilation.Analysis;
+using DotCompute.Linq.Operators.Generation;
+using DotCompute.Linq.KernelGeneration;
+using DotCompute.Linq.Operators.Parameters;
+using DotCompute.Linq.Pipelines.Analysis;
+using CompilationOperatorInfo = DotCompute.Linq.Compilation.Analysis.OperatorInfo;
+using PipelineOperatorInfo = DotCompute.Linq.Pipelines.Analysis.OperatorInfo;
 
 namespace DotCompute.Linq.Compilation.Stages;
 
@@ -687,24 +695,24 @@ internal static class CodeGenerationActivity
 /// </summary>
 internal interface IOperatorCodeGenerator
 {
-    void GenerateVectorized(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context);
-    void GenerateScalar(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context);
+    void GenerateVectorized(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context);
+    void GenerateScalar(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context);
 }
 
 internal interface ICudaOperatorGenerator
 {
-    void Generate(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context);
+    void Generate(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context);
 }
 
 // Placeholder operator generators
 internal class ArithmeticOperatorGenerator : IOperatorCodeGenerator
 {
-    public void GenerateVectorized(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void GenerateVectorized(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("                // Vectorized arithmetic operation");
     }
 
-    public void GenerateScalar(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void GenerateScalar(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("                // Scalar arithmetic operation");
     }
@@ -712,12 +720,12 @@ internal class ArithmeticOperatorGenerator : IOperatorCodeGenerator
 
 internal class SelectOperatorGenerator : IOperatorCodeGenerator
 {
-    public void GenerateVectorized(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void GenerateVectorized(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("                // Vectorized select operation");
     }
 
-    public void GenerateScalar(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void GenerateScalar(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("                // Scalar select operation");
     }
@@ -725,12 +733,12 @@ internal class SelectOperatorGenerator : IOperatorCodeGenerator
 
 internal class WhereOperatorGenerator : IOperatorCodeGenerator
 {
-    public void GenerateVectorized(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void GenerateVectorized(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("                // Vectorized where operation");
     }
 
-    public void GenerateScalar(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void GenerateScalar(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("                // Scalar where operation");
     }
@@ -738,12 +746,12 @@ internal class WhereOperatorGenerator : IOperatorCodeGenerator
 
 internal class AggregateOperatorGenerator : IOperatorCodeGenerator
 {
-    public void GenerateVectorized(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void GenerateVectorized(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("                // Vectorized aggregate operation");
     }
 
-    public void GenerateScalar(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void GenerateScalar(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("                // Scalar aggregate operation");
     }
@@ -751,7 +759,7 @@ internal class AggregateOperatorGenerator : IOperatorCodeGenerator
 
 internal class CudaArithmeticOperatorGenerator : ICudaOperatorGenerator
 {
-    public void Generate(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void Generate(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("        // CUDA arithmetic operation");
     }
@@ -759,7 +767,7 @@ internal class CudaArithmeticOperatorGenerator : ICudaOperatorGenerator
 
 internal class CudaSelectOperatorGenerator : ICudaOperatorGenerator
 {
-    public void Generate(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void Generate(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("        // CUDA select operation");
     }
@@ -767,7 +775,7 @@ internal class CudaSelectOperatorGenerator : ICudaOperatorGenerator
 
 internal class CudaWhereOperatorGenerator : ICudaOperatorGenerator
 {
-    public void Generate(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    public void Generate(StringBuilder builder, PipelineOperatorInfo operatorInfo, CodeGenerationContext context)
     {
         builder.AppendLine("        // CUDA where operation");
     }

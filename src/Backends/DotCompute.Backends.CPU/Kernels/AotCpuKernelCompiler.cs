@@ -374,10 +374,15 @@ ILogger logger) : ICompiledKernel
 
     public ValueTask DisposeAsync()
     {
+        Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose()
+    {
         // Thread pool disposal is handled by the accelerator
         // _threadPool is managed externally
         _logger.LogDebugMessage("Disposed AOT kernel: {Name}");
-        return ValueTask.CompletedTask;
     }
 }
 

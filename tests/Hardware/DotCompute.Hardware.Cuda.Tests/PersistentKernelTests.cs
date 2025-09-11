@@ -4,6 +4,7 @@
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Hardware.Cuda.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
+using Xunit;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {

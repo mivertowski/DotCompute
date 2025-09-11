@@ -49,6 +49,12 @@ public class KernelDefinition
     /// <value>A dictionary containing kernel-specific metadata such as compilation flags, device constraints, or custom attributes.</value>
     public Dictionary<string, object> Metadata { get; init; } = [];
 
+    /// <summary>
+    /// Gets or sets the kernel programming language.
+    /// </summary>
+    /// <value>The language used to write the kernel source code.</value>
+    public Types.KernelLanguage Language { get; init; } = Types.KernelLanguage.CSharp;
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="KernelDefinition"/> class.

@@ -1,11 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Types;
+using DotCompute.Core.Compute.Enums;
 using DotCompute.Linq.Expressions;
+using DotCompute.Linq.Operators.Execution;
+using DotCompute.Linq.Operators.Generation;
+using DotCompute.Linq.Operators.Models;
+using DotCompute.Linq.Types;
+using DotCompute.Linq.Pipelines.Analysis;
+using DotCompute.Linq.KernelGeneration;
 
 namespace DotCompute.Linq.Compilation.Stages;
 
@@ -537,7 +546,7 @@ internal interface IBackendOptimizer
     Task<OptimizedKernel> OptimizeAsync(
         GeneratedKernel kernel,
         ExpressionAnalysisResult analysisResult,
-        CancellationOptions options,
+        object? options,
         CancellationToken cancellationToken);
 }
 
@@ -550,20 +559,24 @@ internal class CpuOptimizer : IBackendOptimizer
     public async Task<OptimizedKernel> OptimizeAsync(
         GeneratedKernel kernel,
         ExpressionAnalysisResult analysisResult,
-        CancellationOptions options,
+        object? options,
         CancellationToken cancellationToken)
     {
         // CPU-specific optimization logic would go here
         await Task.CompletedTask;
+        
+        // Create a simple compiled kernel wrapper
+        var compiledKernel = new GeneratedCompiledKernel(kernel);
+        
         return new OptimizedKernel(
-            kernel.Name,
-            kernel.SourceCode,
-            kernel.Parameters,
-            kernel.EntryPoint,
-            kernel.TargetBackend,
-            kernel.Metadata,
-            new List<AppliedOptimization>(),
-            1.0);
+            compiledKernel,
+            OptimizationLevel.Default,
+            ComputeBackendType.CPU)
+        {
+            Metadata = kernel.Metadata.ToImmutableDictionary(),
+            RelativePerformance = 1.0,
+            MemoryEfficiency = 1.0
+        };
     }
 }
 
@@ -576,20 +589,24 @@ internal class CudaOptimizer : IBackendOptimizer
     public async Task<OptimizedKernel> OptimizeAsync(
         GeneratedKernel kernel,
         ExpressionAnalysisResult analysisResult,
-        CancellationOptions options,
+        object? options,
         CancellationToken cancellationToken)
     {
         // CUDA-specific optimization logic would go here
         await Task.CompletedTask;
+        
+        // Create a simple compiled kernel wrapper
+        var compiledKernel = new GeneratedCompiledKernel(kernel);
+        
         return new OptimizedKernel(
-            kernel.Name,
-            kernel.SourceCode,
-            kernel.Parameters,
-            kernel.EntryPoint,
-            kernel.TargetBackend,
-            kernel.Metadata,
-            new List<AppliedOptimization>(),
-            1.0);
+            compiledKernel,
+            OptimizationLevel.Default,
+            ComputeBackendType.CUDA)
+        {
+            Metadata = kernel.Metadata.ToImmutableDictionary(),
+            RelativePerformance = 1.0,
+            MemoryEfficiency = 1.0
+        };
     }
 }
 
@@ -602,7 +619,7 @@ internal class MetalOptimizer : IBackendOptimizer
     public Task<OptimizedKernel> OptimizeAsync(
         GeneratedKernel kernel,
         ExpressionAnalysisResult analysisResult,
-        CancellationOptions options,
+        object? options,
         CancellationToken cancellationToken)
     {
         throw new NotImplementedException("Metal optimization not yet implemented");
@@ -618,7 +635,7 @@ internal class RocmOptimizer : IBackendOptimizer
     public Task<OptimizedKernel> OptimizeAsync(
         GeneratedKernel kernel,
         ExpressionAnalysisResult analysisResult,
-        CancellationOptions options,
+        object? options,
         CancellationToken cancellationToken)
     {
         throw new NotImplementedException("ROCm optimization not yet implemented");
@@ -867,3 +884,32 @@ internal record SubexpressionEliminationResult(bool HasChanges, string Optimized
 internal record VectorizationResult(bool HasChanges, string VectorizedCode, int VectorizedLoops, double EstimatedSpeedup);
 internal record MemoryOptimizationResult(bool HasChanges, string OptimizedCode, int OptimizedAccesses, double EstimatedSpeedup);
 internal record OccupancyOptimizationResult(bool HasChanges, string OptimizedCode, KernelMetadata UpdatedMetadata, double OriginalOccupancy, double OptimizedOccupancy, double EstimatedSpeedup);
+
+/// <summary>
+/// Simple implementation of ICompiledKernel for generated kernels.
+/// </summary>
+internal class GeneratedCompiledKernel : ICompiledKernel
+{
+    private readonly GeneratedKernel _kernel;
+    private bool _disposed;
+
+    public GeneratedCompiledKernel(GeneratedKernel kernel)
+    {
+        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+    }
+
+    public Task ExecuteAsync(KernelExecutionParameters parameters, CancellationToken cancellationToken = default)
+    {
+        // This is a placeholder implementation
+        // In a real implementation, this would execute the compiled kernel
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+        }
+    }
+}

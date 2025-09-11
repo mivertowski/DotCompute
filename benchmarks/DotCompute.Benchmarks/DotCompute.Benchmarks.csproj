@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
+    <StartupObject>DotCompute.Benchmarks.FinalProgram</StartupObject>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
+    <PackageReference Include="BenchmarkDotNet.Annotations" Version="0.15.2" />
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.8" />
+    <PackageReference Include="System.Numerics.Vectors" Version="4.6.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Only include stable, core components -->
+    <ProjectReference Include="..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
+    
+    <!-- Only include working backend implementations -->
+    <ProjectReference Include="..\..\src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
+    <!-- TODO: Add CUDA backend when compilation issues are resolved -->
+    
+    <!-- Skip problematic projects for now -->
+    <!-- <ProjectReference Include="..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\src\Runtime\DotCompute.Runtime\DotCompute.Runtime.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\src\Extensions\DotCompute.Linq\DotCompute.Linq.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\src\Extensions\DotCompute.Algorithms\DotCompute.Algorithms.csproj" /> -->
+  </ItemGroup>
+
+</Project>

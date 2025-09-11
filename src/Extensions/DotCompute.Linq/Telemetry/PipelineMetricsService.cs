@@ -508,6 +508,48 @@ public sealed class PipelineMetricsContext : IDisposable
     }
 
     /// <summary>
+    /// Measures execution time for a specific stage with metrics service integration.
+    /// </summary>
+    /// <param name="metricsService">The metrics service to record stage execution</param>
+    /// <param name="stageId">Stage identifier</param>
+    /// <param name="stageName">Stage display name</param>
+    /// <param name="operation">The async operation to measure</param>
+    /// <returns>Task representing the measurement operation</returns>
+    public async Task<T> MeasureStageAsync<T>(PipelineMetricsService metricsService, string stageId, string stageName, Func<Task<T>> operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        try
+        {
+            var result = await operation();
+            stopwatch.Stop();
+            
+            // Record stage execution in metrics service
+            metricsService.RecordStageExecution(this, stageId, stageName, stopwatch.Elapsed, true);
+            
+            return result;
+        }
+        catch
+        {
+            stopwatch.Stop();
+            metricsService.RecordStageExecution(this, stageId, stageName, stopwatch.Elapsed, false);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Records cache access with metrics service integration.
+    /// </summary>
+    /// <param name="metricsService">The metrics service to record cache access</param>
+    /// <param name="cacheKey">The cache key</param>
+    /// <param name="hit">Whether it was a cache hit</param>
+    public void RecordCacheAccess(PipelineMetricsService metricsService, string cacheKey, bool hit)
+    {
+        metricsService.RecordCacheAccess(this, cacheKey, hit);
+    }
+
+    /// <summary>
     /// Records throughput metrics for the pipeline.
     /// </summary>
     /// <param name="itemsPerSecond">Number of items processed per second</param>

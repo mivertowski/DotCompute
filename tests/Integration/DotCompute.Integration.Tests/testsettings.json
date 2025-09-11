@@ -1,0 +1,18 @@
+{
+  "TestSettings": {
+    "TimeoutSeconds": 300,
+    "MaxRetries": 3,
+    "EnableCudaTests": true,
+    "EnablePerformanceTests": true,
+    "PerformanceTolerancePercent": 20,
+    "MemoryLeakThresholdMB": 100,
+    "ConcurrencyTestThreads": 10,
+    "LargeDatasetSizeMB": 100
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "DotCompute": "Debug"
+    }
+  }
+}

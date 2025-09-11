@@ -6,6 +6,8 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Memory;
 using DotCompute.Linq.Execution;
 using DotCompute.Linq.Optimization.CostModel;
+using DotCompute.Linq.Optimization.Models;
+using ExecutionContext = DotCompute.Linq.Execution.ExecutionContext;
 
 namespace DotCompute.Linq.Optimization.Strategies;
 

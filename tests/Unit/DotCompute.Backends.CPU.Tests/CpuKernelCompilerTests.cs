@@ -8,6 +8,7 @@ using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Tests.Common;
+using Xunit;
 
 namespace DotCompute.Backends.CPU.Tests;
 

@@ -807,11 +807,16 @@ namespace DotCompute.Backends.CUDA.Integration
 
                 public async ValueTask DisposeAsync()
                 {
+                    await Task.Run(Dispose).ConfigureAwait(false);
+                }
+
+                public void Dispose()
+                {
                     try
                     {
                         foreach (var kernel in _kernelCache.Values)
                         {
-                            await kernel.DisposeAsync().ConfigureAwait(false);
+                            kernel.Dispose();
                         }
                         _kernelCache.Clear();
                     }

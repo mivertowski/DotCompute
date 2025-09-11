@@ -62,7 +62,15 @@ internal sealed class CompiledKernelWrapper : ICompiledKernel
     /// <returns>A completed task representing the disposal operation.</returns>
     public ValueTask DisposeAsync()
     {
-        _disposed = true;
+        Dispose();
         return ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Disposes the kernel wrapper and releases associated resources.
+    /// </summary>
+    public void Dispose()
+    {
+        _disposed = true;
     }
 }

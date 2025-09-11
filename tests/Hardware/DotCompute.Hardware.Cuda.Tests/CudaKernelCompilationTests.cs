@@ -3,6 +3,7 @@
 
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Hardware.Cuda.Tests.TestHelpers;
+using Xunit;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {

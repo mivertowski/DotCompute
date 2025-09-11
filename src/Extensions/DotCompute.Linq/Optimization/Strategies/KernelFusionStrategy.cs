@@ -6,6 +6,8 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Kernels;
 using DotCompute.Linq.Execution;
 using DotCompute.Linq.Optimization.CostModel;
+using DotCompute.Linq.Optimization.Models;
+using ExecutionContext = DotCompute.Linq.Execution.ExecutionContext;
 
 namespace DotCompute.Linq.Optimization.Strategies;
 
@@ -613,7 +615,7 @@ __global__ void FusedKernel(
             optimizations.Add("register_optimization");
         }
         
-        if (context.TargetBackend == BackendType.GPU)
+        if (context.TargetBackend == BackendType.CUDA)
         {
             optimizations.Add("warp_optimization");
         }

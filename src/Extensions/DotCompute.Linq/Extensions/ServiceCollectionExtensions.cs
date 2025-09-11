@@ -17,6 +17,7 @@ using DotCompute.Linq.Pipelines.Optimization;
 using DotCompute.Linq.Pipelines.Providers;
 using DotCompute.Linq.Providers;
 using DotCompute.Linq.Services;
+using DotCompute.Linq.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -1206,6 +1207,26 @@ public class ComprehensivePipelineTelemetryOptions
     /// Gets or sets the metrics collection interval in seconds.
     /// </summary>
     public int MetricsCollectionIntervalSeconds { get; set; } = 10;
+
+    /// <summary>
+    /// Gets or sets whether to enable periodic export of metrics.
+    /// </summary>
+    public bool EnablePeriodicExport { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the default export format for metrics.
+    /// </summary>
+    public DotCompute.Core.Pipelines.MetricsExportFormat DefaultExportFormat { get; set; } = DotCompute.Core.Pipelines.MetricsExportFormat.Json;
+
+    /// <summary>
+    /// Gets or sets whether to integrate with global telemetry service.
+    /// </summary>
+    public bool IntegrateWithGlobalTelemetry { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to enable overhead monitoring.
+    /// </summary>
+    public bool EnableOverheadMonitoring { get; set; } = true;
 }
 
 /// <summary>

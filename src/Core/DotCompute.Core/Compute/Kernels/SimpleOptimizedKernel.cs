@@ -73,8 +73,16 @@ namespace DotCompute.Core.Compute.Kernels
         /// <returns>Completed task when disposal finishes.</returns>
         public ValueTask DisposeAsync()
         {
-            _disposed = true;
+            Dispose();
             return ValueTask.CompletedTask;
+        }
+
+        /// <summary>
+        /// Disposes the kernel and releases associated resources.
+        /// </summary>
+        public void Dispose()
+        {
+            _disposed = true;
         }
     }
 }

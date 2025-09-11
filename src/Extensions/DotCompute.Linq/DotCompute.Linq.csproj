@@ -28,6 +28,8 @@
     <ProjectReference Include="..\..\Core\DotCompute.Core\DotCompute.Core.csproj" />
     <ProjectReference Include="..\..\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
+    <ProjectReference Include="..\..\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
+    <ProjectReference Include="..\..\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
   </ItemGroup>
 
   <ItemGroup>

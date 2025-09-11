@@ -230,7 +230,7 @@ public static class TestDataGenerator
     /// <summary>
     /// Generates test data suitable for performance benchmarks.
     /// </summary>
-    public static class Performance
+    public static class PerformanceTestData
     {
         /// <summary>
         /// Common sizes for performance testing.

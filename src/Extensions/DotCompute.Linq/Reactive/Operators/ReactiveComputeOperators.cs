@@ -523,13 +523,18 @@ public static class ReactiveComputeOperators
         if (array.Length == 0)
             return T.Zero;
         
-        using var inputBuffer = UnifiedBuffer<T>.Allocate(array.Length);
-        inputBuffer.CopyFrom(array);
+        // Create a basic memory allocator and manager
+        using var memoryAllocator = new MemoryAllocator();
+        using var memoryManager = new UnifiedMemoryManager();
+        
+        using var inputBuffer = memoryAllocator.CreateUnifiedBuffer<T>(memoryManager, array.Length);
+        await inputBuffer.CopyFromAsync(array);
         
         // Use reduction kernel for sum
         var kernelCode = GenerateSumReductionKernel<T>();
         
         // This is a simplified implementation - in practice, you'd use a proper reduction algorithm
+        await Task.CompletedTask; // Satisfy async signature
         var result = array.Aggregate(T.Zero, (acc, val) => acc + val);
         
         return result;
@@ -544,10 +549,15 @@ public static class ReactiveComputeOperators
         if (array.Length == 0)
             return (default(T), default(T));
         
-        using var inputBuffer = UnifiedBuffer<T>.Allocate(array.Length);
-        inputBuffer.CopyFrom(array);
+        // Create a basic memory allocator and manager
+        using var memoryAllocator = new MemoryAllocator();
+        using var memoryManager = new UnifiedMemoryManager();
+        
+        using var inputBuffer = memoryAllocator.CreateUnifiedBuffer<T>(memoryManager, array.Length);
+        await inputBuffer.CopyFromAsync(array);
         
         // Simplified implementation
+        await Task.CompletedTask; // Satisfy async signature
         var min = array.Min();
         var max = array.Max();
         

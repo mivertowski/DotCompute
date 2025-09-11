@@ -1184,15 +1184,19 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
 
     public ValueTask DisposeAsync()
     {
+        Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose()
+    {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
-            return ValueTask.CompletedTask;
+            return;
         }
 
         // Clean up any native resources
         // In a real implementation, this might free JIT-compiled code TODO
-
-        return ValueTask.CompletedTask;
     }
 
     private static bool TryGetBufferArguments(KernelExecutionContext context, out IUnifiedMemoryBuffer? input1, out IUnifiedMemoryBuffer? input2, out IUnifiedMemoryBuffer? output)

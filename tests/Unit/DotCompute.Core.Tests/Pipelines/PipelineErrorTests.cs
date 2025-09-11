@@ -1,10 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Exceptions;
 using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Mocks;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
 
 namespace DotCompute.Core.Tests.Pipelines;
 
@@ -97,8 +100,8 @@ public class PipelineErrorTests : PipelineTestBase
         // Assert error message is helpful
         Assert.Contains("Invalid arguments", exception.Message);
         Assert.Contains("InvalidKernel", exception.Message);
-        Assert.NotNull(exception.ValidationErrors);
-        Assert.NotEmpty(exception.ValidationErrors);
+        Assert.NotNull(exception.Errors);
+        Assert.NotEmpty(exception.Errors);
     }
 
     [Fact]
@@ -270,7 +273,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Validation should catch errors before execution
         Assert.Empty(_mockOrchestrator.ExecutionHistory); // No kernels should have executed
-        Assert.NotEmpty(exception.ValidationErrors);
+        Assert.NotEmpty(exception.Errors);
     }
 
     [Fact]

@@ -344,8 +344,13 @@ namespace DotCompute.Core.Compute
 
         public ValueTask DisposeAsync()
         {
-            _disposed = true;
+            Dispose();
             return ValueTask.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            _disposed = true;
         }
     }
 }

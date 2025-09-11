@@ -289,4 +289,6 @@ internal sealed class CompiledKernelAdapter(ICompiledKernel coreKernel) : ICompi
         => await _coreKernel.ExecuteAsync(arguments, cancellationToken).ConfigureAwait(false);
 
     public ValueTask DisposeAsync() => _coreKernel.DisposeAsync();
+    
+    public void Dispose() => _coreKernel.Dispose();
 }

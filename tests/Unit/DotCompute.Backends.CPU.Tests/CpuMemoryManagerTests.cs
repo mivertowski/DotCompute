@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Tests.Common;
+using Xunit;
 
 namespace DotCompute.Backends.CPU.Tests;
 

@@ -9,6 +9,8 @@ using DotCompute.Core.Kernels;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Linq.Compilation.Stages;
 using DotCompute.Linq.Expressions;
+using DotCompute.Linq.Types;
+using DotCompute.Linq.Pipelines.Analysis;
 
 namespace DotCompute.Linq.Compilation;
 

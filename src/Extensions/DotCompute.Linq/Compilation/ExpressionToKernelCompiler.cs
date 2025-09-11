@@ -14,6 +14,7 @@ using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
+using DotCompute.Linq.Pipelines.Analysis;
 using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 using LinqParameterDirection = DotCompute.Linq.Operators.Parameters.ParameterDirection;
 
@@ -467,24 +468,6 @@ public interface IExpressionToKernelCompiler
     public ExpressionResourceEstimate EstimateResources(Expression expression);
 }
 
-/// <summary>
-/// Represents analysis results for an expression.
-/// </summary>
-public sealed class ExpressionAnalysisResult
-{
-    private readonly List<string> _supportedOperations = [];
-    private readonly List<Type> _parameterTypes = [];
-
-    public bool IsCompilable { get; set; }
-    public IReadOnlyList<string> SupportedOperations => _supportedOperations;
-    public IReadOnlyList<Type> ParameterTypes => _parameterTypes;
-    public Type OutputType { get; set; } = typeof(object);
-    public int ComplexityScore { get; set; }
-    public Dictionary<string, object> Metadata { get; init; } = [];
-
-    internal List<string> SupportedOperationsInternal => _supportedOperations;
-    internal List<Type> ParameterTypesInternal => _parameterTypes;
-}
 
 /// <summary>
 /// Represents fusion context for multiple operations.
