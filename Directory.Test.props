@@ -1,0 +1,34 @@
+<Project>
+  <!-- Shared configuration for all test projects -->
+  
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <!-- Test framework settings -->
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CA1707;CA1062;CA2007</NoWarn>
+    
+    <!-- Coverage settings -->
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura,opencover</CoverletOutputFormat>
+    <CoverletOutput>$(MSBuildProjectDirectory)/TestResults/</CoverletOutput>
+    <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+    <ExcludeByFile>**/*.g.cs,**/*.Designer.cs,**/Migrations/*.cs</ExcludeByFile>
+    <Include>[DotCompute.*]*</Include>
+    <Exclude>[*.Tests]*,[*.TestUtilities]*,[xunit.*]*,[FluentAssertions*]*</Exclude>
+    <SkipAutoProps>true</SkipAutoProps>
+    
+    <!-- Test discovery settings -->
+    <VSTestUseMSBuildEngine>false</VSTestUseMSBuildEngine>
+    <GenerateProgramFile>false</GenerateProgramFile>
+  </PropertyGroup>
+
+  <!-- Common test package references - packages defined in Directory.Packages.props -->
+  <!-- Packages are included automatically via Directory.Build.props -->
+
+  <!-- Global usings for test projects -->
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <Using Include="Xunit" />
+    <Using Include="FluentAssertions" />
+    <Using Include="Xunit.Abstractions" />
+  </ItemGroup>
+</Project>
