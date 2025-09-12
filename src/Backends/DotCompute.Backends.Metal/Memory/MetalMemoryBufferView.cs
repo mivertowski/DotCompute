@@ -40,6 +40,16 @@ public sealed class MetalMemoryBufferView : IUnifiedMemoryBuffer
     /// <inheritdoc/>
     public BufferState State => _parent.State;
 
+    /// <summary>
+    /// Gets the parent Metal buffer's native handle.
+    /// </summary>
+    internal IntPtr ParentBuffer => _parent.Buffer;
+
+    /// <summary>
+    /// Gets the offset in bytes from the start of the parent buffer.
+    /// </summary>
+    internal long Offset => _offset;
+
     /// <inheritdoc/>
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromAsync(source, _offset + offset, cancellationToken);
 

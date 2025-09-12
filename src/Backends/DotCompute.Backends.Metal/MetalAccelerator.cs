@@ -406,10 +406,10 @@ public sealed class MetalAccelerator : BaseAccelerator
             throw new InvalidOperationException("Failed to create Metal device for memory manager.");
         }
 
-        // MetalMemoryManager constructor only takes one parameter (logger)
+        // MetalMemoryManager now takes accelerator reference for proper integration
         var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => { });
         var logger = loggerFactory.CreateLogger<MetalMemoryManager>();
-        return new MetalMemoryManager(logger);
+        return new MetalMemoryManager(logger, this);
     }
 
     private static string GetDeviceLocation(MetalDeviceInfo info)

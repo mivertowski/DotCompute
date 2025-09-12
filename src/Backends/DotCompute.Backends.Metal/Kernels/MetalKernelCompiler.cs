@@ -138,22 +138,54 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
             throw new NotSupportedException("Pre-compiled Metal binaries are not yet supported");
         }
 
-        // Assume it's text-based Metal code
+        // Get the source code
         var code = definition.Code ?? string.Empty;
-
-        // If the code doesn't include Metal headers, add them
-        if (!code.Contains("#include <metal_stdlib>", StringComparison.Ordinal))
+        
+        // Check if this is already MSL code (generated from C# or handwritten)
+        if (code.Contains("#include <metal_stdlib>", StringComparison.Ordinal) || 
+            code.Contains("kernel void", StringComparison.Ordinal))
         {
-            var sb = new StringBuilder();
-            _ = sb.AppendLine("#include <metal_stdlib>");
-            _ = sb.AppendLine("#include <metal_compute>");
-            _ = sb.AppendLine("using namespace metal;");
-            _ = sb.AppendLine();
-            _ = sb.Append(code);
-            return sb.ToString();
+            // Already Metal code, return as-is
+            return code;
+        }
+        
+        // Check if the language is specified as Metal
+        if (definition.Language == KernelLanguage.Metal)
+        {
+            // If Metal is specified but headers are missing, add them
+            if (!code.Contains("#include <metal_stdlib>", StringComparison.Ordinal))
+            {
+                var sb = new StringBuilder();
+                _ = sb.AppendLine("#include <metal_stdlib>");
+                _ = sb.AppendLine("#include <metal_compute>");
+                _ = sb.AppendLine("using namespace metal;");
+                _ = sb.AppendLine();
+                _ = sb.Append(code);
+                return sb.ToString();
+            }
+            return code;
+        }
+        
+        // If it's OpenCL C or unspecified, we would need translation
+        // For now, throw an error indicating MSL is required
+        if (code.Contains("__kernel", StringComparison.Ordinal) || 
+            code.Contains("__global", StringComparison.Ordinal) ||
+            definition.Language == KernelLanguage.OpenCL)
+        {
+            throw new NotSupportedException(
+                "OpenCL C to Metal Shading Language translation is not implemented. " +
+                "Please provide Metal Shading Language code directly or use the [Kernel] attribute " +
+                "to generate Metal kernels from C# code.");
         }
 
-        return code;
+        // Try to add Metal headers if the code looks like it might be Metal
+        var sb2 = new StringBuilder();
+        _ = sb2.AppendLine("#include <metal_stdlib>");
+        _ = sb2.AppendLine("#include <metal_compute>");
+        _ = sb2.AppendLine("using namespace metal;");
+        _ = sb2.AppendLine();
+        _ = sb2.Append(code);
+        return sb2.ToString();
     }
 
     private static bool IsBinaryCode(byte[] code)

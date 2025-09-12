@@ -160,9 +160,10 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
                 }
                 else if (memoryBuffer is MetalMemoryBufferView view)
                 {
-                    // Handle view - we need to get the parent buffer
-                    // This is a simplification - in production we'd need access to the parent
-                    throw new NotSupportedException("Memory buffer views are not yet supported as kernel arguments");
+                    // Handle buffer view with proper offset
+                    var parentBuffer = view.ParentBuffer;
+                    var offsetBytes = view.Offset;
+                    MetalNative.SetBuffer(encoder, parentBuffer, offsetBytes, bufferIndex);
                 }
                 else
                 {

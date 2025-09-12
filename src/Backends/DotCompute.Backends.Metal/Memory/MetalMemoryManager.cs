@@ -20,6 +20,7 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     private readonly IntPtr _device;
     private readonly bool _isAppleSilicon;
     private readonly ConcurrentDictionary<IntPtr, MetalAllocationInfo> _activeAllocations;
+    private WeakReference<IAccelerator>? _acceleratorRef;
     
     private long _totalAllocatedBytes;
     private long _peakAllocatedBytes;
@@ -35,11 +36,17 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     /// Initializes a new instance of the <see cref="MetalMemoryManager"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    public MetalMemoryManager(ILogger<MetalMemoryManager> logger) : base(logger)
+    /// <param name="accelerator">Optional accelerator reference.</param>
+    public MetalMemoryManager(ILogger<MetalMemoryManager> logger, IAccelerator? accelerator = null) : base(logger)
     {
         _device = GetOrCreateDevice();
         _isAppleSilicon = DetectAppleSilicon();
         _activeAllocations = new ConcurrentDictionary<IntPtr, MetalAllocationInfo>();
+        
+        if (accelerator != null)
+        {
+            _acceleratorRef = new WeakReference<IAccelerator>(accelerator);
+        }
         
         var logger2 = logger as ILogger; // Access the base logger
         logger2?.LogInformation("Metal Memory Manager initialized for {Architecture} with device {DeviceId:X}",
@@ -99,7 +106,17 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc/>
-    public override IAccelerator Accelerator => throw new NotImplementedException("Accelerator reference not available in memory manager context");
+    public override IAccelerator Accelerator
+    {
+        get
+        {
+            if (_acceleratorRef != null && _acceleratorRef.TryGetTarget(out var accelerator))
+            {
+                return accelerator;
+            }
+            throw new InvalidOperationException("Accelerator reference not available or has been garbage collected");
+        }
+    }
 
     /// <inheritdoc/>
     public override MemoryStatistics Statistics
@@ -224,7 +241,32 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc/>
-    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) => throw new NotImplementedException();
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        
+        if (buffer == null)
+        {
+            throw new ArgumentNullException(nameof(buffer));
+        }
+        
+        // Calculate byte offsets
+        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var offsetBytes = (long)offset * elementSize;
+        var lengthBytes = (long)count * elementSize;
+        
+        // Use the non-generic CreateViewCore which handles the actual view creation
+        var view = CreateViewCore(buffer, offsetBytes, lengthBytes);
+        
+        // Wrap in a typed buffer wrapper if needed
+        if (view is IUnifiedMemoryBuffer<T> typedView)
+        {
+            return typedView;
+        }
+        
+        // This shouldn't happen with our implementation, but handle it gracefully
+        throw new InvalidOperationException($"Failed to create typed view for buffer of type {buffer.GetType()}");
+    }
 
     /// <inheritdoc/>
     public override void Clear()
