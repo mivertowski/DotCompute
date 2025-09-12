@@ -22,7 +22,8 @@ namespace DotCompute.Backends.CUDA
     public sealed class CudaDevice : IDisposable
     {
         // Dynamic minimum requirements based on CUDA version detection
-        private static readonly Lazy<(int major, int minor, string arch)> _minimumRequirements = new(() => 
+        private static readonly Lazy<(int major, int minor, string arch)> _minimumRequirements = new(() =>
+
         {
             // Use CudaCapabilityManager to get dynamic requirements
             var targetCapability = DotCompute.Backends.CUDA.Configuration.CudaCapabilityManager.GetTargetComputeCapability();

@@ -121,7 +121,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             // Start metrics collection timer
 
             _metricsTimer = new Timer(
-                CollectMetrics,
+                CollectMetricsWrapper,
                 null,
                 TimeSpan.FromSeconds(1),
                 TimeSpan.FromSeconds(5));
@@ -540,9 +540,17 @@ namespace DotCompute.Backends.CUDA.Profiling
         private void ProcessResourceEvent(ProfilingEvent evt) => _logger.LogDebugMessage("Resource event captured: {evt.CallbackId}");
 
         /// <summary>
+        /// Timer callback wrapper for collecting metrics.
+        /// </summary>
+        private void CollectMetricsWrapper(object? state)
+        {
+            _ = Task.Run(async () => await CollectMetrics(state));
+        }
+
+        /// <summary>
         /// Collects periodic metrics.
         /// </summary>
-        private async void CollectMetrics(object? state)
+        private async Task CollectMetrics(object? state)
         {
             if (!_isProfilingActive)
             {

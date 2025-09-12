@@ -72,7 +72,7 @@ internal class OptimizedComputeKernel : Base.OptimizedKernelBase
     /// square roots, and power operations to create a compute-bound workload that
     /// stresses the floating-point execution units.
     /// </remarks>
-    private static async void ExecuteComputeIntensiveOptimized(IUnifiedMemoryBuffer inputBuffer, IUnifiedMemoryBuffer outputBuffer, int elementCount, int iterations)
+    private static async Task ExecuteComputeIntensiveOptimized(IUnifiedMemoryBuffer inputBuffer, IUnifiedMemoryBuffer outputBuffer, int elementCount, int iterations)
     {
         var input = new float[elementCount];
         var output = new float[elementCount];

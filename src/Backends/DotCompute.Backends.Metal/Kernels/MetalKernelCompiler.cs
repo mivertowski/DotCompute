@@ -34,6 +34,7 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
     public string Name => "Metal Shader Compiler";
 
 
+
     /// <inheritdoc/>
 #pragma warning disable CA1819 // Properties should not return arrays - Required by IUnifiedKernelCompiler interface
     public IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; } = new List<KernelLanguage>
@@ -374,6 +375,7 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
     /// <inheritdoc/>
     public ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
         // TODO: Implement Metal-specific optimizations
+
 
         => ValueTask.FromResult(kernel);
 }

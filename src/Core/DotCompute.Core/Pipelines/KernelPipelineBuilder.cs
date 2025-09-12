@@ -188,6 +188,7 @@ namespace DotCompute.Core.Pipelines
         public IKernelStageBuilder WithName(string name)
             // Name is set in constructor and cannot be changed
 
+
             => this;
 
         /// <inheritdoc/>

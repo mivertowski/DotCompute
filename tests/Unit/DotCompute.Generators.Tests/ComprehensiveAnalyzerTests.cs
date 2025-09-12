@@ -1,12 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
+using System.Linq;
+using DotCompute.Generators.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using DotCompute.Generators.Analyzers;
-using System.Collections.Immutable;
-using System.Linq;
 using Xunit;
 
 namespace DotCompute.Generators.Tests;
@@ -44,7 +44,7 @@ public struct ThreadId { public int X => 0; }";
         
         Assert.NotNull(dc003Diagnostic);
         Assert.Equal(DiagnosticSeverity.Error, dc003Diagnostic.Severity);
-        Assert.Contains("InvalidReturnType", dc003Diagnostic.GetMessage());
+        Assert.Contains("InvalidReturnType", dc003Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class KernelAttribute : System.Attribute { }";
         
         Assert.NotNull(dc004Diagnostic);
         Assert.Equal(DiagnosticSeverity.Error, dc004Diagnostic.Severity);
-        Assert.Contains("RecursiveKernel", dc004Diagnostic.GetMessage());
+        Assert.Contains("RecursiveKernel", dc004Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public struct ThreadId { public int X => 0; }";
         
         Assert.NotNull(dc005Diagnostic);
         Assert.Equal(DiagnosticSeverity.Warning, dc005Diagnostic.Severity);
-        Assert.Contains("UnsafeKernel", dc005Diagnostic.GetMessage());
+        Assert.Contains("UnsafeKernel", dc005Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public struct ThreadId { public int X => 0; }";
         
         Assert.NotNull(dc006Diagnostic);
         Assert.Equal(DiagnosticSeverity.Error, dc006Diagnostic.Severity);
-        Assert.Contains("ExceptionKernel", dc006Diagnostic.GetMessage());
+        Assert.Contains("ExceptionKernel", dc006Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public struct ThreadId { public int X => 0; }";
         
         Assert.NotNull(dc007Diagnostic);
         Assert.Equal(DiagnosticSeverity.Info, dc007Diagnostic.Severity);
-        Assert.Contains("KernelLikeMethod", dc007Diagnostic.GetMessage());
+        Assert.Contains("KernelLikeMethod", dc007Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public struct ThreadId { public int X => 0; }";
         
         Assert.NotNull(dc008Diagnostic);
         Assert.Equal(DiagnosticSeverity.Warning, dc008Diagnostic.Severity);
-        Assert.Contains("ComplexFlowKernel", dc008Diagnostic.GetMessage());
+        Assert.Contains("ComplexFlowKernel", dc008Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -258,7 +258,7 @@ public struct ThreadId { public int X => 0; }";
         
         Assert.NotNull(dc009Diagnostic);
         Assert.Equal(DiagnosticSeverity.Info, dc009Diagnostic.Severity);
-        Assert.Contains("InefficientKernel", dc009Diagnostic.GetMessage());
+        Assert.Contains("InefficientKernel", dc009Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -308,7 +308,7 @@ public struct ThreadId { public int X => 0; }";
         
         Assert.NotNull(dc012Diagnostic);
         Assert.Equal(DiagnosticSeverity.Info, dc012Diagnostic.Severity);
-        Assert.Contains("RegisterHeavyKernel", dc012Diagnostic.GetMessage());
+        Assert.Contains("RegisterHeavyKernel", dc012Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]

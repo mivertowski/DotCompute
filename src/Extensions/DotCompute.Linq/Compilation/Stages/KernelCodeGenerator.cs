@@ -5,15 +5,27 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Types;
 using DotCompute.Linq.Compilation.Analysis;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.KernelGeneration;
 using DotCompute.Linq.Operators.Parameters;
+
+// Namespace aliases to resolve ambiguous references
+using AbstractionsKernelParameter = DotCompute.Abstractions.Kernels.KernelParameter;
+using OperatorsKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 using DotCompute.Linq.Pipelines.Analysis;
+using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 using CompilationOperatorInfo = DotCompute.Linq.Compilation.Analysis.OperatorInfo;
 using PipelineOperatorInfo = DotCompute.Linq.Pipelines.Analysis.OperatorInfo;
+
+// Namespace aliases to resolve ambiguous references  
+using PipelinesExpressionAnalysisResult = DotCompute.Linq.Pipelines.Analysis.ExpressionAnalysisResult;
+using KernelGenerationExpressionAnalysisResult = DotCompute.Linq.KernelGeneration.ExpressionAnalysisResult;
+using OperatorsGeneratedKernel = DotCompute.Linq.Operators.Generation.GeneratedKernel;
+using KernelGenerationGeneratedKernel = DotCompute.Linq.KernelGeneration.GeneratedKernel;
 
 namespace DotCompute.Linq.Compilation.Stages;
 
@@ -39,20 +51,23 @@ public sealed class KernelCodeGenerator
     /// <summary>
     /// Generates kernel source code for a specific backend.
     /// </summary>
-    public async Task<GeneratedKernel> GenerateAsync(
-        ExpressionAnalysisResult analysisResult,
+    public async Task<OperatorsGeneratedKernel> GenerateAsync(
+        DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult,
         BackendType targetBackend,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         using var activity = CodeGenerationActivity.Start(nameof(GenerateAsync));
-        
+
+
         _logger.LogDebug("Generating kernel code for backend: {Backend}", targetBackend);
-        
+
+
         try
         {
             var startTime = DateTimeOffset.UtcNow;
-            
+
+
             if (!_backendGenerators.TryGetValue(targetBackend, out var generator))
             {
                 throw new UnsupportedBackendException($"Backend {targetBackend} is not supported for code generation");
@@ -67,19 +82,24 @@ public sealed class KernelCodeGenerator
 
             // Generate kernel source code
             var sourceCode = await generator.GenerateKernelSourceAsync(context, cancellationToken);
-            
+
             // Generate parameter definitions
+
             var parameters = await generator.GenerateParametersAsync(context, cancellationToken);
-            
+
             // Generate entry point information
+
             var entryPoint = generator.GenerateEntryPoint(context);
-            
+
             // Generate metadata
+
             var metadata = GenerateKernelMetadata(context, analysisResult);
-            
+
+
             var generationTime = DateTimeOffset.UtcNow - startTime;
             _metrics.RecordGeneration(targetBackend, generationTime);
-            
+
+
             var result = new GeneratedKernel(
                 kernelName,
                 sourceCode,
@@ -87,10 +107,12 @@ public sealed class KernelCodeGenerator
                 entryPoint,
                 targetBackend,
                 metadata);
-                
+
+
             _logger.LogDebug("Kernel generation completed for {Backend} in {Duration}ms: {LineCount} lines",
                 targetBackend, generationTime.TotalMilliseconds, sourceCode.Split('\n').Length);
-                
+
+
             return result;
         }
         catch (Exception ex)
@@ -104,8 +126,8 @@ public sealed class KernelCodeGenerator
     /// <summary>
     /// Generates kernel code for multiple backends in parallel.
     /// </summary>
-    public async Task<IReadOnlyDictionary<BackendType, GeneratedKernel>> GenerateBatchAsync(
-        ExpressionAnalysisResult analysisResult,
+    public async Task<IReadOnlyDictionary<BackendType, OperatorsGeneratedKernel>> GenerateBatchAsync(
+        DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult,
         IEnumerable<BackendType> targetBackends,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
@@ -122,7 +144,7 @@ public sealed class KernelCodeGenerator
 
     private KernelMetadata GenerateKernelMetadata(
         CodeGenerationContext context,
-        ExpressionAnalysisResult analysisResult)
+        DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
     {
         return new KernelMetadata(
             context.KernelName,
@@ -135,7 +157,7 @@ public sealed class KernelCodeGenerator
 
     private ResourceUsageEstimate EstimateResourceUsage(
         CodeGenerationContext context,
-        ExpressionAnalysisResult analysisResult)
+        DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
     {
         var estimator = new ResourceUsageEstimator();
         return estimator.Estimate(context.TargetBackend, analysisResult);
@@ -164,7 +186,7 @@ public sealed class KernelCodeGenerator
 internal interface IBackendCodeGenerator
 {
     Task<string> GenerateKernelSourceAsync(CodeGenerationContext context, CancellationToken cancellationToken);
-    Task<IReadOnlyList<KernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken);
+    Task<IReadOnlyList<LinqKernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken);
     KernelEntryPoint GenerateEntryPoint(CodeGenerationContext context);
 }
 
@@ -185,52 +207,61 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
     public async Task<string> GenerateKernelSourceAsync(CodeGenerationContext context, CancellationToken cancellationToken)
     {
         var builder = new StringBuilder();
-        
+
         // Generate using directives
+
         GenerateUsingDirectives(builder);
-        
+
         // Generate namespace and class declaration
+
         GenerateClassDeclaration(builder, context);
-        
+
         // Generate kernel method
+
         await GenerateKernelMethodAsync(builder, context, cancellationToken);
-        
+
         // Close class and namespace
+
         builder.AppendLine("    }");
         builder.AppendLine("}");
-        
+
+
         return builder.ToString();
     }
 
-    public async Task<IReadOnlyList<KernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<LinqKernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken)
     {
-        var parameters = new List<KernelParameter>();
-        
+        var parameters = new List<LinqKernelParameter>();
+
         // Add input arrays
+
         foreach (var inputType in context.AnalysisResult.TypeUsage.Keys)
         {
             if (IsArrayType(inputType))
             {
-                parameters.Add(new KernelParameter(
+                parameters.Add(new LinqKernelParameter(
                     $"input_{inputType.GetElementType()?.Name?.ToLowerInvariant()}",
                     inputType,
-                    ParameterDirection.Input));
+                    DotCompute.Linq.Operators.Parameters.ParameterDirection.Input));
             }
         }
-        
+
         // Add output array
+
         var outputElementType = DetermineOutputElementType(context.AnalysisResult);
-        parameters.Add(new KernelParameter(
+        parameters.Add(new LinqKernelParameter(
             "output",
             outputElementType.MakeArrayType(),
-            ParameterDirection.Output));
-            
+            DotCompute.Linq.Operators.Parameters.ParameterDirection.Output));
+
         // Add length parameter
-        parameters.Add(new KernelParameter(
+
+        parameters.Add(new LinqKernelParameter(
             "length",
             typeof(int),
-            ParameterDirection.Input));
-        
+            DotCompute.Linq.Operators.Parameters.ParameterDirection.Input));
+
+
         await Task.CompletedTask; // For async consistency
         return parameters;
     }
@@ -265,31 +296,40 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
     private async Task GenerateKernelMethodAsync(StringBuilder builder, CodeGenerationContext context, CancellationToken cancellationToken)
     {
         var outputType = DetermineOutputElementType(context.AnalysisResult);
-        
+
         // Method signature
+
         builder.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
         builder.AppendLine($"        public static unsafe void Execute(");
-        
+
         // Parameters
+
         var parameters = await GenerateParametersAsync(context, cancellationToken);
         for (int i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
-            var paramDecl = param.Direction == ParameterDirection.Input ? "in " : "";
+            var paramDecl = param.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.Input ? "in " : "";
             paramDecl += GetCSharpTypeName(param.Type) + " " + param.Name;
-            
+
+
             if (i < parameters.Count - 1)
+            {
                 paramDecl += ",";
-                
+            }
+
+
             builder.AppendLine($"            {paramDecl}");
         }
-        
+
+
         builder.AppendLine("        )");
         builder.AppendLine("        {");
-        
+
         // Method body with SIMD optimization
+
         GenerateSimdKernelBody(builder, context, outputType);
-        
+
+
         builder.AppendLine("        }");
     }
 
@@ -299,24 +339,30 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
         builder.AppendLine("            var vectorSize = Vector<float>.Count;");
         builder.AppendLine("            var vectorLength = length - (length % vectorSize);");
         builder.AppendLine();
-        
+
         // Generate vectorized loop
+
         builder.AppendLine("            // Vectorized processing");
         builder.AppendLine("            for (int i = 0; i < vectorLength; i += vectorSize)");
         builder.AppendLine("            {");
-        
+
+
         GenerateVectorizedOperations(builder, context);
-        
+
+
         builder.AppendLine("            }");
         builder.AppendLine();
-        
+
         // Generate scalar remainder
+
         builder.AppendLine("            // Scalar remainder");
         builder.AppendLine("            for (int i = vectorLength; i < length; i++)");
         builder.AppendLine("            {");
-        
+
+
         GenerateScalarOperations(builder, context);
-        
+
+
         builder.AppendLine("            }");
     }
 
@@ -357,20 +403,47 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
     }
 
     private static bool IsArrayType(Type type) => type.IsArray;
-    
-    private static Type DetermineOutputElementType(ExpressionAnalysisResult analysisResult)
+
+
+    private static Type DetermineOutputElementType(DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
     {
         // Simplified logic - in practice, this would analyze the expression tree
         return typeof(float);
     }
-    
+
+
     private static string GetCSharpTypeName(Type type)
     {
-        if (type == typeof(int)) return "int";
-        if (type == typeof(float)) return "float";
-        if (type == typeof(double)) return "double";
-        if (type == typeof(bool)) return "bool";
-        if (type.IsArray) return GetCSharpTypeName(type.GetElementType()!) + "[]";
+        if (type == typeof(int))
+        {
+            return "int";
+        }
+
+
+        if (type == typeof(float))
+        {
+            return "float";
+        }
+
+
+        if (type == typeof(double))
+        {
+            return "double";
+        }
+
+
+        if (type == typeof(bool))
+        {
+            return "bool";
+        }
+
+
+        if (type.IsArray)
+        {
+            return GetCSharpTypeName(type.GetElementType()!) + "[]";
+        }
+
+
         return type.Name;
     }
 }
@@ -392,45 +465,52 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
     public async Task<string> GenerateKernelSourceAsync(CodeGenerationContext context, CancellationToken cancellationToken)
     {
         var builder = new StringBuilder();
-        
+
         // Generate CUDA headers
+
         GenerateCudaHeaders(builder);
-        
+
         // Generate kernel function
+
         await GenerateCudaKernelAsync(builder, context, cancellationToken);
-        
+
+
         return builder.ToString();
     }
 
-    public async Task<IReadOnlyList<KernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<LinqKernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken)
     {
         // Similar to CPU version but with device memory considerations
-        var parameters = new List<KernelParameter>();
-        
+        var parameters = new List<LinqKernelParameter>();
+
+
         foreach (var inputType in context.AnalysisResult.TypeUsage.Keys)
         {
             if (IsArrayType(inputType))
             {
-                parameters.Add(new KernelParameter(
+                parameters.Add(new LinqKernelParameter(
                     $"input_{inputType.GetElementType()?.Name?.ToLowerInvariant()}",
                     inputType,
-                    ParameterDirection.Input,
+                    DotCompute.Linq.Operators.Parameters.ParameterDirection.Input,
                     MemorySpace.Device));
             }
         }
-        
+
+
         var outputElementType = DetermineOutputElementType(context.AnalysisResult);
-        parameters.Add(new KernelParameter(
+        parameters.Add(new LinqKernelParameter(
             "output",
             outputElementType.MakeArrayType(),
-            ParameterDirection.Output,
+            DotCompute.Linq.Operators.Parameters.ParameterDirection.Output,
             MemorySpace.Device));
-            
-        parameters.Add(new KernelParameter(
+
+
+        parameters.Add(new LinqKernelParameter(
             "length",
             typeof(int),
-            ParameterDirection.Input));
-        
+            DotCompute.Linq.Operators.Parameters.ParameterDirection.Input));
+
+
         await Task.CompletedTask;
         return parameters;
     }
@@ -455,28 +535,37 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
     {
         var outputType = DetermineOutputElementType(context.AnalysisResult);
         var cudaType = GetCudaTypeName(outputType);
-        
+
         // Kernel signature
+
         builder.AppendLine($"__global__ void {context.KernelName}(");
-        
+
+
         var parameters = await GenerateParametersAsync(context, cancellationToken);
         for (int i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
             var paramDecl = GetCudaParameterDeclaration(param);
-            
+
+
             if (i < parameters.Count - 1)
+            {
                 paramDecl += ",";
-                
+            }
+
+
             builder.AppendLine($"    {paramDecl}");
         }
-        
+
+
         builder.AppendLine(")");
         builder.AppendLine("{");
-        
+
         // Kernel body
+
         GenerateCudaKernelBody(builder, context);
-        
+
+
         builder.AppendLine("}");
     }
 
@@ -486,12 +575,14 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
         builder.AppendLine("    int idx = blockIdx.x * blockDim.x + threadIdx.x;");
         builder.AppendLine("    int stride = blockDim.x * gridDim.x;");
         builder.AppendLine();
-        
+
+
         builder.AppendLine("    // Grid-stride loop for coalesced memory access");
         builder.AppendLine("    for (int i = idx; i < length; i += stride)");
         builder.AppendLine("    {");
-        
+
         // Generate operation code
+
         foreach (var op in context.AnalysisResult.OperatorChain)
         {
             if (_operatorGenerators.TryGetValue(op.OperatorType, out var generator))
@@ -499,7 +590,8 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
                 generator.Generate(builder, op, context);
             }
         }
-        
+
+
         builder.AppendLine("    }");
     }
 
@@ -529,16 +621,17 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
         };
     }
 
-    private static string GetCudaParameterDeclaration(KernelParameter param)
+    private static string GetCudaParameterDeclaration(LinqKernelParameter param)
     {
         var typeName = GetCudaTypeName(param.Type.IsArray ? param.Type.GetElementType()! : param.Type);
         var pointer = param.Type.IsArray ? "*" : "";
-        var constModifier = param.Direction == ParameterDirection.Input && param.Type.IsArray ? "const " : "";
-        
+        var constModifier = param.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.Input && param.Type.IsArray ? "const " : "";
+
+
         return $"{constModifier}{typeName}{pointer} {param.Name}";
     }
 
-    private static Type DetermineOutputElementType(ExpressionAnalysisResult analysisResult)
+    private static Type DetermineOutputElementType(DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
     {
         return typeof(float); // Simplified
     }
@@ -550,15 +643,19 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
 internal class MetalCodeGenerator : IBackendCodeGenerator
 {
     private readonly ILogger _logger;
-    
+
+
     public MetalCodeGenerator(ILogger logger) => _logger = logger;
-    
+
+
     public Task<string> GenerateKernelSourceAsync(CodeGenerationContext context, CancellationToken cancellationToken)
         => throw new NotImplementedException("Metal backend code generation not yet implemented");
-        
-    public Task<IReadOnlyList<KernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken)
+
+
+    public Task<IReadOnlyList<LinqKernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken)
         => throw new NotImplementedException("Metal backend code generation not yet implemented");
-        
+
+
     public KernelEntryPoint GenerateEntryPoint(CodeGenerationContext context)
         => throw new NotImplementedException("Metal backend code generation not yet implemented");
 }
@@ -566,15 +663,19 @@ internal class MetalCodeGenerator : IBackendCodeGenerator
 internal class RocmCodeGenerator : IBackendCodeGenerator
 {
     private readonly ILogger _logger;
-    
+
+
     public RocmCodeGenerator(ILogger logger) => _logger = logger;
-    
+
+
     public Task<string> GenerateKernelSourceAsync(CodeGenerationContext context, CancellationToken cancellationToken)
         => throw new NotImplementedException("ROCm backend code generation not yet implemented");
-        
-    public Task<IReadOnlyList<KernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken)
+
+
+    public Task<IReadOnlyList<LinqKernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken)
         => throw new NotImplementedException("ROCm backend code generation not yet implemented");
-        
+
+
     public KernelEntryPoint GenerateEntryPoint(CodeGenerationContext context)
         => throw new NotImplementedException("ROCm backend code generation not yet implemented");
 }
@@ -583,7 +684,7 @@ internal class RocmCodeGenerator : IBackendCodeGenerator
 /// Context information for code generation.
 /// </summary>
 internal record CodeGenerationContext(
-    ExpressionAnalysisResult AnalysisResult,
+    DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult AnalysisResult,
     BackendType TargetBackend,
     string KernelName,
     CompilationOptions Options);
@@ -593,7 +694,7 @@ internal record CodeGenerationContext(
 /// </summary>
 internal class KernelNamingStrategy
 {
-    public string GenerateKernelName(ExpressionAnalysisResult analysisResult, BackendType backend)
+    public string GenerateKernelName(DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult, BackendType backend)
     {
         var operatorChain = string.Join("_", analysisResult.OperatorChain.Take(3).Select(op => op.OperatorType));
         var hash = Math.Abs(analysisResult.OperationSignature.GetHashCode()) % 10000;
@@ -612,8 +713,11 @@ internal class CodeGenerationMetrics
     public void RecordGeneration(BackendType backend, TimeSpan duration)
     {
         if (!_generationTimes.ContainsKey(backend))
+        {
             _generationTimes[backend] = new List<TimeSpan>();
-        
+        }
+
+
         _generationTimes[backend].Add(duration);
     }
 
@@ -626,12 +730,14 @@ internal class CodeGenerationMetrics
     public CodeGenerationStatistics GetStatistics()
     {
         var backendStats = new Dictionary<BackendType, BackendStatistics>();
-        
+
+
         foreach (var (backend, times) in _generationTimes)
         {
             var avgTime = times.Count > 0 ? times.Average(t => t.TotalMilliseconds) : 0;
             var errorCount = _errorCounts.GetValueOrDefault(backend, 0);
-            
+
+
             backendStats[backend] = new BackendStatistics(
                 times.Count,
                 errorCount,
@@ -639,7 +745,8 @@ internal class CodeGenerationMetrics
                 times.Count > 0 ? times.Min() : TimeSpan.Zero,
                 times.Count > 0 ? times.Max() : TimeSpan.Zero);
         }
-        
+
+
         return new CodeGenerationStatistics(backendStats);
     }
 }
@@ -683,7 +790,8 @@ internal static class CodeGenerationActivity
     {
         return new NoOpDisposable();
     }
-    
+
+
     private class NoOpDisposable : IDisposable
     {
         public void Dispose() { }
@@ -786,7 +894,7 @@ internal class CudaWhereOperatorGenerator : ICudaOperatorGenerator
 /// </summary>
 internal class ResourceUsageEstimator
 {
-    public ResourceUsageEstimate Estimate(BackendType backend, ExpressionAnalysisResult analysisResult)
+    public ResourceUsageEstimate Estimate(BackendType backend, DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
     {
         return backend switch
         {
@@ -796,22 +904,24 @@ internal class ResourceUsageEstimator
         };
     }
 
-    private ResourceUsageEstimate EstimateCpuUsage(ExpressionAnalysisResult analysisResult)
+    private ResourceUsageEstimate EstimateCpuUsage(DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
     {
         var operatorCount = analysisResult.OperatorChain.Count;
         var memoryMB = operatorCount * 10; // Rough estimate
         var threadsNeeded = Environment.ProcessorCount;
-        
+
+
         return new ResourceUsageEstimate(memoryMB, threadsNeeded, 0, 0);
     }
 
-    private ResourceUsageEstimate EstimateGpuUsage(ExpressionAnalysisResult analysisResult)
+    private ResourceUsageEstimate EstimateGpuUsage(DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
     {
         var operatorCount = analysisResult.OperatorChain.Count;
         var memoryMB = operatorCount * 20; // GPU kernels typically use more memory
         var registersPerThread = operatorCount * 4;
         var sharedMemoryKB = Math.Min(operatorCount * 2, 48); // Max 48KB per block
-        
+
+
         return new ResourceUsageEstimate(memoryMB, 0, registersPerThread, sharedMemoryKB);
     }
 }

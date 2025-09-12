@@ -7,6 +7,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Linq.Operators.Models;
+using DotCompute.Linq.Operators.Parameters;
+using DotCompute.Linq.KernelGeneration.Execution;
 
 namespace DotCompute.Linq.Operators.Execution;
 
@@ -16,10 +18,82 @@ namespace DotCompute.Linq.Operators.Execution;
 public interface ICompiledKernel : IDisposable
 {
     /// <summary>
+    /// Gets the name of the compiled kernel.
+    /// </summary>
+    string Name { get; }
+
+    /// <summary>
+    /// Gets the compiled kernel source code.
+    /// </summary>
+    string SourceCode { get; }
+
+    /// <summary>
+    /// Gets the kernel parameters.
+    /// </summary>
+    IReadOnlyList<KernelParameter> Parameters { get; }
+
+    /// <summary>
+    /// Gets the kernel entry point name.
+    /// </summary>
+    string EntryPoint { get; }
+
+    /// <summary>
     /// Executes the compiled kernel with the specified parameters.
     /// </summary>
     /// <param name="parameters">The kernel execution parameters.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous execution.</returns>
     public Task ExecuteAsync(KernelExecutionParameters parameters, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Launches the kernel asynchronously with specified dimensions and parameters.
+    /// </summary>
+    /// <param name="workgroupSize">The workgroup size for kernel execution.</param>
+    /// <param name="globalSize">The global size for kernel execution.</param>
+    /// <param name="parameters">The kernel execution parameters.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous kernel launch.</returns>
+    public Task LaunchAsync(
+        (int x, int y, int z) workgroupSize,
+        (int x, int y, int z) globalSize,
+        KernelExecutionParameters parameters,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Launches the kernel asynchronously with specified dimensions.
+    /// </summary>
+    /// <param name="globalSize">The global work size.</param>
+    /// <param name="localSize">The local work size.</param>
+    /// <param name="args">The kernel arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous kernel launch.</returns>
+    public Task LaunchAsync(
+        int globalSize,
+        int localSize,
+        object[] args,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Launches the kernel asynchronously with basic parameters.
+    /// </summary>
+    /// <param name="args">The kernel arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous kernel launch.</returns>
+    public Task LaunchAsync(
+        object[] args,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Launches the kernel asynchronously with Dim3 block and grid sizes.
+    /// </summary>
+    /// <param name="blockSize">The block size dimensions.</param>
+    /// <param name="gridSize">The grid size dimensions.</param>
+    /// <param name="parameters">The kernel execution parameters.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous kernel launch.</returns>
+    public Task LaunchAsync(
+        DotCompute.Linq.KernelGeneration.Execution.Dim3 blockSize,
+        DotCompute.Linq.KernelGeneration.Execution.Dim3 gridSize,
+        KernelExecutionParameters parameters,
+        CancellationToken cancellationToken = default);
 }

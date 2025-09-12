@@ -32,6 +32,7 @@ public sealed class NuGetPluginService : INuGetPluginService, IDisposable
         CancellationToken cancellationToken = default)
         // Stub implementation - returns empty collection
 
+
         => Task.FromResult(Enumerable.Empty<IAlgorithmPlugin>());
 
     /// <summary>
@@ -42,6 +43,7 @@ public sealed class NuGetPluginService : INuGetPluginService, IDisposable
         string? targetFramework = null,
         CancellationToken cancellationToken = default)
         // Stub implementation - returns 0
+
 
         => Task.FromResult(0);
 
@@ -54,6 +56,7 @@ public sealed class NuGetPluginService : INuGetPluginService, IDisposable
         CancellationToken cancellationToken = default)
         // Stub implementation - returns 0
 
+
         => Task.FromResult(0);
 
     /// <summary>
@@ -62,6 +65,7 @@ public sealed class NuGetPluginService : INuGetPluginService, IDisposable
     public Task ClearNuGetCacheAsync(TimeSpan? olderThan = null, CancellationToken cancellationToken = default)
         // Stub implementation - returns completed task
 
+
         => Task.CompletedTask;
 
     /// <summary>
@@ -69,6 +73,7 @@ public sealed class NuGetPluginService : INuGetPluginService, IDisposable
     /// </summary>
     public Task<CachedPackageInfo[]> GetCachedNuGetPackagesAsync(CancellationToken cancellationToken = default)
         // Stub implementation - returns empty array
+
 
         => Task.FromResult(Array.Empty<CachedPackageInfo>());
 

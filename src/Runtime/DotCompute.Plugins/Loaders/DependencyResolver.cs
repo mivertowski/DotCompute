@@ -493,6 +493,7 @@ public class DependencyResolver
         // In a real implementation, this would check the package's supported frameworks
 
 
+
         => true;
 }
 

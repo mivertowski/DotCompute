@@ -60,4 +60,26 @@ internal class DataSizeEstimator : ExpressionVisitor
 
         return base.VisitConstant(node);
     }
+
+    /// <summary>
+    /// Estimates the data size for a given expression.
+    /// </summary>
+    /// <param name="expression">The expression to analyze.</param>
+    /// <returns>The estimated data size in elements.</returns>
+    /// <remarks>
+    /// This method provides a public interface for estimating data sizes in expressions,
+    /// used by the query optimization and execution planning systems.
+    /// </remarks>
+    public long EstimateDataSize(Expression expression)
+    {
+        ArgumentNullException.ThrowIfNull(expression);
+
+
+        EstimatedSize = 0;
+        Visit(expression);
+
+        // Return a minimum size if no size was estimated
+
+        return Math.Max(EstimatedSize, 1);
+    }
 }

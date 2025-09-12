@@ -861,3 +861,6 @@ docs/technical-debt-analysis.md
 docs/architecture/kernel-pipeline-implementation-summary.md
 docs/architecture/kernel-pipeline-system-design.md
 docs/quick-fixes-implementation-plan.md
+test-reports/critical-error-analysis.md
+docs/LINQ-Housekeeping-Summary.md
+docs/LINQ-Housekeeping-Report.md

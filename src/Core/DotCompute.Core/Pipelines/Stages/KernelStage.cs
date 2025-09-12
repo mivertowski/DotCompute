@@ -278,6 +278,7 @@ namespace DotCompute.Core.Pipelines.Stages
         private List<object> PrepareArguments(PipelineExecutionContext context)
             // Use the new BuildKernelParameters method
 
+
             => BuildKernelParameters(context);
 
         private Dictionary<string, object> PrepareOutputs(PipelineExecutionContext context, List<object> arguments)
@@ -313,6 +314,7 @@ namespace DotCompute.Core.Pipelines.Stages
 
         private static double CalculateMemoryBandwidthUtilization()
             // Use performance monitor to get real memory bandwidth utilization
+
 
             => PerformanceMonitor.GetMemoryBandwidthUtilization();
 

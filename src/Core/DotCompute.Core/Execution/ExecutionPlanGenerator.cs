@@ -103,6 +103,7 @@ namespace DotCompute.Core.Execution
                                                    // inputBuffers.Sum(b => (int)b.Length));
 
 
+
                 var plan = new DataParallelExecutionPlan<T>
                 {
                     KernelName = kernelName,
@@ -173,6 +174,7 @@ namespace DotCompute.Core.Execution
                 // TODO: Fix method resolution issue with PerformanceMonitor
                 var estimatedExecutionTime = 15.0; // _performanceMonitor.EstimateModelParallelExecutionTime(
                                                    // workload, layerAssignments);
+
 
 
                 var plan = new ModelParallelExecutionPlan<T>
@@ -256,6 +258,7 @@ namespace DotCompute.Core.Execution
                 // TODO: Fix method resolution issue with PerformanceMonitor
                 var estimatedExecutionTime = 20.0; // _performanceMonitor.EstimatePipelineExecutionTime(
                                                    // pipelineStages, microbatchConfig);
+
 
 
                 var plan = new PipelineExecutionPlan<T>
@@ -422,6 +425,7 @@ namespace DotCompute.Core.Execution
                 // TODO: Fix method resolution issue with PerformanceMonitor
                 var estimatedProcessingTime = 5.0; // _performanceMonitor.EstimateStageProcessingTime(
                                                    // stageDef.KernelName, device.Info.DeviceType);
+
 
 
                 stages.Add(new PipelineStage<T>

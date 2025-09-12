@@ -55,7 +55,8 @@ public class IntegratedComputeQueryProvider : IQueryProvider
 
         var elementType = GetElementType(expression.Type);
         var queryableType = typeof(IntegratedComputeQueryable<>).MakeGenericType(elementType);
-        
+
+
         try
         {
             return (IQueryable)Activator.CreateInstance(queryableType, this, expression)!;
@@ -78,7 +79,8 @@ public class IntegratedComputeQueryProvider : IQueryProvider
     public object? Execute(Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
-        
+
+
         _logger.LogDebugMessage("Executing query expression via orchestrator");
 
         // Use async-over-sync pattern for synchronous interface
@@ -106,22 +108,26 @@ public class IntegratedComputeQueryProvider : IQueryProvider
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             // Optimize the expression
+
             var optimizedExpression = OptimizeExpression(expression);
-            
+
             // Translate LINQ expression to kernel operations
+
             var kernelOperations = _translator.TranslateToKernelOperations(optimizedExpression);
-            
+
             // Execute kernel operations sequentially
+
             object? result = null;
             foreach (var operation in kernelOperations)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 result = await ExecuteKernelOperationAsync(operation, null, cancellationToken);
             }
-            
+
             // Convert result to expected type
+
             return await ConvertResultAsync<TResult>(result, cancellationToken);
         }
         catch (OperationCanceledException)
@@ -134,7 +140,8 @@ public class IntegratedComputeQueryProvider : IQueryProvider
             throw;
         }
     }
-    
+
+
     /// <summary>
     /// Executes the query with a specific accelerator preference.
     /// </summary>
@@ -151,21 +158,25 @@ public class IntegratedComputeQueryProvider : IQueryProvider
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             // Optimize the expression
+
             var optimizedExpression = OptimizeExpression(expression);
-            
+
             // Translate LINQ expression to kernel operations
+
             var kernelOperations = _translator.TranslateToKernelOperations(optimizedExpression);
-            
+
             // Execute kernel operations with preferred backend
+
             object? result = null;
             foreach (var operation in kernelOperations)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 result = await ExecuteKernelOperationAsync(operation, preferredBackend, cancellationToken);
             }
-            
+
+
             return await ConvertResultAsync<TResult>(result, cancellationToken);
         }
         catch (OperationCanceledException)
@@ -187,7 +198,8 @@ public class IntegratedComputeQueryProvider : IQueryProvider
             UseSharedMemory = true,
             EnableCaching = true
         };
-        
+
+
         return _optimizer.Optimize(expression, options);
     }
 
@@ -196,12 +208,14 @@ public class IntegratedComputeQueryProvider : IQueryProvider
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
+
             if (preferredBackend != null)
             {
                 return await _orchestrator.ExecuteAsync<object>(operation.KernelName, preferredBackend, operation.Arguments, cancellationToken);
             }
-            
+
+
             return await _orchestrator.ExecuteAsync<object>(operation.KernelName, operation.Arguments, cancellationToken);
         }
         catch (OperationCanceledException)
@@ -211,8 +225,9 @@ public class IntegratedComputeQueryProvider : IQueryProvider
         catch (Exception ex)
         {
             _logger.LogWarningMessage("Kernel operation failed, attempting CPU fallback");
-            
+
             // Attempt CPU fallback
+
             if (preferredBackend != "CPU")
             {
                 try
@@ -228,7 +243,8 @@ public class IntegratedComputeQueryProvider : IQueryProvider
                     // Fallback failed, rethrow original exception
                 }
             }
-            
+
+
             throw new InvalidOperationException($"Failed to execute kernel operation: {operation.KernelName}", ex);
         }
     }
@@ -237,7 +253,8 @@ public class IntegratedComputeQueryProvider : IQueryProvider
     {
         await Task.CompletedTask.ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
-        
+
+
         if (result is TResult directResult)
         {
             return directResult;

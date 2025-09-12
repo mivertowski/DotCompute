@@ -360,8 +360,9 @@ namespace DotCompute.Backends.CUDA.Memory
         public unsafe Memory<T> AsMemory()
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            
+
             // Create a custom MemoryManager that wraps the pinned memory
+
             return new PinnedMemoryManager<T>(HostPointer, (int)Count, this).Memory;
         }
 

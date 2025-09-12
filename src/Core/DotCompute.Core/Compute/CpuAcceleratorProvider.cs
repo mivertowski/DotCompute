@@ -298,6 +298,7 @@ namespace DotCompute.Core.Compute
         public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
             // CPU operations are synchronous by default
 
+
             => ValueTask.CompletedTask;
 
         public ValueTask DisposeAsync()

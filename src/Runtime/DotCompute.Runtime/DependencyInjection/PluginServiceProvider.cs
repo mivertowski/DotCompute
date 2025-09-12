@@ -167,6 +167,7 @@ public class PluginServiceProvider : IPluginServiceProvider, IDisposable
         // TODO: Implement proper plugin service isolation when ServiceCollection extensions are available
 
 
+
         => parentProvider;
 
     private static IEnumerable<ServiceDescriptor> GetServiceDescriptors(IServiceProvider provider)

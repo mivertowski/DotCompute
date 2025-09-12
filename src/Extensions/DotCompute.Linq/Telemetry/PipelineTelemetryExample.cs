@@ -41,7 +41,8 @@ public class PipelineTelemetryExample
             for (int i = 0; i < 1000; i++)
             {
                 var result = await ExecuteSamplePipelineWithTelemetryAsync(
-                    metricsService, 
+                    metricsService,
+
                     $"sample-pipeline-{i % 10}", // 10 different pipeline types
                     logger);
                 results.Add(result);
@@ -73,7 +74,8 @@ public class PipelineTelemetryExample
 
             // Analyze collected metrics
             var pipelineMetrics = metricsService.GetAllPipelineMetrics();
-            
+
+
             return new ExampleResult
             {
                 TotalExecutions = results.Count,
@@ -140,15 +142,10 @@ public class PipelineTelemetryExample
                         await Task.Delay(5); // Slower data loading
                         return GenerateSampleData(100);
                     }
-                },
-                stageMetadata: new Dictionary<string, object>
-                {
-                    ["stage_type"] = "io",
-                    ["data_source"] = "sample"
                 });
 
             // Record throughput for stage 1
-            context.RecordThroughput(metricsService, stage1Result.Length);
+            metricsService.RecordThroughput(context, stage1Result.Length);
 
             // Stage 2: Data Processing
             var stage2Result = await context.MeasureStageAsync(
@@ -158,18 +155,14 @@ public class PipelineTelemetryExample
                 async () =>
                 {
                     await Task.Delay(Random.Shared.Next(1, 10)); // Simulate variable processing time
-                    
+
                     // Simulate some computation
+
                     return stage1Result.Select(x => x * 2 + Random.Shared.NextDouble()).ToArray();
-                },
-                stageMetadata: new Dictionary<string, object>
-                {
-                    ["stage_type"] = "compute",
-                    ["algorithm"] = "transform"
                 });
 
             // Record throughput for stage 2
-            context.RecordThroughput(metricsService, stage2Result.Length);
+            metricsService.RecordThroughput(context, stage2Result.Length);
 
             // Stage 3: Result Aggregation with more cache access
             var stage3Result = await context.MeasureStageAsync(
@@ -187,7 +180,8 @@ public class PipelineTelemetryExample
                     }
 
                     await Task.Delay(2); // Aggregation processing
-                    
+
+
                     return new
                     {
                         Sum = stage2Result.Sum(),
@@ -196,16 +190,12 @@ public class PipelineTelemetryExample
                         Min = stage2Result.Min(),
                         Max = stage2Result.Max()
                     };
-                },
-                stageMetadata: new Dictionary<string, object>
-                {
-                    ["stage_type"] = "aggregation",
-                    ["output_format"] = "summary"
                 });
 
             // Complete pipeline execution
             metricsService.CompleteExecution(context, success: true);
-            
+
+
             executionStopwatch.Stop();
 
             return new PipelineExecutionResult
@@ -222,7 +212,8 @@ public class PipelineTelemetryExample
         {
             logger.LogError(ex, "Pipeline execution failed for {PipelineId}", pipelineId);
             metricsService.CompleteExecution(context, success: false, exception: ex);
-            
+
+
             return new PipelineExecutionResult
             {
                 PipelineId = pipelineId,
@@ -376,13 +367,15 @@ public sealed class ValidationResult
         Console.WriteLine($"Overall Score: {OverallScore:P0} ({Requirements.Count(r => r.Met)}/{Requirements.Count} requirements met)");
         Console.WriteLine($"All Requirements Met: {AllRequirementsMet}");
         Console.WriteLine("\nDetailed Requirements:");
-        
+
+
         foreach (var req in Requirements)
         {
             var status = req.Met ? "✅ PASS" : "❌ FAIL";
             Console.WriteLine($"  {status} - {req.Description} (Actual: {req.ActualValue:F4})");
         }
-        
+
+
         Console.WriteLine($"\n{Summary}");
     }
 }

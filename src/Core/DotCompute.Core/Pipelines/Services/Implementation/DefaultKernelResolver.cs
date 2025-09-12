@@ -60,10 +60,12 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
                 // This is a simplified implementation - in practice, this would interface
                 // with the kernel discovery service to resolve kernels by name
                 var kernel = await ResolveKernelFromDiscoveryServiceAsync(kernelName, cancellationToken);
-                
+
                 // Cache the result (even if null to avoid repeated lookups)
+
                 _kernelCache.TryAdd(kernelName, kernel);
-                
+
+
                 if (kernel != null)
                 {
                     _logger?.LogDebug("Successfully resolved kernel '{KernelName}'", kernelName);
@@ -94,9 +96,11 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             {
                 // This would interface with the discovery service to get all available kernel names
                 var kernelNames = await GetKernelNamesFromDiscoveryServiceAsync(cancellationToken);
-                
+
+
                 _logger?.LogDebug("Found {Count} available kernels", kernelNames.Count);
-                
+
+
                 return kernelNames;
             }
             catch (Exception ex)
@@ -131,15 +135,20 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
         private async Task InitializeAsync(CancellationToken cancellationToken)
         {
             if (_initialized)
+            {
                 return;
+            }
+
 
             try
             {
                 _logger?.LogDebug("Initializing kernel resolver");
-                
+
                 // Pre-populate cache with known kernels if available
+
                 await PrePopulateCacheAsync(cancellationToken);
-                
+
+
                 _initialized = true;
                 _logger?.LogInformation("Kernel resolver initialized successfully");
             }
@@ -159,7 +168,8 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             {
                 // This would get all known kernels from the discovery service
                 var availableKernels = await GetKernelNamesFromDiscoveryServiceAsync(cancellationToken);
-                
+
+
                 foreach (var kernelName in availableKernels)
                 {
                     if (!_kernelCache.ContainsKey(kernelName))
@@ -169,7 +179,8 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
                         _kernelCache.TryAdd(kernelName, kernel);
                     }
                 }
-                
+
+
                 _logger?.LogDebug("Pre-populated kernel cache with {Count} kernels", _kernelCache.Count);
             }
             catch (Exception ex)
@@ -192,7 +203,8 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             // 2. Get the kernel definition
             // 3. Compile the kernel for the appropriate backend(s)
             // 4. Return the compiled kernel
-            
+
+
             await Task.Delay(1, cancellationToken); // Simulate async operation
             return null;
         }
@@ -206,7 +218,8 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             // TODO: This needs to interface with the actual kernel discovery system
             // For now, return empty collection
             // In a complete implementation, this would get all registered kernel names
-            
+
+
             await Task.Delay(1, cancellationToken); // Simulate async operation
             return Array.Empty<string>();
         }

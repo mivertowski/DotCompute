@@ -32,7 +32,8 @@ public static class ServiceCollectionExtensions
     /// <param name="configuration">Configuration for runtime options</param>
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddDotComputeRuntime(
-        this IServiceCollection services, 
+        this IServiceCollection services,
+
         IConfiguration? configuration = null)
     {
         // Add configuration
@@ -61,21 +62,26 @@ public static class ServiceCollectionExtensions
 
         // Add core runtime services
         services.AddSingleton<AcceleratorRuntime>();
-        
+
         // Add the integration services (core bridge between generator and runtime)
+
         services.AddSingleton<GeneratedKernelDiscoveryService>();
-        
+
         // Add production kernel services
+
         services.AddSingleton<IKernelCompiler, DefaultKernelCompiler>();
         services.AddSingleton<IKernelCache, MemoryKernelCache>();
         services.AddSingleton<IKernelProfiler, DefaultKernelProfiler>();
-        
+
         // Register the production kernel execution service
+
         services.AddSingleton<KernelExecutionService>();
-        services.AddSingleton<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>(provider => 
+        services.AddSingleton<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>(provider =>
+
             provider.GetRequiredService<KernelExecutionService>());
-        
+
         // Keep simplified version available for backward compatibility
+
         services.AddSingleton<KernelExecutionServiceSimplified>();
 
         return services;
@@ -112,13 +118,25 @@ public static class ServiceCollectionExtensions
         Action<PerformanceMonitoringOptions>? configurePerformance = null)
     {
         if (configureRuntime != null)
+        {
             services.Configure(configureRuntime);
+        }
+
         if (configurePlugins != null)
+        {
             services.Configure(configurePlugins);
+        }
+
         if (configureMemory != null)
+        {
             services.Configure(configureMemory);
+        }
+
         if (configurePerformance != null)
+        {
             services.Configure(configurePerformance);
+        }
+
 
         return services.AddDotComputeRuntime(configuration: null);
     }
@@ -138,10 +156,12 @@ public static class ServiceCollectionExtensions
         // Discover and register kernels
         var kernelDiscovery = serviceProvider.GetRequiredService<GeneratedKernelDiscoveryService>();
         var kernelExecution = serviceProvider.GetRequiredService<KernelExecutionService>();
-        
+
+
         var kernelCount = await kernelDiscovery.DiscoverAndRegisterKernelsAsync(kernelExecution);
-        
+
         // Log successful initialization
+
         var logger = serviceProvider.GetService<Microsoft.Extensions.Logging.ILogger<AcceleratorRuntime>>();
         logger?.LogInformation("DotCompute runtime initialized successfully with {KernelCount} kernels", kernelCount);
     }
@@ -156,15 +176,17 @@ public static class ServiceCollectionExtensions
     {
         // Add memory caching for kernel chain cache service
         services.AddMemoryCache();
-        
+
         // Add kernel chaining services
+
         services.AddSingleton<IKernelResolver, DefaultKernelResolver>();
         services.AddSingleton<IKernelChainValidator, DefaultKernelChainValidator>();
         services.AddSingleton<IKernelChainProfiler, DefaultKernelChainProfiler>();
         services.AddSingleton<IKernelChainCacheService, DefaultKernelChainCacheService>();
 
         // Register factory for creating kernel chain builders
-        services.AddTransient<IKernelChainBuilder>(provider => 
+        services.AddTransient<IKernelChainBuilder>(provider =>
+
         {
             var orchestrator = provider.GetRequiredService<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>();
             var kernelResolver = provider.GetService<IKernelResolver>();
@@ -236,4 +258,5 @@ public static class ServiceCollectionExtensions
 }
 
 // Note: Service implementations should be provided by backend-specific projects
+
 // The integration layer provides the orchestration, while backends provide the actual services

@@ -107,6 +107,7 @@ namespace DotCompute.Core.Compute.Accelerators
             // In a full implementation, this would try to load the CPU backend dynamically - TODO
 
 
+
             => new SimpleOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger);
 
         /// <summary>

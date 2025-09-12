@@ -201,7 +201,10 @@ public sealed class KernelTemplateValidationResult
     public void AddError(string error)
     {
         if (!string.IsNullOrWhiteSpace(error))
+        {
             Errors.Add(error);
+        }
+
     }
 
     /// <summary>
@@ -211,7 +214,10 @@ public sealed class KernelTemplateValidationResult
     public void AddWarning(string warning)
     {
         if (!string.IsNullOrWhiteSpace(warning))
+        {
             Warnings.Add(warning);
+        }
+
     }
 
     /// <summary>
@@ -272,6 +278,21 @@ public sealed class KernelGenerationOptions
     /// Gets or sets custom template variables.
     /// </summary>
     public Dictionary<string, object>? TemplateVariables { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to enable warp shuffle operations.
+    /// </summary>
+    public bool EnableWarpShuffle { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to enable atomic operations.
+    /// </summary>
+    public bool EnableAtomics { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to use shared memory optimizations.
+    /// </summary>
+    public bool UseSharedMemory { get; set; }
 }
 
 /// <summary>

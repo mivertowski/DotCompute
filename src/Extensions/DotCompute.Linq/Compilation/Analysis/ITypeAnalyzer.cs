@@ -50,6 +50,14 @@ public interface ITypeAnalyzer
     /// <param name="expression">The expression context.</param>
     /// <returns>Type-specific optimization hints.</returns>
     IEnumerable<OptimizationHint> GetOptimizationHints(Expression expression);
+
+    /// <summary>
+    /// Analyzes a type expression with context.
+    /// </summary>
+    /// <param name="expression">The expression to analyze.</param>
+    /// <param name="context">Optional analysis context.</param>
+    /// <returns>Type usage information.</returns>
+    TypeUsageInfo Analyze(Expression expression, object? context = null);
 }
 
 /// <summary>
@@ -69,6 +77,14 @@ public interface IOperatorAnalyzer
     OperatorInfo AnalyzeOperator(Expression expression, AnalysisContext context);
 
     /// <summary>
+    /// Analyzes an expression and returns pipeline operator information for the compilation pipeline.
+    /// </summary>
+    /// <param name="expression">The expression to analyze.</param>
+    /// <param name="context">The analysis context.</param>
+    /// <returns>Pipeline operator information.</returns>
+    DotCompute.Linq.Pipelines.Analysis.OperatorInfo Analyze(Expression expression, AnalysisContext context);
+
+    /// <summary>
     /// Determines parallelization opportunities for this operator.
     /// </summary>
     /// <param name="expression">The expression context.</param>
@@ -83,32 +99,7 @@ public interface IOperatorAnalyzer
     double EstimateExecutionCost(Expression expression);
 }
 
-/// <summary>
-/// Contains information about type usage in expressions.
-/// </summary>
-public record TypeUsageInfo
-{
-    /// <summary>Gets the type being analyzed.</summary>
-    public Type Type { get; init; } = typeof(object);
-
-    /// <summary>Gets the frequency of usage in the expression tree.</summary>
-    public int UsageFrequency { get; init; }
-
-    /// <summary>Gets whether the type requires specialization.</summary>
-    public bool RequiresSpecialization { get; init; }
-
-    /// <summary>Gets the memory usage pattern for this type.</summary>
-    public MemoryUsagePattern MemoryPattern { get; init; } = MemoryUsagePattern.Sequential;
-
-    /// <summary>Gets whether the type supports SIMD operations.</summary>
-    public bool SupportsSimd { get; init; }
-
-    /// <summary>Gets the estimated size in bytes.</summary>
-    public int EstimatedSize { get; init; }
-
-    /// <summary>Gets optimization hints specific to this type usage.</summary>
-    public List<OptimizationHint> Hints { get; init; } = new();
-}
+// TypeUsageInfo is defined in PipelineAnalysisTypes.cs to avoid duplication
 
 /// <summary>
 /// Contains information about operator analysis.
@@ -153,25 +144,15 @@ public record ParallelizationOpportunity
 
     /// <summary>Gets the estimated speedup from parallelization.</summary>
     public double EstimatedSpeedup { get; init; } = 1.0;
+
+    /// <summary>Gets the parallelization potential score (0-1).</summary>
+    public double ParallelizationPotential { get; init; }
+
+    /// <summary>Gets whether this operation is suitable for parallelization.</summary>
+    public bool IsSuitable => VectorizationSuitable || SupportsParallelExecution;
 }
 
-/// <summary>
-/// Contains information about dependencies in expressions.
-/// </summary>
-public record DependencyInfo
-{
-    /// <summary>Gets the list of variables this expression depends on.</summary>
-    public List<string> Variables { get; init; } = new();
-
-    /// <summary>Gets the list of method calls this expression depends on.</summary>
-    public List<string> MethodCalls { get; init; } = new();
-
-    /// <summary>Gets whether the expression has side effects.</summary>
-    public bool HasSideEffects { get; init; }
-
-    /// <summary>Gets whether the expression is deterministic.</summary>
-    public bool IsDeterministic { get; init; } = true;
-}
+// DependencyInfo is defined in PipelineAnalysisTypes.cs to avoid duplication
 
 /// <summary>
 /// Defines memory usage patterns for types.

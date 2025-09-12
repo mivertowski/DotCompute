@@ -257,7 +257,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         // Add size parameter
         parameters.Add(new LinqKernelParameter("size", typeof(int), LinqParameterDirection.In));
 
-        return new DotCompute.Abstractions.Kernels.KernelDefinition(name, "/* Generated kernel source */")
+        return new DotCompute.Abstractions.Kernels.KernelDefinition(name, "/* Generated kernel source */", "main")
         {
             Metadata = new Dictionary<string, object>
             {
@@ -284,7 +284,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         // Add output parameter
         parameters.Add(new LinqKernelParameter("output", analysis.OutputType, LinqParameterDirection.Out));
 
-        return new DotCompute.Abstractions.Kernels.KernelDefinition(name, "/* Generated kernel source */")
+        return new DotCompute.Abstractions.Kernels.KernelDefinition(name, "/* Generated kernel source */", "main")
         {
             Metadata = new Dictionary<string, object>
             {
@@ -498,7 +498,7 @@ public sealed class ExpressionResourceEstimate
 public sealed class KernelTemplate
 {
     public string Name { get; init; } = string.Empty;
-    public Func<Expression, DotCompute.Abstractions.Kernels.KernelDefinition> CreateDefinition { get; init; } = _ => new DotCompute.Abstractions.Kernels.KernelDefinition("DefaultKernel", "DefaultSource");
+    public Func<Expression, DotCompute.Abstractions.Kernels.KernelDefinition> CreateDefinition { get; init; } = _ => new DotCompute.Abstractions.Kernels.KernelDefinition("DefaultKernel", "DefaultSource", "main");
     public Dictionary<string, object> Metadata { get; init; } = [];
 }
 

@@ -11,6 +11,12 @@ namespace DotCompute.Abstractions.Types
     public enum KernelLanguage
     {
         /// <summary>
+        /// Automatically detect and select the most appropriate kernel language
+        /// based on the target platform and available runtime features.
+        /// </summary>
+        Auto,
+
+        /// <summary>
         /// CUDA C/C++ source code for NVIDIA GPU programming.
         /// Supports parallel computing on NVIDIA graphics processing units.
         /// </summary>

@@ -18,7 +18,7 @@ namespace DotCompute.Core.Tests;
 /// </summary>
 [Trait("Category", "Unit")]
 [Trait("Component", "ErrorHandling")]
-public class ErrorHandlingTests : IDisposable
+public sealed class ErrorHandlingTests : IDisposable
 {
     private readonly Mock<ILogger> _mockLogger;
     private readonly Mock<IUnifiedMemoryManager> _mockMemory;
@@ -1113,7 +1113,7 @@ public class ErrorHandlingTests : IDisposable
     {
         private readonly SemaphoreSlim _stateLock = new(1, 1);
         private readonly ConcurrentDictionary<string, object> _internalState = new();
-        private volatile int _stateConsistencyViolations;
+        private readonly int _stateConsistencyViolations;
         private volatile int _activeResourceCount;
 
         // Device Error Simulation
@@ -1162,7 +1162,7 @@ public class ErrorHandlingTests : IDisposable
         public bool CpuFallbackActivated { get; private set; }
         public string LastExecutionMode { get; private set; } = "GPU";
         public int StateRestorationCount { get; private set; }
-        private string? _checkpointState;
+        private readonly string? _checkpointState;
 
         // Error Propagation
         public bool SimulateNestedErrors { get; set; }

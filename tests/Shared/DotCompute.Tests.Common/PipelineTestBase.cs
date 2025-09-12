@@ -26,7 +26,8 @@ public abstract class PipelineTestBase : IDisposable
         var services = new ServiceCollection();
         ConfigureServicesInternal(services);
         _serviceProvider = services.BuildServiceProvider();
-        
+
+
         Services = _serviceProvider;
         DataGenerator = Services.GetRequiredService<PipelineTestDataGenerator>();
         Logger = Services.GetService<ILogger<PipelineTestBase>>();
@@ -64,7 +65,8 @@ public abstract class PipelineTestBase : IDisposable
     /// <param name="expected">Expected output results</param>
     /// <param name="tolerance">Tolerance for floating-point comparisons</param>
     [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code.", Justification = "Test code uses dynamic for type-specific floating point comparison.")]
-    protected static void AssertPipelineExecution<T>(T[] input, T[] expected, double tolerance = 1e-6) 
+    protected static void AssertPipelineExecution<T>(T[] input, T[] expected, double tolerance = 1e-6)
+
         where T : IEquatable<T>
     {
         ArgumentNullException.ThrowIfNull(input);
@@ -94,7 +96,8 @@ public abstract class PipelineTestBase : IDisposable
     protected static void ValidatePerformanceBaseline(TimeSpan actual, TimeSpan baseline, double tolerance = 1.5)
     {
         var maxAllowedTime = TimeSpan.FromTicks((long)(baseline.Ticks * tolerance));
-        
+
+
         Assert.True(
             actual <= maxAllowedTime,
             $"Performance regression detected. Actual: {actual.TotalMilliseconds:F2}ms, " +
@@ -124,8 +127,9 @@ public abstract class PipelineTestBase : IDisposable
 
         // Warm up
         await operation();
-        
+
         // Force garbage collection before measurement
+
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
@@ -148,8 +152,9 @@ public abstract class PipelineTestBase : IDisposable
 
         // Warm up
         operation();
-        
+
         // Force garbage collection before measurement
+
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
@@ -168,7 +173,8 @@ public abstract class PipelineTestBase : IDisposable
     /// <param name="maxMemoryIncreaseMB">Maximum allowed memory increase in MB</param>
     /// <returns>Memory usage statistics</returns>
     protected static async Task<MemoryUsageMetrics> ValidateMemoryUsageAsync(
-        Func<Task> operation, 
+        Func<Task> operation,
+
         int maxMemoryIncreaseMB = 50)
     {
         ArgumentNullException.ThrowIfNull(operation);
@@ -179,12 +185,15 @@ public abstract class PipelineTestBase : IDisposable
         GC.Collect();
 
         var initialMemory = GC.GetTotalMemory(false);
-        
+
+
         await operation();
-        
+
+
         GC.Collect();
         GC.WaitForPendingFinalizers();
-        
+
+
         var finalMemory = GC.GetTotalMemory(false);
         var memoryIncrease = finalMemory - initialMemory;
         var memoryIncreaseMB = memoryIncrease / (1024.0 * 1024.0);
@@ -221,14 +230,17 @@ public abstract class PipelineTestBase : IDisposable
     {
         services.AddLogging(builder => builder.AddDebug().SetMinimumLevel(LogLevel.Debug));
         services.AddSingleton<PipelineTestDataGenerator>();
-        
+
         // Register core DotCompute services (would normally be done by extension methods)
+
         services.AddSingleton<IKernelChainBuilder, KernelChainBuilder>();
-        
+
         // Mock services for testing
+
         services.AddSingleton<IComputeOrchestrator, MockComputeOrchestrator>();
-        
+
         // Call virtual method for derived class customization
+
         ConfigureAdditionalServices(services);
     }
 
@@ -302,19 +314,20 @@ public enum DataPattern
 {
     /// <summary>Random data distribution.</summary>
     Random,
-    
+
     /// <summary>Sequential ascending values.</summary>
     Sequential,
-    
+
     /// <summary>All values are identical.</summary>
     Uniform,
-    
+
     /// <summary>Normal (Gaussian) distribution.</summary>
     Normal,
-    
+
     /// <summary>Values alternate between extremes.</summary>
     Alternating,
-    
+
+
     /// <summary>Values include edge cases (min, max, zero).</summary>
     EdgeCases
 }

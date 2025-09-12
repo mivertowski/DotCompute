@@ -45,7 +45,8 @@ public class DefaultMemoryManagerFactory
 
             var newManager = accelerator.Memory;
             _managers[accelerator] = newManager;
-            
+
+
             _logger.LogDebug("Created memory manager for accelerator {AcceleratorName}", accelerator.Info.Name);
             return newManager;
         }

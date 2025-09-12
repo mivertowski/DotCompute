@@ -393,6 +393,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
 
 
+
         => _logger.LogDebugMessage("Setting up resource limits for: {assemblyPath}");
 
     private bool ValidateOperation(SecurityPermissionSet permissionSet, SecurityOperation operation, string? target)

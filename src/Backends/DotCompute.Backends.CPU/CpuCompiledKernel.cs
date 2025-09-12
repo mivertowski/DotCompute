@@ -1249,6 +1249,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         // KernelPerformanceMetrics doesn't have these properties anymore
         // Return a basic instance for now TODO
 
+
         => new();
 
     private static object[] BuildArgumentsArray(KernelExecutionContext context)

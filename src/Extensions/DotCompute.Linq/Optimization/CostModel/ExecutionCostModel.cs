@@ -21,14 +21,16 @@ public sealed class ExecutionCostModel
     private readonly PerformanceModelRegistry _performanceModels;
     private readonly HardwareProfiler _hardwareProfiler;
     private readonly CostCalibrator _costCalibrator;
-    
+
     // Cost model constants and weights
+
     private const double ComputeCostWeight = 0.4;
     private const double MemoryCostWeight = 0.3;
     private const double TransferCostWeight = 0.2;
     private const double SynchronizationCostWeight = 0.1;
-    
+
     // Performance baselines (operations per second)
+
     private const double CpuFloatOpsPerSecond = 10_000_000_000; // 10 GFLOPS
     private const double GpuFloatOpsPerSecond = 1_000_000_000_000; // 1 TFLOPS
     private const double MemoryBandwidthCpuGBps = 50; // 50 GB/s
@@ -40,7 +42,8 @@ public sealed class ExecutionCostModel
         _performanceModels = new PerformanceModelRegistry();
         _hardwareProfiler = new HardwareProfiler();
         _costCalibrator = new CostCalibrator();
-        
+
+
         InitializePerformanceModels();
     }
 
@@ -48,22 +51,26 @@ public sealed class ExecutionCostModel
     {
         // Get or create performance model for operation type
         var performanceModel = await GetPerformanceModel(operation, context);
-        
+
         // Calculate individual cost components
+
         var computeCost = await EstimateComputeCost(operation, performanceModel, context);
         var memoryCost = await EstimateMemoryCost(operation, performanceModel, context);
         var transferCost = await EstimateTransferCost(operation, performanceModel, context);
         var synchronizationCost = await EstimateSynchronizationCost(operation, performanceModel, context);
-        
+
         // Combine costs with weights
+
         var totalCost = ComputeCostWeight * computeCost +
                        MemoryCostWeight * memoryCost +
                        TransferCostWeight * transferCost +
                        SynchronizationCostWeight * synchronizationCost;
-        
+
         // Apply context-specific adjustments
+
         var adjustedCost = await ApplyContextAdjustments(totalCost, operation, context);
-        
+
+
         return adjustedCost;
     }
 
@@ -71,10 +78,12 @@ public sealed class ExecutionCostModel
     {
         var cost = await EstimateExecutionCost(operation, context);
         var performanceModel = await GetPerformanceModel(operation, context);
-        
+
         // Convert cost to time based on hardware capabilities
+
         var executionTime = await ConvertCostToTime(cost, performanceModel, context);
-        
+
+
         return executionTime;
     }
 
@@ -83,7 +92,8 @@ public sealed class ExecutionCostModel
         var baseMemoryUsage = CalculateBaseMemoryUsage(operation);
         var intermediateMemoryUsage = await EstimateIntermediateMemoryUsage(operation, context);
         var parallelizationOverhead = await EstimateParallelizationMemoryOverhead(operation, context);
-        
+
+
         return baseMemoryUsage + intermediateMemoryUsage + parallelizationOverhead;
     }
 
@@ -91,9 +101,11 @@ public sealed class ExecutionCostModel
     {
         var cpuCost = await EstimateCostForBackend(operation, context, BackendType.CPU);
         var gpuCost = await EstimateCostForBackend(operation, context, BackendType.CUDA);
-        
+
+
         var recommendation = new BackendRecommendation();
-        
+
+
         if (gpuCost < cpuCost * 0.8) // GPU must be significantly better
         {
             recommendation.RecommendedBackend = BackendType.CUDA;
@@ -106,54 +118,65 @@ public sealed class ExecutionCostModel
             recommendation.ConfidenceScore = CalculateConfidenceScore(cpuCost, gpuCost);
             recommendation.ExpectedSpeedup = gpuCost / cpuCost;
         }
-        
+
+
         recommendation.Reasoning = GenerateRecommendationReasoning(operation, cpuCost, gpuCost, context);
-        
+
+
         return recommendation;
     }
 
     public async Task<List<OptimizationRecommendation>> SuggestOptimizations(
-        QueryOperation operation, 
+        QueryOperation operation,
+
         ExecutionContext context)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
         // Analyze current cost breakdown
+
         var costBreakdown = await AnalyzeCostBreakdown(operation, context);
-        
+
         // Generate optimization suggestions based on bottlenecks
+
         if (costBreakdown.ComputeCost > costBreakdown.TotalCost * 0.6)
         {
             recommendations.AddRange(await SuggestComputeOptimizations(operation, context));
         }
-        
+
+
         if (costBreakdown.MemoryCost > costBreakdown.TotalCost * 0.4)
         {
             recommendations.AddRange(await SuggestMemoryOptimizations(operation, context));
         }
-        
+
+
         if (costBreakdown.TransferCost > costBreakdown.TotalCost * 0.3)
         {
             recommendations.AddRange(await SuggestTransferOptimizations(operation, context));
         }
-        
+
         // Sort by potential impact
+
         return recommendations.OrderByDescending(r => r.EstimatedImpact).ToList();
     }
 
     private async Task<PerformanceModel> GetPerformanceModel(QueryOperation operation, ExecutionContext context)
     {
         var modelKey = CreateModelKey(operation, context);
-        
+
+
         if (_performanceModels.TryGetModel(modelKey, out var cachedModel))
         {
             return cachedModel;
         }
-        
+
         // Create new performance model
+
         var model = await CreatePerformanceModel(operation, context);
         _performanceModels.RegisterModel(modelKey, model);
-        
+
+
         return model;
     }
 
@@ -172,16 +195,20 @@ public sealed class ExecutionCostModel
             TargetBackend = context.TargetBackend,
             HardwareProfile = await _hardwareProfiler.ProfileHardware(context)
         };
-        
+
         // Initialize model parameters based on operation type
+
         await InitializeModelParameters(model, operation, context);
-        
+
+
         return model;
     }
 
     private async Task InitializeModelParameters(
-        PerformanceModel model, 
-        QueryOperation operation, 
+        PerformanceModel model,
+
+        QueryOperation operation,
+
         ExecutionContext context)
     {
         model.ComputeComplexity = CalculateComputeComplexity(operation);
@@ -189,8 +216,9 @@ public sealed class ExecutionCostModel
         model.ParallelizabilityFactor = CalculateParallelizabilityFactor(operation);
         model.CacheEfficiency = await EstimateCacheEfficiency(operation, context);
         model.VectorizationPotential = CalculateVectorizationPotential(operation);
-        
+
         // Calibrate model with hardware-specific measurements
+
         await _costCalibrator.CalibrateModel(model, context);
     }
 
@@ -236,24 +264,27 @@ public sealed class ExecutionCostModel
         };
     }
 
-    private async Task<double> EstimateCacheEfficiency(QueryOperation operation, ExecutionContext context)
+    private Task<double> EstimateCacheEfficiency(QueryOperation operation, ExecutionContext context)
     {
         var dataSize = operation.InputSize * GetElementSize(operation.DataType);
         var cacheSize = context.CacheSize;
-        
+
+
         if (dataSize <= cacheSize)
         {
-            return 0.95; // Excellent cache utilization
+            return Task.FromResult(0.95); // Excellent cache utilization
         }
-        
+
+
         var memoryAccessPattern = DetermineMemoryAccessPattern(operation);
-        return memoryAccessPattern switch
+        var efficiency = memoryAccessPattern switch
         {
             MemoryAccessPattern.Sequential => Math.Max(0.3, 1.0 - (dataSize - cacheSize) / (double)dataSize),
             MemoryAccessPattern.Random => Math.Max(0.1, cacheSize / (double)dataSize),
             MemoryAccessPattern.Reduction => Math.Max(0.4, 1.0 - (dataSize - cacheSize) / (double)dataSize * 0.7),
             _ => 0.5
         };
+        return Task.FromResult(efficiency);
     }
 
     private double CalculateVectorizationPotential(QueryOperation operation)
@@ -268,44 +299,52 @@ public sealed class ExecutionCostModel
         };
     }
 
-    private async Task<double> EstimateComputeCost(
+    private Task<double> EstimateComputeCost(
         QueryOperation operation,
         PerformanceModel model,
         ExecutionContext context)
     {
         var totalOperations = operation.InputSize * model.ComputeComplexity;
-        var baseOpsPerSecond = context.TargetBackend == BackendType.CUDA 
-            ? GpuFloatOpsPerSecond 
+        var baseOpsPerSecond = context.TargetBackend == BackendType.CUDA
+            ? GpuFloatOpsPerSecond
+
             : CpuFloatOpsPerSecond;
-        
+
         // Apply parallelization scaling
+
         var parallelismDegree = operation.ParallelizationConfig?.Degree ?? 1;
         var effectiveOpsPerSecond = baseOpsPerSecond * parallelismDegree * model.ParallelizabilityFactor;
-        
+
         // Apply vectorization speedup
+
         if (context.TargetBackend == BackendType.CPU)
         {
             var vectorWidth = GetVectorWidth(operation.DataType, context);
             effectiveOpsPerSecond *= 1.0 + (vectorWidth - 1) * model.VectorizationPotential;
         }
-        
-        return totalOperations / effectiveOpsPerSecond;
+
+
+        var cost = totalOperations / effectiveOpsPerSecond;
+        return Task.FromResult(cost);
     }
 
-    private async Task<double> EstimateMemoryCost(
+    private Task<double> EstimateMemoryCost(
         QueryOperation operation,
         PerformanceModel model,
         ExecutionContext context)
     {
         var memoryAccesses = EstimateMemoryAccesses(operation, model);
-        var baseBandwidth = context.TargetBackend == BackendType.CUDA 
-            ? MemoryBandwidthGpuGBps 
+        var baseBandwidth = context.TargetBackend == BackendType.CUDA
+            ? MemoryBandwidthGpuGBps
+
             : MemoryBandwidthCpuGBps;
-        
+
         // Apply cache efficiency
+
         var effectiveBandwidth = baseBandwidth * model.CacheEfficiency;
-        
+
         // Apply memory access pattern penalty
+
         var patternMultiplier = model.MemoryAccessPattern switch
         {
             MemoryAccessPattern.Sequential => 1.0,
@@ -313,11 +352,14 @@ public sealed class ExecutionCostModel
             MemoryAccessPattern.Reduction => 0.7,
             _ => 0.8
         };
-        
+
+
         effectiveBandwidth *= patternMultiplier;
-        
+
+
         var totalBytes = memoryAccesses * GetElementSize(operation.DataType);
-        return totalBytes / (effectiveBandwidth * 1_000_000_000); // Convert to seconds
+        var cost = totalBytes / (effectiveBandwidth * 1_000_000_000); // Convert to seconds
+        return Task.FromResult(cost);
     }
 
     private long EstimateMemoryAccesses(QueryOperation operation, PerformanceModel model)
@@ -325,8 +367,8 @@ public sealed class ExecutionCostModel
         return operation.Type switch
         {
             OperationType.Map => operation.InputSize * 2, // Read input, write output
-            OperationType.Filter => operation.InputSize * 1.5, // Read input, selective write
-            OperationType.Reduce => operation.InputSize * 1.5, // Read input, some intermediate storage
+            OperationType.Filter => (long)(operation.InputSize * 1.5), // Read input, selective write
+            OperationType.Reduce => (long)(operation.InputSize * 1.5), // Read input, some intermediate storage
             OperationType.GroupBy => operation.InputSize * 3, // Read input, hash table operations
             OperationType.Join => operation.InputSize * 4, // Read both inputs, hash operations
             OperationType.Aggregate => operation.InputSize * 2,
@@ -334,21 +376,24 @@ public sealed class ExecutionCostModel
         };
     }
 
-    private async Task<double> EstimateTransferCost(
+    private Task<double> EstimateTransferCost(
         QueryOperation operation,
         PerformanceModel model,
         ExecutionContext context)
     {
         if (context.TargetBackend == BackendType.CPU)
         {
-            return 0; // No transfer cost for CPU operations
+            return Task.FromResult(0.0); // No transfer cost for CPU operations
         }
-        
+
         // Estimate GPU memory transfer costs
+
         var transferSize = CalculateTransferSize(operation);
         var transferBandwidth = context.PcieReadBandwidth; // Use PCIe bandwidth for GPU transfers
-        
-        return transferSize / transferBandwidth;
+
+
+        var cost = (double)transferSize / transferBandwidth;
+        return Task.FromResult(cost);
     }
 
     private long CalculateTransferSize(QueryOperation operation)
@@ -356,7 +401,8 @@ public sealed class ExecutionCostModel
         var elementSize = GetElementSize(operation.DataType);
         var inputSize = operation.InputSize * elementSize;
         var outputSize = EstimateOutputSize(operation) * elementSize;
-        
+
+
         return inputSize + outputSize; // Bidirectional transfer
     }
 
@@ -374,22 +420,26 @@ public sealed class ExecutionCostModel
         };
     }
 
-    private async Task<double> EstimateSynchronizationCost(
+    private Task<double> EstimateSynchronizationCost(
         QueryOperation operation,
         PerformanceModel model,
         ExecutionContext context)
     {
         var parallelismDegree = operation.ParallelizationConfig?.Degree ?? 1;
-        
+
+
         if (parallelismDegree <= 1)
         {
-            return 0; // No synchronization cost for sequential execution
+            return Task.FromResult(0.0); // No synchronization cost for sequential execution
         }
-        
+
+
         var synchronizationEvents = EstimateSynchronizationEvents(operation, parallelismDegree);
         var synchronizationLatency = context.TargetBackend == BackendType.CUDA ? 0.001 : 0.0001; // GPU vs CPU latency
-        
-        return synchronizationEvents * synchronizationLatency;
+
+
+        var cost = synchronizationEvents * synchronizationLatency;
+        return Task.FromResult(cost);
     }
 
     private int EstimateSynchronizationEvents(QueryOperation operation, int parallelismDegree)
@@ -406,14 +456,15 @@ public sealed class ExecutionCostModel
         };
     }
 
-    private async Task<double> ApplyContextAdjustments(
+    private Task<double> ApplyContextAdjustments(
         double baseCost,
         QueryOperation operation,
         ExecutionContext context)
     {
         var adjustedCost = baseCost;
-        
+
         // Apply system load adjustment
+
         if (context.SystemLoad > 0.8)
         {
             adjustedCost *= 1.5; // High system load penalty
@@ -422,37 +473,40 @@ public sealed class ExecutionCostModel
         {
             adjustedCost *= 1.2; // Moderate system load penalty
         }
-        
+
         // Apply thermal throttling adjustment
-        if (context.ThermalState == ThermalState.Throttling)
+
+        if (context.ThermalState == ThermalState.Critical)
         {
             adjustedCost *= 1.8; // Significant performance reduction under throttling
         }
-        else if (context.ThermalState == ThermalState.Warning)
+        else if (context.ThermalState == ThermalState.Hot)
         {
             adjustedCost *= 1.3; // Moderate performance reduction
         }
-        
+
         // Apply memory pressure adjustment
-        if (context.MemoryPressure > 0.9)
+
+        if (context.MemoryPressure == MemoryPressureLevel.High)
         {
             adjustedCost *= 2.0; // High memory pressure significantly impacts performance
         }
-        else if (context.MemoryPressure > 0.8)
+        else if (context.MemoryPressure == MemoryPressureLevel.Medium)
         {
             adjustedCost *= 1.4; // Moderate memory pressure
         }
-        
-        return adjustedCost;
+
+
+        return Task.FromResult(adjustedCost);
     }
 
-    private async Task<TimeSpan> ConvertCostToTime(
+    private Task<TimeSpan> ConvertCostToTime(
         double cost,
         PerformanceModel model,
         ExecutionContext context)
     {
         // Cost is in seconds, convert to TimeSpan
-        return TimeSpan.FromSeconds(cost);
+        return Task.FromResult(TimeSpan.FromSeconds(cost));
     }
 
     private async Task<double> EstimateCostForBackend(
@@ -460,17 +514,30 @@ public sealed class ExecutionCostModel
         ExecutionContext context,
         BackendType backend)
     {
-        var originalBackend = context.TargetBackend;
-        context.TargetBackend = backend;
-        
-        try
+        // Create a temporary context with different backend for estimation
+        var tempContext = context.Clone();
+
+        // Since TargetBackend is calculated from Accelerator, we need to estimate based on backend type
+        // For now, we'll use a simple heuristic based on the backend parameter
+
+
+        if (backend == BackendType.CUDA && context.TargetBackend != BackendType.CUDA)
         {
-            return await EstimateExecutionCost(operation, context);
+            // Estimate GPU cost with adjustments for GPU characteristics
+            var cost = await EstimateExecutionCost(operation, tempContext);
+            // Apply GPU-specific adjustments
+            return cost * 0.1; // GPU is typically 10x faster for parallel workloads
         }
-        finally
+        else if (backend == BackendType.CPU && context.TargetBackend != BackendType.CPU)
         {
-            context.TargetBackend = originalBackend;
+            // Estimate CPU cost with adjustments for CPU characteristics
+            var cost = await EstimateExecutionCost(operation, tempContext);
+            // Apply CPU-specific adjustments
+            return cost * 10.0; // CPU is typically slower for highly parallel workloads
         }
+
+
+        return await EstimateExecutionCost(operation, tempContext);
     }
 
     private double CalculateConfidenceScore(double betterCost, double worseCost)
@@ -486,16 +553,19 @@ public sealed class ExecutionCostModel
         ExecutionContext context)
     {
         var reasons = new List<string>();
-        
+
+
         if (gpuCost < cpuCost)
         {
             reasons.Add($"GPU execution is {cpuCost / gpuCost:F1}x faster");
-            
+
+
             if (operation.InputSize > 100_000)
             {
                 reasons.Add("Large dataset favors GPU parallelism");
             }
-            
+
+
             if (CalculateComputeComplexity(operation) > 1.5)
             {
                 reasons.Add("High compute intensity benefits from GPU");
@@ -504,18 +574,21 @@ public sealed class ExecutionCostModel
         else
         {
             reasons.Add($"CPU execution is {gpuCost / cpuCost:F1}x faster");
-            
+
+
             if (operation.InputSize < 10_000)
             {
                 reasons.Add("Small dataset has insufficient GPU parallelism");
             }
-            
+
+
             if (DetermineMemoryAccessPattern(operation) == MemoryAccessPattern.Random)
             {
                 reasons.Add("Random memory access pattern favors CPU caches");
             }
         }
-        
+
+
         return string.Join("; ", reasons);
     }
 
@@ -524,44 +597,51 @@ public sealed class ExecutionCostModel
         var elementSize = GetElementSize(operation.DataType);
         var inputMemory = operation.InputSize * elementSize;
         var outputMemory = EstimateOutputSize(operation) * elementSize;
-        
+
+
         return inputMemory + outputMemory;
     }
 
-    private async Task<long> EstimateIntermediateMemoryUsage(QueryOperation operation, ExecutionContext context)
+    private Task<long> EstimateIntermediateMemoryUsage(QueryOperation operation, ExecutionContext context)
     {
-        return operation.Type switch
+        var usage = operation.Type switch
         {
             OperationType.GroupBy => (long)(operation.InputSize * GetElementSize(operation.DataType) * 0.2), // Hash table overhead
             OperationType.Join => (long)(operation.InputSize * GetElementSize(operation.DataType) * 0.3), // Hash table for smaller relation
             OperationType.Reduce => (long)(Math.Log2(operation.ParallelizationConfig?.Degree ?? 1) * GetElementSize(operation.DataType) * 64), // Reduction tree
-            _ => 0
+            _ => 0L
         };
+        return Task.FromResult(usage);
     }
 
-    private async Task<long> EstimateParallelizationMemoryOverhead(QueryOperation operation, ExecutionContext context)
+    private Task<long> EstimateParallelizationMemoryOverhead(QueryOperation operation, ExecutionContext context)
     {
         var parallelismDegree = operation.ParallelizationConfig?.Degree ?? 1;
-        
+
+
         if (parallelismDegree <= 1)
         {
-            return 0;
+            return Task.FromResult(0L);
         }
-        
+
         // Estimate per-thread memory overhead
+
         var perThreadOverhead = context.TargetBackend == BackendType.CUDA ? 1024 : 8192; // GPU vs CPU stack size
-        return parallelismDegree * perThreadOverhead;
+        var overhead = (long)(parallelismDegree * perThreadOverhead);
+        return Task.FromResult(overhead);
     }
 
     private async Task<CostBreakdown> AnalyzeCostBreakdown(QueryOperation operation, ExecutionContext context)
     {
         var performanceModel = await GetPerformanceModel(operation, context);
-        
+
+
         var computeCost = await EstimateComputeCost(operation, performanceModel, context);
         var memoryCost = await EstimateMemoryCost(operation, performanceModel, context);
         var transferCost = await EstimateTransferCost(operation, performanceModel, context);
         var synchronizationCost = await EstimateSynchronizationCost(operation, performanceModel, context);
-        
+
+
         return new CostBreakdown
         {
             ComputeCost = computeCost,
@@ -572,12 +652,13 @@ public sealed class ExecutionCostModel
         };
     }
 
-    private async Task<List<OptimizationRecommendation>> SuggestComputeOptimizations(
+    private Task<List<OptimizationRecommendation>> SuggestComputeOptimizations(
         QueryOperation operation,
         ExecutionContext context)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
+
         if (context.TargetBackend == BackendType.CPU && CalculateVectorizationPotential(operation) > 0.7)
         {
             recommendations.Add(new OptimizationRecommendation
@@ -588,7 +669,8 @@ public sealed class ExecutionCostModel
                 ImplementationEffort = ImplementationEffort.Low
             });
         }
-        
+
+
         if (operation.ParallelizationConfig?.Degree == 1 && CalculateParallelizabilityFactor(operation) > 0.8)
         {
             recommendations.Add(new OptimizationRecommendation
@@ -599,16 +681,18 @@ public sealed class ExecutionCostModel
                 ImplementationEffort = ImplementationEffort.Medium
             });
         }
-        
-        return recommendations;
+
+
+        return Task.FromResult(recommendations);
     }
 
-    private async Task<List<OptimizationRecommendation>> SuggestMemoryOptimizations(
+    private Task<List<OptimizationRecommendation>> SuggestMemoryOptimizations(
         QueryOperation operation,
         ExecutionContext context)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
+
         if (DetermineMemoryAccessPattern(operation) == MemoryAccessPattern.Random)
         {
             recommendations.Add(new OptimizationRecommendation
@@ -619,7 +703,8 @@ public sealed class ExecutionCostModel
                 ImplementationEffort = ImplementationEffort.High
             });
         }
-        
+
+
         if (operation.InputSize * GetElementSize(operation.DataType) > context.CacheSize * 2)
         {
             recommendations.Add(new OptimizationRecommendation
@@ -630,16 +715,18 @@ public sealed class ExecutionCostModel
                 ImplementationEffort = ImplementationEffort.Medium
             });
         }
-        
-        return recommendations;
+
+
+        return Task.FromResult(recommendations);
     }
 
-    private async Task<List<OptimizationRecommendation>> SuggestTransferOptimizations(
+    private Task<List<OptimizationRecommendation>> SuggestTransferOptimizations(
         QueryOperation operation,
         ExecutionContext context)
     {
         var recommendations = new List<OptimizationRecommendation>();
-        
+
+
         if (context.TargetBackend == BackendType.CUDA)
         {
             recommendations.Add(new OptimizationRecommendation
@@ -649,7 +736,8 @@ public sealed class ExecutionCostModel
                 EstimatedImpact = 0.3,
                 ImplementationEffort = ImplementationEffort.Medium
             });
-            
+
+
             recommendations.Add(new OptimizationRecommendation
             {
                 Type = OptimizationType.KernelFusion,
@@ -658,18 +746,49 @@ public sealed class ExecutionCostModel
                 ImplementationEffort = ImplementationEffort.High
             });
         }
-        
-        return recommendations;
+
+
+        return Task.FromResult(recommendations);
     }
 
     private int GetElementSize(Type dataType)
     {
-        if (dataType == typeof(byte)) return 1;
-        if (dataType == typeof(short)) return 2;
-        if (dataType == typeof(int)) return 4;
-        if (dataType == typeof(long)) return 8;
-        if (dataType == typeof(float)) return 4;
-        if (dataType == typeof(double)) return 8;
+        if (dataType == typeof(byte))
+        {
+            return 1;
+        }
+
+
+        if (dataType == typeof(short))
+        {
+            return 2;
+        }
+
+
+        if (dataType == typeof(int))
+        {
+            return 4;
+        }
+
+
+        if (dataType == typeof(long))
+        {
+            return 8;
+        }
+
+
+        if (dataType == typeof(float))
+        {
+            return 4;
+        }
+
+
+        if (dataType == typeof(double))
+        {
+            return 8;
+        }
+
+
         return 8; // Default
     }
 
@@ -723,6 +842,12 @@ public class PerformanceModel
 
 public class HardwareProfiler
 {
+    // Performance baselines (operations per second) - duplicated from ExecutionCostModel
+    private const double CpuFloatOpsPerSecond = 10_000_000_000; // 10 GFLOPS
+    private const double GpuFloatOpsPerSecond = 1_000_000_000_000; // 1 TFLOPS
+    private const double MemoryBandwidthCpuGBps = 50; // 50 GB/s
+    private const double MemoryBandwidthGpuGBps = 500; // 500 GB/s
+
     public async Task<HardwareProfile> ProfileHardware(ExecutionContext context)
     {
         return new HardwareProfile
@@ -854,9 +979,5 @@ public enum ImplementationEffort
     High
 }
 
-public enum ThermalState
-{
-    Normal,
-    Warning,
-    Throttling
-}
+
+// Removed duplicate ThermalState enum - using DotCompute.Linq.Execution.ThermalState instead

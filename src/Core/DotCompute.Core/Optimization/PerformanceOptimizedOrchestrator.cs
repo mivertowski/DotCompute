@@ -591,8 +591,9 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         {
             return await _baseOrchestrator.ValidateKernelArgsAsync(kernelName, args);
         }
-        
+
         // Basic validation - just check if kernel exists and args are not null
+
         return !string.IsNullOrEmpty(kernelName) && args != null;
     }
 
@@ -626,6 +627,20 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _baseOrchestrator.GetSupportedAcceleratorsAsync(kernelName);
+    }
+
+    /// <inheritdoc />
+    public async Task<object?> ExecuteKernelAsync(string kernelName, IKernelExecutionParameters executionParameters)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _baseOrchestrator.ExecuteKernelAsync(kernelName, executionParameters);
+    }
+
+    /// <inheritdoc />
+    public async Task<object?> ExecuteKernelAsync(string kernelName, object[] args, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _baseOrchestrator.ExecuteKernelAsync(kernelName, args, cancellationToken);
     }
 
     public void Dispose()

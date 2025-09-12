@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Linq;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Extensions;
@@ -245,8 +246,9 @@ public class BasicUsageExamples
 
             // Execute with aggressive optimization
             var stopwatch = Stopwatch.StartNew();
-            var results = await optimizedPipeline.ExecutePipelineAsync<ProcessedResult[]>(
-                DotCompute.Abstractions.Types.OptimizationLevel.Aggressive);
+            // Execute the optimized pipeline
+            var resultsQuery = await ((dynamic)optimizedPipeline).ExecuteAsync();
+            var results = ((IQueryable<ProcessedResult>)resultsQuery).ToArray();
             stopwatch.Stop();
 
             logger.LogInformation("Pipeline executed {Count} results in {ElapsedMs}ms with optimization",
@@ -254,8 +256,9 @@ public class BasicUsageExamples
 
             // Demonstrate pipeline reuse (should be faster due to caching)
             stopwatch.Restart();
-            var cachedResults = await optimizedPipeline.ExecutePipelineAsync<ProcessedResult[]>(
-                DotCompute.Abstractions.Types.OptimizationLevel.Aggressive);
+            // Execute cached pipeline (reuse optimized pipeline)
+            var cachedQuery = await ((dynamic)optimizedPipeline).ExecuteAsync();
+            var cachedResults = ((IQueryable<ProcessedResult>)cachedQuery).ToArray();
             stopwatch.Stop();
 
             logger.LogInformation("Cached pipeline executed {Count} results in {ElapsedMs}ms",
@@ -366,9 +369,11 @@ public class BasicUsageExamples
             // Analyze pipeline performance
             var performanceReport = await queryable.AnalyzePipelinePerformanceAsync(services);
             logger.LogInformation("Performance Analysis Results:");
-            logger.LogInformation("  Estimated execution time: {Time}ms", 
+            logger.LogInformation("  Estimated execution time: {Time}ms",
+
                 performanceReport.EstimatedExecutionTime.TotalMilliseconds);
-            logger.LogInformation("  Estimated memory usage: {Memory}MB", 
+            logger.LogInformation("  Estimated memory usage: {Memory}MB",
+
                 performanceReport.EstimatedMemoryUsage / (1024.0 * 1024.0));
 
             // Get backend recommendation
@@ -406,10 +411,10 @@ public class BasicUsageExamples
             var data = GenerateSampleData(100_000);
 
             // Define frequently used queries
-            var frequentQueries = new[]
+            var frequentQueries = new IQueryable[]
             {
                 data.AsComputeQueryable(services).Where(x => x.IsActive),
-                data.AsComputeQueryable(services).Select(x => x.Value * 2.0f),
+                data.AsComputeQueryable(services).Select(x => new { ProcessedValue = x.Value * 2.0f }),
                 data.AsComputeQueryable(services).Where(x => x.Category < 5)
             };
 
@@ -418,7 +423,8 @@ public class BasicUsageExamples
             await Task.WhenAll(frequentQueries.Select(q => q.PrecompileAsync(services)));
             precompileStopwatch.Stop();
 
-            logger.LogInformation("Pre-compilation completed in {ElapsedMs}ms", 
+            logger.LogInformation("Pre-compilation completed in {ElapsedMs}ms",
+
                 precompileStopwatch.ElapsedMilliseconds);
 
             // Execute pre-compiled queries (should be faster)
@@ -429,7 +435,8 @@ public class BasicUsageExamples
                 var stopwatch = Stopwatch.StartNew();
                 var results = await query.ExecuteAsync();
                 stopwatch.Stop();
-                
+
+
                 executionTimes.Add(stopwatch.ElapsedMilliseconds);
                 logger.LogInformation("Pre-compiled query executed in {ElapsedMs}ms, {Count} results",
                     stopwatch.ElapsedMilliseconds, results.Count());
@@ -474,12 +481,14 @@ public class BasicUsageExamples
     private static async IAsyncEnumerable<SampleDataItem> GenerateStreamingDataAsync(int count)
     {
         var random = new Random(42);
-        
+
+
         for (int i = 0; i < count; i++)
         {
             // Simulate streaming delay
             await Task.Delay(1);
-            
+
+
             yield return new SampleDataItem(
                 id: i,
                 value: (float)(random.NextDouble() * 1000 + Math.Sin(i * 0.1) * 100),

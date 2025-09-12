@@ -68,12 +68,12 @@ internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
     /// <param name="bufferB">The second input vector buffer.</param>
     /// <param name="bufferResult">The output vector buffer.</param>
     /// <param name="elementCount">The number of elements to process.</param>
-    private static async void ExecuteVectorAddOptimized(IUnifiedMemoryBuffer bufferA, IUnifiedMemoryBuffer bufferB, IUnifiedMemoryBuffer bufferResult, int elementCount)
+    private static async Task ExecuteVectorAddOptimized(IUnifiedMemoryBuffer bufferA, IUnifiedMemoryBuffer bufferB, IUnifiedMemoryBuffer bufferResult, int elementCount)
+    {
         // Use generic implementation since we don't have direct access to HighPerformanceMemoryBuffer here
         // This could be optimized further by exposing unsafe pointers through IUnifiedMemoryBuffer
-
-
-        => await ExecuteVectorAddGenericAsync(bufferA, bufferB, bufferResult, elementCount);
+        await ExecuteVectorAddGenericAsync(bufferA, bufferB, bufferResult, elementCount);
+    }
 
     /// <summary>
     /// Executes the vector addition using generic memory buffer operations with SIMD optimization.

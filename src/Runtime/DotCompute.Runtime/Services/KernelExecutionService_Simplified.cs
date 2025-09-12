@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Runtime.Logging;
@@ -42,7 +43,7 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
             _logger.LogDebugMessage($"Registered kernel: {registration.FullName} with backends: {string.Join(", ", registration.SupportedBackends)}");
         }
 
-        _logger.LogInfoMessage("Registered {_kernelRegistry.Count} kernels from generated registry");
+        _logger.LogInfoMessage($"Registered {_kernelRegistry.Count} kernels from generated registry");
     }
 
     /// <inheritdoc />
@@ -137,7 +138,7 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
 
         if (availableAccelerators.Count == 0)
         {
-            _logger.LogWarningMessage("No suitable accelerators found for kernel {kernelName}");
+            _logger.LogWarningMessage($"No suitable accelerators found for kernel {kernelName}");
             return null;
         }
 
@@ -154,7 +155,7 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
     /// <inheritdoc />
     public async Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
     {
-        _logger.LogInfoMessage("Pre-compilation requested for kernel {kernelName} (placeholder implementation)");
+        _logger.LogInfoMessage($"Pre-compilation requested for kernel {kernelName} (placeholder implementation)");
         await Task.CompletedTask;
     }
 
@@ -215,6 +216,42 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
             "CPU" => 4,      // Fallback option
             _ => 999
         };
+    }
+
+    /// <inheritdoc />
+    public async Task<object?> ExecuteKernelAsync(string kernelName, IKernelExecutionParameters executionParameters)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var accelerator = !string.IsNullOrEmpty(executionParameters.PreferredBackend)
+            ? _runtime.GetAccelerators()
+                .FirstOrDefault(a => a.Info.DeviceType.Equals(executionParameters.PreferredBackend, StringComparison.OrdinalIgnoreCase))
+            : await GetOptimalAcceleratorAsync(kernelName);
+
+        if (accelerator == null)
+        {
+            throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
+        }
+
+        // Execute kernel and return as object
+        var result = await ExecuteAsync<object>(kernelName, accelerator, executionParameters.Arguments);
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async Task<object?> ExecuteKernelAsync(string kernelName, object[] args, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var accelerator = await GetOptimalAcceleratorAsync(kernelName);
+        if (accelerator == null)
+        {
+            throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
+        }
+
+        // Execute kernel and return as object
+        var result = await ExecuteAsync<object>(kernelName, accelerator, args);
+        return result;
     }
 
     public void Dispose()

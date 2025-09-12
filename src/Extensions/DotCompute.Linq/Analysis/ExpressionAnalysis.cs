@@ -134,7 +134,8 @@ public sealed class ExpressionAnalysis
     private static Type[]? ExtractInputTypes(System.Linq.Expressions.Expression expression)
     {
         var types = new List<Type>();
-        
+
+
         if (expression is System.Linq.Expressions.MethodCallExpression methodCall)
         {
             foreach (var argument in methodCall.Arguments)
@@ -238,8 +239,9 @@ internal class ComplexityAnalysisVisitor : System.Linq.Expressions.ExpressionVis
             node.Method.DeclaringType == typeof(System.Linq.Enumerable))
         {
             ChainLength++;
-            
+
             // Check for different operation types
+
             switch (node.Method.Name)
             {
                 case "Sum":

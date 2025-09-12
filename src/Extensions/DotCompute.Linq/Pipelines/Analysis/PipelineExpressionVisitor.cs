@@ -109,14 +109,17 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("WhereKernel", PipelineStageType.Filter);
         var predicate = ExtractLambdaExpression(node.Arguments[1]);
-        
+
+
         stage.Parameters.Add("predicate", predicate);
         stage.KernelComplexity = AnalyzeLambdaComplexity(predicate);
-        stage.SupportedBackends = new[] { "CPU", "CUDA" }; // Where operations work on both
-        
+        stage.SupportedBackends = ["CPU", "CUDA"]; // Where operations work on both
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -124,20 +127,24 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("SelectKernel", PipelineStageType.Transform);
         var selector = ExtractLambdaExpression(node.Arguments[1]);
-        
+
+
         stage.Parameters.Add("selector", selector);
         stage.KernelComplexity = AnalyzeLambdaComplexity(selector);
         stage.SupportedBackends = DetermineSelectorBackends(selector);
-        
+
         // Check for projection complexity
+
         if (IsComplexProjection(selector))
         {
             stage.OptimizationHints.Add("Consider kernel fusion for complex projections");
         }
-        
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -145,63 +152,75 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("GroupByKernel", PipelineStageType.Grouping);
         var keySelector = ExtractLambdaExpression(node.Arguments[1]);
-        
+
+
         stage.Parameters.Add("keySelector", keySelector);
         stage.KernelComplexity = KernelComplexity.High; // GroupBy is inherently complex
-        stage.SupportedBackends = new[] { "CUDA" }; // GPU-optimized grouping
+        stage.SupportedBackends = ["CUDA"]; // GPU-optimized grouping
         stage.RequiredMemory = EstimateGroupingMemory(keySelector);
-        
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
     private Expression VisitJoinExpression(MethodCallExpression node)
     {
         var stage = CreateStage("JoinKernel", PipelineStageType.Join);
-        
+
         // Extract join parameters
+
         var outerKeySelector = ExtractLambdaExpression(node.Arguments[2]);
         var innerKeySelector = ExtractLambdaExpression(node.Arguments[3]);
         var resultSelector = ExtractLambdaExpression(node.Arguments[4]);
-        
+
+
         stage.Parameters.Add("outerKeySelector", outerKeySelector);
         stage.Parameters.Add("innerKeySelector", innerKeySelector);
         stage.Parameters.Add("resultSelector", resultSelector);
         stage.KernelComplexity = KernelComplexity.VeryHigh; // Joins are very complex
-        stage.SupportedBackends = new[] { "CUDA" }; // GPU-optimized joins
-        
+        stage.SupportedBackends = ["CUDA"]; // GPU-optimized joins
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit outer source
         Visit(node.Arguments[1]); // Visit inner source
-        
+
+
         return node;
     }
 
     private Expression VisitAggregateExpression(MethodCallExpression node)
     {
         var stage = CreateStage("AggregateKernel", PipelineStageType.Reduction);
-        
+
+
         if (node.Arguments.Count > 1)
         {
             var aggregateFunc = ExtractLambdaExpression(node.Arguments[1]);
             stage.Parameters.Add("aggregateFunc", aggregateFunc);
             stage.KernelComplexity = AnalyzeLambdaComplexity(aggregateFunc);
         }
-        
+
+
         if (node.Arguments.Count > 2)
         {
             var selector = ExtractLambdaExpression(node.Arguments[2]);
             stage.Parameters.Add("selector", selector);
         }
-        
-        stage.SupportedBackends = new[] { "CUDA", "CPU" }; // Both support reductions
+
+
+        stage.SupportedBackends = ["CUDA", "CPU"]; // Both support reductions
         stage.OptimizationHints.Add("Consider parallel reduction for large datasets");
-        
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -209,12 +228,14 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("SumKernel", PipelineStageType.Reduction);
         stage.KernelComplexity = KernelComplexity.Low; // Sum is simple
-        stage.SupportedBackends = new[] { "CUDA", "CPU" }; // Highly optimized on both
+        stage.SupportedBackends = ["CUDA", "CPU"]; // Highly optimized on both
         stage.OptimizationHints.Add("Use SIMD instructions for CPU, parallel reduction for GPU");
-        
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -224,21 +245,26 @@ public class PipelineExpressionVisitor : ExpressionVisitor
         var sumStage = CreateStage("SumKernel", PipelineStageType.Reduction);
         var countStage = CreateStage("CountKernel", PipelineStageType.Reduction);
         var divideStage = CreateStage("DivideKernel", PipelineStageType.Transform);
-        
-        sumStage.SupportedBackends = new[] { "CUDA", "CPU" };
-        countStage.SupportedBackends = new[] { "CUDA", "CPU" };
-        divideStage.SupportedBackends = new[] { "CUDA", "CPU" };
-        
+
+
+        sumStage.SupportedBackends = ["CUDA", "CPU"];
+        countStage.SupportedBackends = ["CUDA", "CPU"];
+        divideStage.SupportedBackends = ["CUDA", "CPU"];
+
         // Mark these as parallel stages that can run simultaneously
+
         sumStage.CanRunInParallel = true;
         countStage.CanRunInParallel = true;
-        
+
+
         AddStage(sumStage);
         AddStage(countStage);
         AddStage(divideStage);
-        
+
+
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -246,19 +272,22 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("CountKernel", PipelineStageType.Reduction);
         stage.KernelComplexity = KernelComplexity.Low;
-        stage.SupportedBackends = new[] { "CUDA", "CPU" };
-        
+        stage.SupportedBackends = ["CUDA", "CPU"];
+
         // If there's a predicate, it's Count(predicate)
+
         if (node.Arguments.Count > 1)
         {
             var predicate = ExtractLambdaExpression(node.Arguments[1]);
             stage.Parameters.Add("predicate", predicate);
             stage.KernelComplexity = AnalyzeLambdaComplexity(predicate);
         }
-        
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -266,17 +295,20 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("MinKernel", PipelineStageType.Reduction);
         stage.KernelComplexity = KernelComplexity.Medium;
-        stage.SupportedBackends = new[] { "CUDA", "CPU" };
-        
+        stage.SupportedBackends = ["CUDA", "CPU"];
+
+
         if (node.Arguments.Count > 1)
         {
             var selector = ExtractLambdaExpression(node.Arguments[1]);
             stage.Parameters.Add("selector", selector);
         }
-        
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -284,17 +316,20 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("MaxKernel", PipelineStageType.Reduction);
         stage.KernelComplexity = KernelComplexity.Medium;
-        stage.SupportedBackends = new[] { "CUDA", "CPU" };
-        
+        stage.SupportedBackends = ["CUDA", "CPU"];
+
+
         if (node.Arguments.Count > 1)
         {
             var selector = ExtractLambdaExpression(node.Arguments[1]);
             stage.Parameters.Add("selector", selector);
         }
-        
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -302,16 +337,19 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("OrderByKernel", PipelineStageType.Sorting);
         var keySelector = ExtractLambdaExpression(node.Arguments[1]);
-        
+
+
         stage.Parameters.Add("keySelector", keySelector);
         stage.Parameters.Add("descending", descending);
         stage.KernelComplexity = KernelComplexity.High; // Sorting is complex
-        stage.SupportedBackends = new[] { "CUDA" }; // GPU-optimized sorting
+        stage.SupportedBackends = ["CUDA"]; // GPU-optimized sorting
         stage.RequiredMemory = EstimateSortingMemory();
-        
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -319,14 +357,17 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("TakeKernel", PipelineStageType.Limiting);
         var count = ExtractConstantValue<int>(node.Arguments[1]);
-        
+
+
         stage.Parameters.Add("count", count);
         stage.KernelComplexity = KernelComplexity.Low;
-        stage.SupportedBackends = new[] { "CUDA", "CPU" };
-        
+        stage.SupportedBackends = ["CUDA", "CPU"];
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -334,14 +375,17 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("SkipKernel", PipelineStageType.Limiting);
         var count = ExtractConstantValue<int>(node.Arguments[1]);
-        
+
+
         stage.Parameters.Add("count", count);
         stage.KernelComplexity = KernelComplexity.Low;
-        stage.SupportedBackends = new[] { "CUDA", "CPU" };
-        
+        stage.SupportedBackends = ["CUDA", "CPU"];
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -349,12 +393,14 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("DistinctKernel", PipelineStageType.Deduplication);
         stage.KernelComplexity = KernelComplexity.High;
-        stage.SupportedBackends = new[] { "CUDA" }; // Hash-based distinct on GPU
+        stage.SupportedBackends = ["CUDA"]; // Hash-based distinct on GPU
         stage.RequiredMemory = EstimateDistinctMemory();
-        
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
-        
+
+
         return node;
     }
 
@@ -362,12 +408,14 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("UnionKernel", PipelineStageType.SetOperation);
         stage.KernelComplexity = KernelComplexity.Medium;
-        stage.SupportedBackends = new[] { "CUDA", "CPU" };
-        
+        stage.SupportedBackends = ["CUDA", "CPU"];
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit first source
         Visit(node.Arguments[1]); // Visit second source
-        
+
+
         return node;
     }
 
@@ -375,12 +423,14 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("IntersectKernel", PipelineStageType.SetOperation);
         stage.KernelComplexity = KernelComplexity.High;
-        stage.SupportedBackends = new[] { "CUDA" }; // Hash-based intersection
-        
+        stage.SupportedBackends = ["CUDA"]; // Hash-based intersection
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit first source
         Visit(node.Arguments[1]); // Visit second source
-        
+
+
         return node;
     }
 
@@ -388,32 +438,38 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         var stage = CreateStage("ExceptKernel", PipelineStageType.SetOperation);
         stage.KernelComplexity = KernelComplexity.High;
-        stage.SupportedBackends = new[] { "CUDA" }; // Hash-based except
-        
+        stage.SupportedBackends = ["CUDA"]; // Hash-based except
+
+
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit first source
         Visit(node.Arguments[1]); // Visit second source
-        
+
+
         return node;
     }
 
     private Expression VisitGenericMethodCall(MethodCallExpression node)
     {
         _logger.LogWarning("Encountered unsupported method call: {Method}", node.Method.Name);
-        
+
+
         var stage = CreateStage($"CustomKernel_{node.Method.Name}", PipelineStageType.Custom);
         stage.KernelComplexity = KernelComplexity.Unknown;
-        stage.SupportedBackends = new[] { "CPU" }; // Default to CPU for unknown operations
+        stage.SupportedBackends = ["CPU"]; // Default to CPU for unknown operations
         stage.OptimizationHints.Add($"Custom implementation needed for {node.Method.Name}");
-        
+
+
         AddStage(stage);
-        
+
         // Visit all arguments
+
         foreach (var argument in node.Arguments)
         {
             Visit(argument);
         }
-        
+
+
         return node;
     }
 
@@ -446,7 +502,8 @@ public class PipelineExpressionVisitor : ExpressionVisitor
         {
             stage.Dependencies.Add(_stages.Last().StageId);
         }
-        
+
+
         _stages.Add(stage);
         _optimizationContext.AnalyzeStage(stage);
     }
@@ -467,7 +524,8 @@ public class PipelineExpressionVisitor : ExpressionVisitor
         {
             return value;
         }
-        
+
+
         throw new ArgumentException($"Expected constant of type {typeof(T)}, got {expression.GetType()}");
     }
 
@@ -476,7 +534,8 @@ public class PipelineExpressionVisitor : ExpressionVisitor
         // Simple heuristic based on expression tree complexity
         var visitor = new ComplexityAnalysisVisitor();
         visitor.Visit(lambda.Body);
-        
+
+
         return visitor.GetComplexity();
     }
 
@@ -523,24 +582,27 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     private List<ParallelizationOpportunity> IdentifyParallelizationOpportunities(List<PipelineStageInfo> stages)
     {
         var opportunities = new List<ParallelizationOpportunity>();
-        
+
         // Look for stages that can run in parallel
+
         for (int i = 0; i < stages.Count - 1; i++)
         {
             var current = stages[i];
             var next = stages[i + 1];
-            
+
+
             if (current.CanRunInParallel || next.Dependencies.Count == 0)
             {
                 opportunities.Add(new ParallelizationOpportunity
                 {
-                    StageIds = new[] { current.StageId, next.StageId },
+                    StageIds = [current.StageId, next.StageId],
                     EstimatedSpeedup = 1.8, // Conservative estimate
                     Description = $"Parallel execution of {current.KernelName} and {next.KernelName}"
                 });
             }
         }
-        
+
+
         return opportunities;
     }
 
@@ -600,20 +662,32 @@ internal class BackendCompatibilityAnalyzer
         // Analyze the selector to determine backend compatibility
         var supportsCuda = true;
         var supportsCpu = true;
-        
+
         // Check for operations that might not be supported on GPU
+
         var visitor = new BackendCompatibilityVisitor();
         visitor.Visit(selector.Body);
-        
+
+
         if (!visitor.SupportsGpu)
         {
             supportsCuda = false;
         }
-        
+
+
         var backends = new List<string>();
-        if (supportsCpu) backends.Add("CPU");
-        if (supportsCuda) backends.Add("CUDA");
-        
+        if (supportsCpu)
+        {
+            backends.Add("CPU");
+        }
+
+
+        if (supportsCuda)
+        {
+            backends.Add("CUDA");
+        }
+
+
         return backends.ToArray();
     }
 }
@@ -629,13 +703,15 @@ internal class BackendCompatibilityVisitor : ExpressionVisitor
     {
         // Check for GPU-incompatible method calls
         var method = node.Method;
-        if (method.DeclaringType == typeof(string) || 
+        if (method.DeclaringType == typeof(string) ||
+
             method.DeclaringType == typeof(DateTime) ||
             method.DeclaringType == typeof(TimeSpan))
         {
             SupportsGpu = false; // String and DateTime operations often not GPU-friendly
         }
-        
+
+
         return base.VisitMethodCall(node);
     }
 }

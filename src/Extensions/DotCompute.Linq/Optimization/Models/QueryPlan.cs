@@ -38,17 +38,44 @@ public class QueryPlan
     /// <summary>Gets or sets whether this plan supports parallel execution.</summary>
     public bool SupportsParallelExecution { get; set; } = true;
 
+    /// <summary>Gets or sets the estimated data size in bytes.</summary>
+    public long EstimatedDataSize { get; set; }
+
     /// <summary>Gets or sets the target backend for execution.</summary>
     public string TargetBackend { get; set; } = "Auto";
 
     /// <summary>Gets or sets optimization hints for this plan.</summary>
     public List<string> OptimizationHints { get; set; } = new();
 
+    /// <summary>Gets or sets the dynamic scheduling configuration for this plan.</summary>
+    public DotCompute.Linq.Optimization.Strategies.DynamicSchedule? DynamicScheduleConfig { get; set; }
+
     /// <summary>Gets or sets the plan creation timestamp.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>Gets or sets the plan last modified timestamp.</summary>
     public DateTime LastModified { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Gets or sets the estimated memory usage for the entire plan.</summary>
+    public long EstimatedMemoryUsage { get; set; }
+
+    /// <summary>Gets or sets the preferred backend for execution.</summary>
+    public string PreferredBackend { get; set; } = "Auto";
+
+    /// <summary>Gets or sets the degree of parallelism for the plan.</summary>
+    public int ParallelismDegree { get; set; } = Environment.ProcessorCount;
+
+    /// <summary>Gets or sets the memory optimization strategy for the plan.</summary>
+    public string MemoryStrategy { get; set; } = "Balanced";
+
+    /// <summary>Gets or sets the cache strategy for the plan.</summary>
+    public string CacheStrategy { get; set; } = "Auto";
+
+    /// <summary>Gets or sets the memory pooling strategy for the plan.</summary>
+    public string MemoryPoolingStrategy { get; set; } = "Auto";
+
+    /// <summary>Gets or sets the buffer reuse strategy for the plan.</summary>
+    public string BufferReuseStrategy { get; set; } = "Auto";
 
     /// <summary>
     /// Gets the total input size across all operations.
@@ -128,7 +155,15 @@ public class QueryPlan
             OptimizationHints = new List<string>(OptimizationHints),
             CreatedAt = DateTime.UtcNow,
             LastModified = DateTime.UtcNow,
-            MaxParallelizationDegree = MaxParallelizationDegree
+            MaxParallelizationDegree = MaxParallelizationDegree,
+            EstimatedMemoryUsage = EstimatedMemoryUsage,
+            PreferredBackend = PreferredBackend,
+            ParallelismDegree = ParallelismDegree,
+            MemoryStrategy = MemoryStrategy,
+            CacheStrategy = CacheStrategy,
+            MemoryPoolingStrategy = MemoryPoolingStrategy,
+            BufferReuseStrategy = BufferReuseStrategy,
+            DynamicScheduleConfig = DynamicScheduleConfig
         };
     }
 
@@ -238,4 +273,60 @@ public class QueryPlan
 
         return missingDeps.Distinct().ToList();
     }
+
+    /// <summary>
+    /// Replaces multiple operations in the plan with a single operation.
+    /// </summary>
+    /// <param name="operationsToReplace">The operations to remove from the plan.</param>
+    /// <param name="replacementOperation">The operation to add in their place.</param>
+    public void ReplaceOperations(IEnumerable<QueryOperation> operationsToReplace, QueryOperation replacementOperation)
+    {
+        ArgumentNullException.ThrowIfNull(operationsToReplace);
+        ArgumentNullException.ThrowIfNull(replacementOperation);
+
+        var operationsToRemove = operationsToReplace.ToList();
+
+        // Remove the operations to be replaced
+
+        foreach (var operation in operationsToRemove)
+        {
+            Operations.Remove(operation);
+        }
+
+        // Add the replacement operation
+        Operations.Add(replacementOperation);
+        LastModified = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Configures the plan for dynamic scheduling.
+    /// </summary>
+    /// <param name="enableDynamic">Whether to enable dynamic scheduling.</param>
+    /// <returns>The current plan for chaining.</returns>
+    public QueryPlan DynamicSchedule(bool enableDynamic = true)
+    {
+        if (enableDynamic)
+        {
+            OptimizationHints.Add("DynamicScheduling");
+            Metadata["UseDynamicScheduling"] = true;
+        }
+        else
+        {
+            OptimizationHints.Remove("DynamicScheduling");
+            Metadata.Remove("UseDynamicScheduling");
+        }
+
+
+        LastModified = DateTime.UtcNow;
+        return this;
+    }
+
+    /// <summary>
+    /// Gets whether dynamic scheduling is enabled for this plan.
+    /// </summary>
+    public bool IsDynamicSchedulingEnabled =>
+
+        OptimizationHints.Contains("DynamicScheduling") ||
+
+        (Metadata.TryGetValue("UseDynamicScheduling", out var value) && value is true);
 }

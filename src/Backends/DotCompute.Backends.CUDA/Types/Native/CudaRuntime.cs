@@ -192,6 +192,10 @@ namespace DotCompute.Backends.CUDA.Native
 
         [LibraryImport(CUDA_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        internal static partial CudaError cudaMemcpyPeer(nint dst, int dstDevice, nint src, int srcDevice, nuint count);
+
+        [LibraryImport(CUDA_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static partial CudaError cudaMemset(nint devPtr, int value, nuint count);
 
         [LibraryImport(CUDA_LIBRARY)]

@@ -895,6 +895,7 @@ namespace DotCompute.Core.Execution
         private static double EstimatePipelineMemoryBandwidth(StageExecutionResult[] stageResults)
             // Simplified memory bandwidth estimation for pipeline stages
 
+
             => 10.0; // GB/s - placeholder value
 
         private static List<int> GetLayerExecutionOrder<T>(ModelLayer<T>[] layers) where T : unmanaged

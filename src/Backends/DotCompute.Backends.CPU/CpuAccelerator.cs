@@ -28,20 +28,23 @@ public sealed class CpuAccelerator : BaseAccelerator
     private readonly ILogger<CpuAccelerator> _logger;
 
     #region LoggerMessage Delegates
-    
+
+
     private static readonly Action<ILogger, string, int, Exception?> LogOptimizedKernelCompiled =
         LoggerMessage.Define<string, int>(
             LogLevel.Debug,
             new EventId(2001, nameof(LogOptimizedKernelCompiled)),
             "Successfully compiled optimized kernel '{KernelName}' with {VectorWidth}-bit vectorization");
-    
+
+
     private static readonly Action<ILogger, string, Exception?> LogOptimizedKernelFallback =
         LoggerMessage.Define<string>(
             LogLevel.Debug,
             new EventId(2002, nameof(LogOptimizedKernelFallback)),
             "Failed to create optimized kernel for {KernelName}, falling back to standard compilation");
-    
+
     #endregion
+
 
     public CpuAccelerator(
         IOptions<CpuAcceleratorOptions> options,
@@ -111,6 +114,7 @@ public sealed class CpuAccelerator : BaseAccelerator
     /// <inheritdoc/>
     protected override ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken)
         // CPU operations are synchronous by default
+
 
         => ValueTask.CompletedTask;
 
@@ -289,6 +293,7 @@ internal sealed class CompiledKernelAdapter(ICompiledKernel coreKernel) : ICompi
         => await _coreKernel.ExecuteAsync(arguments, cancellationToken).ConfigureAwait(false);
 
     public ValueTask DisposeAsync() => _coreKernel.DisposeAsync();
-    
+
+
     public void Dispose() => _coreKernel.Dispose();
 }

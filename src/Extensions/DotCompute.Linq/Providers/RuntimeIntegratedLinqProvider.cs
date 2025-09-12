@@ -127,8 +127,9 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
         {
             // Analyze expression structure
             var analysis = ExpressionAnalysis.AnalyzeComplexity(expression);
-            
+
             // Check for CPU-bound operations
+
             if (!_compatibilityVisitor.IsGpuCompatible(expression))
             {
                 suggestions.Add(new DotCompute.Linq.Interfaces.OptimizationSuggestion
@@ -143,7 +144,8 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
             // Check for data size estimation
             var dataSizeEstimator = new DataSizeEstimator();
             var estimatedSize = dataSizeEstimator.EstimateDataSize(expression);
-            
+
+
             if (estimatedSize < 1000) // Less than 1K elements
             {
                 suggestions.Add(new DotCompute.Linq.Interfaces.OptimizationSuggestion
@@ -252,7 +254,8 @@ public class AcceleratorSpecificQueryable<T> : IntegratedComputeQueryable<T>
     /// <param name="source">The data source</param>
     /// <param name="accelerator">The specific accelerator to use</param>
     public AcceleratorSpecificQueryable(
-        IntegratedComputeQueryProvider provider, 
+        IntegratedComputeQueryProvider provider,
+
         IEnumerable<T> source,
         IAccelerator accelerator)
         : base(provider, source)

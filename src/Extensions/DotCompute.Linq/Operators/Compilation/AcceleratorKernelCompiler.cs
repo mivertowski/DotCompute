@@ -67,6 +67,7 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
         CancellationToken cancellationToken = default)
         // Delegate to the accelerator's compilation capabilities
 
+
         => await _accelerator.CompileKernelAsync(definition, options, cancellationToken).ConfigureAwait(false);
 
     /// <summary>
@@ -111,6 +112,7 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
         OptimizationLevel level,
         CancellationToken cancellationToken = default)
         // Delegate to accelerator's optimization capabilities if available
+
 
         => ValueTask.FromResult(kernel);
 }

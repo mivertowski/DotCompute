@@ -97,7 +97,11 @@ namespace DotCompute.Core.Pipelines
             ThrowIfDisposed();
 
             if (kernels == null || kernels.Length == 0)
+            {
+
                 throw new ArgumentException("At least one kernel must be specified for parallel execution", nameof(kernels));
+            }
+
 
             var parallelStep = new KernelChainStep
             {
@@ -115,7 +119,8 @@ namespace DotCompute.Core.Pipelines
             };
 
             _steps.Add(parallelStep);
-            _logger?.LogDebug("Added {Count} kernels for parallel execution at position {Position}", 
+            _logger?.LogDebug("Added {Count} kernels for parallel execution at position {Position}",
+
                 kernels.Length, _steps.Count - 1);
 
             return this;
@@ -166,10 +171,18 @@ namespace DotCompute.Core.Pipelines
             ThrowIfDisposed();
 
             if (string.IsNullOrWhiteSpace(key))
+            {
+
                 throw new ArgumentException("Cache key cannot be null or whitespace", nameof(key));
+            }
+
 
             if (_steps.Count == 0)
+            {
+
                 throw new InvalidOperationException("Cannot add caching to empty chain. Add a kernel step first.");
+            }
+
 
             var lastStep = _steps[^1];
             lastStep.CacheKey = key;
@@ -186,7 +199,11 @@ namespace DotCompute.Core.Pipelines
             ThrowIfDisposed();
 
             if (string.IsNullOrWhiteSpace(backendName))
+            {
+
                 throw new ArgumentException("Backend name cannot be null or whitespace", nameof(backendName));
+            }
+
 
             _preferredBackend = backendName;
             _preferredAccelerator = null; // Clear accelerator preference when backend is set
@@ -228,7 +245,11 @@ namespace DotCompute.Core.Pipelines
             ThrowIfDisposed();
 
             if (timeout <= TimeSpan.Zero)
+            {
+
                 throw new ArgumentException("Timeout must be positive", nameof(timeout));
+            }
+
 
             _timeout = timeout;
 
@@ -279,12 +300,19 @@ namespace DotCompute.Core.Pipelines
             }
 
             if (result.Result is T typedResult)
+            {
                 return typedResult;
+            }
+
 
             if (result.Result == null)
+            {
+
                 return default(T)!;
+            }
 
             // Attempt type conversion
+
             try
             {
                 return (T)Convert.ChangeType(result.Result, typeof(T));
@@ -410,7 +438,8 @@ namespace DotCompute.Core.Pipelines
                 catch (Exception ex)
                 {
                     var handlerResult = HandleStepError(ex);
-                    
+
+
                     switch (handlerResult)
                     {
                         case ErrorHandlingStrategy.Continue:
@@ -517,14 +546,19 @@ namespace DotCompute.Core.Pipelines
         private async Task<object?> ExecuteSequentialStepAsync(KernelChainStep step, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(step.KernelName))
+            {
+
                 throw new InvalidOperationException("Kernel name is required for sequential steps");
+            }
 
             // Use the appropriate orchestrator method based on preferences
+
             if (_preferredAccelerator != null)
             {
                 return await _orchestrator.ExecuteAsync<object>(step.KernelName, _preferredAccelerator, step.Arguments);
             }
-            
+
+
             if (!string.IsNullOrEmpty(_preferredBackend))
             {
                 return await _orchestrator.ExecuteAsync<object>(step.KernelName, _preferredBackend, step.Arguments);
@@ -539,18 +573,25 @@ namespace DotCompute.Core.Pipelines
         private async Task<object?> ExecuteParallelStepAsync(KernelChainStep step, CancellationToken cancellationToken)
         {
             if (step.ParallelKernels == null || step.ParallelKernels.Count == 0)
+            {
+
                 return null;
+            }
 
             var tasks = step.ParallelKernels.Select(async parallelStep =>
             {
                 if (string.IsNullOrEmpty(parallelStep.KernelName))
+                {
                     throw new InvalidOperationException("Kernel name is required for parallel steps");
+                }
+
 
                 if (_preferredAccelerator != null)
                 {
                     return await _orchestrator.ExecuteAsync<object>(parallelStep.KernelName, _preferredAccelerator, parallelStep.Arguments);
                 }
-                
+
+
                 if (!string.IsNullOrEmpty(_preferredBackend))
                 {
                     return await _orchestrator.ExecuteAsync<object>(parallelStep.KernelName, _preferredBackend, parallelStep.Arguments);
@@ -569,16 +610,22 @@ namespace DotCompute.Core.Pipelines
         private async Task<object?> ExecuteBranchStepAsync(KernelChainStep step, object? previousResult, CancellationToken cancellationToken)
         {
             if (step.BranchCondition == null)
+            {
+
                 throw new InvalidOperationException("Branch condition is required for branch steps");
+            }
+
 
             var stepMetrics = new List<KernelStepMetrics>();
             var errors = new List<Exception>();
 
             // Evaluate condition
             bool conditionResult = step.BranchCondition.EvaluateCondition(previousResult);
-            
+
+
             var pathToExecute = conditionResult ? step.BranchCondition.TruePath : step.BranchCondition.FalsePath;
-            
+
+
             if (pathToExecute?.Count > 0)
             {
                 return await ExecuteStepsAsync(pathToExecute, stepMetrics, errors, cancellationToken);
@@ -626,10 +673,18 @@ namespace DotCompute.Core.Pipelines
         private string DetermineUsedBackend()
         {
             if (_preferredAccelerator != null)
+            {
+
                 return _preferredAccelerator.Info.Name ?? _preferredAccelerator.GetType().Name;
-            
+            }
+
+
             if (!string.IsNullOrEmpty(_preferredBackend))
+            {
+
                 return _preferredBackend;
+            }
+
 
             return "Auto";
         }
@@ -668,7 +723,10 @@ namespace DotCompute.Core.Pipelines
         public async ValueTask DisposeAsync()
         {
             if (_disposed)
+            {
                 return;
+            }
+
 
             try
             {

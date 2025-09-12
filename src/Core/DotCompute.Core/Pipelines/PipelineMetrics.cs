@@ -115,14 +115,18 @@ namespace DotCompute.Core.Pipelines
 
         /// <inheritdoc/>
         public double ItemThroughputPerSecond
-            => _totalExecutionTime.TotalSeconds > 0 
-                ? _totalItemsProcessed / _totalExecutionTime.TotalSeconds 
+            => _totalExecutionTime.TotalSeconds > 0
+
+                ? _totalItemsProcessed / _totalExecutionTime.TotalSeconds
+
                 : 0;
 
         /// <inheritdoc/>
         public double CacheHitRatio
-            => _totalCacheRequests > 0 
-                ? (double)_cacheHits / _totalCacheRequests 
+            => _totalCacheRequests > 0
+
+                ? (double)_cacheHits / _totalCacheRequests
+
                 : 0;
 
         /// <summary>
@@ -200,7 +204,8 @@ namespace DotCompute.Core.Pipelines
                     _cacheHits++;
                 }
             }
-            
+
+
             RecordTimeSeriesMetric("CacheHitRate", CacheHitRatio, DateTime.UtcNow);
         }
 
@@ -213,7 +218,8 @@ namespace DotCompute.Core.Pipelines
             {
                 _totalItemsProcessed += itemCount;
             }
-            
+
+
             RecordTimeSeriesMetric("ItemThroughput", ItemThroughputPerSecond, DateTime.UtcNow);
         }
 

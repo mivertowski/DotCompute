@@ -155,16 +155,19 @@ internal sealed class GPUCompatibilityVisitor : ExpressionVisitor
     public bool IsGpuCompatible(Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
-        
+
         // Reset state for new analysis
+
         _analysis.CanExecuteOnGPU = true;
         _analysis.Reason = null;
         _inputTypes.Clear();
         _complexity = 0;
-        
+
         // Visit the expression tree
+
         Visit(expression);
-        
+
+
         return _analysis.CanExecuteOnGPU;
     }
 }

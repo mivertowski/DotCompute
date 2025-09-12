@@ -38,8 +38,9 @@ public sealed class PipelineTelemetryCollector : IDisposable
     private readonly ConcurrentDictionary<string, PipelineMetricsSnapshot> _pipelineSnapshots;
     private readonly ConcurrentQueue<TelemetryEvent> _eventQueue;
     private readonly ConcurrentDictionary<string, StageMetricsSnapshot> _stageSnapshots;
-    
+
     // Atomic counters for lock-free operations
+
     private long _totalPipelineExecutions;
     private long _totalStageExecutions;
     private long _totalCacheAccesses;
@@ -61,7 +62,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options?.Value ?? new PipelineTelemetryOptions();
-        
+
+
         _pipelineSnapshots = new ConcurrentDictionary<string, PipelineMetricsSnapshot>();
         _eventQueue = new ConcurrentQueue<TelemetryEvent>();
         _stageSnapshots = new ConcurrentDictionary<string, StageMetricsSnapshot>();
@@ -73,7 +75,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
             description: "Total number of pipeline executions");
 
         _stageExecutionCounter = PipelineMeter.CreateCounter<long>(
-            "dotcompute_pipeline_stage_executions_total", 
+            "dotcompute_pipeline_stage_executions_total",
+
             description: "Total number of pipeline stage executions");
 
         _cacheAccessCounter = PipelineMeter.CreateCounter<long>(
@@ -87,7 +90,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
         _stageExecutionDuration = PipelineMeter.CreateHistogram<double>(
             "dotcompute_pipeline_stage_execution_duration_seconds",
-            unit: "s", 
+            unit: "s",
+
             description: "Pipeline stage execution duration in seconds");
 
         _itemThroughputHistogram = PipelineMeter.CreateHistogram<long>(
@@ -123,15 +127,18 @@ public sealed class PipelineTelemetryCollector : IDisposable
     public PipelineExecutionContext StartPipelineExecution(string pipelineId, string? correlationId = null)
     {
         ThrowIfDisposed();
-        
+
+
         Interlocked.Increment(ref _activePipelineCount);
-        
+
+
         var context = new PipelineExecutionContext
         {
             PipelineId = pipelineId,
             CorrelationId = correlationId ?? Guid.NewGuid().ToString("N"),
             StartTime = DateTime.UtcNow,
-            Activity = _options.EnableDistributedTracing 
+            Activity = _options.EnableDistributedTracing
+
                 ? PipelineActivitySource.StartActivity($"pipeline.{pipelineId}")
                 : null
         };
@@ -150,13 +157,16 @@ public sealed class PipelineTelemetryCollector : IDisposable
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void CompletePipelineExecution(
-        PipelineExecutionContext context, 
-        bool success, 
+        PipelineExecutionContext context,
+
+        bool success,
+
         long itemsProcessed = 0,
         Exception? exception = null)
     {
         ThrowIfDisposed();
-        
+
+
         var duration = DateTime.UtcNow - context.StartTime;
         Interlocked.Decrement(ref _activePipelineCount);
         Interlocked.Increment(ref _totalPipelineExecutions);
@@ -171,7 +181,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
         _pipelineExecutionCounter.Add(1, tags);
         _pipelineExecutionDuration.Record(duration.TotalSeconds, tags);
-        
+
+
         if (itemsProcessed > 0)
         {
             var throughput = itemsProcessed / Math.Max(duration.TotalSeconds, 0.001);
@@ -209,16 +220,21 @@ public sealed class PipelineTelemetryCollector : IDisposable
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RecordStageExecution(
-        string pipelineId, 
-        string stageId, 
-        TimeSpan duration, 
+        string pipelineId,
+
+        string stageId,
+
+        TimeSpan duration,
+
         bool success,
         long memoryUsed = 0)
     {
         ThrowIfDisposed();
-        
+
+
         Interlocked.Increment(ref _totalStageExecutions);
-        
+
+
         var tags = new KeyValuePair<string, object?>[]
         {
             new("pipeline_id", pipelineId),
@@ -244,7 +260,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
     public void RecordCacheAccess(string pipelineId, bool hit)
     {
         ThrowIfDisposed();
-        
+
+
         Interlocked.Increment(ref _totalCacheAccesses);
         if (hit)
         {
@@ -342,14 +359,17 @@ public sealed class PipelineTelemetryCollector : IDisposable
     private async Task<string> ExportPrometheusAsync(CancellationToken cancellationToken)
     {
         var prometheus = new StringBuilder();
-        
+
         // Global metrics
+
         prometheus.AppendLine($"# TYPE dotcompute_pipeline_executions_total counter");
         prometheus.AppendLine($"dotcompute_pipeline_executions_total {Interlocked.Read(ref _totalPipelineExecutions)}");
-        
+
+
         prometheus.AppendLine($"# TYPE dotcompute_pipeline_active_count gauge");
         prometheus.AppendLine($"dotcompute_pipeline_active_count {Interlocked.Read(ref _activePipelineCount)}");
-        
+
+
         prometheus.AppendLine($"# TYPE dotcompute_pipeline_cache_hit_ratio gauge");
         prometheus.AppendLine($"dotcompute_pipeline_cache_hit_ratio {GetAverageCacheHitRatio():F3}");
 
@@ -422,7 +442,11 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
     private void ExportMetricsAsync(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -431,7 +455,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
                 try
                 {
                     var metrics = await ExportMetricsAsync(_options.DefaultExportFormat, _cancellationTokenSource.Token);
-                    
+
+
                     if (_options.ExportToConsole)
                     {
                         _logger.LogDebug("Pipeline Metrics:\n{Metrics}", metrics);
@@ -466,7 +491,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to process telemetry event for pipeline {PipelineId}", 
+                _logger.LogWarning(ex, "Failed to process telemetry event for pipeline {PipelineId}",
+
                     telemetryEvent.PipelineId);
             }
         }
@@ -495,12 +521,20 @@ public sealed class PipelineTelemetryCollector : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(PipelineTelemetryCollector));
+        }
+
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _disposed = true;
         _cancellationTokenSource.Cancel();
@@ -603,14 +637,16 @@ public sealed class PipelineMetricsSnapshot
         LastExecution = lastExecution;
     }
 
-    public long ExecutionCount 
-    { 
+    public long ExecutionCount
+    {
+
         get => Interlocked.Read(ref _executionCount);
         private set => Interlocked.Exchange(ref _executionCount, value);
     }
 
-    public long SuccessCount 
-    { 
+    public long SuccessCount
+    {
+
         get => Interlocked.Read(ref _successCount);
         private set => Interlocked.Exchange(ref _successCount, value);
     }
@@ -623,59 +659,82 @@ public sealed class PipelineMetricsSnapshot
         private set => Interlocked.Exchange(ref _totalDurationTicks, value.Ticks);
     }
 
-    public TimeSpan AverageDuration => ExecutionCount > 0 
-        ? TimeSpan.FromTicks(TotalDuration.Ticks / ExecutionCount) 
+    public TimeSpan AverageDuration => ExecutionCount > 0
+
+        ? TimeSpan.FromTicks(TotalDuration.Ticks / ExecutionCount)
+
         : TimeSpan.Zero;
 
-    public TimeSpan MinDuration 
-    { 
+    public TimeSpan MinDuration
+    {
+
         get => TimeSpan.FromTicks(Interlocked.Read(ref _minDurationTicks));
         private set => Interlocked.Exchange(ref _minDurationTicks, value.Ticks);
     }
-    
-    public TimeSpan MaxDuration 
-    { 
+
+
+    public TimeSpan MaxDuration
+    {
+
         get => TimeSpan.FromTicks(Interlocked.Read(ref _maxDurationTicks));
         private set => Interlocked.Exchange(ref _maxDurationTicks, value.Ticks);
     }
 
-    public long ItemsProcessed 
-    { 
+    public long ItemsProcessed
+    {
+
         get => Interlocked.Read(ref _itemsProcessed);
         private set => Interlocked.Exchange(ref _itemsProcessed, value);
     }
 
-    public double ItemThroughputPerSecond => TotalDuration.TotalSeconds > 0 
-        ? ItemsProcessed / TotalDuration.TotalSeconds 
+    public double ItemThroughputPerSecond => TotalDuration.TotalSeconds > 0
+
+        ? ItemsProcessed / TotalDuration.TotalSeconds
+
         : 0.0;
 
     public PipelineMetricsSnapshot UpdateWith(TimeSpan duration, bool success, long items)
     {
         Interlocked.Increment(ref _executionCount);
-        if (success) Interlocked.Increment(ref _successCount);
-        
+        if (success)
+        {
+            Interlocked.Increment(ref _successCount);
+        }
+
+
         Interlocked.Add(ref _totalDurationTicks, duration.Ticks);
         Interlocked.Add(ref _itemsProcessed, items);
 
         // Update min/max using compare-and-swap for thread safety
         var durationTicks = duration.Ticks;
-        
+
         // Update minimum
+
         long currentMin;
         do
         {
             currentMin = Interlocked.Read(ref _minDurationTicks);
-            if (durationTicks >= currentMin && currentMin != 0) break;
+            if (durationTicks >= currentMin && currentMin != 0)
+            {
+                break;
+            }
+
         } while (Interlocked.CompareExchange(ref _minDurationTicks, durationTicks, currentMin) != currentMin);
-        
+
         // Update maximum
+
         long currentMax;
         do
         {
             currentMax = Interlocked.Read(ref _maxDurationTicks);
-            if (durationTicks <= currentMax) break;
+            if (durationTicks <= currentMax)
+            {
+                break;
+            }
+
         } while (Interlocked.CompareExchange(ref _maxDurationTicks, durationTicks, currentMax) != currentMax);
-        
+
+
         LastExecution = DateTime.UtcNow;
         return this;
     }
@@ -721,8 +780,10 @@ public sealed class StageMetricsSnapshot
     public double SuccessRate => ExecutionCount > 0 ? (double)SuccessCount / ExecutionCount : 0.0;
 
     public TimeSpan TotalDuration => TimeSpan.FromTicks(Interlocked.Read(ref _totalDurationTicks));
-    public TimeSpan AverageDuration => ExecutionCount > 0 
-        ? TimeSpan.FromTicks(TotalDuration.Ticks / ExecutionCount) 
+    public TimeSpan AverageDuration => ExecutionCount > 0
+
+        ? TimeSpan.FromTicks(TotalDuration.Ticks / ExecutionCount)
+
         : TimeSpan.Zero;
 
     public TimeSpan MinDuration => TimeSpan.FromTicks(Interlocked.Read(ref _minDurationTicks));
@@ -732,30 +793,45 @@ public sealed class StageMetricsSnapshot
     public StageMetricsSnapshot UpdateWith(TimeSpan duration, bool success, long memory)
     {
         Interlocked.Increment(ref _executionCount);
-        if (success) Interlocked.Increment(ref _successCount);
-        
+        if (success)
+        {
+            Interlocked.Increment(ref _successCount);
+        }
+
+
         Interlocked.Add(ref _totalDurationTicks, duration.Ticks);
         Interlocked.Add(ref _memoryUsed, memory);
 
         // Update min/max using compare-and-swap for thread safety
         var durationTicks = duration.Ticks;
-        
+
         // Update minimum
+
         long currentMin;
         do
         {
             currentMin = Interlocked.Read(ref _minDurationTicks);
-            if (durationTicks >= currentMin && currentMin != 0) break;
+            if (durationTicks >= currentMin && currentMin != 0)
+            {
+                break;
+            }
+
         } while (Interlocked.CompareExchange(ref _minDurationTicks, durationTicks, currentMin) != currentMin);
-        
+
         // Update maximum
+
         long currentMax;
         do
         {
             currentMax = Interlocked.Read(ref _maxDurationTicks);
-            if (durationTicks <= currentMax) break;
+            if (durationTicks <= currentMax)
+            {
+                break;
+            }
+
         } while (Interlocked.CompareExchange(ref _maxDurationTicks, durationTicks, currentMax) != currentMax);
-        
+
+
         return this;
     }
 }

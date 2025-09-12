@@ -22,7 +22,7 @@ internal class PluginHealthMonitor : IDisposable
     public PluginHealthMonitor(ILogger logger)
     {
         _logger = logger;
-        _healthCheckTimer = new Timer(PeriodicHealthCheck, null, Timeout.Infinite, Timeout.Infinite);
+        _healthCheckTimer = new Timer(PeriodicHealthCheckWrapper, null, Timeout.Infinite, Timeout.Infinite);
     }
 
     /// <summary>
@@ -324,7 +324,12 @@ internal class PluginHealthMonitor : IDisposable
         }
     }
 
-    private async void PeriodicHealthCheck(object? state)
+    private void PeriodicHealthCheckWrapper(object? state)
+    {
+        _ = Task.Run(async () => await PeriodicHealthCheck(state));
+    }
+
+    private async Task PeriodicHealthCheck(object? state)
     {
         try
         {
@@ -366,7 +371,7 @@ internal class PluginMetricsCollector : IDisposable
     public PluginMetricsCollector(ILogger logger)
     {
         _logger = logger;
-        _metricsTimer = new Timer(CollectMetrics, null, Timeout.Infinite, Timeout.Infinite);
+        _metricsTimer = new Timer(CollectMetricsWrapper, null, Timeout.Infinite, Timeout.Infinite);
     }
 
     /// <summary>
@@ -507,7 +512,12 @@ internal class PluginMetricsCollector : IDisposable
         return Task.FromResult<PluginMetrics?>(null);
     }
 
-    private async void CollectMetrics(object? state)
+    private void CollectMetricsWrapper(object? state)
+    {
+        _ = Task.Run(async () => await CollectMetrics(state));
+    }
+
+    private async Task CollectMetrics(object? state)
     {
         try
         {

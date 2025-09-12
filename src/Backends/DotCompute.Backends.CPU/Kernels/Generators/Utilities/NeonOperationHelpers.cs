@@ -95,6 +95,7 @@ internal static class NeonOperationHelpers
         // ARM NEON FMLA: result = a * b + c with single rounding
         // Note: ARM order is (accumulator, multiplicand, multiplier)
 
+
         => AdvSimd.FusedMultiplyAdd(c, a, b);
 
     /// <summary>

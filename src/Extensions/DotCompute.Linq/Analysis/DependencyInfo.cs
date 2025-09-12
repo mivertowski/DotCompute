@@ -1,6 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System;
+using System.Collections.Generic;
+
 namespace DotCompute.Linq.Analysis;
 
 /// <summary>
@@ -62,6 +65,21 @@ public class DependencyInfo
     public Dictionary<string, object> Metadata { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets the dependent operation that relies on this dependency.
+    /// </summary>
+    public string? DependentOperation { get; set; }
+
+    /// <summary>
+    /// Gets or sets the list of dependencies that this dependency depends on.
+    /// </summary>
+    public List<string> Dependencies { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets whether this dependency allows parallelization.
+    /// </summary>
+    public bool AllowsParallelization { get; set; } = true;
+
+    /// <summary>
     /// Returns a string representation of the dependency.
     /// </summary>
     public override string ToString()
@@ -74,8 +92,10 @@ public class DependencyInfo
     /// </summary>
     public override bool Equals(object? obj)
     {
-        return obj is DependencyInfo other && 
-               Type == other.Type && 
+        return obj is DependencyInfo other &&
+
+               Type == other.Type &&
+
                Name == other.Name;
     }
 

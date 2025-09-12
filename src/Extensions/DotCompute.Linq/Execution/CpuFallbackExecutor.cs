@@ -96,6 +96,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
         // CPU fallback can always execute plans
 
 
+
         => DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
 
     /// <summary>

@@ -40,9 +40,11 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
     {
         var session = new ProfilingSession(sessionName, this);
         _activeSessions[session.InternalSessionId] = session;
-        
+
+
         _logger.ProfilingSessionStarted(session.InternalSessionId, sessionName);
-        
+
+
         return session;
     }
 
@@ -71,8 +73,9 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
         {
             if (!_kernelHistory.TryGetValue(kernelName, out var history))
             {
-                return Task.FromResult(new KernelStatistics 
-                { 
+                return Task.FromResult(new KernelStatistics
+                {
+
                     KernelName = kernelName,
                     ExecutionCount = 0
                 });
@@ -89,8 +92,9 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
 
             if (executionTimes.Count == 0)
             {
-                return Task.FromResult(new KernelStatistics 
-                { 
+                return Task.FromResult(new KernelStatistics
+                {
+
                     KernelName = kernelName,
                     ExecutionCount = 0
                 });
@@ -127,7 +131,8 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
     public async Task<string> ExportDataAsync(ExportFormat format, string outputPath, TimeRange? timeRange = null)
     {
         var sessions = _completedSessions.Values.ToList();
-        
+
+
         if (timeRange != null)
         {
             // Filter by time range if needed
@@ -137,23 +142,28 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
         switch (format)
         {
             case ExportFormat.Json:
-                var json = JsonSerializer.Serialize(sessions, new JsonSerializerOptions 
-                { 
-                    WriteIndented = true 
+                var json = JsonSerializer.Serialize(sessions, new JsonSerializerOptions
+                {
+
+                    WriteIndented = true
+
                 });
                 await File.WriteAllTextAsync(outputPath, json);
                 break;
-                
+
+
             case ExportFormat.Csv:
                 await ExportToCsvAsync(sessions, outputPath);
                 break;
-                
+
+
             default:
                 throw new NotSupportedException($"Export format {format} is not yet supported");
         }
 
         _logger.ProfilingDataExported(sessions.Count, outputPath);
-        
+
+
         return outputPath;
     }
 
@@ -185,8 +195,9 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
         if (_activeSessions.TryRemove(session.InternalSessionId, out _))
         {
             _completedSessions[session.InternalSessionId] = results;
-            
+
             // Add to kernel history
+
             var kernelName = ExtractKernelName(results.SessionName);
             if (!string.IsNullOrEmpty(kernelName))
             {
@@ -199,7 +210,8 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
                         return list;
                     });
             }
-            
+
+
             _logger.ProfilingSessionCompleted(session.InternalSessionId);
         }
     }
@@ -220,8 +232,12 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
 
     private static TimeSpan CalculatePercentile(List<TimeSpan> values, double percentile)
     {
-        if (values.Count == 0) return TimeSpan.Zero;
-        
+        if (values.Count == 0)
+        {
+            return TimeSpan.Zero;
+        }
+
+
         var sorted = values.OrderBy(t => t).ToList();
         var index = (int)Math.Ceiling(percentile * sorted.Count) - 1;
         return sorted[Math.Max(0, Math.Min(index, sorted.Count - 1))];
@@ -229,8 +245,12 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
 
     private static TimeSpan CalculateStandardDeviation(List<TimeSpan> values)
     {
-        if (values.Count == 0) return TimeSpan.Zero;
-        
+        if (values.Count == 0)
+        {
+            return TimeSpan.Zero;
+        }
+
+
         var mean = values.Average(t => t.TotalMilliseconds);
         var variance = values.Average(t => Math.Pow(t.TotalMilliseconds - mean, 2));
         return TimeSpan.FromMilliseconds(Math.Sqrt(variance));
@@ -240,7 +260,8 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
     {
         using var writer = new StreamWriter(outputPath);
         await writer.WriteLineAsync("SessionId,SessionName,TotalExecutionTime,CompilationTime,KernelExecutionTime,MemoryTransferTime,PeakMemoryBytes");
-        
+
+
         foreach (var session in sessions)
         {
             await writer.WriteLineAsync(
@@ -264,7 +285,11 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
     /// </summary>
     protected virtual void Dispose(bool disposing)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         if (disposing)
         {
@@ -292,7 +317,8 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
         public string SessionId { get; }
         public string OperationName { get; }
         public DateTime StartTime { get; }
-        
+
+
         public Guid InternalSessionId => _internalId;
 
         public ProfilingSession(string name, DefaultKernelProfiler profiler)
@@ -320,7 +346,8 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
         {
             _tags[key] = value;
         }
-        
+
+
         public SessionMetrics GetMetrics()
         {
             return new SessionMetrics
@@ -330,13 +357,15 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
                 Tags = new Dictionary<string, string>(_tags)
             };
         }
-        
+
+
         public ProfilingSessionResult End()
         {
             _stopwatch.Stop();
             var results = GetCurrentResults();
             _profiler.CompleteSession(this, results);
-            
+
+
             return new ProfilingSessionResult
             {
                 SessionId = SessionId,
@@ -352,8 +381,9 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
                 }
             };
         }
-        
+
         // Additional methods for extended functionality
+
         public void RecordCheckpoint(string checkpointName)
         {
             var now = DateTime.UtcNow;
@@ -395,8 +425,10 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
                 CompilationTime = TimeSpan.FromMilliseconds(_metrics.GetValueOrDefault("CompilationTime", 0)),
                 KernelExecutionTime = TimeSpan.FromMilliseconds(_metrics.GetValueOrDefault("KernelExecutionTime", 0)),
                 MemoryTransferTime = TimeSpan.FromMilliseconds(_metrics.GetValueOrDefault("MemoryTransferTime", 0)),
-                PeakMemoryBytes = _memorySnapshots.Count > 0 
-                    ? _memorySnapshots.Max(s => s.ManagedMemoryBytes) 
+                PeakMemoryBytes = _memorySnapshots.Count > 0
+
+                    ? _memorySnapshots.Max(s => s.ManagedMemoryBytes)
+
                     : 0,
                 CustomMetrics = new Dictionary<string, double>(_metrics),
                 Checkpoints = new List<TimingCheckpoint>(_checkpoints),

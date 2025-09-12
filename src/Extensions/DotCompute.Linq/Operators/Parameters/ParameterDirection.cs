@@ -23,5 +23,15 @@ public enum ParameterDirection
     /// <summary>
     /// Input/output parameter - data flows both into and out of the kernel.
     /// </summary>
-    InOut
+    InOut,
+
+    /// <summary>
+    /// Input parameter (alias for In).
+    /// </summary>
+    Input = In,
+
+    /// <summary>
+    /// Output parameter (alias for Out).
+    /// </summary>
+    Output = Out
 }

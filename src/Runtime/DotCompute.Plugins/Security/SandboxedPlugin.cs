@@ -146,6 +146,7 @@ public class SandboxedPlugin : IDisposable
         // Implementation would depend on the specific threading model used
 
 
+
         => await Task.CompletedTask.ConfigureAwait(false);
 
     /// <summary>

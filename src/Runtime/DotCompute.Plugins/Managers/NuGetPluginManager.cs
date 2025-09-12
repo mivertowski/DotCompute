@@ -58,7 +58,7 @@ public class NuGetPluginManager : IDisposable
 
         // Set up periodic maintenance
 
-        _periodicMaintenanceTimer = new Timer(PeriodicMaintenance, null, Timeout.Infinite, Timeout.Infinite);
+        _periodicMaintenanceTimer = new Timer(PeriodicMaintenanceWrapper, null, Timeout.Infinite, Timeout.Infinite);
     }
 
     /// <summary>
@@ -534,9 +534,17 @@ public class NuGetPluginManager : IDisposable
     }
 
     /// <summary>
+    /// Wrapper for timer callback to periodic maintenance.
+    /// </summary>
+    private void PeriodicMaintenanceWrapper(object? state)
+    {
+        _ = Task.Run(async () => await PeriodicMaintenance(state));
+    }
+
+    /// <summary>
     /// Periodic maintenance tasks.
     /// </summary>
-    private async void PeriodicMaintenance(object? state)
+    private async Task PeriodicMaintenance(object? state)
     {
         try
         {

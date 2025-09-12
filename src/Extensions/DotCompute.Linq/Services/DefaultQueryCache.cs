@@ -30,12 +30,14 @@ public class DefaultQueryCache : IQueryCache
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
+
         var memoryCacheOptions = new MemoryCacheOptions
         {
             SizeLimit = options.MaxEntries
         };
-        
+
+
         _cache = new MemoryCache(memoryCacheOptions);
     }
 
@@ -43,12 +45,14 @@ public class DefaultQueryCache : IQueryCache
     public string GenerateKey(Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
-        
+
         // Generate a hash of the expression string representation
+
         var expressionString = expression.ToString();
         var bytes = Encoding.UTF8.GetBytes(expressionString);
         var hash = SHA256.HashData(bytes);
-        
+
+
         return Convert.ToHexString(hash)[..16]; // Use first 16 characters for reasonable key length
     }
 
@@ -56,7 +60,8 @@ public class DefaultQueryCache : IQueryCache
     public bool TryGet(string key, out object? result)
     {
         ArgumentNullException.ThrowIfNull(key);
-        
+
+
         if (_cache.TryGetValue(key, out result))
         {
             Interlocked.Increment(ref _hits);
@@ -74,7 +79,8 @@ public class DefaultQueryCache : IQueryCache
     public void Set(string key, object? result)
     {
         ArgumentNullException.ThrowIfNull(key);
-        
+
+
         var entryOptions = new MemoryCacheEntryOptions
         {
             Size = 1, // Each entry counts as 1 towards the size limit
@@ -91,16 +97,18 @@ public class DefaultQueryCache : IQueryCache
         if (_cache is MemoryCache memCache)
         {
             memCache.Dispose();
-            
+
+
             var memoryCacheOptions = new MemoryCacheOptions
             {
                 SizeLimit = _options.MaxEntries
             };
-            
+
             // Note: This is a simplified clear implementation
             // In a real implementation, you'd want to properly reinitialize the cache
         }
-        
+
+
         _logger.LogInformation("Query cache cleared");
     }
 

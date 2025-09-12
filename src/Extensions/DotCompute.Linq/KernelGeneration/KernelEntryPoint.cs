@@ -11,6 +11,27 @@ using DotCompute.Linq.Operators.Parameters;
 namespace DotCompute.Linq.KernelGeneration;
 
 /// <summary>
+/// Defines the execution model for kernels.
+/// </summary>
+public enum KernelExecutionModel
+{
+    /// <summary>Sequential execution model.</summary>
+    Sequential,
+
+    /// <summary>Data parallel execution model.</summary>
+    DataParallel,
+
+    /// <summary>Task parallel execution model.</summary>
+    TaskParallel,
+
+    /// <summary>GPU execution model.</summary>
+    GPU,
+
+    /// <summary>Vectorized execution model.</summary>
+    Vectorized
+}
+
+/// <summary>
 /// Represents a kernel entry point with metadata for compilation and execution.
 /// Contains all information needed to call a compiled kernel function.
 /// </summary>
@@ -30,13 +51,37 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
         Type returnType)
     {
         if (string.IsNullOrWhiteSpace(functionName))
+        {
+
             throw new ArgumentException("Function name cannot be null or whitespace.", nameof(functionName));
+        }
+
 
         FunctionName = functionName;
         Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         ReturnType = returnType ?? throw new ArgumentNullException(nameof(returnType));
-        
+
+
         Signature = GenerateSignature();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KernelEntryPoint"/> class with execution model.
+    /// </summary>
+    /// <param name="kernelName">The name of the kernel.</param>
+    /// <param name="methodName">The name of the entry method.</param>
+    /// <param name="executionModel">The execution model for the kernel.</param>
+    public KernelEntryPoint(string kernelName, string methodName, KernelExecutionModel executionModel)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(methodName);
+
+        FunctionName = methodName;
+        Parameters = new List<KernelParameter>();
+        ReturnType = typeof(void);
+        Signature = $"{methodName}()";
+        ExecutionModel = executionModel;
+        KernelName = kernelName;
     }
 
     /// <summary>
@@ -58,6 +103,16 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
     /// Gets the function signature string for compilation.
     /// </summary>
     public string Signature { get; }
+
+    /// <summary>
+    /// Gets the execution model for the kernel.
+    /// </summary>
+    public KernelExecutionModel ExecutionModel { get; private set; }
+
+    /// <summary>
+    /// Gets the kernel name.
+    /// </summary>
+    public string KernelName { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the total number of parameters.
@@ -100,16 +155,27 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
     public bool ValidateParameters(IReadOnlyDictionary<string, object> providedParameters)
     {
         if (providedParameters == null)
+        {
+
             return Parameters.Count == 0;
+        }
+
 
         foreach (var parameter in Parameters)
         {
             if (!providedParameters.ContainsKey(parameter.Name))
+            {
                 return false;
+            }
+
 
             var providedValue = providedParameters[parameter.Name];
             if (providedValue != null && !parameter.Type.IsAssignableFrom(providedValue.GetType()))
+            {
+
                 return false;
+            }
+
         }
 
         return true;
@@ -133,12 +199,42 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
     /// <returns>The type name.</returns>
     private static string GetTypeName(Type type)
     {
-        if (type == typeof(void)) return "void";
-        if (type == typeof(int)) return "int";
-        if (type == typeof(float)) return "float";
-        if (type == typeof(double)) return "double";
-        if (type == typeof(bool)) return "bool";
-        if (type.IsArray) return $"{GetTypeName(type.GetElementType()!)}[]";
+        if (type == typeof(void))
+        {
+            return "void";
+        }
+
+
+        if (type == typeof(int))
+        {
+            return "int";
+        }
+
+
+        if (type == typeof(float))
+        {
+            return "float";
+        }
+
+
+        if (type == typeof(double))
+        {
+            return "double";
+        }
+
+
+        if (type == typeof(bool))
+        {
+            return "bool";
+        }
+
+
+        if (type.IsArray)
+        {
+            return $"{GetTypeName(type.GetElementType()!)}[]";
+        }
+
+
         if (type.IsGenericType)
         {
             var genericName = type.Name.Split('`')[0];
@@ -167,8 +263,17 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
     /// <inheritdoc/>
     public bool Equals(KernelEntryPoint? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
+        if (other is null)
+        {
+            return false;
+        }
+
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
 
         return FunctionName == other.FunctionName &&
                ReturnType == other.ReturnType &&
@@ -205,8 +310,17 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
     {
         public bool Equals(KernelParameter? x, KernelParameter? y)
         {
-            if (ReferenceEquals(x, y)) return true;
-            if (x is null || y is null) return false;
+            if (ReferenceEquals(x, y))
+            {
+                return true;
+            }
+
+
+            if (x is null || y is null)
+            {
+                return false;
+            }
+
 
             return x.Name == y.Name &&
                    x.Type == y.Type &&

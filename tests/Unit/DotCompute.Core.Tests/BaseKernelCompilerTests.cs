@@ -22,7 +22,7 @@ namespace DotCompute.Core.Tests;
 /// </summary>
 [Trait("Category", "HardwareIndependent")]
 [Trait("Component", "BaseKernelCompiler")]
-public class BaseKernelCompilerTests : IDisposable
+public sealed class BaseKernelCompilerTests : IDisposable
 {
     private readonly Mock<ILogger> _mockLogger;
     private readonly TestKernelCompiler _compiler;

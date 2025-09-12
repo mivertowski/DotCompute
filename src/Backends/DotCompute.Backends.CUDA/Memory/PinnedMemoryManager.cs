@@ -28,9 +28,18 @@ internal sealed unsafe class PinnedMemoryManager<T> : MemoryManager<T>, IDisposa
     public PinnedMemoryManager(IntPtr pinnedPtr, int elementCount, IDisposable parent)
     {
         if (pinnedPtr == IntPtr.Zero)
+        {
+
             throw new ArgumentException("Pinned pointer cannot be zero", nameof(pinnedPtr));
+        }
+
+
         if (elementCount <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(elementCount), "Element count must be positive");
+        }
+
 
         _pinnedPtr = pinnedPtr;
         _elementCount = elementCount;
@@ -44,7 +53,11 @@ internal sealed unsafe class PinnedMemoryManager<T> : MemoryManager<T>, IDisposa
     public override Span<T> GetSpan()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(PinnedMemoryManager<T>));
+        }
+
 
         return new Span<T>(_pinnedPtr.ToPointer(), _elementCount);
     }
@@ -57,14 +70,24 @@ internal sealed unsafe class PinnedMemoryManager<T> : MemoryManager<T>, IDisposa
     public override MemoryHandle Pin(int elementIndex = 0)
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(PinnedMemoryManager<T>));
+        }
+
+
         if (elementIndex < 0 || elementIndex >= _elementCount)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(elementIndex));
+        }
 
         // Memory is already pinned, so we just return a handle with the offset
+
         var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var offsetPtr = _pinnedPtr + (elementIndex * elementSize);
-        
+
+
         return new MemoryHandle(offsetPtr.ToPointer(), default, this);
     }
 

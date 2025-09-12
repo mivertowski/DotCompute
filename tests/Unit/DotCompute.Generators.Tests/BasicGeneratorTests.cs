@@ -74,7 +74,7 @@ public struct ThreadId { public int X => 0; }
         
         Assert.NotNull(dc001Diagnostic);
         Assert.Equal(DiagnosticSeverity.Error, dc001Diagnostic.Severity);
-        Assert.Contains("NonStaticKernel", dc001Diagnostic.GetMessage());
+        Assert.Contains("NonStaticKernel", dc001Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -101,8 +101,8 @@ public class KernelAttribute : System.Attribute { }
         
         Assert.NotNull(dc002Diagnostic);
         Assert.Equal(DiagnosticSeverity.Error, dc002Diagnostic.Severity);
-        Assert.Contains("InvalidKernel", dc002Diagnostic.GetMessage());
-        Assert.Contains("badParam", dc002Diagnostic.GetMessage());
+        Assert.Contains("InvalidKernel", dc002Diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("badParam", dc002Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class KernelAttribute : System.Attribute { }
         
         Assert.NotNull(dc010Diagnostic);
         Assert.Equal(DiagnosticSeverity.Warning, dc010Diagnostic.Severity);
-        Assert.Contains("LoopKernel", dc010Diagnostic.GetMessage());
+        Assert.Contains("LoopKernel", dc010Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public class KernelAttribute : System.Attribute { }
         
         Assert.NotNull(dc011Diagnostic);
         Assert.Equal(DiagnosticSeverity.Warning, dc011Diagnostic.Severity);
-        Assert.Contains("NoBoundsKernel", dc011Diagnostic.GetMessage());
+        Assert.Contains("NoBoundsKernel", dc011Diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     [Fact]

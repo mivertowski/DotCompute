@@ -602,5 +602,6 @@ public class SecurityValidator
         // Check if the plugin or its dependencies have known vulnerabilities
 
 
+
         => await VulnerabilityDatabase.CheckPluginAsync(manifest, scanResult, cancellationToken);
 }

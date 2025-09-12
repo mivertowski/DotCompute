@@ -33,6 +33,15 @@ public class WorkloadCharacteristics
     /// <summary>Expected number of operations</summary>
     public long OperationCount { get; set; }
 
+    /// <summary>Gets or sets the operation count as an integer for compatibility.</summary>
+    public int OperationCountInt => (int)Math.Min(OperationCount, int.MaxValue);
+
+    /// <summary>Gets or sets the parallelism potential from 0.0 (no parallel potential) to 1.0 (highly parallel).</summary>
+    public double ParallelismPotential { get; set; }
+
+    /// <summary>Gets or sets the hardware capabilities for this workload.</summary>
+    public object? Hardware { get; set; }
+
 
     /// <summary>Memory access pattern classification</summary>
     public MemoryAccessPattern AccessPattern { get; set; }
@@ -119,6 +128,11 @@ public enum MemoryAccessPattern
     Coalesced,
     Scattered
 }
+
+/// <summary>
+/// Type alias for memory access pattern for compatibility.
+/// </summary>
+public using AccessPattern = MemoryAccessPattern;
 
 /// <summary>
 /// Result of backend selection process.

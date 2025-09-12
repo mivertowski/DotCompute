@@ -70,8 +70,8 @@ public class KernelAttribute : Attribute { }
         var dc002Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC002");
         
         Assert.NotNull(dc002Diagnostic);
-        Assert.Contains("InvalidKernel", dc002Diagnostic.GetMessage());
-        Assert.Contains("invalidParam", dc002Diagnostic.GetMessage());
+        Assert.Contains("InvalidKernel", dc002Diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("invalidParam", dc002Diagnostic.GetMessage(), StringComparison.Ordinal);
         Assert.Equal(DiagnosticSeverity.Error, dc002Diagnostic.Severity);
     }
 
@@ -97,7 +97,7 @@ public class TestClass
         var dc007Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC007");
         
         Assert.NotNull(dc007Diagnostic);
-        Assert.Contains("LooksLikeKernel", dc007Diagnostic.GetMessage());
+        Assert.Contains("LooksLikeKernel", dc007Diagnostic.GetMessage(), StringComparison.Ordinal);
         Assert.Equal(DiagnosticSeverity.Info, dc007Diagnostic.Severity);
     }
 
@@ -126,7 +126,7 @@ public class KernelAttribute : Attribute { }
         var dc010Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC010");
         
         Assert.NotNull(dc010Diagnostic);
-        Assert.Contains("IncorrectThreadingKernel", dc010Diagnostic.GetMessage());
+        Assert.Contains("IncorrectThreadingKernel", dc010Diagnostic.GetMessage(), StringComparison.Ordinal);
         Assert.Equal(DiagnosticSeverity.Warning, dc010Diagnostic.Severity);
     }
 
@@ -155,7 +155,7 @@ public class KernelAttribute : Attribute { }
         var dc011Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC011");
         
         Assert.NotNull(dc011Diagnostic);
-        Assert.Contains("NoBoundsCheckKernel", dc011Diagnostic.GetMessage());
+        Assert.Contains("NoBoundsCheckKernel", dc011Diagnostic.GetMessage(), StringComparison.Ordinal);
         Assert.Equal(DiagnosticSeverity.Warning, dc011Diagnostic.Severity);
     }
 
@@ -188,8 +188,8 @@ public class KernelAttribute : Attribute { }
         var dc003Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC003");
         
         Assert.NotNull(dc003Diagnostic);
-        Assert.Contains("KernelWithTryCatch", dc003Diagnostic.GetMessage());
-        Assert.Contains("try-catch blocks", dc003Diagnostic.GetMessage());
+        Assert.Contains("KernelWithTryCatch", dc003Diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("try-catch blocks", dc003Diagnostic.GetMessage(), StringComparison.Ordinal);
         Assert.Equal(DiagnosticSeverity.Error, dc003Diagnostic.Severity);
     }
 
@@ -218,7 +218,7 @@ public class KernelAttribute : Attribute { }
         var dc004Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC004");
         
         Assert.NotNull(dc004Diagnostic);
-        Assert.Contains("VectorizableKernel", dc004Diagnostic.GetMessage());
+        Assert.Contains("VectorizableKernel", dc004Diagnostic.GetMessage(), StringComparison.Ordinal);
         Assert.Equal(DiagnosticSeverity.Info, dc004Diagnostic.Severity);
     }
 
@@ -253,8 +253,8 @@ public struct ThreadId { public int X => 0; }
         var dc006Diagnostic = diagnostics.FirstOrDefault(d => d.Id == "DC006");
         
         Assert.NotNull(dc006Diagnostic);
-        Assert.Contains("RegisterSpillingKernel", dc006Diagnostic.GetMessage());
-        Assert.Contains("18", dc006Diagnostic.GetMessage()); // Variable count
+        Assert.Contains("RegisterSpillingKernel", dc006Diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("18", dc006Diagnostic.GetMessage(), StringComparison.Ordinal); // Variable count
         Assert.Equal(DiagnosticSeverity.Warning, dc006Diagnostic.Severity);
     }
 

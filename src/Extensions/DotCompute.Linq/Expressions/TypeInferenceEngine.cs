@@ -350,6 +350,7 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
         // Simple check for alignment - more sophisticated logic would be needed in practice
 
 
+
         => type.IsPrimitive || (type.IsValueType && CalculateTypeSize(type) % 4 == 0);
 
     private static int CalculateTypeSize(Type type)

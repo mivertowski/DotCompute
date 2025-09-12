@@ -533,6 +533,7 @@ public sealed class DistributedTracer : IDisposable
         // Simplified critical path analysis - find the longest sequential chain
 
 
+
         => [.. spans.OrderByDescending(s => s.Duration).Take(5)];
 
     private static Dictionary<string, double> AnalyzeDeviceUtilization(

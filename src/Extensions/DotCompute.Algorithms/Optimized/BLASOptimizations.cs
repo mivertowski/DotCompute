@@ -732,11 +732,13 @@ public static class BLASOptimizations
         // Implementation would include cache-blocked GEMV
 
 
+
         => StandardGemv(alpha, matrix, x, beta, y, rows, cols, matrixStride);
 
     private static void SimdGemv(float alpha, ReadOnlySpan<float> matrix, ReadOnlySpan<float> x,
         float beta, Span<float> y, int rows, int cols, int matrixStride)
         // Implementation would include SIMD-optimized GEMV
+
 
 
         => StandardGemv(alpha, matrix, x, beta, y, rows, cols, matrixStride);
@@ -765,6 +767,7 @@ public static class BLASOptimizations
         // Would implement cache-oblivious algorithm
 
 
+
         => OptimizedSmallGemm(alpha, a, b, c, m, n, k, aStride, bStride, cStride);
 
 
@@ -772,6 +775,7 @@ public static class BLASOptimizations
 
         Span<float> c, int m, int n, int k, int aStride, int bStride, int cStride)
         // Would implement blocked GEMM
+
 
 
         => OptimizedSmallGemm(alpha, a, b, c, m, n, k, aStride, bStride, cStride);

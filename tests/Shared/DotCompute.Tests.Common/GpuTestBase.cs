@@ -397,11 +397,13 @@ public abstract class GpuTestBase : TestBase
         // Placeholder for actual NVIDIA GPU detection logic
         // In production, this would use CUDA runtime APIs
 
+
         => IsCudaAvailable();
 
     private static bool DetectAmdGpu()
         // Placeholder for AMD GPU detection logic
         // In production, this would check for AMD drivers/runtime
+
 
         => false;
 
@@ -409,35 +411,42 @@ public abstract class GpuTestBase : TestBase
         // Placeholder for Intel GPU detection logic
         // In production, this would check for Intel GPU drivers
 
+
         => false;
 
     private static string GetComputeCapability()
         // Placeholder - would query actual compute capability
+
 
         => "7.5"; // Example compute capability
 
     private static int GetGpuMemoryMB()
         // Placeholder - would query actual GPU memory
 
+
         => 8192; // Example 8GB
 
     private static bool CheckUnifiedMemorySupport()
         // Placeholder - would check for unified memory support
+
 
         => true;
 
     private static bool CheckDynamicParallelismSupport()
         // Placeholder - would check for dynamic parallelism support
 
+
         => true;
 
     private static long GetCurrentGpuMemoryUsage()
         // Placeholder - would query actual GPU memory usage
 
+
         => 1024 * 1024 * 256; // Example 256MB
 
     private static long GetFreeGpuMemory()
         // Placeholder - would query actual free GPU memory
+
 
         => 1024L * 1024L * 1024L * 7L; // Example 7GB free
 

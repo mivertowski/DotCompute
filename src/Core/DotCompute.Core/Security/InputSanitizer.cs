@@ -680,6 +680,7 @@ public sealed class InputSanitizer : IDisposable
         // Basic email sanitization - remove dangerous characters
 
 
+
         => Regex.Replace(input, @"[^\w@.-]", "", RegexOptions.Compiled);
 
     private static string SanitizeAlphaNumeric(string input) => Regex.Replace(input, @"[^a-zA-Z0-9]", "", RegexOptions.Compiled);

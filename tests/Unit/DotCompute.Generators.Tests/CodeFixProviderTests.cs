@@ -25,7 +25,7 @@ public class CodeFixProviderTests
         var fixableDiagnosticIds = codeFixProvider.FixableDiagnosticIds;
         
         // Should support fixes for 5 specific diagnostics
-        Assert.Equal(5, fixableDiagnosticIds.Count());
+        Assert.Equal(5, fixableDiagnosticIds.Length);
         Assert.Contains("DC001", fixableDiagnosticIds); // Make method static
         Assert.Contains("DC002", fixableDiagnosticIds); // Fix parameter types
         Assert.Contains("DC007", fixableDiagnosticIds); // Add kernel attribute
@@ -55,7 +55,8 @@ public class KernelAttribute : System.Attribute { }
 public static class Kernel { public static ThreadId ThreadId => new(); }
 public struct ThreadId { public int X => 0; }";
 
-        const string expectedFixedCode = @"
+        // This variable represents expected fixed code but is not used in this test
+        _ = @"
 using System;
 
 public class TestClass

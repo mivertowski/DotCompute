@@ -33,7 +33,8 @@ namespace DotCompute.Linq.Types
         /// <summary>
         /// Gets additional metadata associated with this hint.
         /// </summary>
-        public ImmutableDictionary<string, object> Metadata { get; init; } = 
+        public ImmutableDictionary<string, object> Metadata { get; init; } =
+
             ImmutableDictionary<string, object>.Empty;
 
         /// <summary>
@@ -45,6 +46,11 @@ namespace DotCompute.Linq.Types
         /// Gets a description of what this hint optimizes.
         /// </summary>
         public string? Description { get; init; }
+
+        /// <summary>
+        /// Gets the estimated performance benefit of applying this hint.
+        /// </summary>
+        public double EstimatedBenefit { get; init; } = 1.0;
 
         /// <summary>
         /// Creates a vectorization optimization hint.
@@ -157,7 +163,27 @@ namespace DotCompute.Linq.Types
         /// <summary>
         /// Custom backend-specific optimization.
         /// </summary>
-        Custom
+        Custom,
+
+        /// <summary>
+        /// Parallelization optimization hint.
+        /// </summary>
+        Parallelization,
+
+        /// <summary>
+        /// Memory layout optimization.
+        /// </summary>
+        MemoryLayout,
+
+        /// <summary>
+        /// GPU execution optimization.
+        /// </summary>
+        GpuExecution,
+
+        /// <summary>
+        /// General performance optimization hint.
+        /// </summary>
+        Performance
     }
 
     /// <summary>

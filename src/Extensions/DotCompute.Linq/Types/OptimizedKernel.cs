@@ -1,10 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
 using DotCompute.Core.Compute.Enums;
 using DotCompute.Linq.Operators.Models;
+using DotCompute.Linq.Operators.Execution;
 using System.Collections.Immutable;
+using ICompiledKernel = DotCompute.Linq.Operators.Execution.ICompiledKernel;
 
 namespace DotCompute.Linq.Types
 {
@@ -97,8 +98,16 @@ namespace DotCompute.Linq.Types
         /// <summary>
         /// Gets optimization metadata as key-value pairs.
         /// </summary>
-        public ImmutableDictionary<string, object> Metadata { get; init; } = 
+        public ImmutableDictionary<string, object> Metadata { get; init; } =
+
             ImmutableDictionary<string, object>.Empty;
+
+        /// <summary>
+        /// Gets the list of optimization techniques that were applied to this kernel.
+        /// </summary>
+        public ImmutableArray<string> AppliedOptimizations { get; init; } =
+
+            ImmutableArray<string>.Empty;
 
         /// <summary>
         /// Gets a value indicating whether this kernel is valid and ready for execution.
@@ -177,7 +186,8 @@ namespace DotCompute.Linq.Types
         /// <summary>
         /// Gets the success rate as a percentage.
         /// </summary>
-        public double SuccessRate => _totalExecutions > 0 ? 
+        public double SuccessRate => _totalExecutions > 0 ?
+
             ((double)(_totalExecutions - _failedExecutions) / _totalExecutions) * 100.0 : 0.0;
 
         /// <summary>
@@ -194,7 +204,8 @@ namespace DotCompute.Linq.Types
         public void RecordExecution(TimeSpan executionTime, long workItems)
         {
             Interlocked.Increment(ref _totalExecutions);
-            
+
+
             lock (_executionTimes)
             {
                 _executionTimes.Add(executionTime);

@@ -15,7 +15,8 @@ public interface IKernelPipelineBuilder
     /// <param name="parameters">Parameters for kernel execution</param>
     /// <returns>The pipeline builder for method chaining</returns>
     IKernelPipelineBuilder AddStage(string kernelName, params object[] parameters);
-    
+
+
     /// <summary>
     /// Adds a transformation stage to the pipeline
     /// </summary>
@@ -24,7 +25,8 @@ public interface IKernelPipelineBuilder
     /// <param name="transform">Transformation function</param>
     /// <returns>The pipeline builder for method chaining</returns>
     IKernelPipelineBuilder Transform<TInput, TOutput>(Func<TInput, TOutput> transform);
-    
+
+
     /// <summary>
     /// Executes the pipeline with the given input data
     /// </summary>
@@ -33,7 +35,8 @@ public interface IKernelPipelineBuilder
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Pipeline execution result</returns>
     Task<T> ExecuteAsync<T>(T input, CancellationToken cancellationToken = default);
-    
+
+
     /// <summary>
     /// Executes the pipeline and returns the specified output type
     /// </summary>
@@ -41,13 +44,15 @@ public interface IKernelPipelineBuilder
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Pipeline execution result</returns>
     Task<T> ExecutePipelineAsync<T>(CancellationToken cancellationToken = default);
-    
+
+
     /// <summary>
     /// Creates a pipeline instance from the current builder configuration
     /// </summary>
     /// <returns>A pipeline instance that can be executed</returns>
     object Create();
-    
+
+
     /// <summary>
     /// Creates a new pipeline starting with input data array (compatibility method)
     /// </summary>
@@ -55,7 +60,8 @@ public interface IKernelPipelineBuilder
     /// <param name="inputData">The input data array to process</param>
     /// <returns>A new pipeline initialized with the input data</returns>
     IKernelPipelineBuilder FromData<T>(T[] inputData) where T : unmanaged;
-    
+
+
     /// <summary>
     /// Creates a pipeline starting with an async data stream (compatibility method)
     /// </summary>

@@ -351,6 +351,7 @@ public static class AdvancedIntegration
         // For now, use a weighted average that extends Gauss-Legendre
 
 
+
         => GaussLegendre7Point(values, a, b) * 1.05f; // Rough approximation
 
     /// <summary>
