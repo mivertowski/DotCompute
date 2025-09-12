@@ -413,7 +413,7 @@ DotCompute/
 │   ├── Backends/                # Compute backend implementations
 │   │   ├── DotCompute.Backends.CPU/   # ✅ Production: AVX2/AVX512 SIMD
 │   │   ├── DotCompute.Backends.CUDA/  # ✅ Production: NVIDIA GPU (CC 5.0+)
-│   │   ├── DotCompute.Backends.Metal/ # ❌ Stubs only
+│   │   ├── DotCompute.Backends.Metal/ # 🚧 Foundation: Native API, needs MSL compilation
 │   │   └── DotCompute.Backends.ROCm/  # ❌ Placeholder
 │   ├── Extensions/              # Extension libraries
 │   │   ├── DotCompute.Algorithms/     # Algorithm implementations
@@ -462,24 +462,31 @@ DotCompute/
    - `CpuAccelerator`: Multi-threaded CPU execution
    - `VectorizedOperations`: Hardware-accelerated operations
 
-6. **Runtime Integration** (`src/Core/DotCompute.Core/Interfaces/`)
+6. **Metal Backend** (`src/Backends/DotCompute.Backends.Metal/`)
+   - `MetalAccelerator`: Metal-specific accelerator with device management
+   - `MetalNative`: P/Invoke bindings to native Metal framework
+   - `MetalMemoryManager`: Unified memory support for Apple Silicon
+   - `MetalExecutionEngine`: Command buffer and queue management
+   - Native library: `libDotComputeMetal.dylib` (Objective-C++ integration)
+
+7. **Runtime Integration** (`src/Core/DotCompute.Core/Interfaces/`)
    - `IComputeOrchestrator`: Universal kernel execution interface
    - `KernelExecutionService`: Runtime orchestration service
    - `GeneratedKernelDiscoveryService`: Automatic kernel registration
 
-7. **Debugging System** (`src/Core/DotCompute.Core/Debugging/`)
+8. **Debugging System** (`src/Core/DotCompute.Core/Debugging/`)
    - `IKernelDebugService`: Cross-backend validation interface
    - `KernelDebugService`: Production debugging implementation
    - `DebugIntegratedOrchestrator`: Transparent debug wrapper
    - Multiple profiles: Development, Testing, Production
 
-8. **Optimization Engine** (`src/Core/DotCompute.Core/Optimization/`)
+9. **Optimization Engine** (`src/Core/DotCompute.Core/Optimization/`)
    - `AdaptiveBackendSelector`: ML-powered backend selection
    - `PerformanceOptimizedOrchestrator`: Performance-driven execution
    - `WorkloadCharacteristics`: Workload pattern analysis
    - Multiple optimization strategies: Conservative, Balanced, Aggressive
 
-9. **Source Generators & Analyzers** (`src/Runtime/DotCompute.Generators/`)
+10. **Source Generators & Analyzers** (`src/Runtime/DotCompute.Generators/`)
    - `KernelSourceGenerator`: Generates kernel wrappers from [Kernel] attributes
    - `DotComputeKernelAnalyzer`: 12 diagnostic rules for kernel quality
    - `KernelCodeFixProvider`: 5 automated code fixes
@@ -554,11 +561,11 @@ DotCompute/
 
 ## Known Issues and Limitations
 
-1. **Metal Backend**: Contains stubs only, not implemented
+1. **Metal Backend**: Foundation implemented with native API, MSL compilation incomplete
 2. **ROCm Backend**: Placeholder, not implemented
 3. **CUDA Tests**: Some tests may fail with "device kernel image is invalid" on CUDA 13
-4. **Hardware Tests**: Require NVIDIA GPU with Compute Capability 5.0+
-5. **Cross-Platform GPU**: Currently limited to NVIDIA GPUs only
+4. **Hardware Tests**: Require NVIDIA GPU with Compute Capability 5.0+ (or Metal on macOS)
+5. **Cross-Platform GPU**: NVIDIA GPUs fully supported, Metal in development
 
 ## Production-Ready Components
 
@@ -580,7 +587,7 @@ DotCompute/
 
 🚧 **In Development:**
 - Algorithm libraries (expanding operation coverage)
-- Metal backend (macOS GPU support)
+- Metal backend (foundation complete, MSL compilation in progress)
 - ROCm backend (AMD GPU support)
 
 ## Critical Implementation Details

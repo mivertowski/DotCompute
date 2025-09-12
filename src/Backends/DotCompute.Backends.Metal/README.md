@@ -1,196 +1,227 @@
 # DotCompute.Backends.Metal
 
-Apple Metal compute backend for .NET 9+ - **STUB IMPLEMENTATION ONLY**
+Metal compute backend for .NET 9+ targeting Apple Silicon and macOS GPU acceleration.
 
-## Status: ❌ Stub Implementation Only
+## Current Status: 🚧 Foundation Implementation
 
-**⚠️ IMPORTANT: This is a stub implementation with no actual Metal runtime integration.**
+The Metal backend provides foundational infrastructure with native Metal API integration. While core components are implemented, the backend requires additional development for production use.
 
-The Metal backend currently provides:
-- ✅ **Complete Interface**: Full implementation of `IAccelerator` interface
-- ✅ **Service Registration**: Proper dependency injection integration  
-- ✅ **Memory Management**: Unified memory manager interfaces
-- ❌ **Metal Runtime**: No actual Metal API calls or GPU execution
-- ❌ **Kernel Compilation**: No Metal Shading Language (MSL) compilation
-- ❌ **Device Communication**: No communication with Metal devices
+### Implementation Overview
 
-## Current Implementation
+#### ✅ Implemented Components
+- **Native Metal Integration**: P/Invoke bindings to Metal framework via `libDotComputeMetal.dylib`
+- **Device Management**: Metal device enumeration and capability detection
+- **Memory Management**: Buffer allocation with unified memory support
+- **Kernel Infrastructure**: Compilation pipeline and execution framework
+- **Service Architecture**: Dependency injection and plugin registration
+- **Telemetry System**: Performance monitoring and metrics collection
+- **Error Handling**: Comprehensive error recovery and retry mechanisms
 
-### What Works
-The Metal backend stub includes:
-- Complete accelerator interface implementation
-- Mock device enumeration and capability reporting
-- Memory buffer allocation (CPU memory only)
-- Kernel compilation (returns stub compiled kernels)
-- Service container registration
+#### 🚧 Partial Implementation
+- **Kernel Compilation**: Infrastructure present, MSL compilation requires completion
+- **Command Execution**: Command buffer and queue management implemented, execution pipeline needs integration
+- **Memory Transfers**: Basic buffer operations implemented, optimization needed
+- **Performance Profiling**: Telemetry framework ready, Metal-specific profiling pending
 
-### What Doesn't Work  
-- **GPU Execution**: All kernels execute on CPU fallback
-- **Metal Shading Language**: No MSL compilation or execution
-- **Device Memory**: No actual GPU memory allocation
-- **Performance**: No GPU acceleration, CPU performance only
-- **Apple Hardware**: No integration with Apple Silicon or discrete GPUs
+#### ❌ Not Yet Implemented
+- **Metal Shading Language**: OpenCL C to MSL translation pipeline
+- **Compute Pipeline States**: Metal compute pipeline creation and caching
+- **Advanced Features**: Metal Performance Shaders integration
+- **Production Optimization**: Performance tuning for Apple Silicon
 
-## Code Structure
+## Architecture
 
-### Files Present
-- `MetalAccelerator.cs` - Main accelerator implementation (stub)
-- `MetalKernelCompiler.cs` - Kernel compilation (stub)
-- `MetalMemoryManager.cs` - Memory management (stub)
-- `Native/MetalNative.cs` - P/Invoke declarations (stub)
-- Various support classes and utilities
+The Metal backend follows DotCompute's standard architecture with Metal-specific implementations:
 
-### Stub Behavior
-```csharp
-// This compiles but doesn't actually use Metal
-var accelerator = new MetalAccelerator(options, logger);
-await accelerator.InitializeAsync(); // ✅ Works (CPU initialization)
-
-var kernel = await accelerator.CompileKernelAsync(definition); // ✅ Works (stub compilation)
-await kernel.ExecuteAsync(parameters); // ❌ CPU fallback, no GPU execution
+```
+DotCompute.Backends.Metal/
+├── Execution/           # Command buffer and execution management
+├── Factory/            # Component factory patterns
+├── Kernels/            # Kernel compilation and caching
+├── Memory/             # Metal buffer management
+├── native/             # Native Metal API integration (C++/Objective-C++)
+├── Registration/       # Service registration
+├── Telemetry/         # Performance monitoring
+└── Utilities/         # Support utilities
 ```
 
-## Intended Design
+### Native Integration
 
-When fully implemented, the Metal backend should provide:
+The backend includes a native library (`libDotComputeMetal.dylib`) built with:
+- Objective-C++ for Metal framework access
+- CMake build system integration
+- Direct Metal API calls for device and buffer management
 
-### Metal Integration
-- **Device Detection**: MTLCreateSystemDefaultDevice() integration
-- **Command Queues**: MTLCommandQueue for GPU command submission  
-- **Shading Language**: OpenCL C to MSL translation
-- **Memory Buffers**: MTLBuffer for GPU memory management
-- **Compute Pipelines**: MTLComputePipelineState for kernel execution
+### Key Classes
 
-### Target Hardware
-- **Apple Silicon**: M1, M2, M3 series processors
-- **Discrete GPUs**: AMD Radeon Pro/RX series on Mac Pro
-- **Integrated GPUs**: Intel Iris on Intel-based Macs
-- **iOS/iPadOS**: A-series processors with Metal support
+- `MetalAccelerator`: Main accelerator implementation with device management
+- `MetalBackend`: Backend initialization and capability detection
+- `MetalKernelCompiler`: Kernel compilation infrastructure
+- `MetalMemoryManager`: GPU memory allocation and management
+- `MetalNative`: P/Invoke declarations for native Metal calls
+- `MetalExecutionEngine`: Command buffer execution management
+- `MetalTelemetryProvider`: Performance metrics collection
 
-### Performance Goals
-- **GPU Acceleration**: True Metal compute pipeline execution
-- **Unified Memory**: Leverage Apple Silicon unified memory architecture
-- **Metal Performance Shaders**: Integration with MPS for common operations
-- **Neural Engine**: Potential integration with ANE for ML workloads
+## Current Capabilities
 
-## Current Usage (Stub Only)
+### Device Support
+- Detects Apple Silicon (M1/M2/M3) unified memory architecture
+- Enumerates Metal-capable devices
+- Reports device capabilities and limits
+- Manages multiple command queues
 
-### Setup
+### Memory Management
+- Allocates Metal buffers via native API
+- Supports unified memory on Apple Silicon
+- Implements memory pooling infrastructure
+- Provides host-device transfer mechanisms
+
+### Execution Framework
+- Command buffer creation and management
+- Multi-queue support for concurrent execution
+- Error handling with retry policies
+- Performance telemetry integration
+
+## Testing Infrastructure
+
+Comprehensive test suite with 30+ tests covering:
+- Hardware detection and capability verification
+- Memory allocation and stress testing
+- Concurrent execution scenarios
+- Performance benchmarking
+- Error handling and recovery
+- Integration with DotCompute core
+
+See `tests/Hardware/DotCompute.Hardware.Metal.Tests/` for test implementation.
+
+## Usage Example
+
 ```csharp
-using DotCompute.Backends.Metal;
-
-// This creates a stub accelerator (CPU fallback)
-var accelerator = new MetalAccelerator(
-    Microsoft.Extensions.Options.Options.Create(new MetalAcceleratorOptions()),
-    logger);
-
-await accelerator.InitializeAsync(); // CPU initialization only
-```
-
-### Service Registration
-```csharp
-services.AddSingleton<IAccelerator, MetalAccelerator>();
-// OR  
-services.AddMetalBackend(); // Registers stub implementation
-```
-
-### Limitations
-```csharp
-// All of this works but uses CPU fallback
-var kernelDef = new KernelDefinition
+// Current usage - foundational components work
+var options = Options.Create(new MetalAcceleratorOptions 
 {
-    Name = "VectorAdd", 
-    Source = "/* OpenCL C source */",
-    EntryPoint = "vector_add"
-};
+    PreferredDeviceIndex = 0,
+    EnableProfiling = true
+});
 
-// Compiles successfully but creates stub kernel
-var kernel = await accelerator.CompileKernelAsync(kernelDef);
+var accelerator = new MetalAccelerator(options, logger);
+await accelerator.InitializeAsync();
 
-// Executes on CPU, not GPU
-await kernel.ExecuteAsync(parameters); 
+// Device information available
+var info = accelerator.DeviceInfo;
+Console.WriteLine($"Device: {info.Name}");
+Console.WriteLine($"Memory: {info.GlobalMemorySize / (1024*1024*1024)}GB");
+
+// Memory allocation works
+var buffer = await accelerator.AllocateAsync<float>(1024 * 1024);
+
+// Kernel compilation infrastructure ready (MSL compilation pending)
+var kernel = await accelerator.CompileKernelAsync(kernelDefinition);
 ```
 
-## Development Status
+## Development Roadmap
 
-### Implementation Phases
-1. **Phase 1**: ✅ **Complete** - Interface and stub implementation
-2. **Phase 2**: ❌ **Not Started** - Metal API integration  
-3. **Phase 3**: ❌ **Not Started** - MSL compilation pipeline
-4. **Phase 4**: ❌ **Not Started** - Performance optimization
-5. **Phase 5**: ❌ **Not Started** - Advanced Metal features
+### Phase 1: Core Completion (Current Focus)
+- [ ] Complete MSL compilation from OpenCL C
+- [ ] Integrate compute pipeline state creation
+- [ ] Implement kernel argument binding
+- [ ] Complete execution pipeline
 
-### Required Work
-To complete the Metal backend implementation:
+### Phase 2: Optimization
+- [ ] Memory transfer optimization for Apple Silicon
+- [ ] Kernel caching and binary storage
+- [ ] Thread group size optimization
+- [ ] Performance profiling integration
 
-#### Core Metal Integration
-- [ ] Metal device enumeration and selection
-- [ ] Command queue and buffer management  
-- [ ] MSL compilation from OpenCL C source
-- [ ] Compute pipeline state creation and caching
-- [ ] GPU command encoding and execution
+### Phase 3: Advanced Features
+- [ ] Metal Performance Shaders integration
+- [ ] Multi-GPU support
+- [ ] Indirect command buffers
+- [ ] Resource heaps and tier support
 
-#### Memory Management
-- [ ] MTLBuffer allocation and management
-- [ ] Host-device memory transfers
-- [ ] Shared memory allocation for Apple Silicon
-- [ ] Memory pool optimization for GPU buffers
+### Phase 4: Production Readiness
+- [ ] Comprehensive error recovery
+- [ ] Production performance tuning
+- [ ] Documentation completion
+- [ ] Certification testing
 
-#### Kernel Compilation
-- [ ] OpenCL C to Metal Shading Language translation
-- [ ] Kernel argument reflection and binding
-- [ ] Compilation error handling and reporting
-- [ ] Binary caching and optimization
+## Building
 
-#### Platform Support
-- [ ] macOS Metal framework integration
-- [ ] iOS/iPadOS support (if desired)
-- [ ] Universal binary support (Intel + Apple Silicon)
-- [ ] Metal feature level detection
+### Prerequisites
+- macOS 12.0+ (Monterey or later)
+- Xcode 14+ with Metal development tools
+- .NET 9.0 SDK
+- CMake 3.20+
 
-## Alternative Solutions
+### Build Instructions
+```bash
+# Build native library
+cd src/Backends/DotCompute.Backends.Metal/native
+mkdir build && cd build
+cmake ..
+make
 
-Since the Metal backend is not implemented, consider these alternatives:
+# Build .NET project
+dotnet build src/Backends/DotCompute.Backends.Metal/DotCompute.Backends.Metal.csproj
+```
 
-### For macOS Development
-- **CPU Backend**: Use `DotCompute.Backends.CPU` for SIMD acceleration
-- **External GPU**: Use eGPU with CUDA backend (limited compatibility)
-- **Native Metal**: Write Metal kernels directly in Objective-C/Swift
-- **Compute Shaders**: Use Unity or other engines with Metal support
+### Running Tests
+```bash
+# Run Metal-specific tests
+dotnet test tests/Hardware/DotCompute.Hardware.Metal.Tests/DotCompute.Hardware.Metal.Tests.csproj
 
-### Cross-Platform Options  
-- **OpenCL Backend**: Basic implementation available in DotCompute
-- **CUDA Backend**: Production-ready for NVIDIA GPUs
-- **CPU Backend**: Production-ready SIMD acceleration
+# Run with detailed output
+dotnet test --logger "console;verbosity=detailed"
+```
+
+## Limitations
+
+### Current Limitations
+- MSL compilation pipeline not complete
+- Kernel execution uses CPU fallback for complex operations
+- Performance optimization pending for production workloads
+- Limited to basic Metal features
+
+### Platform Requirements
+- macOS only (Metal is Apple-specific)
+- Requires Metal-capable hardware
+- Best performance on Apple Silicon (M1/M2/M3)
 
 ## Contributing
 
-The Metal backend implementation is a significant undertaking requiring:
-- **Metal Framework Expertise**: Deep knowledge of Metal API
-- **Objective-C Interop**: P/Invoke bindings to Metal framework
-- **Shader Compilation**: OpenCL C to MSL translation  
-- **macOS Development**: Native macOS development environment
+The Metal backend welcomes contributions in the following areas:
+1. MSL compilation pipeline completion
+2. Performance optimization for Apple Silicon
+3. Test coverage expansion
+4. Documentation improvements
 
-If you're interested in contributing to Metal backend implementation:
-1. Review the existing stub implementation
-2. Set up macOS development environment with Xcode
-3. Study Metal framework documentation and samples
-4. Start with basic device enumeration and command queue creation
+See [CONTRIBUTING.md](../../../CONTRIBUTING.md) for contribution guidelines.
 
-See [CONTRIBUTING.md](../../../CONTRIBUTING.md) for general guidelines.
+## Technical Notes
 
-## Build Configuration
+### Memory Architecture
+The implementation leverages Apple Silicon's unified memory architecture where available, providing efficient CPU-GPU memory sharing without explicit transfers.
 
-The Metal backend stub can be built on any platform but will only stub functionality:
+### Threading Model
+Follows Metal's threading model with:
+- Thread groups for work distribution
+- SIMD groups for wavefront execution
+- Threadgroup memory for local data sharing
 
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <!-- Metal runtime only available on macOS -->
-    <RuntimeIdentifiers Condition="'$(OS)' != 'OSX'">$(RuntimeIdentifiers);osx-x64;osx-arm64</RuntimeIdentifiers>
-  </PropertyGroup>
-</Project>
-```
+### Error Handling
+Comprehensive error handling includes:
+- Automatic retry for transient failures
+- Graceful degradation for unsupported features
+- Detailed error reporting via telemetry
 
-**Note**: Even when the Metal backend is fully implemented, it will only function on macOS with Metal-capable hardware.
+## Support
+
+For issues specific to the Metal backend:
+1. Check test suite for examples and validation
+2. Review native library logs in `build/` directory
+3. Enable debug logging via `MetalAcceleratorOptions.EnableDebugLogging`
+4. File issues with Metal-specific tags in the main repository
+
+## License
+
+The Metal backend is part of the DotCompute project and follows the same MIT license. See [LICENSE](../../../LICENSE) for details.
