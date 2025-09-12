@@ -130,11 +130,6 @@ public enum MemoryAccessPattern
 }
 
 /// <summary>
-/// Type alias for memory access pattern for compatibility.
-/// </summary>
-public using AccessPattern = MemoryAccessPattern;
-
-/// <summary>
 /// Result of backend selection process.
 /// </summary>
 public class BackendSelection

@@ -86,6 +86,12 @@ public sealed class MetalAccelerator : BaseAccelerator
             logger.LogInformation("Metal telemetry system initialized for production monitoring");
         }
 
+        // Set the accelerator reference in the memory manager after construction
+        if (base.Memory is MetalMemoryManager metalMemoryManager)
+        {
+            metalMemoryManager.SetAcceleratorReference(this);
+        }
+
         // Setup periodic cleanup timer (every 30 seconds)
         _cleanupTimer = new Timer(PerformCleanup, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
     }
@@ -406,10 +412,10 @@ public sealed class MetalAccelerator : BaseAccelerator
             throw new InvalidOperationException("Failed to create Metal device for memory manager.");
         }
 
-        // MetalMemoryManager now takes accelerator reference for proper integration
+        // MetalMemoryManager created without accelerator reference initially
         var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => { });
         var logger = loggerFactory.CreateLogger<MetalMemoryManager>();
-        return new MetalMemoryManager(logger, this);
+        return new MetalMemoryManager(logger, null);
     }
 
     private static string GetDeviceLocation(MetalDeviceInfo info)

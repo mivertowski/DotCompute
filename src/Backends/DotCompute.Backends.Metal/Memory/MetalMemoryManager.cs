@@ -33,6 +33,15 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     public IntPtr Device => _device;
 
     /// <summary>
+    /// Sets the accelerator reference after construction.
+    /// </summary>
+    /// <param name="accelerator">The accelerator to reference.</param>
+    public void SetAcceleratorReference(IAccelerator accelerator)
+    {
+        _acceleratorRef = new WeakReference<IAccelerator>(accelerator);
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="MetalMemoryManager"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>

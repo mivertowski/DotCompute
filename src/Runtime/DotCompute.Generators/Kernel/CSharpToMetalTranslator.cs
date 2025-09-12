@@ -225,9 +225,17 @@ internal sealed class CSharpToMetalTranslator
     private static bool IsConstantCandidate(ISymbol variable)
     {
         // Heuristics for constant memory usage
+        bool isReadOnly = variable switch
+        {
+            IFieldSymbol field => field.IsReadOnly,
+            ILocalSymbol local => local.IsConst,
+            IParameterSymbol param => param.RefKind == RefKind.In,
+            _ => false
+        };
+        
         return variable.IsStatic || 
                variable.Name.IndexOf("const", StringComparison.OrdinalIgnoreCase) >= 0 ||
-               variable.IsReadOnly;
+               isReadOnly;
     }
 
     private void TranslateBlockStatement(BlockSyntax block)
@@ -730,23 +738,3 @@ internal sealed class CSharpToMetalTranslator
     }
 }
 
-// Extension method to help with type display
-internal static class SymbolExtensions
-{
-    public static string GetTypeDisplayString(this ISymbol symbol)
-    {
-        if (symbol is ILocalSymbol local)
-        {
-            return local.Type.ToDisplayString();
-        }
-        else if (symbol is IParameterSymbol parameter)
-        {
-            return parameter.Type.ToDisplayString();
-        }
-        else if (symbol is IFieldSymbol field)
-        {
-            return field.Type.ToDisplayString();
-        }
-        return symbol.ToDisplayString();
-    }
-}

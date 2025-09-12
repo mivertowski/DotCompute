@@ -163,7 +163,7 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
                     // Handle buffer view with proper offset
                     var parentBuffer = view.ParentBuffer;
                     var offsetBytes = view.Offset;
-                    MetalNative.SetBuffer(encoder, parentBuffer, offsetBytes, bufferIndex);
+                    MetalNative.SetBuffer(encoder, parentBuffer, (nuint)offsetBytes, bufferIndex);
                 }
                 else
                 {

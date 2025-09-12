@@ -8,6 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <GenerateProgramFile>false</GenerateProgramFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     
     <!-- Disable AOT for test projects -->
@@ -30,6 +31,8 @@
   <ItemGroup>
     <ProjectReference Include="../../../src/Backends/DotCompute.Backends.Metal/DotCompute.Backends.Metal.csproj" />
     <ProjectReference Include="../../../src/Core/DotCompute.Abstractions/DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="../../../src/Runtime/DotCompute.Generators/DotCompute.Generators.csproj" />
+    <ProjectReference Include="../../Shared/DotCompute.Tests.Common/DotCompute.Tests.Common.csproj" />
   </ItemGroup>
 
 </Project>
