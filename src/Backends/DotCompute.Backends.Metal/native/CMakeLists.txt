@@ -61,7 +61,7 @@ target_compile_options(DotComputeMetal PRIVATE
     -Wextra                     # Extra warnings
     -Wno-unused-parameter       # Disable unused parameter warnings
     -fPIC                       # Position independent code
-    -fvisibility=hidden         # Hide symbols by default
+    -fvisibility=default        # Export symbols by default for C functions
     $<$<CONFIG:Release>:-O3>    # Optimize for release
     $<$<CONFIG:Debug>:-g>       # Debug symbols for debug builds
 )
@@ -72,9 +72,10 @@ set_target_properties(DotComputeMetal PROPERTIES
     SUFFIX ".dylib"
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
-    CXX_VISIBILITY_PRESET hidden
-    OBJCXX_VISIBILITY_PRESET hidden
-    VISIBILITY_INLINES_HIDDEN ON
+    CXX_VISIBILITY_PRESET default
+    OBJCXX_VISIBILITY_PRESET default
+    C_VISIBILITY_PRESET default
+    VISIBILITY_INLINES_HIDDEN OFF
     MACOSX_RPATH ON
     INSTALL_RPATH "@loader_path;@rpath"
     BUILD_WITH_INSTALL_RPATH TRUE

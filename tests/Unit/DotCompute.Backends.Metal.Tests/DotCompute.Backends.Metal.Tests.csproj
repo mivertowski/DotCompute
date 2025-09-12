@@ -2,11 +2,19 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Library</OutputType>
     <LangVersion>13</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    
+    <!-- Disable AOT for test projects -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
     
     <!-- Test Configuration -->
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>

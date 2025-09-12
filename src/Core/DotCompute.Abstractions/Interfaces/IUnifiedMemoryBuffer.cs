@@ -20,6 +20,11 @@ public interface IUnifiedMemoryBuffer<T> : IUnifiedMemoryBuffer where T : unmana
     public int Length { get; }
 
     /// <summary>
+    /// Gets the number of elements in the buffer (alias for Length).
+    /// </summary>
+    public int ElementCount => Length;
+
+    /// <summary>
     /// Gets the accelerator this buffer is associated with.
     /// </summary>
     public IAccelerator Accelerator { get; }

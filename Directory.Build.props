@@ -108,8 +108,9 @@
   
   <!-- Test project dependencies are handled by individual test projects and tests/Directory.Build.targets -->
   
-  <!-- Import test categories for test projects -->
+  <!-- Import test categories and additional test configuration -->
   <Import Project="$(MSBuildThisFileDirectory)tests/test-categories.props" Condition="'$(IsTestProject)' == 'true' And Exists('$(MSBuildThisFileDirectory)tests/test-categories.props')" />
+  <Import Project="$(MSBuildThisFileDirectory)Directory.Test.props" Condition="'$(IsTestProject)' == 'true' And Exists('$(MSBuildThisFileDirectory)Directory.Test.props')" />
   
   <!-- MSBuild targets for test execution -->
   <Target Name="RunCITests" Condition="'$(CI)' == 'true'">

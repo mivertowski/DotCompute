@@ -12,6 +12,8 @@ using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Backends.Metal.Memory;
+using DotCompute.Backends.Metal.Telemetry;
+using DotCompute.Backends.Metal.Execution;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
@@ -27,13 +29,16 @@ public sealed class MetalAccelerator : BaseAccelerator
     private readonly MetalKernelCompiler _kernelCompiler;
     private readonly MetalCommandBufferPool _commandBufferPool;
     private readonly MetalPerformanceProfiler _profiler;
+    private readonly MetalTelemetryManager? _telemetryManager;
     private readonly IntPtr _device;
     private readonly IntPtr _commandQueue;
     private readonly Timer? _cleanupTimer;
 
     public MetalAccelerator(
         IOptions<MetalAcceleratorOptions> options,
-        ILogger<MetalAccelerator> logger)
+        ILogger<MetalAccelerator> logger,
+        IOptions<MetalTelemetryOptions>? telemetryOptions = null,
+        ILoggerFactory? loggerFactory = null)
         : base(
             BuildAcceleratorInfo(options.Value, logger),
             AcceleratorType.Metal,
@@ -73,6 +78,14 @@ public sealed class MetalAccelerator : BaseAccelerator
         // Initialize kernel compiler with command buffer pool
         _kernelCompiler = new MetalKernelCompiler(_device, _commandQueue, logger, _commandBufferPool);
 
+        // Initialize production telemetry if enabled
+        if (telemetryOptions?.Value != null && loggerFactory != null)
+        {
+            var telemetryLogger = loggerFactory.CreateLogger<MetalTelemetryManager>();
+            _telemetryManager = new MetalTelemetryManager(telemetryOptions, telemetryLogger, loggerFactory);
+            logger.LogInformation("Metal telemetry system initialized for production monitoring");
+        }
+
         // Setup periodic cleanup timer (every 30 seconds)
         _cleanupTimer = new Timer(PerformCleanup, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
     }
@@ -84,16 +97,69 @@ public sealed class MetalAccelerator : BaseAccelerator
         CancellationToken cancellationToken)
     {
         using var profiling = _profiler.Profile($"CompileKernel:{definition.Name}");
+        var startTime = DateTimeOffset.UtcNow;
+        Exception? compilationException = null;
 
-        // Compile kernel using Metal Shading Language
-
-        return await _kernelCompiler.CompileAsync(definition, options, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            // Compile kernel using Metal Shading Language
+            var result = await _kernelCompiler.CompileAsync(definition, options, cancellationToken).ConfigureAwait(false);
+            
+            // Record telemetry for successful compilation
+            var duration = DateTimeOffset.UtcNow - startTime;
+            _telemetryManager?.RecordKernelExecution(
+                definition.Name, 
+                duration, 
+                definition.Code?.Length ?? 0, 
+                true,
+                new Dictionary<string, object>
+                {
+                    ["operation"] = "kernel_compilation",
+                    ["compilation_options"] = options.ToString(),
+                    ["code_length"] = definition.Code?.Length ?? 0
+                });
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            compilationException = ex;
+            
+            // Record telemetry for failed compilation
+            var duration = DateTimeOffset.UtcNow - startTime;
+            _telemetryManager?.RecordKernelExecution(
+                definition.Name, 
+                duration, 
+                definition.Code?.Length ?? 0, 
+                false,
+                new Dictionary<string, object>
+                {
+                    ["operation"] = "kernel_compilation",
+                    ["compilation_options"] = options.ToString(),
+                    ["code_length"] = definition.Code?.Length ?? 0,
+                    ["error"] = ex.Message
+                });
+                
+            _telemetryManager?.RecordErrorEvent(
+                MetalError.CompilationError,
+                $"kernel_compilation_{definition.Name}",
+                new Dictionary<string, object>
+                {
+                    ["kernel_name"] = definition.Name,
+                    ["exception_type"] = ex.GetType().Name,
+                    ["exception_message"] = ex.Message
+                });
+            
+            throw;
+        }
     }
 
     /// <inheritdoc/>
     protected override async ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken)
     {
         using var profiling = _profiler.Profile("Synchronize");
+        var startTime = DateTimeOffset.UtcNow;
+        var success = false;
 
         // Get a command buffer from the pool
         var commandBuffer = _commandBufferPool.GetCommandBuffer();
@@ -121,11 +187,34 @@ public sealed class MetalAccelerator : BaseAccelerator
             using (cancellationToken.Register(() => tcs.TrySetCanceled()))
             {
                 _ = await tcs.Task.ConfigureAwait(false);
+                success = true;
             }
+        }
+        catch (Exception ex)
+        {
+            // Record telemetry for failed synchronization
+            var duration = DateTimeOffset.UtcNow - startTime;
+            _telemetryManager?.RecordErrorEvent(
+                MetalError.InvalidOperation,
+                "synchronization_failure",
+                new Dictionary<string, object>
+                {
+                    ["duration_ms"] = duration.TotalMilliseconds,
+                    ["exception_type"] = ex.GetType().Name,
+                    ["exception_message"] = ex.Message
+                });
+            throw;
         }
         finally
         {
             _commandBufferPool.ReturnCommandBuffer(commandBuffer);
+            
+            // Record telemetry for synchronization operation
+            if (success)
+            {
+                var duration = DateTimeOffset.UtcNow - startTime;
+                _telemetryManager?.RecordKernelExecution("synchronize", duration, 0, success);
+            }
         }
     }
 
@@ -135,10 +224,29 @@ public sealed class MetalAccelerator : BaseAccelerator
         // Dispose cleanup timer
         _cleanupTimer?.Dispose();
 
+        // Generate final telemetry report if telemetry is enabled
+        if (_telemetryManager != null)
+        {
+            try
+            {
+                var finalReport = _telemetryManager.GenerateProductionReport();
+                var logger = (ILogger)typeof(BaseAccelerator).GetField("_logger", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(this)!;
+                logger.LogInformation("Final Metal telemetry report - Operations: {Operations}, Errors: {Errors}, Health: {Health}",
+                    finalReport.Snapshot.TotalOperations, finalReport.Snapshot.TotalErrors, finalReport.Snapshot.HealthStatus);
+            }
+            catch (Exception ex)
+            {
+                // Suppress telemetry errors during disposal
+                var logger = (ILogger)typeof(BaseAccelerator).GetField("_logger", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(this)!;
+                logger.LogWarning(ex, "Error generating final telemetry report during disposal");
+            }
+        }
+
         // Dispose managed resources
         _kernelCompiler.Dispose();
         _commandBufferPool.Dispose();
         _profiler.Dispose();
+        _telemetryManager?.Dispose();
 
         // Release native resources
         if (_commandQueue != IntPtr.Zero)
@@ -206,6 +314,36 @@ public sealed class MetalAccelerator : BaseAccelerator
     {
         ThrowIfDisposed();
         _profiler.Reset();
+    }
+
+    /// <summary>
+    /// Gets comprehensive production telemetry report (if telemetry is enabled).
+    /// </summary>
+    public MetalProductionReport? GetTelemetryReport()
+    {
+        ThrowIfDisposed();
+        return _telemetryManager?.GenerateProductionReport();
+    }
+
+    /// <summary>
+    /// Gets current telemetry snapshot (if telemetry is enabled).
+    /// </summary>
+    public MetalTelemetrySnapshot? GetTelemetrySnapshot()
+    {
+        ThrowIfDisposed();
+        return _telemetryManager?.GetCurrentSnapshot();
+    }
+
+    /// <summary>
+    /// Exports metrics to configured monitoring systems (if telemetry is enabled).
+    /// </summary>
+    public async Task ExportTelemetryAsync(CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        if (_telemetryManager != null)
+        {
+            await _telemetryManager.ExportMetricsAsync(cancellationToken);
+        }
     }
 
     private static AcceleratorInfo BuildAcceleratorInfo(MetalAcceleratorOptions options, ILogger logger)

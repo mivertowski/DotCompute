@@ -1,14 +1,15 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
-
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.Metal.Logging;
+
+[assembly: InternalsVisibleTo("DotCompute.Backends.Metal.Tests")]
 namespace DotCompute.Backends.Metal;
 
 
@@ -34,45 +35,61 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public static bool IsAvailable()
     {
+        System.Console.WriteLine($"DEBUG: IsAvailable() called");
+        System.Console.WriteLine($"DEBUG: IsOSPlatform(OSX): {RuntimeInformation.IsOSPlatform(OSPlatform.OSX)}");
+        
         // Metal is only available on macOS
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
+            System.Console.WriteLine($"DEBUG: Not on macOS, returning false");
             return false;
         }
 
-        // Check minimum macOS version (10.11 for basic Metal, 10.13 for compute shaders)
+        // Check minimum macOS version (10.13 for compute shaders, 11+ for modern macOS)
         try
         {
             var osVersion = Environment.OSVersion.Version;
+            System.Console.WriteLine($"DEBUG: OS Version: {osVersion}");
+            // macOS 11+ (Big Sur and later) report major version as 11+
+            // macOS 10.x reports major version as 10
             if (osVersion.Major < 10 || (osVersion.Major == 10 && osVersion.Minor < 13))
             {
+                System.Console.WriteLine($"DEBUG: OS version too old, returning false");
                 return false;
             }
+            // Any version >= 11 is supported (Big Sur, Monterey, Ventura, Sonoma, Sequoia)
+            System.Console.WriteLine($"DEBUG: OS version check passed");
         }
-        catch
+        catch (Exception ex)
         {
             // If we can't determine OS version, assume it's not supported
+            System.Console.WriteLine($"DEBUG: Exception in OS version check: {ex.Message}");
             return false;
         }
 
         // Check if Metal framework is actually available
         try
         {
-            return MetalNative.IsMetalSupported();
+            var result = MetalNative.IsMetalSupported();
+            System.Console.WriteLine($"DEBUG: MetalNative.IsMetalSupported() returned: {result}");
+            return result;
         }
-        catch (DllNotFoundException)
+        catch (DllNotFoundException ex)
         {
             // Native library not available
+            System.Console.WriteLine($"DEBUG: DllNotFoundException: {ex.Message}");
             return false;
         }
-        catch (EntryPointNotFoundException)
+        catch (EntryPointNotFoundException ex)
         {
             // Function not found in native library
+            System.Console.WriteLine($"DEBUG: EntryPointNotFoundException: {ex.Message}");
             return false;
         }
-        catch
+        catch (Exception ex)
         {
             // Any other error means Metal is not available
+            System.Console.WriteLine($"DEBUG: Exception: {ex.GetType().Name}: {ex.Message}");
             return false;
         }
     }
@@ -179,7 +196,7 @@ public sealed partial class MetalBackend : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.MetalFunctionCompilationFailed(ex, functionName);
+            _logger.LogError(ex, "Metal function compilation failed: {FunctionName}", functionName);
             return IntPtr.Zero;
         }
     }
@@ -204,17 +221,17 @@ public sealed partial class MetalBackend : IDisposable
         {
             // This is a simplified approach - in production, we'd maintain a proper mapping
             // between function handles and compiled kernels
-            _logger.ComputeShaderExecuting(buffers.Length);
+            _logger.LogDebug("Executing compute shader with {BufferCount} buffers", buffers.Length);
 
             // For now, we'll just complete successfully
             // In a full implementation, we'd retrieve the compiled kernel from the function handle
             await Task.CompletedTask.ConfigureAwait(false);
 
-            _logger.ComputeShaderExecutionCompleted();
+            _logger.LogDebug("Compute shader execution completed");
         }
         catch (Exception ex)
         {
-            _logger.ComputeShaderExecutionFailed(ex);
+            _logger.LogError(ex, "Compute shader execution failed");
             throw;
         }
     }
@@ -239,7 +256,7 @@ public sealed partial class MetalBackend : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.CommandQueueCreationFailed(ex);
+            _logger.LogError(ex, "Command queue creation failed");
             return IntPtr.Zero;
         }
     }
@@ -248,7 +265,7 @@ public sealed partial class MetalBackend : IDisposable
     {
         if (!IsAvailable())
         {
-            _logger.MetalNotAvailable();
+            _logger.LogWarning("Metal is not available on this system");
             return;
         }
 
@@ -274,7 +291,7 @@ public sealed partial class MetalBackend : IDisposable
                     var device = MetalNative.CreateDeviceAtIndex(deviceIndex);
                     if (device == IntPtr.Zero)
                     {
-                        _logger.FailedToCreateDevice(deviceIndex);
+                        _logger.LogWarning("Failed to create device at index {DeviceIndex}", deviceIndex);
                         continue;
                     }
 

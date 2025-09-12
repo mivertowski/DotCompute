@@ -83,6 +83,73 @@ public static class HardwareDetection
         }
     }
 
+    /// <summary>
+    /// Checks if Metal is available (macOS only).
+    /// </summary>
+    public static bool IsMetalAvailable()
+    {
+        try
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return false;
+            }
+
+            // Check macOS version (Metal requires macOS 10.11+, compute shaders require 10.13+)
+            var version = Environment.OSVersion.Version;
+            if (version.Major < 10 || (version.Major == 10 && version.Minor < 13))
+            {
+                return false;
+            }
+
+            // For now, assume Metal is available on supported macOS versions
+            // In production, this would check for actual Metal device availability
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Checks if running on Apple Silicon (M1/M2/M3/M4).
+    /// </summary>
+    public static bool IsAppleSilicon()
+    {
+        return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) &&
+               RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
+    }
+
+    /// <summary>
+    /// Gets estimated Metal GPU memory in bytes.
+    /// </summary>
+    public static long GetEstimatedMetalGpuMemory()
+    {
+        if (!IsMetalAvailable())
+            return 0;
+
+        try
+        {
+            if (IsAppleSilicon())
+            {
+                // Apple Silicon uses unified memory
+                // Return conservative estimate based on total system memory
+                var totalSystemMemory = GetTotalSystemMemory();
+                return Math.Min(totalSystemMemory / 2, 32L * 1024 * 1024 * 1024); // Max 32GB for GPU
+            }
+            else
+            {
+                // Intel Mac with discrete GPU (estimates)
+                return 4L * 1024 * 1024 * 1024; // Conservative 4GB estimate
+            }
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
 
     /// <summary>
     /// Gets the number of available CUDA devices.
@@ -306,6 +373,30 @@ public static class HardwareDetection
         public bool OpenCLAvailable { get; init; }
 
         /// <summary>
+        /// Gets a value indicating whether Metal is available.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if Metal is available; otherwise, <c>false</c>.
+        /// </value>
+        public bool MetalAvailable { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether running on Apple Silicon.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if running on Apple Silicon; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsAppleSilicon { get; init; }
+
+        /// <summary>
+        /// Gets the estimated Metal GPU memory in bytes.
+        /// </summary>
+        /// <value>
+        /// The estimated Metal GPU memory.
+        /// </value>
+        public long MetalGpuMemory { get; init; }
+
+        /// <summary>
         /// Gets the cuda device count.
         /// </summary>
         /// <value>
@@ -422,6 +513,9 @@ public static class HardwareDetection
         {
             CudaAvailable = IsCudaAvailable(),
             OpenCLAvailable = IsOpenCLAvailable(),
+            MetalAvailable = IsMetalAvailable(),
+            IsAppleSilicon = IsAppleSilicon(),
+            MetalGpuMemory = GetEstimatedMetalGpuMemory(),
             CudaDeviceCount = GetCudaDeviceCount(),
             OpenCLDeviceCount = GetOpenCLDeviceCount(),
             LogicalCores = GetLogicalCoreCount(),

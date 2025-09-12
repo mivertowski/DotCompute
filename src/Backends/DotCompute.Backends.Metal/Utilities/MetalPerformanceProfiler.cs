@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.Metal.Logging;
 
 namespace DotCompute.Backends.Metal.Utilities;
 
@@ -67,11 +66,11 @@ public sealed class MetalPerformanceProfiler : IDisposable
             // Log slow operations
             if (elapsed.TotalMilliseconds > 100) // Log operations > 100ms
             {
-                _logger.SlowOperationDetected(operationName, elapsed.TotalMilliseconds);
+                _logger.LogWarning("Slow operation detected: {Operation} took {Duration}ms", operationName, elapsed.TotalMilliseconds);
             }
             else if (_logger.IsEnabled(LogLevel.Trace))
             {
-                _logger.OperationCompleted(operationName, elapsed.TotalMilliseconds);
+                _logger.LogDebug("Operation completed: {Operation} took {Duration}ms", operationName, elapsed.TotalMilliseconds);
             }
         }
     }
@@ -116,7 +115,7 @@ public sealed class MetalPerformanceProfiler : IDisposable
         lock (_lock)
         {
             _metrics.Clear();
-            _logger.PerformanceMetricsReset();
+            _logger.LogDebug("Performance metrics reset");
         }
     }
 
@@ -174,14 +173,14 @@ public sealed class MetalPerformanceProfiler : IDisposable
         {
             if (_logger.IsEnabled(LogLevel.Information) && _metrics.Count > 0)
             {
-                _logger.PerformanceSummary(GenerateReport());
+                _logger.LogInformation("Performance summary generated");
             }
 
 
             _metrics.Clear();
         }
 
-        _logger.PerformanceProfilerDisposed();
+        _logger.LogDebug("Performance profiler disposed");
     }
 
     /// <summary>

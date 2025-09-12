@@ -1277,22 +1277,25 @@ public class BaseAcceleratorTests : IDisposable
         // Arrange
         var memoryManager = new Mock<IUnifiedMemoryManager>();
         var currentMemoryUsage = 0L;
+        const long totalMemory = 1024 * 1024 * 1024; // 1GB
 
-        _ = memoryManager.Setup(m => m.GetTotalMemory()).Returns(1024 * 1024 * 1024); // 1GB
-        _ = memoryManager.Setup(m => m.GetAvailableMemory()).Returns(() => 1024 * 1024 * 1024 - currentMemoryUsage);
-        _ = memoryManager.Setup(m => m.GetUsedMemory()).Returns(() => currentMemoryUsage);
-
+        // Setup Statistics property with correct property names
+        var mockStats = new Mock<DotCompute.Abstractions.Memory.MemoryStatistics>();
+        mockStats.Setup(s => s.TotalMemoryBytes).Returns(totalMemory);
+        mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => currentMemoryUsage);
+        mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => totalMemory - currentMemoryUsage);
+        
+        _ = memoryManager.Setup(m => m.Statistics).Returns(mockStats.Object);
 
         var accelerator = CreateTestAccelerator(memoryManager: memoryManager.Object);
 
         // Act - Simulate memory allocations
-
         currentMemoryUsage = 100 * 1024 * 1024; // 100MB allocated
 
         // Assert
-        _ = accelerator.Memory.CurrentAllocatedMemory.Should().Be(100L * 1024 * 1024);
-        var availableMemory = accelerator.Memory.TotalAvailableMemory - accelerator.Memory.CurrentAllocatedMemory;
-        _ = availableMemory.Should().Be(1024L * 1024 * 1024 - 100L * 1024 * 1024);
+        _ = accelerator.Memory.Statistics.UsedMemoryBytes.Should().Be(100L * 1024 * 1024);
+        _ = accelerator.Memory.Statistics.AvailableMemoryBytes.Should().Be(1024L * 1024 * 1024 - 100L * 1024 * 1024);
+        _ = accelerator.Memory.Statistics.TotalMemoryBytes.Should().Be(1024 * 1024 * 1024);
         _ = accelerator.Info.TotalMemory.Should().Be(1024 * 1024 * 1024);
     }
 
@@ -1341,9 +1344,13 @@ public class BaseAcceleratorTests : IDisposable
         var memoryManager = new Mock<IUnifiedMemoryManager>();
         var allocationSize = 0L;
 
-        _ = memoryManager.Setup(m => m.GetUsedMemory()).Returns(() => allocationSize);
-        _ = memoryManager.Setup(m => m.TotalAvailableMemory).Returns(1024L * 1024 * 1024);
-        _ = memoryManager.Setup(m => m.CurrentAllocatedMemory).Returns(() => allocationSize);
+        // Setup Statistics property with correct property names
+        var mockStats = new Mock<DotCompute.Abstractions.Memory.MemoryStatistics>();
+        mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => allocationSize);
+        mockStats.Setup(s => s.TotalMemoryBytes).Returns(1024L * 1024 * 1024);
+        mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => 1024L * 1024 * 1024 - allocationSize);
+        
+        _ = memoryManager.Setup(m => m.Statistics).Returns(mockStats.Object);
 
 
         var accelerator = CreateTestAccelerator(memoryManager: memoryManager.Object);
@@ -1904,7 +1911,11 @@ public class BaseAcceleratorTests : IDisposable
         private int _activeSyncs;
 
         public TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger)
-            : base(info, Enum.Parse<AcceleratorType>(info.DeviceType), memory, new AcceleratorContext(IntPtr.Zero, 0), logger)
+            : base(info ?? throw new ArgumentNullException(nameof(info)), 
+                  info != null ? Enum.Parse<AcceleratorType>(info.DeviceType) : AcceleratorType.CPU, 
+                  memory ?? throw new ArgumentNullException(nameof(memory)), 
+                  new AcceleratorContext(IntPtr.Zero, 0), 
+                  logger ?? throw new ArgumentNullException(nameof(logger)))
         {
         }
 

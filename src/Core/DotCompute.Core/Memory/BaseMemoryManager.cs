@@ -18,6 +18,11 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
 {
     private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>> _activeBuffers;
     private readonly ILogger _logger;
+    
+    /// <summary>
+    /// Gets the logger instance for derived classes.
+    /// </summary>
+    protected ILogger Logger => _logger;
     private readonly Lock _lock = new();
     private long _totalAllocatedBytes;
     private long _peakAllocatedBytes;

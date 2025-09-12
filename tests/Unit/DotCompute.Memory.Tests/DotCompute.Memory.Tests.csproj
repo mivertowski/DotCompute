@@ -2,20 +2,22 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Library</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- Re-enable Directory.Build.targets for test packages -->
-    <ImportDirectoryBuildTargets>true</ImportDirectoryBuildTargets>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Disable AOT for test projects -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
   </ItemGroup>
-
-  <!-- Test packages provided by Directory.Build.targets -->
 
 </Project>

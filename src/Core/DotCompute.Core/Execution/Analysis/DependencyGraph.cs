@@ -226,5 +226,14 @@ namespace DotCompute.Core.Execution.Analysis
             }
             return nodes;
         }
+        
+        /// <summary>
+        /// Clears all dependencies from the graph.
+        /// </summary>
+        public void Clear()
+        {
+            _dependencies.Clear();
+            _dependencyTypes.Clear();
+        }
     }
 }

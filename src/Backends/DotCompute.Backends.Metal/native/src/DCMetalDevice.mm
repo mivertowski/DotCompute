@@ -78,7 +78,14 @@ DCMetalDeviceInfo DCMetal_GetDeviceInfo(DCMetalDevice device) {
         info.name = nameStorage.c_str();
         
         info.registryID = mtlDevice.registryID;
-        info.hasUnifiedMemory = mtlDevice.hasUnifiedMemory;
+        
+        // Check for unified memory (available in macOS 10.15+)
+        if (@available(macOS 10.15, *)) {
+            info.hasUnifiedMemory = mtlDevice.hasUnifiedMemory;
+        } else {
+            info.hasUnifiedMemory = false; // Default for older systems
+        }
+        
         info.isLowPower = mtlDevice.isLowPower;
         info.isRemovable = mtlDevice.isRemovable;
         
@@ -86,7 +93,13 @@ DCMetalDeviceInfo DCMetal_GetDeviceInfo(DCMetalDevice device) {
         MTLSize maxThreads = mtlDevice.maxThreadsPerThreadgroup;
         info.maxThreadsPerThreadgroup = maxThreads.width * maxThreads.height * maxThreads.depth;
         info.maxThreadgroupSize = info.maxThreadsPerThreadgroup;
-        info.maxBufferLength = mtlDevice.maxBufferLength;
+        
+        // Buffer length (available in macOS 10.14+)
+        if (@available(macOS 10.14, *)) {
+            info.maxBufferLength = mtlDevice.maxBufferLength;
+        } else {
+            info.maxBufferLength = 256 * 1024 * 1024; // 256MB default for older systems
+        }
         
         // Memory information
         if (@available(macOS 10.12, *)) {
@@ -95,8 +108,8 @@ DCMetalDeviceInfo DCMetal_GetDeviceInfo(DCMetalDevice device) {
             info.recommendedMaxWorkingSetSize = info.maxBufferLength / 2; // Fallback estimate
         }
         
-        // Location information
-        if (@available(macOS 10.13, *)) {
+        // Location information (available in macOS 10.15+)
+        if (@available(macOS 10.15, *)) {
             info.location = (DCMetalDeviceLocation)mtlDevice.location;
             info.locationNumber = mtlDevice.locationNumber;
         } else {
@@ -380,16 +393,14 @@ void DCMetal_SetCompileOptionsLanguageVersion(DCMetalCompileOptions options, DCM
     @autoreleasepool {
         MTLCompileOptions* mtlOptions = (__bridge MTLCompileOptions*)options;
         
-        MTLLanguageVersion langVersion;
+        MTLLanguageVersion langVersion = MTLLanguageVersion2_0; // Default
+        
         switch (version) {
             case DCMetalLanguageVersion10:
-                langVersion = MTLLanguageVersion1_0;
-                break;
             case DCMetalLanguageVersion11:
-                langVersion = MTLLanguageVersion1_1;
-                break;
             case DCMetalLanguageVersion12:
-                langVersion = MTLLanguageVersion1_2;
+                // Metal 1.x versions are deprecated, use 2.0 as fallback
+                langVersion = MTLLanguageVersion2_0;
                 break;
             case DCMetalLanguageVersion20:
                 langVersion = MTLLanguageVersion2_0;
@@ -401,27 +412,47 @@ void DCMetal_SetCompileOptionsLanguageVersion(DCMetalCompileOptions options, DCM
                 langVersion = MTLLanguageVersion2_2;
                 break;
             case DCMetalLanguageVersion23:
-                langVersion = MTLLanguageVersion2_3;
+                if (@available(macOS 11.0, *)) {
+                    langVersion = MTLLanguageVersion2_3;
+                } else {
+                    langVersion = MTLLanguageVersion2_2;
+                }
                 break;
             case DCMetalLanguageVersion24:
-                langVersion = MTLLanguageVersion2_4;
+                if (@available(macOS 12.0, *)) {
+                    langVersion = MTLLanguageVersion2_4;
+                } else if (@available(macOS 11.0, *)) {
+                    langVersion = MTLLanguageVersion2_3;
+                } else {
+                    langVersion = MTLLanguageVersion2_2;
+                }
                 break;
             case DCMetalLanguageVersion30:
-                if (@available(macOS 12.0, *)) {
+                if (@available(macOS 13.0, *)) {
                     langVersion = MTLLanguageVersion3_0;
+                } else if (@available(macOS 12.0, *)) {
+                    langVersion = MTLLanguageVersion2_4;
+                } else if (@available(macOS 11.0, *)) {
+                    langVersion = MTLLanguageVersion2_3;
                 } else {
-                    langVersion = MTLLanguageVersion2_4; // Fallback
+                    langVersion = MTLLanguageVersion2_2;
                 }
                 break;
             case DCMetalLanguageVersion31:
-                if (@available(macOS 13.0, *)) {
+                if (@available(macOS 14.0, *)) {
                     langVersion = MTLLanguageVersion3_1;
+                } else if (@available(macOS 13.0, *)) {
+                    langVersion = MTLLanguageVersion3_0;
+                } else if (@available(macOS 12.0, *)) {
+                    langVersion = MTLLanguageVersion2_4;
+                } else if (@available(macOS 11.0, *)) {
+                    langVersion = MTLLanguageVersion2_3;
                 } else {
-                    langVersion = MTLLanguageVersion3_0; // Fallback
+                    langVersion = MTLLanguageVersion2_2;
                 }
                 break;
             default:
-                langVersion = MTLLanguageVersion2_4;
+                langVersion = MTLLanguageVersion2_0; // Safe default
                 break;
         }
         

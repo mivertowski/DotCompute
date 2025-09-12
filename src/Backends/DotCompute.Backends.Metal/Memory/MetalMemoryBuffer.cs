@@ -3,11 +3,13 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Backends.Metal.Native;
+using System.Runtime.InteropServices;
 
 namespace DotCompute.Backends.Metal.Memory;
 
 /// <summary>
-/// Metal-specific memory buffer implementation.
+/// Metal-specific memory buffer implementation with actual Metal API integration.
 /// </summary>
 public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
 {
@@ -26,31 +28,162 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     /// <summary>
     /// Gets the native Metal buffer handle.
     /// </summary>
-    public IntPtr Buffer { get; }
+    public IntPtr Buffer { get; private set; }
+
+    /// <summary>
+    /// Gets the native handle (alias for Buffer for consistency).
+    /// </summary>
+    public IntPtr NativeHandle => Buffer;
+
+    /// <summary>
+    /// Gets the Metal device used for this buffer.
+    /// </summary>
+    public IntPtr Device { get; private set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetalMemoryBuffer"/> class.
     /// </summary>
     /// <param name="sizeInBytes">The size in bytes.</param>
     /// <param name="options">Memory options.</param>
-    public MetalMemoryBuffer(long sizeInBytes, MemoryOptions options)
+    /// <param name="device">The Metal device to use for buffer allocation.</param>
+    public MetalMemoryBuffer(long sizeInBytes, MemoryOptions options, IntPtr device = default)
     {
         SizeInBytes = sizeInBytes;
         Options = options;
+        State = BufferState.Uninitialized;
+        Buffer = IntPtr.Zero;
+        Device = device != IntPtr.Zero ? device : GetDefaultDevice();
+    }
+
+    /// <summary>
+    /// Initializes a new instance with an existing Metal buffer.
+    /// </summary>
+    /// <param name="buffer">Existing Metal buffer handle.</param>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="options">Memory options.</param>
+    /// <param name="device">The Metal device.</param>
+    internal MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryOptions options, IntPtr device)
+    {
+        Buffer = buffer;
+        SizeInBytes = sizeInBytes;
+        Options = options;
+        Device = device;
         State = BufferState.Allocated;
-        Buffer = IntPtr.Zero; // TODO: Allocate actual Metal buffer
+    }
+
+    /// <summary>
+    /// Initializes the Metal buffer (async version for enhanced memory manager).
+    /// </summary>
+    public async ValueTask InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        if (State != BufferState.Uninitialized)
+            return;
+            
+        await Task.Run(() =>
+        {
+            // Determine storage mode based on options
+            var storageMode = GetStorageMode(Options);
+            
+            // Allocate actual Metal buffer
+            Buffer = MetalNative.CreateBuffer(Device, (nuint)SizeInBytes, storageMode);
+            
+            if (Buffer == IntPtr.Zero)
+            {
+                throw new OutOfMemoryException($"Failed to allocate Metal buffer of size {SizeInBytes} bytes");
+            }
+            
+            State = BufferState.Allocated;
+        }, cancellationToken);
     }
 
     /// <inheritdoc/>
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        // TODO: Implement actual Metal buffer copy from host
-        => ValueTask.CompletedTask;
+    {
+        if (State != BufferState.Allocated)
+            throw new InvalidOperationException("Buffer must be allocated before copying data");
+            
+        return new ValueTask(Task.Run(() =>
+        {
+            var elementSize = Marshal.SizeOf<T>();
+            var totalBytes = source.Length * elementSize;
+            
+            if (offset + totalBytes > SizeInBytes)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
+            }
+            
+            // Get buffer contents pointer
+            var bufferContents = MetalNative.GetBufferContents(Buffer);
+            if (bufferContents == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
+            }
+            
+            // Copy data from source to Metal buffer
+            unsafe
+            {
+                var sourceHandle = source.Pin();
+                try
+                {
+                    var destPtr = (byte*)bufferContents + offset;
+                    var srcPtr = (byte*)sourceHandle.Pointer;
+                    System.Buffer.MemoryCopy(srcPtr, destPtr, totalBytes, totalBytes);
+                }
+                finally
+                {
+                    sourceHandle.Dispose();
+                }
+            }
+            
+            // Mark the modified range if using managed storage
+            var storageMode = GetStorageMode(Options);
+            if (storageMode == MetalStorageMode.Managed)
+            {
+                MetalNative.DidModifyRange(Buffer, offset, totalBytes);
+            }
+        }, cancellationToken));
+    }
 
     /// <inheritdoc/>
     public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        // TODO: Implement actual Metal buffer copy to host
-        => ValueTask.CompletedTask;
-
+    {
+        if (State != BufferState.Allocated)
+            throw new InvalidOperationException("Buffer must be allocated before copying data");
+            
+        return new ValueTask(Task.Run(() =>
+        {
+            var elementSize = Marshal.SizeOf<T>();
+            var totalBytes = destination.Length * elementSize;
+            
+            if (offset + totalBytes > SizeInBytes)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
+            }
+            
+            // Get buffer contents pointer
+            var bufferContents = MetalNative.GetBufferContents(Buffer);
+            if (bufferContents == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
+            }
+            
+            // Copy data from Metal buffer to destination
+            unsafe
+            {
+                var destHandle = destination.Pin();
+                try
+                {
+                    var srcPtr = (byte*)bufferContents + offset;
+                    var destPtr = (byte*)destHandle.Pointer;
+                    System.Buffer.MemoryCopy(srcPtr, destPtr, totalBytes, totalBytes);
+                }
+                finally
+                {
+                    destHandle.Dispose();
+                }
+            }
+        }, cancellationToken));
+    }
 
     /// <summary>
     /// Legacy support method (calls CopyFromAsync).
@@ -71,6 +204,23 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
         {
             State = BufferState.Disposed;
             IsDisposed = true;
+            
+            // Release native Metal buffer
+            if (Buffer != IntPtr.Zero)
+            {
+                try
+                {
+                    MetalNative.ReleaseBuffer(Buffer);
+                }
+                catch
+                {
+                    // Suppress exceptions during disposal
+                }
+                finally
+                {
+                    Buffer = IntPtr.Zero;
+                }
+            }
         }
     }
 
@@ -79,5 +229,49 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     {
         Dispose();
         return ValueTask.CompletedTask;
+    }
+
+    private static MetalStorageMode GetStorageMode(MemoryOptions options)
+    {
+        // Use default shared storage mode for compatibility
+        return MetalStorageMode.Shared;
+    }
+
+    private static IntPtr GetDefaultDevice()
+    {
+        var device = MetalNative.CreateSystemDefaultDevice();
+        if (device == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("Failed to create default Metal device");
+        }
+        return device;
+    }
+
+    /// <summary>
+    /// Gets the actual buffer length as reported by Metal.
+    /// </summary>
+    public long GetActualLength()
+    {
+        if (Buffer == IntPtr.Zero)
+            return 0;
+            
+        return (long)MetalNative.GetBufferLength(Buffer);
+    }
+
+    /// <summary>
+    /// Creates a copy of this buffer with the same data.
+    /// </summary>
+    public async ValueTask<MetalMemoryBuffer> CloneAsync(CancellationToken cancellationToken = default)
+    {
+        if (State != BufferState.Allocated)
+            throw new InvalidOperationException("Cannot clone unallocated buffer");
+            
+        var clone = new MetalMemoryBuffer(SizeInBytes, Options, Device);
+        await clone.InitializeAsync(cancellationToken);
+        
+        // Copy buffer contents using Metal API
+        MetalNative.CopyBuffer(Buffer, 0, clone.Buffer, 0, SizeInBytes);
+        
+        return clone;
     }
 }

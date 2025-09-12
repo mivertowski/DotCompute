@@ -119,6 +119,11 @@ public sealed class MemoryStatistics
     public long PeakMemoryUsage { get; init; }
 
     /// <summary>
+    /// Gets the peak allocated memory in bytes (alias for PeakMemoryUsage).
+    /// </summary>
+    public long PeakAllocated => PeakMemoryUsage;
+
+    /// <summary>
     /// Gets the total available memory in the system in bytes.
     /// </summary>
     public long TotalAvailable { get; init; }

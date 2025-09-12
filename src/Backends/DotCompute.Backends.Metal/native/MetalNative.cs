@@ -15,7 +15,7 @@ namespace DotCompute.Backends.Metal.Native;
 /// </summary>
 internal static partial class MetalNative
 {
-    private const string LibraryName = "libDotComputeMetal.dylib";
+    private const string LibraryName = "libDotComputeMetal";
 
     #region Device Management
 
@@ -224,7 +224,7 @@ internal struct MetalSize
 
 #region Enums
 
-internal enum MetalStorageMode
+public enum MetalStorageMode
 {
     Shared = 0,
     Private = 1,

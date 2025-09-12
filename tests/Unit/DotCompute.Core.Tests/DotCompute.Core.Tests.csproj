@@ -7,6 +7,8 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <OutputType>Library</OutputType>
+    <GenerateProgramFile>false</GenerateProgramFile>
     <NoWarn>$(NoWarn);CS9113;CA1034;CA1724;CA1024;CA1822;CA1510;CA1512;CS0117;CS0220;IDE2001</NoWarn>
   </PropertyGroup>
 
