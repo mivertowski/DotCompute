@@ -65,6 +65,7 @@ public sealed class CpuBackendPlugin : BaseBackendPlugin<CpuAccelerator, CpuAcce
         // Register the CPU accelerator
 
 
+
         => services.TryAddSingleton<CpuAccelerator>();
 
 

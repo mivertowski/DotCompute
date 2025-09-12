@@ -166,37 +166,38 @@ public enum PipelineStageType
 {
     /// <summary>Source data loading stage.</summary>
     Source,
-    
+
     /// <summary>Data transformation stage (Select, Cast, etc.).</summary>
     Transform,
-    
+
     /// <summary>Data filtering stage (Where, etc.).</summary>
     Filter,
-    
+
     /// <summary>Data grouping stage (GroupBy, etc.).</summary>
     Grouping,
-    
+
     /// <summary>Data joining stage (Join, etc.).</summary>
     Join,
-    
+
     /// <summary>Data reduction stage (Aggregate, Sum, etc.).</summary>
     Reduction,
-    
+
     /// <summary>Data sorting stage (OrderBy, etc.).</summary>
     Sorting,
-    
+
     /// <summary>Data limiting stage (Take, Skip, etc.).</summary>
     Limiting,
-    
+
     /// <summary>Data deduplication stage (Distinct, etc.).</summary>
     Deduplication,
-    
+
     /// <summary>Set operation stage (Union, Intersect, etc.).</summary>
     SetOperation,
-    
+
     /// <summary>Custom operation stage.</summary>
     Custom,
-    
+
+
     /// <summary>Output/sink stage.</summary>
     Sink
 }
@@ -208,16 +209,20 @@ public enum KernelComplexity
 {
     /// <summary>Unknown complexity.</summary>
     Unknown = 0,
-    
+
+
     /// <summary>Low complexity operations (simple arithmetic, comparisons).</summary>
     Low = 1,
-    
+
+
     /// <summary>Medium complexity operations (loops, conditionals).</summary>
     Medium = 3,
-    
+
+
     /// <summary>High complexity operations (nested loops, complex algorithms).</summary>
     High = 7,
-    
+
+
     /// <summary>Very high complexity operations (sorting, joins, complex aggregations).</summary>
     VeryHigh = 15
 }
@@ -229,16 +234,17 @@ public enum ParallelizationStrategy
 {
     /// <summary>No parallelization.</summary>
     None,
-    
+
     /// <summary>Data-parallel execution.</summary>
     DataParallel,
-    
+
     /// <summary>Task-parallel execution.</summary>
     TaskParallel,
-    
+
     /// <summary>Pipeline parallel execution.</summary>
     PipelineParallel,
-    
+
+
     /// <summary>Hybrid parallelization approach.</summary>
     Hybrid
 }
@@ -259,16 +265,19 @@ public class PipelineOptimizationContext
     public void AnalyzeStage(PipelineStageInfo stage)
     {
         _analyzedStages.Add(stage);
-        
+
         // Count operation types
+
         var stageTypeName = stage.StageType.ToString();
         _operationCounts.TryGetValue(stageTypeName, out var count);
         _operationCounts[stageTypeName] = count + 1;
-        
+
         // Generate stage-specific hints
+
         GenerateStageHints(stage);
-        
+
         // Check for fusion opportunities
+
         CheckFusionOpportunities(stage);
     }
 
@@ -290,15 +299,18 @@ public class PipelineOptimizationContext
             case PipelineStageType.Filter when stage.KernelComplexity == KernelComplexity.Low:
                 _hints.Add($"Stage {stage.StageId}: Simple filter - consider early execution");
                 break;
-                
+
+
             case PipelineStageType.Transform when IsProjectionStage(stage):
                 _hints.Add($"Stage {stage.StageId}: Consider kernel fusion for projection");
                 break;
-                
+
+
             case PipelineStageType.Reduction when HasLargeDataset(stage):
                 _hints.Add($"Stage {stage.StageId}: Use tree reduction for large datasets");
                 break;
-                
+
+
             case PipelineStageType.Grouping:
                 _hints.Add($"Stage {stage.StageId}: Optimize hash table size for grouping");
                 break;
@@ -310,7 +322,8 @@ public class PipelineOptimizationContext
         if (_analyzedStages.Count > 0)
         {
             var previousStage = _analyzedStages[^2]; // Second to last
-            
+
+
             if (CanFuseStages(previousStage, stage))
             {
                 _hints.Add($"Fusion opportunity: Combine stages {previousStage.StageId} and {stage.StageId}");
@@ -326,18 +339,21 @@ public class PipelineOptimizationContext
         {
             _hints.Add("Consider streaming execution for large memory requirements");
         }
-        
+
         // Parallelization hints
+
         var parallelizableStages = _analyzedStages.Count(s => s.CanRunInParallel);
         if (parallelizableStages > 2)
         {
             _hints.Add($"Pipeline has {parallelizableStages} stages that can run in parallel");
         }
-        
+
         // Backend selection hints
+
         var cudaCompatibleStages = _analyzedStages.Count(s => s.SupportedBackends.Contains("CUDA"));
         var totalStages = _analyzedStages.Count;
-        
+
+
         if (cudaCompatibleStages > totalStages * 0.8)
         {
             _hints.Add("Pipeline is highly GPU-compatible - recommend CUDA backend");
@@ -350,7 +366,8 @@ public class PipelineOptimizationContext
 
     private static bool IsProjectionStage(PipelineStageInfo stage)
     {
-        return stage.StageType == PipelineStageType.Transform && 
+        return stage.StageType == PipelineStageType.Transform &&
+
                stage.Parameters.ContainsKey("selector");
     }
 
@@ -402,6 +419,21 @@ public class PipelinePerformanceReport
     /// Gets or sets alternative execution strategies.
     /// </summary>
     public List<ExecutionStrategy> AlternativeStrategies { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the parallelization potential (0.0 to 1.0).
+    /// </summary>
+    public double ParallelizationPotential { get; set; }
+
+    /// <summary>
+    /// Gets the estimated execution time in milliseconds.
+    /// </summary>
+    public double EstimatedExecutionTimeMs => EstimatedExecutionTime.TotalMilliseconds;
+
+    /// <summary>
+    /// Gets the estimated memory usage in megabytes.
+    /// </summary>
+    public double EstimatedMemoryUsageMB => EstimatedMemoryUsage / (1024.0 * 1024.0);
 }
 
 /// <summary>
@@ -442,16 +474,17 @@ public enum BottleneckType
 {
     /// <summary>Memory bandwidth bottleneck.</summary>
     MemoryBandwidth,
-    
+
     /// <summary>Compute throughput bottleneck.</summary>
     ComputeThroughput,
-    
+
     /// <summary>Memory capacity bottleneck.</summary>
     MemoryCapacity,
-    
+
     /// <summary>Data transfer bottleneck.</summary>
     DataTransfer,
-    
+
+
     /// <summary>Algorithm complexity bottleneck.</summary>
     AlgorithmComplexity
 }

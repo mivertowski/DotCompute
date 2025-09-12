@@ -291,7 +291,12 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <summary>
         /// Device supports stream ordered memory allocator
         /// </summary>
-        MemoryPoolsSupported = 115
+        MemoryPoolsSupported = 115,
+
+        /// <summary>
+        /// Device supports unified virtual addressing with the host
+        /// </summary>
+        UnifiedAddressing = 18
     }
 
     /// <summary>

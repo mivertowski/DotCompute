@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Exceptions;
@@ -33,23 +34,25 @@ public class PipelineErrorTests : PipelineTestBase
         // Arrange
         var data = GenerateTestData<float>(1000);
         var builder = CreatePipelineBuilder();
-        
+
         // Configure graceful error recovery
+
         builder.OnError(ex => ErrorHandlingStrategy.Skip);
 
         // Act
         var result = await builder
             .Kernel("VectorAdd", data, data, new float[data.Length])
-            .Then("FailingKernel", new object[] { "result" }) // This will fail
-            .Then("VectorMultiply", new object[] { "result", data, new float[data.Length] }) // This should still run
+            .Then("FailingKernel", ["result"]) // This will fail
+            .Then("VectorMultiply", ["result", data, new float[data.Length]]) // This should still run
             .ExecuteWithMetricsAsync(CreateTestTimeout());
 
         // Assert
         Assert.True(result.Success); // Overall success despite individual failure
         Assert.NotNull(result.Errors);
         Assert.Single(result.Errors); // One error from FailingKernel
-        
+
         // Should have 3 steps: Add (success), Failing (error), Multiply (success)
+
         Assert.Equal(3, result.StepMetrics.Count);
         Assert.True(result.StepMetrics[0].ExecutionTime > TimeSpan.Zero); // VectorAdd succeeded
         Assert.True(result.StepMetrics[2].ExecutionTime > TimeSpan.Zero); // VectorMultiply succeeded
@@ -61,8 +64,9 @@ public class PipelineErrorTests : PipelineTestBase
         // Arrange
         var largeData = GenerateTestData<float>(10_000_000); // Very large dataset
         var builder = CreatePipelineBuilder();
-        
+
         // Configure fallback on memory issues
+
         builder.OnError(ex => ex is OutOfMemoryException ? ErrorHandlingStrategy.Fallback : ErrorHandlingStrategy.Abort);
 
         // Act
@@ -76,8 +80,9 @@ public class PipelineErrorTests : PipelineTestBase
         Assert.NotNull(result.Errors);
         Assert.Single(result.Errors);
         Assert.IsType<OutOfMemoryException>(result.Errors[0]);
-        
+
         // Should have fallen back to CPU
+
         Assert.Equal("CPU", result.Backend);
     }
 
@@ -92,14 +97,14 @@ public class PipelineErrorTests : PipelineTestBase
         var exception = await Assert.ThrowsAsync<PipelineValidationException>(async () =>
         {
             await builder
-                .Kernel("InvalidKernel", null, null) // Invalid null arguments
+                .Kernel("InvalidKernel", null!, null!) // Invalid null arguments
                 .WithValidation(validateInputs: true)
                 .ExecuteAsync<float[]>(CreateTestTimeout());
         });
 
         // Assert error message is helpful
-        Assert.Contains("Invalid arguments", exception.Message);
-        Assert.Contains("InvalidKernel", exception.Message);
+        Assert.Contains("Invalid arguments", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("InvalidKernel", exception.Message, StringComparison.Ordinal);
         Assert.NotNull(exception.Errors);
         Assert.NotEmpty(exception.Errors);
     }
@@ -110,8 +115,9 @@ public class PipelineErrorTests : PipelineTestBase
         // Arrange
         var data = GenerateTestData<float>(1000);
         var builder = CreatePipelineBuilder();
-        
+
         // Configure backend switching on failure
+
         builder.OnError(ex => ErrorHandlingStrategy.Fallback);
 
         // Act
@@ -124,8 +130,9 @@ public class PipelineErrorTests : PipelineTestBase
         Assert.True(result.Success); // Should succeed after backend switch
         Assert.NotNull(result.Errors);
         Assert.Single(result.Errors); // One error from CUDA failure
-        
+
         // Should have switched to different backend
+
         Assert.NotEqual("CUDA", result.Backend);
     }
 
@@ -135,7 +142,7 @@ public class PipelineErrorTests : PipelineTestBase
         // Arrange
         var data = GenerateTestData<float>(1000);
         var builder = CreatePipelineBuilder();
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
 
         // Act - Cancel after short delay
         var task = builder
@@ -144,15 +151,16 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Cancel after 100ms
         await Task.Delay(100);
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Assert
         await Assert.ThrowsAsync<OperationCanceledException>(() => task);
-        
+
         // Verify resources were cleaned up (mock orchestrator should record cleanup)
+
         var history = _mockOrchestrator.ExecutionHistory;
         Assert.True(history.Any()); // Some execution should have started
-        Assert.True(history.Last().EndTime > history.Last().StartTime); // Execution was terminated
+        Assert.True(history[^1].EndTime > history[^1].StartTime); // Execution was terminated
     }
 
     [Theory]
@@ -166,19 +174,21 @@ public class PipelineErrorTests : PipelineTestBase
         // Arrange
         var data = GenerateTestData<float>(100);
         var builder = CreatePipelineBuilder();
-        
+
+
         builder.OnError(ex => strategy);
 
         // Act
         Exception? caughtException = null;
         KernelChainExecutionResult? result = null;
-        
+
+
         try
         {
             result = await builder
                 .Kernel("VectorAdd", data, data, new float[data.Length])
-                .Then("ReliableFailingKernel", new object[] { "result" }) // Always fails
-                .Then("VectorMultiply", new object[] { "result", data, new float[data.Length] })
+                .Then("ReliableFailingKernel", ["result"]) // Always fails
+                .Then("VectorMultiply", ["result", data, new float[data.Length]])
                 .ExecuteWithMetricsAsync(CreateTestTimeout());
         }
         catch (Exception ex)
@@ -192,7 +202,8 @@ public class PipelineErrorTests : PipelineTestBase
             Assert.Null(caughtException);
             Assert.NotNull(result);
             Assert.True(result.Success);
-            
+
+
             if (strategy != ErrorHandlingStrategy.Retry)
             {
                 Assert.Equal(expectedSteps, result.StepMetrics.Count);
@@ -211,8 +222,9 @@ public class PipelineErrorTests : PipelineTestBase
         // Arrange
         var data = GenerateTestData<float>(100);
         var builder = CreatePipelineBuilder();
-        
+
         // Configure circuit breaker (fails after 3 consecutive failures)
+
         var failureCount = 0;
         builder.OnError(ex =>
         {
@@ -227,8 +239,9 @@ public class PipelineErrorTests : PipelineTestBase
                 .Kernel("AlwaysFailingKernel", data) // Always fails
                 .ExecuteAsync<float[]>(CreateTestTimeout());
         });
-        
+
         // Should have tried exactly 3 times before circuit breaker triggered
+
         var history = _mockOrchestrator.ExecutionHistory;
         var failures = history.Where(h => h.KernelName == "AlwaysFailingKernel" && !h.Success).Count();
         Assert.Equal(3, failures);
@@ -240,7 +253,8 @@ public class PipelineErrorTests : PipelineTestBase
         // Arrange
         var data = GenerateTestData<float>(1000);
         var builder = CreatePipelineBuilder();
-        
+
+
         builder.OnError(ex => ex is TimeoutException ? ErrorHandlingStrategy.Fallback : ErrorHandlingStrategy.Abort);
 
         // Act
@@ -266,7 +280,7 @@ public class PipelineErrorTests : PipelineTestBase
         var exception = await Assert.ThrowsAsync<PipelineValidationException>(async () =>
         {
             await builder
-                .Kernel("VectorAdd", null, null, null) // Invalid inputs
+                .Kernel("VectorAdd", null!, null!, null!) // Invalid inputs
                 .WithValidation(validateInputs: true)
                 .ExecuteAsync<float[]>(CreateTestTimeout());
         });
@@ -282,15 +296,16 @@ public class PipelineErrorTests : PipelineTestBase
         // Arrange
         var data = GenerateTestData<float>(1000);
         var builder = CreatePipelineBuilder();
-        
+
         // Configure to continue on failure
+
         builder.OnError(ex => ErrorHandlingStrategy.Continue);
 
         // Act
         var result = await builder
             .Kernel("VectorAdd", data, data, new float[data.Length]) // Succeeds
-            .Then("PartialFailingKernel", new object[] { "result" }) // Partially fails
-            .Then("VectorMultiply", new object[] { "result", data, new float[data.Length] }) // Continues
+            .Then("PartialFailingKernel", ["result"]) // Partially fails
+            .Then("VectorMultiply", ["result", data, new float[data.Length]]) // Continues
             .ExecuteWithMetricsAsync(CreateTestTimeout());
 
         // Assert
@@ -298,8 +313,9 @@ public class PipelineErrorTests : PipelineTestBase
         Assert.NotNull(result.Result);
         Assert.NotNull(result.Errors);
         Assert.Single(result.Errors); // One partial failure recorded
-        
+
         // All steps should have been attempted
+
         Assert.Equal(3, result.StepMetrics.Count);
     }
 
@@ -309,26 +325,28 @@ public class PipelineErrorTests : PipelineTestBase
         // Arrange
         var data = GenerateTestData<float>(100);
         var builder = CreatePipelineBuilder();
-        
+
         // Continue on all errors to collect them
+
         builder.OnError(ex => ErrorHandlingStrategy.Continue);
 
         // Act
         var result = await builder
             .Kernel("ErrorKernel1", data) // Error 1
-            .Then("ErrorKernel2", new object[] { data }) // Error 2
-            .Then("ErrorKernel3", new object[] { data }) // Error 3
+            .Then("ErrorKernel2", [data]) // Error 2
+            .Then("ErrorKernel3", [data]) // Error 3
             .ExecuteWithMetricsAsync(CreateTestTimeout());
 
         // Assert
         Assert.True(result.Success); // Succeeds with error handling
         Assert.NotNull(result.Errors);
         Assert.Equal(3, result.Errors.Count); // All errors collected
-        
+
         // Verify different error types
-        Assert.Contains(result.Errors, e => e.Message.Contains("Error 1"));
-        Assert.Contains(result.Errors, e => e.Message.Contains("Error 2"));
-        Assert.Contains(result.Errors, e => e.Message.Contains("Error 3"));
+
+        Assert.Contains(result.Errors, e => e.Message.Contains("Error 1", StringComparison.Ordinal));
+        Assert.Contains(result.Errors, e => e.Message.Contains("Error 2", StringComparison.Ordinal));
+        Assert.Contains(result.Errors, e => e.Message.Contains("Error 3", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -338,8 +356,9 @@ public class PipelineErrorTests : PipelineTestBase
         var data = GenerateTestData<float>(100);
         var builder = CreatePipelineBuilder();
         var retryCount = 0;
-        
+
         // Retry with exponential backoff
+
         builder.OnError(ex =>
         {
             retryCount++;
@@ -367,13 +386,14 @@ public class PipelineErrorTests : PipelineTestBase
         // Arrange
         var data = GenerateTestData<float>(1000);
         var builder = CreatePipelineBuilder();
-        
+
+
         builder.OnError(ex => ErrorHandlingStrategy.Skip);
 
         // Act
         var result = await builder
             .Kernel("DependencyKernel", data) // Fails, affects dependent operations
-            .Then("DependentKernel", new object[] { "dependency_result" }) // Depends on first
+            .Then("DependentKernel", ["dependency_result"]) // Depends on first
             .Then("IndependentKernel", data) // Independent operation
             .ExecuteWithMetricsAsync(CreateTestTimeout());
 
@@ -381,8 +401,9 @@ public class PipelineErrorTests : PipelineTestBase
         Assert.True(result.Success);
         Assert.NotNull(result.Errors);
         Assert.True(result.Errors.Count >= 1); // At least dependency failure
-        
+
         // Independent kernel should still execute
+
         var independentExecution = _mockOrchestrator.ExecutionHistory
             .FirstOrDefault(h => h.KernelName == "IndependentKernel");
         Assert.NotNull(independentExecution);
@@ -392,58 +413,74 @@ public class PipelineErrorTests : PipelineTestBase
     private void SetupErrorTestKernels()
     {
         _mockOrchestrator.Reset();
-        
+
         // Basic working kernels
+
         _mockOrchestrator.RegisterMockKernel("VectorAdd", MockComputeOrchestrator.CreateVectorAddMock());
         _mockOrchestrator.RegisterMockKernel("VectorMultiply", MockComputeOrchestrator.CreateVectorMultiplyMock());
-        
+
         // Error testing kernels
-        _mockOrchestrator.RegisterMockKernel("FailingKernel", 
+
+        _mockOrchestrator.RegisterMockKernel("FailingKernel",
+
             MockComputeOrchestrator.CreateErrorMock(typeof(InvalidOperationException), "Simulated kernel failure"));
-            
+
+
         _mockOrchestrator.RegisterMockKernel("AlwaysFailingKernel",
             MockComputeOrchestrator.CreateErrorMock(typeof(InvalidOperationException), "Always fails"));
-            
+
+
         _mockOrchestrator.RegisterMockKernel("ReliableFailingKernel",
             MockComputeOrchestrator.CreateErrorMock(typeof(InvalidOperationException), "Reliable failure for testing"));
-        
+
         // Memory exhaustion kernel
-        _mockOrchestrator.RegisterMockKernel("MemoryExhaustionKernel", 
+
+        _mockOrchestrator.RegisterMockKernel("MemoryExhaustionKernel",
+
             MockComputeOrchestrator.CreateErrorMock(typeof(OutOfMemoryException), "Out of GPU memory"));
-        
+
         // Backend-specific failure
+
         _mockOrchestrator.RegisterMockKernel("BackendSpecificFailure", args =>
         {
             // Simulate CUDA-specific failure
             throw new InvalidOperationException("CUDA kernel compilation failed");
         });
-        
+
         // Long running kernel
+
         _mockOrchestrator.RegisterMockKernel("LongRunningKernel", MockComputeOrchestrator.CreateSlowMock(2000));
-        
+
         // Timeout kernel
+
         _mockOrchestrator.RegisterMockKernel("TimeoutKernel", async args =>
         {
             await Task.Delay(2000); // Takes 2 seconds
             return args[0];
         });
-        
+
         // Partial failure kernel
+
         _mockOrchestrator.RegisterMockKernel("PartialFailingKernel", args =>
         {
             // Simulate partial processing failure
             throw new InvalidOperationException("Partial processing error");
         });
-        
+
         // Multiple error kernels
-        _mockOrchestrator.RegisterMockKernel("ErrorKernel1", 
+
+        _mockOrchestrator.RegisterMockKernel("ErrorKernel1",
+
             MockComputeOrchestrator.CreateErrorMock(typeof(ArgumentException), "Error 1"));
-        _mockOrchestrator.RegisterMockKernel("ErrorKernel2", 
+        _mockOrchestrator.RegisterMockKernel("ErrorKernel2",
+
             MockComputeOrchestrator.CreateErrorMock(typeof(InvalidOperationException), "Error 2"));
-        _mockOrchestrator.RegisterMockKernel("ErrorKernel3", 
+        _mockOrchestrator.RegisterMockKernel("ErrorKernel3",
+
             MockComputeOrchestrator.CreateErrorMock(typeof(NotSupportedException), "Error 3"));
-        
+
         // Sometimes failing kernel (for retry testing)
+
         var failCount = 0;
         _mockOrchestrator.RegisterMockKernel("SometimesFailingKernel", args =>
         {
@@ -451,14 +488,17 @@ public class PipelineErrorTests : PipelineTestBase
                 throw new InvalidOperationException($"Failure attempt {failCount}");
             return args[0]; // Succeed on 4th attempt
         });
-        
+
         // Dependency kernels
-        _mockOrchestrator.RegisterMockKernel("DependencyKernel", 
+
+        _mockOrchestrator.RegisterMockKernel("DependencyKernel",
+
             MockComputeOrchestrator.CreateErrorMock(typeof(InvalidOperationException), "Dependency failure"));
         _mockOrchestrator.RegisterMockKernel("DependentKernel", args => args[0]);
         _mockOrchestrator.RegisterMockKernel("IndependentKernel", args => args[0]);
-        
+
         // Invalid kernel for validation testing
+
         _mockOrchestrator.RegisterMockKernel("InvalidKernel", args =>
         {
             if (args[0] == null || args[1] == null)

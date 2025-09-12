@@ -357,6 +357,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         // For base implementation, use synchronous validation
         // Derived classes can override for async validation
 
+
         => await ValueTask.FromResult(Validate(source));
 
 
@@ -386,6 +387,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         OptimizationLevel level,
         CancellationToken cancellationToken)
         // Default: no optimization
+
 
         => ValueTask.FromResult(kernel);
 }

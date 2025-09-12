@@ -160,26 +160,7 @@ public record DataFlowEdge
     public double Weight { get; init; } = 1.0;
 }
 
-/// <summary>
-/// Represents a bottleneck in data flow.
-/// </summary>
-public record DataFlowBottleneck
-{
-    /// <summary>Gets the bottleneck location.</summary>
-    public string Location { get; init; } = string.Empty;
-
-    /// <summary>Gets the bottleneck type.</summary>
-    public BottleneckType Type { get; init; }
-
-    /// <summary>Gets the severity (0.0 to 1.0).</summary>
-    public double Severity { get; init; }
-
-    /// <summary>Gets the description of the bottleneck.</summary>
-    public string Description { get; init; } = string.Empty;
-
-    /// <summary>Gets suggested optimizations.</summary>
-    public List<string> Suggestions { get; init; } = new();
-}
+// DataFlowBottleneck is defined in DataFlowBottleneck.cs to avoid duplication
 
 /// <summary>
 /// Defines types of data flow nodes.
@@ -223,23 +204,5 @@ public enum DataFlowEdgeType
     AntiDependency
 }
 
-/// <summary>
-/// Defines types of bottlenecks.
-/// </summary>
-public enum BottleneckType
-{
-    /// <summary>Memory bandwidth bottleneck.</summary>
-    MemoryBandwidth,
 
-    /// <summary>Compute bottleneck.</summary>
-    Compute,
-
-    /// <summary>Synchronization bottleneck.</summary>
-    Synchronization,
-
-    /// <summary>I/O bottleneck.</summary>
-    IO,
-
-    /// <summary>Cache miss bottleneck.</summary>
-    CacheMiss
-}
+// BottleneckType is defined in DataFlowBottleneck.cs to avoid duplication

@@ -498,16 +498,19 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
         // Framework compatibility check implementation
 
 
+
         => frameworkName?.Contains(".NETCoreApp") == true;
 
     private static List<string> CheckDependencyConflicts(Assembly assembly)
         // Dependency conflict detection implementation
 
 
+
         => [];
 
     private static List<string> CheckSecurityIssues(Assembly assembly)
         // Security issue detection implementation
+
 
 
         => [];

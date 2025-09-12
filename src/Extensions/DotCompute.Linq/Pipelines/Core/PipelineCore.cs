@@ -148,16 +148,25 @@ public class PipelineOrchestrationException : Exception
         var details = new List<string> { base.ToString() };
 
         if (!string.IsNullOrEmpty(StageName))
+        {
             details.Add($"Stage: {StageName}");
+        }
 
         if (PipelineId.HasValue)
+        {
             details.Add($"Pipeline ID: {PipelineId.Value}");
+        }
 
         if (!string.IsNullOrEmpty(BackendName))
+        {
             details.Add($"Backend: {BackendName}");
+        }
 
         if (ErrorType != PipelineErrorType.None)
+        {
             details.Add($"Error Type: {ErrorType}");
+        }
+
 
         if (DiagnosticInfo.Count > 0)
         {
@@ -366,25 +375,53 @@ public class AdaptiveCacheOptions
     public void Validate()
     {
         if (MaxCacheSize <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(MaxCacheSize), "Cache size must be positive.");
+        }
+
 
         if (MaxEntries <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(MaxEntries), "Max entries must be positive.");
+        }
+
 
         if (DefaultTtl <= TimeSpan.Zero)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(DefaultTtl), "TTL must be positive.");
+        }
+
 
         if (PerformanceThreshold < 0.0 || PerformanceThreshold > 1.0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(PerformanceThreshold), "Performance threshold must be between 0.0 and 1.0.");
+        }
+
 
         if (MinExecutionTimeForCaching < TimeSpan.Zero)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(MinExecutionTimeForCaching), "Minimum execution time cannot be negative.");
+        }
+
 
         if (MaintenanceInterval <= TimeSpan.Zero)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(MaintenanceInterval), "Maintenance interval must be positive.");
+        }
+
 
         if (ConcurrencyLevel <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(ConcurrencyLevel), "Concurrency level must be positive.");
+        }
+
     }
 
     /// <summary>
@@ -538,5 +575,6 @@ public enum CachePartitioningStrategy
     /// </summary>
     Custom
 }
+
 
 #endregion

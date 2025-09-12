@@ -45,6 +45,7 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
     public Activity? StartActivity(string name, ActivityKind kind = ActivityKind.Internal)
         // TODO: Implement activity tracking
 
+
         => null;
 
 
@@ -56,6 +57,7 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null)
         // TODO: Implement timer
+
 
         => new OperationTimer(operationName, tags);
 
@@ -127,6 +129,7 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
         public IOperationTimer MarkFailed(Exception? exception = null)
             // TODO: Mark operation as failed
+
 
             => this;
 

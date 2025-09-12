@@ -42,6 +42,7 @@ public class QueryExecutor : IQueryExecutor
         // For synchronous execution, call the async version and wait
 
 
+
         => ExecuteAsync(context, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
 
     /// <inheritdoc/>

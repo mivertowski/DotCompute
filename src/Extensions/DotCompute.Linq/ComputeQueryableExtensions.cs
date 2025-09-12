@@ -208,7 +208,8 @@ public static class ComputeQueryableExtensions
     /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns>The query results.</returns>
     public static async Task<IEnumerable<T>> ExecuteAsync<T>(
-        this IQueryable<T> queryable, 
+        this IQueryable<T> queryable,
+
         string preferredBackend,
         CancellationToken cancellationToken = default)
     {

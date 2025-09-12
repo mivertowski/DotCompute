@@ -45,7 +45,8 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
                     PeakMemoryUsage = GC.GetTotalMemory(false),
                     TotalKernelExecutions = 0
                 };
-                
+
+
                 _profiles.TryAdd(_currentProfile, result);
                 _logger?.LogDebug("Stopped profiling session '{ProfileName}'", _currentProfile);
                 _currentProfile = null;
@@ -62,7 +63,8 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
 
         public async Task RecordKernelExecutionAsync(string kernelName, TimeSpan executionTime, long memoryUsed, string backend, CancellationToken cancellationToken = default)
         {
-            _logger?.LogDebug("Recorded kernel execution: {KernelName} in {ExecutionTime}ms on {Backend}", 
+            _logger?.LogDebug("Recorded kernel execution: {KernelName} in {ExecutionTime}ms on {Backend}",
+
                 kernelName, executionTime.TotalMilliseconds, backend);
             await Task.CompletedTask;
         }

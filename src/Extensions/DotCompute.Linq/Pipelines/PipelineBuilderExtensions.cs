@@ -25,9 +25,10 @@ public static class PipelineBuilderExtensions
     {
         ArgumentNullException.ThrowIfNull(inputData);
         ArgumentNullException.ThrowIfNull(builder);
-        
+
         // For now, add the data as a transformation stage
         // In a full implementation, this would create proper data initialization
+
         return builder.AddStage("DataInitialization", inputData, options ?? new DataPipelineOptions());
     }
 
@@ -44,9 +45,10 @@ public static class PipelineBuilderExtensions
     {
         ArgumentNullException.ThrowIfNull(inputStream);
         ArgumentNullException.ThrowIfNull(builder);
-        
+
         // For now, add the stream as a stage
         // In a full implementation, this would create proper stream processing
+
         return builder.AddStage("StreamInitialization", inputStream, options ?? new StreamPipelineOptions());
     }
 
@@ -60,8 +62,9 @@ public static class PipelineBuilderExtensions
     public static PipelineChain Create(this IKernelPipelineBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        
+
         // Return a wrapper that provides the expected fluent API
+
         return new PipelineChain(builder);
     }
 }
@@ -100,8 +103,9 @@ public sealed class PipelineChain
     {
         // Add the stage to the underlying builder
         _builder.AddStage(stageName, parametersProvider, options);
-        
+
         // Return this for method chaining
+
         return this;
     }
 
@@ -172,13 +176,14 @@ public enum OptimizationStrategy
 {
     /// <summary>Conservative optimization with safety focus.</summary>
     Conservative,
-    
+
     /// <summary>Balanced optimization approach.</summary>
     Balanced,
-    
+
     /// <summary>Aggressive optimization for maximum performance.</summary>
     Aggressive,
-    
+
+
     /// <summary>Adaptive optimization based on runtime characteristics.</summary>
     Adaptive
 }

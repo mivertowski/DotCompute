@@ -448,6 +448,7 @@ namespace DotCompute.Plugins.Platform
             // Conservative estimate - would be better to query actual GPU memory
 
 
+
             => 2L * 1024 * 1024 * 1024; // 2GB default
 
         private static long EstimateOpenClMemory()

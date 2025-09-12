@@ -607,6 +607,7 @@ public sealed class LogEnricher : IDisposable
         // Simple hash for user identification (not cryptographically secure)
 
 
+
         => input.GetHashCode().ToString("X8");
 
     private static int EstimateLogEntrySize(StructuredLogEntry logEntry)

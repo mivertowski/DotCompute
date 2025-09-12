@@ -363,6 +363,7 @@ namespace DotCompute.Core.Execution
             // For now, fallback to richest victim strategy - TODO
 
 
+
             => SelectRichestVictim(thiefIndex);
 
         private async Task<double> ExecuteWorkItemAsync(

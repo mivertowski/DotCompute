@@ -8,6 +8,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Pipelines;
 using DotCompute.Linq.Interfaces;
+using DotCompute.Linq.Providers;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Pipelines.Optimization;
 using DotCompute.Linq.Pipelines.Providers;
@@ -35,16 +36,19 @@ public static class PipelineLinqIntegration
         services.AddSingleton<IPipelineExpressionAnalyzer, PipelineExpressionAnalyzer>();
         services.AddSingleton<IPipelinePerformanceAnalyzer, PipelinePerformanceAnalyzer>();
         services.AddSingleton<AdvancedPipelineOptimizer, Optimization.AdvancedPipelineOptimizer>();
-        
+
         // LINQ provider services
+
         services.AddScoped<PipelineOptimizedProvider>();
         services.AddScoped<IComputeLinqProvider, IntegratedPipelineLinqProvider>();
-        
+
         // Integration services
+
         services.AddScoped<IPipelineOrchestrationService, PipelineOrchestrationService>();
         services.AddScoped<IPipelineMemoryIntegration, PipelineMemoryIntegration>();
         services.AddScoped<IPipelineBackendIntegration, PipelineBackendIntegration>();
-        
+
+
         return services;
     }
 
@@ -60,10 +64,12 @@ public static class PipelineLinqIntegration
     {
         var options = new PipelineLinqOptions();
         configureOptions?.Invoke(options);
-        
+
+
         services.AddSingleton(options);
         services.AddPipelineLinqServices();
-        
+
+
         return services;
     }
 }
@@ -157,11 +163,13 @@ public class PipelineOrchestrationService : IPipelineOrchestrationService
         {
             // Analyze query for optimization opportunities
             var recommendation = await AnalyzeQueryAsync(queryable);
-            
+
             // Create optimized execution context
+
             var executionContext = CreateExecutionContext(recommendation);
-            
+
             // Execute through orchestrator
+
             var result = await _orchestrator.ExecuteKernelAsync<T>(
                 recommendation.RecommendedKernel,
                 recommendation.Parameters.ToArray(),
@@ -185,11 +193,13 @@ public class PipelineOrchestrationService : IPipelineOrchestrationService
 
         // Get performance analysis
         var performanceReport = await _performanceAnalyzer.AnalyzePipelineAsync(queryable.Expression);
-        
+
         // Get backend recommendation
+
         var backendRecommendation = await _performanceAnalyzer.RecommendOptimalBackendAsync(queryable);
-        
+
         // Get memory estimate
+
         var memoryEstimate = await _performanceAnalyzer.EstimateMemoryUsageAsync(queryable);
 
         var recommendation = new ExecutionRecommendation
@@ -203,8 +213,10 @@ public class PipelineOrchestrationService : IPipelineOrchestrationService
             Confidence = performanceReport.ConfidenceLevel
         };
 
-        _logger.LogDebug("Query analysis completed - Backend: {Backend}, Memory: {Memory}MB", 
-            recommendation.RecommendedBackend, 
+        _logger.LogDebug("Query analysis completed - Backend: {Backend}, Memory: {Memory}MB",
+
+            recommendation.RecommendedBackend,
+
             recommendation.EstimatedMemoryUsage / (1024.0 * 1024.0));
 
         return recommendation;
@@ -270,10 +282,12 @@ public class PipelineMemoryIntegration : IPipelineMemoryIntegration
         _logger.LogDebug("Creating unified memory buffer for {Type}", typeof(T));
 
         var array = data.ToArray();
-        var buffer = _memoryManager.AllocateBuffer<T>(array.Length);
-        
+        var buffer = await _memoryManager.AllocateAsync<T>(array.Length);
+
+
         await buffer.CopyFromAsync(array);
-        
+
+
         return buffer;
     }
 
@@ -338,12 +352,14 @@ public class PipelineBackendIntegration : IPipelineBackendIntegration
         _logger.LogDebug("Selecting optimal backend for query");
 
         var recommendation = await _performanceAnalyzer.RecommendOptimalBackendAsync(queryable);
-        
+
         // Use adaptive backend selector for final decision
+
         var workloadCharacteristics = CreateWorkloadCharacteristics(recommendation);
         var selectedBackend = await _backendSelector.SelectBackendAsync(workloadCharacteristics);
 
-        _logger.LogDebug("Selected backend: {Backend} (confidence: {Confidence:P})", 
+        _logger.LogDebug("Selected backend: {Backend} (confidence: {Confidence:P})",
+
             selectedBackend, recommendation.Confidence);
 
         return selectedBackend;
@@ -355,7 +371,8 @@ public class PipelineBackendIntegration : IPipelineBackendIntegration
         _logger.LogDebug("Validating backend compatibility for {Backend}", backend);
 
         var analysisResult = await _performanceAnalyzer.AnalyzePipelineAsync(queryable.Expression);
-        
+
+
         var isCompatible = backend switch
         {
             "CUDA" => analysisResult.Bottlenecks.All(b => b.Type != BottleneckType.ComputeThroughput),
@@ -415,7 +432,9 @@ public class IntegratedPipelineLinqProvider : IComputeLinqProvider
 
         // Use the pipeline optimized provider with orchestration integration
         var queryable = source.AsQueryable();
-        return new IntegratedComputeQueryable<T>(_pipelineProvider, queryable.Expression);
+        // Create a wrapper to adapt PipelineOptimizedProvider to IntegratedComputeQueryProvider
+        var adaptedProvider = new ProviderAdapter(_pipelineProvider);
+        return new IntegratedComputeQueryable<T>(adaptedProvider, queryable.Expression);
     }
 
     /// <inheritdoc />
@@ -425,7 +444,9 @@ public class IntegratedPipelineLinqProvider : IComputeLinqProvider
 
         // Use the pipeline optimized provider with orchestration integration
         var queryable = source.AsQueryable();
-        return new IntegratedComputeQueryable<T>(_pipelineProvider, queryable.Expression);
+        // Create a wrapper to adapt PipelineOptimizedProvider to IntegratedComputeQueryProvider
+        var adaptedProvider = new ProviderAdapter(_pipelineProvider);
+        return new IntegratedComputeQueryable<T>(adaptedProvider, queryable.Expression);
     }
 
     /// <inheritdoc />
@@ -456,7 +477,8 @@ public class IntegratedPipelineLinqProvider : IComputeLinqProvider
     /// <inheritdoc />
     public async Task<T> ExecuteAsync<T>(Expression expression, IAccelerator preferredAccelerator, CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Executing expression asynchronously for {Type} with accelerator {Accelerator}", 
+        _logger.LogDebug("Executing expression asynchronously for {Type} with accelerator {Accelerator}",
+
             typeof(T), preferredAccelerator.GetType().Name);
 
         // For now, ignore the preferred accelerator and use the standard execution
@@ -477,7 +499,8 @@ public class IntegratedPipelineLinqProvider : IComputeLinqProvider
         foreach (var expression in expressions)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
+
             try
             {
                 var queryable = Expression.Lambda(expression).Compile().DynamicInvoke() as IQueryable;
@@ -623,5 +646,41 @@ public class PipelineOrchestrationException : Exception
     /// <summary>Initializes a new PipelineOrchestrationException.</summary>
     public PipelineOrchestrationException(string message, Exception innerException) : base(message, innerException) { }
 }
+
+/// <summary>
+/// Adapter to wrap PipelineOptimizedProvider as IntegratedComputeQueryProvider.
+/// </summary>
+internal class ProviderAdapter : IntegratedComputeQueryProvider
+{
+    private readonly PipelineOptimizedProvider _pipelineProvider;
+
+    public ProviderAdapter(PipelineOptimizedProvider pipelineProvider)
+
+        : base(null!, null!, null!) // Dummy parameters
+    {
+        _pipelineProvider = pipelineProvider;
+    }
+
+    public new IQueryable<T> CreateQuery<T>(Expression expression)
+    {
+        return _pipelineProvider.CreateQuery<T>(expression);
+    }
+
+    public new IQueryable CreateQuery(Expression expression)
+    {
+        return _pipelineProvider.CreateQuery(expression);
+    }
+
+    public new T Execute<T>(Expression expression)
+    {
+        return _pipelineProvider.Execute<T>(expression);
+    }
+
+    public new object Execute(Expression expression)
+    {
+        return _pipelineProvider.Execute(expression);
+    }
+}
+
 
 #endregion

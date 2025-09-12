@@ -4,10 +4,13 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Linq.Operators.Models;
+using DotCompute.Linq.Operators.Parameters;
+using DotCompute.Linq.KernelGeneration.Execution;
 
 namespace DotCompute.Linq.Operators.Execution;
 
@@ -27,6 +30,18 @@ internal class CompiledKernelAdapter : ICompiledKernel
     {
         _coreKernel = coreKernel ?? throw new ArgumentNullException(nameof(coreKernel));
     }
+
+    /// <inheritdoc />
+    public string Name => _coreKernel.Name;
+
+    /// <inheritdoc />
+    public string SourceCode => "// Adapted kernel from Core";
+
+    /// <inheritdoc />
+    public IReadOnlyList<KernelParameter> Parameters => new List<KernelParameter>();
+
+    /// <inheritdoc />
+    public string EntryPoint => _coreKernel.Name;
 
     /// <summary>
     /// Executes the compiled kernel with the specified parameters.
@@ -61,6 +76,76 @@ internal class CompiledKernelAdapter : ICompiledKernel
         }
 
         await _coreKernel.ExecuteAsync(kernelArgs, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task LaunchAsync(
+        (int x, int y, int z) workgroupSize,
+        (int x, int y, int z) globalSize,
+        KernelExecutionParameters parameters,
+        CancellationToken cancellationToken = default)
+    {
+        // For adapting core kernels, we delegate to the standard ExecuteAsync method
+        // The workgroup and global sizes are typically handled by the underlying kernel execution context
+        await ExecuteAsync(parameters, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task LaunchAsync(
+        int globalSize,
+        int localSize,
+        object[] args,
+        CancellationToken cancellationToken = default)
+    {
+        // Convert object[] args to KernelExecutionParameters
+        var parameters = new KernelExecutionParameters
+        {
+            Arguments = new Dictionary<string, object>()
+        };
+
+        // Add arguments with index-based keys
+        for (int i = 0; i < args.Length; i++)
+        {
+            parameters.Arguments[$"arg{i}"] = args[i];
+        }
+
+        // Set work sizes
+        parameters.GlobalWorkSize = new[] { globalSize };
+        parameters.LocalWorkSize = new[] { localSize };
+
+        await ExecuteAsync(parameters, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task LaunchAsync(
+        object[] args,
+        CancellationToken cancellationToken = default)
+    {
+        // Convert object[] args to KernelExecutionParameters
+        var parameters = new KernelExecutionParameters
+        {
+            Arguments = new Dictionary<string, object>()
+        };
+
+        // Add arguments with index-based keys
+        for (int i = 0; i < args.Length; i++)
+        {
+            parameters.Arguments[$"arg{i}"] = args[i];
+        }
+
+        await ExecuteAsync(parameters, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task LaunchAsync(
+        DotCompute.Linq.KernelGeneration.Execution.Dim3 blockSize,
+        DotCompute.Linq.KernelGeneration.Execution.Dim3 gridSize,
+        KernelExecutionParameters parameters,
+        CancellationToken cancellationToken = default)
+    {
+        // For adapting core kernels, we delegate to the standard ExecuteAsync method
+        // The block and grid sizes are typically handled by the underlying kernel execution context
+        await ExecuteAsync(parameters, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

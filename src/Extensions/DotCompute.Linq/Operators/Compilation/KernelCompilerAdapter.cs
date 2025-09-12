@@ -58,7 +58,7 @@ internal class KernelCompilerAdapter : IUnifiedKernelCompiler
                 OptimizationLevel = ConvertOptimizationLevel(request.OptimizationLevel)
             };
 
-            var kernelDefinition = new DotCompute.Abstractions.Kernels.KernelDefinition(request.Name, kernelSource.Code)
+            var kernelDefinition = new DotCompute.Abstractions.Kernels.KernelDefinition(request.Name, kernelSource.Code, kernelSource.EntryPoint ?? "main")
 
             {
                 Name = request.Name

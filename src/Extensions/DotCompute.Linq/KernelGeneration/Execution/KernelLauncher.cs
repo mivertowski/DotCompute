@@ -10,11 +10,12 @@ using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Extensions.DotCompute.Linq.KernelGeneration;
-using DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory;
+using DotCompute.Linq.KernelGeneration;
+using DotCompute.Linq.KernelGeneration.Memory;
 using Microsoft.Extensions.Logging;
+using DotCompute.Linq.Operators.Models;
 
-namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
+namespace DotCompute.Linq.KernelGeneration.Execution
 {
     /// <summary>
     /// Advanced CUDA kernel launcher with optimized grid/block size calculation,
@@ -75,7 +76,14 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
                 try
                 {
                     // Copy input data to GPU
-                    await _memoryManager.CopyToDeviceAsync(inputData, memoryContext.InputBuffer, cancellationToken);
+                    if (memoryContext.InputBuffer is not GpuBuffer<T> inputBuffer)
+                    {
+
+                        throw new InvalidCastException($"Expected GpuBuffer<{typeof(T).Name}> but got {memoryContext.InputBuffer.GetType().Name}");
+                    }
+
+
+                    await _memoryManager.CopyToDeviceAsync(inputData, inputBuffer, cancellationToken);
 
                     // Get or create CUDA stream
                     var stream = GetOrCreateStream(launchOptions.StreamId);
@@ -85,8 +93,15 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
                         kernel, memoryContext, config, stream, cancellationToken);
 
                     // Copy results back to host
+                    if (memoryContext.OutputBuffer is not GpuBuffer<T> outputBuffer)
+                    {
+
+                        throw new InvalidCastException($"Expected GpuBuffer<{typeof(T).Name}> but got {memoryContext.OutputBuffer.GetType().Name}");
+                    }
+
+
                     var outputData = await _memoryManager.CopyFromDeviceAsync<T>(
-                        memoryContext.OutputBuffer, launchResult.OutputCount, cancellationToken);
+                        outputBuffer, launchResult.OutputCount, cancellationToken);
 
                     stopwatch.Stop();
 
@@ -157,7 +172,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
             LaunchOptions options)
         {
             var cacheKey = GenerateConfigurationCacheKey(kernel, dataSize, options);
-            
+
+
             if (_configurationCache.TryGetValue(cacheKey, out var cachedConfig))
             {
                 _logger.LogDebug("Using cached launch configuration for {KernelName}", kernel.Name);
@@ -168,17 +184,21 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
 
             // Get device properties
             var deviceProps = await GetDevicePropertiesAsync();
-            
+
             // Calculate optimal block size
+
             var blockSize = CalculateOptimalBlockSize(kernel, dataSize, deviceProps, options);
-            
+
             // Calculate grid size
+
             var gridSize = CalculateOptimalGridSize(dataSize, blockSize, deviceProps);
-            
+
             // Calculate shared memory requirements
+
             var sharedMemorySize = CalculateSharedMemorySize(kernel, blockSize, options);
-            
+
             // Estimate output size
+
             var estimatedOutputSize = EstimateOutputSize(dataSize, kernel.Name);
 
             var configuration = new LaunchConfiguration
@@ -217,7 +237,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
 
             // Use CUDA occupancy calculator if available
             var optimalBlockSize = CalculateOccupancyOptimalBlockSize(kernel, deviceProps);
-            
+
+
             if (optimalBlockSize > 0)
             {
                 return new Dim3(optimalBlockSize, 1, 1);
@@ -225,12 +246,13 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
 
             // Fallback to heuristic calculation
             var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
-            
+
+
             return (major, minor) switch
             {
-                (>= 8, >= 9) => new Dim3(Math.Min(512, dataSize), 1, 1), // Ada Lovelace
-                (>= 8, _) => new Dim3(Math.Min(256, dataSize), 1, 1),    // Ampere
-                (>= 7, _) => new Dim3(Math.Min(256, dataSize), 1, 1),    // Volta/Turing
+                ( >= 8, >= 9) => new Dim3(Math.Min(512, dataSize), 1, 1), // Ada Lovelace
+                ( >= 8, _) => new Dim3(Math.Min(256, dataSize), 1, 1),    // Ampere
+                ( >= 7, _) => new Dim3(Math.Min(256, dataSize), 1, 1),    // Volta/Turing
                 _ => new Dim3(Math.Min(128, dataSize), 1, 1)             // Older architectures
             };
         }
@@ -242,20 +264,24 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
         {
             var totalThreads = blockSize.X * blockSize.Y * blockSize.Z;
             var gridX = (dataSize + totalThreads - 1) / totalThreads;
-            
+
             // Limit grid size to device maximum
+
             gridX = Math.Min(gridX, deviceProps.MaxGridSize.X);
-            
+
             // For very large datasets, use 2D grid
+
             if (gridX > 65535)
             {
                 var gridY = (gridX + 65535 - 1) / 65535;
                 gridX = Math.Min(gridX, 65535);
                 gridY = Math.Min(gridY, deviceProps.MaxGridSize.Y);
-                
+
+
                 return new Dim3(gridX, gridY, 1);
             }
-            
+
+
             return new Dim3(gridX, 1, 1);
         }
 
@@ -271,8 +297,9 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
 
             // Estimate based on kernel type and block size
             var totalThreads = blockSize.X * blockSize.Y * blockSize.Z;
-            
+
             // Basic estimation - can be enhanced with kernel analysis
+
             return kernel.Name.Contains("reduce", StringComparison.OrdinalIgnoreCase) ? totalThreads * 4 : 0;
         }
 
@@ -300,7 +327,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
             var maxBlocksPerSM = Math.Min(
                 deviceProps.MaxThreadsPerMultiProcessor / threadsPerBlock,
                 deviceProps.SharedMemoryPerMultiProcessor / Math.Max(sharedMemorySize, 1));
-            
+
+
             var actualThreadsPerSM = maxBlocksPerSM * threadsPerBlock;
             return (double)actualThreadsPerSM / deviceProps.MaxThreadsPerMultiProcessor;
         }
@@ -344,12 +372,17 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
                 };
 
                 // Launch kernel
+                var kernelExecutionParams = new KernelExecutionParameters
+                {
+                    Parameters = parameters,
+                    SharedMemorySize = config.SharedMemorySize,
+                    Stream = stream.StreamPointer
+                };
+
                 await kernel.LaunchAsync(
-                    config.GridSize,
                     config.BlockSize,
-                    config.SharedMemorySize,
-                    stream.StreamPointer,
-                    parameters,
+                    config.GridSize,
+                    kernelExecutionParams,
                     cancellationToken);
 
                 // Synchronize stream if not async
@@ -382,7 +415,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
         private CudaStream GetOrCreateStream(int streamId)
         {
             var streamPtr = new IntPtr(streamId);
-            
+
+
             if (_streamPool.TryGetValue(streamPtr, out var existingStream))
             {
                 return existingStream;
@@ -397,7 +431,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
 
                 var newStream = new CudaStream(_context, streamId != 0);
                 _streamPool.TryAdd(streamPtr, newStream);
-                
+
+
                 _logger.LogDebug("Created new CUDA stream with ID {StreamId}", streamId);
                 return newStream;
             }
@@ -503,9 +538,12 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
         public void Dispose()
         {
             if (_disposed)
+            {
                 return;
+            }
 
             // Dispose all streams
+
             foreach (var stream in _streamPool.Values)
             {
                 stream.Dispose();
@@ -647,7 +685,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             IsAsync = isAsync;
-            
+
+
             if (isAsync)
             {
                 var result = CudaRuntime.CreateStream(out _streamPointer);
@@ -680,7 +719,10 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Execution
         public void Dispose()
         {
             if (_disposed)
+            {
                 return;
+            }
+
 
             if (_streamPointer != IntPtr.Zero)
             {

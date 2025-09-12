@@ -30,6 +30,7 @@ public sealed class SecurityValidator : ISecurityValidator, IDisposable
     public Task<bool> ValidateAssemblySecurityAsync(string assemblyPath)
         // Stub implementation - always returns true
 
+
         => Task.FromResult(true);
 
     /// <summary>
@@ -38,6 +39,7 @@ public sealed class SecurityValidator : ISecurityValidator, IDisposable
     public Task<bool> ValidateStrongNameAsync(string assemblyPath)
         // Stub implementation - always returns true
 
+
         => Task.FromResult(true);
 
     /// <summary>
@@ -45,6 +47,7 @@ public sealed class SecurityValidator : ISecurityValidator, IDisposable
     /// </summary>
     public bool IsVersionCompatible(string? requiredVersion)
         // Stub implementation - always returns true
+
 
         => true;
 

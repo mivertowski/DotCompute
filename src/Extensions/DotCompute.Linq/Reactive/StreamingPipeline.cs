@@ -21,31 +21,40 @@ public record StreamingPipelineConfig
 {
     /// <summary>Pipeline name for identification and monitoring</summary>
     public string Name { get; init; } = "StreamingPipeline";
-    
+
+
     /// <summary>Reactive compute configuration</summary>
     public ReactiveComputeConfig ReactiveConfig { get; init; } = new();
-    
+
+
     /// <summary>Maximum pipeline capacity (elements)</summary>
     public int MaxCapacity { get; init; } = 100000;
-    
+
+
     /// <summary>Health check interval</summary>
     public TimeSpan HealthCheckInterval { get; init; } = TimeSpan.FromSeconds(30);
-    
+
+
     /// <summary>Enable automatic error recovery</summary>
     public bool EnableAutoRecovery { get; init; } = true;
-    
+
+
     /// <summary>Maximum retry attempts for failed operations</summary>
     public int MaxRetryAttempts { get; init; } = 3;
-    
+
+
     /// <summary>Retry delay strategy</summary>
     public RetryDelayStrategy RetryDelayStrategy { get; init; } = RetryDelayStrategy.Exponential;
-    
+
+
     /// <summary>Enable pipeline metrics collection</summary>
     public bool EnableMetrics { get; init; } = true;
-    
+
+
     /// <summary>Checkpoint interval for state persistence</summary>
     public TimeSpan CheckpointInterval { get; init; } = TimeSpan.FromMinutes(5);
-    
+
+
     /// <summary>Enable pipeline state persistence</summary>
     public bool EnableStatePersistence { get; init; } = false;
 }
@@ -79,16 +88,20 @@ public record PipelineStage<TInput, TOutput>
 {
     /// <summary>Stage name</summary>
     public string Name { get; init; } = "";
-    
+
+
     /// <summary>Stage transformation function</summary>
     public Func<IObservable<TInput>, IObservable<TOutput>> Transform { get; init; } = null!;
-    
+
+
     /// <summary>Stage-specific configuration</summary>
     public object? Configuration { get; init; }
-    
+
+
     /// <summary>Whether stage supports parallel processing</summary>
     public bool SupportsParallel { get; init; } = true;
-    
+
+
     /// <summary>Stage priority (higher values get more resources)</summary>
     public int Priority { get; init; } = 1;
 }
@@ -100,28 +113,36 @@ public record PipelineMetrics
 {
     /// <summary>Total elements processed</summary>
     public long TotalProcessed { get; init; }
-    
+
+
     /// <summary>Current throughput (elements/second)</summary>
     public double Throughput { get; init; }
-    
+
+
     /// <summary>Average processing latency (milliseconds)</summary>
     public double AverageLatency { get; init; }
-    
+
+
     /// <summary>Error rate (errors per second)</summary>
     public double ErrorRate { get; init; }
-    
+
+
     /// <summary>Current pipeline health</summary>
     public PipelineHealth Health { get; init; }
-    
+
+
     /// <summary>Memory usage (bytes)</summary>
     public long MemoryUsage { get; init; }
-    
+
+
     /// <summary>CPU utilization percentage</summary>
     public double CpuUtilization { get; init; }
-    
+
+
     /// <summary>GPU utilization percentage</summary>
     public double GpuUtilization { get; init; }
-    
+
+
     /// <summary>Stage-specific metrics</summary>
     public Dictionary<string, object> StageMetrics { get; init; } = new();
 }
@@ -141,25 +162,29 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly Timer _healthCheckTimer;
     private readonly Timer _checkpointTimer;
-    
+
     // Subjects for pipeline control
+
     private readonly Subject<TInput> _inputSubject = new();
     private readonly Subject<TOutput> _outputSubject = new();
     private readonly Subject<Exception> _errorSubject = new();
     private readonly Subject<PipelineMetrics> _metricsSubject = new();
-    
+
     // State management
+
     private IObservable<TOutput>? _pipeline;
     private readonly ConcurrentDictionary<string, object> _state = new();
     private readonly CircuitBreaker _circuitBreaker;
-    
+
     // Metrics
+
     private static readonly Meter _meter = new("DotCompute.Reactive.Pipeline");
     private static readonly Counter<long> _elementsProcessedCounter = _meter.CreateCounter<long>("elements_processed_total");
     private static readonly Counter<long> _errorsCounter = _meter.CreateCounter<long>("errors_total");
     private static readonly Histogram<double> _latencyHistogram = _meter.CreateHistogram<double>("processing_latency_ms");
     private static readonly Gauge<double> _throughputGauge = _meter.CreateGauge<double>("throughput_elements_per_second");
-    
+
+
     private long _totalProcessed;
     private long _totalErrors;
     private readonly List<double> _recentLatencies = new();
@@ -174,17 +199,20 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         _config = config ?? new StreamingPipelineConfig();
         _logger = logger;
-        
+
+
         _circuitBreaker = new CircuitBreaker(_config.MaxRetryAttempts, TimeSpan.FromSeconds(30));
-        
+
         // Setup health monitoring
+
         _healthCheckTimer = new Timer(
             PerformHealthCheck,
             null,
             _config.HealthCheckInterval,
             _config.HealthCheckInterval);
-        
+
         // Setup checkpointing
+
         if (_config.EnableStatePersistence)
         {
             _checkpointTimer = new Timer(
@@ -197,7 +225,8 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
         {
             _checkpointTimer = new Timer(_ => { }, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
-        
+
+
         _logger?.LogInformation(
             "StreamingPipeline '{Name}' initialized with capacity {Capacity}",
             _config.Name, _config.MaxCapacity);
@@ -239,17 +268,20 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
         where TStageOutput : class
     {
         _stages.Add(stage);
-        
+
+
         var newPipeline = new StreamingPipeline<TInput, TStageOutput>(
-            _orchestrator, _config, _logger);
-        
+            _orchestrator, _config, logger: null);
+
         // Copy existing stages
+
         foreach (var existingStage in _stages.Take(_stages.Count - 1))
         {
             newPipeline._stages.Add(existingStage);
         }
         newPipeline._stages.Add(stage);
-        
+
+
         return newPipeline;
     }
 
@@ -314,7 +346,7 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
         {
             Name = name,
             Transform = source => source
-                .Buffer(windowConfig.Count ?? 100)
+                .Buffer(windowConfig.Count)
                 .Select(aggregator),
             Configuration = windowConfig,
             SupportsParallel = true
@@ -330,11 +362,16 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     public IDisposable Start()
     {
         if (_pipeline != null)
+        {
+
             throw new InvalidOperationException("Pipeline is already started");
+        }
+
 
         _startTime = DateTime.UtcNow;
         _pipeline = BuildPipeline();
-        
+
+
         var subscription = _pipeline
             .Subscribe(
                 output =>
@@ -362,7 +399,8 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
                 });
 
         _logger?.LogInformation("StreamingPipeline '{Name}' started", _config.Name);
-        
+
+
         return Disposable.Create(() =>
         {
             subscription?.Dispose();
@@ -384,10 +422,15 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
             var stageType = stageObj.GetType();
             var transformProperty = stageType.GetProperty("Transform");
             var transform = transformProperty?.GetValue(stageObj) as Delegate;
-            
+
+
             if (transform != null)
             {
-                pipeline = (IObservable<object>)transform.DynamicInvoke(pipeline)!;
+                var result = transform.DynamicInvoke(pipeline);
+                if (result is IObservable<object> observableResult)
+                {
+                    pipeline = observableResult;
+                }
             }
         }
 
@@ -410,7 +453,8 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     {
         Interlocked.Increment(ref _totalProcessed);
         _elementsProcessedCounter.Add(1, new KeyValuePair<string, object?>("pipeline", _config.Name));
-        
+
+
         var currentThroughput = _totalProcessed / (DateTime.UtcNow - _startTime).TotalSeconds;
         _throughputGauge.Record(currentThroughput, new KeyValuePair<string, object?>("pipeline", _config.Name));
     }
@@ -421,10 +465,12 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     private void RecordError(Exception error)
     {
         Interlocked.Increment(ref _totalErrors);
-        _errorsCounter.Add(1, 
+        _errorsCounter.Add(1,
+
             new KeyValuePair<string, object?>("pipeline", _config.Name),
             new KeyValuePair<string, object?>("error_type", error.GetType().Name));
-        
+
+
         _logger?.LogError(error, "Pipeline error in '{PipelineName}'", _config.Name);
     }
 
@@ -436,7 +482,8 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
         var uptime = DateTime.UtcNow - _startTime;
         var throughput = uptime.TotalSeconds > 0 ? _totalProcessed / uptime.TotalSeconds : 0;
         var errorRate = uptime.TotalSeconds > 0 ? _totalErrors / uptime.TotalSeconds : 0;
-        
+
+
         var metrics = new PipelineMetrics
         {
             TotalProcessed = _totalProcessed,
@@ -448,7 +495,8 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
             CpuUtilization = GetCpuUtilization(),
             GpuUtilization = GetGpuUtilization()
         };
-        
+
+
         _metricsSubject.OnNext(metrics);
     }
 
@@ -461,14 +509,16 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
         {
             var previousHealth = Health;
             Health = CalculateHealth();
-            
+
+
             if (Health != previousHealth)
             {
                 _logger?.LogInformation(
                     "Pipeline '{Name}' health changed from {PreviousHealth} to {NewHealth}",
                     _config.Name, previousHealth, Health);
             }
-            
+
+
             if (_config.EnableMetrics)
             {
                 PublishMetrics();
@@ -487,15 +537,30 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     {
         var uptime = DateTime.UtcNow - _startTime;
         if (uptime.TotalSeconds < 10)
+        {
             return PipelineHealth.Healthy; // Too early to judge
-        
+        }
+
         var errorRate = _totalErrors / uptime.TotalSeconds;
         var throughput = _totalProcessed / uptime.TotalSeconds;
-        
-        if (errorRate > 10) return PipelineHealth.Failed;
-        if (errorRate > 1) return PipelineHealth.Critical;
-        if (throughput < 1) return PipelineHealth.Degraded;
-        
+
+
+        if (errorRate > 10)
+        {
+            return PipelineHealth.Failed;
+        }
+
+        if (errorRate > 1)
+        {
+            return PipelineHealth.Critical;
+        }
+
+        if (throughput < 1)
+        {
+            return PipelineHealth.Degraded;
+        }
+
+
         return PipelineHealth.Healthy;
     }
 
@@ -505,8 +570,11 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     private void CreateCheckpoint(object? state)
     {
         if (!_config.EnableStatePersistence)
+        {
             return;
-        
+        }
+
+
         try
         {
             var checkpoint = new
@@ -517,10 +585,12 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
                 State = _state.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
                 Health = Health
             };
-            
+
+
             var json = JsonSerializer.Serialize(checkpoint);
             // In a real implementation, you would save this to persistent storage
-            
+
+
             _logger?.LogDebug("Checkpoint created for pipeline '{Name}'", _config.Name);
         }
         catch (Exception ex)
@@ -551,21 +621,28 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
-        
+        }
+
+
         _disposed = true;
-        
+
+
         _cancellationTokenSource.Cancel();
         _healthCheckTimer?.Dispose();
         _checkpointTimer?.Dispose();
-        
+
+
         _inputSubject?.Dispose();
         _outputSubject?.Dispose();
         _errorSubject?.Dispose();
         _metricsSubject?.Dispose();
-        
+
+
         _cancellationTokenSource?.Dispose();
-        
+
+
         _logger?.LogInformation(
             "StreamingPipeline '{Name}' disposed. Total processed: {TotalProcessed}, Total errors: {TotalErrors}",
             _config.Name, _totalProcessed, _totalErrors);
@@ -592,15 +669,20 @@ internal class CircuitBreaker
     public bool CanExecute()
     {
         if (!_isOpen)
+        {
+
             return true;
-        
+        }
+
+
         if (DateTime.UtcNow - _lastFailureTime > _timeout)
         {
             _isOpen = false;
             _failureCount = 0;
             return true;
         }
-        
+
+
         return false;
     }
 
@@ -608,7 +690,8 @@ internal class CircuitBreaker
     {
         _failureCount++;
         _lastFailureTime = DateTime.UtcNow;
-        
+
+
         if (_failureCount >= _maxFailures)
         {
             _isOpen = true;

@@ -32,7 +32,8 @@ public class PipelineTestDataGenerator
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(size);
 
         var data = new T[size];
-        
+
+
         switch (pattern)
         {
             case DataPattern.Random:
@@ -121,10 +122,12 @@ public class PipelineTestDataGenerator
         for (int i = 0; i < batches; i++)
         {
             var batch = GenerateNumericData<float>(batchSize, DataPattern.Random);
-            
+
             // Simulate streaming delay
+
             await Task.Delay(10);
-            
+
+
             yield return batch;
         }
     }
@@ -153,11 +156,13 @@ public class PipelineTestDataGenerator
                 for (int c = 0; c < channels; c++)
                 {
                     var index = (y * width + x) * channels + c;
-                    
+
                     // Create gradient and noise pattern
+
                     var gradient = (x + y) / (float)(width + height);
                     var noise = (_random.NextSingle() - 0.5f) * 0.1f;
-                    
+
+
                     imageData[index] = MathF.Max(0, MathF.Min(1, gradient + noise));
                 }
             }
@@ -184,7 +189,8 @@ public class PipelineTestDataGenerator
             // Random walk for price with volatility
             var priceChange = (_random.NextSingle() - 0.5f) * 2.0f; // ±1%
             currentPrice *= (1 + priceChange / 100);
-            
+
+
             data[i] = new FinancialTransaction
             {
                 Id = i,
@@ -257,7 +263,8 @@ public class PipelineTestDataGenerator
             var u1 = _random.NextDouble();
             var u2 = _random.NextDouble();
             var normal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(2.0 * Math.PI * u2);
-            
+
+
             data[i] = ConvertFromDouble<T>(normal);
         }
     }

@@ -16,10 +16,10 @@ public class DataFlowAnalyzer
     /// </summary>
     /// <param name="operators">The operators to analyze</param>
     /// <returns>Data flow graph</returns>
-    public DataFlowGraph BuildDataFlowGraph(List<OperatorInfo> operators)
+    public DataFlowGraph BuildDataFlowGraph(List<DotCompute.Linq.Pipelines.Analysis.OperatorInfo> operators)
     {
         var graph = new DataFlowGraph();
-        var nodeMap = new Dictionary<OperatorInfo, DataFlowNode>();
+        var nodeMap = new Dictionary<DotCompute.Linq.Pipelines.Analysis.OperatorInfo, DataFlowNode>();
 
         // Create nodes for each operator
         foreach (var op in operators)
@@ -28,7 +28,7 @@ public class DataFlowAnalyzer
             {
                 Id = Guid.NewGuid(),
                 OperatorInfo = op,
-                InputTypes = op.InputTypes,
+                InputTypes = op.InputTypes?.ToList() ?? [],
                 OutputType = op.OutputType
             };
             graph.Nodes.Add(node);
@@ -40,14 +40,16 @@ public class DataFlowAnalyzer
         {
             var sourceNode = nodeMap[operators[i - 1]];
             var targetNode = nodeMap[operators[i]];
-            
+
+
             var edge = new DataFlowEdge
             {
                 Source = sourceNode,
                 Target = targetNode,
                 DataType = sourceNode.OutputType ?? typeof(object)
             };
-            
+
+
             graph.Edges.Add(edge);
             sourceNode.Outputs.Add(edge);
             targetNode.Inputs.Add(edge);
@@ -117,7 +119,8 @@ public class DataFlowAnalyzer
     {
         // Simple estimation based on data types and complexity
         var baseSize = 0L;
-        
+
+
         foreach (var inputType in node.InputTypes)
         {
             baseSize += EstimateTypeSize(inputType);
@@ -130,7 +133,8 @@ public class DataFlowAnalyzer
 
         // Apply complexity multiplier
         var complexityMultiplier = Math.Max(1, node.OperatorInfo.ComplexityScore / 10);
-        
+
+
         return baseSize * complexityMultiplier;
     }
 
@@ -141,18 +145,56 @@ public class DataFlowAnalyzer
     /// <returns>Estimated size in bytes</returns>
     private static int EstimateTypeSize(Type type)
     {
-        if (type == typeof(byte) || type == typeof(sbyte)) return 1;
-        if (type == typeof(short) || type == typeof(ushort)) return 2;
-        if (type == typeof(int) || type == typeof(uint) || type == typeof(float)) return 4;
-        if (type == typeof(long) || type == typeof(ulong) || type == typeof(double)) return 8;
-        if (type == typeof(decimal)) return 16;
-        if (type == typeof(bool)) return 1;
-        if (type == typeof(char)) return 2;
-        
+        if (type == typeof(byte) || type == typeof(sbyte))
+        {
+            return 1;
+        }
+
+
+        if (type == typeof(short) || type == typeof(ushort))
+        {
+            return 2;
+        }
+
+
+        if (type == typeof(int) || type == typeof(uint) || type == typeof(float))
+        {
+            return 4;
+        }
+
+
+        if (type == typeof(long) || type == typeof(ulong) || type == typeof(double))
+        {
+            return 8;
+        }
+
+
+        if (type == typeof(decimal))
+        {
+            return 16;
+        }
+
+
+        if (type == typeof(bool))
+        {
+            return 1;
+        }
+
+
+        if (type == typeof(char))
+        {
+            return 2;
+        }
+
         // For reference types, assume pointer size + some overhead
-        if (!type.IsValueType) return 8 + 32; // 64-bit pointer + estimated object overhead
-        
+
+        if (!type.IsValueType)
+        {
+            return 8 + 32; // 64-bit pointer + estimated object overhead
+        }
+
         // For other value types, assume a reasonable size
+
         return 8;
     }
 }
@@ -186,7 +228,7 @@ public class DataFlowNode
     /// <summary>
     /// Gets or sets the operator information.
     /// </summary>
-    public OperatorInfo OperatorInfo { get; set; } = new();
+    public Pipelines.Analysis.OperatorInfo OperatorInfo { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the input types for this node.

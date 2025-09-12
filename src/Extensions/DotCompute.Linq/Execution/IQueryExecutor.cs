@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Compilation.Plans;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Linq.KernelGeneration;
 
 namespace DotCompute.Linq.Execution;
 
@@ -82,17 +83,37 @@ public class ExecutionContext
     public ExecutionOptions Options { get; set; } = new();
 
     /// <summary>
+    /// Gets the hardware information for the execution context.
+    /// </summary>
+    public HardwareInfo HardwareInfo { get; set; } = new(DotCompute.Linq.Types.BackendType.CPU, "DefaultDevice");
+
+    /// <summary>
     /// Gets or sets GPU information for optimization.
     /// </summary>
     public GpuInfo? GpuInfo { get; set; }
+
+    /// <summary>
+    /// Gets the number of available CPU cores.
+    /// </summary>
+    public int AvailableCores => Environment.ProcessorCount;
+
+    /// <summary>
+    /// Gets the memory bandwidth in GB/s.
+    /// </summary>
+    public double MemoryBandwidth => HardwareInfo.MemoryBandwidthGBps;
+
+    /// <summary>
+    /// Gets a unique hardware signature for caching.
+    /// </summary>
+    public string HardwareSignature => $"{HardwareInfo.DeviceType}_{HardwareInfo.DeviceName}_{AvailableCores}";
 
     /// <summary>
     /// Gets the target backend type.
     /// </summary>
     public DotCompute.Linq.Types.BackendType TargetBackend => Accelerator switch
     {
-        _ when Accelerator.Name.Contains("CUDA") => DotCompute.Linq.Types.BackendType.CUDA,
-        _ when Accelerator.Name.Contains("GPU") => DotCompute.Linq.Types.BackendType.CUDA,
+        _ when Accelerator.Info.Name.Contains("CUDA") => DotCompute.Linq.Types.BackendType.CUDA,
+        _ when Accelerator.Info.Name.Contains("GPU") => DotCompute.Linq.Types.BackendType.CUDA,
         _ => DotCompute.Linq.Types.BackendType.CPU
     };
 
@@ -112,6 +133,94 @@ public class ExecutionContext
     /// Gets a value indicating whether AVX512F is supported.
     /// </summary>
     public bool HasAvx512 => System.Runtime.Intrinsics.X86.Avx512F.IsSupported;
+
+    /// <summary>
+    /// Gets the number of NUMA nodes available on the system.
+    /// </summary>
+    public int NumaNodeCount { get; set; } = 1;
+
+    /// <summary>
+    /// Gets the available memory in bytes.
+    /// </summary>
+    public long AvailableMemory { get; set; } = GC.GetTotalMemory(false);
+
+    /// <summary>
+    /// Gets the data size for the current operation.
+    /// </summary>
+    public long DataSize { get; set; } = 0;
+
+    /// <summary>
+    /// Gets the cache line size in bytes.
+    /// </summary>
+    public int CacheLineSize { get; set; } = 64; // Common cache line size
+
+    /// <summary>
+    /// Gets a value indicating whether the operation has complex memory access patterns.
+    /// </summary>
+    public bool HasComplexAccessPatterns { get; set; } = false;
+
+    /// <summary>
+    /// Gets the PCIe read bandwidth in bytes per second.
+    /// </summary>
+    public long PcieReadBandwidth { get; set; } = 16L * 1024 * 1024 * 1024; // 16 GB/s PCIe 4.0 x16
+
+    /// <summary>
+    /// Gets a value indicating whether the system has NUMA architecture.
+    /// </summary>
+    public bool IsNumaSystem { get; set; } = false;
+
+    /// <summary>
+    /// Gets a value indicating whether the system supports hyper-threading.
+    /// </summary>
+    public bool HasHyperThreading { get; set; } = Environment.ProcessorCount > Environment.ProcessorCount / 2;
+
+    /// <summary>
+    /// Gets the current system load as a percentage (0.0 to 1.0).
+    /// </summary>
+    public double SystemLoad { get; set; } = 0.5; // Default moderate load
+
+    /// <summary>
+    /// Gets the current thermal state of the system.
+    /// </summary>
+    public ThermalState ThermalState { get; set; } = ThermalState.Normal;
+
+    /// <summary>
+    /// Gets the current memory pressure level.
+    /// </summary>
+    public MemoryPressureLevel MemoryPressure { get; set; } = MemoryPressureLevel.Low;
+
+    /// <summary>
+    /// Creates a clone of this execution context.
+    /// </summary>
+    /// <returns>A cloned execution context.</returns>
+    public ExecutionContext Clone()
+    {
+        var clone = new ExecutionContext(Accelerator, Plan)
+        {
+            Options = Options,
+            HardwareInfo = HardwareInfo,
+            GpuInfo = GpuInfo,
+            NumaNodeCount = NumaNodeCount,
+            AvailableMemory = AvailableMemory,
+            DataSize = DataSize,
+            CacheLineSize = CacheLineSize,
+            HasComplexAccessPatterns = HasComplexAccessPatterns,
+            PcieReadBandwidth = PcieReadBandwidth,
+            IsNumaSystem = IsNumaSystem,
+            HasHyperThreading = HasHyperThreading,
+            SystemLoad = SystemLoad,
+            ThermalState = ThermalState,
+            MemoryPressure = MemoryPressure
+        };
+
+        // Copy parameters
+        foreach (var param in Parameters)
+        {
+            clone.Parameters[param.Key] = param.Value;
+        }
+
+        return clone;
+    }
 }
 
 /// <summary>
@@ -330,4 +439,44 @@ public class GpuInfo
     /// Gets or sets the memory bandwidth in bytes per second.
     /// </summary>
     public long MemoryBandwidth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum threads per streaming multiprocessor.
+    /// </summary>
+    public int MaxThreadsPerSM { get; set; } = 2048;
+
+    /// <summary>
+    /// Gets or sets the maximum blocks per streaming multiprocessor.
+    /// </summary>
+    public int MaxBlocksPerSM { get; set; } = 32;
+}
+
+/// <summary>
+/// Represents the thermal state of the system.
+/// </summary>
+public enum ThermalState
+{
+    /// <summary>Normal temperature range.</summary>
+    Normal,
+    /// <summary>Warm but within safe limits.</summary>
+    Warm,
+    /// <summary>Hot, performance may be throttled.</summary>
+    Hot,
+    /// <summary>Critical temperature, aggressive throttling.</summary>
+    Critical
+}
+
+/// <summary>
+/// Represents memory pressure levels.
+/// </summary>
+public enum MemoryPressureLevel
+{
+    /// <summary>Low memory pressure.</summary>
+    Low,
+    /// <summary>Medium memory pressure.</summary>
+    Medium,
+    /// <summary>High memory pressure.</summary>
+    High,
+    /// <summary>Critical memory pressure.</summary>
+    Critical
 }

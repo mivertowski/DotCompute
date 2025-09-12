@@ -10,7 +10,10 @@ using DotCompute.Linq.Execution;
 using DotCompute.Linq.Optimization.CostModel;
 using DotCompute.Linq.Optimization.Models;
 using DotCompute.Linq.KernelGeneration;
+using DotCompute.Linq.Types;
 using ExecutionContext = DotCompute.Linq.Execution.ExecutionContext;
+using Models = DotCompute.Linq.Optimization.Models;
+using DotCompute.Linq.Pipelines.Models;
 
 namespace DotCompute.Linq.Optimization.Strategies;
 
@@ -26,8 +29,9 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     private readonly ConcurrentDictionary<string, OptimizationModel> _models;
     private readonly ReaderWriterLockSlim _modelLock;
     private readonly Timer _adaptationTimer;
-    
+
     // ML-based optimization parameters
+
     private const int MinSamplesForLearning = 10;
     private const int MaxHistorySize = 1000;
     private const double LearningRate = 0.01;
@@ -42,8 +46,9 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         _executionHistory = new ConcurrentDictionary<string, ExecutionHistory>();
         _models = new ConcurrentDictionary<string, OptimizationModel>();
         _modelLock = new ReaderWriterLockSlim();
-        
+
         // Start adaptation timer for continuous learning
+
         _adaptationTimer = new Timer(AdaptModels, null, AdaptationInterval, AdaptationInterval);
     }
 
@@ -51,16 +56,20 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     {
         var querySignature = ComputeQuerySignature(plan);
         var workloadCharacteristics = AnalyzeWorkload(plan, context);
-        
+
         // Try to get existing model or create new one
+
         var model = GetOrCreateModel(querySignature, workloadCharacteristics);
-        
+
         // Predict optimal configuration
+
         var optimizedPlan = await PredictOptimalConfiguration(plan, model, context);
-        
+
         // Track execution for learning
+
         TrackExecution(querySignature, optimizedPlan, context);
-        
+
+
         return optimizedPlan;
     }
 
@@ -68,18 +77,20 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     {
         // Create a signature based on query structure
         var signature = new List<string>();
-        
+
+
         foreach (var operation in plan.Operations)
         {
             signature.Add($"{operation.Type}_{operation.InputSize}_{operation.DataType}");
         }
-        
+
+
         return string.Join("|", signature);
     }
 
-    private WorkloadCharacteristics AnalyzeWorkload(QueryPlan plan, ExecutionContext context)
+    private Pipelines.Models.WorkloadCharacteristics AnalyzeWorkload(QueryPlan plan, ExecutionContext context)
     {
-        return new WorkloadCharacteristics
+        return new Pipelines.Models.WorkloadCharacteristics
         {
             DataSize = plan.EstimatedDataSize,
             OperationCount = plan.Operations.Count,
@@ -93,21 +104,23 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     private double CalculateComputeIntensity(QueryPlan plan)
     {
         double intensity = 0.0;
-        
+
+
         foreach (var operation in plan.Operations)
         {
             intensity += operation.Type switch
             {
-                OperationType.Map => 1.0,
-                OperationType.Filter => 0.5,
-                OperationType.Reduce => 2.0,
-                OperationType.GroupBy => 1.5,
-                OperationType.Join => 3.0,
-                OperationType.Aggregate => 2.5,
+                Models.OperationType.Map => 1.0,
+                Models.OperationType.Filter => 0.5,
+                Models.OperationType.Reduce => 2.0,
+                Models.OperationType.GroupBy => 1.5,
+                Models.OperationType.Join => 3.0,
+                Models.OperationType.Aggregate => 2.5,
                 _ => 1.0
             };
         }
-        
+
+
         return intensity / plan.Operations.Count;
     }
 
@@ -120,14 +133,19 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     {
         int parallelizable = 0;
         int total = 0;
-        
+
+
         foreach (var operation in plan.Operations)
         {
             total++;
             if (IsParallelizable(operation))
+            {
                 parallelizable++;
+            }
+
         }
-        
+
+
         return (double)parallelizable / total;
     }
 
@@ -135,22 +153,22 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     {
         return operation.Type switch
         {
-            OperationType.Map => true,
-            OperationType.Filter => true,
-            OperationType.Reduce => operation.IsAssociative,
-            OperationType.GroupBy => true,
-            OperationType.Join => true,
-            OperationType.Aggregate => operation.IsAssociative,
+            Models.OperationType.Map => true,
+            Models.OperationType.Filter => true,
+            Models.OperationType.Reduce => operation.IsAssociative,
+            Models.OperationType.GroupBy => true,
+            Models.OperationType.Join => true,
+            Models.OperationType.Aggregate => operation.IsAssociative,
             _ => false
         };
     }
 
-    private OptimizationModel GetOrCreateModel(string signature, WorkloadCharacteristics characteristics)
+    private OptimizationModel GetOrCreateModel(string signature, Pipelines.Models.WorkloadCharacteristics characteristics)
     {
         return _models.GetOrAdd(signature, _ => new OptimizationModel
         {
             Signature = signature,
-            BaseCharacteristics = characteristics,
+            BaseCharacteristics = ConvertWorkloadCharacteristics(characteristics),
             Predictions = new Dictionary<string, double>(),
             Weights = InitializeWeights(),
             LastUpdated = DateTime.UtcNow
@@ -170,35 +188,43 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     }
 
     private async Task<QueryPlan> PredictOptimalConfiguration(
-        QueryPlan plan, 
-        OptimizationModel model, 
+        QueryPlan plan,
+
+        OptimizationModel model,
+
         ExecutionContext context)
     {
         var optimizedPlan = plan.Clone();
-        
+
         // Predict backend preference
+
         var backendScore = PredictBackendScore(model, context);
-        optimizedPlan.PreferredBackend = backendScore > 0.5 ? BackendType.CUDA : BackendType.CPU;
-        
+        optimizedPlan.PreferredBackend = backendScore > 0.5 ? BackendType.CUDA.ToString() : BackendType.CPU.ToString();
+
         // Predict optimal parallelism
+
         var parallelismFactor = PredictParallelismFactor(model, context);
         optimizedPlan.ParallelismDegree = Math.Max(1, (int)(context.AvailableCores * parallelismFactor));
-        
+
         // Predict memory strategy
+
         var memoryStrategy = PredictMemoryStrategy(model, context);
-        optimizedPlan.MemoryStrategy = memoryStrategy;
-        
+        optimizedPlan.MemoryStrategy = memoryStrategy.ToString();
+
         // Predict fusion opportunities
+
         var fusionPriority = PredictFusionPriority(model, context);
         if (fusionPriority > 0.7)
         {
             optimizedPlan = await ApplyKernelFusion(optimizedPlan);
         }
-        
+
         // Apply cache optimization
+
         var cacheStrategy = PredictCacheStrategy(model, context);
-        optimizedPlan.CacheStrategy = cacheStrategy;
-        
+        optimizedPlan.CacheStrategy = cacheStrategy.ToString();
+
+
         return optimizedPlan;
     }
 
@@ -209,7 +235,8 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             // Default heuristic: GPU for large datasets, CPU for small
             return context.DataSize > 10_000 ? 0.8 : 0.2;
         }
-        
+
+
         return prediction;
     }
 
@@ -221,7 +248,8 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             var intensity = model.BaseCharacteristics.ComputeIntensity;
             return Math.Min(1.0, 0.5 + intensity * 0.5);
         }
-        
+
+
         return Math.Min(1.0, prediction);
     }
 
@@ -233,7 +261,8 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             var intensity = model.BaseCharacteristics.MemoryIntensity;
             return intensity > 0.5 ? MemoryStrategy.Streaming : MemoryStrategy.Buffered;
         }
-        
+
+
         return prediction > 0.5 ? MemoryStrategy.Streaming : MemoryStrategy.Buffered;
     }
 
@@ -242,11 +271,13 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         if (!model.Predictions.TryGetValue("FusionPriority", out var prediction))
         {
             // Default based on operation count and data movement cost
-            var operationDensity = (double)model.BaseCharacteristics.OperationCount / 
+            var operationDensity = (double)model.BaseCharacteristics.OperationCount /
+
                                    Math.Max(1, model.BaseCharacteristics.DataSize / 1000);
             return Math.Min(1.0, operationDensity * 0.3);
         }
-        
+
+
         return prediction;
     }
 
@@ -257,7 +288,8 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             // Default based on memory access patterns
             return context.HasComplexAccessPatterns ? CacheStrategy.Aggressive : CacheStrategy.Conservative;
         }
-        
+
+
         return prediction > 0.5 ? CacheStrategy.Aggressive : CacheStrategy.Conservative;
     }
 
@@ -265,10 +297,12 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     {
         // Implement kernel fusion logic
         var fusedPlan = plan.Clone();
-        
+
         // Find fusable operation sequences
+
         var fusionCandidates = FindFusionCandidates(plan.Operations);
-        
+
+
         foreach (var candidate in fusionCandidates)
         {
             if (candidate.Operations.Count > 1)
@@ -277,7 +311,8 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
                 fusedPlan.ReplaceOperations(candidate.Operations, fusedOperation);
             }
         }
-        
+
+
         return fusedPlan;
     }
 
@@ -285,7 +320,8 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     {
         var candidates = new List<FusionCandidate>();
         var currentCandidate = new List<QueryOperation>();
-        
+
+
         foreach (var operation in operations)
         {
             if (CanFuseWithPrevious(operation, currentCandidate.LastOrDefault()))
@@ -302,37 +338,44 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
                 currentCandidate.Add(operation);
             }
         }
-        
+
+
         if (currentCandidate.Count > 1)
         {
             candidates.Add(new FusionCandidate { Operations = currentCandidate });
         }
-        
+
+
         return candidates;
     }
 
     private bool CanFuseWithPrevious(QueryOperation current, QueryOperation? previous)
     {
-        if (previous == null) return false;
-        
+        if (previous == null)
+        {
+            return false;
+        }
+
         // Only fuse element-wise operations
-        return (current.Type == OperationType.Map || current.Type == OperationType.Filter) &&
-               (previous.Type == OperationType.Map || previous.Type == OperationType.Filter);
+
+        return (current.Type == Models.OperationType.Map || current.Type == Models.OperationType.Filter) &&
+               (previous.Type == Models.OperationType.Map || previous.Type == Models.OperationType.Filter);
     }
 
-    private async Task<QueryOperation> CreateFusedOperation(List<QueryOperation> operations)
+    private Task<QueryOperation> CreateFusedOperation(List<QueryOperation> operations)
     {
         // Create a new fused operation that combines the logic of multiple operations
         var fusedOperation = new QueryOperation
         {
-            Type = OperationType.FusedKernel,
+            Type = Models.OperationType.FusedKernel,
             InputSize = operations.First().InputSize,
             OutputSize = operations.Last().OutputSize,
             DataType = operations.Last().DataType,
             FusedOperations = operations.ToList()
         };
-        
-        return fusedOperation;
+
+
+        return Task.FromResult(fusedOperation);
     }
 
     private void TrackExecution(string signature, QueryPlan plan, ExecutionContext context)
@@ -342,8 +385,9 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             Signature = signature,
             Executions = new List<ExecutionRecord>()
         });
-        
+
         // This will be called after execution completes
+
         ThreadPool.QueueUserWorkItem(_ =>
         {
             var record = new ExecutionRecord
@@ -353,7 +397,8 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
                 Context = context.Clone(),
                 // Performance metrics will be filled by execution callback
             };
-            
+
+
             lock (history.Executions)
             {
                 history.Executions.Add(record);
@@ -369,11 +414,11 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     {
         return new OptimizationConfiguration
         {
-            BackendType = plan.PreferredBackend,
+            BackendType = Enum.TryParse<BackendType>(plan.PreferredBackend, out var backend) ? backend : BackendType.CPU,
             ParallelismDegree = plan.ParallelismDegree,
-            MemoryStrategy = plan.MemoryStrategy,
-            CacheStrategy = plan.CacheStrategy,
-            FusionEnabled = plan.Operations.Any(op => op.Type == OperationType.FusedKernel)
+            MemoryStrategy = Enum.TryParse<MemoryStrategy>(plan.MemoryStrategy, out var memory) ? memory : MemoryStrategy.Conservative,
+            CacheStrategy = Enum.TryParse<CacheStrategy>(plan.CacheStrategy, out var cache) ? cache : CacheStrategy.Conservative,
+            FusionEnabled = plan.Operations.Any(op => op.Type == Models.OperationType.FusedKernel)
         };
     }
 
@@ -382,12 +427,14 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         try
         {
             _modelLock.EnterWriteLock();
-            
+
+
             foreach (var kvp in _executionHistory)
             {
                 var signature = kvp.Key;
                 var history = kvp.Value;
-                
+
+
                 if (history.Executions.Count >= MinSamplesForLearning)
                 {
                     if (_models.TryGetValue(signature, out var model))
@@ -411,34 +458,50 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             .OrderByDescending(e => e.Timestamp)
             .Take(50)
             .ToList();
-        
-        if (recentExecutions.Count < 3) return;
-        
+
+
+        if (recentExecutions.Count < 3)
+        {
+            return;
+        }
+
         // Find best performing configurations
+
         var bestExecution = recentExecutions
             .Where(e => e.PerformanceMetrics != null)
             .OrderBy(e => e.PerformanceMetrics!.ExecutionTime)
             .FirstOrDefault();
-        
+
+
         if (bestExecution?.Configuration != null)
         {
             // Update predictions based on best configuration
-            UpdatePrediction(model, "BackendPreference", 
+            UpdatePrediction(model, "BackendPreference",
+
                 bestExecution.Configuration.BackendType == BackendType.CUDA ? 1.0 : 0.0);
-            
-            UpdatePrediction(model, "ParallelismFactor", 
+
+
+            UpdatePrediction(model, "ParallelismFactor",
+
                 (double)bestExecution.Configuration.ParallelismDegree / Environment.ProcessorCount);
-            
-            UpdatePrediction(model, "MemoryStrategy", 
+
+
+            UpdatePrediction(model, "MemoryStrategy",
+
                 bestExecution.Configuration.MemoryStrategy == MemoryStrategy.Streaming ? 1.0 : 0.0);
-            
-            UpdatePrediction(model, "CacheStrategy", 
+
+
+            UpdatePrediction(model, "CacheStrategy",
+
                 bestExecution.Configuration.CacheStrategy == CacheStrategy.Aggressive ? 1.0 : 0.0);
-            
-            UpdatePrediction(model, "FusionPriority", 
+
+
+            UpdatePrediction(model, "FusionPriority",
+
                 bestExecution.Configuration.FusionEnabled ? 1.0 : 0.0);
         }
-        
+
+
         model.LastUpdated = DateTime.UtcNow;
     }
 
@@ -448,8 +511,9 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         {
             current = 0.5; // Default neutral prediction
         }
-        
+
         // Simple exponential moving average
+
         var updated = current + LearningRate * (target - current);
         model.Predictions[key] = Math.Max(0.0, Math.Min(1.0, updated));
     }
@@ -459,6 +523,39 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         _adaptationTimer?.Dispose();
         _modelLock?.Dispose();
     }
+
+    /// <summary>
+    /// Converts pipeline workload characteristics to core workload characteristics.
+    /// </summary>
+    private static DotCompute.Core.Optimization.WorkloadCharacteristics ConvertWorkloadCharacteristics(
+        Pipelines.Models.WorkloadCharacteristics pipelineCharacteristics)
+    {
+        return new DotCompute.Core.Optimization.WorkloadCharacteristics
+        {
+            DataSize = pipelineCharacteristics.DataSize,
+            OperationCount = pipelineCharacteristics.OperationCount,
+            MemoryIntensity = pipelineCharacteristics.MemoryIntensity,
+            ComputeIntensity = pipelineCharacteristics.ComputeIntensity,
+            ParallelismLevel = pipelineCharacteristics.ParallelismLevel,
+            AccessPattern = ConvertAccessPattern(pipelineCharacteristics.AccessPattern),
+            OptimizationHints = pipelineCharacteristics.OptimizationHints.ToList()
+        };
+    }
+
+    /// <summary>
+    /// Converts pipeline access pattern to core access pattern.
+    /// </summary>
+    private static DotCompute.Core.Optimization.AccessPattern ConvertAccessPattern(
+        Pipelines.Models.AccessPattern pipelinePattern)
+    {
+        return pipelinePattern switch
+        {
+            Pipelines.Models.AccessPattern.Sequential => DotCompute.Core.Optimization.AccessPattern.Sequential,
+            Pipelines.Models.AccessPattern.Random => DotCompute.Core.Optimization.AccessPattern.Random,
+            Pipelines.Models.AccessPattern.Strided => DotCompute.Core.Optimization.AccessPattern.Strided,
+            _ => DotCompute.Core.Optimization.AccessPattern.Sequential
+        };
+    }
 }
 
 // Supporting classes and enums
@@ -467,20 +564,12 @@ public interface ILinqOptimizationStrategy
     Task<QueryPlan> OptimizeAsync(QueryPlan plan, ExecutionContext context);
 }
 
-public class WorkloadCharacteristics
-{
-    public long DataSize { get; set; }
-    public int OperationCount { get; set; }
-    public double ComputeIntensity { get; set; }
-    public double MemoryIntensity { get; set; }
-    public double ParallelismPotential { get; set; }
-    public HardwareInfo Hardware { get; set; } = new();
-}
+// Pipelines.Models.WorkloadCharacteristics moved to shared location to avoid duplicates
 
 public class OptimizationModel
 {
     public string Signature { get; set; } = string.Empty;
-    public WorkloadCharacteristics BaseCharacteristics { get; set; } = new();
+    public DotCompute.Core.Optimization.WorkloadCharacteristics BaseCharacteristics { get; set; } = new();
     public Dictionary<string, double> Predictions { get; set; } = new();
     public Dictionary<string, double> Weights { get; set; } = new();
     public DateTime LastUpdated { get; set; }
@@ -496,7 +585,7 @@ public class ExecutionRecord
 {
     public DateTime Timestamp { get; set; }
     public OptimizationConfiguration Configuration { get; set; } = new();
-    public ExecutionContext Context { get; set; } = new();
+    public ExecutionContext? Context { get; set; }
     public PerformanceMetrics? PerformanceMetrics { get; set; }
 }
 
@@ -514,16 +603,13 @@ public class FusionCandidate
     public List<QueryOperation> Operations { get; set; } = new();
 }
 
-public enum BackendType
-{
-    CPU,
-    GPU
-}
 
 public enum MemoryStrategy
 {
+    Conservative,
     Buffered,
-    Streaming
+    Streaming,
+    Aggressive
 }
 
 public enum CacheStrategy
@@ -532,16 +618,7 @@ public enum CacheStrategy
     Aggressive
 }
 
-public enum OperationType
-{
-    Map,
-    Filter,
-    Reduce,
-    GroupBy,
-    Join,
-    Aggregate,
-    FusedKernel
-}
+// OperationType enum is defined in Models namespace - removed duplicate
 
 public class PerformanceMetrics
 {

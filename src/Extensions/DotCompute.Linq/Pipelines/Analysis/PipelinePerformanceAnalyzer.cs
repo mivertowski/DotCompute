@@ -69,11 +69,14 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
     public PipelinePerformanceAnalyzer(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-        _expressionAnalyzer = serviceProvider.GetService<IPipelineExpressionAnalyzer>() 
+        _expressionAnalyzer = serviceProvider.GetService<IPipelineExpressionAnalyzer>()
+
             ?? new PipelineExpressionAnalyzer(serviceProvider);
-        _logger = serviceProvider.GetService<ILogger<PipelinePerformanceAnalyzer>>() 
+        _logger = serviceProvider.GetService<ILogger<PipelinePerformanceAnalyzer>>()
+
             ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<PipelinePerformanceAnalyzer>.Instance;
-        
+
+
         _modelCache = new PerformanceModelCache();
         _backendCapabilities = InitializeBackendCapabilities();
     }
@@ -87,20 +90,25 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
         {
             // Convert to pipeline execution plan
             var executionPlan = await _expressionAnalyzer.ConvertToPipelinePlanAsync(linqExpression);
-            
+
             // Analyze each stage
+
             var stageAnalyses = await AnalyzeStagesAsync(executionPlan.Stages);
-            
+
             // Perform bottleneck analysis
+
             var bottlenecks = await AnalyzeBottlenecksAsync(executionPlan);
-            
+
             // Generate recommendations
+
             var recommendations = await GenerateOptimizationRecommendationsAsync(executionPlan);
-            
+
             // Estimate overall performance
+
             var overallEstimate = CalculateOverallPerformance(stageAnalyses);
-            
+
             // Generate alternative strategies
+
             var alternativeStrategies = GenerateAlternativeStrategies(executionPlan, bottlenecks);
 
             var report = new PipelinePerformanceReport
@@ -133,10 +141,12 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
 
         var expression = queryable.Expression;
         var executionPlan = await _expressionAnalyzer.ConvertToPipelinePlanAsync(expression);
-        
+
         // Analyze backend compatibility for each stage
+
         var backendScores = new Dictionary<string, BackendScore>();
-        
+
+
         foreach (var backend in _backendCapabilities.Keys)
         {
             var score = await CalculateBackendScore(backend, executionPlan);
@@ -145,7 +155,8 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
 
         // Select the best backend
         var bestBackend = backendScores.OrderByDescending(kv => kv.Value.OverallScore).First();
-        
+
+
         var recommendation = new BackendRecommendation
         {
             RecommendedBackend = bestBackend.Key,
@@ -167,7 +178,8 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
 
         var expression = queryable.Expression;
         var executionPlan = await _expressionAnalyzer.ConvertToPipelinePlanAsync(expression);
-        
+
+
         var memoryByStage = new Dictionary<int, long>();
         long peakMemory = 0;
         long totalMemory = 0;
@@ -176,7 +188,8 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
         {
             var stageMemory = EstimateStageMemoryUsage(stage);
             memoryByStage[stage.StageId] = stageMemory;
-            
+
+
             totalMemory += stageMemory;
             peakMemory = Math.Max(peakMemory, CalculatePeakMemoryAtStage(executionPlan.Stages, stage.StageId));
         }
@@ -264,22 +277,24 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
         return analyses;
     }
 
-    private async Task<StagePerformanceAnalysis> AnalyzeStagePerformanceAsync(PipelineStageInfo stage)
+    private Task<StagePerformanceAnalysis> AnalyzeStagePerformanceAsync(PipelineStageInfo stage)
     {
         // Use cached performance model if available
         var cacheKey = GeneratePerformanceCacheKey(stage);
         if (_modelCache.TryGetCachedAnalysis(cacheKey, out var cachedAnalysis))
         {
-            return cachedAnalysis;
+            return Task.FromResult(cachedAnalysis);
         }
 
         // Estimate execution time based on stage characteristics
         var executionTime = EstimateStageExecutionTime(stage);
-        
+
         // Estimate memory usage
+
         var memoryUsage = EstimateStageMemoryUsage(stage);
-        
+
         // Estimate throughput
+
         var throughput = EstimateStageThroughput(stage);
 
         var analysis = new StagePerformanceAnalysis
@@ -295,7 +310,7 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
         // Cache the analysis
         _modelCache.CacheAnalysis(cacheKey, analysis);
 
-        return analysis;
+        return Task.FromResult(analysis);
     }
 
     private TimeSpan EstimateStageExecutionTime(PipelineStageInfo stage)
@@ -436,7 +451,7 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
                 BackendName = "CPU",
                 MaxMemory = 32L * 1024 * 1024 * 1024, // 32GB
                 ComputeCapability = 100,
-                SupportedOperations = new[] { "All" },
+                SupportedOperations = ["All"],
                 Reliability = 0.95
             },
             ["CUDA"] = new BackendCapabilities
@@ -444,7 +459,7 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
                 BackendName = "CUDA",
                 MaxMemory = 24L * 1024 * 1024 * 1024, // 24GB for high-end GPUs
                 ComputeCapability = 1000,
-                SupportedOperations = new[] { "Transform", "Filter", "Reduction", "Grouping", "Sorting" },
+                SupportedOperations = ["Transform", "Filter", "Reduction", "Grouping", "Sorting"],
                 Reliability = 0.85
             }
         };
@@ -453,7 +468,8 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
     private async Task<List<BottleneckInfo>> AnalyzeStageBottlenecks(PipelineStageInfo stage, PipelineExecutionPlan pipeline)
     {
         await Task.Delay(1); // Simulate async analysis
-        
+
+
         var bottlenecks = new List<BottleneckInfo>();
 
         // Check for memory bottlenecks
@@ -599,14 +615,16 @@ public partial class PipelinePerformanceAnalyzer
     {
         var estimates = new Dictionary<string, BackendEstimate>
         {
-            ["CPU"] = new BackendEstimate 
-            { 
+            ["CPU"] = new BackendEstimate
+            {
+
                 EstimatedExecutionTime = TimeSpan.FromMilliseconds(100),
                 EstimatedMemory = 1024 * 1024,
                 PerformanceScore = 0.7
             },
-            ["GPU"] = new BackendEstimate 
-            { 
+            ["GPU"] = new BackendEstimate
+            {
+
                 EstimatedExecutionTime = TimeSpan.FromMilliseconds(50),
                 EstimatedMemory = 2048 * 1024,
                 PerformanceScore = 0.9

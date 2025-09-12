@@ -37,7 +37,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         // Initialize health check timer if enabled
         if (_options.EnableHealthChecks)
         {
-            _healthCheckTimer = new Timer(OnHealthCheckTimer, null,
+            _healthCheckTimer = new Timer(OnHealthCheckTimerWrapper, null,
                 _options.HealthCheckInterval, _options.HealthCheckInterval);
         }
     }
@@ -101,9 +101,17 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
     }
 
     /// <summary>
+    /// Timer callback wrapper for periodic health checks.
+    /// </summary>
+    private void OnHealthCheckTimerWrapper(object? state)
+    {
+        _ = Task.Run(async () => await OnHealthCheckTimer(state));
+    }
+
+    /// <summary>
     /// Timer callback for periodic health checks.
     /// </summary>
-    private async void OnHealthCheckTimer(object? state) => await PerformHealthChecksAsync().ConfigureAwait(false);
+    private async Task OnHealthCheckTimer(object? state) => await PerformHealthChecksAsync().ConfigureAwait(false);
 
     /// <summary>
     /// Checks the health of a single plugin.

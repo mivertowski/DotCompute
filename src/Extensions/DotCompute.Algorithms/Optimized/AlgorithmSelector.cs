@@ -59,11 +59,13 @@ public static class AlgorithmSelector
             // Simplified heuristic based on core count and architecture
 
 
+
             => _coreCount >= 8 && (_hasAvx2 || _hasFma);
 
 
         private static int CalculateOptimalThreadCount()
             // Conservative approach: use 75% of available cores for compute-intensive tasks
+
 
 
             => Math.Max(1, (int)(_coreCount * 0.75));
@@ -629,6 +631,7 @@ public static class AlgorithmSelector
 
     private static double BenchmarkBLASOperation(BLASOperation operation, int size)
         // Simplified BLAS benchmarking
+
 
 
         => size * 1000.0 / (size + 100); // Placeholder performance model

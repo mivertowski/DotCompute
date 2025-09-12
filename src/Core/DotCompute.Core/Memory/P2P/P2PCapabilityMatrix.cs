@@ -548,10 +548,12 @@ namespace DotCompute.Core.Memory.P2P
             // For now, assume all cached capabilities are fresh - TODO
 
 
+
             => true;
 
         private static DateTimeOffset GetCapabilityTimestamp(P2PConnectionCapability capability)
             // Placeholder - would return actual timestamp in real implementation - TODO
+
 
 
             => DateTimeOffset.UtcNow;
@@ -780,10 +782,12 @@ namespace DotCompute.Core.Memory.P2P
             // Placeholder - in real implementation would check timestamps - TODO
 
 
+
             => 0;
 
         private static double CalculateCacheHitRatio()
             // Placeholder - would track cache hits/misses in real implementation - TODO
+
 
 
             => 0.95; // Assume 95% cache hit ratio

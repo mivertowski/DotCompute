@@ -8,6 +8,57 @@ using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Linq.Pipelines.Models;
 
+#region Core Interface Bridge Types
+
+/// <summary>
+/// Interface for pipeline memory manager (bridges to Core interface).
+/// </summary>
+public interface IPipelineMemoryManager : IDisposable
+{
+    /// <summary>Allocates memory buffer of specified size.</summary>
+    Task<IMemoryBuffer> AllocateAsync(long size);
+
+
+    /// <summary>Releases allocated memory buffer.</summary>
+    Task ReleaseAsync(IMemoryBuffer buffer);
+}
+
+/// <summary>
+/// Interface for compute device (bridges to Core interface).
+/// </summary>
+public interface IComputeDevice : IDisposable
+{
+    /// <summary>Device name.</summary>
+    string Name { get; }
+
+
+    /// <summary>Device type.</summary>
+    string Type { get; }
+
+
+    /// <summary>Whether device is available.</summary>
+    bool IsAvailable { get; }
+
+
+    /// <summary>Initialize the device.</summary>
+    Task InitializeAsync();
+}
+
+/// <summary>
+/// Interface for memory buffer (bridges to Core interface).
+/// </summary>
+public interface IMemoryBuffer : IDisposable
+{
+    /// <summary>Buffer size in bytes.</summary>
+    long Size { get; }
+
+
+    /// <summary>Copy buffer to another buffer.</summary>
+    Task CopyToAsync(IMemoryBuffer destination);
+}
+
+#endregion
+
 /// <summary>
 /// Temporary interface definition for IAdvancedPipelineOptimizer.
 /// This will be moved to proper location once infrastructure is ready.
@@ -58,6 +109,9 @@ public interface IPipelineDiagnostics
 
     /// <summary>Gets identified performance bottlenecks.</summary>
     IReadOnlyList<BottleneckInfo> Bottlenecks { get; }
+
+    /// <summary>Gets the peak memory usage in bytes.</summary>
+    long PeakMemoryUsage { get; }
 }
 
 /// <summary>
@@ -109,10 +163,12 @@ public class PipelineValidationResult
 {
     /// <summary>Gets whether the pipeline is valid.</summary>
     public bool IsValid { get; set; }
-    
+
+
     /// <summary>Gets validation errors if any.</summary>
     public List<string> Errors { get; set; } = new();
-    
+
+
     /// <summary>Gets validation warnings if any.</summary>
     public List<string> Warnings { get; set; } = new();
 }
@@ -216,6 +272,7 @@ public class SimplePipelineDiagnostics : IPipelineDiagnostics
     public IReadOnlyList<IStagePerformanceMetrics> StageMetrics { get; set; } = new List<IStagePerformanceMetrics>();
     public IMemoryUsageStatistics MemoryUsage { get; set; } = new SimpleMemoryUsageStatistics();
     public IReadOnlyList<BottleneckInfo> Bottlenecks { get; set; } = new List<BottleneckInfo>();
+    public long PeakMemoryUsage { get; set; }
 }
 
 /// <summary>
@@ -294,6 +351,9 @@ public interface IPerformanceInsights
 
     /// <summary>Gets identified performance bottlenecks.</summary>
     IReadOnlyList<BottleneckInfo> Bottlenecks { get; }
+
+    /// <summary>Gets the peak memory usage in bytes.</summary>
+    long PeakMemoryUsage { get; }
 
     /// <summary>Gets performance improvement opportunities.</summary>
     IReadOnlyList<string> ImprovementOpportunities { get; }
@@ -457,8 +517,26 @@ public class WorkloadCharacteristics
     /// <summary>Data size in bytes.</summary>
     public long DataSize { get; set; }
 
+    /// <summary>Secondary data size in bytes.</summary>
+    public long SecondaryDataSize { get; set; }
+
+    /// <summary>Workload variance (0.0 to 1.0) indicating variability in work per element.</summary>
+    public double WorkloadVariance { get; set; }
+
     /// <summary>Workload type description.</summary>
     public string WorkloadType { get; set; } = string.Empty;
+
+    /// <summary>Whether this workload is suitable for GPU execution.</summary>
+    public bool IsGpuSuitable { get; set; }
+
+    /// <summary>Number of operations in the workload.</summary>
+    public int OperationCount { get; set; }
+
+    /// <summary>Parallelism potential (0.0 to 1.0).</summary>
+    public double ParallelismPotential { get; set; }
+
+    /// <summary>Hardware information for this workload.</summary>
+    public object? Hardware { get; set; }
 }
 
 /// <summary>
@@ -471,6 +549,9 @@ public class BackendRecommendation
 
     /// <summary>Confidence in recommendation (0.0 to 1.0).</summary>
     public double Confidence { get; set; }
+
+    /// <summary>Reasoning for the backend recommendation.</summary>
+    public string Reasoning { get; set; } = string.Empty;
 
     /// <summary>Backend performance estimates.</summary>
     public Dictionary<string, BackendEstimate> BackendEstimates { get; set; } = new();
@@ -554,7 +635,8 @@ public interface IPipelineResourceManager
 {
     /// <summary>Gets available resources.</summary>
     Task<object> GetAvailableResourcesAsync();
-    
+
+
     /// <summary>Releases resources.</summary>
     Task ReleaseResourcesAsync();
 }
@@ -566,7 +648,8 @@ public interface IPipelineCacheManager
 {
     /// <summary>Clears the cache.</summary>
     Task ClearCacheAsync();
-    
+
+
     /// <summary>Gets cache statistics.</summary>
     Task<object> GetCacheStatsAsync();
 }
@@ -587,7 +670,8 @@ public interface IPipelineExecutionGraph
 {
     /// <summary>Gets the graph nodes.</summary>
     IEnumerable<object> Nodes { get; }
-    
+
+
     /// <summary>Gets the graph edges.</summary>
     IEnumerable<object> Edges { get; }
 }
@@ -596,34 +680,106 @@ public interface IPipelineExecutionGraph
 
 #endregion
 
+// Options classes moved to GpuOptions.cs to avoid duplication
+
+
 /// <summary>
-/// Temporary extension of IKernelPipelineBuilder to add missing methods.
-/// This will be moved to proper location once infrastructure is ready.
+/// Extension methods to bridge LINQ IKernelPipelineBuilder to Core IKernelPipelineBuilder.
+/// Provides backward compatibility while unifying on the Core interface.
 /// </summary>
 public static class KernelPipelineBuilderExtensions
 {
     /// <summary>
     /// Creates a new empty pipeline for manual construction.
+    /// Bridges LINQ interface to Core interface.
     /// </summary>
     /// <param name="builder">The pipeline builder</param>
-    /// <returns>A new empty pipeline object</returns>
-    public static object Create(this IKernelPipelineBuilder builder)
+    /// <returns>A new empty Core pipeline</returns>
+    public static object Create(this DotCompute.Core.Pipelines.IKernelPipelineBuilder builder)
     {
-        // Return an empty pipeline object - in production this would return IKernelPipeline
-        return new { };
+        ArgumentNullException.ThrowIfNull(builder);
+
+        // Create empty Core pipeline
+
+        return builder.WithName("EmptyPipeline").Build();
     }
 
     /// <summary>
     /// Creates a pipeline from a LINQ expression tree.
+    /// Bridges LINQ interface to Core interface.
     /// </summary>
     /// <param name="builder">The pipeline builder</param>
     /// <param name="expression">The expression to convert to a pipeline</param>
-    /// <returns>A pipeline object based on the expression</returns>
-    public static object FromExpression(this IKernelPipelineBuilder builder, System.Linq.Expressions.Expression expression)
+    /// <returns>A Core pipeline based on the expression</returns>
+    public static object FromExpression(this DotCompute.Core.Pipelines.IKernelPipelineBuilder builder, System.Linq.Expressions.Expression expression)
     {
+        ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(expression);
-        // Return a pipeline object based on the expression - in production this would return IKernelPipeline
-        return new { Expression = expression };
+
+        // Create Core pipeline from expression
+
+        return builder
+            .WithName($"ExpressionPipeline_{expression.GetHashCode()}")
+            .WithMetadata("SourceExpression", expression.ToString())
+            .Build();
+    }
+
+    /// <summary>
+    /// Creates a pipeline from data array.
+    /// Extension method for data-based pipeline construction.
+    /// </summary>
+    /// <typeparam name="T">Data element type</typeparam>
+    /// <param name="builder">The pipeline builder</param>
+    /// <param name="data">Source data array</param>
+    /// <returns>A Core pipeline configured for the data</returns>
+    public static object FromData<T>(this DotCompute.Core.Pipelines.IKernelPipelineBuilder builder, T[] data)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(data);
+
+        // Create Core pipeline with data input
+
+        return builder
+            .WithName($"DataPipeline_{typeof(T).Name}")
+            .WithMetadata("InputDataSize", data.Length)
+            .WithMetadata("InputDataType", typeof(T).Name)
+            .Build();
+    }
+
+    /// <summary>
+    /// Creates a streaming pipeline from async enumerable.
+    /// Extension method for streaming data pipeline construction.
+    /// </summary>
+    /// <typeparam name="T">Stream element type</typeparam>
+    /// <param name="builder">The pipeline builder</param>
+    /// <param name="source">Source async enumerable</param>
+    /// <param name="options">Stream pipeline options</param>
+    /// <returns>A Core pipeline configured for streaming</returns>
+    public static object FromStream<T>(
+        this DotCompute.Core.Pipelines.IKernelPipelineBuilder builder,
+
+        IAsyncEnumerable<T> source,
+
+        StreamPipelineOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(options);
+
+        // Create Core streaming pipeline
+
+        return builder
+            .WithName($"StreamPipeline_{typeof(T).Name}")
+            .WithMetadata("BatchSize", options.BatchSize)
+            .WithMetadata("WindowSize", options.WindowSize.TotalMilliseconds)
+            .WithMetadata("EnableBackpressure", options.EnableBackpressure)
+            .WithOptimization(settings =>
+            {
+                settings.EnableStreaming = true;
+                settings.EnableMemoryOptimization = true;
+                settings.Level = DotCompute.Core.Pipelines.PipelineOptimizationLevel.Balanced;
+            })
+            .Build();
     }
 }
 
@@ -665,18 +821,134 @@ public static class AsyncEnumerableExtensions
         int count)
     {
         ArgumentNullException.ThrowIfNull(source);
-        
+
+
         if (count <= 0)
+        {
             yield break;
+        }
 
         var taken = 0;
         await foreach (var item in source)
         {
             if (taken >= count)
+            {
                 yield break;
-                
+            }
+
             yield return item;
             taken++;
         }
     }
+
+    /// <summary>
+    /// Buffers elements from an async sequence into batches.
+    /// </summary>
+    /// <typeparam name="TSource">Source element type</typeparam>
+    /// <param name="source">Source async enumerable</param>
+    /// <param name="batchSize">Size of each batch</param>
+    /// <returns>Async enumerable of batched elements</returns>
+    public static async IAsyncEnumerable<TSource[]> Buffer<TSource>(
+        this IAsyncEnumerable<TSource> source,
+        int batchSize)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+
+        if (batchSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(batchSize), "Batch size must be positive");
+        }
+
+        var buffer = new List<TSource>(batchSize);
+
+
+        await foreach (var item in source)
+        {
+            buffer.Add(item);
+
+
+            if (buffer.Count >= batchSize)
+            {
+                yield return buffer.ToArray();
+                buffer.Clear();
+            }
+        }
+
+        // Yield remaining items if any
+
+        if (buffer.Count > 0)
+        {
+            yield return buffer.ToArray();
+        }
+    }
 }
+
+#region Missing Types for ComprehensivePipelineDemo
+
+/// <summary>
+/// Represents an aggregate function for pipeline operations.
+/// </summary>
+/// <typeparam name="T">The type being aggregated</typeparam>
+public class AggregateFunction<T>
+{
+    /// <summary>Gets or sets the aggregation function.</summary>
+    public Func<IEnumerable<T>, T>? Function { get; set; }
+
+
+    /// <summary>Gets or sets the function name for kernel generation.</summary>
+    public string Name { get; set; } = string.Empty;
+
+
+    /// <summary>Gets or sets whether the function is associative.</summary>
+    public bool IsAssociative { get; set; }
+
+
+    /// <summary>Gets or sets whether the function is commutative.</summary>
+    public bool IsCommutative { get; set; }
+
+
+    /// <summary>Gets or sets the initial/seed value for reduction.</summary>
+    public T? InitialValue { get; set; }
+
+
+    /// <summary>Creates a sum aggregate function.</summary>
+    public static AggregateFunction<T> Sum() => new()
+    {
+        Name = "Sum",
+        IsAssociative = true,
+        IsCommutative = true
+    };
+
+
+    /// <summary>Creates an average aggregate function.</summary>
+    public static AggregateFunction<T> Average() => new()
+    {
+        Name = "Average",
+        IsAssociative = false,
+        IsCommutative = true
+    };
+
+
+    /// <summary>Creates a min aggregate function.</summary>
+    public static AggregateFunction<T> Min() => new()
+    {
+        Name = "Min",
+        IsAssociative = true,
+        IsCommutative = true
+    };
+
+
+    /// <summary>Creates a max aggregate function.</summary>
+    public static AggregateFunction<T> Max() => new()
+    {
+        Name = "Max",
+        IsAssociative = true,
+        IsCommutative = true
+    };
+}
+
+// StreamPipelineOptions is defined in DotCompute.Linq.Pipelines.Models.PipelineExecutionPlan
+
+
+#endregion

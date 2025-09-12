@@ -201,6 +201,7 @@ public class DefaultKernelFactory : IKernelFactory
 
 
 
+
         => _logger.LogDebugMessage("Built-in generators will be registered through backend plugins");
 
     private static Dictionary<string, object>? ExtractFusionMetadata(DotCompute.Abstractions.Kernels.KernelDefinition definition)
@@ -348,6 +349,7 @@ internal class PlaceholderKernel : IKernel
         // Placeholder compilation - just return completed task
 
 
+
         => Task.CompletedTask;
 
     /// <summary>
@@ -362,6 +364,7 @@ internal class PlaceholderKernel : IKernel
         // In a real implementation, this would execute the kernel code
 
 
+
         => Task.CompletedTask;
 
     /// <summary>
@@ -370,6 +373,7 @@ internal class PlaceholderKernel : IKernel
     /// <returns>The kernel parameter information.</returns>
     public static IReadOnlyList<DotCompute.Abstractions.Kernels.KernelParameter> GetParameterInfo()
         // Return empty list as placeholder doesn't have parameters
+
 
 
         => Array.Empty<DotCompute.Abstractions.Kernels.KernelParameter>();

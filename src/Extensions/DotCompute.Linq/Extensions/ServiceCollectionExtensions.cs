@@ -72,8 +72,9 @@ public static class ServiceCollectionExtensions
 
         // Add the integrated query provider that uses IComputeOrchestrator
         services.AddSingleton<IntegratedComputeQueryProvider>();
-        
+
         // Add the main LINQ provider using the integrated approach
+
         services.AddSingleton<IComputeLinqProvider, RuntimeIntegratedLinqProvider>();
 
         // Add query provider factory for backward compatibility
@@ -511,10 +512,11 @@ public class ComputeLinqProviderImpl : IComputeLinqProvider
     public IQueryable<T> CreateQueryable<T>(IEnumerable<T> source, IAccelerator? accelerator = null)
     {
         ArgumentNullException.ThrowIfNull(source);
-        
+
         // Use the new IServiceProvider-based method
         // For this implementation, we need a service provider, but we don't have one here
         // This is a design issue that needs to be resolved with proper DI integration
+
         throw new NotImplementedException("This method requires proper DI integration. Use CreateQueryable with IServiceProvider instead.");
     }
 
@@ -539,7 +541,8 @@ public class ComputeLinqProviderImpl : IComputeLinqProvider
 
         var provider = GetOrCreateProvider(preferredAccelerator);
         var result = provider.Execute<T>(expression);
-        
+
+
         return await Task.FromResult(result);
     }
 
@@ -547,7 +550,8 @@ public class ComputeLinqProviderImpl : IComputeLinqProvider
     public IEnumerable<Interfaces.OptimizationSuggestion> GetOptimizationSuggestions(System.Linq.Expressions.Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
-        
+
+
         var suggestions = _optimizer.Analyze(expression);
         return suggestions.Select(s => new Interfaces.OptimizationSuggestion
         {
@@ -562,8 +566,9 @@ public class ComputeLinqProviderImpl : IComputeLinqProvider
     public bool IsGpuCompatible(System.Linq.Expressions.Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
-        
+
         // Use the expression optimizer to check compatibility
+
         try
         {
             var suggestions = _optimizer.Analyze(expression);
@@ -579,7 +584,8 @@ public class ComputeLinqProviderImpl : IComputeLinqProvider
     public async Task PrecompileExpressionsAsync(IEnumerable<System.Linq.Expressions.Expression> expressions, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(expressions);
-        
+
+
         var tasks = expressions.Select(async expr =>
         {
             try
@@ -1105,17 +1111,21 @@ internal class DefaultKernelPipeline : IKernelPipeline
     public async ValueTask<DotCompute.Core.Pipelines.PipelineExecutionResult> ExecuteAsync(DotCompute.Core.Pipelines.PipelineExecutionContext context, CancellationToken cancellationToken = default)
     {
         await Task.CompletedTask;
-        return new DotCompute.Core.Pipelines.PipelineExecutionResult 
-        { 
-            Success = true, 
+        return new DotCompute.Core.Pipelines.PipelineExecutionResult
+        {
+
+            Success = true,
+
             Outputs = new Dictionary<string, object>(),
-            Metrics = new DotCompute.Core.Pipelines.PipelineExecutionMetrics 
+            Metrics = new DotCompute.Core.Pipelines.PipelineExecutionMetrics
+
             {
                 ExecutionId = "default",
                 StartTime = DateTime.UtcNow,
                 EndTime = DateTime.UtcNow,
                 Duration = TimeSpan.Zero,
-                MemoryUsage = new DotCompute.Core.Pipelines.MemoryUsageStats 
+                MemoryUsage = new DotCompute.Core.Pipelines.MemoryUsageStats
+
                 {
                     AllocatedBytes = 0,
                     PeakBytes = 0,
@@ -1249,12 +1259,15 @@ public static class PipelineTelemetryServiceCollectionExtensions
 
         services.AddSingleton(options);
         services.AddSingleton<PipelineMetricsService>();
-        
+
         // Add logging
+
         services.AddLogging();
-        
+
+
         return services;
     }
 }
+
 
 #endregion

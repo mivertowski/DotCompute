@@ -16,12 +16,12 @@ using DotCompute.Backends.CUDA.Compilation;
 using AbstractionsKernelLanguage = DotCompute.Abstractions.Types.KernelLanguage;
 using CudaKernelLanguage = DotCompute.Backends.CUDA.Compilation.KernelLanguage;
 using DotCompute.Backends.CUDA.Types;
-using DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates;
-using DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Optimization;
-using DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory;
+using DotCompute.Linq.KernelGeneration.Templates;
+using DotCompute.Linq.KernelGeneration.Optimization;
+using DotCompute.Linq.KernelGeneration.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
+namespace DotCompute.Linq.KernelGeneration
 {
     /// <summary>
     /// Main CUDA kernel generator for LINQ expressions.
@@ -75,22 +75,27 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
             {
                 // Analyze the expression tree
                 var analysisResult = AnalyzeExpression(expression, inputType, outputType);
-                
+
                 // Select appropriate kernel template
+
                 var template = _templates.SelectTemplate(analysisResult.OperationType, inputType, outputType);
-                
+
                 // Generate optimized CUDA source code
+
                 var sourceCode = await GenerateSourceCodeAsync(template, analysisResult, kernelOptions);
-                
+
                 // Apply GPU-specific optimizations
+
                 var optimizedSource = await _optimizer.OptimizeKernelSourceAsync(
                     sourceCode, analysisResult, kernelOptions);
-                
+
                 // Compile to PTX or CUBIN
+
                 var compiledKernel = await CompileKernelAsync(
                     optimizedSource, analysisResult.KernelName, kernelOptions, cancellationToken);
-                
+
                 // Create generated kernel wrapper
+
                 var generatedKernel = new GeneratedKernel(
                     compiledKernel,
                     analysisResult,
@@ -181,7 +186,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
             }
 
             // Generate the main kernel function
-            var kernelSource = await template.GenerateKernelAsync(analysis, options);
+            var templateOptions = ConvertToTemplateOptions(options);
+            var kernelSource = await template.GenerateKernelAsync(analysis, templateOptions);
             sourceBuilder.Append(kernelSource);
 
             return sourceBuilder.ToString();
@@ -205,7 +211,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
             };
 
             var compilationOptions = CreateCompilationOptions(options);
-            
+
+
             return await _compiler.CompileAsync(kernelDefinition, compilationOptions, cancellationToken);
         }
 
@@ -221,7 +228,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
 
             // Core CUDA functionality (available in NVRTC without includes)
             sourceBuilder.AppendLine("// CUDA built-in variables and functions are implicitly available");
-            
+
+
             if (analysis.RequiresCooperativeGroups)
             {
                 sourceBuilder.AppendLine("#include <cooperative_groups.h>");
@@ -247,7 +255,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
         private void AddOptimizationDefines(StringBuilder sourceBuilder, KernelGenerationOptions options)
         {
             var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
-            
+
+
             sourceBuilder.AppendLine($"// Target compute capability: {major}.{minor}");
             sourceBuilder.AppendLine("#define WARP_SIZE 32");
             sourceBuilder.AppendLine($"#define MAX_THREADS_PER_BLOCK {GetMaxThreadsPerBlock(major, minor)}");
@@ -262,7 +271,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
             {
                 sourceBuilder.AppendLine("#define AMPERE_OPTIMIZATIONS 1");
                 sourceBuilder.AppendLine("#define ASYNC_COPY_AVAILABLE 1");
-                
+
+
                 if (minor >= 9) // Ada Lovelace
                 {
                     sourceBuilder.AppendLine("#define ADA_OPTIMIZATIONS 1");
@@ -289,10 +299,12 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
         private void AddTypeDefinitions(StringBuilder sourceBuilder, Type inputType, Type outputType)
         {
             sourceBuilder.AppendLine("// Type definitions");
-            
+
+
             var inputTypeName = GetCudaTypeName(inputType);
             var outputTypeName = GetCudaTypeName(outputType);
-            
+
+
             sourceBuilder.AppendLine($"typedef {inputTypeName} InputType;");
             sourceBuilder.AppendLine($"typedef {outputTypeName} OutputType;");
             sourceBuilder.AppendLine();
@@ -304,7 +316,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
         private void AddDeviceFunctions(StringBuilder sourceBuilder, ExpressionAnalysisResult analysis)
         {
             sourceBuilder.AppendLine("// Device functions");
-            
+
+
             if (analysis.RequiresCustomMath)
             {
                 AddMathDeviceFunctions(sourceBuilder);
@@ -420,7 +433,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
             var inputTypeName = GetSimpleTypeName(inputType);
             var outputTypeName = GetSimpleTypeName(outputType);
             var timestamp = DateTime.UtcNow.Ticks;
-            
+
+
             return $"linq_{operationType.ToString().ToLowerInvariant()}_{inputTypeName}_to_{outputTypeName}_{timestamp}";
         }
 
@@ -432,7 +446,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
             // Basic estimation - can be enhanced with actual data analysis
             var typeSize = GetTypeSize(inputType);
             var estimatedElementCount = 1000; // Default estimation
-            
+
+
             return typeSize * estimatedElementCount;
         }
 
@@ -502,11 +517,31 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
         {
             return (major, minor) switch
             {
-                (>= 8, >= 9) => 1024, // Ada Lovelace
-                (>= 8, _) => 1024,    // Ampere
-                (>= 7, _) => 1024,    // Volta/Turing
-                (>= 5, _) => 1024,    // Maxwell/Pascal
+                ( >= 8, >= 9) => 1024, // Ada Lovelace
+                ( >= 8, _) => 1024,    // Ampere
+                ( >= 7, _) => 1024,    // Volta/Turing
+                ( >= 5, _) => 1024,    // Maxwell/Pascal
                 _ => 512              // Older architectures
+            };
+        }
+
+        /// <summary>
+        /// Converts KernelGenerationOptions to Templates.KernelGenerationOptions.
+        /// </summary>
+        private Templates.KernelGenerationOptions ConvertToTemplateOptions(KernelGenerationOptions options)
+        {
+            return new Templates.KernelGenerationOptions
+            {
+                GenerateDebugInfo = options.EnableDebugInfo, // Note: different property name
+                EnableAggressiveOptimizations = options.OptimizationLevel >= OptimizationLevel.Aggressive,
+                TargetComputeCapability = null, // Set based on system detection
+                MaxRegistersPerThread = options.MaxRegisterCount,
+                PreprocessorDefinitions = null, // Could be added if needed
+                IncludeDirectories = null, // Could be added if needed
+                TemplateVariables = null, // Could be added if needed
+                EnableWarpShuffle = options.EnableWarpShuffle,
+                EnableAtomics = options.EnableAtomics,
+                UseSharedMemory = options.UseSharedMemory
             };
         }
 
@@ -523,7 +558,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
             keyBuilder.Append(outputType.FullName);
             keyBuilder.Append('_');
             keyBuilder.Append(options.GetHashCode());
-            
+
+
             return Convert.ToBase64String(Encoding.UTF8.GetBytes(keyBuilder.ToString()));
         }
 
@@ -545,7 +581,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
         public KernelCacheStatistics GetCacheStatistics()
         {
             var validEntries = _kernelCache.Values.Where(e => !e.IsExpired).ToArray();
-            
+
+
             return new KernelCacheStatistics
             {
                 TotalEntries = _kernelCache.Count,
@@ -564,7 +601,10 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration
         public void Dispose()
         {
             if (_disposed)
+            {
                 return;
+            }
+
 
             ClearCache();
             _optimizer.Dispose();

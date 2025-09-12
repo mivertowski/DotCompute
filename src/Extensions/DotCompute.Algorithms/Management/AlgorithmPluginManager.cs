@@ -105,7 +105,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
         // Initialize health check timer if enabled
         if (_options.EnableHealthChecks)
         {
-            _healthCheckTimer = new Timer(PerformHealthChecks, null, 
+            _healthCheckTimer = new Timer(PerformHealthChecksWrapper, null, 
                 _options.HealthCheckInterval, _options.HealthCheckInterval);
         }
         else
@@ -1383,7 +1383,12 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     /// <summary>
     /// Performs health checks on all loaded plugins.
     /// </summary>
-    private async void PerformHealthChecks(object? state)
+    private void PerformHealthChecksWrapper(object? state)
+    {
+        _ = Task.Run(async () => await PerformHealthChecks(state));
+    }
+
+    private async Task PerformHealthChecks(object? state)
     {
         if (_disposed) return;
 

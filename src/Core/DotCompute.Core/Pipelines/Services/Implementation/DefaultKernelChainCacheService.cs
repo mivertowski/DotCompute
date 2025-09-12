@@ -45,14 +45,17 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
         public async Task SetAsync<T>(string key, T value, TimeSpan? ttl = null, CancellationToken cancellationToken = default) where T : class
         {
             var options = new MemoryCacheEntryOptions();
-            
+
+
             if (ttl.HasValue)
             {
                 options.AbsoluteExpirationRelativeToNow = ttl;
             }
-            
+
+
             options.Size = 1; // Simple size tracking
-            
+
+
             _cache.Set(key, value, options);
             _logger?.LogDebug("Cached value for key '{Key}' with TTL {TTL}", key, ttl);
             await Task.CompletedTask;

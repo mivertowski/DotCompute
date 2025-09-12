@@ -58,7 +58,8 @@ public class MockComputeOrchestrator : IComputeOrchestrator
     public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
     {
         var startTime = DateTime.UtcNow;
-        
+
+
         try
         {
             if (!_kernelMocks.TryGetValue(kernelName, out var mockImplementation))
@@ -67,8 +68,9 @@ public class MockComputeOrchestrator : IComputeOrchestrator
             }
 
             var result = await mockImplementation(args);
-            
+
             // Record successful execution
+
             _executionHistory.Add(new KernelExecutionRecord
             {
                 KernelName = kernelName,
@@ -93,7 +95,8 @@ public class MockComputeOrchestrator : IComputeOrchestrator
                 Success = false,
                 Error = ex
             });
-            
+
+
             throw;
         }
     }
@@ -141,6 +144,21 @@ public class MockComputeOrchestrator : IComputeOrchestrator
         return Task.FromResult(_kernelMocks.ContainsKey(kernelName));
     }
 
+    public async Task<object?> ExecuteKernelAsync(string kernelName, IKernelExecutionParameters executionParameters)
+    {
+        // Extract arguments from execution parameters and delegate to existing method
+        var args = executionParameters.Arguments ?? Array.Empty<object>();
+        var result = await ExecuteAsync<object>(kernelName, args);
+        return result;
+    }
+
+    public async Task<object?> ExecuteKernelAsync(string kernelName, object[] args, CancellationToken cancellationToken = default)
+    {
+        // Delegate to existing method (ignoring cancellation token for mock)
+        var result = await ExecuteAsync<object>(kernelName, args);
+        return result;
+    }
+
     #endregion
 
     #region Legacy Methods (for backward compatibility with existing tests)
@@ -150,8 +168,10 @@ public class MockComputeOrchestrator : IComputeOrchestrator
     /// </summary>
     [Obsolete("Use ExecuteAsync instead")]
     public async Task<T> ExecuteKernelAsync<T>(
-        string kernelName, 
-        object[] arguments, 
+        string kernelName,
+
+        object[] arguments,
+
         CancellationToken cancellationToken = default)
     {
         return await ExecuteAsync<T>(kernelName, arguments);
@@ -162,8 +182,10 @@ public class MockComputeOrchestrator : IComputeOrchestrator
     /// </summary>
     [Obsolete("Use ExecuteAsync instead")]
     public async Task<T> ExecuteKernelAsync<T>(
-        KernelDefinition kernelDefinition, 
-        object[] arguments, 
+        KernelDefinition kernelDefinition,
+
+        object[] arguments,
+
         CancellationToken cancellationToken = default)
     {
         return await ExecuteAsync<T>(kernelDefinition.Name, arguments);
@@ -199,19 +221,23 @@ public class MockComputeOrchestrator : IComputeOrchestrator
         {
             if (args.Length != 3)
                 throw new ArgumentException("VectorAdd requires 3 arguments");
-                
+
+
             var a = (float[])args[0];
             var b = (float[])args[1];
             var result = (float[])args[2];
-            
+
+
             if (a.Length != b.Length || a.Length != result.Length)
                 throw new ArgumentException("Array lengths must match");
-                
+
+
             for (int i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
             }
-            
+
+
             return result;
         };
     }
@@ -226,19 +252,23 @@ public class MockComputeOrchestrator : IComputeOrchestrator
         {
             if (args.Length != 3)
                 throw new ArgumentException("VectorMultiply requires 3 arguments");
-                
+
+
             var a = (float[])args[0];
             var b = (float[])args[1];
             var result = (float[])args[2];
-            
+
+
             if (a.Length != b.Length || a.Length != result.Length)
                 throw new ArgumentException("Array lengths must match");
-                
+
+
             for (int i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] * b[i];
             }
-            
+
+
             return result;
         };
     }
@@ -253,10 +283,12 @@ public class MockComputeOrchestrator : IComputeOrchestrator
         {
             if (args.Length != 2)
                 throw new ArgumentException("Aggregate requires 2 arguments");
-                
+
+
             var input = (float[])args[0];
             var operation = (Func<float, float, float>)args[1];
-            
+
+
             return input.Aggregate(operation);
         };
     }

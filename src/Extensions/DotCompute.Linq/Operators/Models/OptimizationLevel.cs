@@ -21,6 +21,21 @@ public enum OptimizationLevel
     Default,
 
     /// <summary>
+    /// Basic optimization level (-O1 equivalent).
+    /// </summary>
+    O1,
+
+    /// <summary>
+    /// Standard optimization level (-O2 equivalent).
+    /// </summary>
+    O2,
+
+    /// <summary>
+    /// Advanced optimization level (-O3 equivalent).
+    /// </summary>
+    O3,
+
+    /// <summary>
     /// Release mode with standard optimizations.
     /// </summary>
     Release,
@@ -28,5 +43,10 @@ public enum OptimizationLevel
     /// <summary>
     /// Aggressive optimization mode.
     /// </summary>
-    Aggressive
+    Aggressive,
+
+    /// <summary>
+    /// Balanced optimization mode.
+    /// </summary>
+    Balanced
 }

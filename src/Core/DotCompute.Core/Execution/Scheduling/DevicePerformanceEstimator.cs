@@ -51,6 +51,7 @@ internal class DevicePerformanceEstimator
         // TODO: Use device.Type to determine performance factor
         // For now, return a default value
 
+
         => 1.0;
 
 
@@ -60,6 +61,7 @@ internal class DevicePerformanceEstimator
     public static long PredictMemoryRequirement(string kernelName, long inputDataSize)
         // TODO: Implement based on kernel analysis and historical data
         // For now, estimate 2x input size for working memory
+
 
         => inputDataSize * 2;
 

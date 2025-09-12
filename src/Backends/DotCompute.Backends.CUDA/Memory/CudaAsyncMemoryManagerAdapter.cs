@@ -278,6 +278,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
             // Optimization not implemented
 
+
             => ValueTask.CompletedTask;
 
 

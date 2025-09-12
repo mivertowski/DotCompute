@@ -402,9 +402,38 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         {
             return await _baseOrchestrator.ValidateKernelArgsAsync(kernelName, args);
         }
-        
+
         // Basic validation - just check if kernel exists and args are not null
+
         return !string.IsNullOrEmpty(kernelName) && args != null;
+    }
+
+    /// <inheritdoc />
+    public async Task<object?> ExecuteKernelAsync(string kernelName, IKernelExecutionParameters executionParameters)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (!_options.EnableDebugHooks)
+        {
+            return await _baseOrchestrator.ExecuteKernelAsync(kernelName, executionParameters);
+        }
+
+        var result = await ExecuteWithDebugHooksAsync<object>(kernelName, executionParameters.Arguments);
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async Task<object?> ExecuteKernelAsync(string kernelName, object[] args, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (!_options.EnableDebugHooks)
+        {
+            return await _baseOrchestrator.ExecuteKernelAsync(kernelName, args, cancellationToken);
+        }
+
+        var result = await ExecuteWithDebugHooksAsync<object>(kernelName, args);
+        return result;
     }
 
     public void Dispose()

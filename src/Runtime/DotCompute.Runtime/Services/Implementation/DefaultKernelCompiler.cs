@@ -36,13 +36,15 @@ public class DefaultKernelCompiler : IKernelCompiler
 
     /// <inheritdoc />
     public async Task<ICompiledKernel> CompileAsync(
-        KernelDefinition kernelDefinition, 
+        KernelDefinition kernelDefinition,
+
         IAccelerator accelerator,
         CancellationToken cancellationToken = default)
     {
         var backendType = accelerator.Info.DeviceType.ToUpperInvariant();
-        
+
         // Try to get backend-specific compiler
+
         if (_backendCompilers.TryGetValue(backendType, out var backendCompiler))
         {
             _logger.CompilerSelected(backendType, kernelDefinition.Name);
@@ -51,7 +53,8 @@ public class DefaultKernelCompiler : IKernelCompiler
 
         // Fallback: Use accelerator's built-in compilation
         _logger.CompilerSelected("built-in", kernelDefinition.Name);
-        
+
+
         var compilationOptions = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Full,
@@ -60,8 +63,9 @@ public class DefaultKernelCompiler : IKernelCompiler
         };
 
         return await accelerator.CompileKernelAsync(
-            kernelDefinition, 
-            compilationOptions, 
+            kernelDefinition,
+            compilationOptions,
+
             cancellationToken);
     }
 
@@ -69,8 +73,9 @@ public class DefaultKernelCompiler : IKernelCompiler
     public async Task<bool> CanCompileAsync(KernelDefinition kernelDefinition, IAccelerator accelerator)
     {
         var backendType = accelerator.Info.DeviceType.ToUpperInvariant();
-        
+
         // Check if we have a backend-specific compiler
+
         if (_backendCompilers.TryGetValue(backendType, out var backendCompiler))
         {
             return await backendCompiler.CanCompileAsync(kernelDefinition, accelerator);
@@ -84,7 +89,8 @@ public class DefaultKernelCompiler : IKernelCompiler
     public CompilationOptions GetSupportedOptions(IAccelerator accelerator)
     {
         var backendType = accelerator.Info.DeviceType.ToUpperInvariant();
-        
+
+
         if (_backendCompilers.TryGetValue(backendType, out var backendCompiler))
         {
             return backendCompiler.GetSupportedOptions(accelerator);

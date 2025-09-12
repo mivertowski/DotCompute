@@ -8,6 +8,7 @@ using DotCompute.Core.Pipelines.Exceptions;
 using DotCompute.Linq.Pipelines.Integration;
 using DotCompute.Linq.Pipelines.Models;
 using Microsoft.Extensions.Logging;
+using IKernelPipeline = DotCompute.Core.Pipelines.IKernelPipeline;
 
 namespace DotCompute.Linq.Pipelines.Diagnostics;
 
@@ -77,7 +78,8 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         var errorType = ClassifyError(exception);
         var severity = DetermineSeverity(exception, context);
         var recoveryStrategies = await GetRecoveryStrategiesAsync(errorType, context);
-        
+
+
         var result = new PipelineErrorResult
         {
             ErrorType = errorType,
@@ -161,14 +163,17 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         {
             // Validate pipeline structure
             await ValidatePipelineStructureAsync(pipeline, validationResult);
-            
+
             // Validate resource requirements
+
             await ValidateResourceRequirementsAsync(pipeline, validationResult);
-            
+
             // Validate backend compatibility
+
             await ValidateBackendCompatibilityAsync(pipeline, validationResult);
-            
+
             // Validate performance characteristics
+
             await ValidatePerformanceCharacteristicsAsync(pipeline, validationResult);
 
             validationResult.IsValid = !validationResult.Errors.Any();
@@ -242,8 +247,9 @@ public class PipelineErrorHandler : IPipelineErrorHandler
     private PipelineErrorType ClassifyError(Exception exception)
     {
         var exceptionType = exception.GetType();
-        
+
         // Direct mapping
+
         if (_exceptionTypeMapping.TryGetValue(exceptionType, out var errorType))
         {
             return errorType;
@@ -261,11 +267,25 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         // Analyze exception message for additional classification
         var message = exception.Message.ToLowerInvariant();
         if (message.Contains("memory") || message.Contains("out of"))
+        {
+
             return PipelineErrorType.MemoryExhausted;
+        }
+
+
         if (message.Contains("timeout") || message.Contains("time"))
+        {
+
             return PipelineErrorType.Timeout;
+        }
+
+
         if (message.Contains("not supported") || message.Contains("unsupported"))
+        {
+
             return PipelineErrorType.UnsupportedOperation;
+        }
+
 
         return PipelineErrorType.Unknown;
     }
@@ -343,7 +363,8 @@ public class PipelineErrorHandler : IPipelineErrorHandler
     private async Task<RecoveryResult> AttemptAutomaticRecoveryAsync(PipelineErrorResult errorResult)
     {
         var bestStrategy = errorResult.RecoveryStrategies.OrderByDescending(s => s.Success).FirstOrDefault();
-        
+
+
         if (bestStrategy == null)
         {
             return new RecoveryResult { Success = false, Message = "No recovery strategies available" };
@@ -355,13 +376,16 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         {
             // Implement strategy-specific recovery logic
             var recoverySuccess = await ExecuteRecoveryStrategyAsync(bestStrategy, errorResult.Context);
-            
+
+
             var result = new RecoveryResult
             {
                 Success = recoverySuccess,
                 StrategyUsed = bestStrategy.Name,
-                Message = recoverySuccess 
-                    ? $"Successfully recovered using {bestStrategy.Name}" 
+                Message = recoverySuccess
+
+                    ? $"Successfully recovered using {bestStrategy.Name}"
+
                     : $"Recovery attempt using {bestStrategy.Name} failed"
             };
 
@@ -371,9 +395,11 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         catch (Exception ex)
         {
             _logger.LogError(ex, "Recovery attempt failed");
-            return new RecoveryResult 
-            { 
-                Success = false, 
+            return new RecoveryResult
+            {
+
+                Success = false,
+
                 Message = $"Recovery failed with exception: {ex.Message}",
                 StrategyUsed = bestStrategy.Name
             };
@@ -442,8 +468,9 @@ public class PipelineErrorHandler : IPipelineErrorHandler
     {
         // TODO: Implement pipeline structure validation
         _logger.LogDebug("Validating pipeline structure for pipeline: {PipelineId}", pipeline.Id);
-        
+
         // Basic structure validation - check if pipeline has stages
+
         if (pipeline.Stages?.Count == 0)
         {
             result.Errors.Add(new ValidationError
@@ -454,7 +481,8 @@ public class PipelineErrorHandler : IPipelineErrorHandler
                 ErrorCode = "PIPELINE_EMPTY"
             });
         }
-        
+
+
         return Task.CompletedTask;
     }
 
@@ -462,8 +490,9 @@ public class PipelineErrorHandler : IPipelineErrorHandler
     {
         // TODO: Implement resource requirements validation
         _logger.LogDebug("Validating resource requirements for pipeline: {PipelineId}", pipeline.Id);
-        
+
         // Basic resource validation - check if optimization settings are reasonable
+
         var settings = pipeline.OptimizationSettings;
         if (settings.EnableKernelFusion && settings.EnableStageReordering)
         {
@@ -474,7 +503,8 @@ public class PipelineErrorHandler : IPipelineErrorHandler
                 WarningCode = "OPTIMIZATION_CONFLICT"
             });
         }
-        
+
+
         return Task.CompletedTask;
     }
 
@@ -482,11 +512,13 @@ public class PipelineErrorHandler : IPipelineErrorHandler
     {
         // TODO: Implement backend compatibility validation
         _logger.LogDebug("Validating backend compatibility for pipeline: {PipelineId}", pipeline.Id);
-        
+
         // Basic backend validation - log warning about potential compatibility issues
+
         result.Recommendations.Add("Verify backend compatibility for all pipeline stages");
         result.Recommendations.Add("Consider fallback strategies for unsupported operations");
-        
+
+
         return Task.CompletedTask;
     }
 
@@ -494,8 +526,9 @@ public class PipelineErrorHandler : IPipelineErrorHandler
     {
         // TODO: Implement performance characteristics validation
         _logger.LogDebug("Validating performance characteristics for pipeline: {PipelineId}", pipeline.Id);
-        
+
         // Basic performance validation - check stage count
+
         var stageCount = pipeline.Stages?.Count ?? 0;
         if (stageCount > 100)
         {
@@ -506,7 +539,8 @@ public class PipelineErrorHandler : IPipelineErrorHandler
                 WarningCode = "HIGH_STAGE_COUNT"
             });
         }
-        
+
+
         return Task.CompletedTask;
     }
 
@@ -526,7 +560,8 @@ public class PipelineErrorHandler : IPipelineErrorHandler
     private Task<List<string>> IdentifyProblemAreasAsync(Expression expression, Exception exception)
     {
         var problemAreas = new List<string>();
-        
+
+
         try
         {
             // Analyze expression structure for common issues
@@ -552,8 +587,9 @@ public class PipelineErrorHandler : IPipelineErrorHandler
                         break;
                 }
             }
-            
+
             // Add exception-specific problem areas
+
             problemAreas.Add($"Exception type: {exception.GetType().Name} - {exception.Message}");
         }
         catch (Exception ex)
@@ -561,14 +597,16 @@ public class PipelineErrorHandler : IPipelineErrorHandler
             _logger.LogWarning(ex, "Error analyzing expression problem areas");
             problemAreas.Add("Unable to analyze expression structure");
         }
-        
+
+
         return Task.FromResult(problemAreas);
     }
 
     private Task<List<string>> GenerateExpressionSuggestionsAsync(Expression expression, Exception exception)
     {
         var suggestions = new List<string>();
-        
+
+
         try
         {
             // Generate suggestions based on exception type
@@ -578,29 +616,34 @@ public class PipelineErrorHandler : IPipelineErrorHandler
                     suggestions.Add("Add null checks for expression parameters");
                     suggestions.Add("Verify all required inputs are provided");
                     break;
-                    
+
+
                 case NotSupportedException:
                     suggestions.Add("Consider using CPU backend for unsupported operations");
                     suggestions.Add("Break complex expressions into simpler parts");
                     break;
-                    
+
+
                 case OutOfMemoryException:
                     suggestions.Add("Enable streaming processing for large datasets");
                     suggestions.Add("Reduce batch size or enable memory pooling");
                     break;
-                    
+
+
                 case TimeoutException:
                     suggestions.Add("Increase timeout values for complex operations");
                     suggestions.Add("Consider parallel processing strategies");
                     break;
-                    
+
+
                 default:
                     suggestions.Add("Review expression complexity and simplify if possible");
                     suggestions.Add("Add proper error handling and recovery logic");
                     break;
             }
-            
+
             // Add general suggestions
+
             suggestions.Add("Enable detailed logging to get more diagnostic information");
             suggestions.Add("Consider using alternative backends if current one fails");
         }
@@ -609,14 +652,16 @@ public class PipelineErrorHandler : IPipelineErrorHandler
             _logger.LogWarning(ex, "Error generating expression suggestions");
             suggestions.Add("Unable to generate specific suggestions - consult documentation");
         }
-        
+
+
         return Task.FromResult(suggestions);
     }
 
     private Task<List<string>> FindAlternativeApproachesAsync(Expression expression)
     {
         var alternatives = new List<string>();
-        
+
+
         try
         {
             if (expression != null)
@@ -628,25 +673,29 @@ public class PipelineErrorHandler : IPipelineErrorHandler
                         alternatives.Add("Use direct kernel invocation instead of expression trees");
                         alternatives.Add("Consider pre-compiled delegate caching");
                         break;
-                        
+
+
                     case ExpressionType.Lambda:
                         alternatives.Add("Use explicit parameter passing instead of closures");
                         alternatives.Add("Consider compile-time code generation");
                         break;
-                        
+
+
                     case ExpressionType.Conditional:
                         alternatives.Add("Use branching pipeline stages for conditional logic");
                         alternatives.Add("Consider separate kernels for different conditions");
                         break;
-                        
+
+
                     default:
                         alternatives.Add("Use simpler expression structures");
                         alternatives.Add("Consider manual kernel parameter binding");
                         break;
                 }
             }
-            
+
             // Add general alternatives
+
             alternatives.Add("Use CPU backend as fallback option");
             alternatives.Add("Implement custom pipeline stages for complex operations");
             alternatives.Add("Consider using pre-built algorithm implementations");
@@ -656,7 +705,8 @@ public class PipelineErrorHandler : IPipelineErrorHandler
             _logger.LogWarning(ex, "Error finding alternative approaches");
             alternatives.Add("Consult documentation for alternative implementation patterns");
         }
-        
+
+
         return Task.FromResult(alternatives);
     }
     private PerformanceImpact AssessPerformanceImpact(Exception exception) => PerformanceImpact.Medium;
@@ -836,5 +886,6 @@ public class PipelineExecutionContext
     public IKernelPipeline? Pipeline { get; set; }
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
+
 
 #endregion

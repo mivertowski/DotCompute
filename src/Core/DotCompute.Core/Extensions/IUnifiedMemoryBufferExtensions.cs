@@ -141,11 +141,7 @@ namespace DotCompute.Core.Extensions
 
             Span<T> destination, int offset) where T : unmanaged
         {
-            if (offset < 0)
-            {
-
-                throw new ArgumentOutOfRangeException(nameof(offset));
-            }
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
 
             unsafe
@@ -193,11 +189,7 @@ namespace DotCompute.Core.Extensions
 
             Memory<T> destination, int offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (offset < 0)
-            {
-
-                throw new ArgumentOutOfRangeException(nameof(offset));
-            }
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
             // Note: This is a simplified synchronous implementation for test compatibility
             // In a real implementation, this would perform actual async memory operations
@@ -255,11 +247,7 @@ namespace DotCompute.Core.Extensions
 
             ReadOnlySpan<T> data, int offset) where T : unmanaged
         {
-            if (offset < 0)
-            {
-
-                throw new ArgumentOutOfRangeException(nameof(offset));
-            }
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
 
             unsafe
@@ -307,11 +295,7 @@ namespace DotCompute.Core.Extensions
 
             ReadOnlyMemory<T> data, int offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (offset < 0)
-            {
-
-                throw new ArgumentOutOfRangeException(nameof(offset));
-            }
+            ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
             // Note: This is a simplified synchronous implementation for test compatibility
             // In a real implementation, this would perform actual async memory operations

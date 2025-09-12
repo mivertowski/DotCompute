@@ -223,6 +223,7 @@ public class CpuMemoryManager : BaseMemoryManager
         // CPU memory doesn't support views in this implementation
         // Would need to implement a view wrapper for CPU buffers
 
+
         => throw new NotSupportedException("CPU memory views are not yet implemented");
 }
 
@@ -377,6 +378,7 @@ public class CpuMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
     public Memory<T> AsMemory()
         // For CPU buffers, we need to create a properly typed memory
         // This is a temporary implementation - proper buffer management needed
+
 
         => throw new NotSupportedException("Direct Memory<T> access not yet implemented for CpuMemoryBuffer<T>");
 

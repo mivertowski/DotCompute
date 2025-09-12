@@ -118,14 +118,17 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     private int DetermineOptimalNode(NumaMemoryPolicy policy, long sizeInBytes)
     {
         // Production NUMA node selection implementation
-        
+
         // 1. Check current thread affinity first
+
         var currentNode = GetCurrentThreadNumaNode();
-        
+
         // 2. Analyze memory pressure per node
+
         var availableMemoryPerNode = GetAvailableMemoryPerNode();
-        
+
         // 3. Consider allocation size and node capacity
+
         var suitableNodes = availableMemoryPerNode
             .Where(kvp => kvp.Value >= sizeInBytes)
             .Select(kvp => kvp.Key)
@@ -229,11 +232,13 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
         // Simple CPU memory copy - both buffers are in CPU memory
 
+
         => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken)
         // Simple CPU memory copy with offsets
+
 
         => ValueTask.CompletedTask; // Implementation placeholder TODO
 
@@ -241,17 +246,20 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken)
         // Copy from CPU buffer to host memory - essentially a no-op since both are host memory
 
+
         => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
         // Copy from host memory to CPU buffer - essentially a no-op since both are host memory
 
+
         => ValueTask.CompletedTask; // Implementation placeholder TODO
 
     /// <inheritdoc/>
     public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
         // Create typed view of the buffer TODO
+
 
         => throw new NotImplementedException("Typed view creation not yet implemented");
 
@@ -301,7 +309,8 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     private Dictionary<int, long> GetAvailableMemoryPerNode()
     {
         var result = new Dictionary<int, long>();
-        
+
+
         try
         {
             for (int node = 0; node < _topology.NodeCount; node++)
@@ -393,6 +402,7 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
 
     public ValueTask DisposeAsync()
         // View doesn't own the memory, parent does
+
 
         => ValueTask.CompletedTask;
 

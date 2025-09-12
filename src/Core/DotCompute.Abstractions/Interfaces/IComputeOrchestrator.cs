@@ -80,4 +80,42 @@ public interface IComputeOrchestrator
     /// <param name="args">The arguments to validate</param>
     /// <returns>Validation result with any errors or warnings</returns>
     public Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args);
+
+    /// <summary>
+    /// Executes a kernel with advanced execution parameters.
+    /// </summary>
+    /// <param name="kernelName">The kernel name</param>
+    /// <param name="executionParameters">Advanced execution parameters</param>
+    /// <returns>The execution result</returns>
+    public Task<object?> ExecuteKernelAsync(string kernelName, IKernelExecutionParameters executionParameters);
+
+    /// <summary>
+    /// Executes a kernel with cancellation token support.
+    /// </summary>
+    /// <param name="kernelName">The kernel name</param>
+    /// <param name="args">The kernel arguments</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The execution result</returns>
+    public Task<object?> ExecuteKernelAsync(string kernelName, object[] args, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Interface for kernel execution parameters.
+/// </summary>
+public interface IKernelExecutionParameters
+{
+    /// <summary>Gets the kernel arguments.</summary>
+    object[] Arguments { get; }
+
+
+    /// <summary>Gets the preferred backend.</summary>
+    string? PreferredBackend { get; }
+
+
+    /// <summary>Gets the execution options.</summary>
+    IDictionary<string, object> Options { get; }
+
+
+    /// <summary>Gets the cancellation token.</summary>
+    CancellationToken CancellationToken { get; }
 }

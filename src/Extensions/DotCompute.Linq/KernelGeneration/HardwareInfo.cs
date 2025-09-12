@@ -212,7 +212,11 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     public void AddCapability(string name, object value)
     {
         if (string.IsNullOrWhiteSpace(name))
+        {
+
             throw new ArgumentException("Capability name cannot be null or whitespace.", nameof(name));
+        }
+
 
         Capabilities[name] = value ?? throw new ArgumentNullException(nameof(value));
     }
@@ -226,7 +230,12 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     public T? GetCapability<T>(string name)
     {
         if (Capabilities.TryGetValue(name, out var value) && value is T typedValue)
+        {
+
             return typedValue;
+        }
+
+
         return default;
     }
 
@@ -238,7 +247,11 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     public void AddMemoryLevel(string level, long size)
     {
         if (string.IsNullOrWhiteSpace(level))
+        {
+
             throw new ArgumentException("Memory level cannot be null or whitespace.", nameof(level));
+        }
+
 
         MemoryHierarchy[level] = size;
     }
@@ -250,7 +263,10 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     public void AddSupportedFeature(string feature)
     {
         if (!string.IsNullOrWhiteSpace(feature))
+        {
             SupportedFeatures.Add(feature);
+        }
+
     }
 
     /// <summary>
@@ -271,7 +287,11 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     public void AddPerformanceCounter(string counter, double value)
     {
         if (string.IsNullOrWhiteSpace(counter))
+        {
+
             throw new ArgumentException("Counter name cannot be null or whitespace.", nameof(counter));
+        }
+
 
         PerformanceCounters[counter] = value;
     }
@@ -283,7 +303,12 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     /// <returns>The bandwidth utilization as a percentage (0-100).</returns>
     public double CalculateBandwidthUtilization(double actualBandwidthGBps)
     {
-        if (MemoryBandwidthGBps <= 0) return 0.0;
+        if (MemoryBandwidthGBps <= 0)
+        {
+            return 0.0;
+        }
+
+
         return Math.Min(100.0, (actualBandwidthGBps / MemoryBandwidthGBps) * 100.0);
     }
 
@@ -296,7 +321,12 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     public double CalculateComputeUtilization(double actualFlops, bool doublePrecision = false)
     {
         var peakFlops = doublePrecision ? PeakFlopsDouble : PeakFlopsSingle;
-        if (peakFlops <= 0) return 0.0;
+        if (peakFlops <= 0)
+        {
+            return 0.0;
+        }
+
+
         return Math.Min(100.0, (actualFlops / peakFlops) * 100.0);
     }
 
@@ -306,7 +336,12 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     /// <returns>The compute intensity (FLOPS per byte) where the device becomes compute-bound.</returns>
     public double GetComputeIntensityThreshold()
     {
-        if (MemoryBandwidthGBps <= 0 || PeakFlopsSingle <= 0) return 1.0;
+        if (MemoryBandwidthGBps <= 0 || PeakFlopsSingle <= 0)
+        {
+            return 1.0;
+        }
+
+
         return PeakFlopsSingle / (MemoryBandwidthGBps * 1e9);
     }
 
@@ -318,7 +353,8 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     public int GetOptimalWorkGroupSize(KernelComplexity kernelComplexity = KernelComplexity.Medium)
     {
         var baseSize = WarpSize * 4; // Start with 4 warps/wavefronts
-        
+
+
         return kernelComplexity switch
         {
             KernelComplexity.Simple => Math.Min(MaxWorkGroupSize, baseSize * 2),
@@ -382,19 +418,30 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
         };
 
         foreach (var capability in Capabilities)
+        {
             clone.Capabilities[capability.Key] = capability.Value;
+        }
 
         foreach (var memory in MemoryHierarchy)
+        {
             clone.MemoryHierarchy[memory.Key] = memory.Value;
+        }
 
         foreach (var unit in ComputeUnits)
+        {
             clone.ComputeUnits.Add(unit);
+        }
 
         foreach (var feature in SupportedFeatures)
+        {
             clone.SupportedFeatures.Add(feature);
+        }
 
         foreach (var counter in PerformanceCounters)
+        {
             clone.PerformanceCounters[counter.Key] = counter.Value;
+        }
+
 
         return clone;
     }
@@ -402,8 +449,17 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     /// <inheritdoc/>
     public bool Equals(HardwareInfo? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
+        if (other is null)
+        {
+            return false;
+        }
+
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
 
         return DeviceType == other.DeviceType &&
                DeviceName == other.DeviceName &&

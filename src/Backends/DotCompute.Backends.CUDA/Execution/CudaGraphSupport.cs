@@ -842,6 +842,7 @@ namespace DotCompute.Backends.CUDA.Execution
             // Estimate the performance benefit of fusing these kernels
             // Consider memory bandwidth savings and kernel launch overhead reduction
 
+
             => 0.2; // 20% estimated improvement
 
         private static async Task FuseKernelNodesAsync(CudaGraph graph, List<DotCompute.Backends.CUDA.Execution.Optimization.KernelFusionCandidate> candidates, CancellationToken cancellationToken)

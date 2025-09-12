@@ -746,6 +746,7 @@ public class MemoryManagementTests
         public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
             // Simulate memory optimization
 
+
             => ValueTask.CompletedTask;
 
         public void Clear()

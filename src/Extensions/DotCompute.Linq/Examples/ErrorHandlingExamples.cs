@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Linq;
+using System.Reactive.Linq;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Extensions;
@@ -9,6 +11,7 @@ using DotCompute.Linq.Pipelines;
 using DotCompute.Linq.Pipelines.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using IKernelPipeline = DotCompute.Core.Pipelines.IKernelPipeline;
 
 namespace DotCompute.Linq.Examples;
 
@@ -97,8 +100,10 @@ public class ErrorHandlingExamples
         {
             // Create a dataset that may exceed GPU memory
             var largeDataset = GenerateLargeDataset(10_000_000); // 10M items
-            logger.LogInformation("Generated dataset with {Count} items (~{Size}MB)", 
-                largeDataset.Length, 
+            logger.LogInformation("Generated dataset with {Count} items (~{Size}MB)",
+
+                largeDataset.Length,
+
                 largeDataset.Length * sizeof(float) / (1024 * 1024));
 
             // Check memory requirements before execution
@@ -119,12 +124,14 @@ public class ErrorHandlingExamples
                     .Select(x => x * 2.0f)
                     .ExecuteAsync();
 
-                logger.LogInformation("Successfully processed {Count} items with memory limits", 
+                logger.LogInformation("Successfully processed {Count} items with memory limits",
+
                     results.Count());
             }
             catch (OutOfMemoryException ex)
             {
-                logger.LogWarning("Memory limit exceeded, switching to streaming approach: {Message}", 
+                logger.LogWarning("Memory limit exceeded, switching to streaming approach: {Message}",
+
                     ex.Message);
 
                 // Strategy 2: Use streaming processing for large datasets
@@ -243,8 +250,10 @@ public class ErrorHandlingExamples
                     var results = await optimizedQueryable
                         .Where(x => x.Value > 100)
                         .ExecuteAsync();
-                    
-                    logger.LogInformation("Successfully processed optimized data: {Count} results", 
+
+
+                    logger.LogInformation("Successfully processed optimized data: {Count} results",
+
                         results.Count());
                 }
             }
@@ -289,26 +298,34 @@ public class ErrorHandlingExamples
                 .ThenWhere<double>(x => !double.IsNaN(x))
                 .ThenSelect<double, float>(x => (float)(x * Math.PI));
 
-            // Validate the entire pipeline
-            var validationResult = await errorHandler.ValidatePipelineAsync(pipeline);
-
-            if (validationResult.IsValid)
+            // Validate the entire pipeline (simplified for demo)
+            try
             {
-                logger.LogInformation("Pipeline validation passed");
-                var results = await pipeline.ExecutePipelineAsync<float[]>();
-                logger.LogInformation("Pipeline executed successfully: {Count} results", results.Length);
-            }
-            else
-            {
-                logger.LogWarning("Pipeline validation failed:");
-                foreach (var error in validationResult.Errors)
+                var kernelPipeline = pipeline as IKernelPipeline;
+                if (kernelPipeline != null)
                 {
-                    logger.LogWarning("  Validation Error: {Error}", error);
-                }
+                    var validationResult = await errorHandler.ValidatePipelineAsync(kernelPipeline);
 
-                // Apply suggested fixes or alternative strategies
-                logger.LogInformation("Applying validation suggestions...");
-                // In a real implementation, you would apply the suggested fixes
+
+                    if (validationResult.IsValid)
+                    {
+                        logger.LogInformation("Pipeline validation passed");
+                        var results = await kernelPipeline.ExecutePipelineAsync<float[]>();
+                        logger.LogInformation("Pipeline executed successfully: {Count} results", results.Length);
+                    }
+                    else
+                    {
+                        logger.LogWarning("Pipeline validation failed with {ErrorCount} errors", validationResult.Errors.Count);
+                    }
+                }
+                else
+                {
+                    logger.LogInformation("Pipeline validation skipped - IKernelPipeline interface not available");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("Pipeline validation failed: {Message}", ex.Message);
             }
 
             // Demonstrate expression-level error analysis
@@ -399,14 +416,16 @@ public class ErrorHandlingExamples
                     stopwatch.Stop();
 
                     successCount++;
-                    logger.LogInformation("  ✓ Success: {Scenario} completed in {ElapsedMs}ms", 
+                    logger.LogInformation("  ✓ Success: {Scenario} completed in {ElapsedMs}ms",
+
                         name, stopwatch.ElapsedMilliseconds);
                 }
                 catch (OutOfMemoryException ex)
                 {
                     logger.LogWarning("  ⚠ Memory issue in {Scenario}: {Message}", name, ex.Message);
-                    
+
                     // Try fallback strategy
+
                     try
                     {
                         await ExecuteFallbackStrategy(data, services, logger);
@@ -440,7 +459,8 @@ public class ErrorHandlingExamples
             logger.LogInformation("  Successful operations: {Success}", successCount);
             logger.LogInformation("  Fallback operations: {Fallbacks}", fallbackCount);
             logger.LogInformation("  Failed operations: {Errors}", errorCount);
-            logger.LogInformation("  Success rate: {Rate:P}", 
+            logger.LogInformation("  Success rate: {Rate:P}",
+
                 (double)(successCount + fallbackCount) / scenarios.Length);
         }
         catch (Exception ex)
@@ -469,7 +489,7 @@ public class ErrorHandlingExamples
             .Select(i => new ProblematicDataItem(
                 i,
                 $"Item_{i}",
-                new[] { (float)random.NextDouble(), (float)random.NextDouble() },
+                [(float)random.NextDouble(), (float)random.NextDouble()],
                 DateTime.Now.AddDays(random.Next(-365, 365)),
                 (decimal)(random.NextDouble() * 1000)))
             .ToArray();
@@ -486,19 +506,22 @@ public class ErrorHandlingExamples
     }
 
     private static async Task ProcessLargeDatasetWithStreamingAsync(
-        float[] data, 
-        IServiceProvider services, 
+        float[] data,
+
+        IServiceProvider services,
+
         ILogger logger)
     {
         logger.LogInformation("Processing large dataset with streaming approach");
 
         // Convert to async enumerable for streaming using chunks
         var streamingData = data.AsEnumerable();
-        
+
+
         var processedCount = 0;
         var batchSize = 10000;
 
-        await foreach (var batch in streamingData.Buffer(batchSize))
+        await foreach (var batch in streamingData.Chunk(batchSize).ToAsyncEnumerable())
         {
             try
             {
@@ -524,8 +547,10 @@ public class ErrorHandlingExamples
     }
 
     private static async Task ProcessInBatchesAsync(
-        float[] data, 
-        IServiceProvider services, 
+        float[] data,
+
+        IServiceProvider services,
+
         ILogger logger)
     {
         logger.LogInformation("Processing large dataset in batches");
@@ -533,7 +558,8 @@ public class ErrorHandlingExamples
         const int batchSize = 100_000;
         var batches = data.Chunk(batchSize).ToArray();
 
-        logger.LogInformation("Split into {BatchCount} batches of {BatchSize} items", 
+        logger.LogInformation("Split into {BatchCount} batches of {BatchSize} items",
+
             batches.Length, batchSize);
 
         var processedCount = 0;
@@ -551,7 +577,8 @@ public class ErrorHandlingExamples
                 processedCount += results.Count();
                 batchIndex++;
 
-                logger.LogInformation("Batch {Index}/{Total} completed: {Count} results", 
+                logger.LogInformation("Batch {Index}/{Total} completed: {Count} results",
+
                     batchIndex, batches.Length, results.Count());
             }
             catch (Exception ex)
@@ -568,21 +595,25 @@ public class ErrorHandlingExamples
         try
         {
             var stringData = new[] { "hello", "world", "gpu", "computing" };
-            
+
             // This will likely fail on GPU
+
             var queryable = stringData.AsComputeQueryable(services);
-            
+
+
             var isCompatible = queryable.IsGpuCompatible(services);
             if (!isCompatible)
             {
                 logger.LogInformation("String operations detected as GPU-incompatible, using CPU");
-                
+
                 // Process with CPU instead
+
                 var results = stringData
                     .Where(s => s.Length > 3)
                     .Select(s => s.ToUpper())
                     .ToArray();
-                
+
+
                 logger.LogInformation("CPU processing successful: {Count} results", results.Length);
             }
         }
@@ -590,7 +621,8 @@ public class ErrorHandlingExamples
         {
             logger.LogInformation("Handled unsupported operation gracefully: {Message}", ex.Message);
         }
-        
+
+
         return Task.CompletedTask;
     }
 
@@ -600,9 +632,11 @@ public class ErrorHandlingExamples
         {
             // Create a problematic expression
             var expression = System.Linq.Expressions.Expression.Call(
-                typeof(string), 
-                "Concat", 
-                Type.EmptyTypes, 
+                typeof(string),
+                "Concat",
+
+                Type.EmptyTypes,
+
                 System.Linq.Expressions.Expression.Constant("test"));
 
             var analysisError = new NotSupportedException("String concatenation not supported on GPU");
@@ -625,8 +659,9 @@ public class ErrorHandlingExamples
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            
+
             // This might timeout for very large operations
+
             var results = await queryable
                 .Select(x => (float)Math.Pow(x, 10)) // Expensive operation
                 .ExecuteAsync(cts.Token);
@@ -640,7 +675,8 @@ public class ErrorHandlingExamples
     }
 
     private static async Task HandleCompilationErrorsAsync(
-        IQueryable<float> queryable, 
+        IQueryable<float> queryable,
+
         IServiceProvider services,
         ILogger logger)
     {
@@ -650,7 +686,8 @@ public class ErrorHandlingExamples
             await queryable
                 .Select(x => x * 2.0f) // Simple operation
                 .PrecompileAsync(services);
-                
+
+
             logger.LogInformation("Pre-compilation successful");
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("compilation"))
@@ -669,7 +706,8 @@ public class ErrorHandlingExamples
                 .Where(x => !float.IsInfinity(x) && !float.IsNaN(x))
                 .ExecuteAsync();
 
-            logger.LogInformation("Handled potential runtime exceptions: {Count} valid results", 
+            logger.LogInformation("Handled potential runtime exceptions: {Count} valid results",
+
                 results.Count());
         }
         catch (Exception ex)
@@ -692,7 +730,8 @@ public class ErrorHandlingExamples
         // Create multiple large intermediate results
         var query1 = data.AsComputeQueryable(services).Select(x => x * 2.0f);
         var query2 = data.AsComputeQueryable(services).Select(x => x * 3.0f);
-        
+
+
         await Task.WhenAll(
             query1.ExecuteAsync(),
             query2.ExecuteAsync()
@@ -711,7 +750,8 @@ public class ErrorHandlingExamples
     {
         // Expand the dataset temporarily
         var expandedData = data.SelectMany(x => new[] { x, x * 2, x * 3 }).ToArray();
-        
+
+
         await expandedData.AsComputeQueryable(services)
             .Where(x => x > 100)
             .ExecuteAsync();
@@ -728,8 +768,9 @@ public class ErrorHandlingExamples
     private static async Task ExecuteFallbackStrategy(float[] data, IServiceProvider services, ILogger logger)
     {
         logger.LogInformation("Executing fallback strategy with reduced complexity");
-        
+
         // Simplified operation that should work on most backends
+
         await data.Take(data.Length / 2) // Process half the data
             .AsComputeQueryable(services)
             .Where(x => x > 0)

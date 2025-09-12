@@ -159,7 +159,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                     // Additional diagnostic logging for debugging
 
-                    _logger.LogDebugMessage($"Total threads: {launchConfig.GridX * launchConfig.GridY * launchConfig.GridZ *  launchConfig.BlockX * launchConfig.BlockY * launchConfig.BlockZ}, Function ptr: 0x{function.ToInt64()}, Stream: 0x{_context.Stream.ToInt64()}");
+                    _logger.LogDebugMessage($"Total threads: {launchConfig.GridX * launchConfig.GridY * launchConfig.GridZ * launchConfig.BlockX * launchConfig.BlockY * launchConfig.BlockZ}, Function ptr: 0x{function.ToInt64()}, Stream: 0x{_context.Stream.ToInt64()}");
 
                     // Log first few argument pointers for debugging
 

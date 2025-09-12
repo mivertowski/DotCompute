@@ -155,6 +155,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     public DeviceMemory GetDeviceMemory()
         // For CPU backend, device memory is the same as host memory
 
+
         => new(_nativeHandle, _sizeInBytes);
 
     public MappedMemory<byte> Map(MapMode mode = MapMode.ReadWrite)
@@ -195,10 +196,12 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     public void EnsureOnHost()
         // CPU buffer is always on host
 
+
         => _state = BufferState.HostOnly;
 
     public void EnsureOnDevice()
         // CPU buffer is always on host (CPU is the device)
+
 
         => _state = BufferState.DeviceOnly;
 
@@ -298,30 +301,49 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     public IUnifiedMemoryBuffer<byte> Slice(int offset, int length)
     {
         EnsureNotDisposed();
-        
+
+
         if (offset < 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(offset), "Offset cannot be negative");
+        }
+
         if (length < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(length), "Length cannot be negative");
+        }
+
+
         if (offset + length > _sizeInBytes)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(length), "Slice extends beyond buffer boundaries");
+        }
 
         // Create a view of the existing buffer
+
         return new CpuMemoryBufferSlice(this, offset, length, _memoryManager, _logger);
     }
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         EnsureNotDisposed();
-        
+
+
         int elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
         if (_sizeInBytes % elementSize != 0)
+        {
+
             throw new InvalidOperationException($"Buffer size {_sizeInBytes} is not compatible with element size {elementSize}");
+        }
 
         // Calculate new element count
+
         int elementCount = (int)(_sizeInBytes / elementSize);
-        
+
         // Create a typed wrapper around the same memory
+
         return new CpuMemoryBufferTyped<TNew>(this, elementCount, _memoryManager, _logger);
     }
 

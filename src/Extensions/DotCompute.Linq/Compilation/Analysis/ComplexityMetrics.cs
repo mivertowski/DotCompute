@@ -45,43 +45,51 @@ public record ComplexityMetrics
 
     /// <summary>Gets the worst-case complexity scenario.</summary>
     public string WorstCaseScenario { get; init; } = string.Empty;
+
+    /// <summary>Gets whether the operation is memory-bound.</summary>
+    public bool MemoryBound => MemoryAccesses > OperationCount * 2;
+
+    /// <summary>Gets whether the operation can benefit from shared memory optimization.</summary>
+    public bool CanBenefitFromSharedMemory => MemoryBound && ParallelizationPotential > 0.5;
+
+    /// <summary>
+    /// Gets the overall compute complexity as a numeric value.
+    /// </summary>
+    public double ComputeComplexity => ComplexityFactor * (1.0 + OperationCount / 1000000.0);
+
+    /// <summary>
+    /// Gets the overall complexity as an integer score.
+    /// </summary>
+    public int OverallComplexity => (int)Math.Round(ComplexityScore);
+
+    /// <summary>
+    /// Gets the memory complexity score.
+    /// </summary>
+    public double MemoryComplexity => Math.Min(10.0, MemoryAccesses / 1000000.0 * (1.0 / CacheEfficiency));
+
+    /// <summary>
+    /// Gets the memory usage in bytes.
+    /// </summary>
+    public long MemoryUsage => MemoryAccesses * 8; // Assume 8 bytes per access as average
+
+    /// <summary>
+    /// Gets the normalized complexity score (0.0 to 10.0).
+    /// </summary>
+    public double ComplexityScore => Math.Min(10.0, ComputationalComplexity switch
+    {
+        ComplexityClass.Constant => 1.0,
+        ComplexityClass.Logarithmic => 2.0,
+        ComplexityClass.Linear => 3.0,
+        ComplexityClass.Linearithmic => 4.0,
+        ComplexityClass.Quadratic => 6.0,
+        ComplexityClass.Cubic => 8.0,
+        ComplexityClass.Exponential => 10.0,
+        ComplexityClass.Factorial => 10.0,
+        _ => 3.0
+    } * ComplexityFactor);
 }
 
-/// <summary>
-/// Represents global memory access patterns across an expression tree.
-/// </summary>
-public record GlobalMemoryAccessPattern
-{
-    /// <summary>Gets the predominant access pattern.</summary>
-    public MemoryAccessPattern PredominantPattern { get; init; } = MemoryAccessPattern.Sequential;
-
-    /// <summary>Gets the total memory footprint in bytes.</summary>
-    public long TotalMemoryFootprint { get; init; }
-
-    /// <summary>Gets the working set size in bytes.</summary>
-    public long WorkingSetSize { get; init; }
-
-    /// <summary>Gets the memory bandwidth utilization (0.0 to 1.0).</summary>
-    public double BandwidthUtilization { get; init; } = 1.0;
-
-    /// <summary>Gets whether coalescing opportunities exist.</summary>
-    public bool HasCoalescingOpportunities { get; init; }
-
-    /// <summary>Gets whether prefetching would be beneficial.</summary>
-    public bool BenefitsFromPrefetching { get; init; }
-
-    /// <summary>Gets the estimated cache hit ratio (0.0 to 1.0).</summary>
-    public double EstimatedCacheHitRatio { get; init; } = 0.8;
-
-    /// <summary>Gets memory access hotspots.</summary>
-    public List<MemoryHotspot> Hotspots { get; init; } = new();
-
-    /// <summary>Gets memory access conflicts.</summary>
-    public List<MemoryConflict> Conflicts { get; init; } = new();
-
-    /// <summary>Gets the memory access locality factor (0.0 to 1.0).</summary>
-    public double LocalityFactor { get; init; } = 0.8;
-}
+// GlobalMemoryAccessPattern is defined in PipelineAnalysisTypes.cs to avoid duplication
 
 /// <summary>
 /// Represents memory access complexity for specific patterns.

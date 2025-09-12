@@ -152,6 +152,7 @@ public static class ExampleKernels
         // This demonstrates the integration pattern:
 
         await orchestrator.ExecuteAsync<object>("MyNamespace.VectorAdd"
+
             /* inputA, inputB, output, length */);
     }
 }

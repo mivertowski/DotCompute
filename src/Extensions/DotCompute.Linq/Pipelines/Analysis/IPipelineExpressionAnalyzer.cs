@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 using DotCompute.Linq.Pipelines.Models;
+using DotCompute.Linq.Compilation.Analysis;
 
 namespace DotCompute.Linq.Pipelines.Analysis;
 
@@ -56,11 +57,14 @@ public class PipelineExpressionAnalyzer : IPipelineExpressionAnalyzer
     public PipelineExpressionAnalyzer(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-        
+
+
         var logger = (Microsoft.Extensions.Logging.ILogger<PipelineExpressionVisitor>?)serviceProvider
             .GetService(typeof(Microsoft.Extensions.Logging.ILogger<PipelineExpressionVisitor>));
-        
-        _visitor = new PipelineExpressionVisitor(logger ?? 
+
+
+        _visitor = new PipelineExpressionVisitor(logger ??
+
             Microsoft.Extensions.Logging.Abstractions.NullLogger<PipelineExpressionVisitor>.Instance);
     }
 
@@ -68,7 +72,8 @@ public class PipelineExpressionAnalyzer : IPipelineExpressionAnalyzer
     public PipelineConfiguration AnalyzeExpression<T>(Expression expression) where T : unmanaged
     {
         var plan = _visitor.ConvertToPipelinePlan(expression);
-        
+
+
         return new PipelineConfiguration
         {
             ElementType = typeof(T),
@@ -89,7 +94,8 @@ public class PipelineExpressionAnalyzer : IPipelineExpressionAnalyzer
     public async Task<ExpressionAnalysisResult> AnalyzeCompatibilityAsync(Expression expression)
     {
         var plan = await ConvertToPipelinePlanAsync(expression);
-        
+
+
         return new ExpressionAnalysisResult
         {
             IsGpuCompatible = plan.Stages.Any(s => s.SupportedBackends.Contains("CUDA")),
@@ -155,6 +161,11 @@ public class ExpressionAnalysisResult
     private readonly List<Type> _parameterTypes = [];
 
     /// <summary>
+    /// Gets or sets the operation signature for this expression.
+    /// </summary>
+    public string OperationSignature { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets whether the expression can be compiled.
     /// </summary>
     public bool IsCompilable { get; set; } = true;
@@ -165,9 +176,19 @@ public class ExpressionAnalysisResult
     public bool IsGpuCompatible { get; set; }
 
     /// <summary>
+    /// Gets or sets whether the expression is GPU suitable.
+    /// </summary>
+    public bool IsGpuSuitable { get; set; }
+
+    /// <summary>
     /// Gets or sets whether the expression is compatible with CPU execution.
     /// </summary>
     public bool IsCpuCompatible { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether the expression is parallelizable.
+    /// </summary>
+    public bool IsParallelizable { get; set; }
 
     /// <summary>
     /// Gets or sets the complexity score of the expression.
@@ -178,6 +199,11 @@ public class ExpressionAnalysisResult
     /// Gets or sets the estimated memory requirement.
     /// </summary>
     public long MemoryRequirement { get; set; }
+
+    /// <summary>
+    /// Gets or sets the estimated memory usage.
+    /// </summary>
+    public long EstimatedMemoryUsage { get; set; }
 
     /// <summary>
     /// Gets or sets the parallelization potential score.
@@ -210,6 +236,26 @@ public class ExpressionAnalysisResult
     public ComplexityMetrics ComplexityMetrics { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets the operator information for the expression.
+    /// </summary>
+    public List<OperatorInfo> OperatorInfo { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the dependencies for the expression.
+    /// </summary>
+    public List<string> Dependencies { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the parallelization information.
+    /// </summary>
+    public object? ParallelizationInfo { get; set; }
+
+    /// <summary>
+    /// Gets or sets the analysis timestamp.
+    /// </summary>
+    public DateTimeOffset AnalysisTimestamp { get; set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>
     /// Gets the supported operations in this expression.
     /// </summary>
     public IReadOnlyList<string> SupportedOperations => _supportedOperations;
@@ -238,6 +284,21 @@ public class ExpressionAnalysisResult
     /// Internal access to parameter types for modification.
     /// </summary>
     internal List<Type> ParameterTypesInternal => _parameterTypes;
+
+    /// <summary>
+    /// Gets or sets the type usage information for the expression.
+    /// </summary>
+    public Dictionary<Type, int> TypeUsage { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the memory access pattern analysis.
+    /// </summary>
+    public MemoryAccessPattern MemoryAccessPattern { get; set; } = MemoryAccessPattern.Sequential;
+
+    /// <summary>
+    /// Gets or sets the optimization hints for this expression.
+    /// </summary>
+    public List<string> OptimizationHints { get; set; } = new();
 }
 
 /// <summary>
@@ -257,7 +318,8 @@ internal class ExpressionOptimizer
         expression = FusePipelineOperations(expression);
         expression = OptimizeConstants(expression);
         expression = EliminateRedundantOperations(expression);
-        
+
+
         return expression;
     }
 
@@ -302,37 +364,64 @@ internal class PredicateSimplifier : ExpressionVisitor
         {
             // true && x => x
             if (node.Left is ConstantExpression { Value: true })
+            {
                 return Visit(node.Right);
-                
+            }
+
             // x && true => x
+
             if (node.Right is ConstantExpression { Value: true })
+            {
                 return Visit(node.Left);
-                
+            }
+
             // false && x => false
+
             if (node.Left is ConstantExpression { Value: false })
+            {
                 return Expression.Constant(false);
-                
+            }
+
             // x && false => false
+
             if (node.Right is ConstantExpression { Value: false })
+            {
+
                 return Expression.Constant(false);
+            }
+
         }
         else if (node.NodeType == ExpressionType.OrElse)
         {
             // true || x => true
             if (node.Left is ConstantExpression { Value: true })
+            {
                 return Expression.Constant(true);
-                
+            }
+
             // x || true => true
+
             if (node.Right is ConstantExpression { Value: true })
+            {
+
                 return Expression.Constant(true);
-                
+            }
+
             // false || x => x
+
             if (node.Left is ConstantExpression { Value: false })
+            {
                 return Visit(node.Right);
-                
+            }
+
             // x || false => x
+
             if (node.Right is ConstantExpression { Value: false })
+            {
+
                 return Visit(node.Left);
+            }
+
         }
 
         return base.VisitBinary(node);
@@ -627,6 +716,21 @@ public class ComplexityMetrics
     /// Gets or sets the parallelization potential (0-100).
     /// </summary>
     public int ParallelizationPotential { get; set; }
+
+    /// <summary>
+    /// Gets or sets the compute complexity score.
+    /// </summary>
+    public int ComputeComplexity { get; set; }
+
+    /// <summary>
+    /// Gets whether the operation is memory-bound.
+    /// </summary>
+    public bool MemoryBound => MemoryComplexity > ComputationalComplexity * 2;
+
+    /// <summary>
+    /// Gets whether the operation can benefit from shared memory optimization.
+    /// </summary>
+    public bool CanBenefitFromSharedMemory => MemoryBound && ParallelizationPotential > 50;
 
     /// <summary>
     /// Gets or sets complexity factors that contribute to the overall score.

@@ -28,7 +28,11 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
     public KernelMetadata(string name, KernelLanguage language)
     {
         if (string.IsNullOrWhiteSpace(name))
+        {
+
             throw new ArgumentException("Kernel name cannot be null or whitespace.", nameof(name));
+        }
+
 
         Name = name;
         Language = language;
@@ -150,7 +154,11 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
     public void AddCompilationHint(string key, object value)
     {
         if (string.IsNullOrWhiteSpace(key))
+        {
+
             throw new ArgumentException("Hint key cannot be null or whitespace.", nameof(key));
+        }
+
 
         CompilationHints[key] = value ?? throw new ArgumentNullException(nameof(value));
     }
@@ -163,7 +171,11 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
     public void AddPerformanceHint(string key, object value)
     {
         if (string.IsNullOrWhiteSpace(key))
+        {
+
             throw new ArgumentException("Hint key cannot be null or whitespace.", nameof(key));
+        }
+
 
         PerformanceHints[key] = value ?? throw new ArgumentNullException(nameof(value));
     }
@@ -177,7 +189,12 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
     public T? GetCompilationHint<T>(string key)
     {
         if (CompilationHints.TryGetValue(key, out var value) && value is T typedValue)
+        {
+
             return typedValue;
+        }
+
+
         return default;
     }
 
@@ -190,7 +207,12 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
     public T? GetPerformanceHint<T>(string key)
     {
         if (PerformanceHints.TryGetValue(key, out var value) && value is T typedValue)
+        {
+
             return typedValue;
+        }
+
+
         return default;
     }
 
@@ -221,10 +243,15 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
         };
 
         foreach (var hint in CompilationHints)
+        {
             clone.CompilationHints[hint.Key] = hint.Value;
+        }
 
         foreach (var hint in PerformanceHints)
+        {
             clone.PerformanceHints[hint.Key] = hint.Value;
+        }
+
 
         return clone;
     }
@@ -232,8 +259,17 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
     /// <inheritdoc/>
     public bool Equals(KernelMetadata? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
+        if (other is null)
+        {
+            return false;
+        }
+
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
 
         return Name == other.Name &&
                Language == other.Language &&

@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 
 namespace DotCompute.Linq.Operators.Models;
@@ -28,7 +29,17 @@ public class KernelExecutionParameters
     public Dictionary<string, object>? Arguments { get; set; }
 
     /// <summary>
+    /// Gets or sets the kernel parameters (for backwards compatibility).
+    /// </summary>
+    public object[]? Parameters { get; set; }
+
+    /// <summary>
     /// Gets or sets the shared memory size in bytes.
     /// </summary>
     public int SharedMemorySize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the CUDA stream pointer.
+    /// </summary>
+    public IntPtr Stream { get; set; }
 }

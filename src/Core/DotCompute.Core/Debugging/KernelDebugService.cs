@@ -593,7 +593,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             await Task.Yield(); // Allow other tasks to execute without blocking
 
 
-            result = result with {
+            result = result with
+            {
                 Success = true,
                 Result = $"ExecutionResult_{backendType}_{DateTime.UtcNow.Ticks}",
                 MemoryUsed = EstimateMemoryUsage(inputs)
@@ -611,7 +612,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, $"Error executing kernel {kernelName} on {backendType}");
-            result = result with {
+            result = result with
+            {
                 Success = false,
                 ErrorMessage = ex.Message
             };

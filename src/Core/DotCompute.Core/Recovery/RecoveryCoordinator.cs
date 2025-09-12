@@ -387,6 +387,7 @@ public sealed class RecoveryCoordinator : IDisposable
         // due to their specific implementations and contexts
 
 
+
         => _logger.LogDebugMessage("Default recovery strategies registered");
 
     private IRecoveryStrategy<object>? FindRecoveryStrategy<TContext>(Exception error, TContext context)

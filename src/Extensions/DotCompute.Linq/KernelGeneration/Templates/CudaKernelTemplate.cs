@@ -342,7 +342,8 @@ public sealed class CudaKernelTemplate : IKernelTemplate
 
         // Generate operation-specific code based on hints
         var operationType = metadata.GetCompilationHint<string>("operation_type") ?? "elementwise";
-        
+
+
         await Task.Run(() =>
         {
             switch (operationType.ToLowerInvariant())
@@ -378,7 +379,8 @@ public sealed class CudaKernelTemplate : IKernelTemplate
         {
             var input = inputParams[0];
             var output = outputParams[0];
-            
+
+
             sourceBuilder.AppendLine($"    for (int i = idx; i < size; i += stride) {{");
             sourceBuilder.AppendLine($"        {output.Name}[i] = {input.Name}[i]; // TODO: Add actual operation");
             sourceBuilder.AppendLine("    }");
@@ -390,7 +392,8 @@ public sealed class CudaKernelTemplate : IKernelTemplate
         sourceBuilder.AppendLine("    // Reduction operation with shared memory");
         sourceBuilder.AppendLine($"    __shared__ float sdata[{Math.Max(metadata.SharedMemorySize / sizeof(float), 256)}];");
         sourceBuilder.AppendLine();
-        
+
+
         var inputParam = entryPoint.GetInputParameters().FirstOrDefault();
         if (inputParam != null)
         {
@@ -414,7 +417,8 @@ public sealed class CudaKernelTemplate : IKernelTemplate
         sourceBuilder.AppendLine("    const int row = blockIdx.y * blockDim.y + threadIdx.y;");
         sourceBuilder.AppendLine("    const int col = blockIdx.x * blockDim.x + threadIdx.x;");
         sourceBuilder.AppendLine();
-        
+
+
         if (metadata.SharedMemorySize > 0)
         {
             sourceBuilder.AppendLine("    __shared__ float As[16][16];");
@@ -452,15 +456,54 @@ public sealed class CudaKernelTemplate : IKernelTemplate
 
     private static string GetCudaTypeString(Type type)
     {
-        if (type == typeof(float)) return "float";
-        if (type == typeof(double)) return "double";
-        if (type == typeof(int)) return "int";
-        if (type == typeof(long)) return "long long";
-        if (type == typeof(bool)) return "bool";
-        if (type == typeof(byte)) return "unsigned char";
-        if (type == typeof(short)) return "short";
-        if (type.IsArray) return GetCudaTypeString(type.GetElementType()!);
-        
+        if (type == typeof(float))
+        {
+            return "float";
+        }
+
+
+        if (type == typeof(double))
+        {
+            return "double";
+        }
+
+
+        if (type == typeof(int))
+        {
+            return "int";
+        }
+
+
+        if (type == typeof(long))
+        {
+            return "long long";
+        }
+
+
+        if (type == typeof(bool))
+        {
+            return "bool";
+        }
+
+
+        if (type == typeof(byte))
+        {
+            return "unsigned char";
+        }
+
+
+        if (type == typeof(short))
+        {
+            return "short";
+        }
+
+
+        if (type.IsArray)
+        {
+            return GetCudaTypeString(type.GetElementType()!);
+        }
+
+
         return type.Name.ToLowerInvariant();
     }
 
@@ -495,12 +538,21 @@ public sealed class CudaKernelTemplate : IKernelTemplate
 
     private static bool IsValidComputeCapability(string cc)
     {
-        if (string.IsNullOrEmpty(cc)) return false;
-        
+        if (string.IsNullOrEmpty(cc))
+        {
+            return false;
+        }
+
+
         var parts = cc.Split('.');
-        if (parts.Length != 2) return false;
-        
-        return int.TryParse(parts[0], out var major) && 
+        if (parts.Length != 2)
+        {
+            return false;
+        }
+
+
+        return int.TryParse(parts[0], out var major) &&
+
                int.TryParse(parts[1], out var minor) &&
                major >= 3 && major <= 9;
     }
@@ -513,9 +565,23 @@ public sealed class CudaKernelTemplate : IKernelTemplate
             typeof(bool), typeof(uint), typeof(ulong), typeof(ushort), typeof(sbyte)
         };
 
-        if (supportedTypes.Contains(type)) return true;
-        if (type.IsArray && supportedTypes.Contains(type.GetElementType())) return true;
-        if (type.IsPointer && supportedTypes.Contains(type.GetElementType())) return true;
+        if (supportedTypes.Contains(type))
+        {
+            return true;
+        }
+
+
+        if (type.IsArray && supportedTypes.Contains(type.GetElementType()))
+        {
+            return true;
+        }
+
+
+        if (type.IsPointer && supportedTypes.Contains(type.GetElementType()))
+        {
+            return true;
+        }
+
 
         return false;
     }
@@ -542,21 +608,56 @@ public sealed class CudaKernelTemplate : IKernelTemplate
 
     private static int GetTypeSize(Type type)
     {
-        if (type == typeof(float)) return 4;
-        if (type == typeof(double)) return 8;
-        if (type == typeof(int)) return 4;
-        if (type == typeof(long)) return 8;
-        if (type == typeof(short)) return 2;
-        if (type == typeof(byte)) return 1;
-        if (type == typeof(bool)) return 1;
-        
+        if (type == typeof(float))
+        {
+            return 4;
+        }
+
+
+        if (type == typeof(double))
+        {
+            return 8;
+        }
+
+
+        if (type == typeof(int))
+        {
+            return 4;
+        }
+
+
+        if (type == typeof(long))
+        {
+            return 8;
+        }
+
+
+        if (type == typeof(short))
+        {
+            return 2;
+        }
+
+
+        if (type == typeof(byte))
+        {
+            return 1;
+        }
+
+
+        if (type == typeof(bool))
+        {
+            return 1;
+        }
+
+
         return 4; // Default size
     }
 
     private static double EstimateFloatingPointOperations(KernelMetadata metadata, long dataSize)
     {
         var operationType = metadata.GetCompilationHint<string>("operation_type") ?? "elementwise";
-        
+
+
         return operationType.ToLowerInvariant() switch
         {
             "map" or "elementwise" => dataSize * 1.0, // 1 operation per element
@@ -575,7 +676,8 @@ public sealed class CudaKernelTemplate : IKernelTemplate
     private static int EstimateRegisterUsage(KernelMetadata metadata)
     {
         var operationType = metadata.GetCompilationHint<string>("operation_type") ?? "elementwise";
-        
+
+
         return operationType.ToLowerInvariant() switch
         {
             "map" or "elementwise" => 16,
@@ -588,8 +690,9 @@ public sealed class CudaKernelTemplate : IKernelTemplate
     private static double EstimateOccupancy(KernelMetadata metadata)
     {
         var baseOccupancy = 75.0; // Base occupancy percentage
-        
+
         // Reduce occupancy based on register usage
+
         if (metadata.MaxRegistersPerThread.HasValue)
         {
             var regPenalty = Math.Max(0, (metadata.MaxRegistersPerThread.Value - 32) * 2);

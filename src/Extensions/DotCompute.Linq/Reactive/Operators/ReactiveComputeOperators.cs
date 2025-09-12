@@ -5,6 +5,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Memory;
+using DotCompute.Linq.KernelGeneration.Memory;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
@@ -19,16 +20,20 @@ public record WindowConfig
 {
     /// <summary>Window size (count-based)</summary>
     public int? Count { get; init; }
-    
+
+
     /// <summary>Window duration (time-based)</summary>
     public TimeSpan? Duration { get; init; }
-    
+
+
     /// <summary>Skip count for sliding windows</summary>
     public int? Skip { get; init; }
-    
+
+
     /// <summary>Hop duration for time-based sliding windows</summary>
     public TimeSpan? Hop { get; init; }
-    
+
+
     /// <summary>Whether to use tumbling (non-overlapping) windows</summary>
     public bool IsTumbling { get; init; } = false;
 }
@@ -40,13 +45,16 @@ public record TimeSeriesConfig
 {
     /// <summary>Timestamp selector function</summary>
     public Func<object, DateTime>? TimestampSelector { get; init; }
-    
+
+
     /// <summary>Maximum allowed out-of-order delay</summary>
     public TimeSpan MaxOutOfOrderDelay { get; init; } = TimeSpan.FromSeconds(5);
-    
+
+
     /// <summary>Watermark generation interval</summary>
     public TimeSpan WatermarkInterval { get; init; } = TimeSpan.FromSeconds(1);
-    
+
+
     /// <summary>Late data handling strategy</summary>
     public LateDataStrategy LateDataStrategy { get; init; } = LateDataStrategy.Drop;
 }
@@ -97,14 +105,16 @@ public static class ReactiveComputeOperators
         {
             var buffer = new ConcurrentQueue<(T Value, DateTime Timestamp)>();
             var scheduler = new ReactiveKernelScheduler(orchestrator, computeConfig);
-            
+
+
             return source
                 .Timestamp()
                 .Subscribe(
                     timestampedValue =>
                     {
                         buffer.Enqueue((timestampedValue.Value, timestampedValue.Timestamp.DateTime));
-                        
+
+
                         var window = ExtractWindow(buffer, windowConfig, timestampedValue.Timestamp.DateTime);
                         if (window.Length > 0)
                         {
@@ -159,7 +169,8 @@ public static class ReactiveComputeOperators
             var currentSession = new List<T>();
             var lastActivity = DateTime.MinValue;
             var sessionTimer = new Timer(_ => FlushSession(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-            
+
+
             void FlushSession()
             {
                 if (currentSession.Count > 0)
@@ -170,23 +181,28 @@ public static class ReactiveComputeOperators
                     currentSession.Clear();
                 }
             }
-            
+
+
             return source.Subscribe(
                 value =>
                 {
                     var now = DateTime.UtcNow;
-                    
+
                     // Check if we need to start a new session
-                    if (lastActivity != DateTime.MinValue && 
+
+                    if (lastActivity != DateTime.MinValue &&
+
                         now - lastActivity > sessionTimeout)
                     {
                         FlushSession();
                     }
-                    
+
+
                     currentSession.Add(value);
                     lastActivity = now;
-                    
+
                     // Reset the session timer
+
                     sessionTimer.Change(sessionTimeout, Timeout.InfiniteTimeSpan);
                 },
                 ex =>
@@ -229,13 +245,15 @@ public static class ReactiveComputeOperators
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var result = await ComputeArraySum(window, orchestrator);
                 stopwatch.Stop();
-                
+
+
                 _aggregationCounter.Add(1, new KeyValuePair<string, object?>("operation", "sum"));
                 _aggregationTimeHistogram.Record(stopwatch.ElapsedMilliseconds);
-                
+
+
                 return result;
             })
-            .Switch();
+            .SelectMany(obs => obs);
     }
 
     /// <summary>
@@ -259,19 +277,25 @@ public static class ReactiveComputeOperators
             .Select(async window =>
             {
                 if (window.Length == 0)
+                {
+
                     return 0.0;
-                
+                }
+
+
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var sum = await ComputeArraySum(window, orchestrator);
                 var average = Convert.ToDouble(sum) / window.Length;
                 stopwatch.Stop();
-                
+
+
                 _aggregationCounter.Add(1, new KeyValuePair<string, object?>("operation", "average"));
                 _aggregationTimeHistogram.Record(stopwatch.ElapsedMilliseconds);
-                
+
+
                 return average;
             })
-            .Switch();
+            .SelectMany(obs => obs);
     }
 
     /// <summary>
@@ -295,18 +319,24 @@ public static class ReactiveComputeOperators
             .Select(async window =>
             {
                 if (window.Length == 0)
+                {
+
                     return (default(T), default(T));
-                
+                }
+
+
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var (min, max) = await ComputeArrayMinMax(window, orchestrator);
                 stopwatch.Stop();
-                
+
+
                 _aggregationCounter.Add(1, new KeyValuePair<string, object?>("operation", "minmax"));
                 _aggregationTimeHistogram.Record(stopwatch.ElapsedMilliseconds);
-                
+
+
                 return (min, max);
             })
-            .Switch();
+            .SelectMany(obs => obs);
     }
 
     /// <summary>
@@ -330,18 +360,24 @@ public static class ReactiveComputeOperators
             .Select(async window =>
             {
                 if (window.Length < 2)
+                {
+
                     return 0.0;
-                
+                }
+
+
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var stdDev = await ComputeArrayStandardDeviation(window, orchestrator);
                 stopwatch.Stop();
-                
+
+
                 _aggregationCounter.Add(1, new KeyValuePair<string, object?>("operation", "stddev"));
                 _aggregationTimeHistogram.Record(stopwatch.ElapsedMilliseconds);
-                
+
+
                 return stdDev;
             })
-            .Switch();
+            .SelectMany(obs => obs);
     }
 
     #endregion
@@ -358,39 +394,45 @@ public static class ReactiveComputeOperators
     public static IObservable<T> HandleOutOfOrder<T>(
         this IObservable<T> source,
         TimeSeriesConfig config)
-        where T : class
     {
         return Observable.Create<T>(observer =>
         {
             var buffer = new SortedDictionary<DateTime, List<T>>();
             var watermark = DateTime.MinValue;
-            var watermarkTimer = new Timer(_ => ProcessWatermark(), null, 
+            var watermarkTimer = new Timer(_ => ProcessWatermark(), null,
+
                 config.WatermarkInterval, config.WatermarkInterval);
-            
+
+
             void ProcessWatermark()
             {
                 var newWatermark = DateTime.UtcNow - config.MaxOutOfOrderDelay;
-                
+
+
                 var itemsToEmit = buffer
                     .Where(kvp => kvp.Key <= newWatermark)
                     .SelectMany(kvp => kvp.Value)
                     .ToList();
-                
+
+
                 foreach (var item in itemsToEmit)
                 {
                     observer.OnNext(item);
                 }
-                
+
                 // Remove processed items
+
                 var keysToRemove = buffer.Keys.Where(k => k <= newWatermark).ToList();
                 foreach (var key in keysToRemove)
                 {
                     buffer.Remove(key);
                 }
-                
+
+
                 watermark = newWatermark;
             }
-            
+
+
             return source.Subscribe(
                 value =>
                 {
@@ -399,9 +441,11 @@ public static class ReactiveComputeOperators
                         observer.OnNext(value);
                         return;
                     }
-                    
-                    var timestamp = config.TimestampSelector(value);
-                    
+
+
+                    var timestamp = config.TimestampSelector(value!);
+
+
                     if (timestamp <= watermark)
                     {
                         // Handle late data based on strategy
@@ -422,7 +466,11 @@ public static class ReactiveComputeOperators
                     {
                         // Buffer the in-order or early data
                         if (!buffer.ContainsKey(timestamp))
+                        {
                             buffer[timestamp] = new List<T>();
+                        }
+
+
                         buffer[timestamp].Add(value);
                     }
                 },
@@ -452,21 +500,25 @@ public static class ReactiveComputeOperators
         where T : unmanaged, IEquatable<T>
     {
         computeConfig ??= new ReactiveComputeConfig();
-        
+
+
         return Observable.Create<PatternMatch<T>>(observer =>
         {
             var buffer = new CircularBuffer<T>(pattern.Length * 2);
-            
+
+
             return source.Subscribe(
                 async value =>
                 {
                     buffer.Add(value);
-                    
+
+
                     if (buffer.Count >= pattern.Length)
                     {
                         var window = buffer.ToArray();
                         var matches = await FindPatternMatches(window, pattern, orchestrator);
-                        
+
+
                         foreach (var match in matches)
                         {
                             observer.OnNext(match);
@@ -491,13 +543,15 @@ public static class ReactiveComputeOperators
         DateTime currentTime)
     {
         var items = buffer.ToArray();
-        
+
+
         if (config.Count.HasValue)
         {
             // Count-based window
             var count = config.Count.Value;
             var skip = config.Skip ?? (config.IsTumbling ? count : 1);
-            
+
+
             return items.Skip(Math.Max(0, items.Length - count)).Take(count)
                 .Select(x => x.Value).ToArray();
         }
@@ -506,11 +560,13 @@ public static class ReactiveComputeOperators
             // Time-based window
             var duration = config.Duration.Value;
             var windowStart = currentTime - duration;
-            
+
+
             return items.Where(x => x.Timestamp >= windowStart)
                 .Select(x => x.Value).ToArray();
         }
-        
+
+
         return Array.Empty<T>();
     }
 
@@ -521,22 +577,26 @@ public static class ReactiveComputeOperators
         where T : unmanaged, INumber<T>
     {
         if (array.Length == 0)
+        {
             return T.Zero;
-        
-        // Create a basic memory allocator and manager
-        using var memoryAllocator = new MemoryAllocator();
-        using var memoryManager = new UnifiedMemoryManager();
-        
-        using var inputBuffer = memoryAllocator.CreateUnifiedBuffer<T>(memoryManager, array.Length);
-        await inputBuffer.CopyFromAsync(array);
-        
+        }
+
+        // Create a basic memory manager
+        using var memoryManager = new DotCompute.Memory.UnifiedMemoryManager();
+
+
+        using var inputBuffer = await memoryManager.AllocateAndCopyAsync<T>(array);
+
         // Use reduction kernel for sum
+
         var kernelCode = GenerateSumReductionKernel<T>();
-        
+
         // This is a simplified implementation - in practice, you'd use a proper reduction algorithm
+
         await Task.CompletedTask; // Satisfy async signature
         var result = array.Aggregate(T.Zero, (acc, val) => acc + val);
-        
+
+
         return result;
     }
 
@@ -547,50 +607,59 @@ public static class ReactiveComputeOperators
         where T : unmanaged, IComparable<T>
     {
         if (array.Length == 0)
-            return (default(T), default(T));
-        
-        // Create a basic memory allocator and manager
-        using var memoryAllocator = new MemoryAllocator();
-        using var memoryManager = new UnifiedMemoryManager();
-        
-        using var inputBuffer = memoryAllocator.CreateUnifiedBuffer<T>(memoryManager, array.Length);
-        await inputBuffer.CopyFromAsync(array);
-        
+        {
+            return (default(T)!, default(T)!);
+        }
+
+        // Create a basic memory manager
+        using var memoryManager = new DotCompute.Memory.UnifiedMemoryManager();
+
+
+        using var inputBuffer = await memoryManager.AllocateAndCopyAsync<T>(array);
+
         // Simplified implementation
+
         await Task.CompletedTask; // Satisfy async signature
-        var min = array.Min();
-        var max = array.Max();
-        
+        var min = array.Min()!;
+        var max = array.Max()!;
+
+
         return (min, max);
     }
 
     /// <summary>
     /// Computes standard deviation using GPU acceleration
     /// </summary>
-    private static async Task<double> ComputeArrayStandardDeviation<T>(T[] array, IComputeOrchestrator orchestrator)
+    private static Task<double> ComputeArrayStandardDeviation<T>(T[] array, IComputeOrchestrator orchestrator)
         where T : unmanaged, INumber<T>
     {
         if (array.Length < 2)
-            return 0.0;
-        
+        {
+            return Task.FromResult(0.0);
+        }
+
         // Simplified implementation
         var mean = array.Average(x => Convert.ToDouble(x));
         var variance = array.Average(x => Math.Pow(Convert.ToDouble(x) - mean, 2));
-        
-        return Math.Sqrt(variance);
+
+
+        return Task.FromResult(Math.Sqrt(variance));
     }
 
     /// <summary>
     /// Finds pattern matches in the data
     /// </summary>
-    private static async Task<PatternMatch<T>[]> FindPatternMatches<T>(
-        T[] data, 
-        T[] pattern, 
+    private static Task<PatternMatch<T>[]> FindPatternMatches<T>(
+        T[] data,
+
+        T[] pattern,
+
         IComputeOrchestrator orchestrator)
         where T : unmanaged, IEquatable<T>
     {
         var matches = new List<PatternMatch<T>>();
-        
+
+
         for (int i = 0; i <= data.Length - pattern.Length; i++)
         {
             bool isMatch = true;
@@ -602,7 +671,8 @@ public static class ReactiveComputeOperators
                     break;
                 }
             }
-            
+
+
             if (isMatch)
             {
                 matches.Add(new PatternMatch<T>
@@ -614,8 +684,9 @@ public static class ReactiveComputeOperators
                 });
             }
         }
-        
-        return matches.ToArray();
+
+
+        return Task.FromResult(matches.ToArray());
     }
 
     /// <summary>
@@ -644,7 +715,8 @@ public static class ReactiveComputeOperators
             if (tid == 0) output[blockIdx.x] = sdata[0];
         }}";
     }
-    
+
+
     #endregion
 }
 
@@ -698,16 +770,20 @@ public record PatternMatch<T>
 {
     /// <summary>Start index of the match</summary>
     public int StartIndex { get; init; }
-    
+
+
     /// <summary>Length of the matched pattern</summary>
     public int Length { get; init; }
-    
+
+
     /// <summary>The matched data</summary>
     public T[] MatchedData { get; init; } = Array.Empty<T>();
-    
+
+
     /// <summary>Timestamp when the match was found</summary>
     public DateTime Timestamp { get; init; }
-    
+
+
     /// <summary>Confidence score of the match (0-1)</summary>
     public double Confidence { get; init; } = 1.0;
 }

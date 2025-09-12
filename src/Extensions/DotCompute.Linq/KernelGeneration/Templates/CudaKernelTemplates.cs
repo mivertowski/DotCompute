@@ -3,10 +3,12 @@
 
 using System.Globalization;
 using System.Text;
-using DotCompute.Extensions.DotCompute.Linq.KernelGeneration;
+using DotCompute.Linq.KernelGeneration;
+using DotCompute.Linq.KernelGeneration.Templates;
 using Microsoft.Extensions.Logging;
+using TemplateOptions = DotCompute.Linq.KernelGeneration.Templates.KernelGenerationOptions;
 
-namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
+namespace DotCompute.Linq.KernelGeneration.Templates
 {
     /// <summary>
     /// CUDA kernel templates for common LINQ operations.
@@ -73,7 +75,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
         /// </summary>
         public abstract Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
-            KernelGenerationOptions options);
+            TemplateOptions options);
 
         /// <summary>
         /// Gets the optimal block size for this kernel type.
@@ -106,7 +108,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
 
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
-            KernelGenerationOptions options)
+            TemplateOptions options)
         {
             var builder = new StringBuilder();
 
@@ -159,7 +161,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
 
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
-            KernelGenerationOptions options)
+            TemplateOptions options)
         {
             var builder = new StringBuilder();
 
@@ -173,7 +175,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
             builder.AppendLine("    const int idx = blockIdx.x * blockDim.x + threadIdx.x;");
             builder.AppendLine("    const int stride = blockDim.x * gridDim.x;");
             builder.AppendLine();
-            
+
+
             if (options.UseSharedMemory)
             {
                 builder.AppendLine("    // Shared memory for local compaction");
@@ -190,7 +193,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
             builder.AppendLine("    // Grid-stride loop with predicate evaluation");
             builder.AppendLine("    for (int i = idx; i < n; i += stride) {");
             builder.AppendLine("        if (filter_predicate(input[i])) {");
-            
+
+
             if (options.UseSharedMemory)
             {
                 builder.AppendLine("            int local_pos = atomicAdd(&local_count, 1);");
@@ -204,7 +208,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
                 builder.AppendLine("            int pos = atomicAdd(output_count, 1);");
                 builder.AppendLine("            output[pos] = input[i];");
             }
-            
+
+
             builder.AppendLine("        }");
             builder.AppendLine("    }");
 
@@ -248,7 +253,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
 
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
-            KernelGenerationOptions options)
+            TemplateOptions options)
         {
             var builder = new StringBuilder();
 
@@ -363,7 +368,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
 
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
-            KernelGenerationOptions options)
+            TemplateOptions options)
         {
             var builder = new StringBuilder();
 
@@ -446,7 +451,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
 
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
-            KernelGenerationOptions options)
+            TemplateOptions options)
         {
             var builder = new StringBuilder();
 
@@ -505,7 +510,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
 
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
-            KernelGenerationOptions options)
+            TemplateOptions options)
         {
             var builder = new StringBuilder();
 
@@ -563,7 +568,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
 
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
-            KernelGenerationOptions options)
+            TemplateOptions options)
         {
             var builder = new StringBuilder();
 
@@ -616,7 +621,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Templates
 
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
-            KernelGenerationOptions options)
+            TemplateOptions options)
         {
             var builder = new StringBuilder();
 

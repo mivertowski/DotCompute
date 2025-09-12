@@ -48,20 +48,22 @@ public class KernelChainTests : PipelineTestBase
         // Act
         var result = await builder
             .Kernel("VectorAdd", input, input, new float[input.Length])
-            .Then("VectorMultiply", new object[] { "result", input, new float[input.Length] })
+            .Then("VectorMultiply", ["result", input, new float[input.Length]])
             .ExecuteAsync<float[]>(CreateTestTimeout());
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(input.Length, result.Length);
-        
+
         // Verify execution order
+
         var history = _mockOrchestrator.ExecutionHistory;
         Assert.Equal(2, history.Count);
         Assert.Equal("VectorAdd", history[0].KernelName);
         Assert.Equal("VectorMultiply", history[1].KernelName);
-        
+
         // Verify all executions were successful
+
         Assert.All(history, record => Assert.True(record.Success));
     }
 
@@ -86,13 +88,16 @@ public class KernelChainTests : PipelineTestBase
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Length);
-        
+
         // Parallel execution should be significantly faster than sequential
         // Two 100ms operations should complete in ~100-120ms, not 200ms
-        Assert.True(duration < TimeSpan.FromMilliseconds(150), 
+
+        Assert.True(duration < TimeSpan.FromMilliseconds(150),
+
             $"Parallel execution took too long: {duration.TotalMilliseconds}ms");
-        
+
         // Verify both kernels were executed
+
         var history = _mockOrchestrator.ExecutionHistory;
         Assert.True(history.Count >= 2);
     }
@@ -111,21 +116,24 @@ public class KernelChainTests : PipelineTestBase
             .Kernel("VectorAdd", input, input, new float[input.Length])
             .Branch<float[]>(
                 data => conditionValue,
-                truePath => truePath.Then("VectorMultiply", new object[] { "data", input, new float[input.Length] }),
-                falsePath => falsePath.Then("VectorAdd", new object[] { "data", input, new float[input.Length] })
+                truePath => truePath.Then("VectorMultiply", ["data", input, new float[input.Length]]),
+                falsePath => falsePath.Then("VectorAdd", ["data", input, new float[input.Length]])
             )
             .ExecuteAsync<float[]>(CreateTestTimeout());
 
         // Assert
         Assert.NotNull(result);
-        
+
+
         var history = _mockOrchestrator.ExecutionHistory;
         Assert.True(history.Count >= 2);
-        
+
         // First operation should always be VectorAdd
+
         Assert.Equal("VectorAdd", history[0].KernelName);
-        
+
         // Second operation should depend on branch condition
+
         var expectedSecondKernel = conditionValue ? "VectorMultiply" : "VectorAdd";
         Assert.Equal(expectedSecondKernel, history[1].KernelName);
     }
@@ -158,7 +166,8 @@ public class KernelChainTests : PipelineTestBase
 
         // Assert
         // Second execution should be significantly faster due to caching
-        Assert.True(secondExecution < firstExecution * 0.5, 
+        Assert.True(secondExecution < firstExecution * 0.5,
+
             $"Caching did not improve performance. First: {firstExecution.TotalMilliseconds}ms, " +
             $"Second: {secondExecution.TotalMilliseconds}ms");
     }
@@ -174,8 +183,9 @@ public class KernelChainTests : PipelineTestBase
         // Arrange
         var input = GenerateTestData<float>(100);
         var builder = CreatePipelineBuilder();
-        
+
         // Configure error handling
+
         builder.OnError(ex => strategy);
 
         // Act & Assert based on strategy
@@ -234,8 +244,9 @@ public class KernelChainTests : PipelineTestBase
         // Assert
         Assert.NotNull(result);
         Assert.Equal(input.Length, result.Length);
-        
+
         // Verify the backend selection was recorded
+
         var history = _mockOrchestrator.ExecutionHistory;
         Assert.Single(history);
         Assert.True(history[0].Success);
@@ -295,7 +306,7 @@ public class KernelChainTests : PipelineTestBase
 
         // Act
         var validationResult = await builder
-            .Kernel("VectorAdd", null, null, null) // Invalid null inputs
+            .Kernel("VectorAdd", null!, null!, null!) // Invalid null inputs
             .WithValidation(validateInputs: true)
             .ValidateAsync();
 
@@ -315,7 +326,7 @@ public class KernelChainTests : PipelineTestBase
         // Act
         var result = await builder
             .Kernel("VectorAdd", input, input, new float[input.Length])
-            .Then("VectorMultiply", new object[] { "result", input, new float[input.Length] })
+            .Then("VectorMultiply", ["result", input, new float[input.Length]])
             .WithProfiling("test-profile")
             .ExecuteWithMetricsAsync(CreateTestTimeout());
 
@@ -323,15 +334,17 @@ public class KernelChainTests : PipelineTestBase
         Assert.True(result.Success);
         Assert.NotNull(result.StepMetrics);
         Assert.Equal(2, result.StepMetrics.Count);
-        
+
         // Verify metrics contain meaningful data
+
         foreach (var stepMetric in result.StepMetrics)
         {
             Assert.True(stepMetric.ExecutionTime > TimeSpan.Zero);
             Assert.NotNull(stepMetric.KernelName);
             Assert.True(stepMetric.MemoryUsed >= 0);
         }
-        
+
+
         Assert.NotNull(result.MemoryMetrics);
         Assert.True(result.MemoryMetrics.TotalMemoryAllocated >= 0);
     }
@@ -366,7 +379,7 @@ public class KernelChainTests : PipelineTestBase
             {
                 var result = await builder
                     .Kernel("VectorAdd", largeInput, largeInput, new float[largeInput.Length])
-                    .Then("VectorMultiply", new object[] { "result", largeInput, new float[largeInput.Length] })
+                    .Then("VectorMultiply", ["result", largeInput, new float[largeInput.Length]])
                     .ExecuteAsync<float[]>(CreateTestTimeout());
                 Assert.NotNull(result);
             },
@@ -414,21 +427,26 @@ public class KernelChainTests : PipelineTestBase
     private void SetupMockKernels()
     {
         _mockOrchestrator.Reset();
-        
+
         // Basic vector operations
+
         _mockOrchestrator.RegisterMockKernel("VectorAdd", MockComputeOrchestrator.CreateVectorAddMock());
         _mockOrchestrator.RegisterMockKernel("VectorMultiply", MockComputeOrchestrator.CreateVectorMultiplyMock());
         _mockOrchestrator.RegisterMockKernel("Aggregate", MockComputeOrchestrator.CreateAggregateMock());
-        
+
         // Performance testing kernels
+
         _mockOrchestrator.RegisterMockKernel("SlowKernel", MockComputeOrchestrator.CreateSlowMock(100));
         _mockOrchestrator.RegisterMockKernel("VerySlowKernel", MockComputeOrchestrator.CreateSlowMock(1000));
-        
+
         // Error testing kernels
-        _mockOrchestrator.RegisterMockKernel("ErrorKernel", 
+
+        _mockOrchestrator.RegisterMockKernel("ErrorKernel",
+
             MockComputeOrchestrator.CreateErrorMock(typeof(InvalidOperationException), "Simulated kernel error"));
-        
+
         // Retryable error kernel that succeeds on second attempt
+
         var retryAttempts = 0;
         _mockOrchestrator.RegisterMockKernel("RetryableErrorKernel", args =>
         {

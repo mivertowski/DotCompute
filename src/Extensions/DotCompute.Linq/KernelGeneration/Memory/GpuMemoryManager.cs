@@ -9,7 +9,7 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
+namespace DotCompute.Linq.KernelGeneration.Memory
 {
     /// <summary>
     /// Advanced GPU memory manager with pooling, unified memory support,
@@ -91,7 +91,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             var sizeInBytes = elementCount * Marshal.SizeOf<T>();
-            
+
+
             _logger.LogDebug("Allocating GPU buffer: type={BufferType}, elements={ElementCount}, bytes={SizeInBytes}",
                 bufferType, elementCount, sizeInBytes);
 
@@ -114,7 +115,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
 
                 // Determine allocation strategy based on buffer type and size
                 var allocationStrategy = DetermineAllocationStrategy(sizeInBytes, bufferType);
-                
+
+
                 var buffer = allocationStrategy switch
                 {
                     AllocationStrategy.DeviceMemory => await AllocateDeviceMemoryAsync<T>(elementCount),
@@ -174,7 +176,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
                             deviceBuffer.DevicePointer,
                             hostPtr,
                             (UIntPtr)sizeInBytes,
-                            CudaMemcpyKind.HostToDevice);
+                            DotCompute.Backends.CUDA.Types.Native.CudaMemcpyKind.HostToDevice);
 
                         if (result != CudaError.Success)
                         {
@@ -230,7 +232,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
                             hostPtr,
                             deviceBuffer.DevicePointer,
                             (UIntPtr)sizeInBytes,
-                            CudaMemcpyKind.DeviceToHost);
+                            DotCompute.Backends.CUDA.Types.Native.CudaMemcpyKind.DeviceToHost);
 
                         if (result != CudaError.Success)
                         {
@@ -277,7 +279,7 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
                         hostPtr,
                         sourceBuffer.DevicePointer,
                         (UIntPtr)sizeInBytes,
-                        CudaMemcpyKind.DeviceToHost);
+                        DotCompute.Backends.CUDA.Types.Native.CudaMemcpyKind.DeviceToHost);
 
                     if (result != CudaError.Success)
                     {
@@ -398,7 +400,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
             lock (_allocationLock)
             {
                 var (freeMemory, totalMemory) = GetDeviceMemoryInfo();
-                
+
+
                 return new MemoryStatistics
                 {
                     TotalDeviceMemory = (long)totalMemory,
@@ -429,7 +432,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
                 var result = CudaRuntime.cudaDeviceSynchronize();
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to synchronize device during GC: {Error}", 
+                    _logger.LogWarning("Failed to synchronize device during GC: {Error}",
+
                         CudaRuntime.GetErrorString(result));
                 }
             });
@@ -486,7 +490,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
 
             return await Task.Run(() =>
             {
-                var result = CudaRuntime.cudaMalloc(out var devicePointer, (UIntPtr)sizeInBytes);
+                var devicePointer = IntPtr.Zero;
+                var result = CudaRuntime.cudaMalloc(ref devicePointer, (UIntPtr)sizeInBytes);
                 if (result != CudaError.Success)
                 {
                     throw new MemoryAllocationException(
@@ -508,7 +513,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
 
             return await Task.Run(() =>
             {
-                var result = CudaRuntime.cudaMallocHost(out var hostPointer, (UIntPtr)sizeInBytes);
+                var hostPointer = IntPtr.Zero;
+                var result = CudaRuntime.cudaMallocHost(ref hostPointer, (UIntPtr)sizeInBytes);
                 if (result != CudaError.Success)
                 {
                     throw new MemoryAllocationException(
@@ -516,7 +522,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
                 }
 
                 // Get device pointer for the pinned memory
-                result = CudaRuntime.cudaHostGetDevicePointer(out var devicePointer, hostPointer, 0);
+                var devicePointer = IntPtr.Zero;
+                result = CudaRuntime.cudaHostGetDevicePointer(ref devicePointer, hostPointer, 0);
                 if (result != CudaError.Success)
                 {
                     CudaRuntime.cudaFreeHost(hostPointer);
@@ -566,9 +573,10 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
         private bool SupportsUnifiedMemory()
         {
             // Check if device supports unified memory
+            int unifiedAddressing = 0;
             var result = CudaRuntime.cudaDeviceGetAttribute(
-                out var unifiedAddressing,
-                CudaDeviceAttribute.UnifiedAddressing,
+                ref unifiedAddressing,
+                DotCompute.Backends.CUDA.Types.Native.CudaDeviceAttribute.UnifiedAddressing,
                 0);
 
             return result == CudaError.Success && unifiedAddressing == 1;
@@ -579,9 +587,12 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
         public void Dispose()
         {
             if (_disposed)
+            {
                 return;
+            }
 
             // Cleanup all allocations
+
             foreach (var kvp in _allocatedBuffers)
             {
                 CudaRuntime.cudaFree(kvp.Key);
@@ -619,13 +630,22 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
         public async ValueTask DisposeAsync()
         {
             if (InputBuffer != null)
+            {
                 await MemoryManager.DeallocateGenericBufferAsync(InputBuffer);
-            
+            }
+
             if (OutputBuffer != null)
+            {
                 await MemoryManager.DeallocateGenericBufferAsync(OutputBuffer);
-            
+            }
+
+
             if (OutputCountBuffer != null)
+            {
+
                 await MemoryManager.DeallocateBufferAsync(OutputCountBuffer);
+            }
+
         }
     }
 
@@ -770,7 +790,8 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
         {
             buffer = null!;
             var sizeInBytes = elementCount * Marshal.SizeOf<T>();
-            
+
+
             if (_pools.TryGetValue(sizeInBytes, out var pool) && pool.TryDequeue(out var pointer))
             {
                 buffer = new GpuBuffer<T>(pointer, elementCount, MemoryType.Device);
@@ -783,10 +804,14 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
         public bool TryReturnToPool<T>(GpuBuffer<T> buffer) where T : unmanaged
         {
             if (_disposed || buffer.MemoryType != MemoryType.Device)
+            {
                 return false;
+            }
+
 
             var pool = _pools.GetOrAdd(buffer.SizeInBytes, _ => new Queue<IntPtr>());
-            
+
+
             if (pool.Count < 10) // Limit pool size
             {
                 pool.Enqueue(buffer.DevicePointer);
@@ -885,14 +910,18 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
 
         public void Dispose()
         {
-            _disposed = true;
+            if (!_disposed)
+            {
+                // No specific cleanup needed for P2P transfers
+                _disposed = true;
+            }
         }
     }
 
     /// <summary>
     /// Unified memory manager.
     /// </summary>
-    internal class UnifiedMemoryManager : IDisposable
+    public class UnifiedMemoryManager : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -923,7 +952,11 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
 
         public void Dispose()
         {
-            _disposed = true;
+            if (!_disposed)
+            {
+                // No specific cleanup needed for unified memory
+                _disposed = true;
+            }
         }
     }
 
@@ -937,14 +970,4 @@ namespace DotCompute.Extensions.DotCompute.Linq.KernelGeneration.Memory
         UnifiedAddressing = 41
     }
 
-    /// <summary>
-    /// CUDA memory copy kinds.
-    /// </summary>
-    internal enum CudaMemcpyKind
-    {
-        HostToHost = 0,
-        HostToDevice = 1,
-        DeviceToHost = 2,
-        DeviceToDevice = 3
-    }
 }

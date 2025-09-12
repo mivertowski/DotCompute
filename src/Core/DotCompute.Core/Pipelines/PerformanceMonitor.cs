@@ -260,7 +260,8 @@ namespace DotCompute.Core.Pipelines
         {
             var memStats = GetMemoryStats();
             var threadStats = GetThreadPoolStats();
-            
+
+
             return new SystemPerformanceSnapshot
             {
                 Timestamp = DateTimeOffset.UtcNow,

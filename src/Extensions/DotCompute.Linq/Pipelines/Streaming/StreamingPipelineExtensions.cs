@@ -88,11 +88,13 @@ public static class StreamingPipelineExtensions
         where TInput : unmanaged where TOutput : unmanaged
     {
         var semaphore = new SemaphoreSlim(Environment.ProcessorCount, Environment.ProcessorCount);
-        
+
+
         await foreach (var item in source.WithCancellation(cancellationToken))
         {
             await semaphore.WaitAsync(cancellationToken);
-            
+
+
             var processTask = Task.Run(async () =>
             {
                 try
@@ -170,7 +172,8 @@ public static class StreamingPipelineExtensions
                 writer.TryComplete(ex);
                 return;
             }
-            
+
+
             writer.TryComplete();
         }, cancellationToken);
 
@@ -198,17 +201,20 @@ public static class StreamingPipelineExtensions
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var window = new List<TimestampedValue<double>>();
-        
+
+
         await foreach (var value in source.WithCancellation(cancellationToken))
         {
             // Add new value
             window.Add(value);
-            
+
             // Remove values outside the window
+
             var cutoff = value.Timestamp - windowDuration;
             window.RemoveAll(v => v.Timestamp < cutoff);
-            
+
             // Compute and yield average
+
             if (window.Count > 0)
             {
                 var average = window.Average(v => v.Value);
@@ -234,32 +240,37 @@ public static class StreamingPipelineExtensions
         var window = new Queue<double>();
         var sum = 0.0;
         var sumOfSquares = 0.0;
-        
+
+
         await foreach (var value in source.WithCancellation(cancellationToken))
         {
             // Add to window
             window.Enqueue(value);
             sum += value;
             sumOfSquares += value * value;
-            
+
             // Maintain window size
+
             if (window.Count > windowSize)
             {
                 var removed = window.Dequeue();
                 sum -= removed;
                 sumOfSquares -= removed * removed;
             }
-            
+
             // Calculate statistics and detect anomalies
+
             if (window.Count >= 10) // Need minimum samples
             {
                 var mean = sum / window.Count;
                 var variance = (sumOfSquares / window.Count) - (mean * mean);
                 var stdDev = Math.Sqrt(Math.Max(0, variance));
-                
+
+
                 var zScore = stdDev > 0 ? Math.Abs(value - mean) / stdDev : 0;
                 var isAnomaly = zScore > threshold;
-                
+
+
                 yield return new AnomalyResult
                 {
                     Value = value,
@@ -321,26 +332,30 @@ public static class StreamingPipelineExtensions
     {
         var window = new List<TimestampedValue<T>>();
         var lastEmission = DateTime.MinValue;
-        
+
+
         await foreach (var value in source.WithCancellation(cancellationToken))
         {
             window.Add(value);
-            
+
             // Check if we should emit a result
+
             if (value.Timestamp - lastEmission >= windowDuration)
             {
                 // Filter to current window
                 var cutoff = value.Timestamp - windowDuration;
                 var windowValues = window.Where(v => v.Timestamp >= cutoff).Select(v => v.Value);
-                
+
+
                 if (windowValues.Any())
                 {
                     var result = aggregateFunction(windowValues);
                     yield return result;
                     lastEmission = value.Timestamp;
                 }
-                
+
                 // Clean up old values
+
                 window.RemoveAll(v => v.Timestamp < cutoff);
             }
         }
@@ -365,7 +380,8 @@ public static class StreamingPipelineExtensions
     {
         var currentSession = new List<TimestampedValue<T>>();
         DateTime lastTimestamp = DateTime.MinValue;
-        
+
+
         await foreach (var value in source.WithCancellation(cancellationToken))
         {
             // Check if this starts a new session
@@ -376,16 +392,19 @@ public static class StreamingPipelineExtensions
                 {
                     yield return sessionProcessor(currentSession);
                 }
-                
+
                 // Start new session
+
                 currentSession.Clear();
             }
-            
+
+
             currentSession.Add(value);
             lastTimestamp = value.Timestamp;
         }
-        
+
         // Process final session
+
         if (currentSession.Count > 0)
         {
             yield return sessionProcessor(currentSession);
@@ -413,24 +432,30 @@ public static class StreamingPipelineExtensions
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
         where TInput : unmanaged where TOutput : unmanaged
     {
-        var actualParallelism = maxDegreeOfParallelism == -1 
-            ? Environment.ProcessorCount 
+        var actualParallelism = maxDegreeOfParallelism == -1
+
+            ? Environment.ProcessorCount
+
             : maxDegreeOfParallelism;
-            
+
+
         var semaphore = new SemaphoreSlim(actualParallelism, actualParallelism);
         var results = new Dictionary<long, Task<TOutput>>();
         var nextIndex = 0L;
         var currentIndex = 0L;
-        
+
+
         await foreach (var item in source.WithCancellation(cancellationToken))
         {
             await semaphore.WaitAsync(cancellationToken);
-            
+
+
             var index = currentIndex++;
             var task = ProcessItemAsync(item, processor, semaphore);
             results[index] = task;
-            
+
             // Yield completed results in order
+
             while (results.TryGetValue(nextIndex, out var nextTask))
             {
                 if (nextTask.IsCompleted)
@@ -445,8 +470,9 @@ public static class StreamingPipelineExtensions
                 }
             }
         }
-        
+
         // Yield remaining results in order
+
         while (results.TryGetValue(nextIndex, out var remainingTask))
         {
             yield return await remainingTask;
@@ -456,8 +482,10 @@ public static class StreamingPipelineExtensions
     }
 
     private static async Task<TOutput> ProcessItemAsync<TInput, TOutput>(
-        TInput item, 
-        Func<TInput, Task<TOutput>> processor, 
+        TInput item,
+
+        Func<TInput, Task<TOutput>> processor,
+
         SemaphoreSlim semaphore)
     {
         try
@@ -506,15 +534,61 @@ public enum BackpressureStrategy
 {
     /// <summary>Block producer when buffer is full.</summary>
     Block,
-    
+
     /// <summary>Drop oldest items when buffer is full.</summary>
     DropOldest,
-    
+
     /// <summary>Drop newest items when buffer is full.</summary>
     DropNewest,
-    
+
+
     /// <summary>Apply exponential backoff.</summary>
     Backoff
+}
+
+/// <summary>
+/// Options for pipeline profiling configuration.
+/// </summary>
+public class ProfilingOptions
+{
+    /// <summary>Gets or sets whether to enable detailed timing.</summary>
+    public bool EnableDetailedTiming { get; set; } = true;
+
+    /// <summary>Gets or sets whether to track memory usage.</summary>
+    public bool TrackMemoryUsage { get; set; } = true;
+
+    /// <summary>Gets or sets whether to collect performance counters.</summary>
+    public bool CollectPerformanceCounters { get; set; } = false;
+
+    /// <summary>Gets or sets the sampling interval for profiling.</summary>
+    public TimeSpan SamplingInterval { get; set; } = TimeSpan.FromMilliseconds(100);
+
+    /// <summary>Gets or sets whether to enable kernel-level profiling.</summary>
+    public bool EnableKernelProfiling { get; set; } = false;
+
+    /// <summary>Gets or sets custom profiling tags.</summary>
+    public Dictionary<string, string> CustomTags { get; set; } = new();
+}
+
+/// <summary>
+/// Options for circuit breaker pattern in error handling.
+/// </summary>
+public class CircuitBreakerOptions
+{
+    /// <summary>Gets or sets the failure threshold before opening circuit.</summary>
+    public int FailureThreshold { get; set; } = 5;
+
+    /// <summary>Gets or sets the timeout before trying to close circuit.</summary>
+    public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(1);
+
+    /// <summary>Gets or sets the success threshold for closing circuit.</summary>
+    public int SuccessThreshold { get; set; } = 3;
+
+    /// <summary>Gets or sets whether to log circuit breaker events.</summary>
+    public bool EnableLogging { get; set; } = true;
+
+    /// <summary>Gets or sets custom circuit breaker policies.</summary>
+    public Dictionary<string, object> CustomPolicies { get; set; } = new();
 }
 
 /// <summary>
@@ -628,8 +702,10 @@ public class StreamingMetrics
     public TimeSpan TotalDuration { get; set; }
 
     /// <summary>Average throughput in items per second.</summary>
-    public double AverageThroughput => TotalDuration.TotalSeconds > 0 
-        ? ItemsProcessed / TotalDuration.TotalSeconds 
+    public double AverageThroughput => TotalDuration.TotalSeconds > 0
+
+        ? ItemsProcessed / TotalDuration.TotalSeconds
+
         : 0;
 
     /// <inheritdoc />
@@ -638,5 +714,6 @@ public class StreamingMetrics
         return $"Items: {ItemsProcessed}, Duration: {TotalDuration.TotalSeconds:F2}s, Throughput: {AverageThroughput:F2} items/s";
     }
 }
+
 
 #endregion

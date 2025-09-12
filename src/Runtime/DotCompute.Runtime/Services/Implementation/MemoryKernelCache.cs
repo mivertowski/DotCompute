@@ -24,7 +24,8 @@ public class MemoryKernelCache : IKernelCache, IDisposable
     private readonly ConcurrentDictionary<string, CacheEntry> _cache;
     private readonly ReaderWriterLockSlim _statisticsLock;
     private readonly Timer _cleanupTimer;
-    
+
+
     private long _hitCount;
     private long _missCount;
     private long _totalCompilationTimeSaved;
@@ -38,8 +39,9 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         _options = options?.Value ?? new MemoryCacheOptions();
         _cache = new ConcurrentDictionary<string, CacheEntry>();
         _statisticsLock = new ReaderWriterLockSlim();
-        
+
         // Setup periodic cleanup for expired entries
+
         _cleanupTimer = new Timer(
             CleanupExpiredEntries,
             null,
@@ -49,7 +51,8 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
     /// <inheritdoc />
     public string GenerateCacheKey(
-        KernelDefinition kernelDefinition, 
+        KernelDefinition kernelDefinition,
+
         IAccelerator accelerator,
         CompilationOptions? compilationOptions)
     {
@@ -59,7 +62,8 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         keyBuilder.Append(accelerator.Info.DeviceType);
         keyBuilder.Append('_');
         keyBuilder.Append(accelerator.Info.Id);
-        
+
+
         if (compilationOptions != null)
         {
             keyBuilder.Append('_');
@@ -92,12 +96,14 @@ public class MemoryKernelCache : IKernelCache, IDisposable
             {
                 entry.UpdateLastAccess();
                 IncrementHitCount(entry.CompilationTime);
-                
+
+
                 _logger.CacheHit(cacheKey);
                 return Task.FromResult<ICompiledKernel?>(entry.CompiledKernel);
             }
-            
+
             // Remove expired entry
+
             _cache.TryRemove(cacheKey, out _);
         }
 
@@ -121,14 +127,17 @@ public class MemoryKernelCache : IKernelCache, IDisposable
             CreatedAt = DateTime.UtcNow,
             LastAccessedAt = DateTime.UtcNow,
             CompilationTime = TimeSpan.FromMilliseconds(100), // Estimate, should be tracked during compilation
-            ExpiresAt = _options.DefaultExpiration.HasValue 
-                ? DateTime.UtcNow + _options.DefaultExpiration.Value 
+            ExpiresAt = _options.DefaultExpiration.HasValue
+
+                ? DateTime.UtcNow + _options.DefaultExpiration.Value
+
                 : DateTime.MaxValue
         };
 
         _cache[cacheKey] = entry;
         _logger.CacheStored(cacheKey);
-        
+
+
         return Task.CompletedTask;
     }
 
@@ -136,12 +145,14 @@ public class MemoryKernelCache : IKernelCache, IDisposable
     public Task<bool> InvalidateAsync(string cacheKey)
     {
         var removed = _cache.TryRemove(cacheKey, out _);
-        
+
+
         if (removed)
         {
             _logger.CacheInvalidated(cacheKey);
         }
-        
+
+
         return Task.FromResult(removed);
     }
 
@@ -150,7 +161,8 @@ public class MemoryKernelCache : IKernelCache, IDisposable
     {
         var count = _cache.Count;
         _cache.Clear();
-        
+
+
         _logger.CacheCleared(count);
         return Task.FromResult(count);
     }
@@ -167,7 +179,8 @@ public class MemoryKernelCache : IKernelCache, IDisposable
                 TotalSizeBytes = EstimateCacheSize(),
                 HitCount = _hitCount,
                 MissCount = _missCount,
-                AverageTimeSavedPerHit = _hitCount > 0 
+                AverageTimeSavedPerHit = _hitCount > 0
+
                     ? TimeSpan.FromMilliseconds(_totalCompilationTimeSaved / _hitCount)
                     : TimeSpan.Zero
             };
@@ -198,8 +211,9 @@ public class MemoryKernelCache : IKernelCache, IDisposable
                     // Generate cache key but don't compile here
                     // The actual compilation should be done by the caller
                     var cacheKey = GenerateCacheKey(kernel, accelerator, null);
-                    
+
                     // Check if already cached
+
                     if (!_cache.ContainsKey(cacheKey))
                     {
                         _logger.CachePrewarmNeeded(kernel.Name, accelerator.Info.DeviceType);
@@ -222,7 +236,11 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
     private void EvictLeastRecentlyUsed()
     {
-        if (_cache.IsEmpty) return;
+        if (_cache.IsEmpty)
+        {
+            return;
+        }
+
 
         var lruEntry = _cache
             .OrderBy(kvp => kvp.Value.LastAccessedAt)
@@ -288,12 +306,17 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _cleanupTimer?.Dispose();
         _cache.Clear();
         _statisticsLock?.Dispose();
-        
+
+
         _disposed = true;
     }
 

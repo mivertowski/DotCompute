@@ -4,6 +4,9 @@
 using System.Linq.Expressions;
 using DotCompute.Linq.Types;
 using DotCompute.Linq.Pipelines.Analysis;
+using DotCompute.Linq.Compilation.Analysis;
+using CompilationOperatorInfo = DotCompute.Linq.Compilation.Analysis.OperatorInfo;
+using PipelineOperatorInfo = DotCompute.Linq.Pipelines.Analysis.OperatorInfo;
 
 namespace DotCompute.Linq.Analysis;
 
@@ -17,7 +20,12 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
     {
         if (expression is not MethodCallExpression methodCall)
         {
-            throw new ArgumentException("Expression must be a MethodCallExpression", nameof(expression));
+            return new OperatorAnalysisResult
+            {
+                OperatorType = expression.NodeType,
+                IsComputeFriendly = false,
+                SupportsVectorization = false
+            };
         }
 
         return new OperatorAnalysisResult
@@ -35,23 +43,12 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
     }
 
     /// <inheritdoc />
-    public OperatorInfo GetOperatorInfo(ExpressionType operatorType, Type[] operandTypes, BackendType backend)
+    public DotCompute.Linq.Analysis.OperatorInfo GetOperatorInfo(ExpressionType operatorType, Type[] operandTypes, BackendType backend)
     {
-        // For method calls, we need more context than just the operator type
-        return new OperatorInfo
-        {
-            OperatorType = ConvertExpressionTypeToOperatorType(operatorType),
-            Name = "MethodCall",
-            IsNativelySupported = false,
-            Implementation = ImplementationMethod.Library,
-            PerformanceCost = 2.0, // Method calls generally have higher overhead
-            Accuracy = new AccuracyInfo
-            {
-                RelativeError = 0.0,
-                AbsoluteError = 0.0,
-                IsIEEE754Compliant = true
-            }
-        };
+        return backend == BackendType.CUDA
+
+            ? DotCompute.Linq.Analysis.OperatorInfo.ForCUDA(operatorType, operandTypes, operandTypes?.LastOrDefault() ?? typeof(object))
+            : DotCompute.Linq.Analysis.OperatorInfo.ForCPU(operatorType, operandTypes, operandTypes?.LastOrDefault() ?? typeof(object));
     }
 
     /// <inheritdoc />
@@ -72,15 +69,18 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
     public FusionAnalysisResult AnalyzeFusion(IEnumerable<Expression> operators)
     {
         var methodCalls = operators.OfType<MethodCallExpression>().ToList();
-        
+
+
         var opportunities = new List<FusionOpportunity>();
-        
+
         // Look for chainable LINQ operations
+
         for (int i = 0; i < methodCalls.Count - 1; i++)
         {
             var current = methodCalls[i];
             var next = methodCalls[i + 1];
-            
+
+
             if (CanFuseMethods(current, next))
             {
                 opportunities.Add(new FusionOpportunity
@@ -134,8 +134,9 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
         {
             return AnalyzeOperator(methodCall);
         }
-        
+
         // Create a basic analysis result for non-method-call expressions
+
         return new OperatorAnalysisResult
         {
             OperatorType = expression.NodeType,
@@ -164,12 +165,14 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
                 _ => false
             };
         }
-        
+
+
         if (method.DeclaringType == typeof(Math) || method.DeclaringType == typeof(MathF))
         {
             return true;
         }
-        
+
+
         return false;
     }
 
@@ -187,8 +190,9 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
                 _ => false
             };
         }
-        
+
         // Some LINQ operations can be vectorized
+
         if (method.DeclaringType == typeof(Enumerable))
         {
             return method.Name switch
@@ -197,7 +201,8 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
                 _ => false
             };
         }
-        
+
+
         return false;
     }
 
@@ -210,8 +215,9 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
         {
             return 1;
         }
-        
+
         // Return optimal width based on method and typical SIMD capabilities
+
         return method.DeclaringType == typeof(Math) || method.DeclaringType == typeof(MathF) ? 8 : 4;
     }
 
@@ -221,8 +227,9 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
     private static Dictionary<BackendType, OperatorCompatibility> AnalyzeBackendCompatibility(System.Reflection.MethodInfo method)
     {
         var compatibility = new Dictionary<BackendType, OperatorCompatibility>();
-        
+
         // CPU is generally compatible with most methods
+
         compatibility[BackendType.CPU] = new OperatorCompatibility
         {
             IsSupported = true,
@@ -236,8 +243,9 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
                 ComputeIntensity = 10.0
             }
         };
-        
+
         // GPU compatibility depends on the method
+
         var gpuSupported = IsMethodComputeFriendly(method);
         compatibility[BackendType.CUDA] = new OperatorCompatibility
         {
@@ -252,39 +260,43 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
                 ComputeIntensity = gpuSupported ? 100.0 : 0.0
             }
         };
-        
+
+
         return compatibility;
     }
 
     /// <summary>
     /// Generates optimization hints for a method call.
     /// </summary>
-    private static List<OptimizationHint> GenerateOptimizationHints(MethodCallExpression methodCall)
+    private static List<DotCompute.Linq.Types.OptimizationHint> GenerateOptimizationHints(MethodCallExpression methodCall)
     {
-        var hints = new List<OptimizationHint>();
-        
+        var hints = new List<DotCompute.Linq.Types.OptimizationHint>();
+
+
         if (methodCall.Method.DeclaringType == typeof(Enumerable))
         {
-            hints.Add(new OptimizationHint
+            hints.Add(new DotCompute.Linq.Types.OptimizationHint
             {
-                Type = OptimizationHintType.Vectorization,
+                Type = DotCompute.Linq.Types.OptimizationHintType.Vectorization,
                 Description = "Consider vectorizing LINQ operation",
-                Priority = OptimizationPriority.High,
+                Priority = DotCompute.Linq.Types.OptimizationPriority.High,
                 EstimatedBenefit = 2.0
             });
         }
-        
+
+
         if (methodCall.Arguments.Count > 2)
         {
-            hints.Add(new OptimizationHint
+            hints.Add(new DotCompute.Linq.Types.OptimizationHint
             {
-                Type = OptimizationHintType.Parallelization,
+                Type = DotCompute.Linq.Types.OptimizationHintType.Parallelization,
                 Description = "Method may benefit from parallelization",
-                Priority = OptimizationPriority.Medium,
+                Priority = DotCompute.Linq.Types.OptimizationPriority.Medium,
                 EstimatedBenefit = 1.5
             });
         }
-        
+
+
         return hints;
     }
 
@@ -308,8 +320,9 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
     private static List<FusionOpportunity> FindFusionOpportunities(MethodCallExpression methodCall)
     {
         var opportunities = new List<FusionOpportunity>();
-        
+
         // LINQ operations often have good fusion potential
+
         if (methodCall.Method.DeclaringType == typeof(Enumerable))
         {
             opportunities.Add(new FusionOpportunity
@@ -321,7 +334,8 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
                 Complexity = FusionComplexity.Simple
             });
         }
-        
+
+
         return opportunities;
     }
 
@@ -343,7 +357,8 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
     {
         var firstName = first.Method.Name;
         var secondName = second.Method.Name;
-        
+
+
         return (firstName, secondName) switch
         {
             ("Where", "Select") or ("Select", "Where") => FusionPattern.ElementWise,
@@ -377,7 +392,8 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
     {
         var firstName = first.Method.Name;
         var secondName = second.Method.Name;
-        
+
+
         return (firstName, secondName) switch
         {
             ("Where", "Select") or ("Select", "Where") => FusionComplexity.Simple,
@@ -402,118 +418,207 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
             ExpressionType.Modulo => OperatorType.Mathematical,
             ExpressionType.Power => OperatorType.Mathematical,
             ExpressionType.UnaryPlus => OperatorType.Mathematical,
-            ExpressionType.UnaryMinus => OperatorType.Mathematical,
-            
+            ExpressionType.Negate => OperatorType.Mathematical,
+
+
             ExpressionType.Equal => OperatorType.Comparison,
             ExpressionType.NotEqual => OperatorType.Comparison,
             ExpressionType.GreaterThan => OperatorType.Comparison,
             ExpressionType.GreaterThanOrEqual => OperatorType.Comparison,
             ExpressionType.LessThan => OperatorType.Comparison,
             ExpressionType.LessThanOrEqual => OperatorType.Comparison,
-            
+
+
             ExpressionType.AndAlso => OperatorType.Logical,
             ExpressionType.OrElse => OperatorType.Logical,
             ExpressionType.Not => OperatorType.Logical,
             ExpressionType.And => OperatorType.Logical,
             ExpressionType.Or => OperatorType.Logical,
             ExpressionType.ExclusiveOr => OperatorType.Logical,
-            
+
+
             ExpressionType.Convert => OperatorType.Conversion,
             ExpressionType.ConvertChecked => OperatorType.Conversion,
-            
+
+
             ExpressionType.Call => OperatorType.Custom,
             ExpressionType.Lambda => OperatorType.Custom,
             ExpressionType.Invoke => OperatorType.Custom,
-            
+
+
             _ => OperatorType.Unknown
         };
     }
-}
 
-/// <summary>
-/// Represents an optimization hint.
-/// </summary>
-public class OptimizationHint
-{
-    /// <summary>
-    /// Gets or sets the type of optimization.
-    /// </summary>
-    public OptimizationHintType Type { get; set; }
+    /// <inheritdoc />
+    public DotCompute.Linq.Pipelines.Analysis.OperatorInfo Analyze(Expression expression, DotCompute.Linq.Pipelines.Analysis.AnalysisContext context)
+    {
+        if (expression is not MethodCallExpression methodCall)
+        {
+            return new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
+            {
+                OperatorType = DotCompute.Linq.Pipelines.Analysis.OperatorType.Unknown,
+                Name = "UnknownCall",
+                InputTypes = [],
+                OutputType = expression.Type,
+                ComplexityScore = 1,
+                SupportsGpu = false,
+                SupportsCpu = true
+            };
+        }
+
+        var methodName = GetMethodName(methodCall);
+        var operatorType = DetermineOperatorType(methodCall);
+        var inputTypes = GetInputTypes(methodCall);
+
+        return new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
+        {
+            OperatorType = operatorType,
+            Name = methodName,
+            InputTypes = inputTypes.ToList(),
+            OutputType = methodCall.Type,
+            ComplexityScore = GetMethodComplexity(methodCall),
+            SupportsGpu = IsVectorizable(methodCall),
+            SupportsCpu = true,
+            Properties = new Dictionary<string, object>
+            {
+                ["MethodName"] = methodName,
+                ["DeclaringType"] = methodCall.Method.DeclaringType?.FullName ?? "Unknown",
+                ["IsStatic"] = methodCall.Method.IsStatic,
+                ["IsLinqMethod"] = IsLinqMethod(methodCall)
+            }
+        };
+    }
+
+    private static string GetMethodName(MethodCallExpression methodCall)
+    {
+        var declaringType = methodCall.Method.DeclaringType?.Name ?? "Unknown";
+        return $"{declaringType}.{methodCall.Method.Name}";
+    }
+
+    private static DotCompute.Linq.Pipelines.Analysis.OperatorType DetermineOperatorType(MethodCallExpression methodCall)
+    {
+        var methodName = methodCall.Method.Name;
+
+        if (IsLinqMethod(methodCall))
+        {
+            return methodName switch
+            {
+                "Where" => DotCompute.Linq.Pipelines.Analysis.OperatorType.Filter,
+                "Select" => DotCompute.Linq.Pipelines.Analysis.OperatorType.Projection,
+                "Sum" or "Count" or "Average" or "Max" or "Min" => DotCompute.Linq.Pipelines.Analysis.OperatorType.Aggregation,
+                "OrderBy" or "OrderByDescending" => DotCompute.Linq.Pipelines.Analysis.OperatorType.Sort,
+                "GroupBy" => DotCompute.Linq.Pipelines.Analysis.OperatorType.Group,
+                _ => DotCompute.Linq.Pipelines.Analysis.OperatorType.Transformation
+            };
+        }
+
+        if (IsMathMethod(methodCall))
+        {
+            return DotCompute.Linq.Pipelines.Analysis.OperatorType.Mathematical;
+        }
+
+        return DotCompute.Linq.Pipelines.Analysis.OperatorType.Custom;
+    }
+
+    private static IReadOnlyList<Type> GetInputTypes(MethodCallExpression methodCall)
+    {
+        var types = new List<Type>();
+
+        // Add instance type if not static
+        if (!methodCall.Method.IsStatic && methodCall.Object != null)
+        {
+            types.Add(methodCall.Object.Type);
+        }
+
+        // Add argument types
+        types.AddRange(methodCall.Arguments.Select(arg => arg.Type));
+
+        return types;
+    }
+
+    private static bool IsLinqMethod(MethodCallExpression methodCall)
+    {
+        var declaringType = methodCall.Method.DeclaringType;
+        return declaringType?.Name == "Enumerable" || declaringType?.Name == "Queryable";
+    }
+
+    private static bool IsMathMethod(MethodCallExpression methodCall)
+    {
+        var declaringType = methodCall.Method.DeclaringType;
+        return declaringType == typeof(Math) || declaringType == typeof(MathF);
+    }
+
+    private static int GetMethodComplexity(MethodCallExpression methodCall)
+    {
+        if (IsMathMethod(methodCall))
+        {
+            var methodName = methodCall.Method.Name;
+            return methodName switch
+            {
+                "Abs" or "Min" or "Max" => 1,
+                "Sqrt" => 3,
+                "Sin" or "Cos" or "Tan" => 8,
+                "Pow" => 10,
+                _ => 5
+            };
+        }
+
+        if (IsLinqMethod(methodCall))
+        {
+            var methodName = methodCall.Method.Name;
+            return methodName switch
+            {
+                "Select" or "Where" => 1,
+                "Sum" or "Count" => 2,
+                "OrderBy" => 20,
+                _ => 5
+            };
+        }
+
+        return 5;
+    }
+
 
     /// <summary>
-    /// Gets or sets the description of the optimization.
+    /// Determines if a method is vectorizable on GPU.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    private static bool IsVectorizable(MethodCallExpression methodCall)
+    {
+        if (IsMathMethod(methodCall))
+        {
+            var methodName = methodCall.Method.Name;
+            return methodName switch
+            {
+                "Add" or "Subtract" or "Multiply" or "Divide" or
+                "Abs" or "Min" or "Max" or "Sqrt" => true,
+                _ => false
+            };
+        }
+
+        if (IsLinqMethod(methodCall))
+        {
+            var methodName = methodCall.Method.Name;
+            return methodName switch
+            {
+                "Select" or "Where" or "Sum" or "Count" => true,
+                _ => false
+            };
+        }
+
+        return false;
+    }
 
     /// <summary>
-    /// Gets or sets the priority of this optimization.
+    /// Determines if a method is GPU compatible.
     /// </summary>
-    public OptimizationPriority Priority { get; set; }
+    private static bool IsGpuCompatibleMethod(ExpressionType operatorType, Type[] operandTypes)
+    {
+        // Most mathematical operations are GPU compatible
+        return operatorType == ExpressionType.Call &&
 
-    /// <summary>
-    /// Gets or sets the estimated benefit multiplier (1.0 = no benefit, 2.0 = 2x speedup).
-    /// </summary>
-    public double EstimatedBenefit { get; set; } = 1.0;
-}
+               operandTypes != null &&
 
-/// <summary>
-/// Types of optimization hints.
-/// </summary>
-public enum OptimizationHintType
-{
-    /// <summary>
-    /// Vectorization optimization.
-    /// </summary>
-    Vectorization,
-
-    /// <summary>
-    /// Parallelization optimization.
-    /// </summary>
-    Parallelization,
-
-    /// <summary>
-    /// Memory access optimization.
-    /// </summary>
-    MemoryAccess,
-
-    /// <summary>
-    /// Loop optimization.
-    /// </summary>
-    Loop,
-
-    /// <summary>
-    /// Fusion optimization.
-    /// </summary>
-    Fusion,
-
-    /// <summary>
-    /// Backend-specific optimization.
-    /// </summary>
-    BackendSpecific
-}
-
-/// <summary>
-/// Priority levels for optimization hints.
-/// </summary>
-public enum OptimizationPriority
-{
-    /// <summary>
-    /// Low priority optimization.
-    /// </summary>
-    Low,
-
-    /// <summary>
-    /// Medium priority optimization.
-    /// </summary>
-    Medium,
-
-    /// <summary>
-    /// High priority optimization.
-    /// </summary>
-    High,
-
-    /// <summary>
-    /// Critical optimization that should always be applied.
-    /// </summary>
-    Critical
+               operandTypes.All(t => t.IsPrimitive || t == typeof(float) || t == typeof(double));
+    }
 }

@@ -5,6 +5,7 @@ using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using DeviceMemory = DotCompute.Abstractions.DeviceMemory;
 
 namespace DotCompute.Memory;
 
@@ -71,6 +72,19 @@ public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanag
     /// Gets whether this buffer has been disposed.
     /// </summary>
     public bool IsDisposed => _disposed;
+
+    /// <summary>
+    /// Gets the device pointer for this buffer. Returns IntPtr.Zero if buffer is not on device.
+    /// </summary>
+    public IntPtr DevicePointer
+    {
+        get
+        {
+            if (!IsOnDevice || _deviceMemory.Handle == IntPtr.Zero)
+                return IntPtr.Zero;
+            return _deviceMemory.Handle;
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the UnifiedBuffer class.

@@ -761,6 +761,7 @@ public sealed class FileSink : ILogSink, IHealthCheckable
         // File writes are immediately flushed
 
 
+
         => Task.CompletedTask;
 
 

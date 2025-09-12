@@ -582,17 +582,35 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
         }
 
         var backends = new List<string>();
-        
+
         // Look for named arguments with 'Backends' parameter
+
         foreach (var namedArg in attribute.NamedArguments)
         {
             if (namedArg.Key == "Backends" && namedArg.Value.Value is int backendFlags)
             {
                 // Parse backend flags (assuming flags enum)
-                if ((backendFlags & 1) != 0) backends.Add("CPU");
-                if ((backendFlags & 2) != 0) backends.Add("CUDA");
-                if ((backendFlags & 4) != 0) backends.Add("Metal");
-                if ((backendFlags & 8) != 0) backends.Add("OpenCL");
+                if ((backendFlags & 1) != 0)
+                {
+                    backends.Add("CPU");
+                }
+
+                if ((backendFlags & 2) != 0)
+                {
+                    backends.Add("CUDA");
+                }
+
+                if ((backendFlags & 4) != 0)
+                {
+                    backends.Add("Metal");
+                }
+
+                if ((backendFlags & 8) != 0)
+                {
+                    backends.Add("OpenCL");
+                }
+
+
                 return backends.ToArray();
             }
         }
@@ -603,10 +621,28 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
             var firstArg = attribute.ConstructorArguments[0];
             if (firstArg.Value is int flags)
             {
-                if ((flags & 1) != 0) backends.Add("CPU");
-                if ((flags & 2) != 0) backends.Add("CUDA");
-                if ((flags & 4) != 0) backends.Add("Metal");
-                if ((flags & 8) != 0) backends.Add("OpenCL");
+                if ((flags & 1) != 0)
+                {
+                    backends.Add("CPU");
+                }
+
+                if ((flags & 2) != 0)
+                {
+                    backends.Add("CUDA");
+                }
+
+                if ((flags & 4) != 0)
+                {
+                    backends.Add("Metal");
+                }
+
+
+                if ((flags & 8) != 0)
+                {
+                    backends.Add("OpenCL");
+                }
+
+
                 return backends.ToArray();
             }
         }
@@ -637,11 +673,13 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
         // Look for bounds check patterns in the method
         var boundsChecks = method.DescendantNodes()
             .OfType<BinaryExpressionSyntax>()
-            .Where(b => (b.IsKind(SyntaxKind.LessThanExpression) || 
+            .Where(b => (b.IsKind(SyntaxKind.LessThanExpression) ||
+
                         b.IsKind(SyntaxKind.LessThanOrEqualExpression) ||
                         b.IsKind(SyntaxKind.GreaterThanOrEqualExpression)) &&
                        (b.ToString().Contains("Length") || b.ToString().Contains(".Count")));
-        
+
+
         return boundsChecks.Any();
     }
 
@@ -690,7 +728,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
 
         var assignments = methodSyntax.DescendantNodes()
             .OfType<AssignmentExpressionSyntax>()
-            .Where(a => !a.Left.ToString().Contains("[") && 
+            .Where(a => !a.Left.ToString().Contains("[") &&
+
                        !a.Left.ToString().Contains("ThreadId"));
 
         if (assignments.Count() > 1)
@@ -707,7 +746,8 @@ public class DotComputeKernelAnalyzer : DiagnosticAnalyzer
         // Check for method calls that might not be thread-safe
         var methodCalls = methodSyntax.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Where(inv => !inv.ToString().Contains("Math.") && 
+            .Where(inv => !inv.ToString().Contains("Math.") &&
+
                          !inv.ToString().Contains("MathF.") &&
                          !inv.ToString().StartsWith("System."));
 

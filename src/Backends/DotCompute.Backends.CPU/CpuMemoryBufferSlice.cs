@@ -139,9 +139,13 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
     {
         EnsureNotDisposed();
         if (source.Length > _length)
+        {
+
             throw new ArgumentException("Source is larger than slice bounds", nameof(source));
-        
+        }
+
         // The parent buffer's CopyFromAsync doesn't take offset parameter directly
+
         var destSpan = AsSpan();
         source.Span.CopyTo(destSpan);
         MarkHostDirty();
@@ -152,9 +156,13 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
     {
         EnsureNotDisposed();
         if (destination.Length < _length)
+        {
+
             throw new ArgumentException("Destination is smaller than slice size", nameof(destination));
-        
+        }
+
         // Copy our slice data to the destination
+
         var sourceSpan = AsReadOnlySpan();
         sourceSpan.CopyTo(destination.Span);
         return ValueTask.CompletedTask;
@@ -164,7 +172,11 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
     {
         EnsureNotDisposed();
         if (destination.Length < _length)
+        {
+
             throw new ArgumentException("Destination buffer has insufficient capacity", nameof(destination));
+        }
+
 
         var sourceSpan = AsReadOnlySpan();
         var destSpan = destination.AsSpan();
@@ -182,11 +194,25 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
     {
         EnsureNotDisposed();
         if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
+        {
+
             throw new ArgumentOutOfRangeException();
+        }
+
+
         if (sourceOffset + count > _length)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(count), "Copy extends beyond source slice boundaries");
+        }
+
+
         if (destinationOffset + count > destination.Length)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(count), "Copy extends beyond destination buffer boundaries");
+        }
+
 
         var sourceSpan = AsReadOnlySpan().Slice(sourceOffset, count);
         var destSpan = destination.AsSpan().Slice(destinationOffset, count);
@@ -207,8 +233,12 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
     {
         EnsureNotDisposed();
         if (offset + count > _length)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(count), "Fill operation extends beyond slice boundaries");
-        
+        }
+
+
         AsSpan().Slice(offset, count).Fill(value);
         MarkHostDirty();
         return ValueTask.CompletedTask;
@@ -217,25 +247,43 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
     public IUnifiedMemoryBuffer<byte> Slice(int offset, int length)
     {
         EnsureNotDisposed();
-        
+
+
         if (offset < 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(offset), "Offset cannot be negative");
+        }
+
         if (length < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(length), "Length cannot be negative");
+        }
+
+
         if (offset + length > _length)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(length), "Slice extends beyond current slice boundaries");
+        }
 
         // Create a slice of the slice by adjusting offset relative to parent
+
         return new CpuMemoryBufferSlice(_parentBuffer, _offset + offset, length, _memoryManager, _logger);
     }
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         EnsureNotDisposed();
-        
+
+
         int elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
         if (_length % elementSize != 0)
+        {
+
             throw new InvalidOperationException($"Slice size {_length} is not compatible with element size {elementSize}");
+        }
+
 
         int elementCount = _length / elementSize;
         return new CpuMemoryBufferTypedSlice<TNew>(_parentBuffer, _offset, elementCount, _memoryManager, _logger);
@@ -244,9 +292,18 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
     private void EnsureNotDisposed()
     {
         if (_isDisposed)
+        {
+
             throw new ObjectDisposedException(nameof(CpuMemoryBufferSlice));
+        }
+
+
         if (_parentBuffer.IsDisposed)
+        {
+
             throw new ObjectDisposedException(nameof(CpuMemoryBuffer), "Parent buffer has been disposed");
+        }
+
     }
 
     public void Dispose()

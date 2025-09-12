@@ -285,7 +285,8 @@ namespace DotCompute.Core.Pipelines.Examples
             // Verify kernel chain system is working
             var diagnostics = KernelChain.GetDiagnostics();
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            
+
+
             logger.LogInformation("Kernel chain diagnostics: {@Diagnostics}", diagnostics);
 
             if (diagnostics.ContainsKey("IsConfigured") && (bool)diagnostics["IsConfigured"])
@@ -336,15 +337,17 @@ namespace DotCompute.Core.Pipelines.Examples
     public class GridState { public bool RequiresHighPrecision { get; set; } }
     public class SimulationResult { }
     public class DataChunk { public string Id { get; set; } = string.Empty; }
-    public class ProcessingMetrics 
-    { 
+    public class ProcessingMetrics
+    {
+
         public int TotalChunksProcessed { get; set; }
         public int TotalErrors { get; set; }
         public TimeSpan ProcessingTime { get; set; }
         public double ThroughputPerSecond { get; set; }
     }
     public class ComplexWorkload { }
-    public class DetailedExecutionReport 
+    public class DetailedExecutionReport
+
     {
         public bool Success { get; set; }
         public TimeSpan TotalExecutionTime { get; set; }

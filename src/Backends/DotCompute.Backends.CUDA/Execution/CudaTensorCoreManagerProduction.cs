@@ -472,6 +472,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         // This would use NVRTC to compile PTX to cubin
         // For now, return placeholder
 
+
         => Encoding.UTF8.GetBytes(ptxCode);
 
     /// <summary>

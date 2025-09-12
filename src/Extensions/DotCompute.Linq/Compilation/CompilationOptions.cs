@@ -9,6 +9,10 @@ namespace DotCompute.Linq.Compilation;
 public class CompilationOptions
 {
     /// <summary>
+    /// Gets the default compilation options.
+    /// </summary>
+    public static CompilationOptions Default { get; } = new();
+    /// <summary>
     /// Gets or sets a value indicating whether to enable optimizations.
     /// </summary>
     public bool EnableOptimizations { get; set; } = true;

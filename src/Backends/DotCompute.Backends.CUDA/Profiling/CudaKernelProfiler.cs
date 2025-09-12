@@ -436,6 +436,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             // KernelArguments is a wrapper for kernel parameters
             // For now, return a placeholder since actual implementation depends on the structure
 
+
             => IntPtr.Zero;
 
 

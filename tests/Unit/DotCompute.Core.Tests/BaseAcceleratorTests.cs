@@ -21,7 +21,7 @@ namespace DotCompute.Core.Tests;
 /// </summary>
 [Trait("Category", "Unit")]
 [Trait("Component", "BaseAccelerator")]
-public class BaseAcceleratorTests : IDisposable
+public sealed class BaseAcceleratorTests : IDisposable
 {
     private readonly Mock<ILogger> _mockLogger;
     private readonly Mock<IUnifiedMemoryManager> _mockMemory;
@@ -238,7 +238,7 @@ public class BaseAcceleratorTests : IDisposable
 
         // Assert
         _ = result.Should().NotBeNull();
-        _ = _accelerator.LastCompilationOptions.OptimizationLevel.Should().Be(optimizationLevel);
+        _ = _accelerator.LastCompilationOptions?.OptimizationLevel.Should().Be(optimizationLevel);
     }
 
 
@@ -471,6 +471,7 @@ public class BaseAcceleratorTests : IDisposable
     [Trait("TestType", "MemoryIntegration")]
     public void Memory_Property_ReturnsInjectedMemoryManager()
         // Assert
+
 
         => _accelerator.Memory.Should().Be(_mockMemory.Object);
 

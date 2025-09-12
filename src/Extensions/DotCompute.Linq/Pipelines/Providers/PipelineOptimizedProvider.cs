@@ -8,10 +8,13 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Core.Pipelines;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Pipelines.Models;
+using DotCompute.Linq.Pipelines.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using CorePipelineMetrics = DotCompute.Core.Pipelines.IPipelineMetrics;
 using KernelPipelineBuilder = DotCompute.Abstractions.Pipelines.IKernelPipelineBuilder;
+using IKernelPipeline = DotCompute.Core.Pipelines.IKernelPipeline;
+using LinqKernelPipeline = DotCompute.Linq.Pipelines.Interfaces.IKernelPipeline;
 
 namespace DotCompute.Linq.Pipelines.Providers;
 
@@ -40,8 +43,10 @@ public class PipelineOptimizedProvider : IQueryProvider
         _chainBuilder = chainBuilder ?? throw new ArgumentNullException(nameof(chainBuilder));
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
-        _expressionAnalyzer = serviceProvider.GetService<IPipelineExpressionAnalyzer>() 
+
+
+        _expressionAnalyzer = serviceProvider.GetService<IPipelineExpressionAnalyzer>()
+
             ?? new PipelineExpressionAnalyzer(serviceProvider);
     }
 
@@ -49,19 +54,23 @@ public class PipelineOptimizedProvider : IQueryProvider
     public IQueryable CreateQuery(Expression expression)
     {
         _logger.LogDebug("Creating query from expression: {Expression}", expression);
-        
+
+
         var elementType = GetElementType(expression.Type);
         var queryableType = typeof(PipelineOptimizedQueryable<>).MakeGenericType(elementType);
-        
+
+
         return (IQueryable)Activator.CreateInstance(queryableType, this, expression)!;
     }
 
     /// <inheritdoc />
     public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
     {
-        _logger.LogDebug("Creating typed query for {ElementType}: {Expression}", 
+        _logger.LogDebug("Creating typed query for {ElementType}: {Expression}",
+
             typeof(TElement), expression);
-            
+
+
         return new PipelineOptimizedQueryable<TElement>(this, expression);
     }
 
@@ -69,16 +78,19 @@ public class PipelineOptimizedProvider : IQueryProvider
     public object? Execute(Expression expression)
     {
         _logger.LogDebug("Executing expression synchronously: {Expression}", expression);
-        
+
+
         return ExecuteAsync<object>(expression).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc />
     public TResult Execute<TResult>(Expression expression)
     {
-        _logger.LogDebug("Executing typed expression synchronously for {ResultType}: {Expression}", 
+        _logger.LogDebug("Executing typed expression synchronously for {ResultType}: {Expression}",
+
             typeof(TResult), expression);
-            
+
+
         return ExecuteAsync<TResult>(expression).GetAwaiter().GetResult();
     }
 
@@ -90,7 +102,8 @@ public class PipelineOptimizedProvider : IQueryProvider
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The execution result</returns>
     public async Task<TResult> ExecuteAsync<TResult>(
-        Expression expression, 
+        Expression expression,
+
         CancellationToken cancellationToken = default)
     {
         try
@@ -99,13 +112,16 @@ public class PipelineOptimizedProvider : IQueryProvider
 
             // Analyze the expression for optimization opportunities
             var analysisResult = await _expressionAnalyzer.AnalyzeCompatibilityAsync(expression);
-            
+
             // Create optimized pipeline from the expression
+
             var pipeline = await CreateOptimizedPipelineAsync(expression, analysisResult);
-            
+
             // Execute the pipeline with appropriate backend selection
+
             var result = await ExecutePipelineAsync<TResult>(pipeline, analysisResult, cancellationToken);
-            
+
+
             _logger.LogInformation("Pipeline execution completed successfully");
             return result;
         }
@@ -123,23 +139,28 @@ public class PipelineOptimizedProvider : IQueryProvider
     /// <param name="analysisResult">Results from expression analysis</param>
     /// <returns>An optimized kernel pipeline</returns>
     private async Task<IKernelPipeline> CreateOptimizedPipelineAsync(
-        Expression expression, 
+        Expression expression,
+
         ExpressionAnalysisResult analysisResult)
     {
         // Get the execution plan
         var executionPlan = await _expressionAnalyzer.ConvertToPipelinePlanAsync(expression);
-        
+
         // Create pipeline with appropriate configuration
+
         var pipelineConfig = CreatePipelineConfiguration(executionPlan, analysisResult);
         var pipeline = _chainBuilder.Create(pipelineConfig);
-        
+
         // Add stages to the pipeline
-        pipeline = await AddStagesToPipelineAsync(pipeline, executionPlan.Stages);
-        
+
+        pipeline = await AddStagesToPipelineAsync((DotCompute.Linq.Pipelines.IKernelPipeline)pipeline, executionPlan.Stages);
+
         // Apply optimizations based on analysis results
-        pipeline = await ApplyOptimizationsAsync(pipeline, analysisResult);
-        
-        return pipeline;
+
+        pipeline = await ApplyOptimizationsAsync((DotCompute.Linq.Pipelines.IKernelPipeline)pipeline, analysisResult);
+
+
+        return (DotCompute.Core.Pipelines.IKernelPipeline)pipeline;
     }
 
     /// <summary>
@@ -149,7 +170,8 @@ public class PipelineOptimizedProvider : IQueryProvider
     /// <param name="analysisResult">Expression analysis results</param>
     /// <returns>Pipeline configuration</returns>
     private IPipelineConfiguration CreatePipelineConfiguration(
-        PipelineExecutionPlan executionPlan, 
+        PipelineExecutionPlan executionPlan,
+
         ExpressionAnalysisResult analysisResult)
     {
         return new DefaultPipelineConfiguration
@@ -170,16 +192,19 @@ public class PipelineOptimizedProvider : IQueryProvider
     /// <param name="stages">The stages to add</param>
     /// <returns>Pipeline with added stages</returns>
     private async Task<IKernelPipeline> AddStagesToPipelineAsync(
-        IKernelPipeline pipeline, 
+        IKernelPipeline pipeline,
+
         List<PipelineStageInfo> stages)
     {
         var currentPipeline = pipeline;
-        
+
+
         foreach (var stage in stages.OrderBy(s => s.StageId))
         {
             currentPipeline = await AddStageAsync(currentPipeline, stage);
         }
-        
+
+
         return currentPipeline;
     }
 
@@ -214,7 +239,8 @@ public class PipelineOptimizedProvider : IQueryProvider
     /// <param name="analysisResult">Analysis results guiding optimization</param>
     /// <returns>Optimized pipeline</returns>
     private async Task<IKernelPipeline> ApplyOptimizationsAsync(
-        IKernelPipeline pipeline, 
+        IKernelPipeline pipeline,
+
         ExpressionAnalysisResult analysisResult)
     {
         var optimizedPipeline = pipeline;
@@ -247,19 +273,25 @@ public class PipelineOptimizedProvider : IQueryProvider
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Execution result</returns>
     private async Task<TResult> ExecutePipelineAsync<TResult>(
-        IKernelPipeline pipeline, 
+        IKernelPipeline pipeline,
+
         ExpressionAnalysisResult analysisResult,
         CancellationToken cancellationToken)
     {
         // Note: The Timeout() method is not implemented in the current IKernelPipeline interface
         var pipelineWithTimeout = pipeline;
 
-        // Use the ExecuteAsync method from IKernelPipeline interface
-        var result = await pipelineWithTimeout.ExecuteAsync<TResult>(cancellationToken);
+        // Cast to LINQ pipeline interface if needed, or use Core interface directly
+        if (pipelineWithTimeout is LinqKernelPipeline linqPipeline)
+        {
+            var result = await linqPipeline.ExecuteAsync<TResult>(cancellationToken);
+            return result;
+        }
 
-        // Note: Detailed metrics logging is not available with simplified interface
-        
-        return result;
+        // Fallback using Core pipeline interface with extension method
+
+        var coreResult = await ExecuteAsync<TResult>(pipelineWithTimeout, cancellationToken);
+        return coreResult;
     }
 
     #region Helper Methods
@@ -291,7 +323,8 @@ public class PipelineOptimizedProvider : IQueryProvider
 
     private static bool ShouldEnableCaching(PipelineExecutionPlan executionPlan)
     {
-        return executionPlan.EstimatedComplexity > 15 || 
+        return executionPlan.EstimatedComplexity > 15 ||
+
                executionPlan.EstimatedExecutionTime > TimeSpan.FromSeconds(1);
     }
 
@@ -477,18 +510,21 @@ public static class AsyncEnumerableExtensions
     public static async IAsyncEnumerable<T[]> Buffer<T>(this IAsyncEnumerable<T> source, int count)
     {
         var buffer = new List<T>(count);
-        
+
+
         await foreach (var item in source)
         {
             buffer.Add(item);
-            
+
+
             if (buffer.Count >= count)
             {
                 yield return buffer.ToArray();
                 buffer.Clear();
             }
         }
-        
+
+
         if (buffer.Count > 0)
         {
             yield return buffer.ToArray();

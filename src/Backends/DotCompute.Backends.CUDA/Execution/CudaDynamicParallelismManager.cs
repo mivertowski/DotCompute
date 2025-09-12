@@ -162,6 +162,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Missing: Support for device-side kernel launches
             // Simple heuristic: large problem sizes with irregular patterns benefit from dynamic parallelism
 
+
             => arguments.Any(arg => arg.Value is int size && size > 100000);
 
         public void Dispose()

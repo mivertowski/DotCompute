@@ -121,10 +121,12 @@ public sealed class FluentPipelineAdapter : IAsyncDisposable
     public async Task<TOutput> ExecuteAsync<TOutput>(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         var context = CreateDefaultContext();
         var result = await _corePipeline.ExecuteAsync(context, cancellationToken);
-        
+
+
         return ExtractOutput<TOutput>(result);
     }
 
@@ -137,14 +139,17 @@ public sealed class FluentPipelineAdapter : IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The execution result</returns>
     public async Task<TOutput> ExecuteAsync<TInput, TOutput>(
-        TInput input, 
+        TInput input,
+
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         var context = CreateContext(input);
         var result = await _corePipeline.ExecuteAsync(context, cancellationToken);
-        
+
+
         return ExtractOutput<TOutput>(result);
     }
 
@@ -161,7 +166,8 @@ public sealed class FluentPipelineAdapter : IAsyncDisposable
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
+
         await foreach (var input in inputStream.WithCancellation(cancellationToken))
         {
             var result = await ExecuteAsync<TInput, TOutput>(input, cancellationToken);
@@ -195,7 +201,11 @@ public sealed class FluentPipelineAdapter : IAsyncDisposable
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -213,7 +223,11 @@ public sealed class FluentPipelineAdapter : IAsyncDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(FluentPipelineAdapter));
+        }
+
     }
 
     private PipelineExecutionContext CreateDefaultContext()
@@ -221,8 +235,8 @@ public sealed class FluentPipelineAdapter : IAsyncDisposable
         return new PipelineExecutionContext
         {
             Inputs = new Dictionary<string, object>(),
-            MemoryManager = new DefaultMemoryManager(),
-            Device = new DefaultDevice(),
+            MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)new DefaultMemoryManager(),
+            Device = (DotCompute.Core.Device.Interfaces.IComputeDevice)new DefaultDevice(),
             Options = PipelineExecutionOptions.Default
         };
     }
@@ -232,8 +246,8 @@ public sealed class FluentPipelineAdapter : IAsyncDisposable
         return new PipelineExecutionContext
         {
             Inputs = new Dictionary<string, object> { ["input"] = input! },
-            MemoryManager = new DefaultMemoryManager(),
-            Device = new DefaultDevice(),
+            MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)new DefaultMemoryManager(),
+            Device = (DotCompute.Core.Device.Interfaces.IComputeDevice)new DefaultDevice(),
             Options = PipelineExecutionOptions.Default
         };
     }
@@ -442,5 +456,6 @@ internal class DefaultDevice : IComputeDevice
 
     public void Dispose() { }
 }
+
 
 #endregion

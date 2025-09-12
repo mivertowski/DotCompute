@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Runtime.InteropServices;
+using DotCompute.Linq.Types;
 
 namespace DotCompute.Linq.Compilation.Analysis;
 
@@ -31,11 +32,12 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
         {
             Type = TargetType,
             UsageFrequency = usageCount,
+            UsageCount = usageCount,
             RequiresSpecialization = requiresSpecialization,
-            MemoryPattern = memoryPattern,
+            MemoryPattern = (MemoryAccessPattern)(int)memoryPattern,
             SupportsSimd = SupportsVectorization(),
             EstimatedSize = Marshal.SizeOf<T>(),
-            Hints = GetOptimizationHints(expression).ToList()
+            Hints = GetOptimizationHints(expression).Select(h => h.Description ?? h.ToString()).ToList()
         };
     }
 
@@ -54,15 +56,17 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
     public int GetOptimalAlignment()
     {
         var size = Marshal.SizeOf<T>();
-        
+
         // Align to next power of 2, but at least 4 bytes
+
         var alignment = Math.Max(4, 1);
         while (alignment < size)
         {
             alignment *= 2;
         }
-        
+
         // Cap at 32 bytes for cache line efficiency
+
         return Math.Min(alignment, 32);
     }
 
@@ -70,7 +74,8 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
     public double EstimateOperationComplexity(ExpressionType operation)
     {
         var baseComplexity = GetBaseComplexity();
-        
+
+
         return operation switch
         {
             ExpressionType.Add or ExpressionType.Subtract => baseComplexity,
@@ -103,7 +108,7 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
         if (IsFloatingPoint())
         {
             hints.Add(new OptimizationHint(
-                OptimizationHintType.Performance,
+                OptimizationHintType.BackendSpecific,
                 "Consider using fast math options for floating-point operations",
                 OptimizationImpact.Medium));
         }
@@ -117,6 +122,13 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
         }
 
         return hints;
+    }
+
+    /// <inheritdoc/>
+    public TypeUsageInfo Analyze(Expression expression, object? context = null)
+    {
+        var analysisContext = context as AnalysisContext ?? new AnalysisContext();
+        return AnalyzeUsage(expression, analysisContext);
     }
 
     private double GetBaseComplexity()
@@ -136,8 +148,10 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
 
     private bool IsFloatingPoint()
     {
-        return TargetType == typeof(float) || 
-               TargetType == typeof(double) || 
+        return TargetType == typeof(float) ||
+
+               TargetType == typeof(double) ||
+
                TargetType == typeof(decimal);
     }
 
@@ -187,7 +201,8 @@ internal class TypeUsageVisitor : ExpressionVisitor
         {
             _onTypeFound();
         }
-        
+
+
         return base.Visit(node);
     }
 }
