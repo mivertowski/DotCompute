@@ -9,6 +9,11 @@ using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
+
+// Namespace aliases to resolve ambiguous references
+using OperatorsGeneratedKernel = DotCompute.Linq.Operators.Generation.GeneratedKernel;
+using KernelGenerationGeneratedKernel = DotCompute.Linq.KernelGeneration.GeneratedKernel;
+
 namespace DotCompute.Linq.Operators;
 
 
@@ -41,7 +46,7 @@ public class ExpressionKernelGenerator
     /// <param name="expression">The expression to generate from.</param>
     /// <param name="accelerator">The target accelerator.</param>
     /// <returns>A generated kernel.</returns>
-    public GeneratedKernel Generate(Expression expression, IAccelerator accelerator)
+    public OperatorsGeneratedKernel Generate(Expression expression, IAccelerator accelerator)
     {
         ArgumentNullException.ThrowIfNull(expression);
         ArgumentNullException.ThrowIfNull(accelerator);
@@ -52,7 +57,7 @@ public class ExpressionKernelGenerator
         var parameters = ExtractParameters(expression);
         var sourceCode = GenerateSourceCode(expression, accelerator);
 
-        var kernel = new GeneratedKernel
+        var kernel = new OperatorsGeneratedKernel
         {
             Name = kernelName,
             Source = sourceCode,

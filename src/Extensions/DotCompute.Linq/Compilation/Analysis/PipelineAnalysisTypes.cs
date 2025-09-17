@@ -182,6 +182,12 @@ public class PipelineComplexityMetrics
 
     /// <summary>Gets or sets the computational complexity score.</summary>
     public int ComputationalComplexity { get; set; }
+
+    /// <summary>Gets or sets the communication complexity score.</summary>
+    public int CommunicationComplexity { get; set; }
+
+    /// <summary>Gets or sets the parallelization complexity score.</summary>
+    public int ParallelizationComplexity { get; set; }
 }
 
 /// <summary>
@@ -189,6 +195,43 @@ public class PipelineComplexityMetrics
 /// </summary>
 public class ParallelizationInfo
 {
+    /// <summary>
+    /// Initializes a new instance of the ParallelizationInfo class.
+    /// </summary>
+    public ParallelizationInfo() { }
+
+    /// <summary>
+    /// Initializes a new instance of the ParallelizationInfo class with parallelization opportunities and bottlenecks.
+    /// </summary>
+    /// <param name="parallelizationOpportunities">Collection of parallelization opportunities</param>
+    /// <param name="dataFlowBottlenecks">Collection of data flow bottlenecks</param>
+    public ParallelizationInfo(IEnumerable<object> parallelizationOpportunities, IEnumerable<object> dataFlowBottlenecks)
+    {
+        // Convert opportunities to operations list
+        if (parallelizationOpportunities != null)
+        {
+            foreach (var opportunity in parallelizationOpportunities)
+            {
+                ParallelizableOperations.Add(opportunity.ToString() ?? "Unknown");
+            }
+        }
+
+        // Convert bottlenecks to bottlenecks list
+        if (dataFlowBottlenecks != null)
+        {
+            foreach (var bottleneck in dataFlowBottlenecks)
+            {
+                Bottlenecks.Add(bottleneck.ToString() ?? "Unknown");
+            }
+        }
+
+        // Set defaults based on the data
+        CanParallelize = ParallelizableOperations.Count > 0;
+        DegreeOfParallelism = CanParallelize ? Math.Max(1, ParallelizableOperations.Count) : 1;
+        MaxParallelism = Environment.ProcessorCount;
+        ParallelEfficiency = CanParallelize ? Math.Max(0.1, 1.0 - (Bottlenecks.Count * 0.2)) : 0.0;
+        ParallelizationMethod = CanParallelize ? "DataParallel" : "None";
+    }
     /// <summary>Gets or sets the degree of parallelism.</summary>
     public int DegreeOfParallelism { get; set; }
 
@@ -269,6 +312,16 @@ public class GlobalMemoryAccessPattern
 
     /// <summary>Gets or sets the bandwidth utilization (0.0 to 1.0).</summary>
     public double BandwidthUtilization { get; set; } = 0.5;
+
+    /// <summary>Gets or sets the pattern type as a string.</summary>
+    public string PatternType
+    {
+        get => AccessType.ToString();
+        set => AccessType = Enum.TryParse<MemoryAccessType>(value, true, out var result) ? result : MemoryAccessType.Sequential;
+    }
+
+    /// <summary>Gets or sets the global memory access pattern.</summary>
+    public MemoryAccessType Pattern { get; set; } = MemoryAccessType.Sequential;
 }
 
 /// <summary>
@@ -283,7 +336,9 @@ public enum MemoryAccessType
     /// <summary>Strided access pattern.</summary>
     Strided,
     /// <summary>Coalesced access pattern (GPU).</summary>
-    Coalesced
+    Coalesced,
+    /// <summary>Scattered access pattern.</summary>
+    Scattered
 }
 
 /// <summary>

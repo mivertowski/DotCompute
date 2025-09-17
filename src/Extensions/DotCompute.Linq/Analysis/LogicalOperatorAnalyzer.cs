@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
+using DotCompute.Core.Analysis;
 using DotCompute.Linq.Types;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Compilation.Analysis;
@@ -203,7 +204,7 @@ public class LogicalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnalyze
 
         return new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
         {
-            OperatorType = DotCompute.Linq.Pipelines.Analysis.OperatorType.Logical,
+            OperatorType = UnifiedOperatorType.Logical,
             Name = operatorName,
             InputTypes = inputTypes.ToList(),
             OutputType = outputType,

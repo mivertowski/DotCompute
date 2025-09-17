@@ -1113,7 +1113,9 @@ public sealed class ErrorHandlingTests : IDisposable
     {
         private readonly SemaphoreSlim _stateLock = new(1, 1);
         private readonly ConcurrentDictionary<string, object> _internalState = new();
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
         private readonly int _stateConsistencyViolations;
+#pragma warning restore CS0649
         private volatile int _activeResourceCount;
 
         // Device Error Simulation
@@ -1162,7 +1164,9 @@ public sealed class ErrorHandlingTests : IDisposable
         public bool CpuFallbackActivated { get; private set; }
         public string LastExecutionMode { get; private set; } = "GPU";
         public int StateRestorationCount { get; private set; }
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
         private readonly string? _checkpointState;
+#pragma warning restore CS0649
 
         // Error Propagation
         public bool SimulateNestedErrors { get; set; }

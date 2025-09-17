@@ -204,6 +204,9 @@ public enum MemoryAccessPattern
     /// <summary>Scatter access pattern.</summary>
     Scatter,
 
+    /// <summary>Coalesced access pattern (GPU optimized).</summary>
+    Coalesced,
+
     /// <summary>Cache-friendly access pattern.</summary>
     CacheFriendly,
 

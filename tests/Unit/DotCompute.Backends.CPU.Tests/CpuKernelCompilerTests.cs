@@ -26,7 +26,7 @@ public class CpuKernelCompilerTests : IDisposable
 
     public CpuKernelCompilerTests()
     {
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         _logger = loggerFactory.CreateLogger<CpuKernelCompilerTests>();
 
 

@@ -672,7 +672,8 @@ internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmana
 
     protected override ValueTask DisposeCoreAsync()
     {
-        // Async cleanup logic if needed
+        // Call base implementation to ensure proper disposal chain
+        DisposeCore();
         return ValueTask.CompletedTask;
     }
 }

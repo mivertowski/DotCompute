@@ -17,6 +17,20 @@ using DotCompute.Linq.Pipelines.Models;
 
 namespace DotCompute.Linq.Optimization.Strategies;
 
+internal static class AccessPatternConverter
+{
+    internal static DotCompute.Linq.Pipelines.Models.AccessPattern ConvertToAccessPattern(DotCompute.Core.Optimization.MemoryAccessPattern pattern)
+    {
+        return pattern switch
+        {
+            DotCompute.Core.Optimization.MemoryAccessPattern.Sequential => DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential,
+            DotCompute.Core.Optimization.MemoryAccessPattern.Random => DotCompute.Linq.Pipelines.Models.AccessPattern.Random,
+            DotCompute.Core.Optimization.MemoryAccessPattern.Strided => DotCompute.Linq.Pipelines.Models.AccessPattern.Strided,
+            _ => DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential
+        };
+    }
+}
+
 /// <summary>
 /// Machine learning-based optimization strategy that adapts to execution patterns
 /// and predicts optimal configurations at runtime.
@@ -537,23 +551,25 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             MemoryIntensity = pipelineCharacteristics.MemoryIntensity,
             ComputeIntensity = pipelineCharacteristics.ComputeIntensity,
             ParallelismLevel = pipelineCharacteristics.ParallelismLevel,
-            AccessPattern = ConvertAccessPattern(pipelineCharacteristics.AccessPattern),
+            AccessPattern = pipelineCharacteristics.AccessPattern,
             OptimizationHints = pipelineCharacteristics.OptimizationHints.ToList()
         };
     }
 
     /// <summary>
-    /// Converts pipeline access pattern to core access pattern.
+    /// Converts pipeline access pattern to core optimization memory access pattern.
     /// </summary>
-    private static DotCompute.Core.Optimization.AccessPattern ConvertAccessPattern(
-        Pipelines.Models.AccessPattern pipelinePattern)
+    private static DotCompute.Core.Optimization.MemoryAccessPattern ConvertAccessPattern(
+        DotCompute.Linq.Pipelines.Models.AccessPattern pipelinePattern)
     {
         return pipelinePattern switch
         {
-            Pipelines.Models.AccessPattern.Sequential => DotCompute.Core.Optimization.AccessPattern.Sequential,
-            Pipelines.Models.AccessPattern.Random => DotCompute.Core.Optimization.AccessPattern.Random,
-            Pipelines.Models.AccessPattern.Strided => DotCompute.Core.Optimization.AccessPattern.Strided,
-            _ => DotCompute.Core.Optimization.AccessPattern.Sequential
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential => DotCompute.Core.Optimization.MemoryAccessPattern.Sequential,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Random => DotCompute.Core.Optimization.MemoryAccessPattern.Random,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Strided => DotCompute.Core.Optimization.MemoryAccessPattern.Strided,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Coalesced => DotCompute.Core.Optimization.MemoryAccessPattern.Coalesced,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Scattered => DotCompute.Core.Optimization.MemoryAccessPattern.Scattered,
+            _ => DotCompute.Core.Optimization.MemoryAccessPattern.Sequential
         };
     }
 }

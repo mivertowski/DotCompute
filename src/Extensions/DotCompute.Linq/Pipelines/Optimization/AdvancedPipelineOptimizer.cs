@@ -739,13 +739,13 @@ public static class KernelPipelineCacheExtensions
     /// </summary>
     /// <param name="pipeline">The pipeline to get diagnostics for</param>
     /// <returns>Pipeline diagnostics information</returns>
-    public static async Task<IPipelineDiagnostics> GetDiagnosticsAsync(this IKernelPipeline pipeline)
+    public static Task<IPipelineDiagnostics> GetDiagnosticsAsync(this IKernelPipeline pipeline)
     {
         ArgumentNullException.ThrowIfNull(pipeline);
 
         // Return simplified diagnostics based on pipeline metrics
         var metrics = pipeline.GetMetrics();
-        return new SimplePipelineDiagnostics
+        return Task.FromResult<IPipelineDiagnostics>(new SimplePipelineDiagnostics
         {
             StageCount = pipeline.Stages.Count,
             TotalExecutionTimeMs = metrics.TotalExecutionTime.TotalMilliseconds,
@@ -757,7 +757,7 @@ public static class KernelPipelineCacheExtensions
                 AllocationCount = pipeline.Stages.Count,
                 TotalAllocatedMemory = metrics.PeakMemoryUsage
             }
-        };
+        });
     }
 
     /// <summary>
@@ -765,16 +765,16 @@ public static class KernelPipelineCacheExtensions
     /// </summary>
     /// <param name="pipeline">The pipeline to get execution graph for</param>
     /// <returns>Pipeline execution graph</returns>
-    public static async Task<IPipelineExecutionGraph> GetExecutionGraphAsync(this IKernelPipeline pipeline)
+    public static Task<IPipelineExecutionGraph> GetExecutionGraphAsync(this IKernelPipeline pipeline)
     {
         ArgumentNullException.ThrowIfNull(pipeline);
 
         // Return simplified execution graph
-        return new SimplePipelineExecutionGraph
+        return Task.FromResult<IPipelineExecutionGraph>(new SimplePipelineExecutionGraph
         {
             Nodes = pipeline.Stages.Select(s => (object)s).ToList(),
             Edges = new List<object>() // Simplified - no edge relationships for now
-        };
+        });
     }
 }
 

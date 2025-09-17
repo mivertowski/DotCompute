@@ -52,4 +52,9 @@ public class ParallelizationOpportunity
     /// Gets or sets the parallel execution strategy to use.
     /// </summary>
     public string ParallelStrategy { get; set; } = "None";
+
+    /// <summary>
+    /// Gets or sets the estimated memory requirements for this parallelization opportunity.
+    /// </summary>
+    public long MemoryRequirements { get; set; }
 }

@@ -12,6 +12,7 @@ using DotCompute.Core.Kernels.Validation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core.Kernels;
 
@@ -19,12 +20,12 @@ namespace DotCompute.Core.Kernels;
 /// Base abstract class for kernel compiler implementations, consolidating common patterns.
 /// This addresses the critical issue of 15+ duplicate compiler implementations.
 /// </summary>
-public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
+public abstract class BaseKernelCompiler : IUnifiedKernelCompiler<KernelDefinition, AbstractionsICompiledKernel>
 {
     private readonly ILogger _logger;
-    private readonly ConcurrentDictionary<string, ICompiledKernel> _compilationCache;
+    private readonly ConcurrentDictionary<string, AbstractionsICompiledKernel> _compilationCache;
     private readonly ConcurrentDictionary<string, CompilationMetrics> _metricsCache;
-    private readonly ConcurrentDictionary<string, TaskCompletionSource<ICompiledKernel>> _compilationTasks;
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<AbstractionsICompiledKernel>> _compilationTasks;
 
 
     /// <summary>
@@ -34,9 +35,9 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     {
         ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
-        _compilationCache = new ConcurrentDictionary<string, ICompiledKernel>();
+        _compilationCache = new ConcurrentDictionary<string, AbstractionsICompiledKernel>();
         _metricsCache = new ConcurrentDictionary<string, CompilationMetrics>();
-        _compilationTasks = new ConcurrentDictionary<string, TaskCompletionSource<ICompiledKernel>>();
+        _compilationTasks = new ConcurrentDictionary<string, TaskCompletionSource<AbstractionsICompiledKernel>>();
     }
 
 
@@ -66,7 +67,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     };
 
     /// <inheritdoc/>
-    public virtual async ValueTask<ICompiledKernel> CompileAsync(
+    public virtual async ValueTask<AbstractionsICompiledKernel> CompileAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
@@ -97,7 +98,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
         if (EnableCaching)
         {
-            var tcs = new TaskCompletionSource<ICompiledKernel>();
+            var tcs = new TaskCompletionSource<AbstractionsICompiledKernel>();
             if (!_compilationTasks.TryAdd(cacheKey, tcs))
             {
                 // Another thread is already compiling this kernel, wait for it
@@ -183,7 +184,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// <summary>
     /// Core compilation logic to be implemented by derived classes.
     /// </summary>
-    protected abstract ValueTask<ICompiledKernel> CompileKernelCoreAsync(
+    protected abstract ValueTask<AbstractionsICompiledKernel> CompileKernelCoreAsync(
         KernelDefinition definition,
         CompilationOptions options,
         CancellationToken cancellationToken);
@@ -362,8 +363,8 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
 
     /// <inheritdoc/>
-    public virtual async ValueTask<ICompiledKernel> OptimizeAsync(
-        ICompiledKernel kernel,
+    public virtual async ValueTask<AbstractionsICompiledKernel> OptimizeAsync(
+        AbstractionsICompiledKernel kernel,
         OptimizationLevel level,
         CancellationToken cancellationToken = default)
     {
@@ -382,8 +383,8 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// <summary>
     /// Core optimization logic to be implemented by derived classes.
     /// </summary>
-    protected virtual ValueTask<ICompiledKernel> OptimizeKernelCore(
-        ICompiledKernel kernel,
+    protected virtual ValueTask<AbstractionsICompiledKernel> OptimizeKernelCore(
+        AbstractionsICompiledKernel kernel,
         OptimizationLevel level,
         CancellationToken cancellationToken)
         // Default: no optimization

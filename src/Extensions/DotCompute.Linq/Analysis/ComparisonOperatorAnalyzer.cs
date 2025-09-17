@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
+using DotCompute.Core.Analysis;
 using DotCompute.Linq.Types;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Compilation.Analysis;
@@ -198,7 +199,7 @@ public class ComparisonOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
 
         return new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
         {
-            OperatorType = DotCompute.Linq.Pipelines.Analysis.OperatorType.Comparison,
+            OperatorType = UnifiedOperatorType.Comparison,
             Name = operatorName,
             InputTypes = inputTypes.ToList(),
             OutputType = outputType,

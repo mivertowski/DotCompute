@@ -101,9 +101,9 @@ public sealed class BaseAcceleratorTests : IDisposable
     public void Constructor_WithNullParameters_ThrowsArgumentNullException()
     {
         // Assert
-        Action act1 = () => new TestAccelerator(null!, _mockMemory.Object, _mockLogger.Object);
-        Action act2 = () => new TestAccelerator(_accelerator.Info, null!, _mockLogger.Object);
-        Action act3 = () => new TestAccelerator(_accelerator.Info, _mockMemory.Object, null!);
+        Action act1 = () => { var _ = new TestAccelerator(null!, _mockMemory.Object, _mockLogger.Object); };
+        Action act2 = () => { var _ = new TestAccelerator(_accelerator.Info, null!, _mockLogger.Object); };
+        Action act3 = () => { var _ = new TestAccelerator(_accelerator.Info, _mockMemory.Object, null!); };
 
         _ = act1.Should().Throw<ArgumentNullException>().WithParameterName("info");
         _ = act2.Should().Throw<ArgumentNullException>().WithParameterName("memory");

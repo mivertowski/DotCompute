@@ -88,7 +88,7 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
         {
             // Determine optimal memory layout for operation
             var optimalLayout = await DetermineOptimalLayout(operation, profile, context);
-            operation.MemoryLayout = optimalLayout.ToString();
+            operation.MemoryLayout = optimalLayout?.ToString() ?? "Linear";
 
             // Apply data structure optimizations
 
@@ -332,7 +332,7 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
 
         if (ShouldApplyCompression(operation, profile, context))
         {
-            operation.CompressionStrategy = (await SelectCompressionStrategy(operation, context)).ToString();
+            operation.CompressionStrategy = (await SelectCompressionStrategy(operation, context))?.ToString() ?? "None";
         }
     }
 
@@ -383,7 +383,7 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
                     operation, profile, context);
 
 
-                operation.CacheBlockingStrategy = blockingStrategy.ToString();
+                operation.CacheBlockingStrategy = blockingStrategy?.ToString() ?? "None";
             }
         }
     }
@@ -463,7 +463,7 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
     {
         // Configure memory pools for frequent allocations
         var poolingStrategy = await _poolManager.CreatePoolingStrategy(plan, profile, context);
-        plan.MemoryPoolingStrategy = poolingStrategy.ToString();
+        plan.MemoryPoolingStrategy = poolingStrategy?.ToString() ?? "Default";
 
         // Setup buffer reuse optimization
 
@@ -477,7 +477,7 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
         var reuseStrategy = CreateBufferReuseStrategy(bufferAnalysis, context);
 
 
-        plan.BufferReuseStrategy = reuseStrategy.ToString();
+        plan.BufferReuseStrategy = reuseStrategy?.ToString() ?? "None";
 
 
         return Task.CompletedTask;

@@ -9,10 +9,14 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Kernels;
+using DotCompute.Tests.Common;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
+// Resolve ICompiledKernel ambiguity
+using AbstractionsCompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core.Tests;
 
@@ -22,18 +26,20 @@ namespace DotCompute.Core.Tests;
 /// </summary>
 [Trait("Category", "HardwareIndependent")]
 [Trait("Component", "BaseKernelCompiler")]
-public sealed class BaseKernelCompilerTests : IDisposable
+public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
 {
     private readonly Mock<ILogger> _mockLogger;
     private readonly TestKernelCompiler _compiler;
     private readonly List<TestKernelCompiler> _compilers = [];
-    private bool _disposed;
 
-    public BaseKernelCompilerTests()
+    public BaseKernelCompilerTests(ITestOutputHelper output) : base(output)
     {
         _mockLogger = new Mock<ILogger>();
         _compiler = new TestKernelCompiler(_mockLogger.Object);
         _compilers.Add(_compiler);
+        
+        // Track compiler for cleanup
+        TrackDisposable(_compiler);
     }
 
     #region Basic Functionality Tests
@@ -723,7 +729,7 @@ public sealed class BaseKernelCompilerTests : IDisposable
         // Arrange
         var compiler = CreateTestCompiler();
         const int concurrentTasks = 50;
-        var tasks = new List<Task<ICompiledKernel>>();
+        var tasks = new List<Task<AbstractionsCompiledKernel>>();
 
         // Act
 
@@ -1244,17 +1250,7 @@ public sealed class BaseKernelCompilerTests : IDisposable
         return compiler;
     }
 
-    public void Dispose()
-    {
-        if (!_disposed)
-        {
-            foreach (var compiler in _compilers)
-            {
-                compiler.Dispose();
-            }
-            _disposed = true;
-        }
-    }
+    // Dispose is now handled by ConsolidatedTestBase via TrackDisposable()
 
     #endregion
 
@@ -1309,7 +1305,7 @@ public sealed class BaseKernelCompilerTests : IDisposable
         public bool RuntimeCompilationUsed { get; private set; }
         public bool StaticHashingUsed { get; private set; }
 
-        protected override async ValueTask<ICompiledKernel> CompileKernelCoreAsync(
+        protected override async ValueTask<AbstractionsCompiledKernel> CompileKernelCoreAsync(
             KernelDefinition definition,
             CompilationOptions options,
             CancellationToken cancellationToken)
@@ -1347,7 +1343,7 @@ public sealed class BaseKernelCompilerTests : IDisposable
                     RuntimeCompilationUsed = true;
                 }
 
-                var mockKernel = new Mock<ICompiledKernel>();
+                var mockKernel = new Mock<AbstractionsCompiledKernel>();
                 _ = mockKernel.Setup(x => x.Id).Returns(Guid.NewGuid());
                 _ = mockKernel.Setup(x => x.Name).Returns(definition.Name);
 
@@ -1366,8 +1362,8 @@ public sealed class BaseKernelCompilerTests : IDisposable
             }
         }
 
-        protected override ValueTask<ICompiledKernel> OptimizeKernelCore(
-            ICompiledKernel kernel,
+        protected override ValueTask<AbstractionsCompiledKernel> OptimizeKernelCore(
+            AbstractionsCompiledKernel kernel,
             OptimizationLevel level,
             CancellationToken cancellationToken)
         {
@@ -1410,7 +1406,7 @@ public sealed class BaseKernelCompilerTests : IDisposable
             var cacheField = typeof(BaseKernelCompiler).GetField("_compilationCache",
 
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            if (cacheField?.GetValue(this) is ConcurrentDictionary<string, ICompiledKernel> cache)
+            if (cacheField?.GetValue(this) is ConcurrentDictionary<string, AbstractionsCompiledKernel> cache)
             {
                 return cache.Count;
             }

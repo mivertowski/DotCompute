@@ -69,6 +69,12 @@ public class PipelineStageOptions
     
     /// <summary>Retry configuration for stage execution.</summary>
     public RetryConfiguration? RetryConfig { get; set; }
+    
+    /// <summary>Whether to enable optimization for this stage.</summary>
+    public bool EnableOptimization { get; set; } = true;
+    
+    /// <summary>Whether to enable memory optimization for this stage.</summary>
+    public bool EnableMemoryOptimization { get; set; } = true;
 }
 
 /// <summary>

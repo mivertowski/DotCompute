@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Kernels.Compilation;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Types;
+using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core.Kernels
 {
@@ -574,7 +575,7 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Converts ICompiledKernel back to ManagedCompiledKernel.
         /// </summary>
-        private static ManagedCompiledKernel ConvertToManagedCompiledKernel(ICompiledKernel compiledKernel, GeneratedKernel generatedKernel)
+        private static ManagedCompiledKernel ConvertToManagedCompiledKernel(AbstractionsICompiledKernel compiledKernel, GeneratedKernel generatedKernel)
         {
             return new ManagedCompiledKernel
             {

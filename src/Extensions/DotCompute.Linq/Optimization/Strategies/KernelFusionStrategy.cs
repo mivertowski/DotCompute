@@ -10,6 +10,10 @@ using DotCompute.Linq.Optimization.Models;
 using DotCompute.Linq.Types;
 using ExecutionContext = DotCompute.Linq.Execution.ExecutionContext;
 
+// Namespace aliases to resolve ambiguous references
+using OperatorsGeneratedKernel = DotCompute.Linq.Operators.Generation.GeneratedKernel;
+using KernelGenerationGeneratedKernel = DotCompute.Linq.KernelGeneration.GeneratedKernel;
+
 namespace DotCompute.Linq.Optimization.Strategies;
 
 /// <summary>
@@ -594,7 +598,7 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
         return new GeneratedKernel
         {
             Name = source.Name,
-            SourceCode = source.SourceCode,
+            SourceCode = source.Source, // Use Source property instead of SourceCode
             Parameters = source.Parameters?.Select(p => new KernelParameter
             {
                 Name = p.Name,
@@ -690,7 +694,6 @@ public class KernelCodeGenerator
             Parameters = ExtractParameters(group),
             Optimizations = DetermineOptimizations(group, context)
         };
-
 
         return kernel;
     }

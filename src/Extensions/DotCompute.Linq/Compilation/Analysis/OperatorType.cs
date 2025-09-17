@@ -1,11 +1,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Core.Analysis;
+
 namespace DotCompute.Linq.Compilation.Analysis;
 
 /// <summary>
-/// Types of operators that can be analyzed in compilation.
+/// Legacy OperatorType enum - use UnifiedOperatorType instead.
 /// </summary>
+[Obsolete("Use DotCompute.Core.Analysis.UnifiedOperatorType instead. This enum is maintained for backward compatibility.", false)]
 public enum OperatorType
 {
     /// <summary>

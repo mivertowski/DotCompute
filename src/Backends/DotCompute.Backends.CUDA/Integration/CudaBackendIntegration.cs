@@ -17,6 +17,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
+// Resolve ICompiledKernel ambiguity
+using AbstractionsCompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 namespace DotCompute.Backends.CUDA.Integration
 {
 
@@ -766,7 +768,7 @@ namespace DotCompute.Backends.CUDA.Integration
                 }
             }
 
-            private sealed class CudaContextCompiledKernel : ICompiledKernel
+            private sealed class CudaContextCompiledKernel : AbstractionsCompiledKernel
             {
                 private readonly CudaContext _context;
                 private readonly ILogger _logger;
@@ -939,7 +941,7 @@ namespace DotCompute.Backends.CUDA.Integration
             public IUnifiedMemoryManager Memory => _memoryManager;
             public AcceleratorContext Context => _acceleratorContext;
 
-            public ValueTask<ICompiledKernel> CompileKernelAsync(
+            public ValueTask<AbstractionsCompiledKernel> CompileKernelAsync(
                 KernelDefinition definition,
                 DotCompute.Abstractions.CompilationOptions? options = null,
                 CancellationToken cancellationToken = default)
@@ -948,7 +950,7 @@ namespace DotCompute.Backends.CUDA.Integration
                 {
                     var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<CudaContextCompiledKernel>();
                     var kernel = new CudaContextCompiledKernel(_context, logger, definition.Name);
-                    return ValueTask.FromResult<ICompiledKernel>(kernel);
+                    return ValueTask.FromResult<AbstractionsCompiledKernel>(kernel);
                 }
                 catch (Exception ex)
                 {

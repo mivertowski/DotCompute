@@ -385,10 +385,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
             public bool IsEnabled(LogLevel logLevel) => true;
 
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
-
+            void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state,
                 Exception? exception, Func<TState, Exception?, string> formatter)
-                where TState : notnull
             {
                 var message = formatter(state, exception);
                 _output.WriteLine($"[{logLevel}] {message}");

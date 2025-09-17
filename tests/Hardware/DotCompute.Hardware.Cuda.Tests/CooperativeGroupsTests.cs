@@ -284,7 +284,7 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
             _output = output;
         }
 
-        public IDisposable BeginScope<TState>(TState state) => null!;
+        IDisposable ILogger.BeginScope<TState>(TState state) => null!;
         public bool IsEnabled(LogLevel logLevel) => true;
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,

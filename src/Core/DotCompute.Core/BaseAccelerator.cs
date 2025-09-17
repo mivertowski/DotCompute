@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core;
 
@@ -74,7 +75,7 @@ public abstract class BaseAccelerator : IAccelerator
 
 
     /// <inheritdoc/>
-    public virtual ValueTask<ICompiledKernel> CompileKernelAsync(
+    public virtual ValueTask<AbstractionsICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
@@ -123,7 +124,7 @@ public abstract class BaseAccelerator : IAccelerator
     /// <summary>
     /// Core kernel compilation logic to be implemented by derived classes.
     /// </summary>
-    protected abstract ValueTask<ICompiledKernel> CompileKernelCoreAsync(
+    protected abstract ValueTask<AbstractionsICompiledKernel> CompileKernelCoreAsync(
         KernelDefinition definition,
         CompilationOptions options,
         CancellationToken cancellationToken);
@@ -227,7 +228,7 @@ public abstract class BaseAccelerator : IAccelerator
 /// <summary>
 /// Base class for compiled kernels, consolidating common patterns.
 /// </summary>
-public abstract class BaseCompiledKernel : ICompiledKernel
+public abstract class BaseCompiledKernel : AbstractionsICompiledKernel
 {
     private volatile int _disposed;
 

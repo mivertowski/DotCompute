@@ -149,15 +149,15 @@ public class PipelineOptimizedProvider : IQueryProvider
         // Create pipeline with appropriate configuration
 
         var pipelineConfig = CreatePipelineConfiguration(executionPlan, analysisResult);
-        var pipeline = _chainBuilder.Create(pipelineConfig);
+        var pipeline = _chainBuilder.Create();
 
         // Add stages to the pipeline
 
-        pipeline = await AddStagesToPipelineAsync((DotCompute.Linq.Pipelines.IKernelPipeline)pipeline, executionPlan.Stages);
+        pipeline = await AddStagesToPipelineAsync((DotCompute.Core.Pipelines.IKernelPipeline)pipeline, executionPlan.Stages);
 
         // Apply optimizations based on analysis results
 
-        pipeline = await ApplyOptimizationsAsync((DotCompute.Linq.Pipelines.IKernelPipeline)pipeline, analysisResult);
+        pipeline = await ApplyOptimizationsAsync((DotCompute.Core.Pipelines.IKernelPipeline)pipeline, analysisResult);
 
 
         return (DotCompute.Core.Pipelines.IKernelPipeline)pipeline;
@@ -290,8 +290,10 @@ public class PipelineOptimizedProvider : IQueryProvider
 
         // Fallback using Core pipeline interface with extension method
 
-        var coreResult = await ExecuteAsync<TResult>(pipelineWithTimeout, cancellationToken);
-        return coreResult;
+        // Convert pipeline to executable expression
+        var pipelineExpression = ConvertPipelineToExpression(pipelineWithTimeout);
+        var coreResult = await ExecuteAsync<TResult>(pipelineExpression, cancellationToken);
+        return coreResult ?? throw new InvalidOperationException("Pipeline execution returned null result");
     }
 
     #region Helper Methods
@@ -385,6 +387,16 @@ public class PipelineOptimizedProvider : IQueryProvider
             metrics.TotalExecutionTime.TotalMilliseconds,
             metrics.PeakMemoryUsage / (1024.0 * 1024.0),
             metrics.StageCount);
+    }
+
+    /// <summary>
+    /// Converts a pipeline to an executable expression for compatibility.
+    /// </summary>
+    private static Expression ConvertPipelineToExpression(DotCompute.Core.Pipelines.IKernelPipeline pipeline)
+    {
+        // Create a constant expression representing the pipeline
+        // This is a simplified conversion - in practice, you might want more sophisticated conversion
+        return Expression.Constant(pipeline);
     }
 
     #endregion

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
+using DotCompute.Core.Analysis;
 using DotCompute.Linq.Types;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Compilation.Analysis;
@@ -489,7 +490,7 @@ public class ConditionalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAna
         {
             return new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
             {
-                OperatorType = DotCompute.Linq.Pipelines.Analysis.OperatorType.Unknown,
+                OperatorType = UnifiedOperatorType.Unknown,
                 Name = "UnknownConditional",
                 InputTypes = [],
                 OutputType = expression.Type,
@@ -503,7 +504,7 @@ public class ConditionalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAna
 
         return new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
         {
-            OperatorType = DotCompute.Linq.Pipelines.Analysis.OperatorType.Logical,
+            OperatorType = UnifiedOperatorType.Logical,
             Name = "Conditional",
             InputTypes = inputTypes.ToList(),
             OutputType = conditional.Type,

@@ -16,6 +16,30 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DotCompute.Linq.Pipelines;
 
 /// <summary>
+/// Extension methods for IQueryable execution.
+/// </summary>
+public static class QueryableExecutionExtensions
+{
+    /// <summary>
+    /// Executes a queryable asynchronously.
+    /// </summary>
+    public static async Task<IEnumerable<T>> ExecuteAsync<T>(this IQueryable<T> query, CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask; // Placeholder for async operation
+        return query.ToList();
+    }
+
+    /// <summary>
+    /// Executes a queryable asynchronously.
+    /// </summary>
+    public static async Task<IEnumerable<object>> ExecuteAsync(this IQueryable query, CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask; // Placeholder for async operation
+        return query.Cast<object>().ToList();
+    }
+}
+
+/// <summary>
 /// Extension methods for integrating LINQ queries with kernel pipeline workflows.
 /// Provides seamless conversion from LINQ expressions to optimized kernel execution pipelines
 /// with advanced features including streaming, optimization, and performance analysis.

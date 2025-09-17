@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Types;
+using DotCompute.Linq;
 using DotCompute.Linq.Extensions;
 using DotCompute.Linq.Pipelines;
 using Microsoft.Extensions.DependencyInjection;

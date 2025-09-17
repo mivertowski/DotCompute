@@ -8,7 +8,7 @@ namespace DotCompute.Tests.Common.Examples;
 /// Example tests demonstrating the usage of DotCompute test infrastructure.
 /// These examples show best practices for testing accelerated computing scenarios.
 /// </summary>
-public class ExampleTests : TestBase
+public class ExampleTests : ConsolidatedTestBase
 {
     public ExampleTests(ITestOutputHelper output) : base(output)
     {
@@ -62,13 +62,12 @@ public class ExampleTests : TestBase
 
         // Assert - Validate performance expectations
 
-        executionTime.ShouldBeWithinTimeLimit(1000.0,
-
+        executionTime.TotalMilliseconds.ShouldBeWithinTimeLimit(1000.0,
             because: "Medium dataset should process within 1 second");
 
         // Calculate and log throughput
 
-        var elementsPerSecond = (data.Length * iterations) / (executionTime / 1000.0);
+        var elementsPerSecond = (data.Length * iterations) / (executionTime.TotalMilliseconds / 1000.0);
         Output.WriteLine($"Throughput: {elementsPerSecond:N0} elements/second");
     }
 
@@ -201,7 +200,7 @@ public class ExampleTests : TestBase
 /// Example GPU-specific tests demonstrating GPU test infrastructure.
 /// These tests will be skipped if appropriate hardware is not available.
 /// </summary>
-public class ExampleGpuTests : GpuTestBase
+public class ExampleGpuTests : ConsolidatedTestBase
 {
     public ExampleGpuTests(ITestOutputHelper output) : base(output)
     {
@@ -215,13 +214,10 @@ public class ExampleGpuTests : GpuTestBase
         SkipIfNoCuda();
 
         // Get GPU capabilities
-
         var capabilities = GetNvidiaCapabilities();
-
 
         Assert.True(capabilities.HasNvidiaGpu, "NVIDIA GPU should be detected");
         Assert.True(capabilities.TotalMemoryMB > 0, "GPU should have memory");
-
 
         Output.WriteLine($"GPU Compute Capability: {capabilities.ComputeCapability}");
         Output.WriteLine($"GPU Memory: {capabilities.TotalMemoryMB} MB");
@@ -315,9 +311,7 @@ public class ExampleGpuTests : GpuTestBase
         SkipIfInsufficientComputeCapability(minimumComputeCapability: "3.5");
 
         // Test advanced GPU features
-
         var capabilities = GetNvidiaCapabilities();
-
 
         if (capabilities.SupportsUnifiedMemory)
         {

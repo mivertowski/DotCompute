@@ -170,14 +170,13 @@ public class PipelineOrchestrationService : IPipelineOrchestrationService
 
             // Execute through orchestrator
 
-            var result = await _orchestrator.ExecuteKernelAsync<T>(
+            var result = await _orchestrator.ExecuteKernelAsync(
                 recommendation.RecommendedKernel,
                 recommendation.Parameters.ToArray(),
-                executionContext,
                 cancellationToken);
 
             _logger.LogInformation("Orchestrated pipeline execution completed successfully");
-            return result;
+            return (T)(result ?? throw new InvalidOperationException("Orchestrated pipeline execution returned null result"));
         }
         catch (Exception ex)
         {
@@ -375,7 +374,7 @@ public class PipelineBackendIntegration : IPipelineBackendIntegration
 
         var isCompatible = backend switch
         {
-            "CUDA" => analysisResult.Bottlenecks.All(b => b.Type != BottleneckType.ComputeThroughput),
+            "CUDA" => analysisResult.Bottlenecks.All(b => b.Type != DotCompute.Linq.Pipelines.Models.BottleneckType.ComputeThroughput),
             "CPU" => true, // CPU is always compatible
             _ => false
         };
@@ -678,7 +677,7 @@ internal class ProviderAdapter : IntegratedComputeQueryProvider
 
     public new object Execute(Expression expression)
     {
-        return _pipelineProvider.Execute(expression);
+        return _pipelineProvider.Execute(expression) ?? throw new InvalidOperationException("Pipeline execution returned null result");
     }
 }
 

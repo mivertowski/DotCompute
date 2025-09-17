@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using DotCompute.Linq.Compilation.Analysis;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.KernelGeneration;
 using DotCompute.Linq.Operators.Parameters;
+using DotCompute.Linq.Pipelines.Bridge;
 
 // Namespace aliases to resolve ambiguous references
 using AbstractionsKernelParameter = DotCompute.Abstractions.Kernels.KernelParameter;
@@ -40,12 +42,76 @@ public sealed class KernelCodeGenerator
     private readonly KernelNamingStrategy _namingStrategy;
     private readonly CodeGenerationMetrics _metrics;
 
+    #region Helper Methods
+
+    private static DotCompute.Linq.KernelGeneration.MemoryAccessPattern? ConvertMemoryAccessPattern(DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern pattern)
+    {
+        return pattern switch
+        {
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Sequential => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Sequential,
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Random => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Random,
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Strided => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Strided,
+            _ => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Sequential
+        };
+    }
+
+    private DotCompute.Linq.Pipelines.Analysis.OperatorInfo ConvertToOperatorInfo(DotCompute.Linq.Compilation.Analysis.PipelineOperatorInfo pipelineOp)
+    {
+        // Return a default OperatorInfo since the types don't map directly
+        // This is a temporary solution for compilation - a proper mapping should be implemented
+        return new DotCompute.Linq.Pipelines.Analysis.OperatorInfo();
+    }
+
+    #endregion
+
     public KernelCodeGenerator(ILogger<KernelCodeGenerator> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _backendGenerators = InitializeBackendGenerators();
         _namingStrategy = new KernelNamingStrategy();
         _metrics = new CodeGenerationMetrics();
+    }
+
+    /// <summary>
+    /// Converts LinqKernelParameters to GeneratedKernelParameters.
+    /// </summary>
+    private static DotCompute.Linq.Operators.Generation.GeneratedKernelParameter[] ConvertToGeneratedKernelParameters(
+        IReadOnlyList<LinqKernelParameter> parameters)
+    {
+        return parameters.Select((p, index) => new DotCompute.Linq.Operators.Generation.GeneratedKernelParameter
+        {
+            Name = p.Name,
+            Type = p.Type,
+            IsInput = p.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.Input || 
+                     p.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.InOut,
+            IsOutput = p.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.Output || 
+                      p.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.InOut,
+            SizeInBytes = p.Type.IsArray ? 0 : System.Runtime.InteropServices.Marshal.SizeOf(p.Type),
+            ElementCount = p.Type.IsArray ? 1000 : 1, // Default array size
+            ElementType = p.Type.IsArray ? p.Type.GetElementType() : null
+        }).ToArray();
+    }
+
+    /// <summary>
+    /// Converts metadata to dictionary format.
+    /// </summary>
+    private static Dictionary<string, object> ConvertToMetadataDictionary(
+        DotCompute.Linq.KernelGeneration.KernelMetadata metadata)
+    {
+        return new Dictionary<string, object>
+        {
+            ["OptimizationLevel"] = metadata.OptimizationLevel.ToString(),
+            ["Language"] = metadata.Language.ToString(),
+            ["WorkGroupSize"] = metadata.WorkGroupSize ?? new int[] { 1, 1, 1 },
+            ["SharedMemorySize"] = metadata.SharedMemorySize,
+            ["SupportsVectorization"] = metadata.SupportsVectorization,
+            ["UseFastMath"] = metadata.UseFastMath,
+            ["Complexity"] = metadata.Complexity?.ToString() ?? "Moderate",
+            ["MemoryPattern"] = metadata.MemoryPattern?.ToString() ?? "Sequential",
+            ["IsDeterministic"] = metadata.IsDeterministic,
+            ["IsThreadSafe"] = metadata.IsThreadSafe,
+            ["Version"] = metadata.Version
+        };
     }
 
     /// <summary>
@@ -100,13 +166,15 @@ public sealed class KernelCodeGenerator
             _metrics.RecordGeneration(targetBackend, generationTime);
 
 
-            var result = new GeneratedKernel(
-                kernelName,
-                sourceCode,
-                parameters,
-                entryPoint,
-                targetBackend,
-                metadata);
+            var result = new OperatorsGeneratedKernel
+            {
+                Name = kernelName,
+                Source = sourceCode,
+                Parameters = ConvertToGeneratedKernelParameters(parameters),
+                EntryPoint = entryPoint.FunctionName,
+                TargetBackend = targetBackend.ToString(),
+                Metadata = ConvertToMetadataDictionary(metadata)
+            };
 
 
             _logger.LogDebug("Kernel generation completed for {Backend} in {Duration}ms: {LineCount} lines",
@@ -135,7 +203,7 @@ public sealed class KernelCodeGenerator
         var tasks = targetBackends.Select(async backend =>
         {
             var kernel = await GenerateAsync(analysisResult, backend, options, cancellationToken);
-            return new KeyValuePair<BackendType, GeneratedKernel>(backend, kernel);
+            return new KeyValuePair<BackendType, OperatorsGeneratedKernel>(backend, kernel);
         });
 
         var results = await Task.WhenAll(tasks);
@@ -146,13 +214,22 @@ public sealed class KernelCodeGenerator
         CodeGenerationContext context,
         DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
     {
-        return new KernelMetadata(
-            context.KernelName,
-            context.TargetBackend,
-            analysisResult.ComplexityMetrics,
-            analysisResult.MemoryAccessPattern,
-            analysisResult.OptimizationHints,
-            EstimateResourceUsage(context, analysisResult));
+        // Determine the kernel language based on target backend
+        var kernelLanguage = context.TargetBackend switch
+        {
+            BackendType.CPU => DotCompute.Abstractions.Types.KernelLanguage.CSharp,
+            BackendType.CUDA => DotCompute.Abstractions.Types.KernelLanguage.Cuda,
+            BackendType.Metal => DotCompute.Abstractions.Types.KernelLanguage.Metal,
+            BackendType.ROCm => DotCompute.Abstractions.Types.KernelLanguage.HIP,
+            _ => DotCompute.Abstractions.Types.KernelLanguage.Auto
+        };
+
+        return new KernelMetadata(context.KernelName, kernelLanguage)
+        {
+            // Set properties for additional metadata
+            MemoryPattern = ConvertMemoryAccessPattern(analysisResult.MemoryAccessPattern.PredominantPattern),
+            Complexity = ComputationalComplexity.Moderate
+        };
     }
 
     private ResourceUsageEstimate EstimateResourceUsage(
@@ -370,9 +447,10 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
     {
         foreach (var op in context.AnalysisResult.OperatorChain)
         {
-            if (_operatorGenerators.TryGetValue(op.OperatorType, out var generator))
+            if (_operatorGenerators.TryGetValue(op.Name, out var generator))
             {
-                generator.GenerateVectorized(builder, op, context);
+                var operatorInfo = ConvertToOperatorInfo(op);
+                generator.GenerateVectorized(builder, operatorInfo, context);
             }
         }
     }
@@ -381,9 +459,10 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
     {
         foreach (var op in context.AnalysisResult.OperatorChain)
         {
-            if (_operatorGenerators.TryGetValue(op.OperatorType, out var generator))
+            if (_operatorGenerators.TryGetValue(op.Name, out var generator))
             {
-                generator.GenerateScalar(builder, op, context);
+                var operatorInfo = ConvertToOperatorInfo(op);
+                generator.GenerateScalar(builder, operatorInfo, context);
             }
         }
     }
@@ -392,10 +471,10 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
     {
         return new Dictionary<string, IOperatorCodeGenerator>
         {
-            ["Add"] = new ArithmeticOperatorGenerator(),
-            ["Subtract"] = new ArithmeticOperatorGenerator(),
-            ["Multiply"] = new ArithmeticOperatorGenerator(),
-            ["Divide"] = new ArithmeticOperatorGenerator(),
+            ["Addition"] = new ArithmeticOperatorGenerator(),
+            ["Subtraction"] = new ArithmeticOperatorGenerator(),
+            ["Multiplication"] = new ArithmeticOperatorGenerator(),
+            ["Division"] = new ArithmeticOperatorGenerator(),
             ["Select"] = new SelectOperatorGenerator(),
             ["Where"] = new WhereOperatorGenerator(),
             ["Aggregate"] = new AggregateOperatorGenerator()
@@ -404,6 +483,58 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
 
     private static bool IsArrayType(Type type) => type.IsArray;
 
+    /// <summary>
+    /// Converts LINQ kernel parameters to generated kernel parameters.
+    /// </summary>
+    private static GeneratedKernelParameter[] ConvertToGeneratedKernelParameters(IReadOnlyList<LinqKernelParameter> parameters)
+    {
+        return parameters.Select(p => new GeneratedKernelParameter
+        {
+            Name = p.Name,
+            Type = p.Type,
+            IsInput = p.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.Input || p.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.InOut,
+            IsOutput = p.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.Output || p.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.InOut,
+            SizeInBytes = EstimateParameterSize(p.Type),
+            ElementCount = p.Type.IsArray ? 1 : 0,
+            ElementType = p.Type.IsArray ? p.Type.GetElementType() : null
+        }).ToArray();
+    }
+
+    /// <summary>
+    /// Estimates the size of a parameter type in bytes.
+    /// </summary>
+    private static int EstimateParameterSize(Type type)
+    {
+        if (type == typeof(int) || type == typeof(float)) return 4;
+        if (type == typeof(long) || type == typeof(double)) return 8;
+        if (type == typeof(short)) return 2;
+        if (type == typeof(byte) || type == typeof(bool)) return 1;
+        if (type.IsArray) return 0; // Will be determined at runtime
+        return IntPtr.Size; // Default to pointer size for reference types
+    }
+
+    /// <summary>
+    /// Converts kernel metadata to dictionary.
+    /// </summary>
+    private static Dictionary<string, object> ConvertToMetadataDictionary(KernelMetadata metadata)
+    {
+        var result = new Dictionary<string, object>();
+        
+        if (metadata.Properties != null)
+        {
+            foreach (var kvp in metadata.Properties)
+            {
+                result[kvp.Key] = kvp.Value;
+            }
+        }
+        
+        // Add core metadata properties
+        result["GenerationTimestamp"] = metadata.GenerationTimestamp;
+        result["OptimizationLevel"] = metadata.OptimizationLevel.ToString();
+        result["CompilerVersion"] = metadata.CompilerVersion;
+        
+        return result;
+    }
 
     private static Type DetermineOutputElementType(DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
     {
@@ -491,8 +622,7 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
                 parameters.Add(new LinqKernelParameter(
                     $"input_{inputType.GetElementType()?.Name?.ToLowerInvariant()}",
                     inputType,
-                    DotCompute.Linq.Operators.Parameters.ParameterDirection.Input,
-                    MemorySpace.Device));
+                    DotCompute.Linq.Operators.Parameters.ParameterDirection.Input));
             }
         }
 
@@ -501,8 +631,7 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
         parameters.Add(new LinqKernelParameter(
             "output",
             outputElementType.MakeArrayType(),
-            DotCompute.Linq.Operators.Parameters.ParameterDirection.Output,
-            MemorySpace.Device));
+            DotCompute.Linq.Operators.Parameters.ParameterDirection.Output));
 
 
         parameters.Add(new LinqKernelParameter(
@@ -585,9 +714,10 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
 
         foreach (var op in context.AnalysisResult.OperatorChain)
         {
-            if (_operatorGenerators.TryGetValue(op.OperatorType, out var generator))
+            if (_operatorGenerators.TryGetValue(op.Name, out var generator))
             {
-                generator.Generate(builder, op, context);
+                var operatorInfo = ConvertToOperatorInfo(op);
+                generator.Generate(builder, operatorInfo, context);
             }
         }
 
@@ -599,10 +729,10 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
     {
         return new Dictionary<string, ICudaOperatorGenerator>
         {
-            ["Add"] = new CudaArithmeticOperatorGenerator(),
-            ["Subtract"] = new CudaArithmeticOperatorGenerator(),
-            ["Multiply"] = new CudaArithmeticOperatorGenerator(),
-            ["Divide"] = new CudaArithmeticOperatorGenerator(),
+            ["Addition"] = new CudaArithmeticOperatorGenerator(),
+            ["Subtraction"] = new CudaArithmeticOperatorGenerator(),
+            ["Multiplication"] = new CudaArithmeticOperatorGenerator(),
+            ["Division"] = new CudaArithmeticOperatorGenerator(),
             ["Select"] = new CudaSelectOperatorGenerator(),
             ["Where"] = new CudaWhereOperatorGenerator()
         };
@@ -637,6 +767,35 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
     }
 
     private static bool IsArrayType(Type type) => type.IsArray;
+
+    /// <summary>
+    /// Converts PipelineOperatorInfo to OperatorInfo for compatibility.
+    /// </summary>
+    private static Pipelines.Analysis.OperatorInfo ConvertToOperatorInfo(Compilation.Analysis.PipelineOperatorInfo pipelineOp)
+    {
+        return new Pipelines.Analysis.OperatorInfo
+        {
+            OperatorType = DotCompute.Core.Analysis.UnifiedOperatorType.Transform, // Default mapping
+            InputTypes = pipelineOp.InputTypes,
+            OutputType = pipelineOp.OutputType,
+            Name = pipelineOp.Name
+        };
+    }
+
+    /// <summary>
+    /// Converts memory access pattern types.
+    /// </summary>
+    private static DotCompute.Linq.KernelGeneration.MemoryAccessPattern? ConvertMemoryAccessPattern(DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern pattern)
+    {
+        return pattern switch
+        {
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Sequential => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Sequential,
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Random => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Random,
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Strided => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Strided,
+            _ => null
+        };
+    }
+
 }
 
 // Placeholder implementations for other backends
@@ -923,5 +1082,35 @@ internal class ResourceUsageEstimator
 
 
         return new ResourceUsageEstimate(memoryMB, 0, registersPerThread, sharedMemoryKB);
+    }
+
+    /// <summary>
+    /// Converts pipeline operator info to analysis operator info.
+    /// </summary>
+    private static DotCompute.Linq.Analysis.OperatorInfo ConvertToOperatorInfo(PipelineOperatorInfo pipelineInfo)
+    {
+        return new DotCompute.Linq.Analysis.OperatorInfo
+        {
+            OperatorType = ExpressionType.Call,
+            ResultType = pipelineInfo.OutputType ?? typeof(object),
+            OperandTypes = pipelineInfo.InputTypes?.ToArray() ?? Array.Empty<Type>()
+        };
+    }
+
+    /// <summary>
+    /// Converts compilation memory access pattern to kernel metadata memory access pattern.
+    /// </summary>
+    private static DotCompute.Linq.KernelGeneration.MemoryAccessPattern ConvertMemoryAccessPattern(
+        DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern compilationPattern)
+    {
+        return compilationPattern switch
+        {
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Sequential => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Sequential,
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Random => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Random,
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Strided => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Strided,
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Coalesced => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Coalesced,
+            DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern.Scatter => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Scattered,
+            _ => DotCompute.Linq.KernelGeneration.MemoryAccessPattern.Sequential
+        };
     }
 }

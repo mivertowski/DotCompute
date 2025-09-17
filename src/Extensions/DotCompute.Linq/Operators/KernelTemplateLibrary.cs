@@ -11,6 +11,11 @@ using DotCompute.Linq.Operators.Adapters;
 using System.Text;
 using CoreKernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
 using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
+
+// Namespace aliases to resolve ambiguous references
+using OperatorsGeneratedKernel = DotCompute.Linq.Operators.Generation.GeneratedKernel;
+using KernelGenerationGeneratedKernel = DotCompute.Linq.KernelGeneration.GeneratedKernel;
+
 namespace DotCompute.Linq.Operators;
 
 
@@ -102,7 +107,7 @@ public class MapKernelTemplate : IKernelTemplate
         var language = ConvertLanguage(KernelDefinitionAdapter.ExtractLanguage(definition));
         var parameters = KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter).ToArray();
 
-        return new GeneratedKernel
+        return new OperatorsGeneratedKernel
         {
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
@@ -284,11 +289,11 @@ public class FilterKernelTemplate : IKernelTemplate
         _ = sourceBuilder.AppendLine($"// Generated for {accelerator.Type}");
         _ = sourceBuilder.AppendLine("// TODO: Implement filter kernel generation");
 
-        return new GeneratedKernel
+        return new OperatorsGeneratedKernel
         {
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
-            Language = KernelLanguage.CSharp,
+            Language = DotCompute.Abstractions.Types.KernelLanguage.CSharp,
             Parameters = [.. KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter)],
             OptimizationMetadata = definition.Metadata
         };
@@ -320,11 +325,11 @@ public class ReduceKernelTemplate : IKernelTemplate
         _ = sourceBuilder.AppendLine($"// Generated for {accelerator.Type}");
         _ = sourceBuilder.AppendLine("// TODO: Implement reduce kernel generation");
 
-        return new GeneratedKernel
+        return new OperatorsGeneratedKernel
         {
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
-            Language = KernelLanguage.CSharp,
+            Language = DotCompute.Abstractions.Types.KernelLanguage.CSharp,
             Parameters = [.. KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter)],
             OptimizationMetadata = definition.Metadata
         };
@@ -356,11 +361,11 @@ public class SortKernelTemplate : IKernelTemplate
         _ = sourceBuilder.AppendLine($"// Generated for {accelerator.Type}");
         _ = sourceBuilder.AppendLine("// TODO: Implement sort kernel generation");
 
-        return new GeneratedKernel
+        return new OperatorsGeneratedKernel
         {
             Name = definition.Name,
             Source = sourceBuilder.ToString(),
-            Language = KernelLanguage.CSharp,
+            Language = DotCompute.Abstractions.Types.KernelLanguage.CSharp,
             Parameters = [.. KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter)],
             OptimizationMetadata = definition.Metadata
         };

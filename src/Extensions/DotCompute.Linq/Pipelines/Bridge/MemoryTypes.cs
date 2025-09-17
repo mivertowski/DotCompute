@@ -162,6 +162,46 @@ public sealed class MemoryUsageStats
     /// Gets or sets the memory fragmentation percentage.
     /// </summary>
     public required double FragmentationPercentage { get; init; }
+
+    /// <summary>
+    /// Gets the currently allocated bytes (alias for CurrentUsage).
+    /// </summary>
+    public long AllocatedBytes => CurrentUsage;
+
+    /// <summary>
+    /// Gets the peak allocated bytes (alias for PeakUsage).
+    /// </summary>
+    public long PeakBytes => PeakUsage;
+
+    /// <summary>
+    /// Gets the peak usage bytes (alias for PeakUsage).
+    /// </summary>
+    public long PeakUsageBytes => PeakUsage;
+
+    /// <summary>
+    /// Gets the average usage bytes (estimated from current usage).
+    /// </summary>
+    public long AverageUsageBytes => CurrentUsage;
+
+    /// <summary>
+    /// Gets the initial usage bytes (assumed to be 0).
+    /// </summary>
+    public long InitialUsageBytes => 0;
+
+    /// <summary>
+    /// Gets the final usage bytes (alias for CurrentUsage).
+    /// </summary>
+    public long FinalUsageBytes => CurrentUsage;
+
+    /// <summary>
+    /// Gets the total allocated bytes (alias for TotalAllocated).
+    /// </summary>
+    public long TotalAllocatedBytes => TotalAllocated;
+
+    /// <summary>
+    /// Gets the total deallocated bytes (alias for TotalDeallocated).
+    /// </summary>
+    public long TotalDeallocatedBytes => TotalDeallocated;
 }
 
 #endregion

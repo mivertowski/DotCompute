@@ -49,6 +49,9 @@ public class WorkloadCharacteristics
 
     /// <summary>Additional custom characteristics</summary>
     public Dictionary<string, object> CustomCharacteristics { get; set; } = new();
+
+    /// <summary>Gets or sets optimization hints for this workload.</summary>
+    public List<string> OptimizationHints { get; set; } = new();
 }
 
 /// <summary>
@@ -128,6 +131,8 @@ public enum MemoryAccessPattern
     Coalesced,
     Scattered
 }
+
+// Note: Type alias for AccessPattern removed (use MemoryAccessPattern directly)
 
 /// <summary>
 /// Result of backend selection process.

@@ -131,7 +131,7 @@ public sealed class KernelOptimizer
         OptimizationContext context,
         CancellationToken cancellationToken)
     {
-        var currentKernel = context.OperatorsGeneratedKernel;
+        var currentKernel = context.OperatorsGeneratedKernel ?? throw new ArgumentException("Context must contain a valid generated kernel", nameof(context));
         var appliedOptimizations = new List<AppliedOptimization>();
 
 
@@ -151,7 +151,7 @@ public sealed class KernelOptimizer
 
             if (result.WasApplied)
             {
-                currentKernel = result.OptimizedKernel;
+                currentKernel = result.OptimizedKernel ?? currentKernel;
                 appliedOptimizations.Add(new AppliedOptimization(
                     optimization.GetType().Name,
                     result.Description,
@@ -321,7 +321,7 @@ internal class OptimizationPipelineBuilder
 
         // Prefetching
 
-        if (context.AnalysisResult.ComplexityMetrics != null && IsMemoryBound(ConvertComplexityMetrics(context.AnalysisResult.ComplexityMetrics)))
+        if (context.AnalysisResult.ComplexityMetrics != null && IsMemoryBound(MemoryAccessPatternExtensions.ConvertComplexityMetrics(context.AnalysisResult.ComplexityMetrics)))
         {
             optimizations.Add(new PrefetchOptimization());
         }
@@ -344,7 +344,7 @@ internal class OptimizationPipelineBuilder
 
         // Shared memory utilization
 
-        if (context.AnalysisResult.ComplexityMetrics != null && CanBenefitFromSharedMemory(ConvertComplexityMetrics(context.AnalysisResult.ComplexityMetrics)))
+        if (context.AnalysisResult.ComplexityMetrics != null && CanBenefitFromSharedMemory(MemoryAccessPatternExtensions.ConvertComplexityMetrics(context.AnalysisResult.ComplexityMetrics)))
         {
             optimizations.Add(new SharedMemoryOptimization());
         }

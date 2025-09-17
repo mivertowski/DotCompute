@@ -538,7 +538,7 @@ public class OperatorInfo
     /// <summary>
     /// Gets or sets the type of operator.
     /// </summary>
-    public OperatorType OperatorType { get; set; }
+    public DotCompute.Core.Analysis.UnifiedOperatorType OperatorType { get; set; }
 
     /// <summary>
     /// Gets or sets the input types for this operator.
@@ -597,8 +597,9 @@ public class OperatorInfo
 }
 
 /// <summary>
-/// Types of operators that can be analyzed.
+/// Legacy OperatorType enum - use UnifiedOperatorType instead.
 /// </summary>
+[Obsolete("Use DotCompute.Core.Analysis.UnifiedOperatorType instead. This enum is maintained for backward compatibility.", false)]
 public enum OperatorType
 {
     /// <summary>
@@ -723,6 +724,11 @@ public class ComplexityMetrics
     public int ComputeComplexity { get; set; }
 
     /// <summary>
+    /// Gets or sets the communication complexity score for distributed operations.
+    /// </summary>
+    public int CommunicationComplexity { get; set; }
+
+    /// <summary>
     /// Gets whether the operation is memory-bound.
     /// </summary>
     public bool MemoryBound => MemoryComplexity > ComputationalComplexity * 2;
@@ -746,4 +752,23 @@ public class ComplexityMetrics
     /// Gets or sets optimization opportunities.
     /// </summary>
     public List<string> OptimizationOpportunities { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the operation count (alias for OperationsCount).
+    /// </summary>
+    public long OperationCount 
+    { 
+        get => OperationsCount; 
+        set => OperationsCount = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets whether GPU execution is recommended.
+    /// </summary>
+    public bool GpuRecommended { get; set; }
+
+    /// <summary>
+    /// Gets or sets complexity by category.
+    /// </summary>
+    public Dictionary<string, int> ComplexityByCategory { get; set; } = new();
 }

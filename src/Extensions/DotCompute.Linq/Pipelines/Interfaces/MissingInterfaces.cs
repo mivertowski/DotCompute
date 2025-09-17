@@ -495,6 +495,12 @@ public class PipelineStageOptions
 
     /// <summary>Whether to enable caching.</summary>
     public bool EnableCaching { get; set; }
+    
+    /// <summary>Whether to enable optimization.</summary>
+    public bool EnableOptimization { get; set; }
+    
+    /// <summary>Whether to enable memory optimization.</summary>
+    public bool EnableMemoryOptimization { get; set; }
 
     /// <summary>Timeout in milliseconds.</summary>
     public int TimeoutMs { get; set; } = 30000;
@@ -514,8 +520,20 @@ public class WorkloadCharacteristics
     /// <summary>Parallelism degree.</summary>
     public int ParallelismDegree { get; set; }
 
+    /// <summary>Parallelism level (0.0 to 1.0).</summary>
+    public double ParallelismLevel { get; set; }
+
     /// <summary>Data size in bytes.</summary>
     public long DataSize { get; set; }
+
+    /// <summary>Expected number of operations.</summary>
+    public long OperationCount { get; set; }
+
+    /// <summary>Memory access pattern classification.</summary>
+    public DotCompute.Core.Optimization.MemoryAccessPattern AccessPattern { get; set; }
+
+    /// <summary>Additional custom optimization hints.</summary>
+    public List<string> OptimizationHints { get; set; } = new();
 
     /// <summary>Secondary data size in bytes.</summary>
     public long SecondaryDataSize { get; set; }
@@ -528,9 +546,6 @@ public class WorkloadCharacteristics
 
     /// <summary>Whether this workload is suitable for GPU execution.</summary>
     public bool IsGpuSuitable { get; set; }
-
-    /// <summary>Number of operations in the workload.</summary>
-    public int OperationCount { get; set; }
 
     /// <summary>Parallelism potential (0.0 to 1.0).</summary>
     public double ParallelismPotential { get; set; }

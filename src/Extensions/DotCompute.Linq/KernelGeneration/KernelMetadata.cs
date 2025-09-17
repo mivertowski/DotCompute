@@ -147,6 +147,21 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
     public Dictionary<string, object>? CustomMetadata { get; set; }
 
     /// <summary>
+    /// Gets or sets additional properties (alias for CustomMetadata).
+    /// </summary>
+    public Dictionary<string, object>? Properties => CustomMetadata ?? new Dictionary<string, object>();
+
+    /// <summary>
+    /// Gets or sets the generation timestamp.
+    /// </summary>
+    public DateTimeOffset GenerationTimestamp => CreatedAt;
+
+    /// <summary>
+    /// Gets or sets the compiler version used.
+    /// </summary>
+    public string CompilerVersion { get; set; } = "1.0.0";
+
+    /// <summary>
     /// Adds a compilation hint for the backend compiler.
     /// </summary>
     /// <param name="key">The hint key.</param>
@@ -333,9 +348,14 @@ public enum MemoryAccessPattern
     Strided,
 
     /// <summary>
-    /// Coalesced memory access pattern (optimal for GPU).
+    /// Coalesced memory access pattern (GPU optimized).
     /// </summary>
     Coalesced,
+
+    /// <summary>
+    /// Scattered memory access pattern.
+    /// </summary>
+    Scattered,
 
     /// <summary>
     /// Broadcast memory access pattern.

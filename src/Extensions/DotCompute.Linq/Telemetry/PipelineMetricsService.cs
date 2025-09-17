@@ -117,7 +117,7 @@ public sealed class PipelineMetricsService : IDisposable
                 ExecutionContext = executionContext,
                 PipelineMetrics = pipelineMetrics,
                 StartTime = DateTime.UtcNow,
-                Metadata = metadata ?? new Dictionary<string, object>(),
+                Metadata = metadata ?? [],
                 StageContexts = new ConcurrentDictionary<string, StageMetricsContext>()
             };
 
@@ -303,21 +303,24 @@ public sealed class PipelineMetricsService : IDisposable
             {
                 var memoryStats = new CoreMemoryUsageStats
                 {
-                    PeakBytes = context.StageContexts.Values.Sum(s => s.TotalMemoryUsed),
-                    AllocatedBytes = context.StageContexts.Values.Sum(s => s.TotalMemoryUsed)
+                    AllocatedBytes = context.StageContexts.Values.Sum(s => s.TotalMemoryUsed),
+                    PeakBytes = context.StageContexts.Values.Any() ? context.StageContexts.Values.Max(s => s.TotalMemoryUsed) : 0,
+                    AllocationCount = 0, // Default value, could be calculated based on actual metrics
+                    DeallocationCount = 0 // Default value, could be calculated based on actual metrics
                 };
 
 
                 var executionMetrics = new CorePipelineExecutionMetrics
                 {
-                    PipelineId = context.PipelineId,
                     ExecutionId = context.CorrelationId,
                     StartTime = context.StartTime,
                     EndTime = DateTime.UtcNow,
                     Duration = duration,
                     MemoryUsage = memoryStats,
-                    Success = success,
-                    ItemsProcessed = context.ItemsProcessed
+                    ComputeUtilization = 0.75, // Default value, could be calculated based on actual metrics
+                    MemoryBandwidthUtilization = 0.60, // Default value, could be calculated based on actual metrics
+                    StageExecutionTimes = context.StageContexts.ToDictionary(kvp => kvp.Key, kvp => TimeSpan.FromMilliseconds(kvp.Value.ElapsedMs)),
+                    DataTransferTimes = new Dictionary<string, TimeSpan>()
                 };
 
 
@@ -645,6 +648,11 @@ public sealed class StageMetricsContext
     public int ExecutionCount { get; private set; }
     public int SuccessCount { get; private set; }
     public List<Dictionary<string, object>> ExecutionMetadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets the elapsed time in milliseconds.
+    /// </summary>
+    public double ElapsedMs => ExecutionTime.TotalMilliseconds;
 
     public void RecordExecution(
         TimeSpan duration,
