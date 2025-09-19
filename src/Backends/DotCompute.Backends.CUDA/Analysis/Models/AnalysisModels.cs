@@ -4,8 +4,8 @@
 // </copyright>
 
 using DotCompute.Backends.CUDA.Analysis.Types;
-using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
 using DotCompute.Backends.CUDA.Advanced.Types;
+using DotCompute.Abstractions.Types;
 using AbstractionsMemoryAccessPattern = DotCompute.Abstractions.Types.MemoryAccessPattern;
 using AnalysisMemoryAccessPattern = DotCompute.Backends.CUDA.Analysis.Types.MemoryAccessPattern;
 
@@ -75,7 +75,7 @@ public sealed class KernelPerformanceModel
     /// <summary>
     /// Gets or sets identified performance bottlenecks.
     /// </summary>
-    public List<BottleneckType> Bottlenecks { get; set; } = [];
+    public List<DotCompute.Backends.CUDA.Advanced.Profiling.Types.BottleneckType> Bottlenecks { get; set; } = [];
 }
 
 /// <summary>

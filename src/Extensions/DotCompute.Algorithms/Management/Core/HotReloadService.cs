@@ -62,9 +62,9 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
             };
 
             // Handle both file changes and dependency changes
-            watcher.Changed += OnAssemblyChanged;
-            watcher.Created += OnAssemblyChanged;
-            watcher.Error += OnFileWatcherError;
+            watcher.Changed += (sender, e) => _ = HandleAssemblyChangedAsync(sender, e);
+            watcher.Created += (sender, e) => _ = HandleAssemblyChangedAsync(sender, e);
+            watcher.Error += (sender, e) => _ = HandleFileWatcherErrorAsync(sender, e);
 
             // Also watch for .pdb files (debug symbols) and .json manifest files
             var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
@@ -77,7 +77,7 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
                     NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
                     EnableRaisingEvents = true
                 };
-                pdbWatcher.Changed += OnAssemblyChanged;
+                pdbWatcher.Changed += (sender, e) => _ = HandleAssemblyChangedAsync(sender, e);
                 _ = _watchers.TryAdd(pdbPath, pdbWatcher);
             }
 
@@ -88,7 +88,7 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
                     NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
                     EnableRaisingEvents = true
                 };
-                manifestWatcher.Changed += OnAssemblyChanged;
+                manifestWatcher.Changed += (sender, e) => _ = HandleAssemblyChangedAsync(sender, e);
                 _ = _watchers.TryAdd(manifestPath, manifestWatcher);
             }
 
@@ -107,9 +107,7 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
         if (_watchers.TryRemove(assemblyPath, out var watcher))
         {
             watcher.EnableRaisingEvents = false;
-            watcher.Changed -= OnAssemblyChanged;
-            watcher.Created -= OnAssemblyChanged;
-            watcher.Error -= OnFileWatcherError;
+            // Event handlers are anonymous lambdas, no need to unsubscribe explicitly
             watcher.Dispose();
         }
     }
@@ -120,18 +118,31 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
         foreach (var watcher in _watchers.Values)
         {
             watcher.EnableRaisingEvents = false;
-            watcher.Changed -= OnAssemblyChanged;
-            watcher.Created -= OnAssemblyChanged;
-            watcher.Error -= OnFileWatcherError;
+            // Event handlers are anonymous lambdas, no need to unsubscribe explicitly
             watcher.Dispose();
         }
         _watchers.Clear();
     }
 
     /// <summary>
+    /// Async wrapper for handling assembly file changes.
+    /// </summary>
+    private async Task HandleAssemblyChangedAsync(object sender, FileSystemEventArgs e)
+    {
+        try
+        {
+            await OnAssemblyChanged(sender, e).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorMessage(ex, "Error handling assembly change for {e.FullPath}");
+        }
+    }
+
+    /// <summary>
     /// Handles assembly file changes for hot reload.
     /// </summary>
-    private async void OnAssemblyChanged(object sender, FileSystemEventArgs e)
+    private async Task OnAssemblyChanged(object sender, FileSystemEventArgs e)
     {
         try
         {
@@ -181,9 +192,24 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
     }
 
     /// <summary>
+    /// Async wrapper for handling file watcher errors.
+    /// </summary>
+    private async Task HandleFileWatcherErrorAsync(object sender, ErrorEventArgs e)
+    {
+        try
+        {
+            await OnFileWatcherError(sender, e).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorMessage(ex, "Error handling file watcher error");
+        }
+    }
+
+    /// <summary>
     /// Handles file watcher errors.
     /// </summary>
-    private async void OnFileWatcherError(object sender, ErrorEventArgs e)
+    private async Task OnFileWatcherError(object sender, ErrorEventArgs e)
     {
         _logger.LogErrorMessage(e.GetException(), "File watcher error occurred");
 

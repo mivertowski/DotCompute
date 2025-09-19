@@ -6,6 +6,14 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Interfaces.Pipelines.Profiling;
+using DotCompute.Abstractions.Pipelines.Statistics;
+using DotCompute.Core.Execution;
+
+// Type aliases to resolve ambiguous references
+using AbstractionsDataTransferType = DotCompute.Abstractions.Pipelines.Enums.DataTransferType;
+using AbstractionsProfilingResults = DotCompute.Abstractions.Pipelines.Results.ProfilingResults;
+using AbstractionsAggregatedProfilingResults = DotCompute.Abstractions.Pipelines.Results.AggregatedProfilingResults;
 
 namespace DotCompute.Core.Pipelines.Profiling;
 
@@ -115,7 +123,7 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
     /// <param name="bytes">The number of bytes transferred.</param>
     /// <param name="duration">The duration of the transfer.</param>
     /// <param name="type">The type of data transfer.</param>
-    public void RecordDataTransfer(string executionId, long bytes, TimeSpan duration, DataTransferType type)
+    public void RecordDataTransfer(string executionId, long bytes, TimeSpan duration, AbstractionsDataTransferType type)
     {
         var rate = bytes / duration.TotalSeconds / 1024.0 / 1024.0;
         _logger?.LogInformation(
@@ -155,32 +163,23 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
     /// </summary>
     /// <param name="executionId">The execution identifier.</param>
     /// <returns>The profiling results.</returns>
-    public ProfilingResults GetResults(string executionId)
+    public AbstractionsProfilingResults GetResults(string executionId)
     {
         // Return simplified results for this example
-        return new ProfilingResults
+        return new AbstractionsProfilingResults
         {
             ExecutionId = executionId,
             PipelineId = "example",
-            Metrics = new PipelineExecutionMetrics
+            TotalExecutionTime = TimeSpan.FromMinutes(1),
+            KernelStats = [],
+            MemoryStats = new DotCompute.Abstractions.Pipelines.Results.MemoryUsageStats
             {
-                ExecutionId = executionId,
-                StartTime = DateTime.UtcNow.AddMinutes(-1),
-                EndTime = DateTime.UtcNow,
-                Duration = TimeSpan.FromMinutes(1),
-                MemoryUsage = new MemoryUsageStats
-                {
-                    AllocatedBytes = 1024 * 1024,
-                    PeakBytes = 2 * 1024 * 1024,
-                    AllocationCount = 10,
-                    DeallocationCount = 8
-                },
-                ComputeUtilization = PerformanceMonitor.GetCpuUtilization(),
-                MemoryBandwidthUtilization = PerformanceMonitor.GetMemoryBandwidthUtilization(),
-                StageExecutionTimes = new Dictionary<string, TimeSpan>(),
-                DataTransferTimes = new Dictionary<string, TimeSpan>()
+                PeakMemoryUsageBytes = 2 * 1024 * 1024,
+                TotalAllocatedBytes = 1024 * 1024,
+                AllocationCount = 10
             },
-            Timeline = []
+            Timeline = [],
+            Recommendations = []
         };
     }
 
@@ -189,22 +188,17 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
     /// </summary>
     /// <param name="pipelineId">The pipeline identifier.</param>
     /// <returns>The aggregated profiling results.</returns>
-    public AggregatedProfilingResults GetAggregatedResults(string pipelineId)
+    public AbstractionsAggregatedProfilingResults GetAggregatedResults(string pipelineId)
     {
         // Return simplified aggregated results for this example
-        return new AggregatedProfilingResults
+        return new AbstractionsAggregatedProfilingResults
         {
             PipelineId = pipelineId,
             ExecutionCount = 1,
-            Statistics = new StatisticalMetrics
-            {
-                Average = GetResults("example").Metrics,
-                Median = GetResults("example").Metrics,
-                StandardDeviation = GetResults("example").Metrics,
-                Percentiles = new Dictionary<int, PipelineExecutionMetrics>()
-            },
-            Trends = [],
-            CommonBottlenecks = []
+            AverageExecutionTime = TimeSpan.FromMinutes(1),
+            MinExecutionTime = TimeSpan.FromSeconds(45),
+            MaxExecutionTime = TimeSpan.FromSeconds(75),
+            Trends = []
         };
     }
 }

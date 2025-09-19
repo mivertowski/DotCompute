@@ -3,15 +3,23 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Kernels.Compilation;
 using DotCompute.Core.Kernels.Validation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+
+// Using aliases to resolve ValidationIssue conflicts
+using CoreValidationIssue = DotCompute.Abstractions.ValidationIssue;
+using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
+using ValidationValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 
 namespace DotCompute.Core.Kernels;
 
@@ -19,12 +27,12 @@ namespace DotCompute.Core.Kernels;
 /// Base abstract class for kernel compiler implementations, consolidating common patterns.
 /// This addresses the critical issue of 15+ duplicate compiler implementations.
 /// </summary>
-public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
+public abstract class BaseKernelCompiler : IUnifiedKernelCompiler<KernelDefinition, AbstractionsICompiledKernel>
 {
     private readonly ILogger _logger;
-    private readonly ConcurrentDictionary<string, ICompiledKernel> _compilationCache;
+    private readonly ConcurrentDictionary<string, AbstractionsICompiledKernel> _compilationCache;
     private readonly ConcurrentDictionary<string, CompilationMetrics> _metricsCache;
-    private readonly ConcurrentDictionary<string, TaskCompletionSource<ICompiledKernel>> _compilationTasks;
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<AbstractionsICompiledKernel>> _compilationTasks;
 
 
     /// <summary>
@@ -34,9 +42,9 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     {
         ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
-        _compilationCache = new ConcurrentDictionary<string, ICompiledKernel>();
+        _compilationCache = new ConcurrentDictionary<string, AbstractionsICompiledKernel>();
         _metricsCache = new ConcurrentDictionary<string, CompilationMetrics>();
-        _compilationTasks = new ConcurrentDictionary<string, TaskCompletionSource<ICompiledKernel>>();
+        _compilationTasks = new ConcurrentDictionary<string, TaskCompletionSource<AbstractionsICompiledKernel>>();
     }
 
 
@@ -55,7 +63,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     public virtual string Name => CompilerName;
 
     /// <inheritdoc/>
-    public abstract IReadOnlyList<DotCompute.Abstractions.Types.KernelLanguage> SupportedSourceTypes { get; }
+    public abstract IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; }
 
     /// <inheritdoc/>
     public virtual IReadOnlyDictionary<string, object> Capabilities { get; } = new Dictionary<string, object>
@@ -66,7 +74,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     };
 
     /// <inheritdoc/>
-    public virtual async ValueTask<ICompiledKernel> CompileAsync(
+    public virtual async ValueTask<AbstractionsICompiledKernel> CompileAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
@@ -97,7 +105,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
         if (EnableCaching)
         {
-            var tcs = new TaskCompletionSource<ICompiledKernel>();
+            var tcs = new TaskCompletionSource<AbstractionsICompiledKernel>();
             if (!_compilationTasks.TryAdd(cacheKey, tcs))
             {
                 // Another thread is already compiling this kernel, wait for it
@@ -183,7 +191,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// <summary>
     /// Core compilation logic to be implemented by derived classes.
     /// </summary>
-    protected abstract ValueTask<ICompiledKernel> CompileKernelCoreAsync(
+    protected abstract ValueTask<AbstractionsICompiledKernel> CompileKernelCoreAsync(
         KernelDefinition definition,
         CompilationOptions options,
         CancellationToken cancellationToken);
@@ -337,8 +345,119 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         };
     }
 
-    public Task<ManagedCompiledKernel> CompileAsync(IKernelSource source, CompilationOptions options, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-    public Task<KernelValidationResult> ValidateAsync(IKernelSource source, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    /// <summary>
+    /// Converts an IKernelSource to a KernelDefinition for processing.
+    /// </summary>
+    /// <param name="source">The kernel source to convert.</param>
+    /// <returns>A KernelDefinition equivalent.</returns>
+    protected virtual KernelDefinition ConvertToKernelDefinition(IKernelSource source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        // If it's already a KernelDefinition, return as-is
+        if (source is KernelDefinition kernelDef)
+        {
+
+            return kernelDef;
+        }
+
+        // Try to extract basic information from the source
+
+        var name = source.GetType().Name;
+        var code = source.ToString() ?? string.Empty;
+        var entryPoint = "main"; // Default entry point
+
+        // Use reflection to get properties if available
+        var sourceType = source.GetType();
+        var nameProperty = sourceType.GetProperty("Name");
+        if (nameProperty?.GetValue(source) is string sourceName)
+        {
+            name = sourceName;
+        }
+
+        var codeProperty = sourceType.GetProperty("Code") ?? sourceType.GetProperty("Source");
+        if (codeProperty?.GetValue(source) is string sourceCode)
+        {
+            code = sourceCode;
+        }
+
+        var entryProperty = sourceType.GetProperty("EntryPoint");
+        if (entryProperty?.GetValue(source) is string sourceEntry)
+        {
+            entryPoint = sourceEntry;
+        }
+
+
+        return new KernelDefinition(name, code, entryPoint);
+    }
+
+    public async Task<ManagedCompiledKernel> CompileAsync(IKernelSource source, CompilationOptions options, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(options);
+
+        try
+        {
+            // Convert IKernelSource to KernelDefinition if possible
+            var kernelDef = ConvertToKernelDefinition(source);
+
+            // Use the main compilation method
+            var compiled = await CompileAsync(kernelDef, options, cancellationToken);
+
+            // Create ManagedCompiledKernel wrapper
+            return new ManagedCompiledKernel
+            {
+                Name = kernelDef.Name,
+                Binary = Array.Empty<byte>(), // Implementation-specific
+                Parameters = Array.Empty<KernelParameter>() // No parameters for this kernel type
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to compile kernel from IKernelSource: {SourceType}", source.GetType().Name);
+            throw;
+        }
+    }
+    public async Task<KernelValidationResult> ValidateAsync(IKernelSource source, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        try
+        {
+            // Convert IKernelSource to KernelDefinition
+            var kernelDef = ConvertToKernelDefinition(source);
+
+            // Use the main validation method
+            var result = await ValidateAsync(kernelDef, cancellationToken);
+
+            // Convert UnifiedValidationResult to KernelValidationResult
+            return new KernelValidationResult
+            {
+                IsValid = result.IsValid,
+                Errors = result.Errors
+                    .Select(e => new DotCompute.Abstractions.Validation.ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, e.Message, e.Code))
+                    .ToList(),
+                Warnings = result.Warnings
+                    .Select(w => new DotCompute.Abstractions.Validation.ValidationWarning
+                    {
+                        Code = w.Code ?? "UNKNOWN",
+                        Message = w.Message,
+                        Severity = DotCompute.Abstractions.Validation.WarningSeverity.Medium
+                    })
+                    .ToList()
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to validate kernel from IKernelSource: {SourceType}", source.GetType().Name);
+
+            return new KernelValidationResult
+            {
+                IsValid = false,
+                Errors = [new DotCompute.Abstractions.Validation.ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, $"Validation failed: {ex.Message}", "VALIDATION_ERROR")]
+            };
+        }
+    }
     /// <inheritdoc/>
     public virtual DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(KernelDefinition source)
     {
@@ -362,8 +481,8 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
 
     /// <inheritdoc/>
-    public virtual async ValueTask<ICompiledKernel> OptimizeAsync(
-        ICompiledKernel kernel,
+    public virtual async ValueTask<AbstractionsICompiledKernel> OptimizeAsync(
+        AbstractionsICompiledKernel kernel,
         OptimizationLevel level,
         CancellationToken cancellationToken = default)
     {
@@ -382,8 +501,8 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// <summary>
     /// Core optimization logic to be implemented by derived classes.
     /// </summary>
-    protected virtual ValueTask<ICompiledKernel> OptimizeKernelCore(
-        ICompiledKernel kernel,
+    protected virtual ValueTask<AbstractionsICompiledKernel> OptimizeKernelCore(
+        AbstractionsICompiledKernel kernel,
         OptimizationLevel level,
         CancellationToken cancellationToken)
         // Default: no optimization

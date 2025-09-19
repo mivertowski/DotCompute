@@ -154,9 +154,9 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         var validationResult = new PipelineValidationResult
         {
             IsValid = true,
-            Errors = new List<ValidationError>(),
-            Warnings = new List<ValidationWarning>(),
-            Recommendations = new List<string>()
+            Errors = [],
+            Warnings = [],
+            Recommendations = []
         };
 
         try
@@ -184,7 +184,7 @@ public class PipelineErrorHandler : IPipelineErrorHandler
             validationResult.IsValid = false;
             validationResult.Errors.Add(new ValidationError
             {
-                Severity = ErrorSeverity.Critical,
+                Severity = PipelineErrorSeverity.Critical,
                 Message = "Pipeline validation failed with exception",
                 Details = ex.Message,
                 ErrorCode = "VALIDATION_EXCEPTION"
@@ -217,30 +217,30 @@ public class PipelineErrorHandler : IPipelineErrorHandler
     {
         return new Dictionary<PipelineErrorType, List<RecoveryStrategy>>
         {
-            [PipelineErrorType.MemoryExhausted] = new List<RecoveryStrategy>
-            {
+            [PipelineErrorType.MemoryExhausted] =
+            [
                 new() { Name = "Enable Streaming", Description = "Process data in smaller batches", Success = 0.8, Cost = RecoveryCost.Low },
                 new() { Name = "Fallback to CPU", Description = "Use CPU backend with more memory", Success = 0.9, Cost = RecoveryCost.Medium },
                 new() { Name = "Increase Memory Pool", Description = "Expand memory pool size", Success = 0.7, Cost = RecoveryCost.High }
-            },
-            [PipelineErrorType.Timeout] = new List<RecoveryStrategy>
-            {
+            ],
+            [PipelineErrorType.Timeout] =
+            [
                 new() { Name = "Increase Timeout", Description = "Allow more time for execution", Success = 0.6, Cost = RecoveryCost.Low },
                 new() { Name = "Optimize Query", Description = "Apply aggressive optimizations", Success = 0.8, Cost = RecoveryCost.Medium },
                 new() { Name = "Parallelize Execution", Description = "Split work across multiple cores", Success = 0.7, Cost = RecoveryCost.Medium }
-            },
-            [PipelineErrorType.UnsupportedOperation] = new List<RecoveryStrategy>
-            {
+            ],
+            [PipelineErrorType.UnsupportedOperation] =
+            [
                 new() { Name = "Fallback Implementation", Description = "Use CPU fallback for unsupported operations", Success = 0.9, Cost = RecoveryCost.Low },
                 new() { Name = "Alternative Algorithm", Description = "Use different algorithm for the operation", Success = 0.7, Cost = RecoveryCost.High },
                 new() { Name = "Skip Operation", Description = "Skip the unsupported operation with warning", Success = 0.3, Cost = RecoveryCost.Low }
-            },
-            [PipelineErrorType.ExecutionFailure] = new List<RecoveryStrategy>
-            {
+            ],
+            [PipelineErrorType.ExecutionFailure] =
+            [
                 new() { Name = "Retry Execution", Description = "Retry with exponential backoff", Success = 0.5, Cost = RecoveryCost.Low },
                 new() { Name = "Change Backend", Description = "Try different backend", Success = 0.7, Cost = RecoveryCost.Medium },
                 new() { Name = "Simplify Pipeline", Description = "Remove complex operations", Success = 0.8, Cost = RecoveryCost.High }
-            }
+            ]
         };
     }
 
@@ -290,17 +290,17 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         return PipelineErrorType.Unknown;
     }
 
-    private ErrorSeverity DetermineSeverity(Exception exception, PipelineExecutionContext context)
+    private PipelineErrorSeverity DetermineSeverity(Exception exception, PipelineExecutionContext context)
     {
         return exception switch
         {
-            OutOfMemoryException => ErrorSeverity.Critical,
-            PipelineOrchestrationException => ErrorSeverity.High,
-            TimeoutException when context.CriticalPath => ErrorSeverity.High,
-            TimeoutException => ErrorSeverity.Medium,
-            NotSupportedException => ErrorSeverity.Medium,
-            ArgumentException => ErrorSeverity.Low,
-            _ => ErrorSeverity.Medium
+            OutOfMemoryException => PipelineErrorSeverity.Critical,
+            PipelineOrchestrationException => PipelineErrorSeverity.High,
+            TimeoutException when context.CriticalPath => PipelineErrorSeverity.High,
+            TimeoutException => PipelineErrorSeverity.Medium,
+            NotSupportedException => PipelineErrorSeverity.Medium,
+            ArgumentException => PipelineErrorSeverity.Low,
+            _ => PipelineErrorSeverity.Medium
         };
     }
 
@@ -475,7 +475,7 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         {
             result.Errors.Add(new ValidationError
             {
-                Severity = ErrorSeverity.High,
+                Severity = PipelineErrorSeverity.High,
                 Message = "Pipeline has no stages defined",
                 Details = "A valid pipeline must contain at least one execution stage",
                 ErrorCode = "PIPELINE_EMPTY"
@@ -710,7 +710,7 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         return Task.FromResult(alternatives);
     }
     private PerformanceImpact AssessPerformanceImpact(Exception exception) => PerformanceImpact.Medium;
-    private List<RecoveryStrategy> GetDefaultRecoveryStrategies() => new();
+    private List<RecoveryStrategy> GetDefaultRecoveryStrategies() => [];
     private bool IsStrategyApplicable(RecoveryStrategy strategy, PipelineExecutionContext context) => true;
     private RecoveryStrategy CustomizeStrategy(RecoveryStrategy strategy, PipelineExecutionContext context) => strategy;
 
@@ -740,9 +740,9 @@ public enum PipelineErrorType
 }
 
 /// <summary>
-/// Error severity levels.
+/// Pipeline-specific error severity levels.
 /// </summary>
-public enum ErrorSeverity
+public enum PipelineErrorSeverity
 {
     Low,
     Medium,
@@ -791,16 +791,16 @@ public enum ExpressionErrorCategory
 public class PipelineErrorResult
 {
     public PipelineErrorType ErrorType { get; set; }
-    public ErrorSeverity Severity { get; set; }
+    public PipelineErrorSeverity Severity { get; set; }
     public Exception Exception { get; set; } = new();
     public PipelineExecutionContext Context { get; set; } = new();
-    public List<RecoveryStrategy> RecoveryStrategies { get; set; } = new();
+    public List<RecoveryStrategy> RecoveryStrategies { get; set; } = [];
     public DateTime Timestamp { get; set; }
     public bool CanRecover { get; set; }
     public bool RecoveryAttempted { get; set; }
     public bool RecoverySuccessful { get; set; }
     public string? RecoveryMessage { get; set; }
-    public Dictionary<string, object> DiagnosticInfo { get; set; } = new();
+    public Dictionary<string, object> DiagnosticInfo { get; set; } = [];
 }
 
 /// <summary>
@@ -812,7 +812,7 @@ public class RecoveryStrategy
     public string Description { get; set; } = string.Empty;
     public double Success { get; set; }
     public RecoveryCost Cost { get; set; }
-    public Dictionary<string, object> Parameters { get; set; } = new();
+    public Dictionary<string, object> Parameters { get; set; } = [];
 }
 
 /// <summary>
@@ -834,9 +834,9 @@ public class ExpressionErrorAnalysis
     public Expression Expression { get; set; } = Expression.Empty();
     public Exception Exception { get; set; } = new();
     public ExpressionErrorCategory ErrorCategory { get; set; }
-    public List<string> ProblemAreas { get; set; } = new();
-    public List<string> Suggestions { get; set; } = new();
-    public List<string> AlternativeApproaches { get; set; } = new();
+    public List<string> ProblemAreas { get; set; } = [];
+    public List<string> Suggestions { get; set; } = [];
+    public List<string> AlternativeApproaches { get; set; } = [];
     public PerformanceImpact PerformanceImpact { get; set; }
 }
 
@@ -846,9 +846,9 @@ public class ExpressionErrorAnalysis
 public class PipelineValidationResult
 {
     public bool IsValid { get; set; }
-    public List<ValidationError> Errors { get; set; } = new();
-    public List<ValidationWarning> Warnings { get; set; } = new();
-    public List<string> Recommendations { get; set; } = new();
+    public List<ValidationError> Errors { get; set; } = [];
+    public List<ValidationWarning> Warnings { get; set; } = [];
+    public List<string> Recommendations { get; set; } = [];
 }
 
 /// <summary>
@@ -856,7 +856,7 @@ public class PipelineValidationResult
 /// </summary>
 public class ValidationError
 {
-    public ErrorSeverity Severity { get; set; }
+    public PipelineErrorSeverity Severity { get; set; }
     public string Message { get; set; } = string.Empty;
     public string Details { get; set; } = string.Empty;
     public string ErrorCode { get; set; } = string.Empty;
@@ -884,7 +884,7 @@ public class PipelineExecutionContext
     public bool EnableAutomaticRecovery { get; set; } = false;
     public bool CriticalPath { get; set; } = false;
     public IKernelPipeline? Pipeline { get; set; }
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 

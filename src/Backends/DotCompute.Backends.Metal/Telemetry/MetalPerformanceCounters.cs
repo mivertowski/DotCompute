@@ -48,7 +48,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordMemoryAllocation(long sizeBytes, TimeSpan duration, bool success)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         UpdateCounter("memory_allocations_total", 1);
         UpdateCounter("memory_allocated_bytes_total", sizeBytes);
@@ -76,7 +80,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordKernelExecution(string kernelName, TimeSpan duration, long dataSize, bool success)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         UpdateCounter("kernel_executions_total", 1);
         UpdateCounter("kernel_execution_duration_ms", duration.TotalMilliseconds);
@@ -115,7 +123,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordDeviceUtilization(double gpuUtilization, double memoryUtilization)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         UpdateCounter("gpu_utilization_percent", gpuUtilization);
         UpdateCounter("memory_utilization_percent", memoryUtilization);
@@ -147,7 +159,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordError(MetalError error, string context)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         UpdateCounter("errors_total", 1);
         UpdateCounter($"error_{error}_total", 1);
@@ -163,7 +179,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordMemoryPressure(MemoryPressureLevel level, double percentage)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         UpdateCounter("memory_pressure_events_total", 1);
         UpdateCounter($"memory_pressure_{level.ToString().ToLowerInvariant()}_total", 1);
@@ -180,7 +200,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void RecordResourceUsage(ResourceType type, long currentUsage, long peakUsage, long limit)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var typeStr = type.ToString().ToLowerInvariant();
         
@@ -208,7 +232,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public Dictionary<string, object> GetCurrentCounters()
     {
-        if (_disposed) return new Dictionary<string, object>();
+        if (_disposed)
+        {
+            return [];
+        }
+
 
         lock (_lockObject)
         {
@@ -238,7 +266,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public MetalPerformanceAnalysis AnalyzePerformance()
     {
-        if (_disposed) return new MetalPerformanceAnalysis();
+        if (_disposed)
+        {
+            return new MetalPerformanceAnalysis();
+        }
+
 
         var counters = GetCurrentCounters();
         var analysis = new MetalPerformanceAnalysis
@@ -280,7 +312,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     /// </summary>
     public void PerformCleanup(DateTimeOffset cutoffTime)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         lock (_lockObject)
         {
@@ -337,7 +373,11 @@ public sealed class MetalPerformanceCounters : IDisposable
 
     private void UpdateCounter(string counterName, double value)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _statistics.AddOrUpdate(counterName,
             new CounterStatistics(counterName, value),
@@ -350,7 +390,11 @@ public sealed class MetalPerformanceCounters : IDisposable
 
     private void SampleCounters(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -406,7 +450,7 @@ public sealed class MetalPerformanceCounters : IDisposable
             var deviceCount = MetalNative.GetDeviceCount();
             UpdateCounter("metal_devices_total", deviceCount);
 
-            for (int i = 0; i < deviceCount; i++)
+            for (var i = 0; i < deviceCount; i++)
             {
                 try
                 {
@@ -589,7 +633,7 @@ public sealed class MetalPerformanceCounters : IDisposable
 
     private double CalculatePerformanceScore(MetalPerformanceAnalysis analysis)
     {
-        double score = 100.0;
+        var score = 100.0;
         
         // Penalize high error rates
         score -= analysis.ErrorRateAnalysis.OverallErrorRate * 1000; // -10 points per 1% error rate

@@ -31,9 +31,9 @@ internal sealed class CSharpToMetalTranslator
         _semanticModel = semanticModel ?? throw new ArgumentNullException(nameof(semanticModel));
         _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
         _output = new StringBuilder();
-        _variableMapping = new Dictionary<string, string>();
-        _threadgroupVariables = new HashSet<string>();
-        _constantVariables = new HashSet<string>();
+        _variableMapping = [];
+        _threadgroupVariables = [];
+        _constantVariables = [];
         _indentLevel = 0;
     }
 
@@ -104,7 +104,7 @@ internal sealed class CSharpToMetalTranslator
         var bufferIndex = 0;
         var parameters = _kernelInfo.Parameters;
         
-        for (int i = 0; i < parameters.Count; i++)
+        for (var i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
             result.Append("    ");
@@ -158,7 +158,7 @@ internal sealed class CSharpToMetalTranslator
                          paramName.StartsWith("source");
         
         // Extract element type from Span<T> or array
-        string elementType = "float";
+        var elementType = "float";
         if (csharpType.Contains("<") && csharpType.Contains(">"))
         {
             var start = csharpType.IndexOf('<') + 1;
@@ -225,7 +225,7 @@ internal sealed class CSharpToMetalTranslator
     private static bool IsConstantCandidate(ISymbol variable)
     {
         // Heuristics for constant memory usage
-        bool isReadOnly = variable switch
+        var isReadOnly = variable switch
         {
             IFieldSymbol field => field.IsReadOnly,
             ILocalSymbol local => local.IsConst,
@@ -487,7 +487,12 @@ internal sealed class CSharpToMetalTranslator
             var first = true;
             foreach (var arg in invocation.ArgumentList.Arguments)
             {
-                if (!first) _output.Append(", ");
+                if (!first)
+                {
+                    _output.Append(", ");
+                }
+
+
                 TranslateExpression(arg.Expression);
                 first = false;
             }
@@ -506,7 +511,12 @@ internal sealed class CSharpToMetalTranslator
             var first = true;
             foreach (var arg in invocation.ArgumentList.Arguments)
             {
-                if (!first) _output.Append(", ");
+                if (!first)
+                {
+                    _output.Append(", ");
+                }
+
+
                 TranslateExpression(arg.Expression);
                 first = false;
             }
@@ -521,7 +531,12 @@ internal sealed class CSharpToMetalTranslator
         var first = true;
         foreach (var arg in elementAccess.ArgumentList.Arguments)
         {
-            if (!first) _output.Append(", ");
+            if (!first)
+            {
+                _output.Append(", ");
+            }
+
+
             TranslateExpression(arg.Expression);
             first = false;
         }
@@ -559,7 +574,12 @@ internal sealed class CSharpToMetalTranslator
         var firstIncr = true;
         foreach (var incrementor in forStmt.Incrementors)
         {
-            if (!firstIncr) _output.Append(", ");
+            if (!firstIncr)
+            {
+                _output.Append(", ");
+            }
+
+
             TranslateExpression(incrementor);
             firstIncr = false;
         }
@@ -680,7 +700,7 @@ internal sealed class CSharpToMetalTranslator
 
     private void WriteIndented(string text)
     {
-        for (int i = 0; i < _indentLevel; i++)
+        for (var i = 0; i < _indentLevel; i++)
         {
             _output.Append("    ");
         }

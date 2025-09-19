@@ -77,8 +77,11 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public async ValueTask InitializeAsync(CancellationToken cancellationToken = default)
     {
         if (State != BufferState.Uninitialized)
+        {
             return;
-            
+        }
+
+
         await Task.Run(() =>
         {
             // Determine storage mode based on options
@@ -100,8 +103,12 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (State != BufferState.Allocated)
+        {
+
             throw new InvalidOperationException("Buffer must be allocated before copying data");
-            
+        }
+
+
         return new ValueTask(Task.Run(() =>
         {
             var elementSize = Marshal.SizeOf<T>();
@@ -148,8 +155,12 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (State != BufferState.Allocated)
+        {
+
             throw new InvalidOperationException("Buffer must be allocated before copying data");
-            
+        }
+
+
         return new ValueTask(Task.Run(() =>
         {
             var elementSize = Marshal.SizeOf<T>();
@@ -253,8 +264,11 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public long GetActualLength()
     {
         if (Buffer == IntPtr.Zero)
+        {
             return 0;
-            
+        }
+
+
         return (long)MetalNative.GetBufferLength(Buffer);
     }
 
@@ -264,8 +278,12 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
     public async ValueTask<MetalMemoryBuffer> CloneAsync(CancellationToken cancellationToken = default)
     {
         if (State != BufferState.Allocated)
+        {
+
             throw new InvalidOperationException("Cannot clone unallocated buffer");
-            
+        }
+
+
         var clone = new MetalMemoryBuffer(SizeInBytes, Options, Device);
         await clone.InitializeAsync(cancellationToken);
         

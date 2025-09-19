@@ -68,7 +68,7 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
     /// <summary>
     /// Gets the required shared memory size in bytes.
     /// </summary>
-    public int RequiredSharedMemory => _generatedKernel.RequiredSharedMemory;
+    public int RequiredSharedMemory => _generatedKernel.SharedMemorySize;
 
     /// <summary>
     /// Gets the kernel properties.

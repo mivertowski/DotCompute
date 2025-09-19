@@ -4,13 +4,16 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
-using DotCompute.Core.Compute.Enums;
-using DotCompute.Core.Compute.Interfaces;
-using DotCompute.Core.Compute.Options;
+using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Compute.Enums;
+using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Interfaces.Compute;
+using DotCompute.Abstractions.Compute.Options;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 
 using System;
+using System.Diagnostics;
 namespace DotCompute.Core.Compute
 {
 
@@ -79,7 +82,7 @@ namespace DotCompute.Core.Compute
         /// Typically returns the first available GPU backend, falling back to CPU if needed.
         /// </summary>
         /// <returns>The default ComputeBackendType for this system.</returns>
-        public ComputeBackendType DefaultBackend => _availableBackends.FirstOrDefault();
+        public ComputeBackendType DefaultBackend => _availableBackends.Count > 0 ? _availableBackends[0] : ComputeBackendType.CPU;
 
         /// <summary>
         /// Compiles a kernel from source code for execution on the optimal available backend.
@@ -233,32 +236,214 @@ namespace DotCompute.Core.Compute
         private List<ComputeBackendType> DetermineAvailableBackends()
         {
             var backends = new List<ComputeBackendType>
-        {
-            // CPU is always available
-            ComputeBackendType.CPU
-        };
+            {
+                // CPU is always available
+                ComputeBackendType.CPU
+            };
 
             // Check for CUDA support
+            if (IsCudaAvailable())
+            {
+                backends.Add(ComputeBackendType.CUDA);
+                _logger.LogInfoMessage("CUDA backend detected and available");
+            }
+
+            // Check for OpenCL support
+            if (IsOpenClAvailable())
+            {
+                backends.Add(ComputeBackendType.OpenCL);
+                _logger.LogInfoMessage("OpenCL backend detected and available");
+            }
+
+            // Check for Metal support (macOS only)
+            if (IsMetalAvailable())
+            {
+                backends.Add(ComputeBackendType.Metal);
+                _logger.LogInfoMessage("Metal backend detected and available");
+            }
+
+            _logger.LogInfoMessage($"Detected {backends.Count} compute backends: {string.Join(", ", backends)}");
+
+            return backends;
+        }
+
+        /// <summary>
+        /// Checks if CUDA is available on the system by verifying driver and runtime libraries.
+        /// </summary>
+        /// <returns>True if CUDA is available, false otherwise.</returns>
+        private bool IsCudaAvailable()
+        {
             try
             {
-                // Simple check - in production, this would properly detect CUDA - TODO
-                var cudaAvailable = global::System.IO.File.Exists("/usr/lib/wsl/lib/libcuda.so.1") ||
-                                  global::System.IO.File.Exists("/usr/local/cuda/lib64/libcudart.so");
-                if (cudaAvailable)
+                var cudaPaths = new[]
                 {
-                    backends.Add(ComputeBackendType.CUDA);
-                    _logger.LogInfoMessage("CUDA backend detected");
+                    // Windows paths
+                    Environment.ExpandEnvironmentVariables(@"%CUDA_PATH%\bin\cudart64_*.dll"),
+                    Environment.ExpandEnvironmentVariables(@"%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v*\bin\cudart64_*.dll"),
+
+                    // Linux paths
+                    "/usr/local/cuda/lib64/libcudart.so",
+                    "/usr/local/cuda/lib64/libcudart.so.*",
+                    "/usr/lib/x86_64-linux-gnu/libcudart.so",
+                    "/usr/lib/x86_64-linux-gnu/libcudart.so.*",
+
+                    // WSL paths
+                    "/usr/lib/wsl/lib/libcuda.so.1",
+                    "/usr/lib/wsl/lib/libcudart.so.*",
+
+                    // Alternative paths
+                    "/opt/cuda/lib64/libcudart.so",
+                    "/opt/cuda/lib64/libcudart.so.*"
+                };
+
+                // Check for CUDA runtime libraries
+                foreach (var pathPattern in cudaPaths)
+                {
+                    try
+                    {
+                        // Handle wildcard patterns
+                        if (pathPattern.Contains('*'))
+                        {
+                            var directory = Path.GetDirectoryName(pathPattern) ?? "";
+                            var pattern = Path.GetFileName(pathPattern);
+
+                            if (Directory.Exists(directory))
+                            {
+                                var files = Directory.GetFiles(directory, pattern);
+                                if (files.Length > 0)
+                                {
+                                    _logger.LogDebug("CUDA runtime found: {Path}", files[0]);
+                                    return true;
+                                }
+                            }
+                        }
+                        else if (File.Exists(pathPattern))
+                        {
+                            _logger.LogDebug("CUDA runtime found: {Path}", pathPattern);
+                            return true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogTrace(ex, "Error checking CUDA path: {Path}", pathPattern);
+                    }
                 }
+
+                // Check for nvidia-smi (indicates NVIDIA driver)
+                try
+                {
+                    using var process = new Process();
+                    process.StartInfo.FileName = "nvidia-smi";
+                    process.StartInfo.Arguments = "--query-gpu=name --format=csv,noheader";
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.RedirectStandardError = true;
+                    process.StartInfo.CreateNoWindow = true;
+
+                    if (process.Start())
+                    {
+                        process.WaitForExit(5000); // 5 second timeout
+                        if (process.ExitCode == 0)
+                        {
+                            var output = process.StandardOutput.ReadToEnd();
+                            if (!string.IsNullOrWhiteSpace(output))
+                            {
+                                _logger.LogDebug("NVIDIA GPU detected via nvidia-smi: {Output}", output.Trim());
+                                return true;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogTrace(ex, "nvidia-smi check failed");
+                }
+
+                _logger.LogDebug("CUDA not available - no runtime libraries or nvidia-smi found");
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "CUDA detection failed");
+                _logger.LogDebug(ex, "CUDA detection failed with exception");
+                return false;
             }
+        }
 
-            // OpenCL could be detected similarly
-            // For now, just return what we have - TODO
+        /// <summary>
+        /// Checks if OpenCL is available on the system.
+        /// </summary>
+        /// <returns>True if OpenCL is available, false otherwise.</returns>
+        private bool IsOpenClAvailable()
+        {
+            try
+            {
+                var openClPaths = new[]
+                {
+                    // Windows paths
+                    @"C:\Windows\System32\OpenCL.dll",
+                    Environment.ExpandEnvironmentVariables(@"%SystemRoot%\System32\OpenCL.dll"),
 
-            return backends;
+                    // Linux paths
+                    "/usr/lib/x86_64-linux-gnu/libOpenCL.so",
+                    "/usr/lib/x86_64-linux-gnu/libOpenCL.so.1",
+                    "/usr/lib64/libOpenCL.so",
+                    "/usr/lib64/libOpenCL.so.1",
+                    "/usr/local/lib/libOpenCL.so",
+                    "/usr/local/lib/libOpenCL.so.1",
+
+                    // macOS paths
+                    "/System/Library/Frameworks/OpenCL.framework/OpenCL"
+                };
+
+                foreach (var path in openClPaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        _logger.LogDebug("OpenCL library found: {Path}", path);
+                        return true;
+                    }
+                }
+
+                _logger.LogDebug("OpenCL not available - no libraries found");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "OpenCL detection failed");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Checks if Metal is available on the system (macOS only).
+        /// </summary>
+        /// <returns>True if Metal is available, false otherwise.</returns>
+        private bool IsMetalAvailable()
+        {
+            try
+            {
+                // Metal is only available on macOS
+                if (!OperatingSystem.IsMacOS())
+                {
+                    return false;
+                }
+
+                // Check for Metal framework
+                var metalPath = "/System/Library/Frameworks/Metal.framework/Metal";
+                if (File.Exists(metalPath))
+                {
+                    _logger.LogDebug("Metal framework found: {Path}", metalPath);
+                    return true;
+                }
+
+                _logger.LogDebug("Metal not available - framework not found");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Metal detection failed");
+                return false;
+            }
         }
 
         public async ValueTask DisposeAsync()

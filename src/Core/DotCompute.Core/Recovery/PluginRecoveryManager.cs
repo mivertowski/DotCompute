@@ -4,6 +4,7 @@
 using DotCompute.Core.Recovery.Models;
 using DotCompute.Core.Recovery.Statistics;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Interfaces.Recovery;
 using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Recovery;
@@ -83,13 +84,13 @@ public class PluginRecoveryManager : IDisposable
 
             return success
 
-                ? new RecoveryResult { Success = true, Message = "Plugin recovery successful", Duration = TimeSpan.FromMilliseconds(100) }
-                : new RecoveryResult { Success = false, Message = "Plugin recovery failed", Exception = error };
+                ? new RecoveryResult { Success = true, Message = "Plugin recovery successful", Duration = TimeSpan.FromMilliseconds(100), Strategy = "PluginRecovery" }
+                : new RecoveryResult { Success = false, Message = "Plugin recovery failed", Exception = error, Strategy = "PluginRecovery" };
         }
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, $"Plugin recovery failed for {context.PluginId}");
-            return new RecoveryResult { Success = false, Message = "Plugin recovery exception", Exception = ex };
+            return new RecoveryResult { Success = false, Message = "Plugin recovery exception", Exception = ex, Strategy = "PluginRecovery" };
         }
     }
 

@@ -95,8 +95,8 @@ public class MetalGraphStatistics
     /// Gets the success rate as a percentage.
     /// </summary>
     [JsonIgnore]
-    public double SuccessRate =>
-        TotalExecutions > 0 ? (double)SuccessfulExecutions / TotalExecutions * 100 : 0;
+    public double SuccessRate
+        => TotalExecutions > 0 ? (double)SuccessfulExecutions / TotalExecutions * 100 : 0;
 
     #endregion
 
@@ -281,22 +281,22 @@ public class MetalGraphStatistics
     /// Gets the average performance in operations per second.
     /// </summary>
     [JsonIgnore]
-    public double AveragePerformanceOpsPerSec =>
-        AverageGpuExecutionTimeMs > 0 ? NodeCount / (AverageGpuExecutionTimeMs / 1000.0) : 0;
+    public double AveragePerformanceOpsPerSec
+        => AverageGpuExecutionTimeMs > 0 ? NodeCount / (AverageGpuExecutionTimeMs / 1000.0) : 0;
 
     /// <summary>
     /// Gets the throughput in executions per second.
     /// </summary>
     [JsonIgnore]
-    public double ThroughputExecutionsPerSec =>
-        AverageGpuExecutionTimeMs > 0 ? 1000.0 / AverageGpuExecutionTimeMs : 0;
+    public double ThroughputExecutionsPerSec
+        => AverageGpuExecutionTimeMs > 0 ? 1000.0 / AverageGpuExecutionTimeMs : 0;
 
     /// <summary>
     /// Gets the efficiency ratio (GPU time / total time).
     /// </summary>
     [JsonIgnore]
-    public double EfficiencyRatio =>
-        AverageCpuOverheadTimeMs + AverageGpuExecutionTimeMs > 0
+    public double EfficiencyRatio
+        => AverageCpuOverheadTimeMs + AverageGpuExecutionTimeMs > 0
             ? AverageGpuExecutionTimeMs / (AverageGpuExecutionTimeMs + AverageCpuOverheadTimeMs)
             : 0;
 
@@ -304,15 +304,15 @@ public class MetalGraphStatistics
     /// Gets the parallelization effectiveness.
     /// </summary>
     [JsonIgnore]
-    public double ParallelizationEffectiveness =>
-        CriticalPathLength > 0 ? (double)NodeCount / CriticalPathLength : 1.0;
+    public double ParallelizationEffectiveness
+        => CriticalPathLength > 0 ? (double)NodeCount / CriticalPathLength : 1.0;
 
     /// <summary>
     /// Gets the resource utilization score (0-100).
     /// </summary>
     [JsonIgnore]
-    public double ResourceUtilizationScore =>
-        Math.Min(100, (AverageCommandBufferUtilization * 0.4 + EfficiencyRatio * 100 * 0.6));
+    public double ResourceUtilizationScore
+        => Math.Min(100, (AverageCommandBufferUtilization * 0.4 + EfficiencyRatio * 100 * 0.6));
 
     #endregion
 

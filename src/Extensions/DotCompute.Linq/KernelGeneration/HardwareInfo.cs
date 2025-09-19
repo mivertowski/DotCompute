@@ -26,11 +26,11 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
     {
         DeviceType = deviceType;
         DeviceName = deviceName ?? throw new ArgumentNullException(nameof(deviceName));
-        Capabilities = new Dictionary<string, object>();
-        MemoryHierarchy = new Dictionary<string, long>();
-        ComputeUnits = new List<ComputeUnitInfo>();
-        SupportedFeatures = new HashSet<string>();
-        PerformanceCounters = new Dictionary<string, double>();
+        Capabilities = [];
+        MemoryHierarchy = [];
+        ComputeUnits = [];
+        SupportedFeatures = [];
+        PerformanceCounters = [];
         DetectedAt = DateTimeOffset.UtcNow;
     }
 

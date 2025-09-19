@@ -905,7 +905,7 @@ using namespace cooperative_groups;";
     /// </summary>
     internal class OptimizationCache : IDisposable
     {
-        private readonly Dictionary<string, string> _cache = new();
+        private readonly Dictionary<string, string> _cache = [];
         private readonly object _lock = new();
 
         public bool TryGetOptimizedSource(string key, out string optimizedSource)

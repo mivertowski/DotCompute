@@ -15,7 +15,7 @@ namespace DotCompute.Linq.Services;
 public class DefaultMemoryManagerFactory
 {
     private readonly ILogger<IUnifiedMemoryManager> _logger;
-    private readonly Dictionary<IAccelerator, IUnifiedMemoryManager> _managers = new();
+    private readonly Dictionary<IAccelerator, IUnifiedMemoryManager> _managers = [];
     private readonly Lock _lock = new();
 
     /// <summary>

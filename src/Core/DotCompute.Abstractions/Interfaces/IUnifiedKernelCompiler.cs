@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Abstractions;

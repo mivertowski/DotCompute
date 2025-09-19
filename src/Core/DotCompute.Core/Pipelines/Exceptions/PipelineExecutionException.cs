@@ -3,7 +3,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using DotCompute.Core.Pipelines.Models;
+using DotCompute.Abstractions.Models.Pipelines;
+using DotCompute.Abstractions.Pipelines.Results;
 
 namespace DotCompute.Core.Pipelines.Exceptions;
 

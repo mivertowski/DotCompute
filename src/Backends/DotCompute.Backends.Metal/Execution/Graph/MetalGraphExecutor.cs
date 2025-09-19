@@ -235,7 +235,10 @@ public sealed class MetalGraphExecutor : IDisposable
     public async Task WaitForDependenciesAsync(MetalGraphNode node, CancellationToken cancellationToken = default)
     {
         if (node.Dependencies.Count == 0)
+        {
             return;
+        }
+
 
         var dependencyTasks = node.Dependencies
             .Select(dep => _nodeCompletions.TryGetValue(dep.Id, out var tcs) ? tcs.Task : Task.CompletedTask)
@@ -313,7 +316,7 @@ public sealed class MetalGraphExecutor : IDisposable
         _logger.LogDebug("Executing graph with {LevelCount} execution levels", executionLevels.Count);
 
         // Execute each level
-        for (int levelIndex = 0; levelIndex < executionLevels.Count; levelIndex++)
+        for (var levelIndex = 0; levelIndex < executionLevels.Count; levelIndex++)
         {
             var level = executionLevels[levelIndex];
             _logger.LogTrace("Starting execution level {LevelIndex} with {NodeCount} nodes", levelIndex, level.Count);
@@ -388,7 +391,7 @@ public sealed class MetalGraphExecutor : IDisposable
             SetMetalComputePipelineState(computeEncoder, node.Kernel);
 
             // Set kernel arguments
-            for (int i = 0; i < node.Arguments.Length; i++)
+            for (var i = 0; i < node.Arguments.Length; i++)
             {
                 SetMetalKernelArgument(computeEncoder, i, node.Arguments[i]);
             }
@@ -533,7 +536,7 @@ public sealed class MetalGraphExecutor : IDisposable
 
         processed.Add(node.Id);
 
-        int maxDependencyLevel = -1;
+        var maxDependencyLevel = -1;
         foreach (var dependency in node.Dependencies)
         {
             var depLevel = CalculateExecutionLevel(dependency, nodeToLevel, processed);
@@ -549,9 +552,13 @@ public sealed class MetalGraphExecutor : IDisposable
 
     private double CalculateParallelEfficiency(GraphExecutionContext context)
     {
-        if (context.NodesExecuted == 0) return 0.0;
-        
+        if (context.NodesExecuted == 0)
+        {
+            return 0.0;
+        }
+
         // Simplified efficiency calculation
+
         var idealParallelTime = context.TotalGpuTimeMs / Environment.ProcessorCount;
         var actualTime = context.TotalGpuTimeMs;
         
@@ -560,8 +567,12 @@ public sealed class MetalGraphExecutor : IDisposable
 
     private double CalculateMemoryBandwidth(GraphExecutionContext context)
     {
-        if (context.TotalGpuTimeMs == 0) return 0.0;
-        
+        if (context.TotalGpuTimeMs == 0)
+        {
+            return 0.0;
+        }
+
+
         var totalMemoryGB = context.TotalMemoryTransferred / (1024.0 * 1024.0 * 1024.0);
         var timeInSeconds = context.TotalGpuTimeMs / 1000.0;
         
@@ -650,7 +661,11 @@ public sealed class MetalGraphExecutor : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {

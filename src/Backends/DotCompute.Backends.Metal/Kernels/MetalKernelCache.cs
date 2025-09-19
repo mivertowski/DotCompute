@@ -8,7 +8,10 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Kernels;
@@ -121,7 +124,7 @@ public sealed class MetalKernelCache : IDisposable
                 {
                     // Update access time and count for LRU
                     entry.LastAccessTime = DateTimeOffset.UtcNow;
-                    Interlocked.Increment(ref entry.AccessCount);
+                    entry.AccessCount = entry.AccessCount + 1;
                     
                     library = entry.Library;
                     function = entry.Function;
@@ -360,10 +363,10 @@ public sealed class MetalKernelCache : IDisposable
         inputBuilder.Append('|');
         inputBuilder.Append(options.TargetArchitecture ?? "default");
         
-        // Add custom flags if any
-        if (options.CustomFlags != null)
+        // Add additional flags if any
+        if (options.AdditionalFlags != null)
         {
-            foreach (var flag in options.CustomFlags)
+            foreach (var flag in options.AdditionalFlags)
             {
                 inputBuilder.Append('|');
                 inputBuilder.Append(flag);
@@ -464,14 +467,21 @@ public sealed class MetalKernelCache : IDisposable
         entry = null!;
         
         if (string.IsNullOrEmpty(_persistentCachePath))
+        {
             return false;
-        
+        }
+
+
         var filePath = Path.Combine(_persistentCachePath, $"{cacheKey}.metallib");
         var metaPath = Path.Combine(_persistentCachePath, $"{cacheKey}.meta");
         
         if (!File.Exists(filePath) || !File.Exists(metaPath))
+        {
+
             return false;
-        
+        }
+
+
         try
         {
             var binaryData = File.ReadAllBytes(filePath);
@@ -496,8 +506,11 @@ public sealed class MetalKernelCache : IDisposable
     private void SaveToPersistentCache(string cacheKey, CacheEntry entry)
     {
         if (string.IsNullOrEmpty(_persistentCachePath) || entry.BinaryData == null)
+        {
             return;
-        
+        }
+
+
         try
         {
             var filePath = Path.Combine(_persistentCachePath, $"{cacheKey}.metallib");
@@ -532,18 +545,26 @@ public sealed class MetalKernelCache : IDisposable
     private void RemoveFromPersistentCache(string cacheKey)
     {
         if (string.IsNullOrEmpty(_persistentCachePath))
+        {
             return;
-        
+        }
+
+
         try
         {
             var filePath = Path.Combine(_persistentCachePath, $"{cacheKey}.metallib");
             var metaPath = Path.Combine(_persistentCachePath, $"{cacheKey}.meta");
             
             if (File.Exists(filePath))
+            {
                 File.Delete(filePath);
-            
+            }
+
             if (File.Exists(metaPath))
+            {
                 File.Delete(metaPath);
+            }
+
         }
         catch (Exception ex)
         {
@@ -557,8 +578,11 @@ public sealed class MetalKernelCache : IDisposable
     private void LoadPersistentCache()
     {
         if (string.IsNullOrEmpty(_persistentCachePath) || !Directory.Exists(_persistentCachePath))
+        {
             return;
-        
+        }
+
+
         try
         {
             var metaFiles = Directory.GetFiles(_persistentCachePath, "*.meta");
@@ -578,8 +602,12 @@ public sealed class MetalKernelCache : IDisposable
     /// </summary>
     private void PerformCleanup(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _cacheLock.EnterWriteLock();
         try
         {
@@ -619,8 +647,12 @@ public sealed class MetalKernelCache : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         _cleanupTimer?.Dispose();
         
         _cacheLock.EnterWriteLock();

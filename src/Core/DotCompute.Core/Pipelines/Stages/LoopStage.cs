@@ -2,6 +2,20 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Linq;
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Models.Pipelines;
+using DotCompute.Core.Telemetry;
+using DotCompute.Core.Pipelines.Models;
+
+// Type aliases to resolve ambiguous references
+using PipelineExecutionContext = DotCompute.Core.Pipelines.Models.PipelineExecutionContext;
+using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
+using CoreStageExecutionResult = DotCompute.Core.Pipelines.Models.StageExecutionResult;
+using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
+using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
+using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;
+using ValidationIssue = DotCompute.Abstractions.ValidationIssue;
 
 namespace DotCompute.Core.Pipelines.Stages
 {
@@ -10,10 +24,10 @@ namespace DotCompute.Core.Pipelines.Stages
     /// </summary>
     internal sealed class LoopStage(
         string id,
-        Func<PipelineExecutionContext, int, bool> condition,
+        Func<DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext, int, bool> condition,
         List<IPipelineStage> bodyStages) : IPipelineStage
     {
-        private readonly Func<PipelineExecutionContext, int, bool> _condition = condition;
+        private readonly Func<DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext, int, bool> _condition = condition;
         private readonly List<IPipelineStage> _bodyStages = bodyStages;
         private readonly StageMetrics _metrics = new(id);
 
@@ -33,8 +47,8 @@ namespace DotCompute.Core.Pipelines.Stages
         public IReadOnlyDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
 
         /// <inheritdoc/>
-        public async ValueTask<StageExecutionResult> ExecuteAsync(
-            PipelineExecutionContext context,
+        public async ValueTask<DotCompute.Abstractions.Models.Pipelines.StageExecutionResult> ExecuteAsync(
+            DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext context,
             CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -48,31 +62,32 @@ namespace DotCompute.Core.Pipelines.Stages
                 {
                     foreach (var stage in _bodyStages)
                     {
-                        var stageContext = new PipelineExecutionContext
+                        var stageContext = new PipelineExecutionContext();
+                        foreach (var kvp in outputs)
                         {
-                            Inputs = outputs,
-                            MemoryManager = context.MemoryManager,
-                            Device = context.Device,
-                            Options = context.Options,
-                            Profiler = context.Profiler
-                        };
+                            stageContext.Inputs[kvp.Key] = kvp.Value;
+                        }
+                        stageContext.SetMemoryManager(context.MemoryManager);
+                        stageContext.SetDevice(context.Device);
+                        stageContext.Options = (context as DotCompute.Core.Pipelines.Models.PipelineExecutionContext)?.Options;
 
                         var result = await stage.ExecuteAsync(stageContext, cancellationToken);
 
                         if (!result.Success)
                         {
-                            return new StageExecutionResult
+                            return new AbsStageExecutionResult
                             {
                                 StageId = Id,
                                 Success = false,
-                                Duration = stopwatch.Elapsed,
+                                ExecutionTime = stopwatch.Elapsed,
+                                OutputData = [],
                                 Error = result.Error
                             };
                         }
 
-                        if (result.Outputs != null)
+                        if (result.OutputData != null)
                         {
-                            foreach (var (key, value) in result.Outputs)
+                            foreach (var (key, value) in result.OutputData)
                             {
                                 outputs[key] = value;
                             }
@@ -85,13 +100,13 @@ namespace DotCompute.Core.Pipelines.Stages
                 stopwatch.Stop();
                 _metrics.RecordExecution(stopwatch.Elapsed, true);
 
-                return new StageExecutionResult
+                return new AbsStageExecutionResult
                 {
                     StageId = Id,
                     Success = true,
-                    Duration = stopwatch.Elapsed,
-                    Outputs = outputs.Count > context.Inputs.Count ? outputs : null,
-                    Metrics = new Dictionary<string, double>
+                    ExecutionTime = stopwatch.Elapsed,
+                    OutputData = outputs.Count > context.Inputs.Count ? outputs : [],
+                    Metadata = new Dictionary<string, object>
                     {
                         ["IterationsCompleted"] = iteration,
                         ["AverageIterationTime"] = iteration > 0 ? stopwatch.Elapsed.TotalMilliseconds / iteration : 0
@@ -103,11 +118,12 @@ namespace DotCompute.Core.Pipelines.Stages
                 stopwatch.Stop();
                 _metrics.RecordExecution(stopwatch.Elapsed, false);
 
-                return new StageExecutionResult
+                return new AbsStageExecutionResult
                 {
                     StageId = Id,
                     Success = false,
-                    Duration = stopwatch.Elapsed,
+                    ExecutionTime = stopwatch.Elapsed,
+                    OutputData = [],
                     Error = ex
                 };
             }
@@ -116,14 +132,14 @@ namespace DotCompute.Core.Pipelines.Stages
         /// <inheritdoc/>
         public StageValidationResult Validate()
         {
-            var errors = new List<string>();
-            var warnings = new List<string>();
+            var errors = new List<ValidationIssue>();
 
             if (_condition == null)
             {
-                errors.Add("Loop condition is required");
+                errors.Add(ValidationIssue.Error("LOOP_001", "Loop condition is required"));
             }
 
+            var warnings = new List<string>();
             if (_bodyStages.Count == 0)
             {
                 warnings.Add("Loop has no body stages");
@@ -132,10 +148,11 @@ namespace DotCompute.Core.Pipelines.Stages
             return new StageValidationResult
             {
                 IsValid = errors.Count == 0,
-                Errors = errors.Count > 0 ? errors : null,
+                Errors = [.. errors.Select(e => e.Message)],
                 Warnings = warnings.Count > 0 ? warnings : null
             };
         }
+
 
         /// <inheritdoc/>
         public IStageMetrics GetMetrics() => _metrics;

@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Models.Device;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Core.Kernels;
@@ -11,8 +12,12 @@ using DotCompute.Core.Execution.Metrics;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Types;
-using DotCompute.Core.Device.Types;
+using DotCompute.Abstractions.Types;
+using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
 using DotCompute.Core.Execution.Plans;
+
+// Type alias to resolve ambiguity between different BottleneckType enums
+using AnalysisBottleneckType = DotCompute.Core.Kernels.BottleneckType;
 
 namespace DotCompute.Core.Execution
 {
@@ -55,7 +60,7 @@ namespace DotCompute.Core.Execution
             {
                 Id = Guid.NewGuid(),
                 Timestamp = DateTimeOffset.UtcNow,
-                Strategy = result.Strategy,
+                Strategy = (ExecutionStrategyType)result.Strategy,
                 Success = result.Success,
                 TotalExecutionTimeMs = result.TotalExecutionTimeMs,
                 ThroughputGFLOPS = result.ThroughputGFLOPS,
@@ -133,7 +138,7 @@ namespace DotCompute.Core.Execution
                 return new ParallelExecutionAnalysis
                 {
                     OverallRating = 5.0,
-                    RecommendedStrategy = ExecutionStrategyType.Single,
+                    RecommendedStrategy = (DotCompute.Core.Execution.Types.ExecutionStrategyType)ExecutionStrategyType.Single,
                     OptimizationRecommendations = ["No execution data available for analysis."]
                 };
             }
@@ -387,9 +392,9 @@ namespace DotCompute.Core.Execution
                 {
                     Type = b.Type switch
                     {
-                        BottleneckType.MemoryBandwidth => BottleneckType.MemoryBandwidth,
-                        BottleneckType.Compute => BottleneckType.Compute,
-                        _ => BottleneckType.MemoryLatency
+                        AnalysisBottleneckType.MemoryBandwidth => AnalysisBottleneckType.MemoryBandwidth,
+                        AnalysisBottleneckType.Compute => AnalysisBottleneckType.Compute,
+                        _ => AnalysisBottleneckType.MemoryLatency
                     },
                     Severity = b.Severity,
                     Details = b.Details,
@@ -401,7 +406,7 @@ namespace DotCompute.Core.Execution
             analysis.OptimizationRecommendations = [.. GenerateOptimizationRecommendations(executions, kernelBottlenecks)];
 
             // Recommend optimal strategy
-            analysis.RecommendedStrategy = RecommendStrategy(executions);
+            analysis.RecommendedStrategy = (DotCompute.Core.Execution.Types.ExecutionStrategyType)RecommendStrategy(executions);
 
             // Analyze device utilization
             analysis.DeviceUtilizationAnalysis = AnalyzeDeviceUtilization(deviceProfiles);
@@ -466,7 +471,7 @@ namespace DotCompute.Core.Execution
             {
                 bottlenecks.Add(new Analysis.BottleneckAnalysis
                 {
-                    Type = BottleneckType.MemoryBandwidth,
+                    Type = AnalysisBottleneckType.MemoryBandwidth,
                     Severity = 1.0 - (avgMemoryEfficiency / 100),
                     Details = $"Average memory bandwidth utilization is low: {avgMemoryEfficiency:F1} GB/s"
                 });
@@ -478,7 +483,7 @@ namespace DotCompute.Core.Execution
             {
                 bottlenecks.Add(new Analysis.BottleneckAnalysis
                 {
-                    Type = BottleneckType.Synchronization,
+                    Type = AnalysisBottleneckType.Synchronization,
                     Severity = (60 - avgParallelEfficiency) / 60,
                     Details = $"Low parallel efficiency: {avgParallelEfficiency:F1}%"
                 });
@@ -495,13 +500,13 @@ namespace DotCompute.Core.Execution
             {
                 switch (bottleneck.Type)
                 {
-                    case BottleneckType.MemoryBandwidth:
+                    case AnalysisBottleneckType.MemoryBandwidth:
                         recommendations.Add("Consider using larger batch sizes or optimizing memory access patterns");
                         break;
-                    case BottleneckType.MemoryLatency:
+                    case AnalysisBottleneckType.MemoryLatency:
                         recommendations.Add("Reduce synchronization overhead by using asynchronous operations");
                         break;
-                    case BottleneckType.Compute:
+                    case AnalysisBottleneckType.Compute:
                         recommendations.Add("Optimize computational kernels or use higher compute capability devices");
                         break;
                     default:
@@ -662,7 +667,7 @@ namespace DotCompute.Core.Execution
 
             return new ExecutionStrategyRecommendation
             {
-                Strategy = recommendedStrategy,
+                Strategy = (DotCompute.Core.Execution.Types.ExecutionStrategyType)recommendedStrategy,
                 ConfidenceScore = confidenceScore,
                 Reasoning = reasoning,
                 ExpectedImprovementPercentage = EstimateImprovement(recommendedStrategy, recentExecutions)
@@ -847,7 +852,7 @@ namespace DotCompute.Core.Execution
                 recommendations.Add("Increase workload size or improve kernel efficiency");
             }
 
-            if (PrimaryBottleneck is not null && PrimaryBottleneck.Type == BottleneckType.MemoryBandwidth)
+            if (PrimaryBottleneck is not null && PrimaryBottleneck.Type == AnalysisBottleneckType.MemoryBandwidth)
             {
                 recommendations.Add("Optimize memory access patterns or use memory coalescing");
             }

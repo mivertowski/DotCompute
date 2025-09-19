@@ -4,6 +4,14 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using DotCompute.Core.Aot;
+using DotCompute.Abstractions.Interfaces.Pipelines.Interfaces;
+using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Pipelines.Models;
+using DotCompute.Abstractions.Pipelines.Statistics;
+using AbsTimeSeriesMetric = DotCompute.Abstractions.Pipelines.Metrics.TimeSeriesMetric;
+using DotCompute.Abstractions.Pipelines.Metrics;
+using DotCompute.Core.Pipelines.Models;
+using CoreTimeSeriesMetric = DotCompute.Core.Pipelines.Metrics.TimeSeriesMetric;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -15,7 +23,7 @@ namespace DotCompute.Core.Pipelines
     {
         private readonly ConcurrentQueue<PipelineExecutionMetrics> _executions = new();
         private readonly ConcurrentDictionary<string, StageMetrics> _stageMetrics = new();
-        private readonly ConcurrentQueue<TimeSeriesMetric> _timeSeries = new();
+        private readonly ConcurrentQueue<CoreTimeSeriesMetric> _timeSeries = new();
         private readonly ConcurrentDictionary<string, double> _customMetrics = new();
         private readonly Lock _lock = new();
 
@@ -87,11 +95,11 @@ namespace DotCompute.Core.Pipelines
         public IReadOnlyDictionary<string, double> CustomMetrics => _customMetrics;
 
         /// <inheritdoc/>
-        public IReadOnlyList<TimeSeriesMetric> TimeSeries
+        public IReadOnlyList<AbsTimeSeriesMetric> TimeSeries
         {
             get
             {
-                var list = new List<TimeSeriesMetric>();
+                var list = new List<CoreTimeSeriesMetric>();
                 while (_timeSeries.TryDequeue(out var metric))
                 {
                     list.Add(metric);
@@ -106,7 +114,25 @@ namespace DotCompute.Core.Pipelines
                     _timeSeries.Enqueue(metric);
                 }
 
-                return [.. recent.OrderBy(m => m.Timestamp)];
+                // Convert to Abstractions type
+                var groupedMetrics = recent.GroupBy(m => m.MetricName);
+                var result = new List<AbsTimeSeriesMetric>();
+
+                foreach (var group in groupedMetrics)
+                {
+                    var values = group.OrderBy(m => m.Timestamp)
+                        .Select(m => new TimestampedValue<double>(m.Timestamp, m.Value))
+                        .ToList();
+
+                    result.Add(new AbsTimeSeriesMetric
+                    {
+                        Name = group.Key,
+                        Values = values,
+                        Unit = "count" // Default unit
+                    });
+                }
+
+                return result;
             }
         }
 
@@ -160,25 +186,25 @@ namespace DotCompute.Core.Pipelines
                     _maxExecutionTime = metrics.Duration;
                 }
 
-                _totalMemoryUsage += metrics.MemoryUsage.AllocatedBytes;
+                _totalMemoryUsage += metrics.MemoryMetrics?.TotalMemoryAllocated ?? metrics.MemoryUsage;
 
-                if (metrics.MemoryUsage.PeakBytes > _peakMemoryUsage)
+                if ((metrics.MemoryMetrics?.PeakMemoryUsage ?? metrics.MemoryUsage) > _peakMemoryUsage)
                 {
-                    _peakMemoryUsage = metrics.MemoryUsage.PeakBytes;
+                    _peakMemoryUsage = metrics.MemoryMetrics?.PeakMemoryUsage ?? metrics.MemoryUsage;
                 }
 
                 // Record stage metrics
                 foreach (var (stageId, duration) in metrics.StageExecutionTimes)
                 {
                     var stageMetrics = _stageMetrics.GetOrAdd(stageId, _ => new StageMetrics(stageId));
-                    stageMetrics.RecordExecution(duration, success);
+                    stageMetrics.RecordExecution(TimeSpan.FromMilliseconds(duration), success);
                 }
 
                 // Record time series metrics
-                RecordTimeSeriesMetric("ExecutionTime", metrics.Duration.TotalMilliseconds, metrics.StartTime);
-                RecordTimeSeriesMetric("MemoryUsage", metrics.MemoryUsage.AllocatedBytes, metrics.StartTime);
-                RecordTimeSeriesMetric("ComputeUtilization", metrics.ComputeUtilization, metrics.StartTime);
-                RecordTimeSeriesMetric("MemoryBandwidthUtilization", metrics.MemoryBandwidthUtilization, metrics.StartTime);
+                RecordTimeSeriesMetric("ExecutionTime", metrics.Duration.TotalMilliseconds, metrics.StartTime.DateTime);
+                RecordTimeSeriesMetric("MemoryUsage", metrics.MemoryMetrics?.TotalMemoryAllocated ?? metrics.MemoryUsage, metrics.StartTime.DateTime);
+                RecordTimeSeriesMetric("ComputeUtilization", metrics.ComputeUtilization, metrics.StartTime.DateTime);
+                RecordTimeSeriesMetric("MemoryBandwidthUtilization", metrics.MemoryBandwidthUtilization, metrics.StartTime.DateTime);
             }
         }
 
@@ -266,7 +292,7 @@ namespace DotCompute.Core.Pipelines
 
         private void RecordTimeSeriesMetric(string name, double value, DateTime timestamp)
         {
-            _timeSeries.Enqueue(new TimeSeriesMetric
+            _timeSeries.Enqueue(new CoreTimeSeriesMetric
             {
                 MetricName = name,
                 Value = value,
@@ -307,10 +333,9 @@ namespace DotCompute.Core.Pipelines
                 CustomMetrics,
                 TimeSeries = TimeSeries.Select(ts => new
                 {
-                    ts.MetricName,
-                    ts.Value,
-                    Timestamp = ts.Timestamp.ToString("O"),
-                    ts.Labels
+                    Name = ts.Name,
+                    Values = ts.Values.Select(v => new { v.Timestamp, v.Value }),
+                    ts.Unit
                 }).ToList()
             };
 
@@ -433,7 +458,7 @@ namespace DotCompute.Core.Pipelines
     /// <summary>
     /// Implementation of stage metrics.
     /// </summary>
-    internal sealed class StageMetrics(string stageId) : IStageMetrics
+    public sealed class StageMetrics(string stageId, string? stageName = null) : IStageMetrics
     {
         private readonly Lock _lock = new();
         private readonly ConcurrentDictionary<string, double> _customMetrics = new();
@@ -446,6 +471,9 @@ namespace DotCompute.Core.Pipelines
         private long _totalMemoryUsage;
 
         public string StageId { get; } = stageId;
+
+        /// <inheritdoc/>
+        public string StageName { get; } = stageName ?? stageId;
 
         /// <inheritdoc/>
         public long ExecutionCount => _executionCount;

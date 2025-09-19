@@ -17,8 +17,14 @@ namespace DotCompute.Abstractions
         /// <summary>Gets the accelerator type.</summary>
         public AcceleratorType Type { get; }
 
+        /// <summary>Gets the device type as a string (e.g., "CPU", "GPU", "TPU").</summary>
+        public string DeviceType { get; }
+
         /// <summary>Gets memory manager for this accelerator.</summary>
         public IUnifiedMemoryManager Memory { get; }
+
+        /// <summary>Gets the memory manager for this accelerator (alias for Memory).</summary>
+        public IUnifiedMemoryManager MemoryManager { get; }
 
         /// <summary>Gets the accelerator context.</summary>
         public AcceleratorContext Context { get; }

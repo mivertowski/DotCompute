@@ -166,7 +166,7 @@ public class ComprehensivePipelineDemo
             var processedStream = streamingData.Select(item => item.ToString()).Take(10);
 
             // Consume streaming results (simplified)
-            int processedCount = 0;
+            var processedCount = 0;
             await foreach (var batch in streamingData.Take(10))
             {
                 processedCount++;
@@ -399,7 +399,7 @@ public class ComprehensivePipelineDemo
         var random = new Random(42);
 
 
-        for (int i = 0; i < 10000; i++)
+        for (var i = 0; i < 10000; i++)
         {
             await Task.Delay(1, CancellationToken.None); // Simulate streaming delay
 
@@ -420,7 +420,7 @@ public class ComprehensivePipelineDemo
         var random = new Random(42);
 
         // Add normal data
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             data.Add(new SampleData(
                 id: i,
@@ -559,7 +559,7 @@ public class ComprehensivePipelineDemo
         // Missing properties for PipelineExecutionContext usage
 
         public string PipelineId { get; set; } = Guid.NewGuid().ToString();
-        public Dictionary<string, object> Metadata { get; set; } = new();
+        public Dictionary<string, object> Metadata { get; set; } = [];
 
         // Interface implementations (simplified for demo)
 

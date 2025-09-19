@@ -5,7 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Optimization;
+using DotCompute.Core.Optimization.Enums;
+using DotCompute.Core.Optimization.Models;
 using DotCompute.Linq.Execution;
 using DotCompute.Linq.Optimization.CostModel;
 using DotCompute.Linq.Optimization.Models;
@@ -16,6 +17,20 @@ using Models = DotCompute.Linq.Optimization.Models;
 using DotCompute.Linq.Pipelines.Models;
 
 namespace DotCompute.Linq.Optimization.Strategies;
+
+internal static class AccessPatternConverter
+{
+    internal static DotCompute.Linq.Pipelines.Models.AccessPattern ConvertToAccessPattern(MemoryAccessPattern pattern)
+    {
+        return pattern switch
+        {
+            MemoryAccessPattern.Sequential => DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential,
+            MemoryAccessPattern.Random => DotCompute.Linq.Pipelines.Models.AccessPattern.Random,
+            MemoryAccessPattern.Strided => DotCompute.Linq.Pipelines.Models.AccessPattern.Strided,
+            _ => DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential
+        };
+    }
+}
 
 /// <summary>
 /// Machine learning-based optimization strategy that adapts to execution patterns
@@ -103,7 +118,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
 
     private double CalculateComputeIntensity(QueryPlan plan)
     {
-        double intensity = 0.0;
+        var intensity = 0.0;
 
 
         foreach (var operation in plan.Operations)
@@ -131,8 +146,8 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
 
     private double CalculateParallelismPotential(QueryPlan plan)
     {
-        int parallelizable = 0;
-        int total = 0;
+        var parallelizable = 0;
+        var total = 0;
 
 
         foreach (var operation in plan.Operations)
@@ -169,7 +184,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         {
             Signature = signature,
             BaseCharacteristics = ConvertWorkloadCharacteristics(characteristics),
-            Predictions = new Dictionary<string, double>(),
+            Predictions = [],
             Weights = InitializeWeights(),
             LastUpdated = DateTime.UtcNow
         });
@@ -383,7 +398,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         var history = _executionHistory.GetOrAdd(signature, _ => new ExecutionHistory
         {
             Signature = signature,
-            Executions = new List<ExecutionRecord>()
+            Executions = []
         });
 
         // This will be called after execution completes
@@ -527,33 +542,35 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     /// <summary>
     /// Converts pipeline workload characteristics to core workload characteristics.
     /// </summary>
-    private static DotCompute.Core.Optimization.WorkloadCharacteristics ConvertWorkloadCharacteristics(
+    private static WorkloadCharacteristics ConvertWorkloadCharacteristics(
         Pipelines.Models.WorkloadCharacteristics pipelineCharacteristics)
     {
-        return new DotCompute.Core.Optimization.WorkloadCharacteristics
+        return new WorkloadCharacteristics
         {
             DataSize = pipelineCharacteristics.DataSize,
             OperationCount = pipelineCharacteristics.OperationCount,
             MemoryIntensity = pipelineCharacteristics.MemoryIntensity,
             ComputeIntensity = pipelineCharacteristics.ComputeIntensity,
             ParallelismLevel = pipelineCharacteristics.ParallelismLevel,
-            AccessPattern = ConvertAccessPattern(pipelineCharacteristics.AccessPattern),
+            AccessPattern = pipelineCharacteristics.AccessPattern,
             OptimizationHints = pipelineCharacteristics.OptimizationHints.ToList()
         };
     }
 
     /// <summary>
-    /// Converts pipeline access pattern to core access pattern.
+    /// Converts pipeline access pattern to core optimization memory access pattern.
     /// </summary>
-    private static DotCompute.Core.Optimization.AccessPattern ConvertAccessPattern(
-        Pipelines.Models.AccessPattern pipelinePattern)
+    private static MemoryAccessPattern ConvertAccessPattern(
+        DotCompute.Linq.Pipelines.Models.AccessPattern pipelinePattern)
     {
         return pipelinePattern switch
         {
-            Pipelines.Models.AccessPattern.Sequential => DotCompute.Core.Optimization.AccessPattern.Sequential,
-            Pipelines.Models.AccessPattern.Random => DotCompute.Core.Optimization.AccessPattern.Random,
-            Pipelines.Models.AccessPattern.Strided => DotCompute.Core.Optimization.AccessPattern.Strided,
-            _ => DotCompute.Core.Optimization.AccessPattern.Sequential
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential => MemoryAccessPattern.Sequential,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Random => MemoryAccessPattern.Random,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Strided => MemoryAccessPattern.Strided,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Coalesced => MemoryAccessPattern.Coalesced,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Scattered => MemoryAccessPattern.Scattered,
+            _ => MemoryAccessPattern.Sequential
         };
     }
 }
@@ -569,16 +586,16 @@ public interface ILinqOptimizationStrategy
 public class OptimizationModel
 {
     public string Signature { get; set; } = string.Empty;
-    public DotCompute.Core.Optimization.WorkloadCharacteristics BaseCharacteristics { get; set; } = new();
-    public Dictionary<string, double> Predictions { get; set; } = new();
-    public Dictionary<string, double> Weights { get; set; } = new();
+    public WorkloadCharacteristics BaseCharacteristics { get; set; } = new();
+    public Dictionary<string, double> Predictions { get; set; } = [];
+    public Dictionary<string, double> Weights { get; set; } = [];
     public DateTime LastUpdated { get; set; }
 }
 
 public class ExecutionHistory
 {
     public string Signature { get; set; } = string.Empty;
-    public List<ExecutionRecord> Executions { get; set; } = new();
+    public List<ExecutionRecord> Executions { get; set; } = [];
 }
 
 public class ExecutionRecord
@@ -600,7 +617,7 @@ public class OptimizationConfiguration
 
 public class FusionCandidate
 {
-    public List<QueryOperation> Operations { get; set; } = new();
+    public List<QueryOperation> Operations { get; set; } = [];
 }
 
 

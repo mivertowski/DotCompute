@@ -5,6 +5,7 @@ using DotCompute.Abstractions.Pipelines;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Optimization.Enums;
 
 namespace DotCompute.Linq.Pipelines.Models;
 
@@ -166,11 +167,11 @@ public class PipelineValidationResult
 
 
     /// <summary>Gets validation errors if any.</summary>
-    public List<string> Errors { get; set; } = new();
+    public List<string> Errors { get; set; } = [];
 
 
     /// <summary>Gets validation warnings if any.</summary>
-    public List<string> Warnings { get; set; } = new();
+    public List<string> Warnings { get; set; } = [];
 }
 
 /// <summary>
@@ -253,12 +254,12 @@ public class PipelineErrorRecoveryResult<T>
     /// <summary>
     /// Gets recovery actions that were attempted.
     /// </summary>
-    public List<string> RecoveryActions { get; set; } = new();
+    public List<string> RecoveryActions { get; set; } = [];
 
     /// <summary>
     /// Gets any warnings from the recovery process.
     /// </summary>
-    public List<string> Warnings { get; set; } = new();
+    public List<string> Warnings { get; set; } = [];
 }
 
 /// <summary>
@@ -495,6 +496,12 @@ public class PipelineStageOptions
 
     /// <summary>Whether to enable caching.</summary>
     public bool EnableCaching { get; set; }
+    
+    /// <summary>Whether to enable optimization.</summary>
+    public bool EnableOptimization { get; set; }
+    
+    /// <summary>Whether to enable memory optimization.</summary>
+    public bool EnableMemoryOptimization { get; set; }
 
     /// <summary>Timeout in milliseconds.</summary>
     public int TimeoutMs { get; set; } = 30000;
@@ -514,8 +521,20 @@ public class WorkloadCharacteristics
     /// <summary>Parallelism degree.</summary>
     public int ParallelismDegree { get; set; }
 
+    /// <summary>Parallelism level (0.0 to 1.0).</summary>
+    public double ParallelismLevel { get; set; }
+
     /// <summary>Data size in bytes.</summary>
     public long DataSize { get; set; }
+
+    /// <summary>Expected number of operations.</summary>
+    public long OperationCount { get; set; }
+
+    /// <summary>Memory access pattern classification.</summary>
+    public MemoryAccessPattern AccessPattern { get; set; }
+
+    /// <summary>Additional custom optimization hints.</summary>
+    public List<string> OptimizationHints { get; set; } = [];
 
     /// <summary>Secondary data size in bytes.</summary>
     public long SecondaryDataSize { get; set; }
@@ -528,9 +547,6 @@ public class WorkloadCharacteristics
 
     /// <summary>Whether this workload is suitable for GPU execution.</summary>
     public bool IsGpuSuitable { get; set; }
-
-    /// <summary>Number of operations in the workload.</summary>
-    public int OperationCount { get; set; }
 
     /// <summary>Parallelism potential (0.0 to 1.0).</summary>
     public double ParallelismPotential { get; set; }
@@ -554,7 +570,7 @@ public class BackendRecommendation
     public string Reasoning { get; set; } = string.Empty;
 
     /// <summary>Backend performance estimates.</summary>
-    public Dictionary<string, BackendEstimate> BackendEstimates { get; set; } = new();
+    public Dictionary<string, BackendEstimate> BackendEstimates { get; set; } = [];
 }
 
 /// <summary>

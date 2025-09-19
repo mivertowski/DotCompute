@@ -20,22 +20,22 @@ public class AnalysisContext
     public Expression? ParentExpression { get; set; }
 
     /// <summary>Gets the operator chain in the expression tree.</summary>
-    public List<ExpressionType> OperatorChain { get; } = new();
+    public List<ExpressionType> OperatorChain { get; } = [];
 
     /// <summary>Gets type usage information.</summary>
-    public Dictionary<Type, object> TypeUsage { get; } = new();
+    public Dictionary<Type, object> TypeUsage { get; } = [];
 
     /// <summary>Gets parallelization opportunities.</summary>
-    public Dictionary<Expression, object> ParallelizationOpportunities { get; } = new();
+    public Dictionary<Expression, object> ParallelizationOpportunities { get; } = [];
 
     /// <summary>Gets data flow bottlenecks.</summary>
-    public List<string> DataFlowBottlenecks { get; } = new();
+    public List<string> DataFlowBottlenecks { get; } = [];
 
     /// <summary>Gets variable dependencies.</summary>
-    public Dictionary<string, object> VariableDependencies { get; } = new();
+    public Dictionary<string, object> VariableDependencies { get; } = [];
 
     /// <summary>Gets method call information.</summary>
-    public Dictionary<string, object> MethodCalls { get; } = new();
+    public Dictionary<string, object> MethodCalls { get; } = [];
 
     /// <summary>Gets the estimated computational complexity.</summary>
     public double ComputationalComplexity { get; set; }
@@ -44,7 +44,7 @@ public class AnalysisContext
     public bool IsGpuSuitable { get; set; } = true;
 
     /// <summary>Gets collected optimization hints.</summary>
-    public List<string> OptimizationHints { get; } = new();
+    public List<string> OptimizationHints { get; } = [];
 
     /// <summary>
     /// Creates a child analysis context for nested analysis.

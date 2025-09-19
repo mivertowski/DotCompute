@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Models;
 using CorePipeline = DotCompute.Core.Pipelines.IKernelPipeline;
@@ -232,24 +233,22 @@ public sealed class FluentPipelineAdapter : IAsyncDisposable
 
     private PipelineExecutionContext CreateDefaultContext()
     {
-        return new PipelineExecutionContext
-        {
-            Inputs = new Dictionary<string, object>(),
-            MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)new DefaultMemoryManager(),
-            Device = (DotCompute.Core.Device.Interfaces.IComputeDevice)new DefaultDevice(),
-            Options = PipelineExecutionOptions.Default
-        };
+        var context = new PipelineExecutionContext();
+        context.Inputs.Clear();
+        context.SetMemoryManager(new DefaultMemoryManager());
+        context.SetDevice(new DefaultDevice());
+        context.Options = PipelineExecutionOptions.Default;
+        return context;
     }
 
     private PipelineExecutionContext CreateContext<TInput>(TInput input)
     {
-        return new PipelineExecutionContext
-        {
-            Inputs = new Dictionary<string, object> { ["input"] = input! },
-            MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)new DefaultMemoryManager(),
-            Device = (DotCompute.Core.Device.Interfaces.IComputeDevice)new DefaultDevice(),
-            Options = PipelineExecutionOptions.Default
-        };
+        var context = new PipelineExecutionContext();
+        context.Inputs["input"] = input!;
+        context.SetMemoryManager(new DefaultMemoryManager());
+        context.SetDevice(new DefaultDevice());
+        context.Options = PipelineExecutionOptions.Default;
+        return context;
     }
 
     private TOutput ExtractOutput<TOutput>(PipelineExecutionResult result)
@@ -378,25 +377,154 @@ public static class CorePipelineFluentExtensions
 #region Minimal Supporting Types
 
 // Minimal implementations for memory manager and device
-internal class DefaultMemoryManager : IPipelineMemoryManager
+internal class DefaultMemoryManager : DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemoryManager
 {
-    public void Dispose() { }
+    public async ValueTask DisposeAsync() { }
 
-    public IUnifiedBuffer<T> AllocateBuffer<T>(string name, int size) where T : unmanaged
+    public async ValueTask<DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T>> AllocateAsync<T>(
+        long elementCount,
+        DotCompute.Abstractions.Pipelines.Enums.MemoryHint hint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint.None,
+        CancellationToken cancellationToken = default) where T : unmanaged
     {
-        return new DefaultBuffer<T>(size);
+        return new DefaultPipelineMemory<T>(elementCount);
     }
 
-    public IUnifiedBuffer<T> GetBuffer<T>(string name) where T : unmanaged
+    public async ValueTask<DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T>> AllocateSharedAsync<T>(
+        string key,
+        long elementCount,
+        DotCompute.Abstractions.Pipelines.Enums.MemoryHint hint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint.None,
+        CancellationToken cancellationToken = default) where T : unmanaged
     {
-        throw new ArgumentException($"Buffer '{name}' not found");
+        return new DefaultPipelineMemory<T>(elementCount);
     }
 
-    public void ReleaseBuffer(string name) { }
-
-    public IReadOnlyDictionary<string, long> GetBufferSizes()
+    public DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T>? GetShared<T>(string key) where T : unmanaged
     {
-        return new Dictionary<string, long>();
+        return null;
+    }
+
+    public async ValueTask TransferAsync<T>(
+        DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T> memory,
+        string fromStage,
+        string toStage,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        // No-op for default implementation
+    }
+
+    public DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemoryView<T> CreateView<T>(
+        DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T> memory,
+        long offset = 0,
+        long? length = null) where T : unmanaged
+    {
+        return new DefaultPipelineMemoryView<T>(memory, offset, length ?? memory.ElementCount);
+    }
+
+    public async ValueTask<DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T>> OptimizeLayoutAsync<T>(
+        DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T> memory,
+        DotCompute.Abstractions.Interfaces.Pipelines.MemoryLayoutHint layoutHint,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return memory; // No optimization in default implementation
+    }
+
+    public DotCompute.Abstractions.Interfaces.Pipelines.MemoryManagerStats GetStats()
+    {
+        return new DotCompute.Abstractions.Interfaces.Pipelines.MemoryManagerStats
+        {
+            TotalAllocatedBytes = 0,
+            CurrentUsedBytes = 0,
+            PeakUsedBytes = 0,
+            ActiveAllocationCount = 0,
+            TotalAllocationCount = 0,
+            CacheHitRate = 0.0,
+            PoolEfficiency = 0.0,
+            FragmentationPercentage = 0.0
+        };
+    }
+
+    public async ValueTask CollectAsync(CancellationToken cancellationToken = default)
+    {
+        GC.Collect();
+    }
+
+    public void RegisterPool<T>(DotCompute.Abstractions.Interfaces.Pipelines.MemoryPoolOptions options) where T : unmanaged
+    {
+        // No-op for default implementation
+    }
+}
+
+internal class DefaultPipelineMemory<T> : DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T> where T : unmanaged
+{
+    private readonly T[] _data;
+    private bool _isDisposed;
+
+    public DefaultPipelineMemory(long elementCount)
+    {
+        ElementCount = elementCount;
+        _data = new T[elementCount];
+        Id = Guid.NewGuid().ToString();
+        Device = new DefaultDevice();
+    }
+
+    public string Id { get; }
+    public long ElementCount { get; }
+    public long SizeInBytes => ElementCount * Marshal.SizeOf<T>();
+    public bool IsLocked { get; private set; }
+    public DotCompute.Abstractions.Pipelines.Enums.MemoryAccess AccessMode => DotCompute.Abstractions.Pipelines.Enums.MemoryAccess.ReadWrite;
+    public DotCompute.Abstractions.Interfaces.Device.IComputeDevice Device { get; }
+
+    public async ValueTask<DotCompute.Abstractions.Interfaces.Pipelines.MemoryLock<T>> LockAsync(
+        DotCompute.Abstractions.Interfaces.Pipelines.MemoryLockMode mode,
+        CancellationToken cancellationToken = default)
+    {
+        IsLocked = true;
+        return new DotCompute.Abstractions.Interfaces.Pipelines.MemoryLock<T>(this, mode, () => IsLocked = false);
+    }
+
+    public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default)
+    {
+        source.Span.CopyTo(_data.AsSpan((int)offset));
+    }
+
+    public async ValueTask CopyToAsync(Memory<T> destination, long offset = 0, int? count = null, CancellationToken cancellationToken = default)
+    {
+        var length = count ?? (int)(ElementCount - offset);
+        _data.AsSpan((int)offset, length).CopyTo(destination.Span);
+    }
+
+    public DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemoryView<T> Slice(long offset, long length)
+    {
+        return new DefaultPipelineMemoryView<T>(this, offset, length);
+    }
+
+    public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+    {
+        // No-op for CPU memory
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _isDisposed = true;
+    }
+}
+
+internal class DefaultPipelineMemoryView<T> : DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemoryView<T> where T : unmanaged
+{
+    public DefaultPipelineMemoryView(DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T> parent, long offset, long length)
+    {
+        Parent = parent;
+        Offset = offset;
+        Length = length;
+    }
+
+    public long Offset { get; }
+    public long Length { get; }
+    public DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T> Parent { get; }
+
+    public DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemoryView<T> Slice(long offset, long length)
+    {
+        return new DefaultPipelineMemoryView<T>(Parent, Offset + offset, length);
     }
 }
 

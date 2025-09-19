@@ -31,5 +31,10 @@ public enum MemorySpace
     /// <summary>
     /// Private memory space for each work item.
     /// </summary>
-    Private
+    Private,
+
+    /// <summary>
+    /// Device memory space for GPU devices.
+    /// </summary>
+    Device
 }

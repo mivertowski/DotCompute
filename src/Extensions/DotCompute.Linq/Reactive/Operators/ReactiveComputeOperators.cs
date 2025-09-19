@@ -467,7 +467,7 @@ public static class ReactiveComputeOperators
                         // Buffer the in-order or early data
                         if (!buffer.ContainsKey(timestamp))
                         {
-                            buffer[timestamp] = new List<T>();
+                            buffer[timestamp] = [];
                         }
 
 
@@ -660,10 +660,10 @@ public static class ReactiveComputeOperators
         var matches = new List<PatternMatch<T>>();
 
 
-        for (int i = 0; i <= data.Length - pattern.Length; i++)
+        for (var i = 0; i <= data.Length - pattern.Length; i++)
         {
-            bool isMatch = true;
-            for (int j = 0; j < pattern.Length; j++)
+            var isMatch = true;
+            for (var j = 0; j < pattern.Length; j++)
             {
                 if (!data[i + j].Equals(pattern[j]))
                 {
@@ -755,7 +755,7 @@ internal class CircularBuffer<T>
     public T[] ToArray()
     {
         var result = new T[_count];
-        for (int i = 0; i < _count; i++)
+        for (var i = 0; i < _count; i++)
         {
             result[i] = _buffer[(_start + i) % _buffer.Length];
         }

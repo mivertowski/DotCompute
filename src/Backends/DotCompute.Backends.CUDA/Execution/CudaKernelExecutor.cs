@@ -8,9 +8,11 @@ using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
-
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using KernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
 namespace DotCompute.Backends.CUDA.Execution
 {
 

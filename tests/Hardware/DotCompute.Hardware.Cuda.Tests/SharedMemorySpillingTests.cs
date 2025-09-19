@@ -151,8 +151,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int iterations = 100;
 
             // Prepare test data
-            float[] hostData = new float[dataSize];
-            for (int i = 0; i < dataSize; i++)
+            var hostData = new float[dataSize];
+            for (var i = 0; i < dataSize; i++)
                 hostData[i] = i * 0.001f;
 
             using var inputBuffer = await accelerator.Memory.AllocateAsync<float>(dataSize);
@@ -170,7 +170,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 new DotCompute.Abstractions.CompilationOptions());
 
             var swNoSpilling = Stopwatch.StartNew();
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var (grid, block) = CudaTestHelpers.CreateLaunchConfig(dataSize / 256, 1, 1, 256, 1, 1);
                 var kernelArgs = CudaTestHelpers.CreateKernelArguments(
@@ -194,7 +194,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 new DotCompute.Abstractions.CompilationOptions());
 
             var swWithSpilling = Stopwatch.StartNew();
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var (grid, block) = CudaTestHelpers.CreateLaunchConfig(dataSize / 256, 1, 1, 256, 1, 1);
                 var kernelArgs = CudaTestHelpers.CreateKernelArguments(

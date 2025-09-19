@@ -47,3 +47,4 @@ public class GeneratedKernelParameter
     /// </summary>
     public Type? ElementType { get; set; }
 }
+

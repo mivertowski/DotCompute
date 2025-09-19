@@ -4,6 +4,19 @@
 using System.Diagnostics;
 using DotCompute.Abstractions.Kernels;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Models.Pipelines;
+using DotCompute.Core.Pipelines.Models;
+
+// Type aliases to resolve ambiguous references
+using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
+using MemoryHint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint;
+using PipelineExecutionContext = DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext;
+using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
+using CoreStageExecutionResult = DotCompute.Core.Pipelines.Models.StageExecutionResult;
+using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;
+using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
+using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 
 namespace DotCompute.Core.Pipelines.Stages
 {
@@ -119,7 +132,7 @@ namespace DotCompute.Core.Pipelines.Stages
         public string Name { get; } = name;
 
         /// <inheritdoc/>
-        public PipelineStageType Type => PipelineStageType.Kernel;
+        public PipelineStageType Type => PipelineStageType.Computation;
 
         /// <inheritdoc/>
         public IReadOnlyList<string> Dependencies { get; } = dependencies;
@@ -131,7 +144,7 @@ namespace DotCompute.Core.Pipelines.Stages
         public int Priority { get; } = priority;
 
         /// <inheritdoc/>
-        public async ValueTask<StageExecutionResult> ExecuteAsync(
+        public async ValueTask<AbsStageExecutionResult> ExecuteAsync(
             PipelineExecutionContext context,
             CancellationToken cancellationToken = default)
         {
@@ -172,25 +185,19 @@ namespace DotCompute.Core.Pipelines.Stages
                 // Prepare outputs
                 var outputs = PrepareOutputs(context, arguments);
 
-                var memoryUsage = new MemoryUsageStats
-                {
-                    AllocatedBytes = allocatedBytes,
-                    PeakBytes = Math.Max(endMemory, startMemory + allocatedBytes),
-                    AllocationCount = 1,
-                    DeallocationCount = 0
-                };
+                var memoryUsed = Math.Max(allocatedBytes, endMemory - startMemory);
 
                 _metrics.RecordExecution(stopwatch.Elapsed, true);
-                _metrics.RecordMemoryUsage(memoryUsage.AllocatedBytes);
+                _metrics.RecordMemoryUsage(memoryUsed);
 
-                return new StageExecutionResult
+                return new AbsStageExecutionResult
                 {
                     StageId = Id,
                     Success = true,
-                    Duration = stopwatch.Elapsed,
-                    Outputs = outputs.Count > 0 ? outputs : null,
-                    MemoryUsage = memoryUsage,
-                    Metrics = new Dictionary<string, double>
+                    ExecutionTime = stopwatch.Elapsed,
+                    OutputData = outputs.Count > 0 ? outputs : [],
+                    MemoryUsed = memoryUsed,
+                    Metadata = new Dictionary<string, object>
                     {
                         ["ComputeUtilization"] = CalculateComputeUtilization(),
                         ["MemoryBandwidthUtilization"] = CalculateMemoryBandwidthUtilization(),
@@ -206,11 +213,12 @@ namespace DotCompute.Core.Pipelines.Stages
                 stopwatch.Stop();
                 _metrics.RecordExecution(stopwatch.Elapsed, false);
 
-                return new StageExecutionResult
+                return new AbsStageExecutionResult
                 {
                     StageId = Id,
                     Success = false,
-                    Duration = stopwatch.Elapsed,
+                    ExecutionTime = stopwatch.Elapsed,
+                    OutputData = [],
                     Error = ex
                 };
             }
@@ -219,13 +227,13 @@ namespace DotCompute.Core.Pipelines.Stages
         /// <inheritdoc/>
         public StageValidationResult Validate()
         {
-            var errors = new List<string>();
+            var errors = new List<ValidationIssue>();
             var warnings = new List<string>();
 
             // Validate kernel
             if (_kernel == null)
             {
-                errors.Add("Kernel is required");
+                errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Kernel is required", "KERNEL_001"));
             }
 
             // Validate work size
@@ -235,7 +243,7 @@ namespace DotCompute.Core.Pipelines.Stages
             }
             else if (_globalWorkSize.Any(size => size <= 0))
             {
-                errors.Add("Global work size must be positive");
+                errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Global work size must be positive", "KERNEL_003"));
             }
 
             // Validate local work size
@@ -243,11 +251,11 @@ namespace DotCompute.Core.Pipelines.Stages
             {
                 if (_localWorkSize.Length != _globalWorkSize?.Length)
                 {
-                    errors.Add("Local work size dimensions must match global work size dimensions");
+                    errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Local work size dimensions must match global work size dimensions", "KERNEL_004"));
                 }
                 else if (_localWorkSize.Any(size => size <= 0))
                 {
-                    errors.Add("Local work size must be positive");
+                    errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Local work size must be positive", "KERNEL_005"));
                 }
             }
 
@@ -267,7 +275,7 @@ namespace DotCompute.Core.Pipelines.Stages
             return new StageValidationResult
             {
                 IsValid = errors.Count == 0,
-                Errors = errors.Count > 0 ? errors : null,
+                Issues = errors.Count > 0 ? errors : null,
                 Warnings = warnings.Count > 0 ? warnings : null
             };
         }
@@ -317,6 +325,7 @@ namespace DotCompute.Core.Pipelines.Stages
 
 
             => PerformanceMonitor.GetMemoryBandwidthUtilization();
+
 
         private double CalculateWorkItemsProcessed()
         {

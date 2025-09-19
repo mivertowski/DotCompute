@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0  # Need full history for accurate coverage
 
@@ -28,7 +28,7 @@ jobs:
         dotnet-quality: 'preview'
 
     - name: Cache NuGet Packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -93,13 +93,13 @@ jobs:
         fi
 
     - name: Upload Coverage Reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: TestResults/CoverageReport/
 
     - name: Upload Test Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results
@@ -128,7 +128,7 @@ jobs:
     
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup .NET 9
       uses: actions/setup-dotnet@v4
@@ -149,7 +149,7 @@ jobs:
         echo "Performance regression check completed"
 
     - name: Upload Benchmark Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: benchmarks/BenchmarkDotNet.Artifacts/

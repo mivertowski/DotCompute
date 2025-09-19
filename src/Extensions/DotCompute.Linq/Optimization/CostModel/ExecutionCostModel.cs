@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Optimization;
+using DotCompute.Core.Optimization.Enums;
+using DotCompute.Core.Optimization.Models;
 using DotCompute.Linq.Execution;
 using DotCompute.Linq.Optimization.Models;
 using DotCompute.Linq.Types;
@@ -809,7 +810,7 @@ public sealed class ExecutionCostModel
 // Supporting classes and data structures
 public class PerformanceModelRegistry
 {
-    private readonly Dictionary<string, PerformanceModel> _models = new();
+    private readonly Dictionary<string, PerformanceModel> _models = [];
 
     public bool TryGetModel(string key, out PerformanceModel model)
     {

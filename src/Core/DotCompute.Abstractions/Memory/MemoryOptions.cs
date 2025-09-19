@@ -77,7 +77,17 @@ namespace DotCompute.Abstractions.Memory
         /// <summary>
         /// Memory should automatically migrate between devices as needed.
         /// </summary>
-        AutoMigrate = 1 << 12
+        AutoMigrate = 1 << 12,
+
+        /// <summary>
+        /// Memory should be allocated from a memory pool for better performance.
+        /// </summary>
+        Pooled = 1 << 13,
+
+        /// <summary>
+        /// Memory should be allocated local to the device for optimal access.
+        /// </summary>
+        DeviceLocal = 1 << 14
     }
 
     /// <summary>

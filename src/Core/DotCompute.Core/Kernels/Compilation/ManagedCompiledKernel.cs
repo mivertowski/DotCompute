@@ -5,6 +5,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces;
 
 using System;
 namespace DotCompute.Core.Kernels.Compilation;
@@ -13,7 +14,7 @@ namespace DotCompute.Core.Kernels.Compilation;
 /// Represents a compiled kernel ready for execution.
 /// Encapsulates the compiled binary, metadata, and execution parameters for a kernel.
 /// </summary>
-public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
+public sealed class ManagedCompiledKernel : DotCompute.Abstractions.ICompiledKernel
 {
     private bool _disposed;
 

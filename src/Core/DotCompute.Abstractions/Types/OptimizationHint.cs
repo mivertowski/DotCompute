@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Optimization.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Provides hints for kernel launch optimization based on workload characteristics.

@@ -28,8 +28,8 @@ internal sealed class RegisterSpillingOptimizer
     {
         _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
         _semanticModel = semanticModel ?? throw new ArgumentNullException(nameof(semanticModel));
-        _spillableVariables = new List<string>();
-        _variableLifetimes = new Dictionary<string, int>();
+        _spillableVariables = [];
+        _variableLifetimes = [];
         AnalyzeRegisterPressure();
     }
 
@@ -113,7 +113,7 @@ internal sealed class RegisterSpillingOptimizer
 
             // Estimate registers based on type
 
-            int registersNeeded = typeInfo.Type != null ? EstimateRegistersForType(typeInfo.Type) : 1;
+            var registersNeeded = typeInfo.Type != null ? EstimateRegistersForType(typeInfo.Type) : 1;
             _estimatedRegisterCount += registersNeeded;
 
             // Track variable lifetime for spilling decisions
@@ -229,7 +229,7 @@ internal sealed class RegisterSpillingOptimizer
                 sb.AppendLine();
 
                 // Generate spill/reload macros for each variable
-                for (int i = 0; i < _spillableVariables.Count; i++)
+                for (var i = 0; i < _spillableVariables.Count; i++)
                 {
                     var varName = _spillableVariables[i];
                     sb.AppendLine($"#define SPILL_{varName}(val) __spill_buffer[SPILL_OFFSET(threadIdx.x) + {i}] = (val)");
@@ -294,21 +294,21 @@ internal sealed class RegisterSpillingOptimizer
         private sealed class BlockContext
         {
             public int StartLine { get; set; }
-            public HashSet<string> LocalVars { get; } = new HashSet<string>();
+            public HashSet<string> LocalVars { get; } = [];
             public bool IsLoop { get; set; }
         }
 
         public SpillCodeTransformer(List<string> spillableVariables)
         {
             _spillVars = new HashSet<string>(spillableVariables);
-            _spillInfoMap = new Dictionary<string, SpillInfo>();
+            _spillInfoMap = [];
             _output = new StringBuilder();
-            _processedDeclarations = new HashSet<string>();
+            _processedDeclarations = [];
             _blockStack = new Stack<BlockContext>();
 
             // Assign spill slots
 
-            int slot = 0;
+            var slot = 0;
             foreach (var var in spillableVariables)
             {
                 _spillInfoMap[var] = new SpillInfo { SpillSlot = slot++ };
@@ -362,7 +362,7 @@ internal sealed class RegisterSpillingOptimizer
             }
 
             // Process variable declarations with spilling
-            if (IsVariableDeclaration(trimmedLine, out string varName, out string varType, out string initializer))
+            if (IsVariableDeclaration(trimmedLine, out var varName, out var varType, out var initializer))
             {
                 if (_spillVars.Contains(varName) && !_processedDeclarations.Contains(varName))
                 {
@@ -377,7 +377,7 @@ internal sealed class RegisterSpillingOptimizer
             }
 
             // Process variable assignments
-            if (IsVariableAssignment(trimmedLine, out varName, out string value))
+            if (IsVariableAssignment(trimmedLine, out varName, out var value))
             {
                 if (_spillVars.Contains(varName) && _spillInfoMap.ContainsKey(varName))
                 {
@@ -459,7 +459,7 @@ internal sealed class RegisterSpillingOptimizer
 
             // Determine if we should spill immediately or keep in register
 
-            bool shouldSpillImmediately = _blockStack.Any(b => b.IsLoop) || _spillVars.Count > 8;
+            var shouldSpillImmediately = _blockStack.Any(b => b.IsLoop) || _spillVars.Count > 8;
 
 
             if (shouldSpillImmediately)
@@ -653,7 +653,7 @@ internal sealed class RegisterSpillingOptimizer
             public int LastUse { get; set; }
             public int UseCount { get; set; }
             public bool IsLoopCarried { get; set; }
-            public HashSet<string> Dependencies { get; } = new HashSet<string>();
+            public HashSet<string> Dependencies { get; } = [];
             public int LiveRangeLength => LastUse - FirstUse;
         }
 
@@ -661,7 +661,7 @@ internal sealed class RegisterSpillingOptimizer
         public DataFlowAnalyzer(KernelMethodInfo kernelInfo)
         {
             _kernelInfo = kernelInfo;
-            _flowInfo = new Dictionary<string, VariableFlowInfo>();
+            _flowInfo = [];
             Analyze();
         }
 
@@ -675,7 +675,7 @@ internal sealed class RegisterSpillingOptimizer
 
 
             var body = _kernelInfo.MethodDeclaration.Body;
-            int lineNumber = 0;
+            var lineNumber = 0;
 
             // First pass: collect all variable declarations and uses
 

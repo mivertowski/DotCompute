@@ -25,7 +25,7 @@ public class CpuAcceleratorTests : IDisposable
 
     public CpuAcceleratorTests()
     {
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         _logger = loggerFactory.CreateLogger<CpuAccelerator>();
 
 
@@ -90,7 +90,7 @@ public class CpuAcceleratorTests : IDisposable
         // Assert
         _ = simdWidth.Should().NotBeNull();
         _ = simdWidth.Should().BeOfType<int>();
-        _ = ((int)simdWidth).Should().BeGreaterThan(0);
+        _ = ((int)simdWidth!).Should().BeGreaterThan(0);
 
         _ = supportedSets.Should().NotBeNull();
         _ = supportedSets.Should().NotBeEmpty();
@@ -104,6 +104,7 @@ public class CpuAcceleratorTests : IDisposable
         var threadCount = _accelerator.Info.Capabilities["ThreadCount"];
 
         // Assert
+        _ = threadCount.Should().NotBeNull();
         _ = threadCount!.Should().Be(Environment.ProcessorCount);
     }
 
@@ -433,7 +434,15 @@ public class CpuAcceleratorTests : IDisposable
 
     public void Dispose()
     {
-        _accelerator?.DisposeAsync().AsTask().Wait();
+        Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _accelerator?.DisposeAsync().AsTask().Wait();
+        }
     }
 }

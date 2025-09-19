@@ -1,33 +1,19 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+// This interface has been moved to DotCompute.Abstractions.Interfaces.Kernels
+// to avoid circular dependencies and ensure clean architecture boundaries.
+
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace DotCompute.Backends.Metal.Execution.Interfaces;
-
-/// <summary>
-/// Represents a compiled kernel ready for execution in the Metal backend.
-/// This is a simple placeholder interface for the Metal backend.
-/// </summary>
-public interface ICompiledKernel : IDisposable
+namespace DotCompute.Backends.Metal.Execution.Interfaces
 {
     /// <summary>
-    /// Gets the kernel name.
+    /// Re-export for backward compatibility.
+    /// Use DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel instead.
     /// </summary>
-    string Name { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether the kernel is compiled and ready for execution.
-    /// </summary>
-    bool IsReady { get; }
-
-    /// <summary>
-    /// Executes the compiled kernel with the specified parameters.
-    /// </summary>
-    /// <param name="parameters">The kernel execution parameters.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task representing the asynchronous execution.</returns>
-    Task ExecuteAsync(object[] parameters, CancellationToken cancellationToken = default);
+    [Obsolete("Use DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel instead")]
+    public interface ICompiledKernel : DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel
+    {
+    }
 }

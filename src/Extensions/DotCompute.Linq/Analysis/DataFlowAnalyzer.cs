@@ -36,7 +36,7 @@ public class DataFlowAnalyzer
         }
 
         // Create edges based on data dependencies
-        for (int i = 1; i < operators.Count; i++)
+        for (var i = 1; i < operators.Count; i++)
         {
             var sourceNode = nodeMap[operators[i - 1]];
             var targetNode = nodeMap[operators[i]];
@@ -207,12 +207,12 @@ public class DataFlowGraph
     /// <summary>
     /// Gets or sets the nodes in the graph.
     /// </summary>
-    public List<DataFlowNode> Nodes { get; set; } = new();
+    public List<DataFlowNode> Nodes { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the edges in the graph.
     /// </summary>
-    public List<DataFlowEdge> Edges { get; set; } = new();
+    public List<DataFlowEdge> Edges { get; set; } = [];
 }
 
 /// <summary>
@@ -233,7 +233,7 @@ public class DataFlowNode
     /// <summary>
     /// Gets or sets the input types for this node.
     /// </summary>
-    public List<Type> InputTypes { get; set; } = new();
+    public List<Type> InputTypes { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the output type for this node.
@@ -243,12 +243,12 @@ public class DataFlowNode
     /// <summary>
     /// Gets or sets the incoming edges.
     /// </summary>
-    public List<DataFlowEdge> Inputs { get; set; } = new();
+    public List<DataFlowEdge> Inputs { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the outgoing edges.
     /// </summary>
-    public List<DataFlowEdge> Outputs { get; set; } = new();
+    public List<DataFlowEdge> Outputs { get; set; } = [];
 }
 
 /// <summary>
@@ -305,7 +305,7 @@ public class DataFlowBottleneck
     /// <summary>
     /// Gets or sets suggested optimizations.
     /// </summary>
-    public List<string> SuggestedOptimizations { get; set; } = new();
+    public List<string> SuggestedOptimizations { get; set; } = [];
 }
 
 /// <summary>

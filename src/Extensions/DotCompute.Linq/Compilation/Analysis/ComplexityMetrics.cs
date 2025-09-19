@@ -35,10 +35,10 @@ public record ComplexityMetrics
     public double CacheEfficiency { get; init; } = 0.8;
 
     /// <summary>Gets detailed per-operation complexity breakdown.</summary>
-    public Dictionary<string, double> OperationComplexity { get; init; } = new();
+    public Dictionary<string, double> OperationComplexity { get; init; } = [];
 
     /// <summary>Gets memory access patterns that affect complexity.</summary>
-    public List<MemoryAccessComplexity> MemoryAccessPatterns { get; init; } = new();
+    public List<MemoryAccessComplexity> MemoryAccessPatterns { get; init; } = [];
 
     /// <summary>Gets whether the complexity is data-dependent.</summary>
     public bool IsDataDependent { get; init; }
@@ -130,7 +130,7 @@ public record MemoryHotspot
     public double Intensity { get; init; }
 
     /// <summary>Gets optimization recommendations.</summary>
-    public List<string> OptimizationRecommendations { get; init; } = new();
+    public List<string> OptimizationRecommendations { get; init; } = [];
 }
 
 /// <summary>
@@ -139,7 +139,7 @@ public record MemoryHotspot
 public record MemoryConflict
 {
     /// <summary>Gets the conflicting access locations.</summary>
-    public List<string> ConflictingLocations { get; init; } = new();
+    public List<string> ConflictingLocations { get; init; } = [];
 
     /// <summary>Gets the conflict type.</summary>
     public ConflictType Type { get; init; }
@@ -151,7 +151,7 @@ public record MemoryConflict
     public double PerformanceImpact { get; init; }
 
     /// <summary>Gets suggested resolutions.</summary>
-    public List<string> Resolutions { get; init; } = new();
+    public List<string> Resolutions { get; init; } = [];
 }
 
 /// <summary>

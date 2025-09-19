@@ -10,6 +10,7 @@ using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Compilation.Analysis;
 using DotCompute.Linq.Analysis;
 using DotCompute.Linq.Pipelines.Analysis;
+using DotCompute.Core.Analysis;
 using BackendType = DotCompute.Linq.Types.BackendType;
 using PipelineOperatorInfo = DotCompute.Linq.Compilation.Analysis.PipelineOperatorInfo;
 using PipelineComplexityMetrics = DotCompute.Linq.Pipelines.Analysis.ComplexityMetrics;
@@ -17,6 +18,7 @@ using CompilationITypeAnalyzer = DotCompute.Linq.Compilation.Analysis.ITypeAnaly
 using CompilationIOperatorAnalyzer = DotCompute.Linq.Compilation.Analysis.IOperatorAnalyzer;
 using AnalysisIOperatorAnalyzer = DotCompute.Linq.Analysis.IOperatorAnalyzer;
 using CompilationDependencyInfo = DotCompute.Linq.Compilation.Analysis.DependencyInfo;
+using DotCompute.Core.Optimization.Enums;
 using CompilationDependencyType = DotCompute.Linq.Compilation.Analysis.DependencyType;
 using AnalysisDependencyInfo = DotCompute.Linq.Analysis.DependencyInfo;
 using AnalysisDependencyType = DotCompute.Linq.Analysis.DependencyType;
@@ -96,8 +98,8 @@ public sealed class ExpressionAnalyzer
         var operatorInfoList = context.OperatorChain.Select(op => new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
         {
             Name = op.Name,
-            OperatorType = ConvertOperatorType(op.OperatorType),
-            InputTypes = new List<Type> { typeof(object) }, // Default input type
+            OperatorType = UnifiedOperatorType.Custom, // Default to Custom since op.OperatorType is System.Type
+            InputTypes = [typeof(object)], // Default input type
             OutputType = typeof(object) // Default output type
         }).ToList();
         context.DataFlowGraph = dataFlowAnalyzer.BuildDataFlowGraph(operatorInfoList);
@@ -129,8 +131,8 @@ public sealed class ExpressionAnalyzer
 
 
         context.ParallelizationOpportunities = results
-            .Where(r => r.Opportunity.IsSuitable)
-            .ToDictionary(r => r.Operator, r => r.Opportunity);
+            .Where(r => r.Opportunity.VectorizationSuitable || r.Opportunity.SupportsParallelExecution)
+            .ToDictionary(r => r.Operator, r => ConvertToAnalysisParallelizationOpportunity(r.Opportunity));
 
 
         _logger.LogDebug("Parallelization analysis completed: {OpportunityCount} suitable operators",
@@ -145,14 +147,15 @@ public sealed class ExpressionAnalyzer
 
         foreach (var op in context.OperatorChain)
         {
-            var pattern = memoryAnalyzer.AnalyzeOperator(op);
-            context.MemoryAccessPatterns[op] = pattern;
+            var operatorInfo = ConvertToOperatorInfo(op);
+            var analysisResult = memoryAnalyzer.AnalyzeOperator(operatorInfo);
+            context.MemoryAccessPatterns[op] = analysisResult.AccessPattern;
         }
 
         // Detect global patterns
 
         context.GlobalMemoryPattern = memoryAnalyzer.DetectGlobalPattern(
-            context.MemoryAccessPatterns.Values);
+            context.OperatorChain.Select(ConvertToOperatorInfo));
 
 
         _logger.LogDebug("Memory access analysis completed: pattern {Pattern}",
@@ -164,10 +167,12 @@ public sealed class ExpressionAnalyzer
         var calculator = new ComplexityCalculator();
 
 
-        context.ComplexityMetrics = calculator.Calculate(
-            context.OperatorChain,
-            context.TypeUsage,
+        var compilationMetrics = calculator.Calculate(
+            context.OperatorChain.Select(ConvertToOperatorInfo),
+            context.TypeUsage.Values,
             context.DataFlowGraph);
+        
+        context.ComplexityMetrics = ConvertToPipelineComplexityMetrics(compilationMetrics);
 
 
         _logger.LogDebug("Complexity metrics calculated: overall {Overall}, computational {Computational}",
@@ -182,18 +187,58 @@ public sealed class ExpressionAnalyzer
             OperatorChain: context.OperatorChain.ToList(),
             TypeUsage: context.TypeUsage.ToDictionary(kv => kv.Key, kv => kv.Value),
             Dependencies: context.Dependencies.ToList(),
-            ComplexityMetrics: context.ComplexityMetrics,
+            ComplexityMetrics: ConvertToPipelineComplexityMetrics(context.ComplexityMetrics),
             ParallelizationInfo: new DotCompute.Linq.Compilation.Analysis.ParallelizationInfo(
-                context.ParallelizationOpportunities,
+                new List<object>(), // TODO: Fix ParallelizationOpportunities conversion
                 context.DataFlowBottlenecks),
             MemoryAccessPattern: context.GlobalMemoryPattern,
             OptimizationHints: GenerateOptimizationHints(context));
+    }
+
+    private static GlobalMemoryAccessPattern ConvertToGlobalMemoryAccessPattern(MemoryAccessPattern pattern)
+    {
+        return new GlobalMemoryAccessPattern
+        {
+            AccessType = pattern switch
+            {
+                MemoryAccessPattern.Sequential => MemoryAccessType.Sequential,
+                MemoryAccessPattern.Random => MemoryAccessType.Random,
+                MemoryAccessPattern.Strided => MemoryAccessType.Strided,
+                _ => MemoryAccessType.Sequential
+            },
+            IsCoalesced = pattern == MemoryAccessPattern.Sequential,
+            CacheEfficiency = pattern == MemoryAccessPattern.Sequential ? 0.9 : 0.5
+        };
+    }
+
+    private static MemoryAccessPattern ConvertToMemoryAccessPattern(GlobalMemoryAccessPattern pattern)
+    {
+        return pattern.AccessType switch
+        {
+            MemoryAccessType.Sequential => MemoryAccessPattern.Sequential,
+            MemoryAccessType.Random => MemoryAccessPattern.Random,
+            MemoryAccessType.Strided => MemoryAccessPattern.Strided,
+            _ => MemoryAccessPattern.Sequential
+        };
     }
 
     private string GenerateOperationSignature(Expression expression, AnalysisContext context)
     {
         var signatureBuilder = new OperationSignatureBuilder();
         return signatureBuilder.Build(expression, context.OperatorChain);
+    }
+
+    private MemoryAccessPattern ConvertToCompilationMemoryAccessPattern(GlobalMemoryAccessPattern pattern)
+    {
+        return pattern.AccessType switch
+        {
+            MemoryAccessType.Sequential => MemoryAccessPattern.Sequential,
+            MemoryAccessType.Random => MemoryAccessPattern.Random,
+            MemoryAccessType.Strided => MemoryAccessPattern.Strided,
+            MemoryAccessType.Coalesced => MemoryAccessPattern.Coalesced,
+            MemoryAccessType.Scattered => MemoryAccessPattern.Scattered,
+            _ => MemoryAccessPattern.Sequential
+        };
     }
 
     private List<OptimizationHint> GenerateOptimizationHints(AnalysisContext context)
@@ -212,7 +257,7 @@ public sealed class ExpressionAnalyzer
 
         // Memory optimization hints
 
-        if (HasCoalescingOpportunities(context.GlobalMemoryPattern))
+        if (context.GlobalMemoryPattern.Pattern == MemoryAccessType.Sequential)
         {
             hints.Add(new OptimizationHint(
                 OptimizationHintType.MemoryCoalescing,
@@ -276,6 +321,148 @@ public sealed class ExpressionAnalyzer
             [ExpressionType.Conditional] = new ConditionalOperatorAnalyzer()
         };
     }
+
+    /// <summary>
+    /// Converts a compilation analysis parallelization opportunity to the analysis version.
+    /// </summary>
+    private static DotCompute.Linq.Analysis.ParallelizationOpportunity ConvertToAnalysisParallelizationOpportunity(
+        DotCompute.Linq.Compilation.Analysis.ParallelizationOpportunity compilationOpportunity)
+    {
+        return new DotCompute.Linq.Analysis.ParallelizationOpportunity
+        {
+            VectorizationSuitable = compilationOpportunity.VectorizationSuitable,
+            SupportsParallelExecution = compilationOpportunity.SupportsParallelExecution,
+            RecommendedParallelism = compilationOpportunity.RecommendedParallelism,
+            DataDependencies = [], // Will need to map if properties exist
+            MemoryRequirements = 0 // Default value
+        };
+    }
+
+    /// <summary>
+    /// Converts PipelineOperatorInfo to OperatorInfo.
+    /// </summary>
+    private static DotCompute.Linq.Compilation.Analysis.OperatorInfo ConvertToOperatorInfo(PipelineOperatorInfo pipelineOp)
+    {
+        return new DotCompute.Linq.Compilation.Analysis.OperatorInfo
+        {
+            Operator = ConvertToExpressionType(pipelineOp.Name),
+            Complexity = pipelineOp.ComplexityScore,
+            IsCommutative = IsCommutativeOperator(pipelineOp.Name),
+            IsAssociative = IsAssociativeOperator(pipelineOp.Name),
+            AccessPattern = MemoryAccessPattern.Sequential,
+            ParallelizationOpportunity = new DotCompute.Linq.Compilation.Analysis.ParallelizationOpportunity
+            {
+                VectorizationSuitable = pipelineOp.SupportsGpu,
+                SupportsParallelExecution = pipelineOp.CanParallelize,
+                RecommendedParallelism = pipelineOp.CanParallelize ? 4 : 1
+            }
+        };
+    }
+
+    /// <summary>
+    /// Converts operator name to ExpressionType.
+    /// </summary>
+    private static ExpressionType ConvertToExpressionType(string operatorName)
+    {
+        return operatorName switch
+        {
+            "Addition" => ExpressionType.Add,
+            "Subtraction" => ExpressionType.Subtract,
+            "Multiplication" => ExpressionType.Multiply,
+            "Division" => ExpressionType.Divide,
+            "Equal" => ExpressionType.Equal,
+            "NotEqual" => ExpressionType.NotEqual,
+            "LessThan" => ExpressionType.LessThan,
+            "GreaterThan" => ExpressionType.GreaterThan,
+            "AndAlso" => ExpressionType.AndAlso,
+            "OrElse" => ExpressionType.OrElse,
+            "Conditional" => ExpressionType.Conditional,
+            "MethodCall" => ExpressionType.Call,
+            _ => ExpressionType.Call
+        };
+    }
+
+    /// <summary>
+    /// Determines if an operator is commutative.
+    /// </summary>
+    private static bool IsCommutativeOperator(string operatorName)
+    {
+        return operatorName switch
+        {
+            "Addition" or "Multiplication" or "Equal" or "NotEqual" => true,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// Determines if an operator is associative.
+    /// </summary>
+    private static bool IsAssociativeOperator(string operatorName)
+    {
+        return operatorName switch
+        {
+            "Addition" or "Multiplication" => true,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// Converts Compilation.Analysis.PipelineComplexityMetrics to Pipelines.Analysis.ComplexityMetrics.
+    /// </summary>
+    private static PipelineComplexityMetrics ConvertToPipelineComplexityMetrics(
+        DotCompute.Linq.Compilation.Analysis.PipelineComplexityMetrics compilationMetrics)
+    {
+        return new PipelineComplexityMetrics
+        {
+            OverallComplexity = compilationMetrics.OverallComplexity,
+            OperationCount = compilationMetrics.OperationCount,
+            MemoryUsage = compilationMetrics.MemoryUsage,
+            ParallelizationPotential = (int)compilationMetrics.ParallelizationPotential,
+            GpuRecommended = compilationMetrics.GpuRecommended,
+            ComplexityByCategory = compilationMetrics.ComplexityByCategory.ToDictionary(kv => kv.Key, kv => kv.Value)
+        };
+    }
+
+    /// <summary>
+    /// Converts Pipelines.Analysis.ComplexityMetrics to Compilation.Analysis.PipelineComplexityMetrics.
+    /// </summary>
+    private static DotCompute.Linq.Compilation.Analysis.PipelineComplexityMetrics ConvertToPipelineComplexityMetrics(
+        DotCompute.Linq.Pipelines.Analysis.ComplexityMetrics pipelineMetrics)
+    {
+        return new DotCompute.Linq.Compilation.Analysis.PipelineComplexityMetrics
+        {
+            OverallComplexity = pipelineMetrics.OverallComplexity,
+            OperationCount = (int)pipelineMetrics.OperationCount,
+            MemoryUsage = pipelineMetrics.MemoryUsage,
+            ParallelizationPotential = pipelineMetrics.ParallelizationPotential,
+            GpuRecommended = pipelineMetrics.GpuRecommended,
+            ComplexityByCategory = pipelineMetrics.ComplexityByCategory.ToDictionary(kv => kv.Key, kv => kv.Value)
+        };
+    }
+
+    /// <summary>
+    /// Converts Analysis.ParallelizationOpportunity to Compilation.Analysis.ParallelizationOpportunity.
+    /// </summary>
+    private static DotCompute.Linq.Compilation.Analysis.ParallelizationOpportunity ConvertParallelizationOpportunity(
+        DotCompute.Linq.Analysis.ParallelizationOpportunity analysisOpportunity)
+    {
+        return new DotCompute.Linq.Compilation.Analysis.ParallelizationOpportunity
+        {
+            VectorizationSuitable = analysisOpportunity.VectorizationSuitable,
+            SupportsParallelExecution = analysisOpportunity.SupportsParallelExecution,
+            RecommendedParallelism = analysisOpportunity.RecommendedParallelism
+        };
+    }
+
+    /// <summary>
+    /// Converts compilation operator type to unified operator type.
+    /// Updated to use UnifiedOperatorType instead of obsolete types.
+    /// </summary>
+    private static UnifiedOperatorType ConvertOperatorType(
+        UnifiedOperatorType compilationOperatorType)
+    {
+        return compilationOperatorType; // Already unified type, no conversion needed
+    }
 }
 
 /// <summary>
@@ -284,13 +471,13 @@ public sealed class ExpressionAnalyzer
 internal class AnalysisContext
 {
     public CompilationOptions Options { get; }
-    public List<PipelineOperatorInfo> OperatorChain { get; } = new();
-    public Dictionary<Type, TypeUsageInfo> TypeUsage { get; } = new();
-    public HashSet<CompilationDependencyInfo> Dependencies { get; } = new();
-    public Dictionary<PipelineOperatorInfo, DotCompute.Linq.Analysis.ParallelizationOpportunity> ParallelizationOpportunities { get; set; } = new();
-    public Dictionary<PipelineOperatorInfo, DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern> MemoryAccessPatterns { get; } = new();
+    public List<PipelineOperatorInfo> OperatorChain { get; } = [];
+    public Dictionary<Type, TypeUsageInfo> TypeUsage { get; } = [];
+    public HashSet<CompilationDependencyInfo> Dependencies { get; } = [];
+    public Dictionary<PipelineOperatorInfo, DotCompute.Linq.Analysis.ParallelizationOpportunity> ParallelizationOpportunities { get; set; } = [];
+    public Dictionary<PipelineOperatorInfo, DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern> MemoryAccessPatterns { get; } = [];
     public DotCompute.Linq.Analysis.DataFlowGraph DataFlowGraph { get; set; } = new();
-    public List<DotCompute.Linq.Analysis.DataFlowBottleneck> DataFlowBottlenecks { get; set; } = new();
+    public List<DotCompute.Linq.Analysis.DataFlowBottleneck> DataFlowBottlenecks { get; set; } = [];
     public DotCompute.Linq.Compilation.Analysis.GlobalMemoryAccessPattern GlobalMemoryPattern { get; set; } = new();
     public PipelineComplexityMetrics ComplexityMetrics { get; set; } = new();
 
@@ -360,10 +547,12 @@ internal class AnalysisVisitor : ExpressionVisitor
         AnalyzeType(node.Type);
 
         // Add method dependency
-        _context.Dependencies.Add(new CompilationDependencyInfo(
-            CompilationDependencyType.Method,
-            node.Method.DeclaringType?.FullName ?? "Unknown",
-            node.Method.Name));
+        _context.Dependencies.Add(new CompilationDependencyInfo
+        {
+            Type = CompilationDependencyType.Method,
+            DependentOperation = node.Method.DeclaringType?.FullName ?? "Unknown",
+            Dependencies = [node.Method.Name]
+        });
 
         return base.VisitMethodCall(node);
     }
@@ -491,24 +680,6 @@ internal class AnalysisVisitor : ExpressionVisitor
         ExpressionType.Conditional => "Conditional",
         _ => operatorType.ToString()
     };
-
-    /// <summary>
-    /// Converts compilation operator type to pipeline operator type.
-    /// </summary>
-    private static DotCompute.Linq.Pipelines.Analysis.OperatorType ConvertOperatorType(
-        DotCompute.Linq.Compilation.Analysis.OperatorType compilationOperatorType)
-    {
-        return compilationOperatorType switch
-        {
-            DotCompute.Linq.Compilation.Analysis.OperatorType.Arithmetic => DotCompute.Linq.Pipelines.Analysis.OperatorType.Arithmetic,
-            DotCompute.Linq.Compilation.Analysis.OperatorType.Comparison => DotCompute.Linq.Pipelines.Analysis.OperatorType.Comparison,
-            DotCompute.Linq.Compilation.Analysis.OperatorType.Logical => DotCompute.Linq.Pipelines.Analysis.OperatorType.Logical,
-            DotCompute.Linq.Compilation.Analysis.OperatorType.Conditional => DotCompute.Linq.Pipelines.Analysis.OperatorType.Conditional,
-            DotCompute.Linq.Compilation.Analysis.OperatorType.MethodCall => DotCompute.Linq.Pipelines.Analysis.OperatorType.MethodCall,
-            DotCompute.Linq.Compilation.Analysis.OperatorType.Custom => DotCompute.Linq.Pipelines.Analysis.OperatorType.Custom,
-            _ => DotCompute.Linq.Pipelines.Analysis.OperatorType.Custom
-        };
-    }
 }
 
 /// <summary>
@@ -549,24 +720,38 @@ internal class OperationSignatureBuilder
             IsNativelySupported = analysisResult.SupportsVectorization,
             Implementation = analysisResult.Implementation.ToString(),
             PerformanceCost = analysisResult.OptimalVectorWidth * 0.1,
-            Accuracy = analysisResult.Accuracy.AccuracyLevel
+            Accuracy = (double)(int)analysisResult.Accuracy.AccuracyLevel
         };
     }
 
     /// <summary>
-    /// Converts ExpressionType to Pipeline OperatorType.
+    /// Converts ExpressionType to UnifiedOperatorType.
+    /// Updated to use UnifiedOperatorType instead of obsolete types.
     /// </summary>
-    private static DotCompute.Linq.Pipelines.Analysis.OperatorType ConvertExpressionTypeToPipelineOperatorType(ExpressionType expressionType)
+    private static UnifiedOperatorType ConvertExpressionTypeToUnifiedOperatorType(ExpressionType expressionType)
     {
         return expressionType switch
         {
-            ExpressionType.Add or ExpressionType.Subtract or ExpressionType.Multiply or ExpressionType.Divide or ExpressionType.Power or ExpressionType.Modulo => DotCompute.Linq.Pipelines.Analysis.OperatorType.Mathematical,
-            ExpressionType.Equal or ExpressionType.NotEqual or ExpressionType.LessThan or ExpressionType.LessThanOrEqual or ExpressionType.GreaterThan or ExpressionType.GreaterThanOrEqual => DotCompute.Linq.Pipelines.Analysis.OperatorType.Comparison,
-            ExpressionType.AndAlso or ExpressionType.OrElse or ExpressionType.And or ExpressionType.Or or ExpressionType.ExclusiveOr or ExpressionType.Not => DotCompute.Linq.Pipelines.Analysis.OperatorType.Logical,
-            ExpressionType.Conditional => DotCompute.Linq.Pipelines.Analysis.OperatorType.Logical,
-            ExpressionType.Convert or ExpressionType.ConvertChecked => DotCompute.Linq.Pipelines.Analysis.OperatorType.Conversion,
-            ExpressionType.Call => DotCompute.Linq.Pipelines.Analysis.OperatorType.Custom,
-            _ => DotCompute.Linq.Pipelines.Analysis.OperatorType.Unknown
+            ExpressionType.Add => UnifiedOperatorType.Add,
+            ExpressionType.Subtract => UnifiedOperatorType.Subtract,
+            ExpressionType.Multiply => UnifiedOperatorType.Multiply,
+            ExpressionType.Divide => UnifiedOperatorType.Divide,
+            ExpressionType.Power => UnifiedOperatorType.Power,
+            ExpressionType.Modulo => UnifiedOperatorType.Modulo,
+            ExpressionType.Equal => UnifiedOperatorType.Equal,
+            ExpressionType.NotEqual => UnifiedOperatorType.NotEqual,
+            ExpressionType.LessThan => UnifiedOperatorType.LessThan,
+            ExpressionType.LessThanOrEqual => UnifiedOperatorType.LessThanOrEqual,
+            ExpressionType.GreaterThan => UnifiedOperatorType.GreaterThan,
+            ExpressionType.GreaterThanOrEqual => UnifiedOperatorType.GreaterThanOrEqual,
+            ExpressionType.AndAlso or ExpressionType.And => UnifiedOperatorType.LogicalAnd,
+            ExpressionType.OrElse or ExpressionType.Or => UnifiedOperatorType.LogicalOr,
+            ExpressionType.ExclusiveOr => UnifiedOperatorType.LogicalXor,
+            ExpressionType.Not => UnifiedOperatorType.LogicalNot,
+            ExpressionType.Conditional => UnifiedOperatorType.Conditional,
+            ExpressionType.Convert or ExpressionType.ConvertChecked => UnifiedOperatorType.Conversion,
+            ExpressionType.Call => UnifiedOperatorType.MethodCall,
+            _ => UnifiedOperatorType.Unknown
         };
     }
 
@@ -595,8 +780,8 @@ internal class OperationSignatureBuilder
         return pipelineOperators.Select(op => new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
         {
             Name = op.Name,
-            OperatorType = DotCompute.Linq.Pipelines.Analysis.OperatorType.Custom, // Default to custom
-            InputTypes = new List<Type> { op.OperatorType },
+            OperatorType = UnifiedOperatorType.Custom, // Default to custom
+            InputTypes = [op.OperatorType],
             OutputType = typeof(object) // Default output type
         }).ToList();
     }

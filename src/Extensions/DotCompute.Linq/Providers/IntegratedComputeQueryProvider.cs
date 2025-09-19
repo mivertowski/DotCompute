@@ -415,7 +415,7 @@ public class KernelOperation
     /// <summary>
     /// Gets or sets metadata about the operation.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 /// <summary>
@@ -451,7 +451,7 @@ public class LinqToKernelTranslator
     private class ExpressionToKernelVisitor : ExpressionVisitor
     {
         private readonly ILogger _logger;
-        private readonly List<KernelOperation> _operations = new();
+        private readonly List<KernelOperation> _operations = [];
         private int _operationCounter = 0;
 
         public ExpressionToKernelVisitor(ILogger logger)

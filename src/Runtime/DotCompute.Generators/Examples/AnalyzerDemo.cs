@@ -36,7 +36,7 @@ public static class AnalyzerDemo
     [Kernel]
     public static void IncorrectThreadingKernel(Span<float> data)  // ← DC010: No Kernel.ThreadId usage
     {
-        for (int i = 0; i < data.Length; i++)  // ← Should use Kernel.ThreadId.X
+        for (var i = 0; i < data.Length; i++)  // ← Should use Kernel.ThreadId.X
         {
             data[i] *= 2.0f;
         }
@@ -46,7 +46,7 @@ public static class AnalyzerDemo
     [Kernel]
     public static void NoBoundsCheckKernel(Span<float> data)  // ← DC011: Missing bounds check
     {
-        int index = GetThreadIndex();
+        var index = GetThreadIndex();
         data[index] = data[index] * 2.0f;  // ← No bounds validation
     }
 
@@ -54,7 +54,7 @@ public static class AnalyzerDemo
     [Kernel(Backends = KernelBackends.All, VectorSize = 8)]
     public static void OptimalKernel(ReadOnlySpan<float> input, Span<float> output)
     {
-        int index = ThreadId.X;  // ✅ Correct threading model (DC010 compliant)
+        var index = ThreadId.X;  // ✅ Correct threading model (DC010 compliant)
 
 
         if (index >= output.Length)
@@ -76,8 +76,8 @@ public static class AnalyzerDemo
         int width,
         int height)
     {
-        int row = ThreadId.Y;    // ✅ 2D threading model
-        int col = ThreadId.X;
+        var row = ThreadId.Y;    // ✅ 2D threading model
+        var col = ThreadId.X;
 
 
         if (row >= height || col >= width)
@@ -86,8 +86,8 @@ public static class AnalyzerDemo
         }
 
 
-        float sum = 0.0f;
-        for (int k = 0; k < width; k++)
+        var sum = 0.0f;
+        for (var k = 0; k < width; k++)
         {
             sum += matrixA[row * width + k] * matrixB[k * width + col];
         }
@@ -99,7 +99,7 @@ public static class AnalyzerDemo
     public static void ProblematicKernel(float[] data)  // ← DC002: Should use Span<float>
     {
         // DC010: Not using Kernel.ThreadId
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             // DC011: No bounds check on array access
             // DC005: Potential memory access pattern issues
@@ -164,7 +164,7 @@ public static class CodeFixExamples
     // [Kernel] // Commented out due to local Kernel conflict
     public static void FixedMethod(Span<float> data)  // ✅ Now static + Span<T>
     {
-        int index = 0; // Kernel.ThreadId.X;  // ✅ Added by code fixer - using 0 as Kernel is not accessible
+        var index = 0; // Kernel.ThreadId.X;  // ✅ Added by code fixer - using 0 as Kernel is not accessible
         if (index >= data.Length)
         {
             return;  // ✅ Added by code fixer
@@ -182,7 +182,7 @@ public static class CodeFixExamples
     // [Kernel]  // ✅ Added by code fixer - Commented out due to local Kernel conflict
     public static void ProcessData(Span<float> input, Span<float> output)
     {
-        int index = 0; // Kernel.ThreadId.X; - using 0 as Kernel is not accessible
+        var index = 0; // Kernel.ThreadId.X; - using 0 as Kernel is not accessible
         if (index >= output.Length)
         {
             return;
@@ -202,7 +202,7 @@ public static class PerformanceAnalysisExamples
     [Kernel]
     public static void VectorizableLoop(ReadOnlySpan<float> input, Span<float> output)
     {
-        int index = ThreadId.X;
+        var index = ThreadId.X;
         if (index >= output.Length)
         {
             return;
@@ -218,7 +218,7 @@ public static class PerformanceAnalysisExamples
 
     public static void SuboptimalMemoryAccess(Span<float> data)
     {
-        int index = ThreadId.X;
+        var index = ThreadId.X;
         if (index >= data.Length)
         {
             return;
@@ -226,7 +226,7 @@ public static class PerformanceAnalysisExamples
 
         // ⚠️ DC005: Non-coalesced memory access pattern
 
-        int strideIndex = (index * 7) % data.Length;  // Non-sequential access
+        var strideIndex = (index * 7) % data.Length;  // Non-sequential access
         data[strideIndex] = data[index] * 2.0f;
     }
 
@@ -234,7 +234,7 @@ public static class PerformanceAnalysisExamples
     [Kernel(Backends = KernelBackends.CUDA)]  // ⚠️ DC012: Simple operation doesn't need GPU
     public static void SimpleOperation(Span<float> data)
     {
-        int index = ThreadId.X;
+        var index = ThreadId.X;
         if (index >= data.Length)
         {
             return;

@@ -30,6 +30,11 @@ namespace DotCompute.Abstractions
         CUDA = 2,
 
         /// <summary>
+        /// NVIDIA CUDA GPU (alias for CUDA).
+        /// </summary>
+        Cuda = CUDA,
+
+        /// <summary>
         /// AMD ROCm GPU.
         /// </summary>
         ROCm = 3,

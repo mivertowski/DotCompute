@@ -371,7 +371,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int concurrentCount = 10;
 
 
-            for (int i = 0; i < concurrentCount; i++)
+            for (var i = 0; i < concurrentCount; i++)
             {
                 tasks.Add(Task.Run(async () =>
                 {
@@ -456,7 +456,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int librarySize = 20;
 
 
-            for (int i = 0; i < librarySize; i++)
+            for (var i = 0; i < librarySize; i++)
             {
                 kernelLibrary.Add(new KernelDefinition
                 {

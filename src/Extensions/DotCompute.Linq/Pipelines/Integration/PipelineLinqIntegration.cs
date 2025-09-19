@@ -170,14 +170,13 @@ public class PipelineOrchestrationService : IPipelineOrchestrationService
 
             // Execute through orchestrator
 
-            var result = await _orchestrator.ExecuteKernelAsync<T>(
+            var result = await _orchestrator.ExecuteKernelAsync(
                 recommendation.RecommendedKernel,
                 recommendation.Parameters.ToArray(),
-                executionContext,
                 cancellationToken);
 
             _logger.LogInformation("Orchestrated pipeline execution completed successfully");
-            return result;
+            return (T)(result ?? throw new InvalidOperationException("Orchestrated pipeline execution returned null result"));
         }
         catch (Exception ex)
         {
@@ -209,7 +208,7 @@ public class PipelineOrchestrationService : IPipelineOrchestrationService
             EstimatedExecutionTime = performanceReport.EstimatedExecutionTime,
             EstimatedMemoryUsage = memoryEstimate.PeakMemoryUsage,
             OptimizationRecommendations = performanceReport.Recommendations,
-            Parameters = new List<object> { queryable.Expression },
+            Parameters = [queryable.Expression],
             Confidence = performanceReport.ConfidenceLevel
         };
 
@@ -375,7 +374,7 @@ public class PipelineBackendIntegration : IPipelineBackendIntegration
 
         var isCompatible = backend switch
         {
-            "CUDA" => analysisResult.Bottlenecks.All(b => b.Type != BottleneckType.ComputeThroughput),
+            "CUDA" => analysisResult.Bottlenecks.All(b => b.Type != DotCompute.Linq.Pipelines.Models.BottleneckType.ComputeThroughput),
             "CPU" => true, // CPU is always compatible
             _ => false
         };
@@ -386,7 +385,7 @@ public class PipelineBackendIntegration : IPipelineBackendIntegration
             Backend = backend,
             CompatibilityScore = isCompatible ? 0.9 : 0.1,
             Limitations = analysisResult.Bottlenecks.Select(b => b.Description).ToList(),
-            Recommendations = isCompatible ? new List<string>() : new List<string> { $"Consider using CPU backend instead of {backend}" }
+            Recommendations = isCompatible ? [] : [$"Consider using CPU backend instead of {backend}"]
         };
     }
 
@@ -584,10 +583,10 @@ public class ExecutionRecommendation
     public long EstimatedMemoryUsage { get; set; }
 
     /// <summary>Optimization recommendations.</summary>
-    public List<string> OptimizationRecommendations { get; set; } = new();
+    public List<string> OptimizationRecommendations { get; set; } = [];
 
     /// <summary>Execution parameters.</summary>
-    public List<object> Parameters { get; set; } = new();
+    public List<object> Parameters { get; set; } = [];
 
     /// <summary>Confidence in the recommendation.</summary>
     public double Confidence { get; set; }
@@ -608,10 +607,10 @@ public class BackendCompatibilityResult
     public double CompatibilityScore { get; set; }
 
     /// <summary>Known limitations with this backend.</summary>
-    public List<string> Limitations { get; set; } = new();
+    public List<string> Limitations { get; set; } = [];
 
     /// <summary>Recommendations for better compatibility.</summary>
-    public List<string> Recommendations { get; set; } = new();
+    public List<string> Recommendations { get; set; } = [];
 }
 
 /// <summary>
@@ -678,7 +677,7 @@ internal class ProviderAdapter : IntegratedComputeQueryProvider
 
     public new object Execute(Expression expression)
     {
-        return _pipelineProvider.Execute(expression);
+        return _pipelineProvider.Execute(expression) ?? throw new InvalidOperationException("Pipeline execution returned null result");
     }
 }
 

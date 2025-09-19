@@ -2,7 +2,25 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Models.Pipelines;
+using DotCompute.Abstractions.Types;
+using DotCompute.Core.Telemetry;
+using DotCompute.Core.Models;
 using DotCompute.Core.Pipelines.Types;
+// using DotCompute.Core.Pipelines.Models; // Removed to avoid ambiguity - using alias instead
+
+// Type aliases to resolve ambiguous references
+using PipelineExecutionContext = DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext;
+using SynchronizationMode = DotCompute.Abstractions.Types.SynchronizationMode;
+using DotCompute.Abstractions.Validation;
+using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
+using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
+using SynchronizationStrategyEnum = DotCompute.Core.Pipelines.Types.SynchronizationStrategy;
+using CoreStageExecutionResult = DotCompute.Core.Pipelines.Models.StageExecutionResult;
+using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
+using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
+using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;
 
 namespace DotCompute.Core.Pipelines.Stages
 {
@@ -39,7 +57,7 @@ namespace DotCompute.Core.Pipelines.Stages
         public IReadOnlyDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
 
         /// <inheritdoc/>
-        public async ValueTask<StageExecutionResult> ExecuteAsync(
+        public async ValueTask<AbsStageExecutionResult> ExecuteAsync(
             PipelineExecutionContext context,
             CancellationToken cancellationToken = default)
         {
@@ -58,14 +76,14 @@ namespace DotCompute.Core.Pipelines.Stages
                     CancellationToken = cancellationToken
                 };
 
-                var results = new List<StageExecutionResult>();
+                var results = new List<AbsStageExecutionResult>();
                 var outputs = new Dictionary<string, object>(context.Inputs);
 
                 switch (_synchronizationMode)
                 {
                     case SynchronizationMode.WaitAll:
                         // Performance optimization: Use pre-allocated array for better performance
-                        var tasks = new Task<StageExecutionResult>[_parallelStages.Count];
+                        var tasks = new Task<AbsStageExecutionResult>[_parallelStages.Count];
                         for (var i = 0; i < _parallelStages.Count; i++)
                         {
                             var stage = _parallelStages[i];
@@ -110,9 +128,9 @@ namespace DotCompute.Core.Pipelines.Stages
                 // Merge outputs from all stages
                 foreach (var result in results)
                 {
-                    if (result.Success && result.Outputs != null)
+                    if (result.Success && result.OutputData != null)
                     {
-                        foreach (var (key, value) in result.Outputs)
+                        foreach (var (key, value) in result.OutputData)
                         {
                             outputs[key] = value;
                         }
@@ -127,18 +145,12 @@ namespace DotCompute.Core.Pipelines.Stages
                 var endMemory = GC.GetTotalMemory(false);
 
                 var success = results.All(r => r.Success);
-                var totalMemoryUsage = results.Sum(r => r.MemoryUsage?.AllocatedBytes ?? 0);
+                var totalMemoryUsage = results.Sum(r => r.MemoryUsed);
 
-                var memoryUsage = new MemoryUsageStats
-                {
-                    AllocatedBytes = Math.Max(allocatedBytes, totalMemoryUsage),
-                    PeakBytes = Math.Max(endMemory, startMemory + totalMemoryUsage),
-                    AllocationCount = results.Sum(r => r.MemoryUsage?.AllocationCount ?? 0),
-                    DeallocationCount = results.Sum(r => r.MemoryUsage?.DeallocationCount ?? 0)
-                };
+                var memoryUsed = Math.Max(allocatedBytes, totalMemoryUsage);
 
                 _metrics.RecordExecution(stopwatch.Elapsed, success);
-                _metrics.RecordMemoryUsage(memoryUsage.AllocatedBytes);
+                _metrics.RecordMemoryUsage(memoryUsed);
 
                 // Calculate real parallel efficiency
                 var parallelEfficiency = CalculateParallelEfficiency(results);
@@ -149,14 +161,14 @@ namespace DotCompute.Core.Pipelines.Stages
                 var expectedCpuUtilization = Math.Min(1.0, parallelEfficiency * _maxDegreeOfParallelism / Environment.ProcessorCount);
                 var syncOverhead = Math.Max(0.0, (expectedCpuUtilization - avgCpuUtilization) / expectedCpuUtilization);
 
-                return new StageExecutionResult
+                return new AbsStageExecutionResult
                 {
                     StageId = Id,
                     Success = success,
-                    Duration = stopwatch.Elapsed,
-                    Outputs = outputs.Count > context.Inputs.Count ? outputs : null,
-                    MemoryUsage = memoryUsage,
-                    Metrics = new Dictionary<string, double>
+                    ExecutionTime = stopwatch.Elapsed,
+                    OutputData = outputs.Count > context.Inputs.Count ? outputs : [],
+                    MemoryUsed = memoryUsed,
+                    Metadata = new Dictionary<string, object>
                     {
                         ["ParallelEfficiency"] = parallelEfficiency,
                         ["LoadBalance"] = loadBalance,
@@ -172,11 +184,13 @@ namespace DotCompute.Core.Pipelines.Stages
                 stopwatch.Stop();
                 _metrics.RecordExecution(stopwatch.Elapsed, false);
 
-                return new StageExecutionResult
+                return new AbsStageExecutionResult
                 {
                     StageId = Id,
                     Success = false,
-                    Duration = stopwatch.Elapsed,
+                    ExecutionTime = stopwatch.Elapsed,
+                    OutputData = [],
+                    MemoryUsed = 0,
                     Error = ex
                 };
             }
@@ -185,28 +199,28 @@ namespace DotCompute.Core.Pipelines.Stages
         /// <inheritdoc/>
         public StageValidationResult Validate()
         {
-            var errors = new List<string>();
+            var errors = new List<ValidationIssue>();
             var warnings = new List<string>();
 
             if (_parallelStages.Count == 0)
             {
-                errors.Add("Parallel stage must contain at least one sub-stage");
+                errors.Add(new ValidationIssue(ValidationSeverity.Error, "Parallel stage must contain at least one sub-stage", "PARALLEL_001"));
             }
 
             if (_maxDegreeOfParallelism <= 0)
             {
-                errors.Add("Max degree of parallelism must be positive");
+                errors.Add(new ValidationIssue(ValidationSeverity.Error, "Max degree of parallelism must be positive", "PARALLEL_002"));
             }
 
             // Validate all sub-stages
             foreach (var stage in _parallelStages)
             {
                 var stageValidation = stage.Validate();
-                if (!stageValidation.IsValid && stageValidation.Errors != null)
+                if (!stageValidation.IsValid && stageValidation.Issues != null)
                 {
-                    foreach (var error in stageValidation.Errors)
+                    foreach (var error in stageValidation.Issues)
                     {
-                        errors.Add($"Sub-stage '{stage.Name}': {error}");
+                        errors.Add(new ValidationIssue(ValidationSeverity.Error, $"Sub-stage '{stage.Name}': {error.Message}", "PARALLEL_003"));
                     }
                 }
 
@@ -222,7 +236,7 @@ namespace DotCompute.Core.Pipelines.Stages
             return new StageValidationResult
             {
                 IsValid = errors.Count == 0,
-                Errors = errors.Count > 0 ? errors : null,
+                Issues = errors.Count > 0 ? errors : null,
                 Warnings = warnings.Count > 0 ? warnings : null
             };
         }
@@ -230,32 +244,32 @@ namespace DotCompute.Core.Pipelines.Stages
         /// <inheritdoc/>
         public IStageMetrics GetMetrics() => _metrics;
 
-        private static async Task<StageExecutionResult> ExecuteStageAsync(
+        private static async Task<AbsStageExecutionResult> ExecuteStageAsync(
             IPipelineStage stage,
             PipelineExecutionContext context,
             CancellationToken cancellationToken) => await stage.ExecuteAsync(context, cancellationToken);
 
-        private static double CalculateParallelEfficiency(List<StageExecutionResult> results)
+        private static double CalculateParallelEfficiency(List<AbsStageExecutionResult> results)
         {
             if (results.Count == 0)
             {
                 return 0;
             }
 
-            var totalTime = results.Sum(r => r.Duration.TotalMilliseconds);
-            var maxTime = results.Max(r => r.Duration.TotalMilliseconds);
+            var totalTime = results.Sum(r => r.ExecutionTime.TotalMilliseconds);
+            var maxTime = results.Max(r => r.ExecutionTime.TotalMilliseconds);
 
             return maxTime > 0 ? (totalTime / (results.Count * maxTime)) : 0;
         }
 
-        private static double CalculateLoadBalance(List<StageExecutionResult> results)
+        private static double CalculateLoadBalance(List<AbsStageExecutionResult> results)
         {
             if (results.Count == 0)
             {
                 return 1;
             }
 
-            var durations = results.Select(r => r.Duration.TotalMilliseconds).ToList();
+            var durations = results.Select(r => r.ExecutionTime.TotalMilliseconds).ToList();
             var mean = durations.Average();
             var variance = durations.Sum(d => Math.Pow(d - mean, 2)) / durations.Count;
             var stdDev = Math.Sqrt(variance);
@@ -263,7 +277,7 @@ namespace DotCompute.Core.Pipelines.Stages
             return mean > 0 ? Math.Max(0, 1 - (stdDev / mean)) : 1;
         }
 
-        private static double CalculateSynchronizationOverhead(List<StageExecutionResult> results)
+        private static double CalculateSynchronizationOverhead(List<AbsStageExecutionResult> results)
         {
             if (results.Count <= 1)
             {
@@ -271,7 +285,7 @@ namespace DotCompute.Core.Pipelines.Stages
             }
 
             // Calculate synchronization overhead based on variance in execution times
-            var executionTimes = results.Select(r => r.Duration.TotalMilliseconds).ToList();
+            var executionTimes = results.Select(r => r.ExecutionTime.TotalMilliseconds).ToList();
             var mean = executionTimes.Average();
             var variance = executionTimes.Sum(t => Math.Pow(t - mean, 2)) / executionTimes.Count;
             var stdDev = Math.Sqrt(variance);
@@ -304,7 +318,7 @@ namespace DotCompute.Core.Pipelines.Stages
             return 0.0;
         }
 
-        private static double CalculateActualParallelism(List<StageExecutionResult> results, TimeSpan totalDuration)
+        private static double CalculateActualParallelism(List<AbsStageExecutionResult> results, TimeSpan totalDuration)
         {
             if (results.Count == 0 || totalDuration.TotalMilliseconds == 0)
             {
@@ -312,7 +326,7 @@ namespace DotCompute.Core.Pipelines.Stages
             }
 
             // Calculate the sum of all stage durations
-            var totalStageDuration = results.Sum(r => r.Duration.TotalMilliseconds);
+            var totalStageDuration = results.Sum(r => r.ExecutionTime.TotalMilliseconds);
 
             // Actual parallelism is the ratio of total work time to wall clock time
             var actualParallelism = totalStageDuration / totalDuration.TotalMilliseconds;
@@ -324,22 +338,22 @@ namespace DotCompute.Core.Pipelines.Stages
         /// <summary>
         /// Executes custom synchronization strategies for parallel stages.
         /// </summary>
-        private async Task ExecuteCustomSynchronizationAsync(PipelineExecutionContext context, List<StageExecutionResult> results, CancellationToken cancellationToken)
+        private async Task ExecuteCustomSynchronizationAsync(PipelineExecutionContext context, List<AbsStageExecutionResult> results, CancellationToken cancellationToken)
         {
             // Implementation of custom synchronization patterns
             var customStrategy = DetermineCustomStrategy(context);
 
             switch (customStrategy)
             {
-                case CustomSyncStrategy.BarrierSync:
+                case SynchronizationStrategyEnum.BarrierSync:
                     await ExecuteBarrierSynchronizationAsync(context, results, cancellationToken);
                     break;
 
-                case CustomSyncStrategy.ProducerConsumer:
+                case SynchronizationStrategyEnum.ProducerConsumer:
                     await ExecuteProducerConsumerPatternAsync(context, results, cancellationToken);
                     break;
 
-                case CustomSyncStrategy.WorkStealing:
+                case SynchronizationStrategyEnum.WorkStealing:
                     await ExecuteWorkStealingPatternAsync(context, results, cancellationToken);
                     break;
 
@@ -352,29 +366,29 @@ namespace DotCompute.Core.Pipelines.Stages
             }
         }
 
-        private CustomSyncStrategy DetermineCustomStrategy(PipelineExecutionContext context)
+        private SynchronizationStrategyEnum DetermineCustomStrategy(PipelineExecutionContext context)
         {
             // Analyze context and metadata to determine optimal synchronization strategy
             if (_parallelStages.Count > 4)
             {
-                return CustomSyncStrategy.WorkStealing;
+                return SynchronizationStrategyEnum.WorkStealing;
             }
             else if (_parallelStages.Any(s => s.Type == PipelineStageType.Custom))
             {
-                return CustomSyncStrategy.ProducerConsumer;
+                return SynchronizationStrategyEnum.ProducerConsumer;
             }
             else if (_hasBarrier)
             {
-                return CustomSyncStrategy.BarrierSync;
+                return SynchronizationStrategyEnum.BarrierSync;
             }
 
-            return CustomSyncStrategy.Default;
+            return SynchronizationStrategyEnum.Default;
         }
 
-        private async Task ExecuteBarrierSynchronizationAsync(PipelineExecutionContext context, List<StageExecutionResult> results, CancellationToken cancellationToken)
+        private async Task ExecuteBarrierSynchronizationAsync(PipelineExecutionContext context, List<AbsStageExecutionResult> results, CancellationToken cancellationToken)
         {
             using var barrier = new Barrier(_parallelStages.Count);
-            var tasks = new List<Task<StageExecutionResult>>();
+            var tasks = new List<Task<AbsStageExecutionResult>>();
 
             foreach (var stage in _parallelStages)
             {
@@ -392,7 +406,7 @@ namespace DotCompute.Core.Pipelines.Stages
             results.AddRange(stageResults);
         }
 
-        private async Task ExecuteProducerConsumerPatternAsync(PipelineExecutionContext context, List<StageExecutionResult> results, CancellationToken cancellationToken)
+        private async Task ExecuteProducerConsumerPatternAsync(PipelineExecutionContext context, List<AbsStageExecutionResult> results, CancellationToken cancellationToken)
         {
             var channel = global::System.Threading.Channels.Channel.CreateUnbounded<object>();
             var writer = channel.Writer;
@@ -405,9 +419,9 @@ namespace DotCompute.Core.Pipelines.Stages
             var producerTasks = producers.Select(async stage =>
             {
                 var result = await ExecuteStageAsync(stage, context, cancellationToken);
-                if (result.Outputs != null)
+                if (result.OutputData != null)
                 {
-                    foreach (var output in result.Outputs)
+                    foreach (var output in result.OutputData)
                     {
                         await writer.WriteAsync(output, cancellationToken);
                     }
@@ -431,17 +445,17 @@ namespace DotCompute.Core.Pipelines.Stages
             writer.Complete();
         }
 
-        private async Task ExecuteWorkStealingPatternAsync(PipelineExecutionContext context, List<StageExecutionResult> results, CancellationToken cancellationToken)
+        private async Task ExecuteWorkStealingPatternAsync(PipelineExecutionContext context, List<AbsStageExecutionResult> results, CancellationToken cancellationToken)
         {
             var workQueue = new global::System.Collections.Concurrent.ConcurrentQueue<IPipelineStage>(_parallelStages);
             var workerCount = Math.Min(_maxDegreeOfParallelism, Environment.ProcessorCount);
-            var workers = new List<Task<List<StageExecutionResult>>>();
+            var workers = new List<Task<List<AbsStageExecutionResult>>>();
 
             for (var i = 0; i < workerCount; i++)
             {
                 var worker = Task.Run(async () =>
                 {
-                    var workerResults = new List<StageExecutionResult>();
+                    var workerResults = new List<AbsStageExecutionResult>();
 
                     while (workQueue.TryDequeue(out var stage))
                     {

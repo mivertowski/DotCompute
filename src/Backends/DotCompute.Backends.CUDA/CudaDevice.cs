@@ -600,7 +600,7 @@ namespace DotCompute.Backends.CUDA
             if (!_disposed)
             {
                 _disposed = true;
-                _logger.LogDebugMessage("Disposed CUDA device {_deviceId}");
+                _logger.LogDebugMessage($"Disposed CUDA device {_deviceId}");
             }
         }
     }

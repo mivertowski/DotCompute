@@ -13,6 +13,10 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Telemetry;
+using DotCompute.Core.Optimization.Enums;
+using DotCompute.Core.Optimization.Models;
+using DotCompute.Core.Optimization.Performance;
+using DotCompute.Core.Optimization.Selection;
 
 namespace DotCompute.Core.Optimization;
 
@@ -47,8 +51,8 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options ?? new PerformanceOptimizationOptions();
 
-        _kernelProfiles = new Dictionary<string, KernelPerformanceProfile>();
-        _workloadCache = new Dictionary<string, WorkloadCharacteristics>();
+        _kernelProfiles = [];
+        _workloadCache = [];
 
         _logger.LogInfoMessage($"Performance-optimized orchestrator initialized with {_options.OptimizationStrategy} optimization strategy");
     }
@@ -203,7 +207,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         // This would need to integrate with the actual accelerator runtime
         // For now, returning empty list as placeholder
         await Task.CompletedTask;
-        return new List<IAccelerator>();
+        return [];
     }
 
     private SelectionConstraints? GetSelectionConstraints()
@@ -221,7 +225,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var systemSnapshot = PerformanceMonitor.GetSystemPerformanceSnapshot();
         if (systemSnapshot.CpuUsage > _options.MaxCpuUtilizationThreshold)
         {
-            constraints.DisallowedBackends ??= new HashSet<string>();
+            constraints.DisallowedBackends ??= [];
             constraints.DisallowedBackends.Add("CPU");
         }
 
@@ -666,7 +670,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 public class KernelPerformanceProfile
 {
     public string KernelName { get; set; } = string.Empty;
-    public HashSet<string> ExecutedOnBackends { get; set; } = new();
+    public HashSet<string> ExecutedOnBackends { get; set; } = [];
     public DateTimeOffset LastExecutionTime { get; set; }
     public int TotalExecutions { get; set; }
     public double? HistoricalComputeIntensity { get; set; }

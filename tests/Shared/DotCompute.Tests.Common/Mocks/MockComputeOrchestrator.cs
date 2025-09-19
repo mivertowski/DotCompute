@@ -16,8 +16,8 @@ namespace DotCompute.Tests.Common.Mocks;
 /// </summary>
 public class MockComputeOrchestrator : IComputeOrchestrator
 {
-    private readonly Dictionary<string, Func<object[], Task<object>>> _kernelMocks = new();
-    private readonly List<KernelExecutionRecord> _executionHistory = new();
+    private readonly Dictionary<string, Func<object[], Task<object>>> _kernelMocks = [];
+    private readonly List<KernelExecutionRecord> _executionHistory = [];
 
     /// <summary>
     /// Gets the execution history for verification in tests.
@@ -232,7 +232,7 @@ public class MockComputeOrchestrator : IComputeOrchestrator
                 throw new ArgumentException("Array lengths must match");
 
 
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -263,7 +263,7 @@ public class MockComputeOrchestrator : IComputeOrchestrator
                 throw new ArgumentException("Array lengths must match");
 
 
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] * b[i];
             }

@@ -3,6 +3,7 @@
 
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
+using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
@@ -12,7 +13,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Tests device initialization, memory operations, and hardware verification.
     /// </summary>
     [Trait("Category", "RequiresCUDA")]
-    public class CudaAcceleratorTests : TestBase
+    public class CudaAcceleratorTests : CudaTestBase
     {
         public CudaAcceleratorTests(ITestOutputHelper output) : base(output) { }
 
@@ -30,10 +31,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             _ = accelerator.Should().NotBeNull();
             _ = accelerator.Info.Should().NotBeNull();
-
+            _ = accelerator.Info.ComputeCapability.Should().NotBeNull();
 
             Output.WriteLine($"Device Name: {accelerator.Info.Name}");
-            Output.WriteLine($"Compute Capability: {accelerator.Info.ComputeCapability.Major}.{accelerator.Info.ComputeCapability.Minor}");
+            Output.WriteLine($"Compute Capability: {accelerator.Info.ComputeCapability!.Major}.{accelerator.Info.ComputeCapability.Minor}");
             Output.WriteLine($"Global Memory: {accelerator.Info.GlobalMemoryBytes() / (1024.0 * 1024.0 * 1024.0):F2} GB");
             Output.WriteLine($"Multiprocessors: {accelerator.Info.MultiprocessorCount()}");
             Output.WriteLine($"CUDA Cores (est.): {accelerator.Info.EstimatedCudaCores()}");

@@ -399,7 +399,11 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// </summary>
     public void RecordEvent(string category, string eventName, Dictionary<string, object>? properties = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var telemetryEvent = new MetalTelemetryEvent
         {
@@ -423,7 +427,11 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// </summary>
     public void RecordMetric(string name, object value)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _metrics.AddOrUpdate(name, value, (_, _) => value);
     }
@@ -433,7 +441,11 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// </summary>
     public void RecordTiming(string operation, TimeSpan duration, bool success = true)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         RecordEvent("Performance", "OperationTiming", new Dictionary<string, object>
         {
@@ -451,7 +463,11 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// </summary>
     public void RecordResourceAllocation(MetalResourceType type, long sizeInBytes, bool success = true)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         RecordEvent("Resource", "Allocation", new Dictionary<string, object>
         {
@@ -469,7 +485,11 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// </summary>
     public void RecordError(string component, MetalError errorCode, string? message = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         RecordEvent("Error", "ErrorOccurred", new Dictionary<string, object>
         {
@@ -521,7 +541,11 @@ public sealed class MetalExecutionTelemetry : IDisposable
 
     private void GeneratePeriodicReport(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {

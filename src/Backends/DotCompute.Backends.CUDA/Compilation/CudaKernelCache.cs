@@ -966,6 +966,75 @@ public sealed class CudaKernelCache : IDisposable
     }
 
     /// <summary>
+    /// Optimizes cache performance based on current metrics and usage patterns.
+    /// </summary>
+    public void OptimizeCachePerformance()
+    {
+        ThrowIfDisposed();
+
+        var hitRate = CalculateHitRate();
+        var currentSize = GetCacheStats().Size;
+
+        // If hit rate is low and cache isn't full, increase cache size
+        if (hitRate < 0.7 && currentSize < _maxCacheSize * 0.8)
+        {
+            ExpandCache();
+        }
+        // If hit rate is high but cache is full, optimize cache contents
+        else if (hitRate > 0.9 && currentSize >= _maxCacheSize * 0.9)
+        {
+            OptimizeCacheContents();
+        }
+
+        _logger?.LogInformation("Cache optimization completed: Hit rate {HitRate:P2}, Size {Size}",
+            hitRate, currentSize);
+    }
+
+    /// <summary>
+    /// Expands cache size to improve hit rates.
+    /// </summary>
+    private void ExpandCache()
+    {
+        var newSize = Math.Min(_maxCacheSize, (int)(_maxCacheSize * 1.2));
+        if (newSize > _maxCacheSize)
+        {
+            _maxCacheSize = newSize;
+            _logger?.LogInformation("Expanded cache size to {Size} entries", newSize);
+        }
+    }
+
+    /// <summary>
+    /// Optimizes cache contents by removing least valuable entries.
+    /// </summary>
+    private void OptimizeCacheContents()
+    {
+        lock (_lruLock)
+        {
+            // Remove bottom 10% of LRU entries to make room for new, potentially more valuable ones
+            var targetRemovalCount = Math.Max(1, _lruList.Count / 10);
+            var removedCount = 0;
+
+            var node = _lruList.Last;
+            while (node != null && removedCount < targetRemovalCount)
+            {
+                var prev = node.Previous;
+                var key = node.Value;
+
+                if (_memoryCache.TryRemove(key, out _))
+                {
+                    _lruList.RemoveLast();
+                    removedCount++;
+                }
+
+                node = prev;
+            }
+
+            _logger?.LogDebug("Optimized cache contents: Removed {Count} least recently used entries",
+                removedCount);
+        }
+    }
+
+    /// <summary>
     /// Clears all caches.
     /// </summary>
     public void ClearCache()

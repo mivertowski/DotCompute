@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Backends.Metal.Execution.Interfaces;
 using DotCompute.Backends.Metal.Execution.Graph.Configuration;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
@@ -429,12 +431,25 @@ internal class MockCompiledKernel : ICompiledKernel
     public string Name { get; set; } = string.Empty;
     public IntPtr Handle { get; set; }
     public bool IsReady { get; set; } = true;
+    public string BackendType => "Metal";
     public bool IsDisposed { get; private set; }
 
     public Task ExecuteAsync(object[] parameters, CancellationToken cancellationToken = default)
     {
         // Mock implementation - just return completed task
         return Task.CompletedTask;
+    }
+
+    public object GetMetadata()
+    {
+        return new
+        {
+            Name = Name,
+            BackendType = BackendType,
+            IsReady = IsReady,
+            Handle = Handle,
+            IsDisposed = IsDisposed
+        };
     }
 
     public void Dispose()

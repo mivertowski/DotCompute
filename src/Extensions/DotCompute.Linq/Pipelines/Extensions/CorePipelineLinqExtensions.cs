@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Pipelines;
 using DotCompute.Core.Pipelines;
 using DotCompute.Linq.Pipelines.Models;
 
@@ -44,7 +45,7 @@ public static class CorePipelineLinqExtensions
         return pipeline.Then<TInput, TOutput>(
             "LinqTransform",
 
-            input => [input],
+            input => [input!],
 
             new PipelineStageOptions { EnableProfiling = true });
     }
@@ -113,7 +114,7 @@ public static class CorePipelineLinqExtensions
                 kernelName,
 
                 parameterBuilder,
-                new PipelineStageOptions { EnableOptimization = true });
+                new DotCompute.Linq.Pipelines.Models.PipelineStageOptions { EnableOptimization = true });
         }
 
         return pipeline.Optimize(OptimizationStrategy.Aggressive);
@@ -135,7 +136,7 @@ public static class CorePipelineLinqExtensions
 
         return pipeline.Then<T, T>(
             "LinqFilter",
-            input => [input, predicate],
+            input => [input!, predicate],
             new PipelineStageOptions { EnableCaching = true });
     }
 
@@ -156,8 +157,8 @@ public static class CorePipelineLinqExtensions
 
         return pipeline.Then<TInput, TOutput>(
             "LinqSelect",
-            input => [input, selector],
-            new PipelineStageOptions { EnableOptimization = true });
+            input => [input!, selector],
+            new DotCompute.Linq.Pipelines.Models.PipelineStageOptions { EnableOptimization = true });
     }
 
     /// <summary>
@@ -176,7 +177,7 @@ public static class CorePipelineLinqExtensions
 
         return pipeline.Then<T, T>(
             "LinqAggregate",
-            input => [input, aggregator],
+            input => [input!, aggregator],
             new PipelineStageOptions { PreferredBackend = "GPU" });
     }
 
@@ -197,7 +198,7 @@ public static class CorePipelineLinqExtensions
 
         return pipeline.Then<TSource, IGrouping<TKey, TSource>>(
             "LinqGroupBy",
-            input => [input, keySelector],
+            input => [input!, keySelector],
             new PipelineStageOptions { EnableMemoryOptimization = true });
     }
 
@@ -260,13 +261,9 @@ public static class CorePipelineLinqExtensions
         ArgumentNullException.ThrowIfNull(pipeline);
 
         // Create execution context with input data
-        var context = new PipelineExecutionContext
-        {
-            Inputs = new Dictionary<string, object> { ["input"] = input! },
-            MemoryManager = new DefaultPipelineMemoryManager(),
-            Device = new DefaultComputeDevice(),
-            Options = new PipelineExecutionOptions { EnableProfiling = true }
-        };
+        var context = new DotCompute.Core.Pipelines.Models.PipelineExecutionContext();
+        context.Inputs["input"] = input!;
+        context.Options = new DotCompute.Core.Pipelines.Models.PipelineExecutionOptions { EnableProfiling = true };
 
         var result = await pipeline.ExecuteAsync(context, cancellationToken);
 
@@ -308,20 +305,18 @@ public static class CorePipelineLinqExtensions
     /// </summary>
     /// <param name="pipeline">The core pipeline</param>
     /// <returns>LINQ-compatible validation result</returns>
-    public static async Task<DotCompute.Linq.Pipelines.Models.PipelineValidationResult> ValidateLinqAsync(this IKernelPipeline pipeline)
+    public static Task<DotCompute.Linq.Pipelines.Models.PipelineValidationResult> ValidateLinqAsync(this IKernelPipeline pipeline)
     {
         ArgumentNullException.ThrowIfNull(pipeline);
 
-
         var coreResult = pipeline.Validate();
 
-
-        return new DotCompute.Linq.Pipelines.Models.PipelineValidationResult
+        return Task.FromResult(new DotCompute.Linq.Pipelines.Models.PipelineValidationResult
         {
             IsValid = coreResult.IsValid,
             Errors = coreResult.Errors?.Select(e => e.Message).ToList() ?? new List<string>(),
             Warnings = coreResult.Warnings?.Select(w => w.Message).ToList() ?? new List<string>()
-        };
+        });
     }
 
     #endregion
@@ -333,9 +328,9 @@ public static class CorePipelineLinqExtensions
     /// </summary>
     private class DefaultPipelineMemoryManager : DotCompute.Linq.Pipelines.Models.IPipelineMemoryManager
     {
-        public Task<DotCompute.Linq.Pipelines.Models.IMemoryBuffer> AllocateAsync(long size) =>
+        public Task<DotCompute.Linq.Pipelines.Models.IMemoryBuffer> AllocateAsync(long size)
 
-            Task.FromResult<DotCompute.Linq.Pipelines.Models.IMemoryBuffer>(new MemoryBuffer(size));
+            => Task.FromResult<DotCompute.Linq.Pipelines.Models.IMemoryBuffer>(new MemoryBuffer(size));
 
 
         public Task ReleaseAsync(DotCompute.Linq.Pipelines.Models.IMemoryBuffer buffer) => Task.CompletedTask;
@@ -380,7 +375,7 @@ public static class PipelineStageOptionsExtensions
     /// </summary>
     /// <param name="options">Stage options to extend</param>
     /// <returns>Options with optimization enabled</returns>
-    public static PipelineStageOptions EnableOptimization(this PipelineStageOptions options)
+    public static DotCompute.Linq.Pipelines.Models.PipelineStageOptions EnableOptimization(this DotCompute.Linq.Pipelines.Models.PipelineStageOptions options)
     {
         // For Core interface compatibility - would configure optimization in full implementation
         return options;

@@ -573,7 +573,7 @@ namespace DotCompute.Linq.KernelGeneration.Memory
         private bool SupportsUnifiedMemory()
         {
             // Check if device supports unified memory
-            int unifiedAddressing = 0;
+            var unifiedAddressing = 0;
             var result = CudaRuntime.cudaDeviceGetAttribute(
                 ref unifiedAddressing,
                 DotCompute.Backends.CUDA.Types.Native.CudaDeviceAttribute.UnifiedAddressing,
@@ -872,7 +872,7 @@ namespace DotCompute.Linq.KernelGeneration.Memory
         {
             _context = context;
             _logger = logger;
-            _enabledP2PPairs = new HashSet<(int, int)>();
+            _enabledP2PPairs = [];
         }
 
         public void InitializeP2P()

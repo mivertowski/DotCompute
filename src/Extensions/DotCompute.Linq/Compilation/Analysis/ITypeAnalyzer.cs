@@ -140,7 +140,7 @@ public record ParallelizationOpportunity
     public int RecommendedParallelism { get; init; } = 1;
 
     /// <summary>Gets data dependencies that affect parallelization.</summary>
-    public List<string> DataDependencies { get; init; } = new();
+    public List<string> DataDependencies { get; init; } = [];
 
     /// <summary>Gets the estimated speedup from parallelization.</summary>
     public double EstimatedSpeedup { get; init; } = 1.0;
@@ -203,6 +203,9 @@ public enum MemoryAccessPattern
 
     /// <summary>Scatter access pattern.</summary>
     Scatter,
+
+    /// <summary>Coalesced access pattern (GPU optimized).</summary>
+    Coalesced,
 
     /// <summary>Cache-friendly access pattern.</summary>
     CacheFriendly,

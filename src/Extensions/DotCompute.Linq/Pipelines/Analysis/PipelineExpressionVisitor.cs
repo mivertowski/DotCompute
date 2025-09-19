@@ -30,8 +30,8 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _stageStack = new Stack<PipelineStageInfo>();
-        _stages = new List<PipelineStageInfo>();
-        _intermediateResults = new Dictionary<Expression, string>();
+        _stages = [];
+        _intermediateResults = [];
         _optimizationContext = new PipelineOptimizationContext();
         _stageCounter = 0;
     }
@@ -484,9 +484,9 @@ public class PipelineExpressionVisitor : ExpressionVisitor
             StageId = ++_stageCounter,
             KernelName = kernelName,
             StageType = stageType,
-            Parameters = new Dictionary<string, object>(),
-            OptimizationHints = new List<string>(),
-            Dependencies = new List<int>(),
+            Parameters = [],
+            OptimizationHints = [],
+            Dependencies = [],
             EstimatedExecutionTime = TimeSpan.Zero,
             RequiredMemory = 0,
             KernelComplexity = KernelComplexity.Unknown,
@@ -585,7 +585,7 @@ public class PipelineExpressionVisitor : ExpressionVisitor
 
         // Look for stages that can run in parallel
 
-        for (int i = 0; i < stages.Count - 1; i++)
+        for (var i = 0; i < stages.Count - 1; i++)
         {
             var current = stages[i];
             var next = stages[i + 1];

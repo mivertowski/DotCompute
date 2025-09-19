@@ -21,8 +21,8 @@ namespace DotCompute.Generators.CodeFixes;
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(KernelCodeFixProvider)), Shared]
 public class KernelCodeFixProvider : CodeFixProvider
 {
-    public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-        ImmutableArray.Create(
+    public sealed override ImmutableArray<string> FixableDiagnosticIds
+        => ImmutableArray.Create(
             "DC001", // Kernel methods must be static
             "DC002", // Kernel method has invalid parameters
             "DC007", // Method should have [Kernel] attribute

@@ -111,10 +111,10 @@ public sealed class KernelGenerationResult
         SourceCode = sourceCode ?? throw new ArgumentNullException(nameof(sourceCode));
         EntryPointName = entryPointName ?? throw new ArgumentNullException(nameof(entryPointName));
         GeneratedAt = DateTimeOffset.UtcNow;
-        Headers = new List<string>();
-        CompilationFlags = new List<string>();
-        Dependencies = new List<string>();
-        Metadata = new Dictionary<string, object>();
+        Headers = [];
+        CompilationFlags = [];
+        Dependencies = [];
+        Metadata = [];
     }
 
     /// <summary>
@@ -175,8 +175,8 @@ public sealed class KernelTemplateValidationResult
     public KernelTemplateValidationResult(bool isValid)
     {
         IsValid = isValid;
-        Errors = new List<string>();
-        Warnings = new List<string>();
+        Errors = [];
+        Warnings = [];
     }
 
     /// <summary>

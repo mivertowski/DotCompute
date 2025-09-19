@@ -116,7 +116,7 @@ internal static partial class LoggerMessages
     public static partial void LogErrorMessage(this ILogger logger, string message);
 
     [LoggerMessage(EventId = 47004, Level = LogLevel.Error, Message = "{Message}")]
-    public static partial void LogErrorMessage(this ILogger logger, Exception ex, string message);
+    public static partial void LogErrorMessageWithException(this ILogger logger, Exception ex, string message);
 
     [LoggerMessage(EventId = 47005, Level = LogLevel.Trace, Message = "{Message}")]
     public static partial void LogTraceMessage(this ILogger logger, string message);

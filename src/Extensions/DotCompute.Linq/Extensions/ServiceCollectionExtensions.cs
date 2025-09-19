@@ -490,7 +490,7 @@ public class ComputeLinqProviderImpl : IComputeLinqProvider
     private readonly IComputeQueryProviderFactory _providerFactory;
     private readonly IExpressionOptimizer _optimizer;
     private readonly ILogger<ComputeLinqProviderImpl> _logger;
-    private readonly Dictionary<IAccelerator, ComputeQueryProvider> _providers = new();
+    private readonly Dictionary<IAccelerator, ComputeQueryProvider> _providers = [];
     private readonly Lock _lock = new();
 
     /// <summary>

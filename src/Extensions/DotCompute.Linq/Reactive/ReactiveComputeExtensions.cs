@@ -239,7 +239,7 @@ public static class ReactiveComputeExtensions
 
             {
                 var accumulator = seed;
-                for (int i = 0; i < windowSize && i < batch.Length; i++)
+                for (var i = 0; i < windowSize && i < batch.Length; i++)
                 {
                     accumulator = func(accumulator, batch[i]);
                 }
@@ -377,7 +377,7 @@ public static class ReactiveComputeExtensions
         // For now, use CPU fallback until proper kernel execution is implemented
 
         var results = new TResult[batch.Length];
-        for (int i = 0; i < batch.Length; i++)
+        for (var i = 0; i < batch.Length; i++)
         {
             results[i] = selector(batch[i]);
         }
@@ -408,7 +408,7 @@ public static class ReactiveComputeExtensions
         var result = new List<T>(batch.Length);
 
 
-        for (int i = 0; i < batch.Length; i++)
+        for (var i = 0; i < batch.Length; i++)
         {
             if (predicate(batch[i]))
             {

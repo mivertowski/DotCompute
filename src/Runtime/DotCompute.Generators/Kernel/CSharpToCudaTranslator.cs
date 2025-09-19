@@ -31,9 +31,9 @@ internal sealed class CSharpToCudaTranslator
         _semanticModel = semanticModel ?? throw new ArgumentNullException(nameof(semanticModel));
         _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
         _output = new StringBuilder();
-        _variableMapping = new Dictionary<string, string>();
-        _sharedMemoryVariables = new HashSet<string>();
-        _constantMemoryVariables = new HashSet<string>();
+        _variableMapping = [];
+        _sharedMemoryVariables = [];
+        _constantMemoryVariables = [];
         _indentLevel = 0;
     }
 
@@ -227,7 +227,7 @@ internal sealed class CSharpToCudaTranslator
 
         if (forStmt.Incrementors.Any())
         {
-            for (int i = 0; i < forStmt.Incrementors.Count; i++)
+            for (var i = 0; i < forStmt.Incrementors.Count; i++)
             {
                 if (i > 0)
                 {
@@ -453,7 +453,7 @@ internal sealed class CSharpToCudaTranslator
         _output.Append("[");
 
 
-        for (int i = 0; i < elementAccess.ArgumentList.Arguments.Count; i++)
+        for (var i = 0; i < elementAccess.ArgumentList.Arguments.Count; i++)
         {
             if (i > 0)
             {
@@ -501,7 +501,7 @@ internal sealed class CSharpToCudaTranslator
 
 
         _output.Append("(");
-        for (int i = 0; i < invocation.ArgumentList.Arguments.Count; i++)
+        for (var i = 0; i < invocation.ArgumentList.Arguments.Count; i++)
         {
             if (i > 0)
             {
@@ -582,7 +582,7 @@ internal sealed class CSharpToCudaTranslator
         }
         else
         {
-            for (int i = 0; i < arguments.Arguments.Count; i++)
+            for (var i = 0; i < arguments.Arguments.Count; i++)
             {
                 if (i > 0)
                 {
@@ -702,7 +702,7 @@ internal sealed class CSharpToCudaTranslator
 
     private void WriteIndented(string text)
     {
-        for (int i = 0; i < _indentLevel * 4; i++)
+        for (var i = 0; i < _indentLevel * 4; i++)
         {
             _output.Append(' ');
         }

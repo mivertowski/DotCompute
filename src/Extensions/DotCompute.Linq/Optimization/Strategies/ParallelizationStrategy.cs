@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Optimization;
+using DotCompute.Core.Optimization.Enums;
+using DotCompute.Core.Optimization.Models;
 using DotCompute.Linq.Execution;
 using DotCompute.Linq.Optimization.CostModel;
 using DotCompute.Linq.Optimization.Models;
@@ -606,14 +607,14 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
         if (context.IsNumaSystem)
         {
             var coresPerNode = context.AvailableCores / context.NumaNodeCount;
-            for (int i = 0; i < coreCount && i < context.AvailableCores; i++)
+            for (var i = 0; i < coreCount && i < context.AvailableCores; i++)
             {
                 preferredCores.Add(i % context.AvailableCores);
             }
         }
         else
         {
-            for (int i = 0; i < coreCount && i < context.AvailableCores; i++)
+            for (var i = 0; i < coreCount && i < context.AvailableCores; i++)
             {
                 preferredCores.Add(i);
             }
@@ -729,7 +730,7 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
     private List<MemoryTransferGroup> GroupMemoryTransfers(QueryPlan plan)
     {
         // Group related memory transfers for batching
-        return new List<MemoryTransferGroup>();
+        return [];
     }
 
     private async Task OptimizeTransferGroup(MemoryTransferGroup group, ExecutionContext context)
@@ -1057,7 +1058,7 @@ public class GpuOccupancyOptimizer
 
         // Find optimal block size considering register usage and shared memory
 
-        for (int blockSize = warpSize; blockSize <= maxBlockSize; blockSize += warpSize)
+        for (var blockSize = warpSize; blockSize <= maxBlockSize; blockSize += warpSize)
         {
             if (IsOptimalBlockSize(blockSize, operation, context))
             {
@@ -1157,7 +1158,7 @@ public class DynamicScheduler
 // Data structures
 public class WorkloadProfile
 {
-    public Dictionary<string, DotCompute.Linq.Pipelines.Models.WorkloadCharacteristics> OperationCharacteristics { get; set; } = new();
+    public Dictionary<string, DotCompute.Linq.Pipelines.Models.WorkloadCharacteristics> OperationCharacteristics { get; set; } = [];
 
 
     public DotCompute.Linq.Pipelines.Models.WorkloadCharacteristics GetWorkloadCharacteristics(QueryOperation operation)
@@ -1215,7 +1216,7 @@ public class StrategiesGpuOptimizationConfig
 public class StrategiesCpuOptimizationConfig
 {
     public ThreadAffinityConfig ThreadAffinity { get; set; } = new();
-    public List<VectorizationHint> VectorizationHints { get; set; } = new();
+    public List<VectorizationHint> VectorizationHints { get; set; } = [];
     public CacheOptimizationStrategy CacheOptimization { get; set; } = new();
     public HyperThreadingStrategy HyperThreadingStrategy { get; set; }
     public NumaConfiguration? NumaConfiguration { get; set; }
@@ -1224,7 +1225,7 @@ public class StrategiesCpuOptimizationConfig
 public class ThreadAffinityConfig
 {
     public bool UsePhysicalCores { get; set; }
-    public List<int> PreferredCores { get; set; } = new();
+    public List<int> PreferredCores { get; set; } = [];
     public bool AvoidHyperThreading { get; set; }
 }
 

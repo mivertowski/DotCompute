@@ -292,25 +292,47 @@ public class MetalResourceLimits
         var errors = new List<string>();
 
         if (MaxGpuMemoryBytes <= 0)
+        {
             errors.Add("MaxGpuMemoryBytes must be positive");
+        }
+
 
         if (MaxCommandBuffers <= 0)
+        {
             errors.Add("MaxCommandBuffers must be positive");
+        }
+
 
         if (MaxComputeEncoders <= 0)
+        {
             errors.Add("MaxComputeEncoders must be positive");
+        }
+
 
         if (MaxBlitEncoders <= 0)
+        {
             errors.Add("MaxBlitEncoders must be positive");
+        }
+
 
         if (MaxThreadgroupMemoryBytes == 0)
+        {
             errors.Add("MaxThreadgroupMemoryBytes must be greater than 0");
+        }
+
 
         if (MaxKernelArguments <= 0)
+        {
             errors.Add("MaxKernelArguments must be positive");
+        }
+
 
         if (MaxKernelArguments > 31)
+        {
+
             errors.Add("MaxKernelArguments cannot exceed Metal limit of 31");
+        }
+
 
         return errors;
     }

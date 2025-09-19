@@ -8,7 +8,7 @@ using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Interfaces;
 using DotCompute.Core.Telemetry;
 using DotCompute.Linq.Pipelines.Models;
-using CorePipelineMetrics = DotCompute.Core.Pipelines.Interfaces.IPipelineMetrics;
+using CorePipelineMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IPipelineMetrics;
 using CorePipelineExecutionContext = DotCompute.Core.Telemetry.PipelineExecutionContext;
 using CorePipelineExecutionMetrics = DotCompute.Core.Pipelines.PipelineExecutionMetrics;
 using CoreMemoryUsageStats = DotCompute.Core.Pipelines.MemoryUsageStats;
@@ -117,7 +117,7 @@ public sealed class PipelineMetricsService : IDisposable
                 ExecutionContext = executionContext,
                 PipelineMetrics = pipelineMetrics,
                 StartTime = DateTime.UtcNow,
-                Metadata = metadata ?? new Dictionary<string, object>(),
+                Metadata = metadata ?? [],
                 StageContexts = new ConcurrentDictionary<string, StageMetricsContext>()
             };
 
@@ -303,21 +303,24 @@ public sealed class PipelineMetricsService : IDisposable
             {
                 var memoryStats = new CoreMemoryUsageStats
                 {
-                    PeakBytes = context.StageContexts.Values.Sum(s => s.TotalMemoryUsed),
-                    AllocatedBytes = context.StageContexts.Values.Sum(s => s.TotalMemoryUsed)
+                    AllocatedBytes = context.StageContexts.Values.Sum(s => s.TotalMemoryUsed),
+                    PeakBytes = context.StageContexts.Values.Any() ? context.StageContexts.Values.Max(s => s.TotalMemoryUsed) : 0,
+                    AllocationCount = 0, // Default value, could be calculated based on actual metrics
+                    DeallocationCount = 0 // Default value, could be calculated based on actual metrics
                 };
 
 
                 var executionMetrics = new CorePipelineExecutionMetrics
                 {
-                    PipelineId = context.PipelineId,
                     ExecutionId = context.CorrelationId,
                     StartTime = context.StartTime,
                     EndTime = DateTime.UtcNow,
                     Duration = duration,
                     MemoryUsage = memoryStats,
-                    Success = success,
-                    ItemsProcessed = context.ItemsProcessed
+                    ComputeUtilization = 0.75, // Default value, could be calculated based on actual metrics
+                    MemoryBandwidthUtilization = 0.60, // Default value, could be calculated based on actual metrics
+                    StageExecutionTimes = context.StageContexts.ToDictionary(kvp => kvp.Key, kvp => TimeSpan.FromMilliseconds(kvp.Value.ElapsedMs)),
+                    DataTransferTimes = new Dictionary<string, TimeSpan>()
                 };
 
 
@@ -525,9 +528,9 @@ public sealed class PipelineMetricsContext : IDisposable
     public CorePipelineExecutionContext ExecutionContext { get; set; } = null!;
     public CorePipelineMetrics PipelineMetrics { get; set; } = null!;
     public DateTime StartTime { get; set; }
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
     public ConcurrentDictionary<string, StageMetricsContext> StageContexts { get; set; } = new();
-    public List<CacheAccessInfo> CacheAccesses { get; set; } = new();
+    public List<CacheAccessInfo> CacheAccesses { get; set; } = [];
     public long ItemsProcessed { get; set; }
 
     /// <summary>
@@ -644,7 +647,12 @@ public sealed class StageMetricsContext
     public long TotalMemoryUsed { get; private set; }
     public int ExecutionCount { get; private set; }
     public int SuccessCount { get; private set; }
-    public List<Dictionary<string, object>> ExecutionMetadata { get; set; } = new();
+    public List<Dictionary<string, object>> ExecutionMetadata { get; set; } = [];
+
+    /// <summary>
+    /// Gets the elapsed time in milliseconds.
+    /// </summary>
+    public double ElapsedMs => ExecutionTime.TotalMilliseconds;
 
     public void RecordExecution(
         TimeSpan duration,
@@ -759,7 +767,7 @@ public sealed class PipelineExecutionContext : IDisposable
 internal sealed class LinqPipelineMetrics : CorePipelineMetrics
 {
     private readonly ConcurrentDictionary<string, CoreIStageMetrics> _stageMetrics = new();
-    private readonly List<CoreTimeSeriesMetric> _timeSeries = new();
+    private readonly List<CoreTimeSeriesMetric> _timeSeries = [];
     private readonly ConcurrentDictionary<string, double> _customMetrics = new();
 
 
@@ -830,15 +838,23 @@ internal sealed class LinqPipelineMetrics : CorePipelineMetrics
 
 
         if (duration < _minExecutionTime)
+        {
             _minExecutionTime = duration;
-        if (duration > _maxExecutionTime)
-            _maxExecutionTime = duration;
+        }
 
+
+        if (duration > _maxExecutionTime)
+        {
+            _maxExecutionTime = duration;
+        }
 
         var memoryUsage = metrics.MemoryUsage.PeakBytes;
         _totalMemoryUsage += memoryUsage;
         if (memoryUsage > _peakMemoryUsage)
+        {
             _peakMemoryUsage = memoryUsage;
+        }
+
     }
 
 

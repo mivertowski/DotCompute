@@ -35,5 +35,55 @@ namespace DotCompute.Core.Execution.Pipeline
         /// Empty list indicates this stage has no dependencies and can execute immediately.
         /// </summary>
         public List<string> Dependencies { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the input specifications for this stage.
+        /// Defines the expected input data types, shapes, and access patterns.
+        /// Used for memory optimization and data transfer planning.
+        /// </summary>
+        public List<DataSpecification> InputSpecs { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the output specifications for this stage.
+        /// Defines the output data types, shapes, and memory requirements.
+        /// Used for memory allocation and data flow optimization.
+        /// </summary>
+        public List<DataSpecification> OutputSpecs { get; set; } = [];
+    }
+
+    /// <summary>
+    /// Specification for data input or output in a pipeline stage.
+    /// </summary>
+    public class DataSpecification
+    {
+        /// <summary>
+        /// Gets or sets the name of the data specification.
+        /// </summary>
+        public required string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the data type.
+        /// </summary>
+        public required Type DataType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the data shape or dimensions.
+        /// </summary>
+        public int[] Shape { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the total number of elements in the data specification.
+        /// </summary>
+        public long ElementCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the memory access pattern.
+        /// </summary>
+        public string AccessPattern { get; set; } = "ReadWrite";
+
+        /// <summary>
+        /// Gets or sets whether the data is optional.
+        /// </summary>
+        public bool IsOptional { get; set; } = false;
     }
 }

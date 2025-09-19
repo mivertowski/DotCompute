@@ -76,8 +76,8 @@ namespace DotCompute.Linq.Types
         /// </summary>
         /// <param name="value">The string value to parse.</param>
         /// <returns>The corresponding BackendType, or CPU if parsing fails.</returns>
-        public static BackendType ParseBackendType(string value) =>
-            Enum.TryParse<BackendType>(value, true, out var result) ? result : BackendType.CPU;
+        public static BackendType ParseBackendType(string value)
+            => Enum.TryParse<BackendType>(value, true, out var result) ? result : BackendType.CPU;
 
         /// <summary>
         /// Tries to parse a string to BackendType.
@@ -85,8 +85,8 @@ namespace DotCompute.Linq.Types
         /// <param name="value">The string value to parse.</param>
         /// <param name="result">The parsed BackendType if successful.</param>
         /// <returns>True if parsing was successful; otherwise, false.</returns>
-        public static bool TryParseBackendType(string value, out BackendType result) =>
-            Enum.TryParse<BackendType>(value, true, out result);
+        public static bool TryParseBackendType(string value, out BackendType result)
+            => Enum.TryParse<BackendType>(value, true, out result);
 
         /// <summary>
         /// Converts a string to BackendType for comparison operations.
@@ -101,8 +101,8 @@ namespace DotCompute.Linq.Types
         /// <param name="stringValue">The string value to compare.</param>
         /// <param name="backendType">The BackendType to compare with.</param>
         /// <returns>True if they represent the same backend type.</returns>
-        public static bool Equals(string stringValue, BackendType backendType) =>
-            TryParseBackendType(stringValue, out var parsed) && parsed == backendType;
+        public static bool Equals(string stringValue, BackendType backendType)
+            => TryParseBackendType(stringValue, out var parsed) && parsed == backendType;
 
         /// <summary>
         /// Checks if a string value matches a BackendType.
@@ -110,7 +110,7 @@ namespace DotCompute.Linq.Types
         /// <param name="stringValue">The string value to check.</param>
         /// <param name="backendType">The BackendType to match against.</param>
         /// <returns>True if the string matches the BackendType.</returns>
-        public static bool IsBackendType(string stringValue, BackendType backendType) =>
-            Equals(stringValue, backendType);
+        public static bool IsBackendType(string stringValue, BackendType backendType)
+            => Equals(stringValue, backendType);
     }
 }

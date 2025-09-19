@@ -20,12 +20,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
-    <PackageReference Include="coverlet.collector" />
-    <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="Moq" />
+    <!-- Test packages provided by tests/Directory.Build.targets -->
+    <!-- Microsoft.NET.Test.Sdk, xunit, xunit.runner.visualstudio, coverlet.collector, FluentAssertions, Moq automatically included -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />

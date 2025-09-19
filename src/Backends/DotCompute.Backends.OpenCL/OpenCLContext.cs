@@ -66,7 +66,7 @@ internal sealed class OpenCLContext : IDisposable
     {
         ThrowIfDisposed();
 
-        _logger.LogDebugMessage("Creating OpenCL buffer: size={Size}, flags={size, flags}");
+        _logger.LogDebugMessage($"Creating OpenCL buffer: size={size}, flags={flags}");
 
         var buffer = OpenCLRuntime.clCreateBuffer(_context, flags, size, hostPtr, out var error);
         OpenCLException.ThrowIfError(error, "Create buffer");
@@ -83,7 +83,7 @@ internal sealed class OpenCLContext : IDisposable
     {
         ThrowIfDisposed();
 
-        _logger.LogDebugMessage("Creating OpenCL program from source ({source.Length} chars)");
+        _logger.LogDebugMessage($"Creating OpenCL program from source ({source.Length} chars)");
 
         var sources = new[] { source };
         var program = OpenCLRuntime.clCreateProgramWithSource(_context, 1, sources, null, out var error);
@@ -127,7 +127,7 @@ internal sealed class OpenCLContext : IDisposable
     {
         ThrowIfDisposed();
 
-        _logger.LogDebugMessage("Creating kernel: {kernelName}");
+        _logger.LogDebugMessage($"Creating kernel: {kernelName}");
 
         var kernel = OpenCLRuntime.clCreateKernel(program, kernelName, out var error);
         OpenCLException.ThrowIfError(error, $"Create kernel '{kernelName}'");
@@ -282,7 +282,7 @@ internal sealed class OpenCLContext : IDisposable
     /// </summary>
     private void Initialize()
     {
-        _logger.LogDebugMessage("Initializing OpenCL context for device: {_deviceInfo.Name}");
+        _logger.LogDebugMessage($"Initializing OpenCL context for device: {_deviceInfo.Name}");
 
         try
         {

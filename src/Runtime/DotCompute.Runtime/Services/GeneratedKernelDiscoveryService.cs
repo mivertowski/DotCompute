@@ -15,7 +15,7 @@ namespace DotCompute.Runtime.Services;
 public class GeneratedKernelDiscoveryService
 {
     private readonly ILogger<GeneratedKernelDiscoveryService> _logger;
-    private readonly List<Assembly> _scannedAssemblies = new();
+    private readonly List<Assembly> _scannedAssemblies = [];
 
     public GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoveryService> logger)
     {

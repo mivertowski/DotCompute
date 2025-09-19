@@ -245,7 +245,8 @@ public static class ComputeQueryableExtensions
         if (source is IntegratedComputeQueryable<T> integrated)
         {
             var asyncResult = integrated.ExecuteAsync().GetAwaiter().GetResult();
-            return asyncResult.ToArray();
+            // Use collection expression for better performance
+            return [.. asyncResult];
         }
 
         // Fallback to regular LINQ
@@ -266,7 +267,8 @@ public static class ComputeQueryableExtensions
         ArgumentNullException.ThrowIfNull(source);
 
         var results = await source.ExecuteAsync(cancellationToken);
-        return results.ToArray();
+        // Use collection expression for better performance
+        return [.. results];
     }
 
     /// <summary>
@@ -630,7 +632,7 @@ public static class ComputeQueryableExtensions
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        // Convert span to array for queryable interface
+        // Convert enumerable to array for better performance
         var array = source.ToArray();
         return array.AsComputeQueryable(serviceProvider, accelerator);
     }

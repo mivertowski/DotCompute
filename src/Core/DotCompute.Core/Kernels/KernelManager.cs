@@ -8,6 +8,10 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Kernels.Compilation;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
+using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core.Kernels
 {
@@ -557,24 +561,24 @@ namespace DotCompute.Core.Kernels
         /// <summary>
         /// Converts Core KernelLanguage to Abstractions KernelLanguage.
         /// </summary>
-        private static AbstractionsMemory.Types.KernelLanguage ConvertKernelLanguage(KernelLanguage language)
+        private static KernelLanguage ConvertKernelLanguage(KernelLanguage language)
         {
             return language switch
             {
-                KernelLanguage.CSharp => AbstractionsMemory.Types.KernelLanguage.CSharpIL,
-                KernelLanguage.OpenCL => AbstractionsMemory.Types.KernelLanguage.OpenCL,
-                KernelLanguage.CUDA => AbstractionsMemory.Types.KernelLanguage.Cuda,
-                KernelLanguage.Metal => AbstractionsMemory.Types.KernelLanguage.Metal,
-                KernelLanguage.DirectCompute => AbstractionsMemory.Types.KernelLanguage.HLSL,
-                KernelLanguage.Vulkan or KernelLanguage.WebGPU => AbstractionsMemory.Types.KernelLanguage.SPIRV,
-                _ => AbstractionsMemory.Types.KernelLanguage.CSharpIL
+                KernelLanguage.CSharp => KernelLanguage.CSharpIL,
+                KernelLanguage.OpenCL => KernelLanguage.OpenCL,
+                KernelLanguage.CUDA => KernelLanguage.Cuda,
+                KernelLanguage.Metal => KernelLanguage.Metal,
+                KernelLanguage.DirectCompute => KernelLanguage.HLSL,
+                KernelLanguage.Vulkan or KernelLanguage.WebGPU => KernelLanguage.SPIRV,
+                _ => KernelLanguage.CSharpIL
             };
         }
 
         /// <summary>
         /// Converts ICompiledKernel back to ManagedCompiledKernel.
         /// </summary>
-        private static ManagedCompiledKernel ConvertToManagedCompiledKernel(ICompiledKernel compiledKernel, GeneratedKernel generatedKernel)
+        private static ManagedCompiledKernel ConvertToManagedCompiledKernel(AbstractionsICompiledKernel compiledKernel, GeneratedKernel generatedKernel)
         {
             return new ManagedCompiledKernel
             {

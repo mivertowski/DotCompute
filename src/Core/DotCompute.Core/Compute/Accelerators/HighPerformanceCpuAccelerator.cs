@@ -51,9 +51,19 @@ namespace DotCompute.Core.Compute.Accelerators
         public AcceleratorType Type => AcceleratorType.CPU;
 
         /// <summary>
+        /// Gets the device type as a string.
+        /// </summary>
+        public string DeviceType => "CPU";
+
+        /// <summary>
         /// Gets the memory manager for this accelerator.
         /// </summary>
         public IUnifiedMemoryManager Memory => _memoryManager;
+
+        /// <summary>
+        /// Gets the memory manager for this accelerator (alias for Memory).
+        /// </summary>
+        public IUnifiedMemoryManager MemoryManager => _memoryManager;
 
         /// <summary>
         /// Gets the accelerator context.

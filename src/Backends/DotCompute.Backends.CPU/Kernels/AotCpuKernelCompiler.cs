@@ -2,8 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using global::System.Runtime.CompilerServices;
+using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
@@ -229,8 +231,15 @@ internal sealed class AotCpuKernelCompiler
 
         await Task.Run(() =>
         {
-            // TODO: Use SIMD vectorization when available
-            // VectorizedMath.Add(bufferA.Span, bufferB.Span, bufferC.Span, length);
+            // Use SIMD vectorization for optimal performance
+            if (bufferA is CpuMemoryBuffer cpuA && bufferB is CpuMemoryBuffer cpuB && bufferC is CpuMemoryBuffer cpuC)
+            {
+                var spanA = MemoryMarshal.Cast<byte, float>(cpuA.GetMemory().Span);
+                var spanB = MemoryMarshal.Cast<byte, float>(cpuB.GetMemory().Span);
+                var spanC = MemoryMarshal.Cast<byte, float>(cpuC.GetMemory().Span);
+
+                VectorizedMath.Add(spanA, spanB, spanC, (int)length);
+            }
         });
     }
 
@@ -253,9 +262,15 @@ internal sealed class AotCpuKernelCompiler
 
         await Task.Run(() =>
         {
-            // TODO: VectorizedMath.MatrixMultiply(
-            //     matrixA.Span, matrixB.Span, matrixC.Span,
-            //     rows, cols, cols);
+            // Use optimized matrix multiplication with blocking
+            if (matrixA is CpuMemoryBuffer cpuA && matrixB is CpuMemoryBuffer cpuB && matrixC is CpuMemoryBuffer cpuC)
+            {
+                var spanA = MemoryMarshal.Cast<byte, float>(cpuA.GetMemory().Span);
+                var spanB = MemoryMarshal.Cast<byte, float>(cpuB.GetMemory().Span);
+                var spanC = MemoryMarshal.Cast<byte, float>(cpuC.GetMemory().Span);
+
+                VectorizedMath.MatrixMultiply(spanA, spanB, spanC, rows, cols, cols);
+            }
         });
     }
 
@@ -278,7 +293,15 @@ internal sealed class AotCpuKernelCompiler
 
         await Task.Run(() =>
         {
-            // TODO: VectorizedMath.Multiply(bufferA.Span, bufferB.Span, bufferC.Span, length);
+            // Use SIMD vectorization for element-wise multiplication
+            if (bufferA is CpuMemoryBuffer cpuA && bufferB is CpuMemoryBuffer cpuB && bufferC is CpuMemoryBuffer cpuC)
+            {
+                var spanA = MemoryMarshal.Cast<byte, float>(cpuA.GetMemory().Span);
+                var spanB = MemoryMarshal.Cast<byte, float>(cpuB.GetMemory().Span);
+                var spanC = MemoryMarshal.Cast<byte, float>(cpuC.GetMemory().Span);
+
+                VectorizedMath.Multiply(spanA, spanB, spanC, (int)length);
+            }
         });
     }
 
@@ -298,8 +321,18 @@ internal sealed class AotCpuKernelCompiler
 
         await Task.Run(() =>
         {
-            // TODO: var sum = VectorizedMath.Sum(input.Span);
-            // TODO: output.Span[0] = sum;
+            // Use vectorized sum reduction
+            if (input is CpuMemoryBuffer cpuInput && output is CpuMemoryBuffer cpuOutput)
+            {
+                var inputSpan = MemoryMarshal.Cast<byte, float>(cpuInput.GetMemory().Span);
+                var outputSpan = MemoryMarshal.Cast<byte, float>(cpuOutput.GetMemory().Span);
+
+                var sum = VectorizedMath.Sum(inputSpan);
+                if (outputSpan.Length > 0)
+                {
+                    outputSpan[0] = sum;
+                }
+            }
         });
     }
 
@@ -350,7 +383,7 @@ ILogger logger) : ICompiledKernel
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebugMessage("Executing AOT kernel: {Name}");
+        _logger.LogDebug("Executing AOT kernel: {Name}", Name);
 
         try
         {
@@ -363,11 +396,11 @@ ILogger logger) : ICompiledKernel
             }
 
             await _implementation(context).ConfigureAwait(false);
-            _logger.LogDebugMessage("Successfully executed AOT kernel: {Name}");
+            _logger.LogDebug("Successfully executed AOT kernel: {Name}", Name);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error executing AOT kernel: {Name}");
+            _logger.LogError(ex, "Error executing AOT kernel: {Name}", Name);
             throw;
         }
     }
@@ -382,7 +415,7 @@ ILogger logger) : ICompiledKernel
     {
         // Thread pool disposal is handled by the accelerator
         // _threadPool is managed externally
-        _logger.LogDebugMessage("Disposed AOT kernel: {Name}");
+        _logger.LogDebug("Disposed AOT kernel: {Name}", Name);
     }
 }
 

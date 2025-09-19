@@ -740,7 +740,7 @@ namespace DotCompute.Linq.KernelGeneration
     /// </summary>
     internal class LinqExpressionAnalyzer : ExpressionVisitor
     {
-        public List<ParameterExpression> Parameters { get; } = new();
+        public List<ParameterExpression> Parameters { get; } = [];
         public bool HasReduction { get; private set; }
         public bool RequiresSharedMemory { get; private set; }
         public int ComplexityLevel { get; private set; }

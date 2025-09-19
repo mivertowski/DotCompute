@@ -733,6 +733,8 @@ namespace DotCompute.Backends.CUDA.Factory
 
             // IAccelerator interface implementation
             public AcceleratorType Type => AcceleratorType.CUDA;
+            public string DeviceType => AcceleratorType.CUDA.ToString();
+            public IUnifiedMemoryManager MemoryManager => _memoryAdapter.Value;
             public AcceleratorInfo Info => new()
 
             {

@@ -318,7 +318,7 @@ public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDi
 
             if (totalCleaned > 0)
             {
-                _logger.LogDebugMessage("Pool maintenance cleaned {Count} buffers, freed {totalCleaned, bytesFreed} bytes");
+                _logger.LogDebugMessage($"Pool maintenance cleaned {totalCleaned} buffers, freed {bytesFreed} bytes");
             }
         }, cancellationToken);
     }

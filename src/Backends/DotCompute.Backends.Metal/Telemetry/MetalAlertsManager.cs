@@ -52,7 +52,11 @@ public sealed class MetalAlertsManager : IDisposable
     /// </summary>
     public void CheckMemoryAllocationFailure(long sizeBytes)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var alertKey = "memory_allocation_failure";
         var threshold = _options.MemoryAllocationFailureThreshold;
@@ -101,7 +105,11 @@ public sealed class MetalAlertsManager : IDisposable
     /// </summary>
     public void CheckKernelExecutionFailure(string kernelName, TimeSpan duration)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var alertKey = $"kernel_execution_failure_{kernelName}";
         var history = _alertHistory.GetOrAdd(alertKey, _ => new AlertHistory(alertKey));
@@ -148,9 +156,17 @@ public sealed class MetalAlertsManager : IDisposable
     /// </summary>
     public void CheckSlowOperation(string operationName, TimeSpan duration)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        if (duration.TotalMilliseconds <= _options.SlowOperationThresholdMs) return;
+
+        if (duration.TotalMilliseconds <= _options.SlowOperationThresholdMs)
+        {
+            return;
+        }
+
 
         var alertKey = $"slow_operation_{operationName}";
         var history = _alertHistory.GetOrAdd(alertKey, _ => new AlertHistory(alertKey));
@@ -200,9 +216,17 @@ public sealed class MetalAlertsManager : IDisposable
     /// </summary>
     public void CheckHighGpuUtilization(double utilizationPercentage)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        if (utilizationPercentage <= _options.HighGpuUtilizationThreshold) return;
+
+        if (utilizationPercentage <= _options.HighGpuUtilizationThreshold)
+        {
+            return;
+        }
+
 
         var alertKey = "high_gpu_utilization";
         var history = _alertHistory.GetOrAdd(alertKey, _ => new AlertHistory(alertKey));
@@ -251,9 +275,17 @@ public sealed class MetalAlertsManager : IDisposable
     /// </summary>
     public void CheckHighMemoryUtilization(double utilizationPercentage)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        if (utilizationPercentage <= _options.HighMemoryUtilizationThreshold) return;
+
+        if (utilizationPercentage <= _options.HighMemoryUtilizationThreshold)
+        {
+            return;
+        }
+
 
         var alertKey = "high_memory_utilization";
         
@@ -292,9 +324,17 @@ public sealed class MetalAlertsManager : IDisposable
     /// </summary>
     public void CheckHighResourceUtilization(ResourceType resourceType, double utilizationPercentage)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
-        if (utilizationPercentage <= _options.HighResourceUtilizationThreshold) return;
+
+        if (utilizationPercentage <= _options.HighResourceUtilizationThreshold)
+        {
+            return;
+        }
+
 
         var alertKey = $"high_resource_utilization_{resourceType}";
         
@@ -328,7 +368,11 @@ public sealed class MetalAlertsManager : IDisposable
     /// </summary>
     public void CheckHighMemoryPressure(MemoryPressureLevel level, double percentage)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var alertKey = "high_memory_pressure";
         
@@ -368,7 +412,11 @@ public sealed class MetalAlertsManager : IDisposable
     /// </summary>
     public void CheckErrorRate(MetalError error)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var alertKey = $"error_rate_{error}";
         var history = _alertHistory.GetOrAdd(alertKey, _ => new AlertHistory(alertKey));
@@ -422,7 +470,11 @@ public sealed class MetalAlertsManager : IDisposable
     /// </summary>
     public void EvaluateActiveAlerts(MetalTelemetrySnapshot snapshot)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         foreach (var alert in _activeAlerts.Values.ToList())
         {
@@ -553,7 +605,7 @@ public sealed class MetalAlertsManager : IDisposable
         // Add current snapshot data to alert properties
         if (alert.Properties == null)
         {
-            alert.Properties = new Dictionary<string, object>();
+            alert.Properties = [];
         }
         
         alert.Properties["last_update"] = DateTimeOffset.UtcNow;
@@ -667,7 +719,11 @@ public sealed class MetalAlertsManager : IDisposable
 
     private void EvaluateAlerts(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -686,7 +742,11 @@ public sealed class MetalAlertsManager : IDisposable
 
     private void CleanupAlerts(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {

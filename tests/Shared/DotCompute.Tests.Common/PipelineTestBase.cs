@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Models;
 using DotCompute.Tests.Common.Generators;
@@ -74,7 +75,7 @@ public abstract class PipelineTestBase : IDisposable
 
         Assert.Equal(expected.Length, input.Length);
 
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             if (typeof(T) == typeof(float) || typeof(T) == typeof(double))
             {

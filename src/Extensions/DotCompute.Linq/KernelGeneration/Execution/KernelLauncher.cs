@@ -42,7 +42,7 @@ namespace DotCompute.Linq.KernelGeneration.Execution
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _configurationCache = new ConcurrentDictionary<string, LaunchConfiguration>();
             _streamPool = new ConcurrentDictionary<IntPtr, CudaStream>();
-            _performanceMetrics = new Dictionary<string, KernelPerformanceMetrics>();
+            _performanceMetrics = [];
         }
 
         /// <summary>
@@ -379,11 +379,18 @@ namespace DotCompute.Linq.KernelGeneration.Execution
                     Stream = stream.StreamPointer
                 };
 
-                await kernel.LaunchAsync(
-                    config.BlockSize,
-                    config.GridSize,
-                    kernelExecutionParams,
-                    cancellationToken);
+                // Create kernel arguments from execution parameters
+                var kernelArgs = new KernelArguments(kernelExecutionParams.Parameters?.ToArray() ?? [])
+                {
+                    LaunchConfiguration = new KernelLaunchConfiguration
+                    {
+                        GridSize = ((uint)config.GridSize.X, (uint)config.GridSize.Y, (uint)config.GridSize.Z),
+                        BlockSize = ((uint)config.BlockSize.X, (uint)config.BlockSize.Y, (uint)config.BlockSize.Z),
+                        SharedMemoryBytes = (uint)kernelExecutionParams.SharedMemorySize
+                    }
+                };
+                
+                await kernel.ExecuteAsync(kernelArgs, cancellationToken);
 
                 // Synchronize stream if not async
                 if (!stream.IsAsync)

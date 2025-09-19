@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Backends.Metal.Execution.Interfaces;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
 
@@ -130,8 +132,8 @@ public sealed class MetalGraphNode
     /// <summary>
     /// Gets the execution duration, if the node has completed.
     /// </summary>
-    public TimeSpan? ExecutionDuration =>
-        ExecutionStartTime.HasValue && ExecutionEndTime.HasValue
+    public TimeSpan? ExecutionDuration
+        => ExecutionStartTime.HasValue && ExecutionEndTime.HasValue
             ? ExecutionEndTime.Value - ExecutionStartTime.Value
             : null;
 
@@ -218,8 +220,11 @@ public sealed class MetalGraphNode
     /// </summary>
     /// <param name="dependencyId">The ID of the dependency to remove.</param>
     /// <returns><c>true</c> if the dependency was found and removed; otherwise, <c>false</c>.</returns>
-    public bool RemoveDependency(string dependencyId)
-    {
+    public bool RemoveDependency(string dependencyId
+        {
+            return false;
+        }
+
         if (string.IsNullOrWhiteSpace(dependencyId))
             return false;
 
@@ -244,7 +249,11 @@ public sealed class MetalGraphNode
     /// <param name="nodeId">The ID of the node to check for dependency.</param>
     /// <returns><c>true</c> if this node depends on the specified node; otherwise, <c>false</c>.</returns>
     public bool DependsOn(string nodeId)
+        {
+
     {
+        }
+
         if (string.IsNullOrWhiteSpace(nodeId))
             return false;
 
@@ -287,39 +296,61 @@ public sealed class MetalGraphNode
 
         switch (Type)
         {
-            case MetalNodeType.Kernel:
-                if (Kernel == null)
+                {
                     errors.Add("Kernel node must have a valid kernel.");
-                
-                if (ThreadgroupsPerGrid.width == 0 || ThreadgroupsPerGrid.height == 0 || ThreadgroupsPerGrid.depth == 0)
+                }
+
+if (Kernel == null)
+                    errors.Add("Kernel node must have a valid kernel.");
+                {
                     errors.Add("Kernel node must have valid threadgroup dimensions.");
-                
+                }
+
+if (ThreadgroupsPerGrid.width == 0 || ThreadgroupsPerGrid.height == 0 || ThreadgroupsPerGrid.depth == 0)
+                    errors.Add("Kernel node must have valid threadgroup dimensions.");
+                {
+                    errors.Add("Kernel node must have valid threads per threadgroup dimensions.");
+                }
+
                 if (ThreadsPerThreadgroup.width == 0 || ThreadsPerThreadgroup.height == 0 || ThreadsPerThreadgroup.depth == 0)
                     errors.Add("Kernel node must have valid threads per threadgroup dimensions.");
 
-                var totalThreadsPerThreadgroup = ThreadsPerThreadgroup.width * ThreadsPerThreadgroup.height * ThreadsPerThreadgroup.depth;
-                if (totalThreadsPerThreadgroup > 1024) // Metal limit
+                {
                     errors.Add($"Total threads per threadgroup ({totalThreadsPerThreadgroup}) exceeds Metal limit of 1024.");
-                
+                }
+
                 break;
 
             case MetalNodeType.MemoryCopy:
                 if (SourceBuffer == IntPtr.Zero)
+                {
                     errors.Add("Memory copy node must have a valid source buffer.");
-                
+                }
+
                 if (DestinationBuffer == IntPtr.Zero)
+                {
                     errors.Add("Memory copy node must have a valid destination buffer.");
-                
+                }
+
                 if (CopySize <= 0)
+                {
                     errors.Add("Memory copy node must have a positive copy size.");
-                
+                }
+
                 break;
 
             case MetalNodeType.MemorySet:
                 if (DestinationBuffer == IntPtr.Zero)
+                {
                     errors.Add("Memory set node must have a valid destination buffer.");
-                
+                }
+
                 if (CopySize <= 0)
+                {
+                    errors.Add("Memory set node must have a positive size.");
+                }
+
+if (CopySize <= 0)
                     errors.Add("Memory set node must have a positive size.");
                 
                 break;

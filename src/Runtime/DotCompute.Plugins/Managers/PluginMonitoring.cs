@@ -476,7 +476,7 @@ internal class PluginMetricsCollector : IDisposable
                 _ = metricsState.MetricsHistory.Remove(oldMetric);
             }
 
-            _logger.LogDebugMessage("Cleaned up {Count} old metrics for plugin: {oldMetrics.Count, pluginId}");
+            _logger.LogDebugMessage($"Cleaned up {oldMetrics.Count} old metrics for plugin: {pluginId}");
         }
     }
 

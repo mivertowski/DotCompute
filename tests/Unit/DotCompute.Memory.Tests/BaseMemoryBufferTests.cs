@@ -50,7 +50,7 @@ public class BaseMemoryBufferTests
     public void BaseMemoryBuffer_ThrowsForInvalidSize(int invalidSize)
     {
         // Act & Assert
-        Action act = () => new TestMemoryBuffer<float>(invalidSize);
+        Action act = () => { var _ = new TestMemoryBuffer<float>(invalidSize); };
         _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*sizeInBytes*");
     }
@@ -229,7 +229,7 @@ public class BaseMemoryBufferTests
         using var buffer = new TestMemoryBuffer<float>(1024);
         var sourceData = new float[256];
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act & Assert
 
@@ -347,7 +347,7 @@ public class BaseMemoryBufferTests
     {
         // Arrange
         var buffer = new TestMemoryBuffer<float>(1024);
-        buffer.Dispose();
+        await buffer.DisposeAsync();
 
         // Act & Assert - Test multiple operations throw when disposed
 

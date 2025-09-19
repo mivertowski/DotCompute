@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Interfaces.Recovery;
 using DotCompute.Core.Recovery.Models;
 using DotCompute.Core.Recovery.Statistics;
 using DotCompute.Core.Recovery.Types;
@@ -33,7 +34,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
     private readonly Timer _cacheCleanupTimer;
     private bool _disposed;
 
-    public override RecoveryCapability Capability => RecoveryCapability.CompilationErrors;
+    public override RecoveryCapability Capability => RecoveryCapability.MemoryErrors;
     public override int Priority => 90;
 
     public CompilationFallback(ILogger<CompilationFallback> logger, CompilationFallbackConfiguration? config = null)
@@ -633,7 +634,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         }
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         if (!_disposed)
         {

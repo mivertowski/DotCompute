@@ -219,7 +219,7 @@ public sealed class MetalExportOptions
     /// <summary>
     /// Gets or sets the configured exporters
     /// </summary>
-    public List<ExporterConfiguration> Exporters { get; set; } = new();
+    public List<ExporterConfiguration> Exporters { get; set; } = [];
 }
 
 /// <summary>
@@ -250,7 +250,7 @@ public sealed class MetalAlertsOptions
     /// <summary>
     /// Gets or sets the notification endpoints
     /// </summary>
-    public List<string> NotificationEndpoints { get; set; } = new();
+    public List<string> NotificationEndpoints { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the memory allocation failure threshold
@@ -311,9 +311,9 @@ public sealed class MetalTelemetrySnapshot
     public long TotalOperations { get; set; }
     public long TotalErrors { get; set; }
     public double ErrorRate { get; set; }
-    public Dictionary<string, MetalOperationMetrics> OperationMetrics { get; set; } = new();
-    public Dictionary<string, MetalResourceMetrics> ResourceMetrics { get; set; } = new();
-    public Dictionary<string, object> PerformanceCounters { get; set; } = new();
+    public Dictionary<string, MetalOperationMetrics> OperationMetrics { get; set; } = [];
+    public Dictionary<string, MetalResourceMetrics> ResourceMetrics { get; set; } = [];
+    public Dictionary<string, object> PerformanceCounters { get; set; } = [];
     public HealthStatus HealthStatus { get; set; }
     public MetalSystemInfo SystemInfo { get; set; } = new();
 }
@@ -345,12 +345,25 @@ public sealed class MetalOperationMetrics
     public void UpdateMetrics(TimeSpan duration, bool success)
     {
         TotalExecutions++;
-        if (success) SuccessfulExecutions++;
+        if (success)
+        {
+            SuccessfulExecutions++;
+        }
+
 
         TotalExecutionTime = TotalExecutionTime.Add(duration);
 
-        if (duration < MinExecutionTime) MinExecutionTime = duration;
-        if (duration > MaxExecutionTime) MaxExecutionTime = duration;
+        if (duration < MinExecutionTime)
+        {
+            MinExecutionTime = duration;
+        }
+
+
+        if (duration > MaxExecutionTime)
+        {
+            MaxExecutionTime = duration;
+        }
+
 
         LastUpdated = DateTimeOffset.UtcNow;
     }
@@ -380,7 +393,12 @@ public sealed class MetalResourceMetrics
     public void UpdateUsage(long currentUsage, long peakUsage, long limit)
     {
         CurrentUsage = currentUsage;
-        if (peakUsage > PeakUsage) PeakUsage = peakUsage;
+        if (peakUsage > PeakUsage)
+        {
+            PeakUsage = peakUsage;
+        }
+
+
         Limit = limit;
         LastUpdated = DateTimeOffset.UtcNow;
     }
@@ -388,7 +406,12 @@ public sealed class MetalResourceMetrics
     public void UpdateUtilization(double gpuUtilization, double memoryUtilization, long usedMemory)
     {
         CurrentUsage = usedMemory;
-        if (usedMemory > PeakUsage) PeakUsage = usedMemory;
+        if (usedMemory > PeakUsage)
+        {
+            PeakUsage = usedMemory;
+        }
+
+
         LastUpdated = DateTimeOffset.UtcNow;
     }
 }
@@ -414,9 +437,9 @@ public sealed class MetalProductionReport
     public MetalTelemetrySnapshot Snapshot { get; set; } = new();
     public MetalPerformanceAnalysis PerformanceAnalysis { get; set; } = new();
     public MetalHealthAnalysis HealthAnalysis { get; set; } = new();
-    public List<Alert> AlertsSummary { get; set; } = new();
-    public List<string> Recommendations { get; set; } = new();
-    public Dictionary<string, object> ExportedMetrics { get; set; } = new();
+    public List<Alert> AlertsSummary { get; set; } = [];
+    public List<string> Recommendations { get; set; } = [];
+    public Dictionary<string, object> ExportedMetrics { get; set; } = [];
 }
 
 #endregion
@@ -435,7 +458,7 @@ public sealed class MetalPerformanceAnalysis
     public ResourceUtilizationAnalysis ResourceUtilizationAnalysis { get; set; } = new();
     public PerformanceTrends PerformanceTrends { get; set; } = new();
     public double OverallPerformanceScore { get; set; }
-    public List<string> Errors { get; set; } = new();
+    public List<string> Errors { get; set; } = [];
 }
 
 /// <summary>
@@ -502,8 +525,17 @@ public sealed class CounterStatistics
         TotalValue += value;
         SampleCount++;
 
-        if (value < MinValue) MinValue = value;
-        if (value > MaxValue) MaxValue = value;
+        if (value < MinValue)
+        {
+            MinValue = value;
+        }
+
+
+        if (value > MaxValue)
+        {
+            MaxValue = value;
+        }
+
 
         LastUpdated = DateTimeOffset.UtcNow;
     }
@@ -603,7 +635,7 @@ public sealed class HealthEvent
     public HealthSeverity Severity { get; set; }
     public string Message { get; set; } = string.Empty;
     public Dictionary<string, object>? Properties { get; set; }
-    public Dictionary<string, object> Data { get; set; } = new();
+    public Dictionary<string, object> Data { get; set; } = [];
 }
 
 /// <summary>
@@ -617,7 +649,7 @@ public sealed class ComponentHealth
     public int ErrorCount { get; private set; }
     public int SuccessCount { get; private set; }
     public string? LastError { get; set; }
-    public Dictionary<string, object> Properties { get; set; } = new();
+    public Dictionary<string, object> Properties { get; set; } = [];
 
     public double SuccessRate => (ErrorCount + SuccessCount) > 0 
         ? (double)SuccessCount / (ErrorCount + SuccessCount) 
@@ -672,11 +704,11 @@ public sealed class MetalHealthReport
 {
     public DateTimeOffset Timestamp { get; set; }
     public HealthStatus OverallHealth { get; set; }
-    public Dictionary<string, ComponentHealth> ComponentHealthMap { get; set; } = new();
-    public List<HealthEvent> RecentEvents { get; set; } = new();
-    public Dictionary<string, CircuitBreakerState> CircuitBreakerStates { get; set; } = new();
-    public Dictionary<string, object> SystemMetrics { get; set; } = new();
-    public List<string> Recommendations { get; set; } = new();
+    public Dictionary<string, ComponentHealth> ComponentHealthMap { get; set; } = [];
+    public List<HealthEvent> RecentEvents { get; set; } = [];
+    public Dictionary<string, CircuitBreakerState> CircuitBreakerStates { get; set; } = [];
+    public Dictionary<string, object> SystemMetrics { get; set; } = [];
+    public List<string> Recommendations { get; set; } = [];
 }
 
 /// <summary>
@@ -687,11 +719,11 @@ public sealed class MetalHealthAnalysis
     public DateTimeOffset Timestamp { get; set; }
     public TimeSpan AnalysisPeriod { get; set; }
     public int TotalEvents { get; set; }
-    public Dictionary<string, object> ErrorPatterns { get; set; } = new();
-    public Dictionary<string, object> PerformanceDegradation { get; set; } = new();
-    public Dictionary<string, object> ResourcePressureTrends { get; set; } = new();
+    public Dictionary<string, object> ErrorPatterns { get; set; } = [];
+    public Dictionary<string, object> PerformanceDegradation { get; set; } = [];
+    public Dictionary<string, object> ResourcePressureTrends { get; set; } = [];
     public double HealthScore { get; set; }
-    public List<string> PredictedIssues { get; set; } = new();
+    public List<string> PredictedIssues { get; set; } = [];
 }
 
 /// <summary>
@@ -700,7 +732,7 @@ public sealed class MetalHealthAnalysis
 public sealed class AlertHistory
 {
     public string AlertKey { get; }
-    private readonly List<HealthEvent> _events = new();
+    private readonly List<HealthEvent> _events = [];
     private readonly object _lock = new();
 
     public AlertHistory(string alertKey)
@@ -835,7 +867,7 @@ public sealed class StructuredLogEntry
     public Microsoft.Extensions.Logging.LogLevel LogLevel { get; set; }
     public string EventType { get; set; } = string.Empty;
     public string CorrelationId { get; set; } = string.Empty;
-    public Dictionary<string, object> Properties { get; set; } = new();
+    public Dictionary<string, object> Properties { get; set; } = [];
     public string Message { get; set; } = string.Empty;
 }
 

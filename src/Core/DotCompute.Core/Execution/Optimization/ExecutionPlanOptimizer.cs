@@ -99,7 +99,7 @@ namespace DotCompute.Core.Execution.Optimization
             // Apply optimizations based on performance monitoring data
             var metrics = _performanceMonitor.GetCurrentMetrics();
 
-            if (metrics.MetricsByStrategy.TryGetValue(plan.StrategyType, out var strategyMetrics))
+            if (metrics.MetricsByStrategy.TryGetValue((DotCompute.Abstractions.Types.ExecutionStrategyType)(int)plan.StrategyType, out var strategyMetrics))
             {
                 if (strategyMetrics.AverageEfficiencyPercentage < 60)
                 {

@@ -283,9 +283,9 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
 
         // Calculate byte offset and length
 
-        int elementSize = Unsafe.SizeOf<T>();
-        int byteOffset = offset * elementSize;
-        int byteLength = length * elementSize;
+        var elementSize = Unsafe.SizeOf<T>();
+        var byteOffset = offset * elementSize;
+        var byteLength = length * elementSize;
 
         return new CpuMemoryBufferTypedSlice<T>(_parentBuffer, byteOffset, length, _memoryManager, _logger);
     }
@@ -295,8 +295,8 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         EnsureNotDisposed();
 
 
-        int currentSize = (int)SizeInBytes;
-        int newElementSize = Unsafe.SizeOf<TNew>();
+        var currentSize = (int)SizeInBytes;
+        var newElementSize = Unsafe.SizeOf<TNew>();
 
 
         if (currentSize % newElementSize != 0)
@@ -306,7 +306,7 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         }
 
 
-        int newElementCount = currentSize / newElementSize;
+        var newElementCount = currentSize / newElementSize;
         return new CpuMemoryBufferTyped<TNew>(_parentBuffer, newElementCount, _memoryManager, _logger);
     }
 
@@ -635,8 +635,8 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         }
 
 
-        int elementSize = Unsafe.SizeOf<T>();
-        int newByteOffset = _byteOffset + (offset * elementSize);
+        var elementSize = Unsafe.SizeOf<T>();
+        var newByteOffset = _byteOffset + (offset * elementSize);
 
 
         return new CpuMemoryBufferTypedSlice<T>(_parentBuffer, newByteOffset, length, _memoryManager, _logger);
@@ -647,8 +647,8 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         EnsureNotDisposed();
 
 
-        long currentSize = SizeInBytes;
-        int newElementSize = Unsafe.SizeOf<TNew>();
+        var currentSize = SizeInBytes;
+        var newElementSize = Unsafe.SizeOf<TNew>();
 
 
         if (currentSize % newElementSize != 0)
@@ -658,7 +658,7 @@ internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, ID
         }
 
 
-        int newElementCount = (int)(currentSize / newElementSize);
+        var newElementCount = (int)(currentSize / newElementSize);
         return new CpuMemoryBufferTypedSlice<TNew>(_parentBuffer, _byteOffset, newElementCount, _memoryManager, _logger);
     }
 

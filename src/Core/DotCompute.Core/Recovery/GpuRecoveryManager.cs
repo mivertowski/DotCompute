@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Recovery;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 
@@ -225,7 +226,7 @@ public sealed class GpuRecoveryManager : IDisposable
             GpuRecoveryStrategy.KernelTermination => await KernelTerminationAsync(context, cancellationToken),
             GpuRecoveryStrategy.ContextReset => await ContextResetAsync(context, cancellationToken),
             GpuRecoveryStrategy.DeviceReset => await DeviceResetRecoveryAsync(context, cancellationToken),
-            _ => new RecoveryResult { Success = false, Message = "Unknown recovery strategy" }
+            _ => new RecoveryResult { Success = false, Message = "Unknown recovery strategy", Strategy = "Unknown" }
         };
     }
 

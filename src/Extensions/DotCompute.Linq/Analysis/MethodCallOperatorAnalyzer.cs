@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
+using DotCompute.Core.Analysis;
 using DotCompute.Linq.Types;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Compilation.Analysis;
@@ -31,7 +32,7 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
         return new OperatorAnalysisResult
         {
             OperatorType = ExpressionType.Call,
-            OperandTypes = methodCall.Arguments.Select(arg => arg.Type).ToArray(),
+            OperandTypes = [.. methodCall.Arguments.Select(arg => arg.Type)],
             IsComputeFriendly = IsMethodComputeFriendly(methodCall.Method),
             SupportsVectorization = CanVectorizeMethod(methodCall.Method),
             OptimalVectorWidth = GetOptimalVectorWidth(methodCall.Method),
@@ -75,7 +76,7 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
 
         // Look for chainable LINQ operations
 
-        for (int i = 0; i < methodCalls.Count - 1; i++)
+        for (var i = 0; i < methodCalls.Count - 1; i++)
         {
             var current = methodCalls[i];
             var next = methodCalls[i + 1];
@@ -144,7 +145,7 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
             IsComputeFriendly = false,
             SupportsVectorization = false,
             OptimalVectorWidth = 1,
-            BackendCompatibility = new Dictionary<BackendType, OperatorCompatibility>(),
+            BackendCompatibility = [],
             OptimizationHints = [],
             Complexity = ComputationalComplexity.Linear,
             FusionOpportunities = []
@@ -226,21 +227,22 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
     /// </summary>
     private static Dictionary<BackendType, OperatorCompatibility> AnalyzeBackendCompatibility(System.Reflection.MethodInfo method)
     {
-        var compatibility = new Dictionary<BackendType, OperatorCompatibility>();
-
-        // CPU is generally compatible with most methods
-
-        compatibility[BackendType.CPU] = new OperatorCompatibility
+        var compatibility = new Dictionary<BackendType, OperatorCompatibility>
         {
-            IsSupported = true,
-            SupportLevel = SupportLevel.Full,
-            Alternatives = [],
-            Performance = new PerformanceCharacteristics
+            // CPU is generally compatible with most methods
+
+            [BackendType.CPU] = new OperatorCompatibility
             {
-                Throughput = 1000.0,
-                Latency = 0.001,
-                MemoryBandwidth = 100.0,
-                ComputeIntensity = 10.0
+                IsSupported = true,
+                SupportLevel = SupportLevel.Full,
+                Alternatives = [],
+                Performance = new PerformanceCharacteristics
+                {
+                    Throughput = 1000.0,
+                    Latency = 0.001,
+                    MemoryBandwidth = 100.0,
+                    ComputeIntensity = 10.0
+                }
             }
         };
 
@@ -407,46 +409,46 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
     /// </summary>
     /// <param name="expressionType">The expression type to convert.</param>
     /// <returns>The corresponding operator type.</returns>
-    private static OperatorType ConvertExpressionTypeToOperatorType(ExpressionType expressionType)
+    private static DotCompute.Core.Analysis.UnifiedOperatorType ConvertExpressionTypeToOperatorType(ExpressionType expressionType)
     {
         return expressionType switch
         {
-            ExpressionType.Add => OperatorType.Mathematical,
-            ExpressionType.Subtract => OperatorType.Mathematical,
-            ExpressionType.Multiply => OperatorType.Mathematical,
-            ExpressionType.Divide => OperatorType.Mathematical,
-            ExpressionType.Modulo => OperatorType.Mathematical,
-            ExpressionType.Power => OperatorType.Mathematical,
-            ExpressionType.UnaryPlus => OperatorType.Mathematical,
-            ExpressionType.Negate => OperatorType.Mathematical,
+            ExpressionType.Add => DotCompute.Core.Analysis.UnifiedOperatorType.Add,
+            ExpressionType.Subtract => DotCompute.Core.Analysis.UnifiedOperatorType.Subtract,
+            ExpressionType.Multiply => DotCompute.Core.Analysis.UnifiedOperatorType.Multiply,
+            ExpressionType.Divide => DotCompute.Core.Analysis.UnifiedOperatorType.Divide,
+            ExpressionType.Modulo => DotCompute.Core.Analysis.UnifiedOperatorType.Modulo,
+            ExpressionType.Power => DotCompute.Core.Analysis.UnifiedOperatorType.Power,
+            ExpressionType.UnaryPlus => DotCompute.Core.Analysis.UnifiedOperatorType.Mathematical,
+            ExpressionType.Negate => DotCompute.Core.Analysis.UnifiedOperatorType.Mathematical,
 
 
-            ExpressionType.Equal => OperatorType.Comparison,
-            ExpressionType.NotEqual => OperatorType.Comparison,
-            ExpressionType.GreaterThan => OperatorType.Comparison,
-            ExpressionType.GreaterThanOrEqual => OperatorType.Comparison,
-            ExpressionType.LessThan => OperatorType.Comparison,
-            ExpressionType.LessThanOrEqual => OperatorType.Comparison,
+            ExpressionType.Equal => DotCompute.Core.Analysis.UnifiedOperatorType.Equal,
+            ExpressionType.NotEqual => UnifiedOperatorType.NotEqual,
+            ExpressionType.GreaterThan => UnifiedOperatorType.GreaterThan,
+            ExpressionType.GreaterThanOrEqual => UnifiedOperatorType.GreaterThanOrEqual,
+            ExpressionType.LessThan => UnifiedOperatorType.LessThan,
+            ExpressionType.LessThanOrEqual => UnifiedOperatorType.LessThanOrEqual,
 
 
-            ExpressionType.AndAlso => OperatorType.Logical,
-            ExpressionType.OrElse => OperatorType.Logical,
-            ExpressionType.Not => OperatorType.Logical,
-            ExpressionType.And => OperatorType.Logical,
-            ExpressionType.Or => OperatorType.Logical,
-            ExpressionType.ExclusiveOr => OperatorType.Logical,
+            ExpressionType.AndAlso => UnifiedOperatorType.LogicalAnd,
+            ExpressionType.OrElse => UnifiedOperatorType.LogicalOr,
+            ExpressionType.Not => UnifiedOperatorType.LogicalNot,
+            ExpressionType.And => UnifiedOperatorType.BitwiseAnd,
+            ExpressionType.Or => UnifiedOperatorType.BitwiseOr,
+            ExpressionType.ExclusiveOr => UnifiedOperatorType.BitwiseXor,
 
 
-            ExpressionType.Convert => OperatorType.Conversion,
-            ExpressionType.ConvertChecked => OperatorType.Conversion,
+            ExpressionType.Convert => UnifiedOperatorType.Conversion,
+            ExpressionType.ConvertChecked => UnifiedOperatorType.Conversion,
 
 
-            ExpressionType.Call => OperatorType.Custom,
-            ExpressionType.Lambda => OperatorType.Custom,
-            ExpressionType.Invoke => OperatorType.Custom,
+            ExpressionType.Call => UnifiedOperatorType.MethodCall,
+            ExpressionType.Lambda => UnifiedOperatorType.Custom,
+            ExpressionType.Invoke => UnifiedOperatorType.MethodCall,
 
 
-            _ => OperatorType.Unknown
+            _ => UnifiedOperatorType.Unknown
         };
     }
 
@@ -457,7 +459,7 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
         {
             return new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
             {
-                OperatorType = DotCompute.Linq.Pipelines.Analysis.OperatorType.Unknown,
+                OperatorType = UnifiedOperatorType.Unknown,
                 Name = "UnknownCall",
                 InputTypes = [],
                 OutputType = expression.Type,
@@ -475,7 +477,7 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
         {
             OperatorType = operatorType,
             Name = methodName,
-            InputTypes = inputTypes.ToList(),
+            InputTypes = [.. inputTypes],
             OutputType = methodCall.Type,
             ComplexityScore = GetMethodComplexity(methodCall),
             SupportsGpu = IsVectorizable(methodCall),
@@ -496,7 +498,7 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
         return $"{declaringType}.{methodCall.Method.Name}";
     }
 
-    private static DotCompute.Linq.Pipelines.Analysis.OperatorType DetermineOperatorType(MethodCallExpression methodCall)
+    private static DotCompute.Core.Analysis.UnifiedOperatorType DetermineOperatorType(MethodCallExpression methodCall)
     {
         var methodName = methodCall.Method.Name;
 
@@ -504,21 +506,26 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
         {
             return methodName switch
             {
-                "Where" => DotCompute.Linq.Pipelines.Analysis.OperatorType.Filter,
-                "Select" => DotCompute.Linq.Pipelines.Analysis.OperatorType.Projection,
-                "Sum" or "Count" or "Average" or "Max" or "Min" => DotCompute.Linq.Pipelines.Analysis.OperatorType.Aggregation,
-                "OrderBy" or "OrderByDescending" => DotCompute.Linq.Pipelines.Analysis.OperatorType.Sort,
-                "GroupBy" => DotCompute.Linq.Pipelines.Analysis.OperatorType.Group,
-                _ => DotCompute.Linq.Pipelines.Analysis.OperatorType.Transformation
+                "Where" => DotCompute.Core.Analysis.UnifiedOperatorType.Where,
+                "Select" => DotCompute.Core.Analysis.UnifiedOperatorType.Select,
+                "Sum" => DotCompute.Core.Analysis.UnifiedOperatorType.Sum,
+                "Count" => DotCompute.Core.Analysis.UnifiedOperatorType.Count,
+                "Average" => DotCompute.Core.Analysis.UnifiedOperatorType.Average,
+                "Max" => DotCompute.Core.Analysis.UnifiedOperatorType.Max,
+                "Min" => DotCompute.Core.Analysis.UnifiedOperatorType.Min,
+                "OrderBy" => DotCompute.Core.Analysis.UnifiedOperatorType.OrderBy,
+                "OrderByDescending" => DotCompute.Core.Analysis.UnifiedOperatorType.OrderByDescending,
+                "GroupBy" => DotCompute.Core.Analysis.UnifiedOperatorType.GroupBy,
+                _ => DotCompute.Core.Analysis.UnifiedOperatorType.Transformation
             };
         }
 
         if (IsMathMethod(methodCall))
         {
-            return DotCompute.Linq.Pipelines.Analysis.OperatorType.Mathematical;
+            return DotCompute.Core.Analysis.UnifiedOperatorType.Mathematical;
         }
 
-        return DotCompute.Linq.Pipelines.Analysis.OperatorType.Custom;
+        return DotCompute.Core.Analysis.UnifiedOperatorType.Custom;
     }
 
     private static IReadOnlyList<Type> GetInputTypes(MethodCallExpression methodCall)

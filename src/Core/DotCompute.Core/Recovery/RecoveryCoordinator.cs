@@ -6,7 +6,9 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Recovery;
 using DotCompute.Core.Recovery.Models;
+using CoreRecoveryMetrics = DotCompute.Core.Recovery.Models.RecoveryMetrics;
 using DotCompute.Core.Recovery.Statistics;
 using DotCompute.Core.Recovery.Memory;
 using DotCompute.Core.Recovery.Types;
@@ -24,7 +26,7 @@ public sealed class RecoveryCoordinator : IDisposable
     private readonly ILogger<RecoveryCoordinator> _logger;
     private readonly ConcurrentDictionary<Type, IRecoveryStrategy<object>> _strategies;
     private readonly RecoveryCoordinatorConfiguration _config;
-    private readonly RecoveryMetrics _globalMetrics;
+    private readonly CoreRecoveryMetrics _globalMetrics;
     private readonly Timer _metricsReportTimer;
     private readonly SemaphoreSlim _recoveryLock;
 
@@ -47,7 +49,7 @@ public sealed class RecoveryCoordinator : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _config = config ?? RecoveryCoordinatorConfiguration.Default;
         _strategies = new ConcurrentDictionary<Type, IRecoveryStrategy<object>>();
-        _globalMetrics = new RecoveryMetrics();
+        _globalMetrics = new CoreRecoveryMetrics();
         _recoveryLock = new SemaphoreSlim(1, 1);
 
 
@@ -118,8 +120,8 @@ public sealed class RecoveryCoordinator : IDisposable
 
             var recoveryResult = await _circuitBreaker.ExecuteAsync(
                 $"Recovery_{strategy.GetType().Name}",
-                async ct => await strategy.RecoverAsync(error, (object)context, recoveryOptions, ct),
-                cancellationToken);
+                async ct => await ((dynamic)strategy).RecoverAsync(error, context!, recoveryOptions, ct),
+                cancellationToken) ?? new RecoveryResult { Success = false, Message = "Circuit breaker returned null", Strategy = strategy.GetType().Name, Duration = stopwatch.Elapsed };
 
 
             stopwatch.Stop();
@@ -134,12 +136,12 @@ public sealed class RecoveryCoordinator : IDisposable
             else
             {
                 _globalMetrics.RecordFailure(recoveryResult.Duration, error);
-                _logger.LogError("Recovery failed using {Strategy}: {Message}",
-                    strategy.GetType().Name, recoveryResult.Message);
+                var strategyName = strategy.GetType().Name;
+                _logger.LogErrorMessage($"Recovery failed using {strategyName}: {recoveryResult.Message}");
             }
 
 
-            return recoveryResult;
+            return recoveryResult!;
         }
         catch (Exception ex)
         {
@@ -374,6 +376,7 @@ public sealed class RecoveryCoordinator : IDisposable
     /// Registers a custom recovery strategy
     /// </summary>
     public void RegisterRecoveryStrategy<TContext>(IRecoveryStrategy<TContext> strategy)
+        where TContext : class
     {
         var contextType = typeof(TContext);
         _ = _strategies.TryAdd(contextType, (IRecoveryStrategy<object>)strategy);

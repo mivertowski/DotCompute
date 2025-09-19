@@ -329,11 +329,11 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
             StartTime = DateTime.UtcNow;
             _profiler = profiler;
             _stopwatch = Stopwatch.StartNew();
-            _metrics = new Dictionary<string, double>();
-            _tags = new Dictionary<string, string>();
-            _checkpoints = new List<TimingCheckpoint>();
-            _memorySnapshots = new List<MemorySnapshot>();
-            _context = new Dictionary<string, object>();
+            _metrics = [];
+            _tags = [];
+            _checkpoints = [];
+            _memorySnapshots = [];
+            _context = [];
             _lastCheckpointTime = DateTime.UtcNow;
         }
 

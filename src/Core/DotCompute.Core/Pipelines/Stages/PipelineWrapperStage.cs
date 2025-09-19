@@ -2,6 +2,22 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Models.Pipelines;
+using DotCompute.Core.Telemetry;
+using DotCompute.Core.Pipelines.Models;
+
+// Type aliases to resolve ambiguous references
+using PipelineExecutionContext = DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext;
+using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
+using CoreStageExecutionResult = DotCompute.Core.Pipelines.Models.StageExecutionResult;
+using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
+using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
+using DotCompute.Abstractions.Validation;
+using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;
+using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
+using IKernelPipeline = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipeline;
+using PipelineExecutionMetrics = DotCompute.Abstractions.Pipelines.Models.PipelineExecutionMetrics;
 
 namespace DotCompute.Core.Pipelines.Stages
 {
@@ -29,7 +45,7 @@ namespace DotCompute.Core.Pipelines.Stages
         public IReadOnlyDictionary<string, object> Metadata => _pipeline.Metadata;
 
         /// <inheritdoc/>
-        public async ValueTask<StageExecutionResult> ExecuteAsync(
+        public async ValueTask<AbsStageExecutionResult> ExecuteAsync(
             PipelineExecutionContext context,
             CancellationToken cancellationToken = default)
         {
@@ -42,13 +58,13 @@ namespace DotCompute.Core.Pipelines.Stages
                 stopwatch.Stop();
                 _metrics.RecordExecution(stopwatch.Elapsed, result.Success);
 
-                return new StageExecutionResult
+                return new AbsStageExecutionResult
                 {
                     StageId = Id,
                     Success = result.Success,
-                    Duration = stopwatch.Elapsed,
-                    Outputs = result.Outputs,
-                    MemoryUsage = result.Metrics.MemoryUsage,
+                    ExecutionTime = stopwatch.Elapsed,
+                    OutputData = result.Outputs?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? [],
+                    MemoryUsed = result.Metrics?.PeakMemoryUsage ?? 0L,
                     Error = result.Errors?.FirstOrDefault()?.Exception
                 };
             }
@@ -57,11 +73,12 @@ namespace DotCompute.Core.Pipelines.Stages
                 stopwatch.Stop();
                 _metrics.RecordExecution(stopwatch.Elapsed, false);
 
-                return new StageExecutionResult
+                return new AbsStageExecutionResult
                 {
                     StageId = Id,
                     Success = false,
-                    Duration = stopwatch.Elapsed,
+                    ExecutionTime = stopwatch.Elapsed,
+                    OutputData = [],
                     Error = ex
                 };
             }
@@ -71,12 +88,32 @@ namespace DotCompute.Core.Pipelines.Stages
         public StageValidationResult Validate()
         {
             var pipelineValidation = _pipeline.Validate();
+            var errors = new List<ValidationIssue>();
+            var warnings = new List<string>();
+
+            // Add errors from pipeline validation
+            if (pipelineValidation.Errors != null)
+            {
+                foreach (var error in pipelineValidation.Errors)
+                {
+                    errors.Add(new ValidationIssue(ValidationSeverity.Error, error.Message, "PIPELINE_001"));
+                }
+            }
+
+            // Add warnings from pipeline validation
+            if (pipelineValidation.Warnings != null)
+            {
+                foreach (var warning in pipelineValidation.Warnings)
+                {
+                    warnings.Add(warning.Message);
+                }
+            }
 
             return new StageValidationResult
             {
                 IsValid = pipelineValidation.IsValid,
-                Errors = pipelineValidation.Errors?.Select(e => e.Message).ToList(),
-                Warnings = pipelineValidation.Warnings?.Select(w => w.Message).ToList()
+                Issues = errors.Count > 0 ? errors : null,
+                Warnings = warnings.Count > 0 ? warnings : null
             };
         }
 

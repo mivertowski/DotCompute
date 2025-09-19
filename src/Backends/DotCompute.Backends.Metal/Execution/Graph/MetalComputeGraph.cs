@@ -3,6 +3,8 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Backends.Metal.Execution.Interfaces;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
@@ -502,15 +504,21 @@ public sealed class MetalComputeGraph : IDisposable
         };
     }
 
-    private int CalculateCriticalPath()
-    {
-        if (_nodes.IsEmpty) return 0;
+    private int CalculateCr
+        {
+            return 0;
+        }
 
         var pathLengths = new Dictionary<string, int>();
         var visited = new HashSet<string>();
 
         int CalculateNodePath(MetalGraphNode node)
         {
+            if (visited.Contains(node.Id))
+            {
+                return pathLengths.GetValueOrDefault(node.Id, 0);
+            }
+
             if (visited.Contains(node.Id))
                 return pathLengths.GetValueOrDefault(node.Id, 0);
 
@@ -549,9 +557,9 @@ public sealed class MetalComputeGraph : IDisposable
         var kernelNodes = _nodes.Where(n => n.Type == MetalNodeType.Kernel).ToList();
         var fusionOpportunities = 0;
 
-        for (int i = 0; i < kernelNodes.Count - 1; i++)
+        for (var i = 0; i < kernelNodes.Count - 1; i++)
         {
-            for (int j = i + 1; j < kernelNodes.Count; j++)
+            for (var j = i + 1; j < kernelNodes.Count; j++)
             {
                 if (CanFuseKernels(kernelNodes[i], kernelNodes[j]))
                 {
@@ -571,9 +579,13 @@ public sealed class MetalComputeGraph : IDisposable
         // 3. Combined resource usage is within Metal limits
 
         var hasDirectDependency = kernel1.Dependencies.Contains(kernel2) || 
-                                 kernel2.Dependencies.Contains(kernel1);
+                                 
+        {
+           kernel2.Depend
+        }
 
-        if (!hasDirectDependency) return false;
+        // Check threadgroup compatibility (simplified check)
+
 
         // Check threadgroup compatibility (simplified check)
         var compatible = kernel1.ThreadgroupsPerGrid.width <= 1024 &&
@@ -590,9 +602,9 @@ public sealed class MetalComputeGraph : IDisposable
         var coalescingOpportunities = 0;
 
         // Look for adjacent memory operations that can be coalesced
-        for (int i = 0; i < memoryNodes.Count - 1; i++)
+        for (var i = 0; i < memoryNodes.Count - 1; i++)
         {
-            for (int j = i + 1; j < memoryNodes.Count; j++)
+            for (var j = i + 1; j < memoryNodes.Count; j++)
             {
                 if (CanCoalesceMemoryOperations(memoryNodes[i], memoryNodes[j]))
                 {
@@ -617,6 +629,10 @@ public sealed class MetalComputeGraph : IDisposable
         var processed = new HashSet<string>();
 
         foreach (var node in _nodes)
+            {
+                continue;
+            }
+
         {
             if (processed.Contains(node.Id)) continue;
 
@@ -625,7 +641,11 @@ public sealed class MetalComputeGraph : IDisposable
 
             // Find nodes that can be batched with this one
             foreach (var other in _nodes)
-            {
+                {
+                    continue;
+                }
+
+
                 if (processed.Contains(other.Id)) continue;
                 
                 if (CanBatchInSameCommandBuffer(node, other))
@@ -655,11 +675,19 @@ public sealed class MetalComputeGraph : IDisposable
     /// <summary>
     /// Releases all resources used by the Metal compute graph.
     /// </summary>
-    public void Dispose()
+    public void Dispos
+        {
+            return;
+        }
+
     {
         if (_disposed) return;
 
         lock (_lock)
+            {
+                return;
+            }
+
         {
             if (_disposed) return;
 

@@ -70,7 +70,7 @@ internal sealed class KernelExecutionModeHandler
     {
         _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
         _mode = mode;
-        _configuration = configuration ?? new Dictionary<string, object>();
+        _configuration = configuration ?? [];
     }
 
 
@@ -80,11 +80,11 @@ internal sealed class KernelExecutionModeHandler
     private void HandleRegisterSpilling(StringBuilder sb)
     {
         // Check if kernel has MaxRegisters attribute or configuration
-        int maxRegisters = _configuration.ContainsKey("maxRegisters") ? (int)_configuration["maxRegisters"] : 0;
+        var maxRegisters = _configuration.ContainsKey("maxRegisters") ? (int)_configuration["maxRegisters"] : 0;
 
         // Also check for explicit register pressure hints
 
-        bool hasHighRegisterPressure = _configuration.ContainsKey("highRegisterPressure") &&
+        var hasHighRegisterPressure = _configuration.ContainsKey("highRegisterPressure") &&
                                       (bool)_configuration["highRegisterPressure"];
 
 
@@ -100,9 +100,9 @@ internal sealed class KernelExecutionModeHandler
 
                 // Calculate optimal occupancy based on register limit
 
-                int registersPerSM = 65536; // For compute capability 7.0+
-                int maxThreadsPerSM = registersPerSM / maxRegisters;
-                int maxBlocksPerSM = Math.Min(maxThreadsPerSM / 256, 32);
+                var registersPerSM = 65536; // For compute capability 7.0+
+                var maxThreadsPerSM = registersPerSM / maxRegisters;
+                var maxBlocksPerSM = Math.Min(maxThreadsPerSM / 256, 32);
 
 
                 sb.AppendLine($"// Estimated max occupancy: {maxBlocksPerSM} blocks per SM");
@@ -176,8 +176,8 @@ internal sealed class KernelExecutionModeHandler
 
         // Apply launch_bounds for register limiting or mode-specific requirements
 
-        int maxRegisters = _configuration.ContainsKey("maxRegisters") ? (int)_configuration["maxRegisters"] : 0;
-        bool needsLaunchBounds = _mode == KernelExecutionMode.Cooperative ||
+        var maxRegisters = _configuration.ContainsKey("maxRegisters") ? (int)_configuration["maxRegisters"] : 0;
+        var needsLaunchBounds = _mode == KernelExecutionMode.Cooperative ||
 
                                 _mode == KernelExecutionMode.Persistent ||
                                 maxRegisters > 0;
@@ -189,8 +189,8 @@ internal sealed class KernelExecutionModeHandler
 
             // Add launch_bounds attribute
 
-            int maxThreadsPerBlock = _configuration.ContainsKey("maxThreadsPerBlock") ? (int)_configuration["maxThreadsPerBlock"] : 256;
-            int minBlocksPerSM = _configuration.ContainsKey("minBlocksPerMultiprocessor") ? (int)_configuration["minBlocksPerMultiprocessor"] : 2;
+            var maxThreadsPerBlock = _configuration.ContainsKey("maxThreadsPerBlock") ? (int)_configuration["maxThreadsPerBlock"] : 256;
+            var minBlocksPerSM = _configuration.ContainsKey("minBlocksPerMultiprocessor") ? (int)_configuration["minBlocksPerMultiprocessor"] : 2;
 
             // Adjust for register pressure
 

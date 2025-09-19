@@ -57,7 +57,7 @@ public class MemoryAccessAnalyzer
             AccessFrequency = 1,
             MemoryBandwidthUsage = 0.8,
             CoalescingOpportunities = true,
-            Bottlenecks = new List<string>()
+            Bottlenecks = []
         };
     }
 
@@ -88,7 +88,7 @@ public class MemoryAccessAnalyzer
     /// </summary>
     private class MemoryAccessVisitor : ExpressionVisitor
     {
-        public List<string> AccessedLocations { get; } = new(); // Simplified as strings for now
+        public List<string> AccessedLocations { get; } = []; // Simplified as strings for now
         public MemoryAccessPattern DominantAccessType { get; private set; } = MemoryAccessPattern.Sequential;
         public bool IsCoalesced { get; private set; } = true;
 
@@ -226,7 +226,7 @@ public class ComplexityCalculator
         public int OperationCount { get; private set; }
         public long EstimatedMemoryUsage { get; private set; }
         public double ParallelizationPotential { get; private set; } = 0.7;
-        public Dictionary<string, int> ComplexityByCategory { get; } = new();
+        public Dictionary<string, int> ComplexityByCategory { get; } = [];
 
         protected override Expression VisitBinary(BinaryExpression node)
         {
@@ -320,7 +320,7 @@ public class MemoryAccessAnalysisResult
     public bool CoalescingOpportunities { get; set; }
 
     /// <summary>Gets or sets the identified bottlenecks.</summary>
-    public List<string> Bottlenecks { get; set; } = new();
+    public List<string> Bottlenecks { get; set; } = [];
 
     /// <summary>Gets or sets the cache hit ratio estimate.</summary>
     public double CacheHitRatio { get; set; } = 0.8;
@@ -389,7 +389,7 @@ public class DecimalTypeAnalyzer : ITypeAnalyzer
             MemoryPattern = MemoryAccessPattern.Sequential,
             SupportsSimd = false,
             EstimatedSize = 16,
-            Hints = new List<string>()
+            Hints = []
         };
 
         var visitor = new DecimalUsageVisitor();
@@ -405,7 +405,7 @@ public class DecimalTypeAnalyzer : ITypeAnalyzer
     private class DecimalUsageVisitor : ExpressionVisitor
     {
         public int DecimalUsageCount { get; private set; }
-        public List<string> ConversionRequirements { get; } = new();
+        public List<string> ConversionRequirements { get; } = [];
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
@@ -489,7 +489,7 @@ public class StringTypeAnalyzer : ITypeAnalyzer
             MemoryPattern = MemoryAccessPattern.Random,
             SupportsSimd = false,
             EstimatedSize = IntPtr.Size,
-            Hints = new List<string>()
+            Hints = []
         };
 
         var visitor = new StringUsageVisitor();
@@ -505,7 +505,7 @@ public class StringTypeAnalyzer : ITypeAnalyzer
     private class StringUsageVisitor : ExpressionVisitor
     {
         public int StringUsageCount { get; private set; }
-        public List<string> ConversionRequirements { get; } = new();
+        public List<string> ConversionRequirements { get; } = [];
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
@@ -589,7 +589,7 @@ public class BooleanTypeAnalyzer : ITypeAnalyzer
             MemoryPattern = MemoryAccessPattern.Sequential,
             SupportsSimd = true,
             EstimatedSize = 1,
-            Hints = new List<string>()
+            Hints = []
         };
 
         var visitor = new BooleanUsageVisitor();

@@ -12,7 +12,9 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 
@@ -52,7 +54,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Profiles a kernel launch with comprehensive metrics
         /// </summary>
-        public async Task<Core.Kernels.KernelProfilingResult> ProfileKernelAsync(
+        public async Task<KernelProfilingResult> ProfileKernelAsync(
             string kernelName,
             IntPtr functionHandle,
             KernelArguments arguments,
@@ -115,7 +117,7 @@ namespace DotCompute.Backends.CUDA.Advanced
 
                 // Use real metrics if available, fallback to calculated
 
-                var throughput = new ThroughputMetrics
+                var throughput = new CudaThroughputMetrics
                 {
                     MemoryBandwidth = kernelMetrics.DramReadThroughput > 0
 
@@ -295,7 +297,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Calculates throughput metrics
         /// </summary>
-        private ThroughputMetrics CalculateThroughput(double avgTimeMs, KernelArguments arguments)
+        private CudaThroughputMetrics CalculateThroughput(double avgTimeMs, KernelArguments arguments)
         {
             // Estimate memory bandwidth utilization
             var memorySize = EstimateMemoryFootprint(arguments);
@@ -307,7 +309,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             var peakGFLOPS = smCount * clockRate * 128; // Approximate for Ada
             var achievedGFLOPS = peakGFLOPS * 0.3; // Rough estimate
 
-            return new ThroughputMetrics
+            return new CudaThroughputMetrics
             {
                 MemoryBandwidth = memoryBandwidth,
                 ComputePerformance = achievedGFLOPS
@@ -317,7 +319,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Analyzes potential bottlenecks and generates optimization suggestions using real metrics
         /// </summary>
-        private (Core.Kernels.BottleneckAnalysis bottleneck, List<string> suggestions) AnalyzeBottlenecks(
+        private (BottleneckAnalysis bottleneck, List<string> suggestions) AnalyzeBottlenecks(
             ProfilingStatistics stats,
 
             OccupancyMetrics occupancy,
@@ -496,9 +498,9 @@ namespace DotCompute.Backends.CUDA.Advanced
     }
 
     /// <summary>
-    /// Throughput performance metrics
+    /// CUDA-specific throughput performance metrics
     /// </summary>
-    public sealed class ThroughputMetrics
+    public sealed class CudaThroughputMetrics
     {
         public double MemoryBandwidth { get; set; } // GB/s
         public double ComputePerformance { get; set; } // GFLOPS

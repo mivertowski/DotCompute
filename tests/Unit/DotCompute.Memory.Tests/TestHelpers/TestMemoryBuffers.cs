@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#pragma warning disable CA2000 // Dispose objects before losing scope - Test implementations don't require disposal
+
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
@@ -670,10 +672,11 @@ internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmana
     }
 
 
-    protected override ValueTask DisposeCoreAsync()
+    protected override async ValueTask DisposeCoreAsync()
     {
-        // Async cleanup logic if needed
-        return ValueTask.CompletedTask;
+        // Call base implementation to ensure proper disposal chain
+        await base.DisposeCoreAsync();
+        DisposeCore();
     }
 }
 
@@ -684,12 +687,13 @@ internal sealed class TestAccelerator : IAccelerator
 {
     public AcceleratorType Type => AcceleratorType.CPU;
 
+    public string DeviceType => "TestDevice";
 
     public AcceleratorInfo Info => new(Type, "Test Accelerator", "1.0.0", 1024 * 1024 * 1024);
 
-
     public IUnifiedMemoryManager Memory => null!;
 
+    public IUnifiedMemoryManager MemoryManager => null!;
 
     public AcceleratorContext Context => AcceleratorContext.Invalid;
 

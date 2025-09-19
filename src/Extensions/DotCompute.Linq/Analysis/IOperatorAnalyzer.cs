@@ -123,6 +123,16 @@ namespace DotCompute.Linq.Analysis
         /// Gets or sets fusion opportunities with other operators.
         /// </summary>
         public List<FusionOpportunity> FusionOpportunities { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the implementation method for this operator.
+        /// </summary>
+        public ImplementationMethod Implementation { get; set; } = ImplementationMethod.Library;
+
+        /// <summary>
+        /// Gets or sets the accuracy information for this operator.
+        /// </summary>
+        public AccuracyInfo Accuracy { get; set; } = new();
     }
 
 
@@ -295,6 +305,21 @@ namespace DotCompute.Linq.Analysis
         /// Gets or sets special cases or limitations.
         /// </summary>
         public List<string> SpecialCases { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the overall accuracy level of the operator.
+        /// </summary>
+        public AccuracyLevel AccuracyLevel { get; set; } = AccuracyLevel.High;
+
+        /// <summary>
+        /// Gets or sets the numerical stability measure.
+        /// </summary>
+        public double NumericalStability { get; set; } = 1.0;
+
+        /// <summary>
+        /// Gets or sets the error bounds information.
+        /// </summary>
+        public double ErrorBounds { get; set; } = 0.0;
     }
 
     /// <summary>
@@ -321,6 +346,26 @@ namespace DotCompute.Linq.Analysis
         /// Gets or sets the compute intensity (ops per byte).
         /// </summary>
         public double ComputeIntensity { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cache efficiency (0.0 to 1.0).
+        /// </summary>
+        public double CacheEfficiency { get; set; } = 0.5;
+
+        /// <summary>
+        /// Gets or sets the parallel efficiency (0.0 to 1.0).
+        /// </summary>
+        public double ParallelEfficiency { get; set; } = 0.8;
+
+        /// <summary>
+        /// Gets or sets the scalability factor.
+        /// </summary>
+        public double ScalabilityFactor { get; set; } = 1.0;
+
+        /// <summary>
+        /// Gets or sets the power efficiency.
+        /// </summary>
+        public double PowerEfficiency { get; set; } = 1.0;
     }
 
     /// <summary>
@@ -347,6 +392,16 @@ namespace DotCompute.Linq.Analysis
         /// Quadratic complexity.
         /// </summary>
         Quadratic,
+
+        /// <summary>
+        /// Linearithmic complexity (O(n log n)).
+        /// </summary>
+        Linearithmic,
+
+        /// <summary>
+        /// Cubic complexity (O(n³)).
+        /// </summary>
+        Cubic,
 
         /// <summary>
         /// Exponential complexity.
@@ -543,5 +598,41 @@ namespace DotCompute.Linq.Analysis
         /// Unstable error propagation.
         /// </summary>
         Unstable
+    }
+
+    /// <summary>
+    /// Defines accuracy levels for operator implementations.
+    /// </summary>
+    public enum AccuracyLevel
+    {
+        /// <summary>
+        /// Exact computation with no loss of precision.
+        /// </summary>
+        Exact,
+
+        /// <summary>
+        /// High accuracy with minimal error.
+        /// </summary>
+        High,
+
+        /// <summary>
+        /// Standard accuracy suitable for most applications.
+        /// </summary>
+        Standard,
+
+        /// <summary>
+        /// Reduced accuracy for performance optimization.
+        /// </summary>
+        Reduced,
+
+        /// <summary>
+        /// Low accuracy with potential significant errors.
+        /// </summary>
+        Low,
+
+        /// <summary>
+        /// Unknown or variable accuracy.
+        /// </summary>
+        Unknown
     }
 }

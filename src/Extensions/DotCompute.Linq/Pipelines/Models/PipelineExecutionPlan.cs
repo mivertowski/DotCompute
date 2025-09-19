@@ -14,12 +14,12 @@ public class PipelineExecutionPlan
     /// <summary>
     /// Gets or sets the list of pipeline stages in execution order.
     /// </summary>
-    public List<PipelineStageInfo> Stages { get; set; } = new();
+    public List<PipelineStageInfo> Stages { get; set; } = [];
 
     /// <summary>
     /// Gets or sets optimization hints for the entire pipeline.
     /// </summary>
-    public List<string> OptimizationHints { get; set; } = new();
+    public List<string> OptimizationHints { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the estimated complexity of the entire pipeline.
@@ -29,7 +29,7 @@ public class PipelineExecutionPlan
     /// <summary>
     /// Gets or sets identified opportunities for parallel execution.
     /// </summary>
-    public List<ParallelizationOpportunity> ParallelizationOpportunities { get; set; } = new();
+    public List<ParallelizationOpportunity> ParallelizationOpportunities { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the estimated total execution time.
@@ -49,7 +49,7 @@ public class PipelineExecutionPlan
     /// <summary>
     /// Gets or sets additional metadata about the pipeline.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 /// <summary>
@@ -75,7 +75,7 @@ public class PipelineStageInfo
     /// <summary>
     /// Gets or sets the parameters for kernel execution.
     /// </summary>
-    public Dictionary<string, object> Parameters { get; set; } = new();
+    public Dictionary<string, object> Parameters { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the complexity level of this stage.
@@ -100,7 +100,7 @@ public class PipelineStageInfo
     /// <summary>
     /// Gets or sets the stage IDs this stage depends on.
     /// </summary>
-    public List<int> Dependencies { get; set; } = new();
+    public List<int> Dependencies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether this stage can run in parallel with others.
@@ -110,12 +110,12 @@ public class PipelineStageInfo
     /// <summary>
     /// Gets or sets optimization hints specific to this stage.
     /// </summary>
-    public List<string> OptimizationHints { get; set; } = new();
+    public List<string> OptimizationHints { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the input data types for this stage.
     /// </summary>
-    public List<Type> InputTypes { get; set; } = new();
+    public List<Type> InputTypes { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the output data type for this stage.
@@ -125,7 +125,7 @@ public class PipelineStageInfo
     /// <summary>
     /// Gets or sets custom configuration for this stage.
     /// </summary>
-    public Dictionary<string, object> Configuration { get; set; } = new();
+    public Dictionary<string, object> Configuration { get; set; } = [];
 }
 
 /// <summary>
@@ -254,9 +254,9 @@ public enum ParallelizationStrategy
 /// </summary>
 public class PipelineOptimizationContext
 {
-    private readonly List<string> _hints = new();
-    private readonly Dictionary<string, int> _operationCounts = new();
-    private readonly List<PipelineStageInfo> _analyzedStages = new();
+    private readonly List<string> _hints = [];
+    private readonly Dictionary<string, int> _operationCounts = [];
+    private readonly List<PipelineStageInfo> _analyzedStages = [];
 
     /// <summary>
     /// Analyzes a pipeline stage and updates optimization context.
@@ -403,12 +403,12 @@ public class PipelinePerformanceReport
     /// <summary>
     /// Gets or sets performance optimization recommendations.
     /// </summary>
-    public List<string> Recommendations { get; set; } = new();
+    public List<string> Recommendations { get; set; } = [];
 
     /// <summary>
     /// Gets or sets bottleneck analysis results.
     /// </summary>
-    public List<BottleneckInfo> Bottlenecks { get; set; } = new();
+    public List<BottleneckInfo> Bottlenecks { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the confidence level in the estimates.
@@ -418,7 +418,7 @@ public class PipelinePerformanceReport
     /// <summary>
     /// Gets or sets alternative execution strategies.
     /// </summary>
-    public List<ExecutionStrategy> AlternativeStrategies { get; set; } = new();
+    public List<ExecutionStrategy> AlternativeStrategies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the parallelization potential (0.0 to 1.0).
@@ -464,7 +464,7 @@ public class BottleneckInfo
     /// <summary>
     /// Gets or sets suggested mitigations.
     /// </summary>
-    public List<string> Mitigations { get; set; } = new();
+    public List<string> Mitigations { get; set; } = [];
 }
 
 /// <summary>
@@ -540,7 +540,7 @@ public class BackendPerformanceEstimate
     /// <summary>
     /// Gets or sets backend-specific limitations.
     /// </summary>
-    public List<string> Limitations { get; set; } = new();
+    public List<string> Limitations { get; set; } = [];
 }
 
 /// <summary>
@@ -561,12 +561,12 @@ public class MemoryEstimate
     /// <summary>
     /// Gets or sets memory usage by stage.
     /// </summary>
-    public Dictionary<int, long> MemoryByStage { get; set; } = new();
+    public Dictionary<int, long> MemoryByStage { get; set; } = [];
 
     /// <summary>
     /// Gets or sets memory optimization opportunities.
     /// </summary>
-    public List<string> OptimizationOpportunities { get; set; } = new();
+    public List<string> OptimizationOpportunities { get; set; } = [];
 }
 
 /// <summary>

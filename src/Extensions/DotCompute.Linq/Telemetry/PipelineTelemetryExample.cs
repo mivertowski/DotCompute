@@ -38,7 +38,7 @@ public class PipelineTelemetryExample
         try
         {
             // Run multiple pipeline executions to validate performance
-            for (int i = 0; i < 1000; i++)
+            for (var i = 0; i < 1000; i++)
             {
                 var result = await ExecuteSamplePipelineWithTelemetryAsync(
                     metricsService,
@@ -172,7 +172,7 @@ public class PipelineTelemetryExample
                 async () =>
                 {
                     // Multiple cache accesses for aggregation
-                    for (int i = 0; i < 5; i++)
+                    for (var i = 0; i < 5; i++)
                     {
                         var cacheKey = $"agg-{pipelineId}-{i}";
                         var cacheHit = Random.Shared.NextDouble() > 0.2; // 80% hit rate for aggregation
@@ -299,7 +299,7 @@ public sealed class ExampleResult
     public PerformanceOverheadStats OverheadStats { get; set; } = null!;
     public bool MeetsPerformanceRequirement { get; set; }
     public IReadOnlyDictionary<string, DotCompute.Core.Pipelines.Interfaces.IPipelineMetrics> PipelineMetrics { get; set; } = null!;
-    public Dictionary<string, string> ExportedMetrics { get; set; } = new();
+    public Dictionary<string, string> ExportedMetrics { get; set; } = [];
     public double AverageExecutionTime { get; set; }
     public double CacheHitRateOverall { get; set; }
     public double ThroughputOverall { get; set; }
@@ -357,7 +357,7 @@ public sealed class Requirement
 public sealed class ValidationResult
 {
     public bool AllRequirementsMet { get; set; }
-    public List<Requirement> Requirements { get; set; } = new();
+    public List<Requirement> Requirements { get; set; } = [];
     public double OverallScore { get; set; }
     public string Summary { get; set; } = string.Empty;
 

@@ -14,8 +14,8 @@ namespace DotCompute.Linq.Compilation.Analysis;
 /// </summary>
 public class DataFlowGraph
 {
-    private readonly Dictionary<string, DataFlowNode> _nodes = new();
-    private readonly List<DataFlowEdge> _edges = new();
+    private readonly Dictionary<string, DataFlowNode> _nodes = [];
+    private readonly List<DataFlowEdge> _edges = [];
 
     /// <summary>Gets all nodes in the graph.</summary>
     public IReadOnlyCollection<DataFlowNode> Nodes => _nodes.Values;
@@ -139,7 +139,7 @@ public record DataFlowNode
     public object? Value { get; init; }
 
     /// <summary>Gets additional metadata for the node.</summary>
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>

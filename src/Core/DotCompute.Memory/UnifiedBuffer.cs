@@ -81,7 +81,12 @@ public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanag
         get
         {
             if (!IsOnDevice || _deviceMemory.Handle == IntPtr.Zero)
+            {
+
                 return IntPtr.Zero;
+            }
+
+
             return _deviceMemory.Handle;
         }
     }

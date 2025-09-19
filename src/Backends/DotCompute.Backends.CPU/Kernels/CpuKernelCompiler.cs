@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;

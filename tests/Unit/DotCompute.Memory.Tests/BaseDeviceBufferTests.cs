@@ -15,10 +15,10 @@ public class BaseDeviceBufferTests
 {
     [Fact]
     [Trait("Category", "BufferTypes")]
-    public void DeviceBuffer_InitializesCorrectly()
+    public async Task DeviceBuffer_InitializesCorrectly()
     {
         // Arrange
-        var accelerator = new TestAccelerator();
+        await using var accelerator = new TestAccelerator();
 
         // Act
 
@@ -38,10 +38,10 @@ public class BaseDeviceBufferTests
     [InlineData(MemoryType.Shared)]
     [InlineData(MemoryType.Pinned)]
     [Trait("Category", "BufferTypes")]
-    public void DeviceBuffer_SupportsMultipleMemoryTypes(MemoryType memoryType)
+    public async Task DeviceBuffer_SupportsMultipleMemoryTypes(MemoryType memoryType)
     {
         // Arrange
-        var accelerator = new TestAccelerator();
+        await using var accelerator = new TestAccelerator();
 
         // Act
 
@@ -55,10 +55,10 @@ public class BaseDeviceBufferTests
 
     [Fact]
     [Trait("Category", "BufferTypes")]
-    public void DeviceBuffer_ThrowsOnHostOperations()
+    public async Task DeviceBuffer_ThrowsOnHostOperations()
     {
         // Arrange
-        var accelerator = new TestAccelerator();
+        await using var accelerator = new TestAccelerator();
         using var buffer = new TestDeviceBuffer<double>(accelerator, 800);
 
         // Act & Assert
@@ -73,15 +73,15 @@ public class BaseDeviceBufferTests
 
     [Fact]
     [Trait("Category", "BufferTypes")]
-    public void DeviceBuffer_TracksDisposalState()
+    public async Task DeviceBuffer_TracksDisposalState()
     {
         // Arrange
-        var accelerator = new TestAccelerator();
+        await using var accelerator = new TestAccelerator();
         var buffer = new TestDeviceBuffer<float>(accelerator, 256);
 
         // Act
 
-        buffer.Dispose();
+        await buffer.DisposeAsync();
 
         // Assert
         _ = buffer.IsDisposed.Should().BeTrue();

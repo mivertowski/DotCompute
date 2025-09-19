@@ -3,7 +3,10 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Optimization;
+using DotCompute.Core.Optimization.Enums;
+using DotCompute.Core.Optimization.Models;
+using DotCompute.Core.Optimization.Performance;
+using DotCompute.Core.Optimization.Selection;
 using DotCompute.Linq.Pipelines.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -481,7 +484,7 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
                 Type = BottleneckType.MemoryCapacity,
                 Severity = 0.8,
                 Description = $"Stage {stage.StageId} requires {stage.RequiredMemory / (1024 * 1024)}MB of memory",
-                Mitigations = new List<string> { "Enable streaming execution", "Increase memory pool size", "Use memory-mapped files" }
+                Mitigations = ["Enable streaming execution", "Increase memory pool size", "Use memory-mapped files"]
             });
         }
 
@@ -494,7 +497,7 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
                 Type = BottleneckType.ComputeThroughput,
                 Severity = 0.9,
                 Description = $"Stage {stage.StageId} has very high computational complexity",
-                Mitigations = new List<string> { "Use GPU acceleration", "Optimize algorithm", "Parallelize computation" }
+                Mitigations = ["Use GPU acceleration", "Optimize algorithm", "Parallelize computation"]
             });
         }
 
@@ -561,7 +564,7 @@ internal class StagePerformanceAnalysis
     public long EstimatedMemoryUsage { get; set; }
     public double EstimatedThroughput { get; set; }
     public double BottleneckPotential { get; set; }
-    public List<string> OptimizationOpportunities { get; set; } = new();
+    public List<string> OptimizationOpportunities { get; set; } = [];
 }
 
 internal class OverallPerformanceEstimate
@@ -572,7 +575,7 @@ internal class OverallPerformanceEstimate
 
 internal class PerformanceModelCache
 {
-    private readonly Dictionary<string, StagePerformanceAnalysis> _cache = new();
+    private readonly Dictionary<string, StagePerformanceAnalysis> _cache = [];
     private readonly object _lock = new();
 
     public bool TryGetCachedAnalysis(string key, out StagePerformanceAnalysis analysis)
@@ -603,14 +606,14 @@ public class PerformanceAnalysisException : Exception
 // Placeholder implementations for remaining methods
 public partial class PipelinePerformanceAnalyzer
 {
-    private List<BottleneckInfo> AnalyzeInterStageBottlenecks(PipelineExecutionPlan pipeline) => new();
-    private List<string> AnalyzeKernelFusionOpportunities(PipelineExecutionPlan pipeline) => new();
-    private List<string> AnalyzeParallelizationOpportunities(PipelineExecutionPlan pipeline) => new();
-    private List<string> AnalyzeMemoryOptimizationOpportunities(PipelineExecutionPlan pipeline) => new();
+    private List<BottleneckInfo> AnalyzeInterStageBottlenecks(PipelineExecutionPlan pipeline) => [];
+    private List<string> AnalyzeKernelFusionOpportunities(PipelineExecutionPlan pipeline) => [];
+    private List<string> AnalyzeParallelizationOpportunities(PipelineExecutionPlan pipeline) => [];
+    private List<string> AnalyzeMemoryOptimizationOpportunities(PipelineExecutionPlan pipeline) => [];
     private Task<List<string>> AnalyzeBackendOptimizations(PipelineExecutionPlan pipeline) => Task.FromResult(new List<string>());
-    private List<string> AnalyzeCachingOpportunities(PipelineExecutionPlan pipeline) => new();
+    private List<string> AnalyzeCachingOpportunities(PipelineExecutionPlan pipeline) => [];
     private double CalculateConfidenceLevel(PipelineExecutionPlan plan) => 0.85;
-    private List<ExecutionStrategy> GenerateAlternativeStrategies(PipelineExecutionPlan plan, List<BottleneckInfo> bottlenecks) => new();
+    private List<ExecutionStrategy> GenerateAlternativeStrategies(PipelineExecutionPlan plan, List<BottleneckInfo> bottlenecks) => [];
     private Task<Dictionary<string, BackendEstimate>> GenerateBackendEstimates(PipelineExecutionPlan plan)
     {
         var estimates = new Dictionary<string, BackendEstimate>
@@ -634,7 +637,7 @@ public partial class PipelinePerformanceAnalyzer
     }
     private string GenerateRecommendationReasoning(string backend, BackendScore score, PipelineExecutionPlan plan) => $"Selected {backend} based on compatibility and performance scores";
     private long CalculatePeakMemoryAtStage(List<PipelineStageInfo> stages, int stageId) => stages.Where(s => s.StageId <= stageId).Sum(s => s.RequiredMemory);
-    private List<string> IdentifyMemoryOptimizationOpportunities(PipelineExecutionPlan plan) => new();
+    private List<string> IdentifyMemoryOptimizationOpportunities(PipelineExecutionPlan plan) => [];
     private bool IsStageCompatible(PipelineStageInfo stage, BackendCapabilities capabilities) => stage.SupportedBackends.Contains(capabilities.BackendName) || capabilities.SupportedOperations.Contains("All");
     private double CalculateScoreConfidence(BackendCapabilities capabilities, PipelineExecutionPlan plan) => capabilities.Reliability;
 }

@@ -13,6 +13,11 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Telemetry;
 using DotCompute.Core.Telemetry.System;
 using DotCompute.Core.Pipelines;
+using DotCompute.Core.Optimization.Configuration;
+using DotCompute.Core.Optimization.Enums;
+using DotCompute.Core.Optimization.Models;
+using DotCompute.Core.Optimization.Performance;
+using DotCompute.Core.Optimization.Selection;
 
 namespace DotCompute.Core.Optimization;
 
@@ -435,7 +440,7 @@ public class AdaptiveBackendSelector : IDisposable
             WorkloadPattern = signature.WorkloadPattern,
             EstimatedExecutionTimeMs = EstimateExecutionTime(characteristics),
             EstimatedMemoryUsageMB = EstimateMemoryUsage(characteristics),
-            HistoricalPerformance = new Dictionary<string, BackendPerformanceStats>(),
+            HistoricalPerformance = [],
             TotalHistoryEntries = 0
         };
 
@@ -626,8 +631,8 @@ public class AdaptiveBackendSelector : IDisposable
         return (long)(baseMemory * memoryMultiplier);
     }
 
-    private static string GetWorkloadCacheKey(WorkloadSignature signature) =>
-        $"{signature.KernelName}_{signature.DataSize}_{signature.ComputeIntensity:F2}_{signature.MemoryIntensity:F2}_{signature.ParallelismLevel:F2}";
+    private static string GetWorkloadCacheKey(WorkloadSignature signature)
+        => $"{signature.KernelName}_{signature.DataSize}_{signature.ComputeIntensity:F2}_{signature.MemoryIntensity:F2}_{signature.ParallelismLevel:F2}";
 
     private string GetBackendId(IAccelerator accelerator)
     {

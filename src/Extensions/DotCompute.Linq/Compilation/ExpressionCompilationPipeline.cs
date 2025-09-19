@@ -105,7 +105,7 @@ public sealed class ExpressionCompilationPipeline : IDisposable
 
                 var pipelineAnalysisResult = new PipelineAnalysisResult
                 {
-                    OperatorInfo = new List<PipelineOperatorInfo>(),
+                    OperatorInfo = [],
                     TypeUsage = analysisResult.TypeUsage.Select(kvp => new DotCompute.Linq.Compilation.Analysis.TypeUsageInfo
                     {
                         Type = kvp.Key,
@@ -348,7 +348,7 @@ public sealed class ExpressionCompilationPipeline : IDisposable
             ParallelizationPotential = source.ParallelizationPotential,
             Recommendations = source.Recommendations.ToList(),
             Bottlenecks = source.Bottlenecks.ToList(),
-            OptimizationHints = source.OptimizationHints?.Select(h => h.Description).ToList() ?? new List<string>()
+            OptimizationHints = source.OptimizationHints?.Select(h => h.Description).ToList() ?? []
         };
     }
 
@@ -358,7 +358,11 @@ public sealed class ExpressionCompilationPipeline : IDisposable
     private static ImmutableArray<OptimizationHint> ConvertOptimizationHints(List<string> hintStrings)
     {
         if (hintStrings == null || hintStrings.Count == 0)
+        {
+
             return ImmutableArray<OptimizationHint>.Empty;
+        }
+
 
         var hints = hintStrings.Select(hint => new OptimizationHint
         {
@@ -414,7 +418,7 @@ public sealed class ExpressionCompilationPipeline : IDisposable
             Dependencies = analysisResult.Dependencies.Select(d => new Analysis.DependencyInfo
             {
                 DependentOperation = d.DependentOperation ?? string.Empty,
-                Dependencies = d.Dependencies?.ToList() ?? new List<string>(),
+                Dependencies = d.Dependencies?.ToList() ?? [],
                 Type = Analysis.DependencyType.Data,
                 AllowsParallelization = d.AllowsParallelization
             }).ToList(),
@@ -453,9 +457,13 @@ public sealed class ExpressionCompilationPipeline : IDisposable
         object sourcePattern)
     {
         if (sourcePattern is DotCompute.Linq.Compilation.Analysis.GlobalMemoryAccessPattern compilationPattern)
+        {
+
             return compilationPattern;
+        }
 
         // Create a new pattern with default values
+
         return new DotCompute.Linq.Compilation.Analysis.GlobalMemoryAccessPattern();
     }
 
@@ -572,7 +580,7 @@ internal sealed class LinqToAbstractionsKernelAdapter : DotCompute.Abstractions.
     {
         return new PipelineAnalysisResult
         {
-            OperatorInfo = new List<PipelineOperatorInfo>(),
+            OperatorInfo = [],
             TypeUsage = analysisResult.TypeUsage.Select(kvp => new DotCompute.Linq.Compilation.Analysis.TypeUsageInfo
             {
                 Type = kvp.Key,
@@ -622,9 +630,9 @@ internal sealed class LinqToAbstractionsKernelAdapter : DotCompute.Abstractions.
     {
         return new PipelineAnalysisResult
         {
-            OperatorInfo = new List<PipelineOperatorInfo>(),
-            TypeUsage = new List<DotCompute.Linq.Compilation.Analysis.TypeUsageInfo>(),
-            Dependencies = new List<DotCompute.Linq.Compilation.Analysis.DependencyInfo>(),
+            OperatorInfo = [],
+            TypeUsage = [],
+            Dependencies = [],
             ComplexityMetrics = new PipelineComplexityMetrics
             {
                 OverallComplexity = (int)analysisResult.ComplexityScore,

@@ -3,6 +3,8 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Abstractions.Types;
 namespace DotCompute.Backends.Metal.Kernels;
 

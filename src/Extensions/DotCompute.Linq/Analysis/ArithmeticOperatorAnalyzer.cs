@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
+using DotCompute.Core.Analysis;
 using DotCompute.Linq.Types;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Compilation.Analysis;
@@ -26,7 +27,7 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
                 IsComputeFriendly = false,
                 SupportsVectorization = false,
                 OptimalVectorWidth = 1,
-                BackendCompatibility = new Dictionary<BackendType, OperatorCompatibility>(),
+                BackendCompatibility = [],
                 OptimizationHints = [],
                 Complexity = ComputationalComplexity.Linear,
                 FusionOpportunities = []
@@ -90,7 +91,7 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
         var opportunities = new List<FusionOpportunity>();
 
         // Look for arithmetic operation chains
-        for (int i = 0; i < operatorList.Count - 1; i++)
+        for (var i = 0; i < operatorList.Count - 1; i++)
         {
             var current = operatorList[i];
             var next = operatorList[i + 1];
@@ -159,7 +160,7 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
 
         return new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
         {
-            OperatorType = DotCompute.Linq.Pipelines.Analysis.OperatorType.Mathematical,
+            OperatorType = UnifiedOperatorType.Mathematical,
             Name = operatorName,
             InputTypes = inputTypes.ToList(),
             OutputType = outputType,
@@ -192,8 +193,10 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
     public double EstimateExecutionCost(Expression expression)
     {
         if (expression == null)
-            return 0.0;
+        {
 
+            return 0.0;
+        }
 
         var baseCost = GetBaseCost(expression.NodeType);
         var typePenalty = GetTypePenalty(expression.Type);
@@ -324,8 +327,10 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
 
     private static Type DetermineResultType(ExpressionType operatorType, Type[] operandTypes)
     {
-        if (operandTypes.Length == 0) return typeof(object);
-
+        if (operandTypes.Length == 0)
+        {
+            return typeof(object);
+        }
 
         return operatorType switch
         {
@@ -575,12 +580,16 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
     private static NumericalPrecision DetermineNumericalPrecision(ExpressionType operatorType, Type[] operandTypes)
     {
         if (operandTypes.Any(t => t == typeof(decimal)))
-            return NumericalPrecision.High;
+        {
 
+            return NumericalPrecision.High;
+        }
 
         if (operandTypes.Any(t => t == typeof(double)))
-            return NumericalPrecision.Standard;
+        {
 
+            return NumericalPrecision.Standard;
+        }
 
         return operatorType switch
         {

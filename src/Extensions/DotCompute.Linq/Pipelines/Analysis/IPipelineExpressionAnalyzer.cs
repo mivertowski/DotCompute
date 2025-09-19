@@ -129,12 +129,12 @@ public class PipelineConfiguration
     /// <summary>
     /// Gets or sets the pipeline stages.
     /// </summary>
-    public List<PipelineStageInfo> Stages { get; set; } = new();
+    public List<PipelineStageInfo> Stages { get; set; } = [];
 
     /// <summary>
     /// Gets or sets optimization hints for the pipeline.
     /// </summary>
-    public List<string> OptimizationHints { get; set; } = new();
+    public List<string> OptimizationHints { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the estimated complexity.
@@ -149,7 +149,7 @@ public class PipelineConfiguration
     /// <summary>
     /// Gets or sets additional configuration parameters.
     /// </summary>
-    public Dictionary<string, object> Parameters { get; set; } = new();
+    public Dictionary<string, object> Parameters { get; set; } = [];
 }
 
 /// <summary>
@@ -213,22 +213,22 @@ public class ExpressionAnalysisResult
     /// <summary>
     /// Gets or sets optimization recommendations.
     /// </summary>
-    public List<string> Recommendations { get; set; } = new();
+    public List<string> Recommendations { get; set; } = [];
 
     /// <summary>
     /// Gets or sets identified bottlenecks.
     /// </summary>
-    public List<string> Bottlenecks { get; set; } = new();
+    public List<string> Bottlenecks { get; set; } = [];
 
     /// <summary>
     /// Gets or sets alternative execution strategies.
     /// </summary>
-    public List<string> AlternativeStrategies { get; set; } = new();
+    public List<string> AlternativeStrategies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the operator chain analysis for the expression.
     /// </summary>
-    public List<OperatorInfo> OperatorChain { get; set; } = new();
+    public List<OperatorInfo> OperatorChain { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the complexity metrics for the expression.
@@ -238,12 +238,12 @@ public class ExpressionAnalysisResult
     /// <summary>
     /// Gets or sets the operator information for the expression.
     /// </summary>
-    public List<OperatorInfo> OperatorInfo { get; set; } = new();
+    public List<OperatorInfo> OperatorInfo { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the dependencies for the expression.
     /// </summary>
-    public List<string> Dependencies { get; set; } = new();
+    public List<string> Dependencies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the parallelization information.
@@ -273,7 +273,7 @@ public class ExpressionAnalysisResult
     /// <summary>
     /// Gets or sets additional metadata for the analysis.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Internal access to supported operations for modification.
@@ -288,7 +288,7 @@ public class ExpressionAnalysisResult
     /// <summary>
     /// Gets or sets the type usage information for the expression.
     /// </summary>
-    public Dictionary<Type, int> TypeUsage { get; set; } = new();
+    public Dictionary<Type, int> TypeUsage { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the memory access pattern analysis.
@@ -298,7 +298,7 @@ public class ExpressionAnalysisResult
     /// <summary>
     /// Gets or sets the optimization hints for this expression.
     /// </summary>
-    public List<string> OptimizationHints { get; set; } = new();
+    public List<string> OptimizationHints { get; set; } = [];
 }
 
 /// <summary>
@@ -538,12 +538,12 @@ public class OperatorInfo
     /// <summary>
     /// Gets or sets the type of operator.
     /// </summary>
-    public OperatorType OperatorType { get; set; }
+    public DotCompute.Core.Analysis.UnifiedOperatorType OperatorType { get; set; }
 
     /// <summary>
     /// Gets or sets the input types for this operator.
     /// </summary>
-    public List<Type> InputTypes { get; set; } = new();
+    public List<Type> InputTypes { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the output type for this operator.
@@ -573,7 +573,7 @@ public class OperatorInfo
     /// <summary>
     /// Gets or sets additional properties for this operator.
     /// </summary>
-    public Dictionary<string, object> Properties { get; set; } = new();
+    public Dictionary<string, object> Properties { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether this operator is natively supported by the backend.
@@ -597,8 +597,9 @@ public class OperatorInfo
 }
 
 /// <summary>
-/// Types of operators that can be analyzed.
+/// Legacy OperatorType enum - use UnifiedOperatorType instead.
 /// </summary>
+[Obsolete("Use DotCompute.Core.Analysis.UnifiedOperatorType instead. This enum is maintained for backward compatibility.", false)]
 public enum OperatorType
 {
     /// <summary>
@@ -723,6 +724,11 @@ public class ComplexityMetrics
     public int ComputeComplexity { get; set; }
 
     /// <summary>
+    /// Gets or sets the communication complexity score for distributed operations.
+    /// </summary>
+    public int CommunicationComplexity { get; set; }
+
+    /// <summary>
     /// Gets whether the operation is memory-bound.
     /// </summary>
     public bool MemoryBound => MemoryComplexity > ComputationalComplexity * 2;
@@ -735,15 +741,34 @@ public class ComplexityMetrics
     /// <summary>
     /// Gets or sets complexity factors that contribute to the overall score.
     /// </summary>
-    public Dictionary<string, int> ComplexityFactors { get; set; } = new();
+    public Dictionary<string, int> ComplexityFactors { get; set; } = [];
 
     /// <summary>
     /// Gets or sets performance bottlenecks identified in the analysis.
     /// </summary>
-    public List<string> Bottlenecks { get; set; } = new();
+    public List<string> Bottlenecks { get; set; } = [];
 
     /// <summary>
     /// Gets or sets optimization opportunities.
     /// </summary>
-    public List<string> OptimizationOpportunities { get; set; } = new();
+    public List<string> OptimizationOpportunities { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the operation count (alias for OperationsCount).
+    /// </summary>
+    public long OperationCount 
+    { 
+        get => OperationsCount; 
+        set => OperationsCount = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets whether GPU execution is recommended.
+    /// </summary>
+    public bool GpuRecommended { get; set; }
+
+    /// <summary>
+    /// Gets or sets complexity by category.
+    /// </summary>
+    public Dictionary<string, int> ComplexityByCategory { get; set; } = [];
 }

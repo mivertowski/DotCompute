@@ -1,36 +1,42 @@
-// Copyright (c) 2025 Michael Ivertowski
-// Licensed under the MIT License. See LICENSE file in the project root for license information.
+namespace DotCompute.Abstractions.Types;
 
-namespace DotCompute.Backends.CUDA.Advanced.Types
+/// <summary>
+/// Defines the type of workload being processed
+/// </summary>
+public enum WorkloadType
 {
     /// <summary>
-    /// Workload types for optimization decisions.
+    /// General compute workload
     /// </summary>
-    public enum WorkloadType
-    {
-        /// <summary>
-        /// Workload is primarily compute-intensive with heavy ALU usage.
-        /// </summary>
-        ComputeIntensive,
+    Compute = 0,
 
-        /// <summary>
-        /// Workload is limited by memory bandwidth.
-        /// </summary>
-        MemoryBandwidthBound,
+    /// <summary>
+    /// Memory-intensive workload
+    /// </summary>
+    Memory = 1,
 
-        /// <summary>
-        /// Workload makes intensive use of shared memory.
-        /// </summary>
-        SharedMemoryIntensive,
+    /// <summary>
+    /// I/O-intensive workload
+    /// </summary>
+    IO = 2,
 
-        /// <summary>
-        /// Workload utilizes tensor core operations.
-        /// </summary>
-        TensorOperations,
+    /// <summary>
+    /// Mixed workload with compute and memory operations
+    /// </summary>
+    Mixed = 3,
 
-        /// <summary>
-        /// Workload has mixed characteristics.
-        /// </summary>
-        Mixed
-    }
+    /// <summary>
+    /// Graphics/rendering workload
+    /// </summary>
+    Graphics = 4,
+
+    /// <summary>
+    /// Machine learning/AI workload
+    /// </summary>
+    MachineLearning = 5,
+
+    /// <summary>
+    /// Scientific computing workload
+    /// </summary>
+    Scientific = 6
 }

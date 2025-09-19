@@ -180,7 +180,7 @@ public class ThreadSafetyTests : IDisposable
         const int threadCount = 8;
         const int operationsPerThread = 20;
         var memoryManager = _serviceProvider.GetRequiredService<IMemoryManager>();
-        var allocatedBuffers = new ConcurrentBag<IUnifiedBuffer>();
+        var allocatedBuffers = new ConcurrentBag<IUnifiedMemoryBuffer>();
         var exceptions = new ConcurrentBag<Exception>();
         var operationCounts = new ConcurrentDictionary<string, int>();
 

@@ -340,7 +340,7 @@ public class AdaptiveCacheOptions
     /// Gets or sets custom cache key generators for specific data types.
     /// Allows fine-tuned control over how cache keys are generated for different scenarios.
     /// </summary>
-    public Dictionary<Type, Func<object, string>> CustomKeyGenerators { get; set; } = new();
+    public Dictionary<Type, Func<object, string>> CustomKeyGenerators { get; set; } = [];
 
     /// <summary>
     /// Gets or sets cache partitioning configuration for multi-tenant scenarios.
@@ -366,7 +366,7 @@ public class AdaptiveCacheOptions
     /// Gets or sets tags that can be used to group and invalidate cache entries.
     /// Useful for invalidating related entries based on business logic.
     /// </summary>
-    public HashSet<string> DefaultTags { get; set; } = new();
+    public HashSet<string> DefaultTags { get; set; } = [];
 
     /// <summary>
     /// Validates the configuration options and throws an exception if invalid.
@@ -541,7 +541,7 @@ public class CachePartitioningOptions
     /// Gets or sets custom partition size limits for specific partitions.
     /// Key is the partition identifier, value is the size limit as a percentage of total cache.
     /// </summary>
-    public Dictionary<string, double> PartitionSizeLimits { get; set; } = new();
+    public Dictionary<string, double> PartitionSizeLimits { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether cross-partition sharing is allowed when a partition is under-utilized.

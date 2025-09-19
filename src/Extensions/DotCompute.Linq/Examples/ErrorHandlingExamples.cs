@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Types;
+using DotCompute.Linq;
 using DotCompute.Linq.Extensions;
 using DotCompute.Linq.Pipelines;
 using DotCompute.Linq.Pipelines.Diagnostics;

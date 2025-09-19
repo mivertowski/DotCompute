@@ -102,7 +102,8 @@ public sealed class PipelineChain
         PipelineStageOptions? options = null)
     {
         // Add the stage to the underlying builder
-        _builder.AddStage(stageName, parametersProvider, options);
+        ArgumentNullException.ThrowIfNull(parametersProvider);
+        _builder.AddStage(stageName, (object)parametersProvider);
 
         // Return this for method chaining
 

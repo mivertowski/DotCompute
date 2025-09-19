@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
+using DotCompute.Core.Analysis;
 using DotCompute.Linq.Types;
 using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Compilation.Analysis;
@@ -24,7 +25,7 @@ public class ComparisonOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
                 IsComputeFriendly = false,
                 SupportsVectorization = false,
                 OptimalVectorWidth = 1,
-                BackendCompatibility = new Dictionary<BackendType, OperatorCompatibility>(),
+                BackendCompatibility = [],
                 OptimizationHints = [],
                 Complexity = ComputationalComplexity.Linear,
                 FusionOpportunities = []
@@ -106,7 +107,7 @@ public class ComparisonOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
         var opportunities = new List<FusionOpportunity>();
 
         // Look for comparison chains that can be optimized
-        for (int i = 0; i < operatorList.Count - 1; i++)
+        for (var i = 0; i < operatorList.Count - 1; i++)
         {
             var current = operatorList[i];
             var next = operatorList[i + 1];
@@ -183,8 +184,10 @@ public class ComparisonOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
     public double EstimateExecutionCost(Expression expression)
     {
         if (expression == null)
-            return 0.0;
+        {
 
+            return 0.0;
+        }
 
         return GetBaseCost(expression.NodeType);
     }
@@ -198,7 +201,7 @@ public class ComparisonOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
 
         return new DotCompute.Linq.Pipelines.Analysis.OperatorInfo
         {
-            OperatorType = DotCompute.Linq.Pipelines.Analysis.OperatorType.Comparison,
+            OperatorType = UnifiedOperatorType.Comparison,
             Name = operatorName,
             InputTypes = inputTypes.ToList(),
             OutputType = outputType,
@@ -232,8 +235,8 @@ public class ComparisonOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
         _ => Array.Empty<Type>()
     };
 
-    private static bool IsVectorizable(IReadOnlyList<Type> inputTypes) =>
-        inputTypes.All(type => type switch
+    private static bool IsVectorizable(IReadOnlyList<Type> inputTypes)
+        => inputTypes.All(type => type switch
         {
             var t when t == typeof(int) => true,
             var t when t == typeof(float) => true,
@@ -245,8 +248,8 @@ public class ComparisonOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
         });
 
 
-    private static bool IsVectorizable(Type[] operandTypes) =>
-        operandTypes.All(type => type switch
+    private static bool IsVectorizable(Type[] operandTypes)
+        => operandTypes.All(type => type switch
         {
             var t when t == typeof(int) => true,
             var t when t == typeof(float) => true,
@@ -267,7 +270,12 @@ public class ComparisonOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
 
     private static int GetOptimalVectorWidth(Type[] operandTypes)
     {
-        if (operandTypes.Length == 0) return 1;
+        if (operandTypes.Length == 0)
+        {
+            return 1;
+        }
+
+
         var primaryType = operandTypes[0];
         return primaryType switch
         {

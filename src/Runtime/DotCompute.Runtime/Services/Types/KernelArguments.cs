@@ -63,7 +63,7 @@ public class KernelArguments
             .Concat(ScalarArguments.Select(s => s.GetType()))
             .ToArray();
 
-        for (int i = 0; i < expectedTypes.Length; i++)
+        for (var i = 0; i < expectedTypes.Length; i++)
         {
             if (!expectedTypes[i].IsAssignableFrom(actualTypes[i]))
             {
@@ -188,30 +188,30 @@ public readonly struct Dimensions3D : IEquatable<Dimensions3D>
     }
 
     /// <inheritdoc/>
-    public bool Equals(Dimensions3D other) =>
-        X == other.X && Y == other.Y && Z == other.Z;
+    public bool Equals(Dimensions3D other)
+        => X == other.X && Y == other.Y && Z == other.Z;
 
     /// <inheritdoc/>
-    public override bool Equals(object? obj) =>
-        obj is Dimensions3D other && Equals(other);
+    public override bool Equals(object? obj)
+        => obj is Dimensions3D other && Equals(other);
 
     /// <inheritdoc/>
-    public override int GetHashCode() =>
-        HashCode.Combine(X, Y, Z);
+    public override int GetHashCode()
+        => HashCode.Combine(X, Y, Z);
 
     /// <inheritdoc/>
-    public override string ToString() =>
-        Z == 1 ? (Y == 1 ? $"({X})" : $"({X}, {Y})") : $"({X}, {Y}, {Z})";
+    public override string ToString()
+        => Z == 1 ? (Y == 1 ? $"({X})" : $"({X}, {Y})") : $"({X}, {Y}, {Z})";
 
     /// <summary>
     /// Equality operator.
     /// </summary>
-    public static bool operator ==(Dimensions3D left, Dimensions3D right) =>
-        left.Equals(right);
+    public static bool operator ==(Dimensions3D left, Dimensions3D right)
+        => left.Equals(right);
 
     /// <summary>
     /// Inequality operator.
     /// </summary>
-    public static bool operator !=(Dimensions3D left, Dimensions3D right) =>
-        !left.Equals(right);
+    public static bool operator !=(Dimensions3D left, Dimensions3D right)
+        => !left.Equals(right);
 }

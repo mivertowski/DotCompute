@@ -40,4 +40,14 @@ public class KernelParameter
     /// Gets the parameter direction.
     /// </summary>
     public ParameterDirection Direction { get; }
+
+    /// <summary>
+    /// Gets or sets the parameter size in bytes.
+    /// </summary>
+    public long Size { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional parameter metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }

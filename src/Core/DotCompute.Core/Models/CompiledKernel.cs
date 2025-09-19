@@ -86,5 +86,25 @@ namespace DotCompute.Core.Models
         /// Gets or sets the compilation log.
         /// </summary>
         public string? CompilationLog { get; set; }
+
+        /// <summary>
+        /// Gets or sets the entry point function name for this kernel.
+        /// </summary>
+        public string EntryPoint { get; set; } = "";
+
+        /// <summary>
+        /// Gets or sets the target device or accelerator type for this kernel.
+        /// </summary>
+        public string TargetDevice { get; set; } = "Unknown";
+
+        /// <summary>
+        /// Gets or sets the required shared memory size in bytes for this kernel.
+        /// </summary>
+        public long RequiredSharedMemory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum threads per block supported by this kernel.
+        /// </summary>
+        public int MaxThreadsPerBlock { get; set; } = 1024;
     }
 }

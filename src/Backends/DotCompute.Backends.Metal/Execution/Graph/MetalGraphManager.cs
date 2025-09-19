@@ -129,7 +129,10 @@ public sealed class MetalGraphManager : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         
         if (string.IsNullOrWhiteSpace(name))
+        {
             return false;
+        }
+
 
         if (_graphs.TryRemove(name, out var graph))
         {
@@ -156,7 +159,10 @@ public sealed class MetalGraphManager : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         
         if (string.IsNullOrWhiteSpace(sourceName) || string.IsNullOrWhiteSpace(targetName))
+        {
             return null;
+        }
+
 
         if (_graphs.ContainsKey(targetName))
         {
@@ -165,7 +171,11 @@ public sealed class MetalGraphManager : IDisposable
 
         var sourceGraph = GetGraph(sourceName);
         if (sourceGraph == null)
+        {
+
             return null;
+        }
+
 
         var clonedGraph = CreateGraph(targetName, configuration);
         
@@ -526,7 +536,11 @@ public sealed class MetalGraphManager : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {

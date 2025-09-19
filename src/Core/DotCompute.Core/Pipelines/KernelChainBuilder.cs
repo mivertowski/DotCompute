@@ -3,11 +3,21 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Pipelines.Models;
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Models.Pipelines;
+using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Pipelines.Results;
 using DotCompute.Core.Pipelines.Services;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+
+// Type aliases to resolve ambiguous references
+using KernelChainExecutionResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainExecutionResult;
+using KernelStepMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelStepMetrics;
+using KernelChainMemoryMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainMemoryMetrics;
+using ErrorHandlingStrategy = DotCompute.Abstractions.Interfaces.Pipelines.ErrorHandlingStrategy;
+using KernelChainValidationResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainValidationResult;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -60,9 +70,9 @@ namespace DotCompute.Core.Pipelines
             _cacheService = cacheService;
             _logger = logger;
 
-            _steps = new List<KernelChainStep>();
-            _context = new Dictionary<string, object>();
-            _errorHandlers = new List<Func<Exception, ErrorHandlingStrategy>>();
+            _steps = [];
+            _context = [];
+            _errorHandlers = [];
         }
 
         /// <inheritdoc/>
@@ -155,7 +165,7 @@ namespace DotCompute.Core.Pipelines
                 {
                     Condition = condition,
                     TruePath = trueChain._steps,
-                    FalsePath = falseChain?._steps ?? new List<KernelChainStep>()
+                    FalsePath = falseChain?._steps ?? []
                 }
             };
 
@@ -338,7 +348,7 @@ namespace DotCompute.Core.Pipelines
             var stepMetrics = new List<KernelStepMetrics>();
             var errors = new List<Exception>();
             object? finalResult = null;
-            string usedBackend = "Unknown";
+            var usedBackend = "Unknown";
 
             try
             {
@@ -415,7 +425,8 @@ namespace DotCompute.Core.Pipelines
                 };
             }
 
-            return await _validator.ValidateChainAsync(_steps);
+            var validationResult = await _validator.ValidateChainAsync(_steps);
+            return ConvertToInterfacesKernelChainValidationResult(validationResult);
         }
 
         /// <summary>
@@ -488,7 +499,7 @@ namespace DotCompute.Core.Pipelines
         {
             var stepStopwatch = Stopwatch.StartNew();
             object? result = null;
-            bool wasCached = false;
+            var wasCached = false;
             long memoryUsed = 0;
 
             try
@@ -531,8 +542,10 @@ namespace DotCompute.Core.Pipelines
                 stepMetrics.Add(new KernelStepMetrics
                 {
                     KernelName = step.KernelName ?? $"{step.Type}Step",
+                    StepName = step.KernelName ?? $"{step.Type}Step",
                     StepIndex = step.ExecutionOrder,
                     ExecutionTime = stepStopwatch.Elapsed,
+                    Success = true, // Add required Success property
                     Backend = DetermineUsedBackend(),
                     WasCached = wasCached,
                     MemoryUsed = memoryUsed
@@ -620,7 +633,7 @@ namespace DotCompute.Core.Pipelines
             var errors = new List<Exception>();
 
             // Evaluate condition
-            bool conditionResult = step.BranchCondition.EvaluateCondition(previousResult);
+            var conditionResult = step.BranchCondition.EvaluateCondition(previousResult);
 
 
             var pathToExecute = conditionResult ? step.BranchCondition.TruePath : step.BranchCondition.FalsePath;
@@ -705,6 +718,19 @@ namespace DotCompute.Core.Pipelines
                 TotalMemoryAllocated = GC.GetTotalMemory(false),
                 GarbageCollections = gc0 + gc1 + gc2,
                 MemoryPoolingUsed = false // Could be determined by checking if memory pools are configured
+            };
+        }
+
+        /// <summary>
+        /// Converts Results KernelChainValidationResult to Interfaces KernelChainValidationResult
+        /// </summary>
+        private static KernelChainValidationResult ConvertToInterfacesKernelChainValidationResult(DotCompute.Abstractions.Pipelines.Results.KernelChainValidationResult resultsValidation)
+        {
+            return new KernelChainValidationResult
+            {
+                IsValid = resultsValidation.IsValid,
+                Errors = resultsValidation.Errors?.ToList() ?? [],
+                Warnings = resultsValidation.Warnings?.ToList() ?? []
             };
         }
 

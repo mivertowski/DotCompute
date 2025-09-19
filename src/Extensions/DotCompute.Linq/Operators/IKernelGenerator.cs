@@ -6,6 +6,11 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
+
+// Namespace aliases to resolve ambiguous references
+using OperatorsGeneratedKernel = DotCompute.Linq.Operators.Generation.GeneratedKernel;
+using KernelGenerationGeneratedKernel = DotCompute.Linq.KernelGeneration.GeneratedKernel;
+
 namespace DotCompute.Linq.Operators;
 
 
@@ -27,7 +32,7 @@ public interface IKernelGenerator
     /// <param name="expression">The expression to compile.</param>
     /// <param name="context">The generation context.</param>
     /// <returns>A generated kernel.</returns>
-    public GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context);
+    public OperatorsGeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context);
 
     /// <summary>
     /// Generates a kernel for a specific operation type.
@@ -37,7 +42,7 @@ public interface IKernelGenerator
     /// <param name="outputType">The output type.</param>
     /// <param name="context">The generation context.</param>
     /// <returns>A generated kernel.</returns>
-    public GeneratedKernel GenerateOperationKernel(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context);
+    public OperatorsGeneratedKernel GenerateOperationKernel(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context);
 }
 
 /// <summary>
@@ -52,9 +57,9 @@ internal class CUDAKernelGenerator : IKernelGenerator
 
         => expression.NodeType is ExpressionType.Call or ExpressionType.Lambda;
 
-    public GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context)
+    public OperatorsGeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context)
     {
-        return new GeneratedKernel
+        return new OperatorsGeneratedKernel
         {
             Name = $"cuda_kernel_{Guid.NewGuid():N}",
             Source = GenerateCudaSource(expression, context),
@@ -68,9 +73,9 @@ internal class CUDAKernelGenerator : IKernelGenerator
         };
     }
 
-    public GeneratedKernel GenerateOperationKernel(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context)
+    public OperatorsGeneratedKernel GenerateOperationKernel(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context)
     {
-        return new GeneratedKernel
+        return new OperatorsGeneratedKernel
         {
             Name = $"cuda_{operationType.ToLowerInvariant()}_kernel_{Guid.NewGuid():N}",
             Source = GenerateCudaOperationSource(operationType, inputTypes, outputType, context),
@@ -173,9 +178,9 @@ internal class OpenCLKernelGenerator : IKernelGenerator
 {
     public bool CanCompile(Expression expression) => expression.NodeType is ExpressionType.Call or ExpressionType.Lambda;
 
-    public GeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context)
+    public OperatorsGeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context)
     {
-        return new GeneratedKernel
+        return new OperatorsGeneratedKernel
         {
             Name = $"opencl_kernel_{Guid.NewGuid():N}",
             Source = GenerateOpenCLSource(expression, context),
@@ -189,9 +194,9 @@ internal class OpenCLKernelGenerator : IKernelGenerator
         };
     }
 
-    public GeneratedKernel GenerateOperationKernel(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context)
+    public OperatorsGeneratedKernel GenerateOperationKernel(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context)
     {
-        return new GeneratedKernel
+        return new OperatorsGeneratedKernel
         {
             Name = $"opencl_{operationType.ToLowerInvariant()}_kernel_{Guid.NewGuid():N}",
             Source = GenerateOpenCLOperationSource(operationType, inputTypes, outputType, context),

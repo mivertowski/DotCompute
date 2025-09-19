@@ -24,7 +24,7 @@ public class CpuMemoryManagerTests : IDisposable
 
     public CpuMemoryManagerTests()
     {
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         _logger = loggerFactory.CreateLogger<CpuMemoryManager>();
         _memoryManager = new CpuMemoryManager(_logger);
     }
@@ -183,7 +183,7 @@ public class CpuMemoryManagerTests : IDisposable
 
 
     [Fact]
-    public async Task CreateView_WithInvalidBuffer_ThrowsArgumentException()
+    public void CreateView_WithInvalidBuffer_ThrowsArgumentException()
     {
         // Arrange
         var mockBuffer = new Mock<IUnifiedMemoryBuffer>();
