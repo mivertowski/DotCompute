@@ -382,7 +382,7 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
         // Parameters
 
         var parameters = await GenerateParametersAsync(context, cancellationToken);
-        for (int i = 0; i < parameters.Count; i++)
+        for (var i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
             var paramDecl = param.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.Input ? "in " : "";
@@ -505,11 +505,36 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
     /// </summary>
     private static int EstimateParameterSize(Type type)
     {
-        if (type == typeof(int) || type == typeof(float)) return 4;
-        if (type == typeof(long) || type == typeof(double)) return 8;
-        if (type == typeof(short)) return 2;
-        if (type == typeof(byte) || type == typeof(bool)) return 1;
-        if (type.IsArray) return 0; // Will be determined at runtime
+        if (type == typeof(int) || type == typeof(float))
+        {
+            return 4;
+        }
+
+
+        if (type == typeof(long) || type == typeof(double))
+        {
+            return 8;
+        }
+
+
+        if (type == typeof(short))
+        {
+            return 2;
+        }
+
+
+        if (type == typeof(byte) || type == typeof(bool))
+        {
+            return 1;
+        }
+
+
+        if (type.IsArray)
+        {
+            return 0; // Will be determined at runtime
+        }
+
+
         return IntPtr.Size; // Default to pointer size for reference types
     }
 
@@ -671,7 +696,7 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
 
 
         var parameters = await GenerateParametersAsync(context, cancellationToken);
-        for (int i = 0; i < parameters.Count; i++)
+        for (var i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
             var paramDecl = GetCudaParameterDeclaration(param);
@@ -866,14 +891,14 @@ internal class KernelNamingStrategy
 /// </summary>
 internal class CodeGenerationMetrics
 {
-    private readonly Dictionary<BackendType, List<TimeSpan>> _generationTimes = new();
-    private readonly Dictionary<BackendType, int> _errorCounts = new();
+    private readonly Dictionary<BackendType, List<TimeSpan>> _generationTimes = [];
+    private readonly Dictionary<BackendType, int> _errorCounts = [];
 
     public void RecordGeneration(BackendType backend, TimeSpan duration)
     {
         if (!_generationTimes.ContainsKey(backend))
         {
-            _generationTimes[backend] = new List<TimeSpan>();
+            _generationTimes[backend] = [];
         }
 
 

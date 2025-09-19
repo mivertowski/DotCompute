@@ -687,12 +687,13 @@ internal sealed class TestAccelerator : IAccelerator
 {
     public AcceleratorType Type => AcceleratorType.CPU;
 
+    public string DeviceType => "TestDevice";
 
     public AcceleratorInfo Info => new(Type, "Test Accelerator", "1.0.0", 1024 * 1024 * 1024);
 
-
     public IUnifiedMemoryManager Memory => null!;
 
+    public IUnifiedMemoryManager MemoryManager => null!;
 
     public AcceleratorContext Context => AcceleratorContext.Invalid;
 

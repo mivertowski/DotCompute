@@ -42,7 +42,7 @@ namespace DotCompute.Linq.KernelGeneration.Execution
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _configurationCache = new ConcurrentDictionary<string, LaunchConfiguration>();
             _streamPool = new ConcurrentDictionary<IntPtr, CudaStream>();
-            _performanceMetrics = new Dictionary<string, KernelPerformanceMetrics>();
+            _performanceMetrics = [];
         }
 
         /// <summary>

@@ -66,8 +66,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int padding = 1;
 
 
-            int outputHeight = (inputHeight + 2 * padding - kernelSize) / stride + 1;
-            int outputWidth = (inputWidth + 2 * padding - kernelSize) / stride + 1;
+            var outputHeight = (inputHeight + 2 * padding - kernelSize) / stride + 1;
+            var outputWidth = (inputWidth + 2 * padding - kernelSize) / stride + 1;
 
             // Create input image (batch size = 1)
 
@@ -95,7 +95,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             perf.Stop();
 
 
-            long ops = (long)outputHeight * outputWidth * outputChannels *
+            var ops = (long)outputHeight * outputWidth * outputChannels *
 
                       inputChannels * kernelSize * kernelSize * 2; // multiply-add
             perf.LogResults(ops);
@@ -129,8 +129,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int stride = 2;
 
 
-            int outputHeight = inputHeight / stride;
-            int outputWidth = inputWidth / stride;
+            var outputHeight = inputHeight / stride;
+            var outputWidth = inputWidth / stride;
 
 
             var input = TestDataGenerator.CreateRandomData(inputHeight * inputWidth * channels, 42);
@@ -144,26 +144,26 @@ namespace DotCompute.Hardware.Cuda.Tests
                 poolSize, stride);
 
             // Assert - verify max pooling properties
-            for (int c = 0; c < channels; c++)
+            for (var c = 0; c < channels; c++)
             {
-                for (int oh = 0; oh < outputHeight; oh++)
+                for (var oh = 0; oh < outputHeight; oh++)
                 {
-                    for (int ow = 0; ow < outputWidth; ow++)
+                    for (var ow = 0; ow < outputWidth; ow++)
                     {
-                        int outputIdx = (c * outputHeight + oh) * outputWidth + ow;
+                        var outputIdx = (c * outputHeight + oh) * outputWidth + ow;
 
                         // Find max in corresponding input window
 
-                        float expectedMax = float.MinValue;
-                        for (int kh = 0; kh < poolSize; kh++)
+                        var expectedMax = float.MinValue;
+                        for (var kh = 0; kh < poolSize; kh++)
                         {
-                            for (int kw = 0; kw < poolSize; kw++)
+                            for (var kw = 0; kw < poolSize; kw++)
                             {
-                                int ih = oh * stride + kh;
-                                int iw = ow * stride + kw;
+                                var ih = oh * stride + kh;
+                                var iw = ow * stride + kw;
                                 if (ih < inputHeight && iw < inputWidth)
                                 {
-                                    int inputIdx = (c * inputHeight + ih) * inputWidth + iw;
+                                    var inputIdx = (c * inputHeight + ih) * inputWidth + iw;
                                     expectedMax = MathF.Max(expectedMax, input[inputIdx]);
                                 }
                             }
@@ -204,10 +204,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 batchSize, features, epsilon, momentum, true); // training = true
 
             // Assert - verify normalization
-            for (int f = 0; f < features; f++)
+            for (var f = 0; f < features; f++)
             {
                 var featureValues = new float[batchSize];
-                for (int b = 0; b < batchSize; b++)
+                for (var b = 0; b < batchSize; b++)
                 {
                     featureValues[b] = output[b * features + f];
                 }
@@ -262,15 +262,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteSoftmax(logits, probabilities, batchSize, numClasses);
 
             // Assert
-            for (int b = 0; b < batchSize; b++)
+            for (var b = 0; b < batchSize; b++)
             {
-                float sum = 0.0f;
-                float maxProb = 0.0f;
+                var sum = 0.0f;
+                var maxProb = 0.0f;
 
 
-                for (int c = 0; c < numClasses; c++)
+                for (var c = 0; c < numClasses; c++)
                 {
-                    int idx = b * numClasses + c;
+                    var idx = b * numClasses + c;
                     probabilities[idx].Should().BeInRange(0.0f, 1.0f,
                         "Softmax output should be probabilities");
                     sum += probabilities[idx];
@@ -304,14 +304,14 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Generate random predictions and labels
 
-            for (int b = 0; b < batchSize; b++)
+            for (var b = 0; b < batchSize; b++)
             {
                 labels[b] = random.Next(numClasses);
 
                 // Create softmax-like predictions
 
-                float sum = 0.0f;
-                for (int c = 0; c < numClasses; c++)
+                var sum = 0.0f;
+                for (var c = 0; c < numClasses; c++)
                 {
                     predictions[b * numClasses + c] = (float)random.NextDouble();
                     sum += predictions[b * numClasses + c];
@@ -319,7 +319,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 // Normalize to sum to 1
 
-                for (int c = 0; c < numClasses; c++)
+                for (var c = 0; c < numClasses; c++)
                 {
                     predictions[b * numClasses + c] /= sum;
                 }
@@ -332,17 +332,17 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteCrossEntropyLoss(predictions, labels, losses, batchSize, numClasses);
 
             // Assert
-            float avgLoss = losses.Average();
+            var avgLoss = losses.Average();
             avgLoss.Should().BeGreaterThan(0.0f, "Loss should be positive");
             avgLoss.Should().BeLessThan(10.0f, "Loss should be reasonable");
 
             // Verify individual losses
 
-            for (int b = 0; b < batchSize; b++)
+            for (var b = 0; b < batchSize; b++)
             {
-                int label = labels[b];
-                float pred = predictions[b * numClasses + label];
-                float expectedLoss = -MathF.Log(MathF.Max(1e-7f, pred));
+                var label = labels[b];
+                var pred = predictions[b * numClasses + label];
+                var expectedLoss = -MathF.Log(MathF.Max(1e-7f, pred));
 
 
                 losses[b].Should().BeApproximately(expectedLoss, 0.001f,
@@ -368,8 +368,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteDropout(input, output, mask, dropoutRate, true); // training = true
 
             // Assert
-            int droppedCount = mask.Count(m => m == 0.0f);
-            float actualDropRate = (float)droppedCount / size;
+            var droppedCount = mask.Count(m => m == 0.0f);
+            var actualDropRate = (float)droppedCount / size;
 
 
             actualDropRate.Should().BeApproximately(dropoutRate, 0.05f,
@@ -377,7 +377,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Check scaling
 
-            float expectedScale = 1.0f / (1.0f - dropoutRate);
+            var expectedScale = 1.0f / (1.0f - dropoutRate);
             var nonZeroOutputs = output.Where(o => o > 0.0f).ToArray();
             if (nonZeroOutputs.Length > 0)
             {
@@ -456,8 +456,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             int inputH, int inputW, int inputC,
             int outputC, int kernelSize, int stride, int padding)
         {
-            int outputH = (inputH + 2 * padding - kernelSize) / stride + 1;
-            int outputW = (inputW + 2 * padding - kernelSize) / stride + 1;
+            var outputH = (inputH + 2 * padding - kernelSize) / stride + 1;
+            var outputW = (inputW + 2 * padding - kernelSize) / stride + 1;
 
 
             await using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);

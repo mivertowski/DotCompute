@@ -63,6 +63,18 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     /// <inheritdoc />
     public bool IsDisposed => _disposed || _parentBuffer.IsDisposed;
 
+    /// <inheritdoc />
+    public bool IsOnHost => _parentBuffer.IsOnHost;
+
+    /// <inheritdoc />
+    public bool IsOnDevice => _parentBuffer.IsOnDevice;
+
+    /// <inheritdoc />
+    public bool IsDirty => _parentBuffer.IsDirty;
+
+    /// <inheritdoc />
+    public BufferState State => _parentBuffer.State;
+
     /// <summary>
     /// Gets the device memory handle for this view.
     /// </summary>
@@ -73,7 +85,11 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
 
         var parentDeviceMemory = _parentBuffer.GetDeviceMemory();
         if (!parentDeviceMemory.IsValid)
+        {
+
             return DeviceMemory.Invalid;
+        }
+
 
         return new DeviceMemory(parentDeviceMemory.Handle, SizeInBytes);
     }
@@ -294,6 +310,62 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
         return new MappedMemory<TView>(AsMemory());
     }
 
+    /// <inheritdoc />
+    public void EnsureOnHost()
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        _parentBuffer.EnsureOnHost();
+    }
+
+    /// <inheritdoc />
+    public void EnsureOnDevice()
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        _parentBuffer.EnsureOnDevice();
+    }
+
+    /// <inheritdoc />
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        return _parentBuffer.EnsureOnHostAsync(context, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        return _parentBuffer.EnsureOnDeviceAsync(context, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public void Synchronize()
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        _parentBuffer.Synchronize();
+    }
+
+    /// <inheritdoc />
+    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        return _parentBuffer.SynchronizeAsync(context, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public void MarkHostDirty()
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        _parentBuffer.MarkHostDirty();
+    }
+
+    /// <inheritdoc />
+    public void MarkDeviceDirty()
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        _parentBuffer.MarkDeviceDirty();
+    }
+
     #region IUnifiedMemoryBuffer (non-generic) Implementation
 
     /// <inheritdoc />
@@ -309,7 +381,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public async ValueTask CopyToAsync<U>(Memory<U> destination, long offset = 0, CancellationToken cancellationToken = default) where U : unmanaged
+    public ValueTask CopyToAsync<U>(Memory<U> destination, long offset = 0, CancellationToken cancellationToken = default) where U : unmanaged
     {
         if (typeof(U) != typeof(TView))
         {
@@ -321,6 +393,8 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
 
         var copyLength = Math.Min(viewData.Length, typedDestination.Length);
         viewData.Span.Slice(0, copyLength).CopyTo(typedDestination);
+
+        return ValueTask.CompletedTask;
     }
 
     #endregion

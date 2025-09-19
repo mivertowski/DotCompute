@@ -356,9 +356,13 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler<KernelDefiniti
 
         // If it's already a KernelDefinition, return as-is
         if (source is KernelDefinition kernelDef)
+        {
+
             return kernelDef;
+        }
 
         // Try to extract basic information from the source
+
         var name = source.GetType().Name;
         var code = source.ToString() ?? string.Empty;
         var entryPoint = "main"; // Default entry point
@@ -367,15 +371,22 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler<KernelDefiniti
         var sourceType = source.GetType();
         var nameProperty = sourceType.GetProperty("Name");
         if (nameProperty?.GetValue(source) is string sourceName)
+        {
             name = sourceName;
+        }
 
         var codeProperty = sourceType.GetProperty("Code") ?? sourceType.GetProperty("Source");
         if (codeProperty?.GetValue(source) is string sourceCode)
+        {
             code = sourceCode;
+        }
 
         var entryProperty = sourceType.GetProperty("EntryPoint");
         if (entryProperty?.GetValue(source) is string sourceEntry)
+        {
             entryPoint = sourceEntry;
+        }
+
 
         return new KernelDefinition(name, code, entryPoint);
     }

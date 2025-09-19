@@ -18,9 +18,9 @@ namespace DotCompute.Core.Kernels;
 /// </summary>
 public sealed class UnifiedGeneratedKernel : IFullGeneratedKernel
 {
-    private readonly Dictionary<string, object> _metadata = new();
-    private readonly List<IKernelParameter> _parameters = new();
-    private readonly List<string> _optimizations = new();
+    private readonly Dictionary<string, object> _metadata = [];
+    private readonly List<IKernelParameter> _parameters = [];
+    private readonly List<string> _optimizations = [];
     private bool _disposed;
 
     /// <summary>
@@ -167,7 +167,7 @@ public sealed class UnifiedGeneratedKernel : IFullGeneratedKernel
         }
 
         // Parameter validation
-        for (int i = 0; i < Parameters.Count; i++)
+        for (var i = 0; i < Parameters.Count; i++)
         {
             var expectedType = Parameters[i].Type;
             var actualValue = parameters[i];
@@ -204,7 +204,10 @@ public sealed class UnifiedGeneratedKernel : IFullGeneratedKernel
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         CompiledKernel?.Dispose();
         MemoryManager?.Dispose();

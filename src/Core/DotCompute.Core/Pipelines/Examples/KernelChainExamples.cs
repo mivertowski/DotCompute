@@ -236,7 +236,7 @@ namespace DotCompute.Core.Pipelines.Examples
                 StepMetrics = executionResult.StepMetrics.Select(ConvertToResultsKernelStepMetrics).ToList(),
                 MemoryMetrics = ConvertToResultsKernelChainMemoryMetrics(executionResult.MemoryMetrics),
                 BackendUsed = executionResult.Backend,
-                Errors = executionResult.Errors?.ToList() ?? new List<Exception>(),
+                Errors = executionResult.Errors?.ToList() ?? [],
                 Recommendations = await GenerateOptimizationRecommendations(ConvertToResultsKernelChainExecutionResult(executionResult))
             };
 
@@ -360,7 +360,11 @@ namespace DotCompute.Core.Pipelines.Examples
         /// </summary>
         private static KernelChainMemoryMetrics? ConvertToResultsKernelChainMemoryMetrics(DotCompute.Abstractions.Interfaces.Pipelines.KernelChainMemoryMetrics? interfaceMetrics)
         {
-            if (interfaceMetrics == null) return null;
+            if (interfaceMetrics == null)
+            {
+                return null;
+            }
+
 
             return new KernelChainMemoryMetrics
             {
@@ -382,6 +386,7 @@ namespace DotCompute.Core.Pipelines.Examples
             return new KernelChainExecutionResult
             {
                 Success = interfaceResult.Success,
+                Result = null, // Set to null for this conversion - could be set to actual result if available
                 ExecutionTime = interfaceResult.ExecutionTime,
                 Backend = interfaceResult.Backend,
                 StepMetrics = interfaceResult.StepMetrics.Select(ConvertToResultsKernelStepMetrics).ToList(),
@@ -415,11 +420,11 @@ namespace DotCompute.Core.Pipelines.Examples
     {
         public bool Success { get; set; }
         public TimeSpan TotalExecutionTime { get; set; }
-        public List<KernelStepMetrics> StepMetrics { get; set; } = new();
+        public List<KernelStepMetrics> StepMetrics { get; set; } = [];
         public KernelChainMemoryMetrics? MemoryMetrics { get; set; }
         public string BackendUsed { get; set; } = string.Empty;
-        public List<Exception> Errors { get; set; } = new();
-        public List<string> Recommendations { get; set; } = new();
+        public List<Exception> Errors { get; set; } = [];
+        public List<string> Recommendations { get; set; } = [];
     }
 
     // Example service classes that would use kernel chains

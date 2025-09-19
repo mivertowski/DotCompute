@@ -496,8 +496,8 @@ public class SimdPerformanceResult
     public double SpeedupRatio { get; set; }
     public double ExpectedSpeedupRatio { get; set; }
     public bool MeetsExpectation { get; set; }
-    public TestUtilities.PerformanceMeasurement ScalarResult { get; set; } = new();
-    public TestUtilities.PerformanceMeasurement VectorResult { get; set; } = new();
+    public PerformanceMeasurement ScalarResult { get; set; } = new();
+    public PerformanceMeasurement VectorResult { get; set; } = new();
 }
 
 /// <summary>
@@ -510,8 +510,8 @@ public class GpuPerformanceResult
     public double SpeedupRatio { get; set; }
     public double ExpectedSpeedupRatio { get; set; }
     public bool MeetsExpectation { get; set; }
-    public TestUtilities.PerformanceMeasurement CpuResult { get; set; } = new();
-    public TestUtilities.PerformanceMeasurement GpuResult { get; set; } = new();
+    public PerformanceMeasurement CpuResult { get; set; } = new();
+    public PerformanceMeasurement GpuResult { get; set; } = new();
 }
 
 #endregion

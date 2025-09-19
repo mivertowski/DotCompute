@@ -65,7 +65,7 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
             // Step 1: Check for CUDA runtime libraries
 
-            bool hasRuntimeLibrary = false;
+            var hasRuntimeLibrary = false;
             diagnostics.AppendLine("\n1. CUDA Runtime Library Check:");
 
 
@@ -74,7 +74,7 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                 var windowsLibs = new[] { "cudart64_13.dll", "cudart64_12.dll", "cudart64_11.dll" };
                 foreach (var lib in windowsLibs)
                 {
-                    bool exists = File.Exists(lib);
+                    var exists = File.Exists(lib);
                     diagnostics.AppendLine($"   {lib}: {(exists ? "✓" : "✗")}");
                     if (exists && !hasRuntimeLibrary)
                     {
@@ -98,7 +98,7 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
                 foreach (var path in linuxPaths)
                 {
-                    bool exists = File.Exists(path);
+                    var exists = File.Exists(path);
                     diagnostics.AppendLine($"   {path}: {(exists ? "✓" : "✗")}");
                     if (exists && !hasRuntimeLibrary)
                     {
@@ -122,7 +122,7 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
             try
             {
-                int deviceCount = 0;
+                var deviceCount = 0;
                 var result = CudaRuntime.cudaGetDeviceCount(out deviceCount);
 
 
@@ -203,8 +203,8 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
         private static string FormatCudaVersion(int version)
         {
-            int major = version / 1000;
-            int minor = (version % 1000) / 10;
+            var major = version / 1000;
+            var minor = (version % 1000) / 10;
             return $"{major}.{minor}";
         }
 

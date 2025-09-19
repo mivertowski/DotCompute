@@ -62,7 +62,7 @@ public class PipelineCharacteristics
     /// <summary>
     /// Gets or sets optimization hints for this pipeline.
     /// </summary>
-    public List<string> OptimizationHints { get; set; } = new();
+    public List<string> OptimizationHints { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the estimated data size in bytes.

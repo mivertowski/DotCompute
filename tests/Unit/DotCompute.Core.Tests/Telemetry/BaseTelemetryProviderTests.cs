@@ -123,7 +123,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Act
         var stopwatch = Stopwatch.StartNew();
-        for (int i = 0; i < metricCount; i++)
+        for (var i = 0; i < metricCount; i++)
         {
             _telemetryProvider.RecordMetric(metricName, i * 0.1);
         }
@@ -360,7 +360,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         {
             try
             {
-                for (int i = 0; i < metricsPerThread; i++)
+                for (var i = 0; i < metricsPerThread; i++)
                 {
                     _telemetryProvider.RecordMetric($"thread_{threadId}_metric", i * threadId);
                 }
@@ -446,7 +446,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         const int eventCount = 1000;
 
         // Act
-        for (int i = 0; i < eventCount; i++)
+        for (var i = 0; i < eventCount; i++)
         {
             _telemetryProvider.TrackEvent("sampled_event", new Dictionary<string, object> { { "index", i } });
         }
@@ -489,7 +489,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _telemetryProvider.SetRetentionPolicy(TimeSpan.FromMilliseconds(100), maxCount: 5);
 
         // Act - Record metrics with delays
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _telemetryProvider.RecordMetric("retention_test", i);
             if (i == 4) Thread.Sleep(150); // Let some metrics expire
@@ -556,7 +556,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     {
         // Arrange
         var startTime = DateTimeOffset.UtcNow;
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             _telemetryProvider.TrackEvent("frequency_test", new Dictionary<string, object> { { "index", i } });
             Thread.Sleep(10); // 10ms between events
@@ -583,7 +583,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var initialMemory = GC.GetTotalMemory(true);
 
         // Act
-        for (int i = 0; i < metricCount; i++)
+        for (var i = 0; i < metricCount; i++)
         {
             _telemetryProvider.RecordMetric($"memory_test_{i % 100}", i * 0.1);
 
@@ -613,7 +613,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _telemetryProvider.SetMemoryPressureThreshold(10 * 1024 * 1024); // 10MB threshold
 
         // Act - Generate data to trigger cleanup
-        for (int i = 0; i < 100000; i++)
+        for (var i = 0; i < 100000; i++)
         {
             _telemetryProvider.RecordMetric("cleanup_test", i);
         }
@@ -786,12 +786,12 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 internal sealed class TestTelemetryProvider : BaseTelemetryProvider
 {
     private readonly object _lock = new();
-    private readonly Dictionary<string, List<MetricDataPoint>> _metrics = new();
-    private readonly List<TelemetryEvent> _events = new();
-    private readonly List<TelemetryException> _exceptions = new();
-    private readonly List<TelemetryDependency> _dependencies = new();
-    private readonly Dictionary<string, List<TimeSpan>> _timers = new();
-    private readonly Dictionary<string, long> _counters = new();
+    private readonly Dictionary<string, List<MetricDataPoint>> _metrics = [];
+    private readonly List<TelemetryEvent> _events = [];
+    private readonly List<TelemetryException> _exceptions = [];
+    private readonly List<TelemetryDependency> _dependencies = [];
+    private readonly Dictionary<string, List<TimeSpan>> _timers = [];
+    private readonly Dictionary<string, long> _counters = [];
     private readonly Random _random = new();
 
     // Configuration
@@ -820,7 +820,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         {
             if (!_metrics.TryGetValue(metricName, out var metricList))
             {
-                metricList = new List<MetricDataPoint>();
+                metricList = [];
                 _metrics[metricName] = metricList;
             }
 
@@ -828,7 +828,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
             {
                 Value = value,
                 Timestamp = DateTimeOffset.UtcNow,
-                Tags = tags?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, string>()
+                Tags = tags?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? []
             });
 
             ApplyRetentionPolicy(metricList);
@@ -848,7 +848,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
             _events.Add(new TelemetryEvent
             {
                 Name = eventName,
-                Properties = properties?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, object>(),
+                Properties = properties?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? [],
                 CorrelationId = correlationId ?? Guid.NewGuid().ToString(),
                 Timestamp = DateTimeOffset.UtcNow
             });
@@ -865,7 +865,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
             _exceptions.Add(new TelemetryException
             {
                 Exception = exception,
-                AdditionalData = additionalData?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, object>(),
+                AdditionalData = additionalData?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? [],
                 StackTrace = exception.StackTrace ?? Environment.StackTrace,
                 Timestamp = DateTimeOffset.UtcNow
             });
@@ -1074,7 +1074,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         {
             if (!_timers.TryGetValue(timerName, out var timerList))
             {
-                timerList = new List<TimeSpan>();
+                timerList = [];
                 _timers[timerName] = timerList;
             }
             timerList.Add(elapsed);
@@ -1143,13 +1143,13 @@ public class MetricDataPoint
 {
     public double Value { get; set; }
     public DateTimeOffset Timestamp { get; set; }
-    public Dictionary<string, string> Tags { get; set; } = new();
+    public Dictionary<string, string> Tags { get; set; } = [];
 }
 
 public class TelemetryEvent
 {
     public string Name { get; set; } = string.Empty;
-    public Dictionary<string, object> Properties { get; set; } = new();
+    public Dictionary<string, object> Properties { get; set; } = [];
     public string CorrelationId { get; set; } = string.Empty;
     public DateTimeOffset Timestamp { get; set; }
 }
@@ -1157,7 +1157,7 @@ public class TelemetryEvent
 public class TelemetryException
 {
     public Exception Exception { get; set; } = null!;
-    public Dictionary<string, object> AdditionalData { get; set; } = new();
+    public Dictionary<string, object> AdditionalData { get; set; } = [];
     public string StackTrace { get; set; } = string.Empty;
     public DateTimeOffset Timestamp { get; set; }
 }

@@ -186,25 +186,25 @@ namespace DotCompute.Core.Pipelines
                     _maxExecutionTime = metrics.Duration;
                 }
 
-                _totalMemoryUsage += metrics.MemoryUsage.AllocatedBytes;
+                _totalMemoryUsage += metrics.MemoryMetrics?.TotalMemoryAllocated ?? metrics.MemoryUsage;
 
-                if (metrics.MemoryUsage.PeakBytes > _peakMemoryUsage)
+                if ((metrics.MemoryMetrics?.PeakMemoryUsage ?? metrics.MemoryUsage) > _peakMemoryUsage)
                 {
-                    _peakMemoryUsage = metrics.MemoryUsage.PeakBytes;
+                    _peakMemoryUsage = metrics.MemoryMetrics?.PeakMemoryUsage ?? metrics.MemoryUsage;
                 }
 
                 // Record stage metrics
                 foreach (var (stageId, duration) in metrics.StageExecutionTimes)
                 {
                     var stageMetrics = _stageMetrics.GetOrAdd(stageId, _ => new StageMetrics(stageId));
-                    stageMetrics.RecordExecution(duration, success);
+                    stageMetrics.RecordExecution(TimeSpan.FromMilliseconds(duration), success);
                 }
 
                 // Record time series metrics
-                RecordTimeSeriesMetric("ExecutionTime", metrics.Duration.TotalMilliseconds, metrics.StartTime);
-                RecordTimeSeriesMetric("MemoryUsage", metrics.MemoryUsage.AllocatedBytes, metrics.StartTime);
-                RecordTimeSeriesMetric("ComputeUtilization", metrics.ComputeUtilization, metrics.StartTime);
-                RecordTimeSeriesMetric("MemoryBandwidthUtilization", metrics.MemoryBandwidthUtilization, metrics.StartTime);
+                RecordTimeSeriesMetric("ExecutionTime", metrics.Duration.TotalMilliseconds, metrics.StartTime.DateTime);
+                RecordTimeSeriesMetric("MemoryUsage", metrics.MemoryMetrics?.TotalMemoryAllocated ?? metrics.MemoryUsage, metrics.StartTime.DateTime);
+                RecordTimeSeriesMetric("ComputeUtilization", metrics.ComputeUtilization, metrics.StartTime.DateTime);
+                RecordTimeSeriesMetric("MemoryBandwidthUtilization", metrics.MemoryBandwidthUtilization, metrics.StartTime.DateTime);
             }
         }
 
@@ -333,10 +333,9 @@ namespace DotCompute.Core.Pipelines
                 CustomMetrics,
                 TimeSeries = TimeSeries.Select(ts => new
                 {
-                    ts.MetricName,
-                    ts.Value,
-                    Timestamp = ts.Timestamp.ToString("O"),
-                    ts.Labels
+                    Name = ts.Name,
+                    Values = ts.Values.Select(v => new { v.Timestamp, v.Value }),
+                    ts.Unit
                 }).ToList()
             };
 

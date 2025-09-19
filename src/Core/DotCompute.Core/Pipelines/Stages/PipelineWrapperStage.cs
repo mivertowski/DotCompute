@@ -63,7 +63,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = result.Success,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = result.Outputs?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, object>(),
+                    OutputData = result.Outputs?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? [],
                     MemoryUsed = result.Metrics?.PeakMemoryUsage ?? 0L,
                     Error = result.Errors?.FirstOrDefault()?.Exception
                 };
@@ -78,7 +78,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = false,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = new Dictionary<string, object>(),
+                    OutputData = [],
                     Error = ex
                 };
             }

@@ -105,7 +105,7 @@ namespace DotCompute.Linq.Pipelines.Extensions
         {
             ArgumentNullException.ThrowIfNull(pipeline);
 
-            int count = 0;
+            var count = 0;
             await using var enumerator = pipeline.GetAsyncEnumerator(cancellationToken);
             while (await enumerator.MoveNextAsync())
             {

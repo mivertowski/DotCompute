@@ -19,8 +19,8 @@ internal sealed class StageReorderingStrategy : IOptimizationStrategy
     public OptimizationType SupportedOptimizations => OptimizationType.StageReordering;
     public OptimizationType Type => OptimizationType.StageReordering;
 
-    public bool CanOptimize(IKernelPipeline pipeline) =>
-        pipeline?.Stages?.Count > 1;
+    public bool CanOptimize(IKernelPipeline pipeline)
+        => pipeline?.Stages?.Count > 1;
     public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
 
     public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)

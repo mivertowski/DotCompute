@@ -132,7 +132,7 @@ public sealed class StageExecutionMetrics
     /// <summary>
     /// Gets or sets warnings generated during stage execution.
     /// </summary>
-    public IList<string> Warnings { get; set; } = new List<string>();
+    public IList<string> Warnings { get; set; } = [];
 
     /// <summary>
     /// Gets or sets debug information collected during execution.
@@ -200,10 +200,19 @@ public sealed class StageExecutionMetrics
     /// <returns>Efficiency ratio between 0 and 1</returns>
     public double GetEfficiencyRatio()
     {
-        if (WasSkipped || !Success) return 0.0;
-        if (WasCached) return 1.0;
+        if (WasSkipped || !Success)
+        {
+            return 0.0;
+        }
+
+
+        if (WasCached)
+        {
+            return 1.0;
+        }
 
         // Simple efficiency based on processing rate vs. theoretical maximum
+
         var theoreticalMaxRate = ComputeMetrics?.TheoreticalMaxThroughput ?? double.MaxValue;
         return theoreticalMaxRate > 0 ? Math.Min(ProcessingRate / theoreticalMaxRate, 1.0) : 0.0;
     }
@@ -479,7 +488,7 @@ public sealed class StageQualityMetrics
     /// <summary>
     /// Gets or sets quality issues detected in this stage.
     /// </summary>
-    public IList<string> QualityIssues { get; set; } = new List<string>();
+    public IList<string> QualityIssues { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the confidence level in the stage results (0-1).

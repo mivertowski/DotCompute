@@ -93,15 +93,15 @@ public class KernelDebugService : IKernelDebugService, IDisposable
                     KernelName = kernelName,
                     IsValid = false,
                     BackendsTested = availableAccelerators.Keys.ToArray(),
-                    Issues = new List<DebugValidationIssue>
-                    {
+                    Issues =
+                    [
                         new()
                         {
                             Severity = DebugValidationSeverity.Critical,
                             Message = "Kernel failed to execute on all available backends",
                             BackendAffected = "All"
                         }
-                    },
+                    ],
                     TotalValidationTime = stopwatch.Elapsed
                 };
             }
@@ -166,15 +166,15 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             {
                 KernelName = kernelName,
                 IsValid = false,
-                Issues = new List<DebugValidationIssue>
-                {
+                Issues =
+                [
                     new()
                     {
                         Severity = DebugValidationSeverity.Critical,
                         Message = $"Validation failed with exception: {ex.Message}",
                         BackendAffected = "All"
                     }
-                },
+                ],
                 TotalValidationTime = stopwatch.Elapsed
             };
         }
@@ -264,7 +264,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         // Prefer GPU backends for comprehensive tracing, fallback to CPU
         var preferredBackends = new[] { "CUDA", "METAL", "OPENCL", "CPU" };
         IAccelerator? accelerator = null;
-        string selectedBackend = "CPU";
+        var selectedBackend = "CPU";
 
         foreach (var backend in preferredBackends)
         {
@@ -426,7 +426,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         // Try GPU first for memory analysis, fallback to CPU
         var preferredBackends = new[] { "CUDA", "CPU" };
         IAccelerator? accelerator = null;
-        string backendType = "CPU";
+        var backendType = "CPU";
 
         foreach (var backend in preferredBackends)
         {
@@ -444,7 +444,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             {
                 KernelName = kernelName,
                 BackendType = "None",
-                Warnings = new List<string> { "No backends available for memory analysis" }
+                Warnings = ["No backends available for memory analysis"]
             };
         }
 
@@ -464,8 +464,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             CoalescingEfficiency = backendType == "CUDA" ? 0.85f : 1.0f,
             Issues = backendType == "CUDA" && memoryEfficiency < 0.8f
 
-                ? new List<string> { "Consider memory coalescing optimizations" }
-                : new List<string>()
+                ? ["Consider memory coalescing optimizations"]
+                : []
         });
 
         // Add optimization suggestions
@@ -854,7 +854,11 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         }
 
         // Implement sophisticated result comparison based on data types and tolerance
-        if (results.Count == 0) return true;
+        if (results.Count == 0)
+        {
+            return true;
+        }
+
 
         var firstResult = results[0];
         var allMatch = results.All(result => CompareResults(firstResult, result, out var variation));
@@ -883,7 +887,12 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     {
         variation = 0f;
 
-        if (result1 == null && result2 == null) return true;
+        if (result1 == null && result2 == null)
+        {
+            return true;
+        }
+
+
         if (result1 == null || result2 == null)
         {
             variation = 1f;
@@ -919,9 +928,9 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         }
 
         const float tolerance = 1e-6f;
-        float maxDiff = 0f;
+        var maxDiff = 0f;
 
-        for (int i = 0; i < arr1.Length; i++)
+        for (var i = 0; i < arr1.Length; i++)
         {
             var diff = Math.Abs(arr1[i] - arr2[i]);
             var relativeDiff = arr1[i] != 0 ? diff / Math.Abs(arr1[i]) : diff;
@@ -944,7 +953,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         const double tolerance = 1e-12;
         double maxDiff = 0;
 
-        for (int i = 0; i < arr1.Length; i++)
+        for (var i = 0; i < arr1.Length; i++)
         {
             var diff = Math.Abs(arr1[i] - arr2[i]);
             var relativeDiff = arr1[i] != 0 ? diff / Math.Abs(arr1[i]) : diff;
@@ -964,7 +973,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
             return false;
         }
 
-        for (int i = 0; i < arr1.Length; i++)
+        for (var i = 0; i < arr1.Length; i++)
         {
             if (arr1[i] != arr2[i])
             {
@@ -1032,19 +1041,36 @@ public class KernelDebugService : IKernelDebugService, IDisposable
 
     private static int LevenshteinDistance(string s1, string s2)
     {
-        if (s1.Length == 0) return s2.Length;
-        if (s2.Length == 0) return s1.Length;
+        if (s1.Length == 0)
+        {
+            return s2.Length;
+        }
+
+
+        if (s2.Length == 0)
+        {
+            return s1.Length;
+        }
+
 
         var matrix = new int[s1.Length + 1, s2.Length + 1];
 
         // Initialize first row and column
-        for (int i = 0; i <= s1.Length; i++) matrix[i, 0] = i;
-        for (int j = 0; j <= s2.Length; j++) matrix[0, j] = j;
+        for (var i = 0; i <= s1.Length; i++)
+        {
+            matrix[i, 0] = i;
+        }
+
+        for (var j = 0; j <= s2.Length; j++)
+        {
+            matrix[0, j] = j;
+        }
 
         // Fill matrix
-        for (int i = 1; i <= s1.Length; i++)
+
+        for (var i = 1; i <= s1.Length; i++)
         {
-            for (int j = 1; j <= s2.Length; j++)
+            for (var j = 1; j <= s2.Length; j++)
             {
                 var cost = s1[i - 1] == s2[j - 1] ? 0 : 1;
                 matrix[i, j] = Math.Min(
@@ -1509,7 +1535,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Kernel execution failed for {KernelName} on {BackendType}", kernelName, backendType);
+            _logger.LogErrorMessage(ex, $"Kernel execution failed for {kernelName} on {backendType}");
             return (false, null, ex.Message);
         }
     }
@@ -1567,7 +1593,11 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     /// </summary>
     private static long EstimateObjectSize(object? obj)
     {
-        if (obj == null) return 0;
+        if (obj == null)
+        {
+            return 0;
+        }
+
 
         return obj switch
         {
@@ -1586,7 +1616,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     private class InstrumentationContext
     {
         public string KernelName { get; set; } = string.Empty;
-        public List<string> TracePoints { get; set; } = new();
+        public List<string> TracePoints { get; set; } = [];
         public DateTime StartTime { get; set; }
         public Guid InstrumentationId { get; set; }
     }
@@ -1596,7 +1626,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         public DateTime Timestamp { get; set; }
         public long MemoryUsage { get; set; }
         public long[] InputSizes { get; set; } = Array.Empty<long>();
-        public Dictionary<string, object> AcceleratorState { get; set; } = new();
+        public Dictionary<string, object> AcceleratorState { get; set; } = [];
     }
 
     /// <summary>
@@ -1639,19 +1669,31 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         await Task.CompletedTask; // For async signature
 
         if (result1.Result == null && result2.Result == null)
+        {
+
             return (true, "Root", 0f);
+        }
+
 
         if (result1.Result == null || result2.Result == null)
+        {
+
             return (false, "Root", 1.0f);
+        }
 
         // Simple comparison - in production this would be more sophisticated
+
         var str1 = result1.Result.ToString();
         var str2 = result2.Result.ToString();
 
         if (str1 == str2)
+        {
+
             return (true, "Root", 0f);
+        }
 
         // Calculate a simple difference metric
+
         var maxLength = Math.Max(str1?.Length ?? 0, str2?.Length ?? 0);
         var difference = maxLength > 0 ? Math.Abs((str1?.Length ?? 0) - (str2?.Length ?? 0)) / (float)maxLength : 1.0f;
 
@@ -1676,7 +1718,11 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     /// </summary>
     private static int GetElementSize(Type? elementType)
     {
-        if (elementType == null) return sizeof(int);
+        if (elementType == null)
+        {
+            return sizeof(int);
+        }
+
 
         return Type.GetTypeCode(elementType) switch
         {
@@ -1702,24 +1748,39 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     private static (bool IsEqual, float Difference, string DifferenceSource) CompareObjects(object? obj1, object? obj2)
     {
         if (ReferenceEquals(obj1, obj2))
+        {
             return (true, 0f, "");
+        }
+
 
         if (obj1 == null || obj2 == null)
+        {
+
             return (false, 1.0f, "Null reference");
+        }
+
 
         if (obj1.GetType() != obj2.GetType())
+        {
+
             return (false, 1.0f, "Type mismatch");
+        }
 
         // Handle numeric types
+
         if (obj1 is IComparable comparable1 && obj2 is IComparable comparable2)
         {
             try
             {
                 var comparison = comparable1.CompareTo(obj2);
                 if (comparison == 0)
+                {
+
                     return (true, 0f, "");
+                }
 
                 // Calculate relative difference for numeric types
+
                 if (obj1 is float f1 && obj2 is float f2)
                 {
                     var maxVal = Math.Max(Math.Abs(f1), Math.Abs(f2));
@@ -1747,7 +1808,11 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         if (obj1 is string str1 && obj2 is string str2)
         {
             if (str1 == str2)
+            {
+
                 return (true, 0f, "");
+            }
+
 
             var maxLength = Math.Max(str1.Length, str2.Length);
             var diff = maxLength > 0 ? Math.Abs(str1.Length - str2.Length) / (float)maxLength : 0f;
@@ -1769,13 +1834,25 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         var totalResults = results.Count;
 
         if (uniqueResults == totalResults)
+        {
+
             return "Each execution produced a unique result - possible random number generation";
+        }
+
 
         if (uniqueResults == 2)
+        {
+
             return "Results alternate between two values - possible race condition";
+        }
+
 
         if (uniqueResults < totalResults / 2)
+        {
+
             return "Limited result variation - possible timing-dependent behavior";
+        }
+
 
         return "Multiple different results - possible non-deterministic algorithm or hardware behavior";
     }

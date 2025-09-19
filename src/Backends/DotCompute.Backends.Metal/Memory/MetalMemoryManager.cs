@@ -149,11 +149,19 @@ public sealed class MetalMemoryManager : BaseMemoryManager
         ObjectDisposedException.ThrowIf(_disposed, this);
         
         if (sizeInBytes <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size must be positive");
-            
+        }
+
+
         if (sizeInBytes > MaxAllocationSize)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes), $"Size {sizeInBytes} exceeds maximum allocation size {MaxAllocationSize}");
-        
+        }
+
+
         _ = Interlocked.Increment(ref _totalAllocations);
         
         // Allocate Metal buffer directly with real Metal API
@@ -167,8 +175,12 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     /// <inheritdoc/>
     public override ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken)
     {
-        if (buffer == null) return ValueTask.CompletedTask;
-        
+        if (buffer == null)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+
         ObjectDisposedException.ThrowIf(_disposed, this);
         
         // Track deallocation
@@ -308,8 +320,12 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     /// </summary>
     private static bool DetectAppleSilicon()
     {
-        if (!OperatingSystem.IsMacOS()) return false;
-        
+        if (!OperatingSystem.IsMacOS())
+        {
+            return false;
+        }
+
+
         try
         {
             // Check architecture - Apple Silicon typically reports as ARM64
@@ -344,7 +360,11 @@ public sealed class MetalMemoryManager : BaseMemoryManager
             do
             {
                 currentPeak = _peakAllocatedBytes;
-                if (totalBytes <= currentPeak) break;
+                if (totalBytes <= currentPeak)
+                {
+                    break;
+                }
+
             } while (Interlocked.CompareExchange(ref _peakAllocatedBytes, totalBytes, currentPeak) != currentPeak);
         }
     }
@@ -354,10 +374,14 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     /// </summary>
     private long GetUnifiedMemorySize()
     {
-        if (!_isAppleSilicon) return 0;
-        
+        if (!_isAppleSilicon)
+        {
+            return 0;
+        }
+
         // This would query the actual unified memory size from the system
         // For now, return a reasonable default based on typical Apple Silicon configurations
+
         return 16L * 1024 * 1024 * 1024; // 16GB unified memory
     }
     
@@ -366,8 +390,12 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     /// </summary>
     protected override void Dispose(bool disposing)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         if (disposing)
         {
             try

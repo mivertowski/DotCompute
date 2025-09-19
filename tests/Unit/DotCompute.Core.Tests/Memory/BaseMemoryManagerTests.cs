@@ -113,7 +113,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         try
         {
             // Act - Allocate multiple buffers
-            for (int i = 0; i < allocationCount; i++)
+            for (var i = 0; i < allocationCount; i++)
             {
                 var buffer = await _memoryManager.AllocateAsync<byte>(allocationSize);
                 buffers.Add(buffer);
@@ -233,7 +233,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
         // Act - High volume allocate/deallocate cycle
-        for (int i = 0; i < operationCount; i++)
+        for (var i = 0; i < operationCount; i++)
         {
             using var buffer = await pooledManager.AllocateAsync<byte>(bufferSize);
             // Simulate some work
@@ -262,7 +262,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
 
         // Act - Allocate buffers of different sizes
         var buffers = new List<IMemoryBuffer<byte>>();
-        for (int i = 0; i < sizes.Length; i++)
+        for (var i = 0; i < sizes.Length; i++)
         {
             var buffer = await pooledManager.AllocateAsync<byte>(sizes[i]);
             if (i < sizes.Length / 2)
@@ -306,7 +306,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         {
             try
             {
-                for (int i = 0; i < allocationsPerThread; i++)
+                for (var i = 0; i < allocationsPerThread; i++)
                 {
                     var buffer = await _memoryManager.AllocateAsync<byte>(bufferSize);
                     results.Add(buffer);
@@ -343,7 +343,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         var activeTasks = 0;
 
         // Act - Mix of allocations and deallocations
-        for (int i = 0; i < operationCount; i++)
+        for (var i = 0; i < operationCount; i++)
         {
             allocateTasks.Add(Task.Run(async () =>
             {
@@ -385,7 +385,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         // Act - Concurrent statistics access while allocating
         var allocateTask = Task.Run(async () =>
         {
-            for (int i = 0; i < 100; i++)
+            for (var i = 0; i < 100; i++)
             {
                 using var buffer = await _memoryManager.AllocateAsync<byte>(1024);
                 await Task.Delay(10);
@@ -394,7 +394,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
 
         var statsTasks = Enumerable.Range(0, taskCount).Select(_ => Task.Run(async () =>
         {
-            for (int i = 0; i < 50; i++)
+            for (var i = 0; i < 50; i++)
             {
                 statisticsResults.Add(_memoryManager.Statistics);
                 await Task.Delay(5);
@@ -452,7 +452,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         try
         {
             // Act - Keep allocating until we hit limits
-            for (int i = 0; i < 100; i++)
+            for (var i = 0; i < 100; i++)
             {
                 try
                 {
@@ -526,7 +526,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
         // Act
-        for (int i = 0; i < allocationCount; i++)
+        for (var i = 0; i < allocationCount; i++)
         {
             using var buffer = await _memoryManager.AllocateAsync<byte>(bufferSize);
             // Minimal work to prevent optimization
@@ -594,19 +594,19 @@ public sealed class BaseMemoryManagerTests : IDisposable
         var fragmentationMetrics = new List<double>();
 
         // Act - Simulate fragmentation-inducing patterns
-        for (int cycle = 0; cycle < cycles; cycle++)
+        for (var cycle = 0; cycle < cycles; cycle++)
         {
             var buffers = new List<IMemoryBuffer<byte>>();
 
             // Allocate buffers of varying sizes
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 var size = (i % 3 + 1) * 1024; // 1KB, 2KB, or 3KB
                 buffers.Add(await _memoryManager.AllocateAsync<byte>(size));
             }
 
             // Free every other buffer to create fragmentation
-            for (int i = 1; i < buffers.Count; i += 2)
+            for (var i = 1; i < buffers.Count; i += 2)
             {
                 buffers[i].Dispose();
                 buffers[i] = null!;
@@ -764,7 +764,7 @@ internal sealed class TestMemoryManager : BaseMemoryManager
 {
     private readonly bool _enablePooling;
     private readonly object _lock = new();
-    private readonly Dictionary<long, Queue<byte[]>> _pool = new();
+    private readonly Dictionary<long, Queue<byte[]>> _pool = [];
     private long _currentAllocatedMemory;
     private int _allocationCount;
     private int _poolHitCount;

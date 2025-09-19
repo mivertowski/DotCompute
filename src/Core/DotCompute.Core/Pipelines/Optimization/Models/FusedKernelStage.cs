@@ -38,11 +38,11 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
                 StageId = Id,
                 Success = result1.Success,
                 ExecutionTime = result1.ExecutionTime,
-                OutputData = result1.OutputData ?? new Dictionary<string, object>()
+                OutputData = result1.OutputData ?? []
             };
         }
 
-        var intermediateContext = new DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext();
+        var intermediateContext = new DotCompute.Core.Pipelines.Models.PipelineExecutionContext();
         foreach (var kvp in result1.OutputData ?? context.Inputs)
         {
             intermediateContext.Inputs[kvp.Key] = kvp.Value;
@@ -58,7 +58,7 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
             StageId = Id,
             Success = result2.Success,
             ExecutionTime = result1.ExecutionTime + result2.ExecutionTime,
-            OutputData = result2.OutputData ?? new Dictionary<string, object>()
+            OutputData = result2.OutputData ?? []
         };
     }
 

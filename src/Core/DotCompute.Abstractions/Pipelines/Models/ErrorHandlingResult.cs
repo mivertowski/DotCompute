@@ -72,7 +72,7 @@ public sealed class ErrorHandlingResult
     /// <summary>
     /// Gets or sets error recovery suggestions.
     /// </summary>
-    public IList<string> RecoverySuggestions { get; set; } = new List<string>();
+    public IList<string> RecoverySuggestions { get; set; } = [];
 
     /// <summary>
     /// Gets or sets metadata associated with the error handling.

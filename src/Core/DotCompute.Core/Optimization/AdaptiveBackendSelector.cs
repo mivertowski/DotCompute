@@ -440,7 +440,7 @@ public class AdaptiveBackendSelector : IDisposable
             WorkloadPattern = signature.WorkloadPattern,
             EstimatedExecutionTimeMs = EstimateExecutionTime(characteristics),
             EstimatedMemoryUsageMB = EstimateMemoryUsage(characteristics),
-            HistoricalPerformance = new Dictionary<string, BackendPerformanceStats>(),
+            HistoricalPerformance = [],
             TotalHistoryEntries = 0
         };
 
@@ -631,8 +631,8 @@ public class AdaptiveBackendSelector : IDisposable
         return (long)(baseMemory * memoryMultiplier);
     }
 
-    private static string GetWorkloadCacheKey(WorkloadSignature signature) =>
-        $"{signature.KernelName}_{signature.DataSize}_{signature.ComputeIntensity:F2}_{signature.MemoryIntensity:F2}_{signature.ParallelismLevel:F2}";
+    private static string GetWorkloadCacheKey(WorkloadSignature signature)
+        => $"{signature.KernelName}_{signature.DataSize}_{signature.ComputeIntensity:F2}_{signature.MemoryIntensity:F2}_{signature.ParallelismLevel:F2}";
 
     private string GetBackendId(IAccelerator accelerator)
     {

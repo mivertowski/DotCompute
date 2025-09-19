@@ -73,7 +73,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         var buffer = await CreateNumaAwareBufferAsync(sizeInBytes, options, preferredNode, cancellationToken);
 
         // Apply memory pinning for performance-critical allocations
-        if (options.HasFlag(MemoryOptions.PinnedMemory))
+        if (options.HasFlag(MemoryOptions.PreferPinned))
         {
             await PinBufferMemoryAsync(buffer, cancellationToken);
         }
@@ -311,7 +311,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
 
         try
         {
-            for (int node = 0; node < _topology.NodeCount; node++)
+            for (var node = 0; node < _topology.NodeCount; node++)
             {
                 // Get available memory for each NUMA node
                 // Use NUMA node memory size as total, estimate usage at 50%
@@ -392,7 +392,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         try
         {
             // In production, this would use SetThreadAffinityMask and mbind (Linux) or
-            // VirtualAllocExNuma (Windows) to bind memory to specific NUMA nodes
+            // VirtualAllocExNuma (Windows) to bind memory to specific NUMA nodes TODO
             _logger.LogDebug("Binding buffer to NUMA node {Node}", numaNode);
 
             // Simulate NUMA binding operation
@@ -487,15 +487,27 @@ public sealed class CpuMemoryManager : BaseMemoryManager
 
                 // Validate offsets and count
                 if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
+                {
+
                     throw new ArgumentOutOfRangeException("Negative offsets or count not allowed");
+                }
+
 
                 if (sourceOffset + count > sourceSpan.Length)
+                {
+
                     throw new ArgumentOutOfRangeException("Source range exceeds buffer size");
+                }
+
 
                 if (destinationOffset + count > destSpan.Length)
+                {
+
                     throw new ArgumentOutOfRangeException("Destination range exceeds buffer size");
+                }
 
                 // Perform offset-based copy
+
                 var sourceSlice = sourceSpan.Slice(sourceOffset, count);
                 var destSlice = destSpan.Slice(destinationOffset, count);
                 sourceSlice.CopyTo(destSlice);
@@ -606,7 +618,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
                 var byteLength = count * elementSize;
 
                 var view = new CpuMemoryBufferView(untypedBuffer, byteOffset, byteLength);
-                return new CpuMemoryBufferTypedWrapper<T>(view);
+                return new CpuMemoryBufferTypedWrapper<T>(view, this);
             }
             else
             {
@@ -657,6 +669,14 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
     public bool IsDisposed => _parent.IsDisposed;
     public BufferState State => _parent.State;
 
+    // Helper method to get the host memory for this view
+    public Memory<byte> GetHostMemory()
+    {
+        // Get the parent buffer's memory and slice it for this view
+        var parentMemory = _parent.AsMemory();
+        return parentMemory.Slice((int)_offset, (int)_length);
+    }
+
     // Interface implementations
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
@@ -703,11 +723,13 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
 {
     private readonly CpuMemoryBufferView _view;
     private readonly int _elementCount;
+    private readonly CpuMemoryManager _memoryManager;
 
-    public CpuMemoryBufferTypedWrapper(CpuMemoryBufferView view)
+    public CpuMemoryBufferTypedWrapper(CpuMemoryBufferView view, CpuMemoryManager? memoryManager = null)
     {
         _view = view ?? throw new ArgumentNullException(nameof(view));
         _elementCount = (int)(_view.SizeInBytes / Unsafe.SizeOf<T>());
+        _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
     }
 
     public long SizeInBytes => _view.SizeInBytes;
@@ -716,7 +738,250 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
     public BufferState State => _view.State;
 
     public int Length => _elementCount;
+    public int ElementCount => Length;
 
+    // For CPU backend, accelerator is always the CPU accelerator
+    public IAccelerator Accelerator => _memoryManager.Accelerator;
+
+    // For CPU backend, data is always on host, never needs device synchronization
+    public bool IsOnHost => true;
+    public bool IsOnDevice => false;
+    public bool IsDirty => false;
+
+    // Host Memory Access
+    public Span<T> AsSpan()
+    {
+        // For CPU backend, we can directly access the memory as a span
+        // This requires getting the underlying memory from the view
+        unsafe
+        {
+            // Create a span from the view's memory
+            var memory = _view.GetHostMemory();
+            return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(memory.Span);
+        }
+    }
+
+    public ReadOnlySpan<T> AsReadOnlySpan()
+    {
+        return AsSpan();
+    }
+
+    public Memory<T> AsMemory()
+    {
+        // For CPU backend, return a memory handle
+        var memory = _view.GetHostMemory();
+        return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(memory.Span).ToArray().AsMemory();
+    }
+
+    public ReadOnlyMemory<T> AsReadOnlyMemory()
+    {
+        return AsMemory();
+    }
+
+    // Device Memory Access (CPU backend doesn't have separate device memory)
+    public DeviceMemory GetDeviceMemory()
+    {
+        // For CPU backend, device memory is the same as host memory
+        return DeviceMemory.Invalid;
+    }
+
+    // Memory Mapping (for CPU backend, this is essentially a no-op)
+    public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
+    {
+        return new MappedMemory<T>(AsMemory());
+    }
+
+    public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+    {
+        var memory = AsMemory();
+        if (offset < 0 || length < 0 || offset + length > memory.Length)
+        {
+            throw new ArgumentOutOfRangeException("Invalid range for mapping");
+        }
+        return new MappedMemory<T>(memory.Slice(offset, length));
+    }
+
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(Map(mode));
+    }
+
+    // Synchronization (CPU backend doesn't need synchronization)
+    public void EnsureOnHost()
+    {
+        // No-op for CPU backend - data is always on host
+    }
+
+    public void EnsureOnDevice()
+    {
+        // No-op for CPU backend - no separate device memory
+    }
+
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public void Synchronize()
+    {
+        // No-op for CPU backend
+    }
+
+    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public void MarkHostDirty()
+    {
+        // No-op for CPU backend
+    }
+
+    public void MarkDeviceDirty()
+    {
+        // No-op for CPU backend
+    }
+
+    // Copy Operations
+    public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
+    {
+        var destination = AsSpan();
+        var copyLength = Math.Min(source.Length, destination.Length);
+        source.Span[..copyLength].CopyTo(destination);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
+    {
+        var source = AsReadOnlySpan();
+        var copyLength = Math.Min(source.Length, destination.Length);
+        source[..copyLength].CopyTo(destination.Span);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
+    {
+        if (destination is CpuMemoryBufferTypedWrapper<T> cpuDest)
+        {
+            var source = AsReadOnlySpan();
+            var dest = cpuDest.AsSpan();
+            var copyLength = Math.Min(source.Length, dest.Length);
+            source[..copyLength].CopyTo(dest);
+            return ValueTask.CompletedTask;
+        }
+        else
+        {
+            // Fallback to generic copy
+            var source = AsMemory();
+            return destination.CopyFromAsync(source, cancellationToken);
+        }
+    }
+
+    public ValueTask CopyToAsync(
+        int sourceOffset,
+        IUnifiedMemoryBuffer<T> destination,
+        int destinationOffset,
+        int count,
+        CancellationToken cancellationToken = default)
+    {
+        if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
+        {
+
+            throw new ArgumentOutOfRangeException("Negative offsets or count not allowed");
+        }
+
+
+        if (sourceOffset + count > Length)
+        {
+
+            throw new ArgumentOutOfRangeException("Source range exceeds buffer size");
+        }
+
+
+        var sourceSlice = AsMemory().Slice(sourceOffset, count);
+
+        if (destination is CpuMemoryBufferTypedWrapper<T> cpuDest)
+        {
+            if (destinationOffset + count > cpuDest.Length)
+            {
+
+                throw new ArgumentOutOfRangeException("Destination range exceeds buffer size");
+            }
+
+
+            var destSlice = cpuDest.AsSpan().Slice(destinationOffset, count);
+            sourceSlice.Span.CopyTo(destSlice);
+            return ValueTask.CompletedTask;
+        }
+        else
+        {
+            // Fallback: copy to temporary buffer then to destination
+            return destination.CopyFromAsync(sourceSlice, cancellationToken);
+        }
+    }
+
+    // Fill Operations
+    public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
+    {
+        AsSpan().Fill(value);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
+    {
+        if (offset < 0 || count < 0 || offset + count > Length)
+        {
+
+            throw new ArgumentOutOfRangeException("Invalid range for fill operation");
+        }
+
+
+        AsSpan().Slice(offset, count).Fill(value);
+        return ValueTask.CompletedTask;
+    }
+
+    // View and Slice Operations
+    public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
+    {
+        if (offset < 0 || length < 0 || offset + length > Length)
+        {
+
+            throw new ArgumentOutOfRangeException("Invalid slice parameters");
+        }
+
+        // Create a new view with the specified offset and length
+
+        var elementSize = Unsafe.SizeOf<T>();
+        var byteOffset = offset * elementSize;
+        var byteLength = length * elementSize;
+
+        // Get the underlying buffer from the view
+        var parentBuffer = GetParentBuffer();
+        var sliceView = new CpuMemoryBufferView(parentBuffer, byteOffset, byteLength);
+        return new CpuMemoryBufferTypedWrapper<T>(sliceView, _memoryManager);
+    }
+
+    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
+    {
+        // Calculate the new element count based on size
+        var newElementSize = Unsafe.SizeOf<TNew>();
+        var oldElementSize = Unsafe.SizeOf<T>();
+
+        if (SizeInBytes % newElementSize != 0)
+        {
+            throw new InvalidOperationException($"Buffer size {SizeInBytes} is not compatible with element size {newElementSize}");
+        }
+
+        // Create a new wrapper with the same view but different type
+        return new CpuMemoryBufferTypedWrapper<TNew>(_view, _memoryManager);
+    }
+
+    // Legacy copy operations for compatibility
     public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         // Convert source to bytes and delegate to view
@@ -751,5 +1016,16 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
     public ValueTask DisposeAsync()
     {
         return _view.DisposeAsync();
+    }
+
+    // Helper methods
+    private CpuMemoryBuffer GetParentBuffer()
+    {
+        // Access the parent buffer from the view
+        // This uses reflection to access the private field, which is not ideal
+        // but necessary for the current implementation
+        var field = typeof(CpuMemoryBufferView).GetField("_parent",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        return (CpuMemoryBuffer)(field?.GetValue(_view) ?? throw new InvalidOperationException("Could not access parent buffer"));
     }
 }

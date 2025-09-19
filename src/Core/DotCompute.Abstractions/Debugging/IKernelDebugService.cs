@@ -113,8 +113,8 @@ public class KernelValidationResult
     public string KernelName { get; init; } = string.Empty;
     public bool IsValid { get; init; }
     public string[] BackendsTested { get; init; } = Array.Empty<string>();
-    public Dictionary<string, object> Results { get; init; } = new();
-    public List<DebugValidationIssue> Issues { get; init; } = new();
+    public Dictionary<string, object> Results { get; init; } = [];
+    public List<DebugValidationIssue> Issues { get; init; } = [];
     public TimeSpan TotalValidationTime { get; init; }
     public float MaxDifference { get; init; }
     public string RecommendedBackend { get; init; } = string.Empty;
@@ -132,7 +132,7 @@ public record KernelExecutionResult
     public long MemoryUsed { get; init; }
     public bool Success { get; init; }
     public string? ErrorMessage { get; init; }
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
     public DateTime ExecutedAt { get; init; } = DateTime.UtcNow;
 }
 
@@ -144,10 +144,10 @@ public class ResultComparisonReport
     public string KernelName { get; init; } = string.Empty;
     public bool ResultsMatch { get; init; }
     public string[] BackendsCompared { get; init; } = Array.Empty<string>();
-    public List<ResultDifference> Differences { get; init; } = new();
+    public List<ResultDifference> Differences { get; init; } = [];
     public ComparisonStrategy Strategy { get; init; }
     public float Tolerance { get; init; }
-    public Dictionary<string, PerformanceMetrics> PerformanceComparison { get; init; } = new();
+    public Dictionary<string, PerformanceMetrics> PerformanceComparison { get; init; } = [];
 }
 
 /// <summary>
@@ -157,7 +157,7 @@ public class KernelExecutionTrace
 {
     public string KernelName { get; init; } = string.Empty;
     public string BackendType { get; init; } = string.Empty;
-    public List<TracePoint> TracePoints { get; init; } = new();
+    public List<TracePoint> TracePoints { get; init; } = [];
     public TimeSpan TotalExecutionTime { get; init; }
     public bool Success { get; init; }
     public string? ErrorMessage { get; init; }
@@ -171,10 +171,10 @@ public class DeterminismReport
     public string KernelName { get; init; } = string.Empty;
     public bool IsDeterministic { get; init; }
     public int ExecutionCount { get; init; }
-    public List<object> AllResults { get; init; } = new();
+    public List<object> AllResults { get; init; } = [];
     public float MaxVariation { get; init; }
     public string? NonDeterminismSource { get; init; }
-    public List<string> Recommendations { get; init; } = new();
+    public List<string> Recommendations { get; init; } = [];
 }
 
 /// <summary>
@@ -184,11 +184,11 @@ public class MemoryAnalysisReport
 {
     public string KernelName { get; init; } = string.Empty;
     public string BackendType { get; init; } = string.Empty;
-    public List<MemoryAccessPattern> AccessPatterns { get; init; } = new();
-    public List<PerformanceOptimization> Optimizations { get; init; } = new();
+    public List<MemoryAccessPattern> AccessPatterns { get; init; } = [];
+    public List<PerformanceOptimization> Optimizations { get; init; } = [];
     public long TotalMemoryAccessed { get; init; }
     public float MemoryEfficiency { get; init; }
-    public List<string> Warnings { get; init; } = new();
+    public List<string> Warnings { get; init; } = [];
 }
 
 /// <summary>
@@ -200,7 +200,7 @@ public class BackendInfo
     public string Version { get; init; } = string.Empty;
     public bool IsAvailable { get; init; }
     public string[] Capabilities { get; init; } = Array.Empty<string>();
-    public Dictionary<string, object> Properties { get; init; } = new();
+    public Dictionary<string, object> Properties { get; init; } = [];
     public string? UnavailabilityReason { get; init; }
     public int Priority { get; init; }
 
@@ -234,7 +234,7 @@ public class DebugValidationIssue
     public string Message { get; init; } = string.Empty;
     public string BackendAffected { get; init; } = string.Empty;
     public string? Suggestion { get; init; }
-    public Dictionary<string, object> Details { get; init; } = new();
+    public Dictionary<string, object> Details { get; init; } = [];
 
     /// <summary>
     /// Creates a new debug validation issue.
@@ -272,7 +272,7 @@ public class TracePoint
 {
     public string Name { get; init; } = string.Empty;
     public int ExecutionOrder { get; init; }
-    public Dictionary<string, object> Values { get; init; } = new();
+    public Dictionary<string, object> Values { get; init; } = [];
     public TimeSpan TimestampFromStart { get; init; }
 }
 
@@ -296,7 +296,7 @@ public class MemoryAccessPattern
     public string PatternType { get; init; } = string.Empty;
     public long AccessCount { get; init; }
     public float CoalescingEfficiency { get; init; }
-    public List<string> Issues { get; init; } = new();
+    public List<string> Issues { get; init; } = [];
 }
 
 /// <summary>

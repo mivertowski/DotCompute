@@ -92,7 +92,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Initialize
 
             var initialData = new float[bufferSize];
-            for (int i = 0; i < bufferSize; i++)
+            for (var i = 0; i < bufferSize; i++)
                 initialData[i] = i * 0.01f;
             await buffer.CopyFromAsync(initialData.AsMemory());
             await stepBuffer.CopyFromAsync(new[] { 0 }.AsMemory());
@@ -123,7 +123,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Execute time steps
 
-            for (int i = 0; i < timeSteps; i++)
+            for (var i = 0; i < timeSteps; i++)
             {
                 var (grid, block) = CudaTestHelpers.CreateLaunchConfig(1, 1, 1, 256, 1, 1);
                 var kernelArgs = CudaTestHelpers.CreateKernelArguments(
@@ -212,7 +212,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             bool shouldBeValid)
         {
             // Simple validation logic for kernel configuration
-            bool isValid = ringBufferDepth >= 2 && blockSize > 0 && blockSize <= 1024;
+            var isValid = ringBufferDepth >= 2 && blockSize > 0 && blockSize <= 1024;
 
 
             isValid.Should().Be(shouldBeValid,
@@ -313,7 +313,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Create multiple buffers to simulate ring buffer pattern
 
             var buffers = new List<IDisposable>();
-            for (int i = 0; i < numBuffers; i++)
+            for (var i = 0; i < numBuffers; i++)
             {
                 buffers.Add(await accelerator.Memory.AllocateAsync<float>(elements));
             }
@@ -355,7 +355,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             int depth)
         {
             // Simple dimension validation
-            long totalElements = (long)width * height * depth;
+            var totalElements = (long)width * height * depth;
 
 
             totalElements.Should().BeGreaterThan(0, $"{dimensionType} grid should have positive element count");

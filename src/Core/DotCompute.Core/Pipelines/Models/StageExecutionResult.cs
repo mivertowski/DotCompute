@@ -137,7 +137,7 @@ public sealed class StageExecutionResult
         {
             Success = false,
             StageId = stageId,
-            OutputData = partialOutputs ?? new Dictionary<string, object>(),
+            OutputData = partialOutputs ?? [],
             ExecutionTime = executionTime,
             Error = error
         };

@@ -51,7 +51,7 @@ public record GeneratedKernel
     /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the kernel language.
@@ -71,7 +71,7 @@ public record GeneratedKernel
     /// <summary>
     /// Gets or sets optimization metadata for the kernel.
     /// </summary>
-    public Dictionary<string, object> OptimizationMetadata { get; set; } = new();
+    public Dictionary<string, object> OptimizationMetadata { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the source expression that generated this kernel.

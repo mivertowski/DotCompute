@@ -40,7 +40,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public void RecordMetric(string name, double value, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -70,7 +74,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public void IncrementCounter(string name, long increment = 1, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -99,7 +107,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public void RecordHistogram(string name, double value, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -128,7 +140,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public Activity? StartActivity(string name, ActivityKind kind = ActivityKind.Internal)
     {
-        if (_disposed) return null;
+        if (_disposed)
+        {
+            return null;
+        }
+
 
         try
         {
@@ -151,7 +167,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public void RecordEvent(string name, IDictionary<string, object?>? attributes = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -185,7 +205,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public Abstractions.Interfaces.Telemetry.IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed) return new OperationTimer(operationName, tags);
+        if (_disposed)
+        {
+            return new OperationTimer(operationName, tags);
+        }
+
 
         try
         {
@@ -205,7 +229,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public void RecordMemoryAllocation(long bytes, string? allocationType = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -233,7 +261,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public void RecordGarbageCollection(int generation, TimeSpan duration, long memoryBefore, long memoryAfter)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -269,7 +301,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public void RecordAcceleratorUtilization(string acceleratorType, double utilization, long memoryUsed)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -317,7 +353,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public void RecordKernelExecution(string kernelName, TimeSpan duration, long operationCount)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -369,7 +409,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     public void RecordMemoryTransfer(string direction, long bytes, TimeSpan duration)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -611,7 +655,7 @@ internal sealed class ProductionOperationTimer : Abstractions.Interfaces.Telemet
                 Duration = _stopwatch.Elapsed,
                 StartTime = DateTime.UtcNow.Subtract(_stopwatch.Elapsed),
                 EndTime = DateTime.UtcNow,
-                Metadata = _tags?.Where(kv => kv.Value != null).ToDictionary(kv => kv.Key, kv => kv.Value!) ?? new Dictionary<string, object>()
+                Metadata = _tags?.Where(kv => kv.Value != null).ToDictionary(kv => kv.Key, kv => kv.Value!) ?? []
             });
         }
     }
@@ -643,7 +687,7 @@ internal sealed class ProductionOperationTimer : Abstractions.Interfaces.Telemet
             OperationId = operationId ?? Guid.NewGuid().ToString();
             StartTime = DateTime.UtcNow;
             _stopwatch = Stopwatch.StartNew();
-            _checkpoints = new Dictionary<string, TimeSpan>();
+            _checkpoints = [];
         }
 
         public TimeSpan Stop(IDictionary<string, object>? metadata = null)

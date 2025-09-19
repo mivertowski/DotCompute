@@ -14,9 +14,9 @@ namespace DotCompute.Linq.Pipelines.Interfaces.Classes
         public bool IsValid { get; set; }
 
         /// <summary>Gets validation errors if any.</summary>
-        public List<string> Errors { get; set; } = new();
+        public List<string> Errors { get; set; } = [];
 
         /// <summary>Gets validation warnings if any.</summary>
-        public List<string> Warnings { get; set; } = new();
+        public List<string> Warnings { get; set; } = [];
     }
 }

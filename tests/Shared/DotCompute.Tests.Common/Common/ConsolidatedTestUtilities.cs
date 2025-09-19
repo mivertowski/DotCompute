@@ -48,7 +48,7 @@ public static class ConsolidatedTestUtilities
         if (typeof(T) == typeof(float))
         {
             var floatData = data as float[];
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 floatData![i] = (float)(random.NextDouble() * 2.0 - 1.0);
             }
@@ -56,7 +56,7 @@ public static class ConsolidatedTestUtilities
         else if (typeof(T) == typeof(double))
         {
             var doubleData = data as double[];
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 doubleData![i] = random.NextDouble() * 2.0 - 1.0;
             }
@@ -64,7 +64,7 @@ public static class ConsolidatedTestUtilities
         else if (typeof(T) == typeof(int))
         {
             var intData = data as int[];
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 intData![i] = random.Next(-1000, 1000);
             }
@@ -77,7 +77,7 @@ public static class ConsolidatedTestUtilities
         else
         {
             // For other types, fill with pattern based on index
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 var bytes = new byte[Unsafe.SizeOf<T>()];
                 random.NextBytes(bytes);

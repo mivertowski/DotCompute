@@ -379,7 +379,7 @@ public static class StreamingPipelineExtensions
         where T : unmanaged where TResult : unmanaged
     {
         var currentSession = new List<TimestampedValue<T>>();
-        DateTime lastTimestamp = DateTime.MinValue;
+        var lastTimestamp = DateTime.MinValue;
 
 
         await foreach (var value in source.WithCancellation(cancellationToken))
@@ -567,7 +567,7 @@ public class ProfilingOptions
     public bool EnableKernelProfiling { get; set; } = false;
 
     /// <summary>Gets or sets custom profiling tags.</summary>
-    public Dictionary<string, string> CustomTags { get; set; } = new();
+    public Dictionary<string, string> CustomTags { get; set; } = [];
 }
 
 /// <summary>
@@ -588,7 +588,7 @@ public class CircuitBreakerOptions
     public bool EnableLogging { get; set; } = true;
 
     /// <summary>Gets or sets custom circuit breaker policies.</summary>
-    public Dictionary<string, object> CustomPolicies { get; set; } = new();
+    public Dictionary<string, object> CustomPolicies { get; set; } = [];
 }
 
 /// <summary>

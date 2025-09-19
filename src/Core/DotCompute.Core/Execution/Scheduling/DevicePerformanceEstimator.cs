@@ -72,7 +72,7 @@ internal class DevicePerformanceEstimator
         var performanceKey = GetPerformanceKey(kernelName, device);
 
         // Try to get historical performance data
-        if (_performanceHistory.TryGetValue(performanceKey, out var history) && history?.Measurements.Count > 0)
+        if (_performanceHistory.TryGetValue(performanceKey, out var history) && history != null && history.Measurements.Count() > 0)
         {
             return EstimateFromHistoricalData(history!, dataSize);
         }
@@ -167,7 +167,7 @@ internal class DevicePerformanceEstimator
             (key, oldValue) => (oldValue * 0.8) + (throughput * 0.2)); // Exponential moving average
 
         // Update kernel model if we have enough data
-        if (history.Measurements.Count >= 5)
+        if (history.Measurements.Count() >= 5)
         {
             UpdateKernelModel(kernelName, history);
         }
@@ -232,11 +232,11 @@ internal class DevicePerformanceEstimator
             var historicalFactor = avgHistoricalThroughput / cpuBaseline;
 
             // Blend theoretical and historical factors
-            baseFactor = (baseFactor * 0.3) + (historicalFactor * 0.7);
+            baseFactor = (long)((baseFactor * 0.3) + (historicalFactor * 0.7));
         }
 
         // Apply power efficiency factor
-        baseFactor *= capabilities.PowerEfficiency;
+        baseFactor = (long)(baseFactor * capabilities.PowerEfficiency);
 
         return Math.Max(baseFactor, 0.1); // Minimum factor of 0.1
     }
@@ -466,7 +466,11 @@ internal class DevicePerformanceEstimator
     private static double CalculateVariance(IEnumerable<double> values)
     {
         var valuesList = values.ToList();
-        if (valuesList.Count < 2) return 0.0;
+        if (valuesList.Count < 2)
+        {
+            return 0.0;
+        }
+
 
         var mean = valuesList.Average();
         var sumOfSquaredDifferences = valuesList.Sum(v => Math.Pow(v - mean, 2));
@@ -478,9 +482,13 @@ internal class DevicePerformanceEstimator
     /// </summary>
     private static double EstimateComputeIntensity(PerformanceMeasurement[] measurements)
     {
-        if (measurements.Length < 2) return 10.0; // Default
+        if (measurements.Length < 2)
+        {
+            return 10.0; // Default
+        }
 
         // Analyze throughput vs data size correlation
+
         var avgThroughput = measurements.Average(m => m.Throughput);
         var throughputVariation = CalculateVariance(measurements.Select(m => m.Throughput));
 
@@ -494,13 +502,17 @@ internal class DevicePerformanceEstimator
     /// </summary>
     private static double EstimateMemoryAccessPattern(PerformanceMeasurement[] measurements)
     {
-        if (measurements.Length < 3) return 1.2; // Default
+        if (measurements.Length < 3)
+        {
+            return 1.2; // Default
+        }
 
         // Analyze how performance scales with data size
+
         var sizeRatios = new List<double>();
         var timeRatios = new List<double>();
 
-        for (int i = 1; i < measurements.Length; i++)
+        for (var i = 1; i < measurements.Length; i++)
         {
             var sizeRatio = (double)measurements[i].DataSize / measurements[i - 1].DataSize;
             var timeRatio = measurements[i].ExecutionTime.TotalSeconds / measurements[i - 1].ExecutionTime.TotalSeconds;
@@ -512,9 +524,13 @@ internal class DevicePerformanceEstimator
             }
         }
 
-        if (sizeRatios.Count == 0) return 1.2;
+        if (sizeRatios.Count == 0)
+        {
+            return 1.2;
+        }
 
         // If time scales more than linearly with size, memory access is complex
+
         var avgSizeRatio = sizeRatios.Average();
         var avgTimeRatio = timeRatios.Average();
         var scalingFactor = avgTimeRatio / avgSizeRatio;
@@ -561,7 +577,11 @@ internal class DevicePerformanceEstimator
             .Select(kvp => kvp.Value)
             .ToArray();
 
-        if (deviceScores.Length == 0) return 1.0;
+        if (deviceScores.Length == 0)
+        {
+            return 1.0;
+        }
+
 
         var avgObservedThroughput = deviceScores.Average();
         var expectedThroughput = GetDevicePerformanceFactor(device) * 50_000_000; // 50 MB/s baseline
@@ -588,7 +608,11 @@ internal class DevicePerformanceEstimator
     private static double CalculateMemoryFactor(long memoryRequired, long availableMemory)
     {
         if (memoryRequired > availableMemory)
+        {
+
             return 0.0; // Cannot fit
+        }
+
 
         var utilizationRatio = (double)memoryRequired / availableMemory;
 

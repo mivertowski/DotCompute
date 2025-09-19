@@ -277,7 +277,7 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
         EnsureNotDisposed();
 
 
-        int elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
+        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
         if (_length % elementSize != 0)
         {
 
@@ -285,7 +285,7 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
         }
 
 
-        int elementCount = _length / elementSize;
+        var elementCount = _length / elementSize;
         return new CpuMemoryBufferTypedSlice<TNew>(_parentBuffer, _offset, elementCount, _memoryManager, _logger);
     }
 

@@ -146,7 +146,7 @@ public static class PipelineBuilderLinqExtensions
         {
             EstimatedExecutionTime = TimeSpan.FromMilliseconds(50),
             EstimatedMemoryUsage = 1024 * 1024 * 10, // 10 MB
-            Recommendations = new List<string> { "Consider using GPU acceleration", "Enable caching" }
+            Recommendations = ["Consider using GPU acceleration", "Enable caching"]
         };
     }
 

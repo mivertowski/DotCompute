@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
 using global::System.Buffers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.ObjectPool;
 
 namespace DotCompute.Memory;
 
@@ -19,7 +20,7 @@ namespace DotCompute.Memory;
 /// Target: 90%+ allocation reduction for frequent operations
 /// </summary>
 /// <typeparam name="T">The type of objects to pool.</typeparam>
-public sealed class HighPerformanceObjectPool<T> : ObjectPool<T> where T : class
+public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable where T : class
 {
     private readonly Func<T> _createFunc;
     private readonly Action<T>? _resetAction;
@@ -101,10 +102,13 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T> where T : class
 
         // Try thread-local pool first (fastest path)
         var threadLocal = _threadLocal.Value;
-        if (threadLocal.TryPop(out var item))
+        if (threadLocal?.TryPop(out var item) == true)
         {
             Interlocked.Increment(ref _poolHits);
-            return ValidateAndPrepareItem(item);
+            if (item != null)
+            {
+                return ValidateAndPrepareItem(item);
+            }
         }
 
         // Try global pool
@@ -151,7 +155,10 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T> where T : class
         // Reset object state
         try
         {
-            _resetAction?.Invoke(obj);
+            if (_resetAction != null)
+            {
+                _resetAction(obj);
+            }
         }
         catch (Exception ex)
         {
@@ -162,7 +169,7 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T> where T : class
 
         // Try thread-local pool first (fastest path)
         var threadLocal = _threadLocal.Value;
-        if (threadLocal.TryPush(obj))
+        if (threadLocal != null && threadLocal.TryPush(obj))
         {
             return;
         }
@@ -231,7 +238,11 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T> where T : class
 
     private void PrePopulatePool()
     {
-        if (_config.PrePopulateCount <= 0) return;
+        if (_config.PrePopulateCount <= 0)
+        {
+            return;
+        }
+
 
         try
         {
@@ -252,7 +263,11 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T> where T : class
 
     private void PerformMaintenance(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -277,7 +292,11 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T> where T : class
 
     private void CleanupExpiredObjects()
     {
-        if (!_config.ObjectLifetime.HasValue) return;
+        if (!_config.ObjectLifetime.HasValue)
+        {
+            return;
+        }
+
 
         var cutoff = DateTimeOffset.UtcNow - _config.ObjectLifetime.Value;
         var objectsToKeep = new List<PooledObject<T>>();
@@ -375,9 +394,9 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T> where T : class
         }
     }
 
-    protected override void Dispose(bool disposing)
+    public void Dispose()
     {
-        if (!_disposed && disposing)
+        if (!_disposed)
         {
             _disposed = true;
             _maintenanceTimer?.Dispose();
@@ -391,7 +410,6 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T> where T : class
 
             _logger?.LogDebug("High-performance object pool disposed for {Type}", typeof(T).Name);
         }
-        base.Dispose(disposing);
     }
 }
 

@@ -62,7 +62,11 @@ public sealed class MetalHealthMonitor : IDisposable
     /// </summary>
     public void ReportError(MetalError error, string context)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var healthEvent = new HealthEvent
         {
@@ -116,7 +120,11 @@ public sealed class MetalHealthMonitor : IDisposable
     /// </summary>
     public void ReportMemoryPressure(MemoryPressureLevel level, double percentage)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var severity = level switch
         {
@@ -167,7 +175,11 @@ public sealed class MetalHealthMonitor : IDisposable
     /// </summary>
     public void ReportSuccess(string component, string operation, TimeSpan duration)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var healthEvent = new HealthEvent
         {
@@ -214,19 +226,29 @@ public sealed class MetalHealthMonitor : IDisposable
     /// </summary>
     public HealthStatus GetCurrentHealth()
     {
-        if (_disposed) return HealthStatus.Unknown;
+        if (_disposed)
+        {
+            return HealthStatus.Unknown;
+        }
 
         var componentStatuses = _componentHealth.Values.Select(c => c.Status).ToList();
         
         if (componentStatuses.Any(s => s == HealthStatus.Critical))
+        {
             return HealthStatus.Critical;
-        
+        }
+
         if (componentStatuses.Any(s => s == HealthStatus.Degraded))
+        {
             return HealthStatus.Degraded;
-        
+        }
+
         if (componentStatuses.All(s => s == HealthStatus.Healthy))
+        {
             return HealthStatus.Healthy;
-        
+        }
+
+
         return HealthStatus.Unknown;
     }
 
@@ -235,7 +257,11 @@ public sealed class MetalHealthMonitor : IDisposable
     /// </summary>
     public MetalHealthReport GetDetailedHealthReport()
     {
-        if (_disposed) return new MetalHealthReport { OverallHealth = HealthStatus.Unknown };
+        if (_disposed)
+        {
+            return new MetalHealthReport { OverallHealth = HealthStatus.Unknown };
+        }
+
 
         var recentEvents = _healthEvents.ToArray()
             .Where(e => e.Timestamp > DateTimeOffset.UtcNow.Subtract(_options.EventRetentionPeriod))
@@ -267,7 +293,11 @@ public sealed class MetalHealthMonitor : IDisposable
     /// </summary>
     public MetalHealthAnalysis AnalyzeHealth()
     {
-        if (_disposed) return new MetalHealthAnalysis();
+        if (_disposed)
+        {
+            return new MetalHealthAnalysis();
+        }
+
 
         var recentEvents = _healthEvents.ToArray()
             .Where(e => e.Timestamp > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromHours(24)))
@@ -303,7 +333,11 @@ public sealed class MetalHealthMonitor : IDisposable
     /// </summary>
     public void PerformCleanup(DateTimeOffset cutoffTime)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var eventsToRemove = new List<HealthEvent>();
         var eventArray = _healthEvents.ToArray();
@@ -360,7 +394,11 @@ public sealed class MetalHealthMonitor : IDisposable
 
     private void PerformHealthCheck(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -394,7 +432,11 @@ public sealed class MetalHealthMonitor : IDisposable
 
     private void DetectAnomalies(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -431,7 +473,7 @@ public sealed class MetalHealthMonitor : IDisposable
                 return;
             }
 
-            for (int i = 0; i < Math.Min(deviceCount, 4); i++) // Check up to 4 devices
+            for (var i = 0; i < Math.Min(deviceCount, 4); i++) // Check up to 4 devices
             {
                 var device = MetalNative.CreateDeviceAtIndex(i);
                 if (device != IntPtr.Zero)
@@ -564,15 +606,23 @@ public sealed class MetalHealthMonitor : IDisposable
     {
         var successEvents = recentEvents.Where(e => e.EventType == HealthEventType.Success).ToList();
         
-        if (successEvents.Count < 10) return; // Need sufficient data
-        
+        if (successEvents.Count < 10)
+        {
+            return; // Need sufficient data
+        }
+
+
         var durations = successEvents
             .Where(e => e.Data.ContainsKey("duration_ms"))
             .Select(e => (double)e.Data["duration_ms"])
             .ToList();
         
-        if (durations.Count < 10) return;
-        
+        if (durations.Count < 10)
+        {
+            return;
+        }
+
+
         var mean = durations.Average();
         var stdDev = Math.Sqrt(durations.Select(d => Math.Pow(d - mean, 2)).Average());
         var threshold = mean + (2 * stdDev); // 2 standard deviations
@@ -659,8 +709,12 @@ public sealed class MetalHealthMonitor : IDisposable
 
     private List<TimeWindow> GetTimeWindows(List<HealthEvent> events, TimeSpan windowSize)
     {
-        if (events.Count == 0) return new List<TimeWindow>();
-        
+        if (events.Count == 0)
+        {
+            return [];
+        }
+
+
         var windows = new List<TimeWindow>();
         var startTime = events.Min(e => e.Timestamp);
         var endTime = events.Max(e => e.Timestamp);
@@ -796,9 +850,13 @@ public sealed class MetalHealthMonitor : IDisposable
 
     private double CalculateHealthScore(List<HealthEvent> events)
     {
-        if (events.Count == 0) return 100.0;
+        if (events.Count == 0)
+        {
+            return 100.0;
+        }
 
-        double score = 100.0;
+
+        var score = 100.0;
         
         // Penalize errors
         var errorCount = events.Count(e => e.EventType == HealthEventType.Error);
@@ -851,7 +909,11 @@ public sealed class MetalHealthMonitor : IDisposable
 
     private static string CalculatePerformanceTrend(List<double> durations)
     {
-        if (durations.Count < 2) return "insufficient_data";
+        if (durations.Count < 2)
+        {
+            return "insufficient_data";
+        }
+
 
         var firstHalf = durations.Take(durations.Count / 2).Average();
         var secondHalf = durations.Skip(durations.Count / 2).Average();

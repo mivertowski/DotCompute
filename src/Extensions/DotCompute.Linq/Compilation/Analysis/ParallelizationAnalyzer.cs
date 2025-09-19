@@ -358,12 +358,12 @@ public class ParallelizationResult
     /// <summary>
     /// Gets or sets data dependencies that affect parallelization.
     /// </summary>
-    public List<string> DataDependencies { get; set; } = new();
+    public List<string> DataDependencies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets constraints that limit parallelization.
     /// </summary>
-    public List<string> Constraints { get; set; } = new();
+    public List<string> Constraints { get; set; } = [];
 }
 
 /// <summary>

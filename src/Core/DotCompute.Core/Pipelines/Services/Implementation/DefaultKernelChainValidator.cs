@@ -50,8 +50,8 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             return new KernelChainValidationResult
             {
                 IsValid = errors.Count == 0,
-                Errors = errors.Count > 0 ? errors : null,
-                Warnings = warnings.Count > 0 ? warnings : null
+                Errors = errors,
+                Warnings = warnings
             };
         }
 

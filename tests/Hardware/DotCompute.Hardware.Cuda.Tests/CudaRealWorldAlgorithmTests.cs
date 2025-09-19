@@ -67,12 +67,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             var expected = new float[m * n];
             var perf = new PerformanceMeasurement("CPU Matrix Multiply", Output);
             perf.Start();
-            for (int i = 0; i < m; i++)
+            for (var i = 0; i < m; i++)
             {
-                for (int j = 0; j < n; j++)
+                for (var j = 0; j < n; j++)
                 {
-                    float sum = 0.0f;
-                    for (int l = 0; l < k; l++)
+                    var sum = 0.0f;
+                    for (var l = 0; l < k; l++)
                     {
                         sum += a[i * k + l] * b[l * n + j];
                     }
@@ -145,7 +145,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var expected = new float[size];
             expected[0] = input[0];
-            for (int i = 1; i < size; i++)
+            for (var i = 1; i < size; i++)
             {
                 expected[i] = expected[i - 1] + input[i];
             }
@@ -202,7 +202,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Create a simple sinusoidal signal
 
             const float frequency = 10.0f;
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 input[i * 2] = MathF.Sin(2.0f * MathF.PI * frequency * i / size); // Real part
                 input[i * 2 + 1] = 0.0f; // Imaginary part
@@ -215,15 +215,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteFFT(input, output, size);
 
             // Assert - Check for peak at expected frequency
-            float maxMagnitude = 0.0f;
-            int maxIndex = 0;
+            var maxMagnitude = 0.0f;
+            var maxIndex = 0;
 
 
-            for (int i = 0; i < size / 2; i++)
+            for (var i = 0; i < size / 2; i++)
             {
-                float real = output[i * 2];
-                float imag = output[i * 2 + 1];
-                float magnitude = MathF.Sqrt(real * real + imag * imag);
+                var real = output[i * 2];
+                var imag = output[i * 2 + 1];
+                var magnitude = MathF.Sqrt(real * real + imag * imag);
 
 
                 if (magnitude > maxMagnitude)
@@ -261,17 +261,17 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Initial conditions - hot spot in center
 
-            int centerX = width / 2;
-            int centerY = height / 2;
-            int radius = 20;
+            var centerX = width / 2;
+            var centerY = height / 2;
+            var radius = 20;
 
 
-            for (int y = 0; y < height; y++)
+            for (var y = 0; y < height; y++)
             {
-                for (int x = 0; x < width; x++)
+                for (var x = 0; x < width; x++)
                 {
-                    int dx = x - centerX;
-                    int dy = y - centerY;
+                    var dx = x - centerX;
+                    var dy = y - centerY;
                     if (dx * dx + dy * dy <= radius * radius)
                     {
                         temperature[y * width + x] = 100.0f; // Hot spot
@@ -349,7 +349,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Verify monotonicity of distances
 
-            for (int i = 1; i < numNodes; i++)
+            for (var i = 1; i < numNodes; i++)
             {
                 distances[i].Should().BeGreaterThan(0, "All non-start nodes should have positive distance");
                 distances[i].Should().BeLessThan(numNodes, "Distance should not exceed number of nodes");
@@ -471,10 +471,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Bitonic sort requires multiple passes
 
-            int n = data.Length;
-            for (int k = 2; k <= n; k *= 2)
+            var n = data.Length;
+            for (var k = 2; k <= n; k *= 2)
             {
-                for (int j = k / 2; j > 0; j /= 2)
+                for (var j = k / 2; j > 0; j /= 2)
                 {
                     var args = new KernelArguments
                     {
@@ -538,7 +538,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var compiled = await _accelerator.CompileKernelAsync(kernel);
 
 
-            for (int iter = 0; iter < iterations; iter++)
+            for (var iter = 0; iter < iterations; iter++)
             {
                 var args = new KernelArguments
                 {
@@ -568,7 +568,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var flatEdges = edges.SelectMany(e => e).ToArray();
             var edgeOffsets = new int[numNodes + 1];
             edgeOffsets[0] = 0;
-            for (int i = 0; i < numNodes; i++)
+            for (var i = 0; i < numNodes; i++)
             {
                 edgeOffsets[i + 1] = edgeOffsets[i] + edges[i].Length;
             }
@@ -593,7 +593,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // BFS requires multiple iterations
 
-            for (int level = 0; level < numNodes; level++)
+            for (var level = 0; level < numNodes; level++)
             {
                 var args = new KernelArguments
                 {
@@ -614,15 +614,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             var edges = new int[numNodes][];
 
 
-            for (int i = 0; i < numNodes; i++)
+            for (var i = 0; i < numNodes; i++)
             {
                 var nodeEdges = new HashSet<int>();
 
                 // Add some random edges
 
-                for (int j = 0; j < edgesPerNode; j++)
+                for (var j = 0; j < edgesPerNode; j++)
                 {
-                    int target = random.Next(numNodes);
+                    var target = random.Next(numNodes);
                     if (target != i)
                         nodeEdges.Add(target);
                 }

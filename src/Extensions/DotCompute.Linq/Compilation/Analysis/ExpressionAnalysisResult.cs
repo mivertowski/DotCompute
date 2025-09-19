@@ -81,11 +81,11 @@ public sealed record ExpressionAnalysisResult(
     /// <summary>
     /// Gets identified bottlenecks.
     /// </summary>
-    public IReadOnlyList<string> Bottlenecks => ParallelizationInfo.Bottlenecks ?? new List<string>();
+    public IReadOnlyList<string> Bottlenecks => ParallelizationInfo.Bottlenecks ?? [];
 
     // Legacy compatibility properties for backward compatibility with existing visitor pattern
-    private List<string> _supportedOperationsInternal = new();
-    private List<Type> _parameterTypesInternal = new();
+    private List<string> _supportedOperationsInternal = [];
+    private List<Type> _parameterTypesInternal = [];
 
     /// <summary>
     /// Gets the supported operations (backward compatibility).
@@ -125,7 +125,7 @@ public sealed record ExpressionAnalysisResult(
     /// <summary>
     /// Gets metadata about the analysis.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 // TypeUsageInfo and DependencyInfo are already defined in ITypeAnalyzer.cs

@@ -23,13 +23,21 @@ public static class IntelligentBufferSizeCalculator
         long availableMemory = 0)
     {
         if (elementCount <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(elementCount), "Element count must be positive");
+        }
+
 
         if (elementSize <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(elementSize), "Element size must be positive");
+        }
 
         // Calculate total data size
-        long totalDataSize = elementCount * elementSize;
+
+        var totalDataSize = elementCount * elementSize;
 
         // If no memory limit specified, use reasonable defaults
         if (availableMemory <= 0)
@@ -44,7 +52,7 @@ public static class IntelligentBufferSizeCalculator
         }
 
         // Calculate buffer size based on workload characteristics
-        long bufferSize = workloadType switch
+        var bufferSize = workloadType switch
         {
             WorkloadType.Compute => CalculateComputeOptimalSize(totalDataSize, availableMemory),
             WorkloadType.Memory => CalculateMemoryOptimalSize(totalDataSize, availableMemory),
@@ -122,7 +130,11 @@ public static class IntelligentBufferSizeCalculator
     public static int CalculateBufferCount(long totalSize, long bufferSize)
     {
         if (bufferSize <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(bufferSize), "Buffer size must be positive");
+        }
+
 
         return (int)Math.Ceiling((double)totalSize / bufferSize);
     }
@@ -152,13 +164,16 @@ public static class IntelligentBufferSizeCalculator
     public static int SuggestBufferCount(long totalSize, long availableMemory, int processorCount = 0)
     {
         if (processorCount <= 0)
+        {
             processorCount = Environment.ProcessorCount;
+        }
 
         // Start with processor count as base
-        int baseCount = processorCount * 2; // 2x for better utilization
+
+        var baseCount = processorCount * 2; // 2x for better utilization
 
         // Calculate buffer size for this count
-        long bufferSize = totalSize / baseCount;
+        var bufferSize = totalSize / baseCount;
 
         // Ensure buffer size is reasonable
         const long minBufferSize = 64 * 1024; // 64KB minimum
@@ -176,7 +191,7 @@ public static class IntelligentBufferSizeCalculator
         }
 
         // Ensure we don't exceed memory constraints
-        long totalBufferMemory = baseCount * (totalSize / baseCount);
+        var totalBufferMemory = baseCount * (totalSize / baseCount);
         if (totalBufferMemory > availableMemory)
         {
             baseCount = (int)(availableMemory / (totalSize / baseCount));

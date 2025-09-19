@@ -540,7 +540,7 @@ public class ComprehensivePipelineDemo
 
     private async IAsyncEnumerable<SampleData> GenerateStreamingDataAsync()
     {
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             await Task.Delay(1); // Simulate streaming delay
             yield return new SampleData
@@ -691,7 +691,7 @@ public class ComprehensivePipelineDemo
         public string RecommendedBackend { get; set; } = string.Empty;
         public TimeSpan EstimatedExecutionTime { get; set; }
         public long EstimatedMemoryUsage { get; set; }
-        public List<string> OptimizationRecommendations { get; set; } = new();
+        public List<string> OptimizationRecommendations { get; set; } = [];
         public double BackendConfidence { get; set; }
     }
 

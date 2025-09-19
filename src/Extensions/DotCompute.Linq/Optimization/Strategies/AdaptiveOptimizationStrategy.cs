@@ -118,7 +118,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
 
     private double CalculateComputeIntensity(QueryPlan plan)
     {
-        double intensity = 0.0;
+        var intensity = 0.0;
 
 
         foreach (var operation in plan.Operations)
@@ -146,8 +146,8 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
 
     private double CalculateParallelismPotential(QueryPlan plan)
     {
-        int parallelizable = 0;
-        int total = 0;
+        var parallelizable = 0;
+        var total = 0;
 
 
         foreach (var operation in plan.Operations)
@@ -184,7 +184,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         {
             Signature = signature,
             BaseCharacteristics = ConvertWorkloadCharacteristics(characteristics),
-            Predictions = new Dictionary<string, double>(),
+            Predictions = [],
             Weights = InitializeWeights(),
             LastUpdated = DateTime.UtcNow
         });
@@ -398,7 +398,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
         var history = _executionHistory.GetOrAdd(signature, _ => new ExecutionHistory
         {
             Signature = signature,
-            Executions = new List<ExecutionRecord>()
+            Executions = []
         });
 
         // This will be called after execution completes
@@ -587,15 +587,15 @@ public class OptimizationModel
 {
     public string Signature { get; set; } = string.Empty;
     public WorkloadCharacteristics BaseCharacteristics { get; set; } = new();
-    public Dictionary<string, double> Predictions { get; set; } = new();
-    public Dictionary<string, double> Weights { get; set; } = new();
+    public Dictionary<string, double> Predictions { get; set; } = [];
+    public Dictionary<string, double> Weights { get; set; } = [];
     public DateTime LastUpdated { get; set; }
 }
 
 public class ExecutionHistory
 {
     public string Signature { get; set; } = string.Empty;
-    public List<ExecutionRecord> Executions { get; set; } = new();
+    public List<ExecutionRecord> Executions { get; set; } = [];
 }
 
 public class ExecutionRecord
@@ -617,7 +617,7 @@ public class OptimizationConfiguration
 
 public class FusionCandidate
 {
-    public List<QueryOperation> Operations { get; set; } = new();
+    public List<QueryOperation> Operations { get; set; } = [];
 }
 
 

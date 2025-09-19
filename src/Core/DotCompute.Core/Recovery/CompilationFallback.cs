@@ -34,7 +34,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
     private readonly Timer _cacheCleanupTimer;
     private bool _disposed;
 
-    public override RecoveryCapability Capability => RecoveryCapability.CompilationErrors;
+    public override RecoveryCapability Capability => RecoveryCapability.MemoryErrors;
     public override int Priority => 90;
 
     public CompilationFallback(ILogger<CompilationFallback> logger, CompilationFallbackConfiguration? config = null)

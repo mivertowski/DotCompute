@@ -37,6 +37,11 @@ public sealed class StageExecutionResult
     public long MemoryUsed { get; set; }
 
     /// <summary>
+    /// Gets or sets the memory usage in bytes.
+    /// </summary>
+    public long MemoryUsage { get; set; }
+
+    /// <summary>
     /// Gets or sets any error that occurred during execution.
     /// </summary>
     public Exception? Error { get; set; }
@@ -133,6 +138,9 @@ public sealed class DefaultStageMetrics : IStageMetrics
 
     /// <inheritdoc />
     public double SuccessRate { get; set; }
+
+    /// <inheritdoc />
+    public long ErrorCount { get; set; }
 
     /// <inheritdoc />
     public IReadOnlyDictionary<string, double> CustomMetrics { get; set; } = new Dictionary<string, double>();

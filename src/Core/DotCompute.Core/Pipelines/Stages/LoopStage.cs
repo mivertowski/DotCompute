@@ -62,7 +62,7 @@ namespace DotCompute.Core.Pipelines.Stages
                 {
                     foreach (var stage in _bodyStages)
                     {
-                        var stageContext = new DotCompute.Core.Pipelines.Models.PipelineExecutionContext();
+                        var stageContext = new PipelineExecutionContext();
                         foreach (var kvp in outputs)
                         {
                             stageContext.Inputs[kvp.Key] = kvp.Value;
@@ -80,7 +80,7 @@ namespace DotCompute.Core.Pipelines.Stages
                                 StageId = Id,
                                 Success = false,
                                 ExecutionTime = stopwatch.Elapsed,
-                                OutputData = new Dictionary<string, object>(),
+                                OutputData = [],
                                 Error = result.Error
                             };
                         }
@@ -105,7 +105,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = true,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = outputs.Count > context.Inputs.Count ? outputs : new Dictionary<string, object>(),
+                    OutputData = outputs.Count > context.Inputs.Count ? outputs : [],
                     Metadata = new Dictionary<string, object>
                     {
                         ["IterationsCompleted"] = iteration,
@@ -123,7 +123,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = false,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = new Dictionary<string, object>(),
+                    OutputData = [],
                     Error = ex
                 };
             }
@@ -148,8 +148,8 @@ namespace DotCompute.Core.Pipelines.Stages
             return new StageValidationResult
             {
                 IsValid = errors.Count == 0,
-                Errors = errors,
-                Warnings = warnings.Count > 0 ? warnings.Select(w => ValidationIssue.Warning("LOOP_WARNING", w)).ToList() : new List<ValidationIssue>()
+                Errors = [.. errors.Select(e => e.Message)],
+                Warnings = warnings.Count > 0 ? warnings : null
             };
         }
 

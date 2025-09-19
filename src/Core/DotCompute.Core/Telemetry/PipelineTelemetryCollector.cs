@@ -203,7 +203,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
             {
                 Name = "PipelineCompleted",
                 Timestamp = new DateTimeOffset(DateTime.UtcNow),
-                Attributes = new Dictionary<string, object?>(),
+                Attributes = [],
                 Source = nameof(PipelineTelemetryCollector),
                 EventType = TelemetryEventType.PipelineCompleted,
                 PipelineId = context.PipelineId,

@@ -23,11 +23,11 @@ namespace DotCompute.Linq.KernelGeneration.Templates;
 public sealed class CudaKernelTemplate : IKernelTemplate
 {
     private readonly ILogger<CudaKernelTemplate> _logger;
-    private static readonly HashSet<string> s_supportedOperations = new()
-    {
+    private static readonly HashSet<string> s_supportedOperations =
+    [
         "map", "reduce", "filter", "scan", "sort", "matmul", "conv2d", "elementwise",
         "transpose", "gemv", "gemm", "fft", "reduction", "broadcast", "gather", "scatter"
-    };
+    ];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CudaKernelTemplate"/> class.

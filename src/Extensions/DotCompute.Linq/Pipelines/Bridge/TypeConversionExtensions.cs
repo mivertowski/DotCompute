@@ -43,9 +43,13 @@ public static class TypeConversionExtensions
     public static DotCompute.Linq.Analysis.OperatorInfo? ToOperatorInfo(this PipelineOperatorInfo? pipelineInfo, BackendType targetBackend = BackendType.CPU)
     {
         if (pipelineInfo == null)
+        {
+
             return null;
+        }
 
         // Map string-based operator name to ExpressionType
+
         var operatorType = MapOperatorNameToExpressionType(pipelineInfo.Name);
 
         // Extract operand types from input types
@@ -72,7 +76,11 @@ public static class TypeConversionExtensions
     public static PipelineOperatorInfo? ToPipelineOperatorInfo(this DotCompute.Linq.Analysis.OperatorInfo? operatorInfo)
     {
         if (operatorInfo == null)
+        {
+
             return null;
+        }
+
 
         return new PipelineOperatorInfo
         {
@@ -81,7 +89,7 @@ public static class TypeConversionExtensions
             ComplexityScore = MapComplexityToScore(operatorInfo.Complexity),
             CanParallelize = operatorInfo.SupportsVectorization,
             MemoryRequirement = EstimateMemoryRequirement(operatorInfo),
-            InputTypes = operatorInfo.OperandTypes?.ToList() ?? new List<Type>(),
+            InputTypes = operatorInfo.OperandTypes?.ToList() ?? [],
             OutputType = operatorInfo.ResultType,
             SupportsGpu = operatorInfo.Backend == BackendType.CUDA || operatorInfo.Backend == BackendType.Metal,
             SupportsCpu = operatorInfo.Backend == BackendType.CPU,
@@ -103,13 +111,21 @@ public static class TypeConversionExtensions
     public static IEnumerable<DotCompute.Linq.Analysis.OperatorInfo> ToOperatorInfos(this IEnumerable<PipelineOperatorInfo>? pipelineInfos, BackendType targetBackend = BackendType.CPU)
     {
         if (pipelineInfos == null)
+        {
+
             yield break;
+        }
+
 
         foreach (var pipelineInfo in pipelineInfos)
         {
             var operatorInfo = pipelineInfo.ToOperatorInfo(targetBackend);
             if (operatorInfo != null)
+            {
+
                 yield return operatorInfo;
+            }
+
         }
     }
 
@@ -122,13 +138,21 @@ public static class TypeConversionExtensions
     public static IEnumerable<PipelineOperatorInfo> ToPipelineOperatorInfos(this IEnumerable<DotCompute.Linq.Analysis.OperatorInfo>? operatorInfos)
     {
         if (operatorInfos == null)
+        {
+
             yield break;
+        }
+
 
         foreach (var operatorInfo in operatorInfos)
         {
             var pipelineInfo = operatorInfo.ToPipelineOperatorInfo();
             if (pipelineInfo != null)
+            {
+
                 yield return pipelineInfo;
+            }
+
         }
     }
 
@@ -262,7 +286,11 @@ public static class TypeConversionExtensions
     public static IEnumerable<AbstractionsParameterDirection> ToAbstractionsDirections(this IEnumerable<LinqParameterDirection>? linqDirections)
     {
         if (linqDirections == null)
+        {
+
             yield break;
+        }
+
 
         foreach (var direction in linqDirections)
         {
@@ -279,7 +307,11 @@ public static class TypeConversionExtensions
     public static IEnumerable<LinqParameterDirection> ToLinqDirections(this IEnumerable<AbstractionsParameterDirection>? abstractionsDirections)
     {
         if (abstractionsDirections == null)
+        {
+
             yield break;
+        }
+
 
         foreach (var direction in abstractionsDirections)
         {

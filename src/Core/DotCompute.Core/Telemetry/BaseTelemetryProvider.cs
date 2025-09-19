@@ -66,7 +66,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void RecordMetric(string name, double value, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed || !Configuration.IsEnabled) return;
+        if (_disposed || !Configuration.IsEnabled)
+        {
+            return;
+        }
+
 
         var startTicks = Stopwatch.GetTimestamp();
 
@@ -103,7 +107,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void IncrementCounter(string name, long increment = 1, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed || !Configuration.IsEnabled) return;
+        if (_disposed || !Configuration.IsEnabled)
+        {
+            return;
+        }
+
 
         var startTicks = Stopwatch.GetTimestamp();
 
@@ -140,7 +148,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void RecordHistogram(string name, double value, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed || !Configuration.IsEnabled) return;
+        if (_disposed || !Configuration.IsEnabled)
+        {
+            return;
+        }
+
 
         var startTicks = Stopwatch.GetTimestamp();
 
@@ -176,7 +188,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual Activity? StartActivity(string name, ActivityKind kind = ActivityKind.Internal)
     {
-        if (_disposed || !Configuration.IsEnabled) return null;
+        if (_disposed || !Configuration.IsEnabled)
+        {
+            return null;
+        }
+
 
         try
         {
@@ -207,7 +223,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordEvent(string name, IDictionary<string, object?>? attributes = null)
     {
-        if (_disposed || !Configuration.IsEnabled) return;
+        if (_disposed || !Configuration.IsEnabled)
+        {
+            return;
+        }
+
 
         var startTicks = Stopwatch.GetTimestamp();
 
@@ -217,7 +237,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
             {
                 Name = name,
                 Timestamp = DateTimeOffset.UtcNow,
-                Attributes = attributes?.ToDictionary(kv => kv.Key, kv => kv.Value) ?? new Dictionary<string, object?>(),
+                Attributes = attributes?.ToDictionary(kv => kv.Key, kv => kv.Value) ?? [],
                 Source = GetType().Name
             };
 
@@ -249,7 +269,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     public virtual IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null)
     {
         if (_disposed || !Configuration.IsEnabled)
+        {
+
             return new NullOperationTimer();
+        }
+
 
         try
         {
@@ -274,7 +298,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordMemoryAllocation(long bytes, string? allocationType = null)
     {
-        if (_disposed || !Configuration.IsEnabled) return;
+        if (_disposed || !Configuration.IsEnabled)
+        {
+            return;
+        }
+
 
         try
         {
@@ -303,7 +331,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordAcceleratorUtilization(string acceleratorType, double utilization, long memoryUsed)
     {
-        if (_disposed || !Configuration.IsEnabled) return;
+        if (_disposed || !Configuration.IsEnabled)
+        {
+            return;
+        }
+
 
         try
         {
@@ -331,7 +363,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordKernelExecution(string kernelName, TimeSpan duration, long operationCount)
     {
-        if (_disposed || !Configuration.IsEnabled) return;
+        if (_disposed || !Configuration.IsEnabled)
+        {
+            return;
+        }
+
 
         try
         {
@@ -367,7 +403,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordMemoryTransfer(string direction, long bytes, TimeSpan duration)
     {
-        if (_disposed || !Configuration.IsEnabled) return;
+        if (_disposed || !Configuration.IsEnabled)
+        {
+            return;
+        }
+
 
         try
         {
@@ -403,7 +443,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordGarbageCollection(int generation, TimeSpan duration, long memoryBefore, long memoryAfter)
     {
-        if (_disposed || !Configuration.IsEnabled) return;
+        if (_disposed || !Configuration.IsEnabled)
+        {
+            return;
+        }
+
 
         try
         {
@@ -592,12 +636,20 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     protected virtual double CalculateOverheadPercentage()
     {
-        if (!Configuration.TrackOverhead) return 0.0;
+        if (!Configuration.TrackOverhead)
+        {
+            return 0.0;
+        }
+
 
         var overheadTicks = Interlocked.Read(ref _telemetryOverheadTicks);
         var totalOps = Interlocked.Read(ref _totalOperations);
 
-        if (totalOps == 0) return 0.0;
+        if (totalOps == 0)
+        {
+            return 0.0;
+        }
+
 
         var avgOverheadTicks = overheadTicks / (double)totalOps;
         var avgOverheadMs = (avgOverheadTicks / Stopwatch.Frequency) * 1000;
@@ -860,7 +912,7 @@ internal sealed class UnifiedOperationTimer : IOperationTimer
                 Duration = _stopwatch.Elapsed,
                 StartTime = DateTime.UtcNow.Subtract(_stopwatch.Elapsed),
                 EndTime = DateTime.UtcNow,
-                Metadata = _tags?.Where(kv => kv.Value != null).ToDictionary(kv => kv.Key, kv => kv.Value!) ?? new Dictionary<string, object>()
+                Metadata = _tags?.Where(kv => kv.Value != null).ToDictionary(kv => kv.Key, kv => kv.Value!) ?? []
             });
         }
     }
@@ -875,11 +927,11 @@ internal sealed class UnifiedOperationTimer : IOperationTimer
     }
 
     // Additional interface methods with minimal implementations
-    public ITimerHandle StartOperation(string operationName, string? operationId = null) =>
-        new SimpleTimerHandle(operationName, operationId ?? Guid.NewGuid().ToString());
+    public ITimerHandle StartOperation(string operationName, string? operationId = null)
+        => new SimpleTimerHandle(operationName, operationId ?? Guid.NewGuid().ToString());
 
-    public IDisposable StartOperationScope(string operationName, string? operationId = null) =>
-        new SimpleTimerHandle(operationName, operationId ?? Guid.NewGuid().ToString());
+    public IDisposable StartOperationScope(string operationName, string? operationId = null)
+        => new SimpleTimerHandle(operationName, operationId ?? Guid.NewGuid().ToString());
 
     public (T result, TimeSpan duration) TimeOperation<T>(string operationName, Func<T> operation)
     {
@@ -956,7 +1008,9 @@ internal sealed class NullOperationTimer : IOperationTimer
 {
     public bool IsEnabled => false;
     public TimeSpan MinimumDurationThreshold => TimeSpan.Zero;
+#pragma warning disable CS0067 // Event is never used
     public event EventHandler<OperationTimingEventArgs>? OperationCompleted;
+#pragma warning restore CS0067
 
     public void Stop() { }
     public void Dispose() { }

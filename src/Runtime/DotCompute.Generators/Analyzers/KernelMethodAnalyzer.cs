@@ -215,7 +215,10 @@ internal static class KernelMethodAnalyzer
     {
         var kernelAttribute = KernelAnalysisHelpers.GetKernelAttribute(methodSymbol);
         if (kernelAttribute == null)
+        {
             return;
+        }
+
 
         var complexity = KernelAnalysisHelpers.AnalyzeComputationalComplexity(methodSyntax);
         var suggestedBackends = KernelAnalysisHelpers.GetOptimalBackends(complexity);

@@ -73,6 +73,13 @@ public interface IStageMetrics
     public double SuccessRate { get; }
 
     /// <summary>
+    /// Gets the total number of errors that occurred during stage execution.
+    /// Provides insight into the reliability of this stage.
+    /// </summary>
+    /// <value>The error count as a long integer.</value>
+    public long ErrorCount { get; }
+
+    /// <summary>
     /// Gets custom metrics specific to this pipeline stage.
     /// Allows for stage-specific performance measurements and analysis.
     /// </summary>

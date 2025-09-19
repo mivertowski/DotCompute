@@ -19,10 +19,10 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
     /// </summary>
     public ResourceUsageEstimate()
     {
-        MemoryDetails = new Dictionary<string, long>();
-        ComputeDetails = new Dictionary<string, double>();
-        BandwidthDetails = new Dictionary<string, double>();
-        CustomMetrics = new Dictionary<string, object>();
+        MemoryDetails = [];
+        ComputeDetails = [];
+        BandwidthDetails = [];
+        CustomMetrics = [];
         EstimatedAt = DateTimeOffset.UtcNow;
     }
 

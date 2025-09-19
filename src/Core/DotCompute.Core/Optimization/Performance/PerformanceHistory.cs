@@ -31,7 +31,7 @@ public class PerformanceHistory
     public void AddPerformanceResult(string backendId, PerformanceResult result)
     {
         _backendResults.AddOrUpdate(backendId,
-            _ => new List<PerformanceResult> { result },
+            _ => [result],
             (_, existing) =>
             {
                 lock (existing)

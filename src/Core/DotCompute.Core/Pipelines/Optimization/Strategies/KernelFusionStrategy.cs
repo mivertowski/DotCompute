@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Pipelines.Models;
 using DotCompute.Core.Pipelines.Stages;
 using DotCompute.Core.Pipelines.Models;
 using DotCompute.Core.Pipelines.Optimization.Models;
+using DotCompute.Core.Pipelines.Optimization.Calculators;
 
 namespace DotCompute.Core.Pipelines.Optimization.Strategies;
 
@@ -20,8 +21,8 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
     public OptimizationType SupportedOptimizations => OptimizationType.KernelFusion;
     public OptimizationType Type => OptimizationType.KernelFusion;
 
-    public bool CanOptimize(IKernelPipeline pipeline) =>
-        pipeline?.Stages?.Any(s => s.Type == PipelineStageType.Computation) == true;
+    public bool CanOptimize(IKernelPipeline pipeline)
+        => pipeline?.Stages?.Any(s => s.Type == PipelineStageType.Computation) == true;
     public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
 
     public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)

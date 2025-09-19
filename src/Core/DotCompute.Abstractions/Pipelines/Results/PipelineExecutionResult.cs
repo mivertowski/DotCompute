@@ -63,8 +63,8 @@ namespace DotCompute.Abstractions.Pipelines.Results
         /// <summary>
         /// Gets the total execution time for the pipeline.
         /// </summary>
-        public TimeSpan? TotalExecutionTime =>
-            (StartTime.HasValue && EndTime.HasValue) ? EndTime.Value - StartTime.Value : null;
+        public TimeSpan? TotalExecutionTime
+            => (StartTime.HasValue && EndTime.HasValue) ? EndTime.Value - StartTime.Value : null;
 
         /// <summary>
         /// Gets the execution context that was used for the pipeline.
@@ -301,9 +301,13 @@ namespace DotCompute.Abstractions.Pipelines.Results
         /// <returns>Performance score based on success rate, execution time, and resource usage</returns>
         public double GetPerformanceScore()
         {
-            if (!Success) return 0.0;
+            if (!Success)
+            {
+                return 0.0;
+            }
 
             // Base score from stage success rate
+
             var successRate = TotalStages > 0 ? (double)SuccessfulStages / TotalStages : 0.0;
             var baseScore = successRate * 60.0; // Up to 60 points for success
 
@@ -382,8 +386,17 @@ namespace DotCompute.Abstractions.Pipelines.Results
             }
 
             // Bonus for using multiple cores/devices
-            if (CpuCoresUsed > 1) score += 2.0;
-            if (GpuDevicesUsed > 0) score += 3.0;
+            if (CpuCoresUsed > 1)
+            {
+                score += 2.0;
+            }
+
+
+            if (GpuDevicesUsed > 0)
+            {
+                score += 3.0;
+            }
+
 
             return Math.Min(20.0, score);
         }

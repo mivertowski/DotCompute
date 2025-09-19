@@ -127,6 +127,16 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
         /// Gets or sets the size in bytes for raw buffers.
         /// </summary>
         public long SizeInBytes { get; init; }
+
+        /// <summary>
+        /// Gets or sets the size of the argument (for compatibility).
+        /// </summary>
+        public int Size { get => (int)SizeInBytes; init => SizeInBytes = value; }
+
+        /// <summary>
+        /// Gets or sets whether this argument is an output parameter.
+        /// </summary>
+        public bool IsOutput { get; init; }
     }
 
     /// <summary>

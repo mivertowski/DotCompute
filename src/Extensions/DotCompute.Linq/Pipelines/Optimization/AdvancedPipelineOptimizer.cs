@@ -390,10 +390,10 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
         return new MemoryPatternAnalysis
         {
             PeakMemoryUsage = diagnostics.PeakMemoryUsage,
-            SequentialAccessPatterns = new List<string>(),
-            RandomAccessPatterns = new List<string>(),
-            MemoryPoolingOpportunities = new List<string>(),
-            CacheOptimizationOpportunities = new List<string>()
+            SequentialAccessPatterns = [],
+            RandomAccessPatterns = [],
+            MemoryPoolingOpportunities = [],
+            CacheOptimizationOpportunities = []
         };
     }
 
@@ -464,9 +464,9 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
 
     private bool ContainsOperationType(IPipelineExecutionGraph graph, string operationType) => false;
     private double CalculateParallelizationPotential(IPipelineExecutionGraph graph) => 0.5;
-    private List<string> IdentifyMemoryIntensiveOperations(IPipelineExecutionGraph graph) => new();
+    private List<string> IdentifyMemoryIntensiveOperations(IPipelineExecutionGraph graph) => [];
     private Task<StageDependencyAnalysis> AnalyzeStageDependenciesAsync(IKernelPipeline pipeline) => Task.FromResult(new StageDependencyAnalysis());
-    private List<ParallelizationOpportunity> IdentifyParallelizationOpportunities(StageDependencyAnalysis analysis) => new();
+    private List<ParallelizationOpportunity> IdentifyParallelizationOpportunities(StageDependencyAnalysis analysis) => [];
     private Task<IKernelPipeline> GenerateParallelPipelineAsync(IKernelPipeline pipeline, List<ParallelizationOpportunity> opportunities) => Task.FromResult(pipeline);
     private Task<IKernelPipeline> ApplyLoadBalancingAsync(IKernelPipeline pipeline) => Task.FromResult(pipeline);
     private Task<List<FusionOpportunity>> AnalyzeFusionOpportunitiesAsync(IKernelPipeline pipeline) => Task.FromResult(new List<FusionOpportunity>());
@@ -513,7 +513,7 @@ internal class PipelineStructureAnalysis
     public bool HasJoinOperations { get; set; }
     public bool HasGroupByOperations { get; set; }
     public double ParallelizationPotential { get; set; }
-    public List<string> MemoryIntensiveOperations { get; set; } = new();
+    public List<string> MemoryIntensiveOperations { get; set; } = [];
 }
 
 /// <summary>
@@ -522,10 +522,10 @@ internal class PipelineStructureAnalysis
 internal class MemoryPatternAnalysis
 {
     public long PeakMemoryUsage { get; set; }
-    public List<string> SequentialAccessPatterns { get; set; } = new();
-    public List<string> RandomAccessPatterns { get; set; } = new();
-    public List<string> MemoryPoolingOpportunities { get; set; } = new();
-    public List<string> CacheOptimizationOpportunities { get; set; } = new();
+    public List<string> SequentialAccessPatterns { get; set; } = [];
+    public List<string> RandomAccessPatterns { get; set; } = [];
+    public List<string> MemoryPoolingOpportunities { get; set; } = [];
+    public List<string> CacheOptimizationOpportunities { get; set; } = [];
 }
 
 /// <summary>
@@ -533,9 +533,9 @@ internal class MemoryPatternAnalysis
 /// </summary>
 internal class StageDependencyAnalysis
 {
-    public Dictionary<string, List<string>> Dependencies { get; set; } = new();
-    public List<string> IndependentStages { get; set; } = new();
-    public List<List<string>> ParallelGroups { get; set; } = new();
+    public Dictionary<string, List<string>> Dependencies { get; set; } = [];
+    public List<string> IndependentStages { get; set; } = [];
+    public List<List<string>> ParallelGroups { get; set; } = [];
 }
 
 /// <summary>
@@ -544,7 +544,7 @@ internal class StageDependencyAnalysis
 internal class FusionOpportunity
 {
     public string Description { get; set; } = string.Empty;
-    public List<string> StageIds { get; set; } = new();
+    public List<string> StageIds { get; set; } = [];
     public double ExpectedSpeedup { get; set; }
     public double ImplementationComplexity { get; set; }
 }

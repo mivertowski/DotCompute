@@ -41,10 +41,10 @@ public class QueryOperation
     public string Name { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the dependencies on other operations.</summary>
-    public List<string> Dependencies { get; set; } = new();
+    public List<string> Dependencies { get; set; } = [];
 
     /// <summary>Gets or sets operation-specific metadata.</summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>Gets or sets whether this operation can be parallelized.</summary>
     public bool IsParallelizable { get; set; } = true;
@@ -315,7 +315,7 @@ public class ParallelizationConfig
     public string LoadBalancingStrategy { get; set; } = "Dynamic";
 
     /// <summary>Gets or sets thread affinity preferences.</summary>
-    public Dictionary<int, int> ThreadAffinity { get; set; } = new();
+    public Dictionary<int, int> ThreadAffinity { get; set; } = [];
 
     /// <summary>Gets or sets the parallelization degree (alias for PreferredParallelism).</summary>
     public int Degree
@@ -364,7 +364,7 @@ public class CpuOptimizationConfig
     public int UnrollFactor { get; set; } = 4;
 
     /// <summary>Gets or sets the NUMA affinity settings.</summary>
-    public Dictionary<int, int> NumaAffinity { get; set; } = new();
+    public Dictionary<int, int> NumaAffinity { get; set; } = [];
 
     /// <summary>Gets or sets the start time for this operation.</summary>
     public DateTime StartTime { get; set; }

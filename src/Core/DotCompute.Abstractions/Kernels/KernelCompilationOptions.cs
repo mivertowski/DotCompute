@@ -37,17 +37,17 @@ public sealed class KernelCompilationOptions
     /// <summary>
     /// Gets or sets additional compiler flags
     /// </summary>
-    public List<string> CompilerFlags { get; set; } = new();
+    public List<string> CompilerFlags { get; set; } = [];
 
     /// <summary>
     /// Gets or sets preprocessor definitions
     /// </summary>
-    public Dictionary<string, string> Definitions { get; set; } = new();
+    public Dictionary<string, string> Definitions { get; set; } = [];
 
     /// <summary>
     /// Gets or sets include directories for compilation
     /// </summary>
-    public List<string> IncludeDirectories { get; set; } = new();
+    public List<string> IncludeDirectories { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether to enable kernel caching

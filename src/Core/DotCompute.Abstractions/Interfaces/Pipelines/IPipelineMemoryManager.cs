@@ -186,7 +186,7 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
         private readonly MemoryLockMode _mode;
         private readonly Action? _unlockAction;
 
-        internal MemoryLock(IPipelineMemory<T> memory, MemoryLockMode mode, Action? unlockAction)
+        public MemoryLock(IPipelineMemory<T> memory, MemoryLockMode mode, Action? unlockAction)
         {
             _memory = memory;
             _mode = mode;

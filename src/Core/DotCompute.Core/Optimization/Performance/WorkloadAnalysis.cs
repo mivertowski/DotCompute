@@ -16,7 +16,7 @@ public class WorkloadAnalysis
     public WorkloadPattern WorkloadPattern { get; set; }
     public double EstimatedExecutionTimeMs { get; set; }
     public long EstimatedMemoryUsageMB { get; set; }
-    public Dictionary<string, BackendPerformanceStats> HistoricalPerformance { get; set; } = new();
+    public Dictionary<string, BackendPerformanceStats> HistoricalPerformance { get; set; } = [];
     public int TotalHistoryEntries { get; set; }
     public bool HasSufficientHistory { get; set; }
 }

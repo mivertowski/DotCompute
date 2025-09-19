@@ -161,9 +161,13 @@ public static class OperatorTypeAdapter
     public static UnifiedOperatorType FromString(string operatorTypeString)
     {
         if (string.IsNullOrEmpty(operatorTypeString))
+        {
+
             return UnifiedOperatorType.Unknown;
+        }
 
         // Try direct enum parsing first
+
         if (Enum.TryParse<UnifiedOperatorType>(operatorTypeString, true, out var directResult))
         {
             return directResult;
@@ -191,7 +195,11 @@ public static class OperatorTypeAdapter
     public static UnifiedOperatorType FromEnum(Enum operatorTypeEnum)
     {
         if (operatorTypeEnum == null)
+        {
+
             return UnifiedOperatorType.Unknown;
+        }
+
 
         var enumType = operatorTypeEnum.GetType();
         var enumValue = operatorTypeEnum.ToString();

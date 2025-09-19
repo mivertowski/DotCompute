@@ -28,7 +28,7 @@ public class SelectionConstraints
     public float? MinConfidenceScore { get; set; }
 
     /// <summary>Custom constraint predicates</summary>
-    public List<Func<string, bool>> CustomConstraints { get; set; } = new();
+    public List<Func<string, bool>> CustomConstraints { get; set; } = [];
 
     /// <summary>
     /// Checks if a backend is allowed based on all constraints.

@@ -138,12 +138,23 @@ internal sealed class MemoryOptimizedStageWrapper(IPipelineStage innerStage) : I
     public IStageMetrics GetMetrics() => _innerStage.GetMetrics();
 
     private static async ValueTask OptimizeMemoryAsync(DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext context)
+    {
         // Implement memory layout optimizations
+        if (context.MemoryManager != null)
+        {
+            await context.MemoryManager.CollectAsync();
+        }
 
-        => await context.MemoryManager.CollectAsync();
+    }
 
     private static async ValueTask CleanupMemoryAsync(DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext context)
+    {
         // Clean up temporary memory
+        if (context.MemoryManager != null)
+        {
 
-        => await context.MemoryManager.CollectAsync();
+            await context.MemoryManager.CollectAsync();
+        }
+
+    }
 }

@@ -26,7 +26,9 @@ internal sealed class OperationTimer : IOperationTimer
     public bool IsEnabled => true;
     public TimeSpan MinimumDurationThreshold => TimeSpan.Zero;
 
+#pragma warning disable CS0067 // Event is never used
     public event EventHandler<OperationTimingEventArgs>? OperationCompleted;
+#pragma warning restore CS0067
 
     public ITimerHandle StartOperation(string operationName, string? operationId = null) => new TimerHandle();
     public IDisposable StartOperationScope(string operationName, string? operationId = null) => new TimerHandle();

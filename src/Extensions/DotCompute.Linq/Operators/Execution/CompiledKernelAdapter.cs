@@ -100,11 +100,11 @@ internal class CompiledKernelAdapter : ICompiledKernel
         // Convert object[] args to KernelExecutionParameters
         var parameters = new KernelExecutionParameters
         {
-            Arguments = new Dictionary<string, object>()
+            Arguments = []
         };
 
         // Add arguments with index-based keys
-        for (int i = 0; i < args.Length; i++)
+        for (var i = 0; i < args.Length; i++)
         {
             parameters.Arguments[$"arg{i}"] = args[i];
         }
@@ -124,11 +124,11 @@ internal class CompiledKernelAdapter : ICompiledKernel
         // Convert object[] args to KernelExecutionParameters
         var parameters = new KernelExecutionParameters
         {
-            Arguments = new Dictionary<string, object>()
+            Arguments = []
         };
 
         // Add arguments with index-based keys
-        for (int i = 0; i < args.Length; i++)
+        for (var i = 0; i < args.Length; i++)
         {
             parameters.Arguments[$"arg{i}"] = args[i];
         }

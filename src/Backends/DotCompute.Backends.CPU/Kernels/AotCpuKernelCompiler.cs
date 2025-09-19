@@ -5,6 +5,7 @@ using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
@@ -382,7 +383,7 @@ ILogger logger) : ICompiledKernel
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebugMessage("Executing AOT kernel: {Name}");
+        _logger.LogDebug("Executing AOT kernel: {Name}", Name);
 
         try
         {
@@ -395,11 +396,11 @@ ILogger logger) : ICompiledKernel
             }
 
             await _implementation(context).ConfigureAwait(false);
-            _logger.LogDebugMessage("Successfully executed AOT kernel: {Name}");
+            _logger.LogDebug("Successfully executed AOT kernel: {Name}", Name);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error executing AOT kernel: {Name}");
+            _logger.LogError(ex, "Error executing AOT kernel: {Name}", Name);
             throw;
         }
     }
@@ -414,7 +415,7 @@ ILogger logger) : ICompiledKernel
     {
         // Thread pool disposal is handled by the accelerator
         // _threadPool is managed externally
-        _logger.LogDebugMessage("Disposed AOT kernel: {Name}");
+        _logger.LogDebug("Disposed AOT kernel: {Name}", Name);
     }
 }
 

@@ -200,7 +200,10 @@ public sealed class MetalGraphOptimizer
         foreach (var node in kernelNodes)
         {
             if (processed.Contains(node.Id) || !node.CanBeFused)
+            {
                 continue;
+            }
+
 
             var fusionGroup = new List<MetalGraphNode> { node };
             processed.Add(node.Id);
@@ -223,9 +226,13 @@ public sealed class MetalGraphOptimizer
         HashSet<string> processed, 
         int remainingDepth)
     {
-        if (remainingDepth <= 0) return;
+        if (remainingDepth <= 0)
+        {
+            return;
+        }
 
         // Look for dependent nodes that can be fused
+
         var allNodes = currentNode.Dependencies.Concat(GetNodesThatDependOn(currentNode));
         
         foreach (var connectedNode in allNodes)
@@ -233,7 +240,10 @@ public sealed class MetalGraphOptimizer
             if (processed.Contains(connectedNode.Id) || 
                 connectedNode.Type != MetalNodeType.Kernel || 
                 !connectedNode.CanBeFused)
+            {
                 continue;
+            }
+
 
             if (CanFuseKernels(currentNode, connectedNode))
             {
@@ -250,31 +260,48 @@ public sealed class MetalGraphOptimizer
     {
         // Check resource compatibility
         if (!AreKernelResourcesCompatible(kernel1, kernel2))
+        {
             return false;
+        }
 
         // Check data flow dependencies
+
         if (!AreKernelDataFlowsCompatible(kernel1, kernel2))
+        {
             return false;
+        }
 
         // Check threadgroup size limits
+
         var combinedThreadgroupSize = kernel1.ThreadsPerThreadgroup.TotalElements + 
                                      kernel2.ThreadsPerThreadgroup.TotalElements;
         if (combinedThreadgroupSize > 1024) // Metal limit
+        {
             return false;
+        }
 
         // Check memory requirements
+
         var combinedMemoryUsage = kernel1.EstimatedMemoryUsage + kernel2.EstimatedMemoryUsage;
         if (combinedMemoryUsage > GetMaxThreadgroupMemory())
+        {
+
             return false;
+        }
+
 
         return true;
     }
 
     private bool IsValidFusionGroup(List<MetalGraphNode> group)
     {
-        if (group.Count < 2) return false;
+        if (group.Count < 2)
+        {
+            return false;
+        }
 
         // Check total resource requirements
+
         var totalMemory = group.Sum(n => n.EstimatedMemoryUsage);
         var totalThreads = group.Sum(n => n.ThreadsPerThreadgroup.TotalElements);
 
@@ -283,7 +310,11 @@ public sealed class MetalGraphOptimizer
 
     private bool TryFuseKernelGroup(List<MetalGraphNode> kernelGroup)
     {
-        if (kernelGroup.Count < 2) return false;
+        if (kernelGroup.Count < 2)
+        {
+            return false;
+        }
+
 
         try
         {
@@ -299,7 +330,7 @@ public sealed class MetalGraphOptimizer
             primaryKernel.OptimizationHints |= MetalOptimizationHints.FusionCandidate;
 
             // Remove the other nodes from the graph (this is a simplified representation)
-            for (int i = 1; i < kernelGroup.Count; i++)
+            for (var i = 1; i < kernelGroup.Count; i++)
             {
                 var nodeToRemove = kernelGroup[i];
                 
@@ -386,7 +417,10 @@ public sealed class MetalGraphOptimizer
         foreach (var node in memoryNodes)
         {
             if (processed.Contains(node.Id))
+            {
                 continue;
+            }
+
 
             var coalescingGroup = new List<MetalGraphNode> { node };
             processed.Add(node.Id);
@@ -395,7 +429,10 @@ public sealed class MetalGraphOptimizer
             foreach (var otherNode in memoryNodes)
             {
                 if (processed.Contains(otherNode.Id))
+                {
                     continue;
+                }
+
 
                 if (CanCoalesceMemoryOperations(node, otherNode))
                 {
@@ -428,7 +465,11 @@ public sealed class MetalGraphOptimizer
 
     private bool TryCoalesceMemoryOperations(List<MetalGraphNode> memoryGroup)
     {
-        if (memoryGroup.Count < 2) return false;
+        if (memoryGroup.Count < 2)
+        {
+            return false;
+        }
+
 
         try
         {
@@ -441,7 +482,7 @@ public sealed class MetalGraphOptimizer
             primaryOp.IsMemoryOptimized = true;
 
             // Remove other operations and update dependencies
-            for (int i = 1; i < memoryGroup.Count; i++)
+            for (var i = 1; i < memoryGroup.Count; i++)
             {
                 var nodeToRemove = memoryGroup[i];
                 UpdateDependenciesAfterCoalescing(nodeToRemove, primaryOp);
@@ -459,9 +500,13 @@ public sealed class MetalGraphOptimizer
     private bool OptimizeKernelMemoryAccess(MetalGraphNode kernel)
     {
         if (kernel.Type != MetalNodeType.Kernel || kernel.IsMemoryOptimized)
+        {
+
             return false;
+        }
 
         // Analyze kernel memory access patterns
+
         var accessPattern = AnalyzeMemoryAccessPattern(kernel);
         
         if (accessPattern.IsOptimizable)
@@ -541,7 +586,10 @@ public sealed class MetalGraphOptimizer
         foreach (var node in nodes)
         {
             if (processed.Contains(node.Id))
+            {
                 continue;
+            }
+
 
             var batch = new MetalCommandBatch
             {
@@ -556,7 +604,10 @@ public sealed class MetalGraphOptimizer
             foreach (var otherNode in nodes)
             {
                 if (processed.Contains(otherNode.Id) || batch.NodeIds.Count >= maxBatchSize)
+                {
                     break;
+                }
+
 
                 if (CanBatchNodes(node, otherNode))
                 {
@@ -579,10 +630,17 @@ public sealed class MetalGraphOptimizer
         // 3. Have compatible resource requirements
 
         if (node1.RequiredEncoderType != node2.RequiredEncoderType)
+        {
             return false;
+        }
+
 
         if (node1.Dependencies.Contains(node2) || node2.Dependencies.Contains(node1))
+        {
+
             return false;
+        }
+
 
         return true;
     }

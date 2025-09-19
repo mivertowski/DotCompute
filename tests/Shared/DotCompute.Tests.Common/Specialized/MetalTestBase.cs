@@ -228,9 +228,9 @@ public abstract class MetalTestBase : ConsolidatedTestBase
             if (pattern)
             {
                 // Create a checkerboard pattern for validation
-                for (int y = 0; y < height; y++)
+                for (var y = 0; y < height; y++)
                 {
-                    for (int x = 0; x < width; x++)
+                    for (var x = 0; x < width; x++)
                     {
                         var index = (y * width + x) * 4;
                         var isBlack = (x / 8 + y / 8) % 2 == 0;
@@ -245,7 +245,7 @@ public abstract class MetalTestBase : ConsolidatedTestBase
             else
             {
                 var random = new Random(seed);
-                for (int i = 0; i < data.Length; i++)
+                for (var i = 0; i < data.Length; i++)
                 {
                     data[i] = (float)random.NextDouble();
                 }

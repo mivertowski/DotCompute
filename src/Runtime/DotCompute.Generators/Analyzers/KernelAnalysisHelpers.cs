@@ -17,20 +17,20 @@ internal static class KernelAnalysisHelpers
     /// <summary>
     /// Checks if a symbol has the [Kernel] attribute.
     /// </summary>
-    public static bool HasKernelAttribute(ISymbol symbol) =>
-        symbol.GetAttributes().Any(attr => attr.AttributeClass?.Name == "KernelAttribute");
+    public static bool HasKernelAttribute(ISymbol symbol)
+        => symbol.GetAttributes().Any(attr => attr.AttributeClass?.Name == "KernelAttribute");
 
     /// <summary>
     /// Gets the [Kernel] attribute from a symbol if it exists.
     /// </summary>
-    public static AttributeData? GetKernelAttribute(ISymbol symbol) =>
-        symbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.Name == "KernelAttribute");
+    public static AttributeData? GetKernelAttribute(ISymbol symbol)
+        => symbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.Name == "KernelAttribute");
 
     /// <summary>
     /// Determines if a method looks like a kernel based on its signature and body.
     /// </summary>
-    public static bool LooksLikeKernelMethod(MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol) =>
-        methodSymbol.IsStatic &&
+    public static bool LooksLikeKernelMethod(MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
+        => methodSymbol.IsStatic &&
         methodSymbol.Parameters.Any(p => p.Type.ToString().Contains("Span")) &&
         methodSyntax.Body?.Statements.OfType<ForStatementSyntax>().Any() == true;
 
@@ -138,16 +138,25 @@ internal static class KernelAnalysisHelpers
         var backends = new List<string>();
 
         if ((flags & 1) != 0)
+        {
             backends.Add("CPU");
+        }
 
         if ((flags & 2) != 0)
+        {
             backends.Add("CUDA");
+        }
 
         if ((flags & 4) != 0)
+        {
             backends.Add("Metal");
+        }
 
         if ((flags & 8) != 0)
+        {
             backends.Add("OpenCL");
+        }
+
 
         return backends.ToArray();
     }

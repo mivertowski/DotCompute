@@ -140,7 +140,7 @@ public record ParallelizationOpportunity
     public int RecommendedParallelism { get; init; } = 1;
 
     /// <summary>Gets data dependencies that affect parallelization.</summary>
-    public List<string> DataDependencies { get; init; } = new();
+    public List<string> DataDependencies { get; init; } = [];
 
     /// <summary>Gets the estimated speedup from parallelization.</summary>
     public double EstimatedSpeedup { get; init; } = 1.0;

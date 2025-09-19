@@ -25,7 +25,7 @@ public class LogicalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnalyze
                 IsComputeFriendly = false,
                 SupportsVectorization = false,
                 OptimalVectorWidth = 1,
-                BackendCompatibility = new Dictionary<BackendType, OperatorCompatibility>(),
+                BackendCompatibility = [],
                 OptimizationHints = [],
                 Complexity = ComputationalComplexity.Linear,
                 FusionOpportunities = []
@@ -107,7 +107,7 @@ public class LogicalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnalyze
         var opportunities = new List<FusionOpportunity>();
 
         // Look for logical operation chains
-        for (int i = 0; i < operatorList.Count - 1; i++)
+        for (var i = 0; i < operatorList.Count - 1; i++)
         {
             var current = operatorList[i];
             var next = operatorList[i + 1];
@@ -189,8 +189,10 @@ public class LogicalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnalyze
     public double EstimateExecutionCost(Expression expression)
     {
         if (expression == null)
-            return 0.0;
+        {
 
+            return 0.0;
+        }
 
         return GetBaseCost(expression.NodeType);
     }
@@ -268,8 +270,9 @@ public class LogicalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnalyze
     private static int GetOptimalVectorWidth(ExpressionType operatorType, Type[] operandTypes)
     {
         if (!IsVectorizable(operatorType))
+        {
             return 1;
-
+        }
 
         return operandTypes.FirstOrDefault() switch
         {

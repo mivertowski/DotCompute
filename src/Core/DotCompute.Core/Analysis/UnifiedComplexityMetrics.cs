@@ -32,8 +32,8 @@ public record UnifiedComplexityMetrics : IAdvancedComplexityMetrics
     public ComplexityClass ComputationalComplexityClass { get; init; } = ComplexityClass.Constant;
     public ComplexityClass SpaceComplexity { get; init; } = ComplexityClass.Constant;
     public long MemoryAccesses { get; init; }
-    public Dictionary<string, double> OperationComplexity { get; init; } = new();
-    public List<MemoryAccessComplexity> MemoryAccessPatterns { get; init; } = new();
+    public Dictionary<string, double> OperationComplexity { get; init; } = [];
+    public List<MemoryAccessComplexity> MemoryAccessPatterns { get; init; } = [];
     public string WorstCaseScenario { get; init; } = string.Empty;
 
     // Additional unified properties from all sources
@@ -42,7 +42,7 @@ public record UnifiedComplexityMetrics : IAdvancedComplexityMetrics
     public int TotalComplexity { get; init; } // Alias for OverallComplexity
     public double LocalityFactor { get; init; } = 0.5;
     public bool GpuRecommended { get; init; }
-    public Dictionary<string, int> ComplexityByCategory { get; init; } = new();
+    public Dictionary<string, int> ComplexityByCategory { get; init; } = [];
     public int CommunicationComplexity { get; init; }
 
     // Computed properties
@@ -78,7 +78,7 @@ public record UnifiedComplexityMetrics : IAdvancedComplexityMetrics
 /// </summary>
 public class UnifiedComplexityMetricsBuilder
 {
-    private readonly Dictionary<string, object> _properties = new();
+    private readonly Dictionary<string, object> _properties = [];
 
     public UnifiedComplexityMetricsBuilder WithComputationalComplexity(int complexity)
     {
@@ -174,15 +174,15 @@ public class UnifiedComplexityMetricsBuilder
             ComputationalComplexityClass = GetProperty<ComplexityClass>(nameof(UnifiedComplexityMetrics.ComputationalComplexityClass), ComplexityClass.Constant),
             SpaceComplexity = GetProperty<ComplexityClass>(nameof(UnifiedComplexityMetrics.SpaceComplexity), ComplexityClass.Constant),
             MemoryAccesses = GetProperty<long>(nameof(UnifiedComplexityMetrics.MemoryAccesses)),
-            OperationComplexity = GetProperty<Dictionary<string, double>>(nameof(UnifiedComplexityMetrics.OperationComplexity)) ?? new(),
-            MemoryAccessPatterns = GetProperty<List<MemoryAccessComplexity>>(nameof(UnifiedComplexityMetrics.MemoryAccessPatterns)) ?? new(),
+            OperationComplexity = GetProperty<Dictionary<string, double>>(nameof(UnifiedComplexityMetrics.OperationComplexity)) ?? [],
+            MemoryAccessPatterns = GetProperty<List<MemoryAccessComplexity>>(nameof(UnifiedComplexityMetrics.MemoryAccessPatterns)) ?? [],
             WorstCaseScenario = GetProperty<string>(nameof(UnifiedComplexityMetrics.WorstCaseScenario), string.Empty),
             EstimatedMemoryUsage = GetProperty<long>(nameof(UnifiedComplexityMetrics.EstimatedMemoryUsage)),
             OperationsCount = GetProperty<long>(nameof(UnifiedComplexityMetrics.OperationsCount)),
             TotalComplexity = GetProperty<int>(nameof(UnifiedComplexityMetrics.TotalComplexity)),
             LocalityFactor = GetProperty<double>(nameof(UnifiedComplexityMetrics.LocalityFactor), 0.5),
             GpuRecommended = GetProperty<bool>(nameof(UnifiedComplexityMetrics.GpuRecommended)),
-            ComplexityByCategory = GetProperty<Dictionary<string, int>>(nameof(UnifiedComplexityMetrics.ComplexityByCategory)) ?? new(),
+            ComplexityByCategory = GetProperty<Dictionary<string, int>>(nameof(UnifiedComplexityMetrics.ComplexityByCategory)) ?? [],
             CommunicationComplexity = GetProperty<int>(nameof(UnifiedComplexityMetrics.CommunicationComplexity))
         };
     }

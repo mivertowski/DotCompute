@@ -28,10 +28,10 @@ public class PipelineOperatorInfo
     public long MemoryRequirement { get; set; }
 
     /// <summary>Gets or sets operator-specific metadata.</summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>Gets or sets the input types for this operator.</summary>
-    public List<Type> InputTypes { get; set; } = new();
+    public List<Type> InputTypes { get; set; } = [];
 
     /// <summary>Gets or sets the output type for this operator.</summary>
     public Type OutputType { get; set; } = typeof(object);
@@ -87,7 +87,7 @@ public class TypeUsageInfo
     }
 
     /// <summary>Gets or sets conversion requirements.</summary>
-    public List<string> ConversionRequirements { get; set; } = new();
+    public List<string> ConversionRequirements { get; set; } = [];
 
     /// <summary>Gets or sets whether the type requires specialization.</summary>
     public bool RequiresSpecialization { get; set; }
@@ -99,7 +99,7 @@ public class TypeUsageInfo
     public bool SupportsSimd { get; set; }
 
     /// <summary>Gets or sets optimization hints for this type.</summary>
-    public List<string> Hints { get; set; } = new();
+    public List<string> Hints { get; set; } = [];
 }
 
 /// <summary>
@@ -111,7 +111,7 @@ public class DependencyInfo
     public string DependentOperation { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the operations this one depends on.</summary>
-    public List<string> Dependencies { get; set; } = new();
+    public List<string> Dependencies { get; set; } = [];
 
     /// <summary>Gets or sets the dependency type (data, control, etc.).</summary>
     public DependencyType Type { get; set; }
@@ -172,7 +172,7 @@ public class PipelineComplexityMetrics
     public bool GpuRecommended { get; set; }
 
     /// <summary>Gets or sets complexity by category.</summary>
-    public Dictionary<string, int> ComplexityByCategory { get; set; } = new();
+    public Dictionary<string, int> ComplexityByCategory { get; set; } = [];
 
     /// <summary>Gets or sets the memory complexity score.</summary>
     public int MemoryComplexity { get; set; }
@@ -236,16 +236,16 @@ public class ParallelizationInfo
     public int DegreeOfParallelism { get; set; }
 
     /// <summary>Gets or sets parallelizable operations.</summary>
-    public List<string> ParallelizableOperations { get; set; } = new();
+    public List<string> ParallelizableOperations { get; set; } = [];
 
     /// <summary>Gets or sets operations that must run sequentially.</summary>
-    public List<string> SequentialOperations { get; set; } = new();
+    public List<string> SequentialOperations { get; set; } = [];
 
     /// <summary>Gets or sets the parallel efficiency estimate (0.0 to 1.0).</summary>
     public double ParallelEfficiency { get; set; }
 
     /// <summary>Gets or sets bottleneck operations that limit parallelization.</summary>
-    public List<string> Bottlenecks { get; set; } = new();
+    public List<string> Bottlenecks { get; set; } = [];
 
     /// <summary>Gets or sets whether this pipeline can be parallelized.</summary>
     public bool CanParallelize { get; set; }
@@ -286,7 +286,7 @@ public class GlobalMemoryAccessPattern
     public int StridePattern { get; set; }
 
     /// <summary>Gets or sets memory locations accessed.</summary>
-    public List<MemoryLocation> AccessedLocations { get; set; } = new();
+    public List<MemoryLocation> AccessedLocations { get; set; } = [];
 
     /// <summary>Gets or sets cache efficiency estimate (0.0 to 1.0).</summary>
     public double CacheEfficiency { get; set; }
@@ -365,13 +365,13 @@ public class MemoryLocation
 public class PipelineAnalysisResult
 {
     /// <summary>Gets or sets pipeline operator information.</summary>
-    public List<PipelineOperatorInfo> OperatorInfo { get; set; } = new();
+    public List<PipelineOperatorInfo> OperatorInfo { get; set; } = [];
 
     /// <summary>Gets or sets type usage information.</summary>
-    public List<TypeUsageInfo> TypeUsage { get; set; } = new();
+    public List<TypeUsageInfo> TypeUsage { get; set; } = [];
 
     /// <summary>Gets or sets dependency information.</summary>
-    public List<DependencyInfo> Dependencies { get; set; } = new();
+    public List<DependencyInfo> Dependencies { get; set; } = [];
 
     /// <summary>Gets or sets complexity metrics.</summary>
     public PipelineComplexityMetrics ComplexityMetrics { get; set; } = new();

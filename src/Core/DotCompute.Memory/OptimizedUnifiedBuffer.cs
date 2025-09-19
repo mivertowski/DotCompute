@@ -6,6 +6,7 @@ using global::System.Runtime.InteropServices;
 using global::System.Buffers;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using Microsoft.Extensions.ObjectPool;
 using DeviceMemory = DotCompute.Abstractions.DeviceMemory;
 
 namespace DotCompute.Memory;
@@ -14,7 +15,7 @@ namespace DotCompute.Memory;
 /// Performance-optimized unified buffer with advanced memory management patterns:
 /// - Object pooling for frequent allocations (90% reduction target)
 /// - Lazy initialization for expensive operations
-/// - Zero-copy operations using Span<T> and Memory<T>
+/// - Zero-copy operations using Span&lt;T&gt; and Memory&lt;T&gt;
 /// - Async-first design with optimized synchronization
 /// - Memory prefetching for improved cache performance
 /// - NUMA-aware memory allocation
@@ -94,7 +95,12 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         get
         {
             if (!IsOnDevice || _deviceMemory.Handle == IntPtr.Zero)
+            {
+
                 return IntPtr.Zero;
+            }
+
+
             return _deviceMemory.Handle;
         }
     }
@@ -127,7 +133,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         _memoryManager = memoryManager;
         Length = length;
         SizeInBytes = length * Unsafe.SizeOf<T>();
-        _arrayPool = arrayPool ?? DefaultArrayPool<T>.Shared;
+        _arrayPool = arrayPool ?? CreateDefaultArrayPool();
         _usePooling = arrayPool != null;
         _lastAccessTime = DateTimeOffset.UtcNow;
 
@@ -401,6 +407,12 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
 
     #region Performance-Optimized Private Methods
 
+    private static ObjectPool<T[]> CreateDefaultArrayPool()
+    {
+        // For now, return a simple wrapper around ArrayPool
+        return new ArrayPoolWrapper<T>();
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void UpdateAccessTime() => _lastAccessTime = DateTimeOffset.UtcNow;
 
@@ -453,7 +465,11 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
 
     private async ValueTask AllocateDeviceMemoryAsync(AcceleratorContext context, CancellationToken cancellationToken)
     {
-        if (_deviceBuffer != null) return;
+        if (_deviceBuffer != null)
+        {
+            return;
+        }
+
 
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -495,7 +511,11 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     private void TransferHostToDevice()
     {
         if (_hostArray == null || _deviceBuffer == null)
+        {
+
             throw new InvalidOperationException("Host array or device buffer not allocated");
+        }
+
 
         var startTime = DateTimeOffset.UtcNow;
         
@@ -515,7 +535,11 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     private void TransferDeviceToHost()
     {
         if (_hostArray == null || _deviceBuffer == null)
+        {
+
             throw new InvalidOperationException("Host array or device buffer not allocated");
+        }
+
 
         var startTime = DateTimeOffset.UtcNow;
         
@@ -535,7 +559,11 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     private async ValueTask TransferHostToDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_hostArray == null || _deviceBuffer == null)
+        {
+
             throw new InvalidOperationException("Host array or device buffer not allocated");
+        }
+
 
         var startTime = DateTimeOffset.UtcNow;
         cancellationToken.ThrowIfCancellationRequested();
@@ -559,7 +587,11 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     private async ValueTask TransferDeviceToHostAsync(AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_hostArray == null || _deviceBuffer == null)
+        {
+
             throw new InvalidOperationException("Host array or device buffer not allocated");
+        }
+
 
         var startTime = DateTimeOffset.UtcNow;
         cancellationToken.ThrowIfCancellationRequested();
@@ -743,13 +775,12 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         ArgumentOutOfRangeException.ThrowIfNegative(length);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, Length);
 
-        return new UnifiedBufferSlice<T>(this, offset, length);
+        throw new NotImplementedException("OptimizedUnifiedBuffer slicing not yet implemented. Use UnifiedBuffer<T> instead.");
     }
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
-        var newLength = Length * Unsafe.SizeOf<T>() / Unsafe.SizeOf<TNew>();
-        return new UnifiedBufferView<T, TNew>(this, newLength);
+        throw new NotImplementedException("OptimizedUnifiedBuffer type casting not yet implemented. Use UnifiedBuffer<T> instead.");
     }
 
     public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
@@ -771,8 +802,8 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         await destSlice.CopyFromAsync(sourceData.AsMemory(), cancellationToken).ConfigureAwait(false);
     }
 
-    public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default) =>
-        await FillAsync(value, 0, Length, cancellationToken).ConfigureAwait(false);
+    public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
+        => await FillAsync(value, 0, Length, cancellationToken).ConfigureAwait(false);
 
     public async ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
@@ -784,7 +815,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await EnsureOnHostAsync(cancellationToken).ConfigureAwait(false);
+            await EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);
             var span = new Span<T>(_hostArray, offset, count);
             span.Fill(value);
             MarkHostDirty();
@@ -817,7 +848,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     public async ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         UpdateAccessTime();
-        await EnsureOnHostAsync(cancellationToken).ConfigureAwait(false);
+        await EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);
         return new MappedMemory<T>(AsMemory());
     }
 
@@ -834,7 +865,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await EnsureOnHostAsync(cancellationToken).ConfigureAwait(false);
+            await EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);
             var result = new T[count.Value];
             var sourceSpan = new ReadOnlySpan<T>(_hostArray, offset, count.Value);
             sourceSpan.CopyTo(result);
@@ -856,7 +887,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await EnsureOnHostAsync(cancellationToken).ConfigureAwait(false);
+            await EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);
             var destSpan = new Span<T>(_hostArray, offset, data.Length);
             data.Span.CopyTo(destSpan);
             MarkHostDirty();
@@ -867,8 +898,8 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    public async ValueTask WriteAsync(T[] data, int offset = 0, CancellationToken cancellationToken = default) =>
-        await WriteAsync(data.AsMemory(), offset, cancellationToken).ConfigureAwait(false);
+    public async ValueTask WriteAsync(T[] data, int offset = 0, CancellationToken cancellationToken = default)
+        => await WriteAsync(data.AsMemory(), offset, cancellationToken).ConfigureAwait(false);
 
     #endregion
 
@@ -877,7 +908,11 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     ValueTask IUnifiedMemoryBuffer.CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset, CancellationToken cancellationToken)
     {
         if (typeof(U) != typeof(T))
+        {
+
             throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
+        }
+
 
         var typedSource = MemoryMarshal.Cast<U, T>(source.Span);
         var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
@@ -887,7 +922,11 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken)
     {
         if (typeof(U) != typeof(T))
+        {
+
             throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
+        }
+
 
         var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
         return new ValueTask(ReadAsync(elementOffset, destination.Length, cancellationToken).AsTask().ContinueWith(t =>
@@ -901,7 +940,11 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     public async ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         if (typeof(TSource) != typeof(T))
+        {
+
             throw new ArgumentException($"Source type {typeof(TSource)} does not match buffer type {typeof(T)}");
+        }
+
 
         var typedSource = MemoryMarshal.Cast<TSource, T>(source.Span);
         var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
@@ -911,7 +954,11 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     public async ValueTask CopyToHostAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged
     {
         if (typeof(TDestination) != typeof(T))
+        {
+
             throw new ArgumentException($"Destination type {typeof(TDestination)} does not match buffer type {typeof(T)}");
+        }
+
 
         var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
         var sourceData = await ReadAsync(elementOffset, destination.Length, cancellationToken).ConfigureAwait(false);
@@ -925,11 +972,20 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         lock (_lock)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
+
             _disposed = true;
 
             // Free device memory
@@ -964,12 +1020,21 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         await _asyncLock.WaitAsync();
         try
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
+
             _disposed = true;
 
             // Free device memory
@@ -1021,6 +1086,19 @@ public record BufferPerformanceMetrics
     public DateTimeOffset LastAccessTime { get; init; }
     public long SizeInBytes { get; init; }
     public string AllocationSource { get; init; } = "Unknown";
-    public double TransfersPerSecond => TransferCount > 0 && AverageTransferTime > TimeSpan.Zero 
+    public double TransfersPerSecond => TransferCount > 0 && AverageTransferTime > TimeSpan.Zero
         ? 1.0 / AverageTransferTime.TotalSeconds : 0;
+}
+
+/// <summary>
+/// Simple wrapper to make ArrayPool compatible with ObjectPool interface.
+/// </summary>
+/// <typeparam name="T">Element type.</typeparam>
+internal class ArrayPoolWrapper<T> : ObjectPool<T[]> where T : unmanaged
+{
+    private readonly ArrayPool<T> _arrayPool = ArrayPool<T>.Shared;
+
+    public override T[] Get() => _arrayPool.Rent(1024); // Default size, will be resized as needed
+
+    public override void Return(T[] obj) => _arrayPool.Return(obj);
 }

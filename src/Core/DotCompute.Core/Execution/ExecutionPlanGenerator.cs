@@ -693,13 +693,13 @@ namespace DotCompute.Core.Execution
         {
             // Model parallel execution time depends on layer complexity and communication overhead
             var baseTimePerLayer = 2.0; // Base time per layer in milliseconds
-            var communicationOverhead = 1.5; // Overhead for inter-device communication
+            // Communication overhead for inter-device communication is accounted for in multiplier
 
             // Adjust for device types and their relative performance
             var avgDevicePerformance = devices.Average(d => d.DeviceType switch
             {
-                AcceleratorType.GPU.ToString() => 0.2,     // GPUs are faster for neural network operations
-                AcceleratorType.CPU.ToString() => 1.0,     // Base performance
+                nameof(AcceleratorType.GPU) => 0.2,     // GPUs are faster for neural network operations
+                nameof(AcceleratorType.CPU) => 1.0,     // Base performance
                 _ => 1.2                   // Conservative estimate
             });
 

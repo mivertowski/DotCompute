@@ -87,7 +87,7 @@ public sealed class PipelineExecutionMetrics
     /// <summary>
     /// Gets or sets detailed metrics for each stage.
     /// </summary>
-    public List<StageExecutionMetrics> StageMetrics { get; set; } = new List<StageExecutionMetrics>();
+    public List<StageExecutionMetrics> StageMetrics { get; set; } = [];
 
     /// <summary>
     /// Gets or sets memory usage statistics.
@@ -246,7 +246,11 @@ public sealed class PipelineExecutionMetrics
     /// <returns>Average stage execution time</returns>
     public TimeSpan GetAverageStageTime()
     {
-        if (StageMetrics.Count == 0) return TimeSpan.Zero;
+        if (StageMetrics.Count == 0)
+        {
+            return TimeSpan.Zero;
+        }
+
 
         var totalTicks = 0L;
         foreach (var stage in StageMetrics)
@@ -585,5 +589,5 @@ public sealed class QualityMetrics
     /// <summary>
     /// Gets or sets any quality warnings or issues.
     /// </summary>
-    public IList<string> QualityWarnings { get; set; } = new List<string>();
+    public IList<string> QualityWarnings { get; set; } = [];
 }

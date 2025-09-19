@@ -88,7 +88,11 @@ public static class ComplexityMetricsAdapter
     public static UnifiedComplexityMetrics FromAny(object legacyMetrics)
     {
         if (legacyMetrics == null)
+        {
+
             throw new ArgumentNullException(nameof(legacyMetrics));
+        }
+
 
         var builder = UnifiedComplexityMetrics.Builder();
         var type = legacyMetrics.GetType();
@@ -159,7 +163,11 @@ public static class ComplexityMetricsAdapter
     /// </summary>
     private static object? GetPropertyValue(object obj, string propertyName)
     {
-        if (obj == null) return null;
+        if (obj == null)
+        {
+            return null;
+        }
+
 
         var type = obj.GetType();
         var property = type.GetProperty(propertyName);

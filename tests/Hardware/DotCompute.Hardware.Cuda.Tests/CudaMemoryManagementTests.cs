@@ -300,7 +300,7 @@ public class CudaMemoryManagementTests : CudaTestBase
         var buffers = new IUnifiedMemoryBuffer<float>[sizes.Length];
 
         // Act - Allocate buffers of different sizes
-        for (int i = 0; i < sizes.Length; i++)
+        for (var i = 0; i < sizes.Length; i++)
         {
             buffers[i] = await _memoryManager.AllocateAsync<float>(sizes[i]);
         }
@@ -313,7 +313,7 @@ public class CudaMemoryManagementTests : CudaTestBase
 
         // Reallocate - should reuse from pool
         var newBuffers = new IUnifiedMemoryBuffer<float>[sizes.Length];
-        for (int i = 0; i < sizes.Length; i++)
+        for (var i = 0; i < sizes.Length; i++)
         {
             newBuffers[i] = await _memoryManager.AllocateAsync<float>(sizes[i]);
         }
@@ -346,7 +346,7 @@ public class CudaMemoryManagementTests : CudaTestBase
 
         // Initialize from host
         var hostView = buffer.AsSpan();
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             hostView[i] = i * 2.0f;
         }
@@ -380,7 +380,7 @@ public class CudaMemoryManagementTests : CudaTestBase
 
         // Act
         var buffers = new IUnifiedMemoryBuffer<float>[bufferCount];
-        for (int i = 0; i < bufferCount; i++)
+        for (var i = 0; i < bufferCount; i++)
         {
             buffers[i] = await _memoryManager.AllocateAsync<float>(elementCount);
         }
@@ -389,7 +389,7 @@ public class CudaMemoryManagementTests : CudaTestBase
         var afterAllocated = _memoryManager.TotalAllocated;
 
         // Dispose half of them
-        for (int i = 0; i < bufferCount / 2; i++)
+        for (var i = 0; i < bufferCount / 2; i++)
         {
             await buffers[i].DisposeAsync();
         }
@@ -451,7 +451,7 @@ public class CudaMemoryManagementTests : CudaTestBase
             .Select(async threadId =>
             {
                 var buffers = new IUnifiedMemoryBuffer<float>[allocationsPerThread];
-                for (int i = 0; i < allocationsPerThread; i++)
+                for (var i = 0; i < allocationsPerThread; i++)
                 {
                     buffers[i] = await _memoryManager.AllocateAsync<float>(256 + threadId * 10);
                 }
@@ -487,7 +487,7 @@ public class CudaMemoryManagementTests : CudaTestBase
         var buffers = new IUnifiedMemoryBuffer<float>[bufferCount];
         var expectedData = new float[bufferCount][];
 
-        for (int i = 0; i < bufferCount; i++)
+        for (var i = 0; i < bufferCount; i++)
         {
             buffers[i] = await _memoryManager.AllocateAsync<float>(elementCount);
             expectedData[i] = Enumerable.Range(0, elementCount).Select(j => i * 1000.0f + j).ToArray();

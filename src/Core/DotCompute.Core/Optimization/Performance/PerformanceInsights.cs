@@ -15,7 +15,7 @@ public class PerformanceInsights
     public DateTimeOffset Timestamp { get; set; }
     public int TotalWorkloadSignatures { get; set; }
     public int TotalBackends { get; set; }
-    public Dictionary<string, BackendPerformanceStateSummary> BackendStates { get; set; } = new();
-    public List<(WorkloadSignature Workload, string Backend, double PerformanceScore)> TopPerformingPairs { get; set; } = new();
+    public Dictionary<string, BackendPerformanceStateSummary> BackendStates { get; set; } = [];
+    public List<(WorkloadSignature Workload, string Backend, double PerformanceScore)> TopPerformingPairs { get; set; } = [];
     public LearningStatistics LearningStatistics { get; set; } = new();
 }

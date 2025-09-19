@@ -35,19 +35,29 @@ public sealed class KernelChainValidationResult
     public bool HasWarnings => Warnings.Count > 0;
 
     /// <summary>
+    /// Gets the time taken to perform the validation.
+    /// </summary>
+    public TimeSpan ValidationTime { get; init; } = TimeSpan.Zero;
+
+    /// <summary>
+    /// Gets the number of steps validated.
+    /// </summary>
+    public int StepsValidated { get; init; } = 0;
+
+    /// <summary>
     /// Creates a successful validation result with no errors or warnings.
     /// </summary>
     /// <returns>A validation result indicating success.</returns>
-    public static KernelChainValidationResult Success() =>
-        new() { IsValid = true };
+    public static KernelChainValidationResult Success()
+        => new() { IsValid = true };
 
     /// <summary>
     /// Creates a successful validation result with warnings.
     /// </summary>
     /// <param name="warnings">The validation warnings.</param>
     /// <returns>A validation result indicating success with warnings.</returns>
-    public static KernelChainValidationResult SuccessWithWarnings(IEnumerable<string> warnings) =>
-        new() 
+    public static KernelChainValidationResult SuccessWithWarnings(IEnumerable<string> warnings)
+        => new() 
         { 
             IsValid = true, 
             Warnings = warnings.ToList() 
@@ -58,8 +68,8 @@ public sealed class KernelChainValidationResult
     /// </summary>
     /// <param name="errors">The validation errors.</param>
     /// <returns>A validation result indicating failure.</returns>
-    public static KernelChainValidationResult Failure(IEnumerable<string> errors) =>
-        new() 
+    public static KernelChainValidationResult Failure(IEnumerable<string> errors)
+        => new() 
         { 
             IsValid = false, 
             Errors = errors.ToList() 
@@ -71,8 +81,8 @@ public sealed class KernelChainValidationResult
     /// <param name="errors">The validation errors.</param>
     /// <param name="warnings">The validation warnings.</param>
     /// <returns>A validation result indicating failure with additional warnings.</returns>
-    public static KernelChainValidationResult Failure(IEnumerable<string> errors, IEnumerable<string> warnings) =>
-        new() 
+    public static KernelChainValidationResult Failure(IEnumerable<string> errors, IEnumerable<string> warnings)
+        => new() 
         { 
             IsValid = false, 
             Errors = errors.ToList(),
@@ -84,16 +94,16 @@ public sealed class KernelChainValidationResult
     /// </summary>
     /// <param name="error">The error message.</param>
     /// <returns>A validation result indicating failure.</returns>
-    public static KernelChainValidationResult FromError(string error) =>
-        Failure(new[] { error });
+    public static KernelChainValidationResult FromError(string error)
+        => Failure(new[] { error });
 
     /// <summary>
     /// Creates a validation result from a single warning message.
     /// </summary>
     /// <param name="warning">The warning message.</param>
     /// <returns>A validation result indicating success with a warning.</returns>
-    public static KernelChainValidationResult FromWarning(string warning) =>
-        SuccessWithWarnings(new[] { warning });
+    public static KernelChainValidationResult FromWarning(string warning)
+        => SuccessWithWarnings(new[] { warning });
 
     /// <summary>
     /// Combines multiple validation results into a single result.
@@ -104,7 +114,11 @@ public sealed class KernelChainValidationResult
     public static KernelChainValidationResult Combine(params KernelChainValidationResult[] results)
     {
         if (results.Length == 0)
+        {
+
             return Success();
+        }
+
 
         var allErrors = results.SelectMany(r => r.Errors).ToList();
         var allWarnings = results.SelectMany(r => r.Warnings).ToList();
@@ -125,11 +139,19 @@ public sealed class KernelChainValidationResult
     public override string ToString()
     {
         if (IsValid && !HasWarnings)
+        {
+
             return "Validation passed successfully";
-        
+        }
+
+
         if (IsValid && HasWarnings)
+        {
+
             return $"Validation passed with {Warnings.Count} warning(s)";
-        
+        }
+
+
         return $"Validation failed with {Errors.Count} error(s)" + 
                (HasWarnings ? $" and {Warnings.Count} warning(s)" : "");
     }

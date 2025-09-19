@@ -56,7 +56,11 @@ public abstract class CustomSyncStrategy
     public virtual async Task SynchronizeAsync(int participantId, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         if (!SupportsTimeout)
+        {
+
             throw new NotSupportedException($"Synchronization strategy '{Name}' does not support timeout operations.");
+        }
+
 
         using var timeoutCts = new CancellationTokenSource(timeout);
         using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
@@ -126,7 +130,11 @@ public sealed class BarrierSyncStrategy : CustomSyncStrategy
     public override Task SynchronizeAsync(int participantId, CancellationToken cancellationToken = default)
     {
         if (_barrier == null)
+        {
+
             throw new InvalidOperationException("Strategy must be initialized before use.");
+        }
+
 
         return Task.Run(() =>
         {
@@ -175,7 +183,11 @@ public sealed class CountdownSyncStrategy : CustomSyncStrategy
     public override Task SynchronizeAsync(int participantId, CancellationToken cancellationToken = default)
     {
         if (_countdown == null)
+        {
+
             throw new InvalidOperationException("Strategy must be initialized before use.");
+        }
+
 
         return Task.Run(() =>
         {

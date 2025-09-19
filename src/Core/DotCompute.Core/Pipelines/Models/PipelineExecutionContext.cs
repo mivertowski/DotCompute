@@ -33,9 +33,13 @@ public sealed class PipelineExecutionContext : Abstractions.Models.Pipelines.Pip
     public string? CorrelationId { get; set; }
 
     /// <summary>
-    /// Gets the pipeline identifier.
+    /// Gets or sets the pipeline identifier.
     /// </summary>
-    public override string? PipelineId => _pipelineId;
+    public override string? PipelineId
+    {
+        get => _pipelineId;
+        set => _pipelineId = value;
+    }
 
     /// <summary>
     /// Gets the execution start time.
@@ -59,9 +63,13 @@ public sealed class PipelineExecutionContext : Abstractions.Models.Pipelines.Pip
     public override IAccelerator? Accelerator => _accelerator;
 
     /// <summary>
-    /// Gets the profiler for pipeline performance analysis.
+    /// Gets or sets the profiler for pipeline performance analysis.
     /// </summary>
-    public override IPipelineProfiler? Profiler => _profiler;
+    public override IPipelineProfiler? Profiler
+    {
+        get => _profiler;
+        set => _profiler = value;
+    }
 
     /// <summary>
     /// Sets the pipeline identifier.
@@ -96,7 +104,17 @@ public sealed class PipelineExecutionContext : Abstractions.Models.Pipelines.Pip
     /// <summary>
     /// Gets or sets execution options.
     /// </summary>
-    public PipelineExecutionOptions? Options { get; set; }
+    public override object? Options { get; set; }
+
+    /// <summary>
+    /// Gets or sets the execution state dictionary.
+    /// </summary>
+    public override Dictionary<string, object> State { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the session identifier.
+    /// </summary>
+    public override string? SessionId { get; set; }
 
     /// <summary>
     /// Gets or sets the shared data dictionary for passing data between stages.
@@ -141,27 +159,27 @@ public sealed class PipelineExecutionContext : Abstractions.Models.Pipelines.Pip
     /// <summary>
     /// Gets or sets the execution metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the telemetry data.
     /// </summary>
-    public Dictionary<string, object> Telemetry { get; set; } = new();
+    public Dictionary<string, object> Telemetry { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the performance counters.
     /// </summary>
-    public Dictionary<string, long> PerformanceCounters { get; set; } = new();
+    public Dictionary<string, long> PerformanceCounters { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the memory allocations tracking.
     /// </summary>
-    public Dictionary<string, long> MemoryAllocations { get; set; } = new();
+    public Dictionary<string, long> MemoryAllocations { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the execution history for debugging.
     /// </summary>
-    public List<string> ExecutionHistory { get; set; } = new();
+    public List<string> ExecutionHistory { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether debugging is enabled.
@@ -270,9 +288,12 @@ public sealed class PipelineExecutionContext : Abstractions.Models.Pipelines.Pip
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
 
         // Clean up any disposable resources in SharedData
+
         foreach (var value in SharedData.Values.OfType<IDisposable>())
         {
             try
@@ -303,9 +324,12 @@ public sealed class PipelineExecutionContext : Abstractions.Models.Pipelines.Pip
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         // Clean up any disposable resources in SharedData
+
         foreach (var value in SharedData.Values.OfType<IDisposable>())
         {
             try
@@ -402,9 +426,14 @@ public sealed class PipelineExecutionOptions
     public TimeSpan CacheTtl { get; set; } = TimeSpan.FromMinutes(30);
 
     /// <summary>
+    /// Gets or sets whether to continue execution on error.
+    /// </summary>
+    public bool ContinueOnError { get; set; } = false;
+
+    /// <summary>
     /// Gets or sets additional configuration options.
     /// </summary>
-    public Dictionary<string, object> AdditionalOptions { get; set; } = new();
+    public Dictionary<string, object> AdditionalOptions { get; set; } = [];
 
     /// <summary>
     /// Gets the default execution options.

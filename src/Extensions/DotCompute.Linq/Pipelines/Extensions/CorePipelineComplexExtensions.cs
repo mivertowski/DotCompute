@@ -284,8 +284,10 @@ public static class CorePipelineComplexExtensions
         ArgumentNullException.ThrowIfNull(windowFunction);
 
         if (windowSize <= 0)
-            throw new ArgumentOutOfRangeException(nameof(windowSize));
+        {
 
+            throw new ArgumentOutOfRangeException(nameof(windowSize));
+        }
 
         var windowOptions = options ?? new Models.WindowOptions();
 

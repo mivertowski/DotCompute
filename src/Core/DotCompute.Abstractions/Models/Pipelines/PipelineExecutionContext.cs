@@ -18,9 +18,9 @@ public abstract class PipelineExecutionContext
     public abstract string Id { get; }
 
     /// <summary>
-    /// Gets the pipeline identifier.
+    /// Gets or sets the pipeline identifier.
     /// </summary>
-    public abstract string? PipelineId { get; }
+    public abstract string? PipelineId { get; set; }
 
     /// <summary>
     /// Gets the execution start time.
@@ -63,9 +63,9 @@ public abstract class PipelineExecutionContext
     public abstract object? Device { get; }
 
     /// <summary>
-    /// Gets the profiler for pipeline performance analysis.
+    /// Gets or sets the profiler for pipeline performance analysis.
     /// </summary>
-    public abstract IPipelineProfiler? Profiler { get; }
+    public abstract IPipelineProfiler? Profiler { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether the execution has been cancelled.
@@ -76,4 +76,19 @@ public abstract class PipelineExecutionContext
     /// Gets a value indicating whether the execution has timed out.
     /// </summary>
     public virtual bool IsTimedOut => DateTimeOffset.UtcNow - StartTime > Timeout;
+
+    /// <summary>
+    /// Gets or sets the execution options.
+    /// </summary>
+    public abstract object? Options { get; set; }
+
+    /// <summary>
+    /// Gets or sets the execution state dictionary.
+    /// </summary>
+    public abstract Dictionary<string, object> State { get; set; }
+
+    /// <summary>
+    /// Gets or sets the session identifier.
+    /// </summary>
+    public abstract string? SessionId { get; set; }
 }

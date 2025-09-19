@@ -788,7 +788,7 @@ public sealed class PipelineOptimizerTests : IDisposable
         return new TestPipelineStage(name, StageType.Map)
         {
             MemoryUsageMB = memoryUsageMB,
-            OptimizationHints = new List<string> { "memory_intensive" }
+            OptimizationHints = ["memory_intensive"]
         };
     }
 
@@ -835,7 +835,7 @@ public sealed class PipelineOptimizerTests : IDisposable
         {
             EstimatedExecutionTimeMs = executionTimeMs,
             CanExecuteInParallel = true,
-            OptimizationHints = new List<string> { "bottleneck" }
+            OptimizationHints = ["bottleneck"]
         };
     }
 
@@ -845,7 +845,7 @@ public sealed class PipelineOptimizerTests : IDisposable
         {
             WorkerCount = workerCount,
             CanExecuteInParallel = true,
-            OptimizationHints = new List<string> { "parallel", "workers" }
+            OptimizationHints = ["parallel", "workers"]
         };
     }
 
@@ -855,7 +855,7 @@ public sealed class PipelineOptimizerTests : IDisposable
         {
             EstimatedExecutionTimeMs = 1000,
             ComputationSignature = "expensive_computation", // Same signature for caching
-            OptimizationHints = new List<string> { "expensive", "cacheable" }
+            OptimizationHints = ["expensive", "cacheable"]
         };
     }
 
@@ -866,7 +866,7 @@ public sealed class PipelineOptimizerTests : IDisposable
             CpuUsagePercent = cpuUsage,
             MemoryUsageMB = memoryUsageMB,
             IoOperationsPerSecond = ioOpsPerSec,
-            OptimizationHints = new List<string> { "resource_intensive" }
+            OptimizationHints = ["resource_intensive"]
         };
     }
 
@@ -1008,7 +1008,7 @@ public class TestPipelineStage : IPipelineStage
     public bool SupportsGPU { get; set; }
     public bool RequiresSynchronization { get; set; }
     public string[] Dependencies { get; set; } = Array.Empty<string>();
-    public List<string> OptimizationHints { get; set; } = new();
+    public List<string> OptimizationHints { get; set; } = [];
     public string PreferredDevice { get; set; } = "CPU";
 
     // Performance characteristics

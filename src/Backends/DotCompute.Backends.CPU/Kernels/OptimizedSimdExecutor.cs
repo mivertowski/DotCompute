@@ -7,6 +7,7 @@ using global::System.Runtime.Intrinsics;
 using global::System.Runtime.Intrinsics.Arm;
 using global::System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CPU.Intrinsics;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Kernels;
@@ -25,7 +26,7 @@ namespace DotCompute.Backends.CPU.Kernels;
 public sealed class OptimizedSimdExecutor : IDisposable
 {
     private readonly ILogger<OptimizedSimdExecutor> _logger;
-    private readonly SimdCapabilities _capabilities;
+    private readonly SimdSummary _capabilities;
     private readonly ExecutorConfiguration _config;
     private readonly ThreadLocal<ExecutionContext> _threadContext;
     
@@ -46,7 +47,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _config = config ?? ExecutorConfiguration.Default;
-        _capabilities = DetectSimdCapabilities();
+        _capabilities = SimdCapabilities.GetSummary();
         _threadContext = new ThreadLocal<ExecutionContext>(() => new ExecutionContext(_capabilities), 
             trackAllValues: true);
 
@@ -95,23 +96,23 @@ public sealed class OptimizedSimdExecutor : IDisposable
 
             // Determine optimal execution strategy
             var strategy = DetermineExecutionStrategy<T>(elementCount, context);
-            
+
             // Execute with the optimal strategy
             switch (strategy)
             {
-                case ExecutionStrategy.Avx512:
+                case SimdExecutionStrategy.Avx512:
                     ExecuteAvx512<T>(input1, input2, output, elementCount, context);
                     break;
-                case ExecutionStrategy.Avx2:
+                case SimdExecutionStrategy.Avx2:
                     ExecuteAvx2<T>(input1, input2, output, elementCount, context);
                     break;
-                case ExecutionStrategy.Sse:
+                case SimdExecutionStrategy.Sse:
                     ExecuteSse<T>(input1, input2, output, elementCount, context);
                     break;
-                case ExecutionStrategy.Neon:
+                case SimdExecutionStrategy.Neon:
                     ExecuteNeon<T>(input1, input2, output, elementCount, context);
                     break;
-                case ExecutionStrategy.Scalar:
+                case SimdExecutionStrategy.Scalar:
                     ExecuteScalar<T>(input1, input2, output, elementCount, context);
                     break;
                 default:
@@ -396,7 +397,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
         fixed (T* ptr1 = input1, ptr2 = input2, ptrOut = output)
         {
             ExecuteScalarRemainder(ptr1, ptr2, ptrOut, elementCount);
-            Interlocked.Add(ref _scalarElements, elementCount);
+            _ = Interlocked.Add(ref _scalarElements, elementCount);
         }
     }
 
@@ -428,17 +429,23 @@ public sealed class OptimizedSimdExecutor : IDisposable
     {
         if (typeof(T) == typeof(float))
         {
-            return (T)(object)VectorizedSumFloat32((ReadOnlySpan<float>)(object)input);
+            var floatSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(input);
+            var result = VectorizedSumFloat32(floatSpan);
+            return *(T*)&result;
         }
         if (typeof(T) == typeof(double))
         {
-            return (T)(object)VectorizedSumFloat64((ReadOnlySpan<double>)(object)input);
+            var doubleSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(input);
+            var result = VectorizedSumFloat64(doubleSpan);
+            return *(T*)&result;
         }
         if (typeof(T) == typeof(int))
         {
-            return (T)(object)VectorizedSumInt32((ReadOnlySpan<int>)(object)input);
+            var intSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(input);
+            var result = VectorizedSumInt32(intSpan);
+            return *(T*)&result;
         }
-        
+
         return ScalarSum(input);
     }
 
@@ -520,17 +527,37 @@ public sealed class OptimizedSimdExecutor : IDisposable
     #region Helper Methods
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static T AddGeneric<T>(T a, T b) where T : unmanaged
+    private static unsafe T AddGeneric<T>(T a, T b) where T : unmanaged
     {
         if (typeof(T) == typeof(float))
-            return (T)(object)((float)(object)a + (float)(object)b);
+        {
+            var fa = *(float*)&a;
+            var fb = *(float*)&b;
+            var result = fa + fb;
+            return *(T*)&result;
+        }
         if (typeof(T) == typeof(double))
-            return (T)(object)((double)(object)a + (double)(object)b);
+        {
+            var da = *(double*)&a;
+            var db = *(double*)&b;
+            var result = da + db;
+            return *(T*)&result;
+        }
         if (typeof(T) == typeof(int))
-            return (T)(object)((int)(object)a + (int)(object)b);
+        {
+            var ia = *(int*)&a;
+            var ib = *(int*)&b;
+            var result = ia + ib;
+            return *(T*)&result;
+        }
         if (typeof(T) == typeof(long))
-            return (T)(object)((long)(object)a + (long)(object)b);
-        
+        {
+            var la = *(long*)&a;
+            var lb = *(long*)&b;
+            var result = la + lb;
+            return *(T*)&result;
+        }
+
         throw new NotSupportedException($"Type {typeof(T)} not supported for addition");
     }
 
@@ -581,51 +608,40 @@ public sealed class OptimizedSimdExecutor : IDisposable
         return sum128.ToScalar();
     }
 
-    private ExecutionStrategy DetermineExecutionStrategy<T>(long elementCount, ExecutionContext context) where T : unmanaged
+    private SimdExecutionStrategy DetermineExecutionStrategy<T>(long elementCount, ExecutionContext context) where T : unmanaged
     {
         // Choose strategy based on element count, type, and available instructions
         if (elementCount < _config.MinElementsForVectorization)
         {
-            return ExecutionStrategy.Scalar;
+            return SimdExecutionStrategy.Scalar;
         }
 
-        if (_capabilities.HasAvx512 && elementCount >= _config.MinElementsForAvx512)
+        if (_capabilities.SupportsAvx512 && elementCount >= _config.MinElementsForAvx512)
         {
-            return ExecutionStrategy.Avx512;
+            return SimdExecutionStrategy.Avx512;
         }
-        
-        if (_capabilities.HasAvx2 && elementCount >= _config.MinElementsForAvx2)
+
+        if (_capabilities.SupportsAvx2 && elementCount >= _config.MinElementsForAvx2)
         {
-            return ExecutionStrategy.Avx2;
+            return SimdExecutionStrategy.Avx2;
         }
-        
-        if (_capabilities.HasSse2)
+
+        if (_capabilities.SupportsSse2)
         {
-            return ExecutionStrategy.Sse;
+            return SimdExecutionStrategy.Sse;
         }
-        
-        if (_capabilities.HasNeon)
+
+        if (_capabilities.SupportsAdvSimd)
         {
-            return ExecutionStrategy.Neon;
+            return SimdExecutionStrategy.Neon;
         }
-        
-        return ExecutionStrategy.Scalar;
+
+        return SimdExecutionStrategy.Scalar;
     }
 
-    private static SimdCapabilities DetectSimdCapabilities()
-    {
-        return new SimdCapabilities
-        {
-            HasSse2 = Sse2.IsSupported,
-            HasAvx2 = Avx2.IsSupported,
-            HasAvx512 = Avx512F.IsSupported,
-            HasFma = Fma.IsSupported,
-            HasNeon = AdvSimd.IsSupported,
-            VectorByteSize = Vector<byte>.Count
-        };
-    }
+    // Removed DetectSimdCapabilities method - using SimdCapabilities.GetSummary() instead
 
-    private T ExecuteVectorizedMin<T>(ReadOnlySpan<T> input, ExecutionContext context) where T : unmanaged
+    private unsafe T ExecuteVectorizedMin<T>(ReadOnlySpan<T> input, ExecutionContext context) where T : unmanaged
     {
         if (input.IsEmpty)
         {
@@ -634,21 +650,27 @@ public sealed class OptimizedSimdExecutor : IDisposable
 
         if (typeof(T) == typeof(float))
         {
-            return (T)(object)VectorizedMinFloat32((ReadOnlySpan<float>)(object)input);
+            var floatSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(input);
+            var result = VectorizedMinFloat32(floatSpan);
+            return *(T*)&result;
         }
         if (typeof(T) == typeof(double))
         {
-            return (T)(object)VectorizedMinFloat64((ReadOnlySpan<double>)(object)input);
+            var doubleSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(input);
+            var result = VectorizedMinFloat64(doubleSpan);
+            return *(T*)&result;
         }
         if (typeof(T) == typeof(int))
         {
-            return (T)(object)VectorizedMinInt32((ReadOnlySpan<int>)(object)input);
+            var intSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(input);
+            var result = VectorizedMinInt32(intSpan);
+            return *(T*)&result;
         }
 
         return ScalarMin(input);
     }
 
-    private T ExecuteVectorizedMax<T>(ReadOnlySpan<T> input, ExecutionContext context) where T : unmanaged
+    private unsafe T ExecuteVectorizedMax<T>(ReadOnlySpan<T> input, ExecutionContext context) where T : unmanaged
     {
         if (input.IsEmpty)
         {
@@ -657,21 +679,27 @@ public sealed class OptimizedSimdExecutor : IDisposable
 
         if (typeof(T) == typeof(float))
         {
-            return (T)(object)VectorizedMaxFloat32((ReadOnlySpan<float>)(object)input);
+            var floatSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(input);
+            var result = VectorizedMaxFloat32(floatSpan);
+            return *(T*)&result;
         }
         if (typeof(T) == typeof(double))
         {
-            return (T)(object)VectorizedMaxFloat64((ReadOnlySpan<double>)(object)input);
+            var doubleSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(input);
+            var result = VectorizedMaxFloat64(doubleSpan);
+            return *(T*)&result;
         }
         if (typeof(T) == typeof(int))
         {
-            return (T)(object)VectorizedMaxInt32((ReadOnlySpan<int>)(object)input);
+            var intSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(input);
+            var result = VectorizedMaxInt32(intSpan);
+            return *(T*)&result;
         }
 
         return ScalarMax(input);
     }
 
-    private T ExecuteVectorizedProduct<T>(ReadOnlySpan<T> input, ExecutionContext context) where T : unmanaged
+    private unsafe T ExecuteVectorizedProduct<T>(ReadOnlySpan<T> input, ExecutionContext context) where T : unmanaged
     {
         if (input.IsEmpty)
         {
@@ -680,15 +708,21 @@ public sealed class OptimizedSimdExecutor : IDisposable
 
         if (typeof(T) == typeof(float))
         {
-            return (T)(object)VectorizedProductFloat32((ReadOnlySpan<float>)(object)input);
+            var floatSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(input);
+            var result = VectorizedProductFloat32(floatSpan);
+            return *(T*)&result;
         }
         if (typeof(T) == typeof(double))
         {
-            return (T)(object)VectorizedProductFloat64((ReadOnlySpan<double>)(object)input);
+            var doubleSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(input);
+            var result = VectorizedProductFloat64(doubleSpan);
+            return *(T*)&result;
         }
         if (typeof(T) == typeof(int))
         {
-            return (T)(object)VectorizedProductInt32((ReadOnlySpan<int>)(object)input);
+            var intSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(input);
+            var result = VectorizedProductInt32(intSpan);
+            return *(T*)&result;
         }
 
         return ScalarProduct(input);
@@ -819,9 +853,9 @@ public sealed class OptimizedSimdExecutor : IDisposable
     {
         // Estimate performance gain based on vectorization ratio and instruction set
         var vectorizationRatio = CalculateVectorizationRatio();
-        var baseGain = _capabilities.HasAvx512 ? 16.0 : 
-                      _capabilities.HasAvx2 ? 8.0 : 
-                      _capabilities.HasSse2 ? 4.0 : 1.0;
+        var baseGain = _capabilities.SupportsAvx512 ? 16.0 :
+                      _capabilities.SupportsAvx2 ? 8.0 :
+                      _capabilities.SupportsSse2 ? 4.0 : 1.0;
         return 1.0 + (baseGain - 1.0) * vectorizationRatio;
     }
 
@@ -947,7 +981,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe float ScalarMinFloat32(float* data, int count)
     {
-        float min = data[0];
+        var min = data[0];
         for (var i = 1; i < count; i++)
         {
             if (data[i] < min)
@@ -961,7 +995,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe float ScalarMaxFloat32(float* data, int count)
     {
-        float max = data[0];
+        var max = data[0];
         for (var i = 1; i < count; i++)
         {
             if (data[i] > max)
@@ -975,7 +1009,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe float ScalarProductFloat32(float* data, int count)
     {
-        float product = data[0];
+        var product = data[0];
         for (var i = 1; i < count; i++)
         {
             product *= data[i];
@@ -997,7 +1031,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe int ScalarSumInt32(int* data, int count)
     {
-        int sum = 0;
+        var sum = 0;
         for (var i = 0; i < count; i++)
         {
             sum += data[i];
@@ -1212,40 +1246,18 @@ public sealed class OptimizedSimdExecutor : IDisposable
 
 #region Supporting Types
 
-/// <summary>
-/// SIMD capabilities detected at runtime.
-/// </summary>
-public readonly record struct SimdCapabilities
-{
-    public bool HasSse2 { get; init; }
-    public bool HasAvx2 { get; init; }
-    public bool HasAvx512 { get; init; }
-    public bool HasFma { get; init; }
-    public bool HasNeon { get; init; }
-    public int VectorByteSize { get; init; }
-    
-    public override string ToString()
-    {
-        var features = new List<string>();
-        if (HasSse2) features.Add("SSE2");
-        if (HasAvx2) features.Add("AVX2");
-        if (HasAvx512) features.Add("AVX512");
-        if (HasFma) features.Add("FMA");
-        if (HasNeon) features.Add("NEON");
-        return $"SIMD({string.Join(",", features)}, VectorSize={VectorByteSize})"; 
-    }
-}
+// Removed duplicate SimdCapabilities struct - using DotCompute.Backends.CPU.Intrinsics.SimdCapabilities instead
 
 /// <summary>
 /// Execution context for thread-local optimizations.
 /// </summary>
 internal sealed class ExecutionContext
 {
-    public SimdCapabilities Capabilities { get; }
+    public SimdSummary Capabilities { get; }
     public long ThreadExecutions { get; set; }
     public DateTimeOffset LastExecution { get; set; }
     
-    public ExecutionContext(SimdCapabilities capabilities)
+    public ExecutionContext(SimdSummary capabilities)
     {
         Capabilities = capabilities;
         LastExecution = DateTimeOffset.UtcNow;
@@ -1290,9 +1302,9 @@ public readonly record struct ExecutorStatistics
 }
 
 /// <summary>
-/// Execution strategies based on available instruction sets.
+/// SIMD execution strategies based on available instruction sets.
 /// </summary>
-public enum ExecutionStrategy
+public enum SimdExecutionStrategy
 {
     Scalar,
     Sse,

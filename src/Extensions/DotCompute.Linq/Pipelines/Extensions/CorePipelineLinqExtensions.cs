@@ -328,9 +328,9 @@ public static class CorePipelineLinqExtensions
     /// </summary>
     private class DefaultPipelineMemoryManager : DotCompute.Linq.Pipelines.Models.IPipelineMemoryManager
     {
-        public Task<DotCompute.Linq.Pipelines.Models.IMemoryBuffer> AllocateAsync(long size) =>
+        public Task<DotCompute.Linq.Pipelines.Models.IMemoryBuffer> AllocateAsync(long size)
 
-            Task.FromResult<DotCompute.Linq.Pipelines.Models.IMemoryBuffer>(new MemoryBuffer(size));
+            => Task.FromResult<DotCompute.Linq.Pipelines.Models.IMemoryBuffer>(new MemoryBuffer(size));
 
 
         public Task ReleaseAsync(DotCompute.Linq.Pipelines.Models.IMemoryBuffer buffer) => Task.CompletedTask;

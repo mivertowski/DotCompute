@@ -55,13 +55,13 @@ public class OptimizationStrategyTests : IDisposable
         _mockBaseOrchestrator = new Mock<IComputeOrchestrator>();
 
         // Create mock accelerators for different backends
-        _mockAccelerators = new List<Mock<IAccelerator>>
-        {
+        _mockAccelerators =
+        [
             CreateMockAccelerator("CPU", "Intel i9-13900K", true, 1000),
             CreateMockAccelerator("CUDA", "NVIDIA RTX 4090", true, 5000),
             CreateMockAccelerator("Metal", "Apple M3 Max", true, 3000),
             CreateMockAccelerator("OpenCL", "AMD RX 7900 XTX", false, 4000) // Unavailable
-        };
+        ];
 
         _defaultOptions = new AdaptiveSelectionOptions
         {
@@ -596,7 +596,7 @@ public class OptimizationStrategyTests : IDisposable
 
         // Act
         const int iterations = 100;
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             await selector.SelectOptimalBackendAsync($"PerfKernel_{i}", workload, availableBackends);
         }

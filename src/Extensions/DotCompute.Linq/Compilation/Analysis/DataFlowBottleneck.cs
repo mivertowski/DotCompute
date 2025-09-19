@@ -23,7 +23,7 @@ public record DataFlowBottleneck
     public double Impact { get; init; }
 
     /// <summary>Gets suggestions to address this bottleneck.</summary>
-    public List<string> Suggestions { get; init; } = new();
+    public List<string> Suggestions { get; init; } = [];
 }
 
 /// <summary>

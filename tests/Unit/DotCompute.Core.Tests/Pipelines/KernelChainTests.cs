@@ -400,7 +400,7 @@ public class KernelChainTests : PipelineTestBase
         const int concurrentExecutions = 10;
 
         // Act - Execute multiple chains concurrently
-        for (int i = 0; i < concurrentExecutions; i++)
+        for (var i = 0; i < concurrentExecutions; i++)
         {
             var input = GenerateTestData<float>(100, DataPattern.Sequential);
             tasks.Add(builder

@@ -20,17 +20,26 @@ internal static class KernelSyntaxAnalyzer
     public static void AnalyzeForStatement(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not ForStatementSyntax forLoop)
+        {
             return;
+        }
+
 
         var parentMethod = forLoop.FirstAncestorOrSelf<MethodDeclarationSyntax>();
         if (parentMethod == null)
+        {
             return;
+        }
+
 
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(parentMethod) as IMethodSymbol;
         if (methodSymbol == null || !KernelAnalysisHelpers.HasKernelAttribute(methodSymbol))
+        {
             return;
+        }
 
         // Check for vectorization opportunities in for loops
+
         if (KernelAnalysisHelpers.CanBeVectorized(forLoop))
         {
             var diagnostic = Diagnostic.Create(
@@ -60,17 +69,26 @@ internal static class KernelSyntaxAnalyzer
     public static void AnalyzeElementAccess(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not ElementAccessExpressionSyntax elementAccess)
+        {
             return;
+        }
+
 
         var parentMethod = elementAccess.FirstAncestorOrSelf<MethodDeclarationSyntax>();
         if (parentMethod == null)
+        {
             return;
+        }
+
 
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(parentMethod) as IMethodSymbol;
         if (methodSymbol == null || !KernelAnalysisHelpers.HasKernelAttribute(methodSymbol))
+        {
             return;
+        }
 
         // Check for bounds validation
+
         if (!KernelAnalysisHelpers.HasBoundsCheckForAccess(parentMethod, elementAccess))
         {
             var diagnostic = Diagnostic.Create(
@@ -100,11 +118,17 @@ internal static class KernelSyntaxAnalyzer
     public static void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
     {
         if (context.Node is not MethodDeclarationSyntax methodSyntax)
+        {
             return;
+        }
+
 
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodSyntax) as IMethodSymbol;
         if (methodSymbol == null)
+        {
             return;
+        }
+
 
         var hasKernelAttribute = KernelAnalysisHelpers.HasKernelAttribute(methodSymbol);
 

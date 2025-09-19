@@ -77,7 +77,7 @@ public class ConditionalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAna
 
         // Look for chainable LINQ operations
 
-        for (int i = 0; i < methodCalls.Count - 1; i++)
+        for (var i = 0; i < methodCalls.Count - 1; i++)
         {
             var current = methodCalls[i];
             var next = methodCalls[i + 1];
@@ -146,7 +146,7 @@ public class ConditionalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAna
             IsComputeFriendly = false,
             SupportsVectorization = false,
             OptimalVectorWidth = 1,
-            BackendCompatibility = new Dictionary<BackendType, OperatorCompatibility>(),
+            BackendCompatibility = [],
             OptimizationHints = [],
             Complexity = ComputationalComplexity.Linear,
             FusionOpportunities = []
@@ -464,12 +464,15 @@ public class ConditionalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAna
     public double EstimateExecutionCost(Expression expression)
     {
         if (expression == null)
+        {
             return 0.0;
-
+        }
 
         if (expression is not ConditionalExpression conditional)
-            return 2.0; // Basic cost for non-conditional
+        {
 
+            return 2.0; // Basic cost for non-conditional
+        }
 
         var baseCost = 3.0; // Base cost for conditional
         var branchPenalty = GetBranchDivergence(conditional) * 2.0;

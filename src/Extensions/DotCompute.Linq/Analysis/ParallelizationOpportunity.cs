@@ -26,7 +26,7 @@ public class ParallelizationOpportunity
     /// <summary>
     /// Gets or sets data dependencies that might limit parallelization.
     /// </summary>
-    public List<string> DataDependencies { get; set; } = new();
+    public List<string> DataDependencies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the estimated speedup from parallelization.
@@ -46,7 +46,7 @@ public class ParallelizationOpportunity
     /// <summary>
     /// Gets or sets parallelization constraints or limitations.
     /// </summary>
-    public List<string> Constraints { get; set; } = new();
+    public List<string> Constraints { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the parallel execution strategy to use.

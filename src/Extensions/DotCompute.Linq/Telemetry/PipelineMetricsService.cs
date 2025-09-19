@@ -528,9 +528,9 @@ public sealed class PipelineMetricsContext : IDisposable
     public CorePipelineExecutionContext ExecutionContext { get; set; } = null!;
     public CorePipelineMetrics PipelineMetrics { get; set; } = null!;
     public DateTime StartTime { get; set; }
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
     public ConcurrentDictionary<string, StageMetricsContext> StageContexts { get; set; } = new();
-    public List<CacheAccessInfo> CacheAccesses { get; set; } = new();
+    public List<CacheAccessInfo> CacheAccesses { get; set; } = [];
     public long ItemsProcessed { get; set; }
 
     /// <summary>
@@ -647,7 +647,7 @@ public sealed class StageMetricsContext
     public long TotalMemoryUsed { get; private set; }
     public int ExecutionCount { get; private set; }
     public int SuccessCount { get; private set; }
-    public List<Dictionary<string, object>> ExecutionMetadata { get; set; } = new();
+    public List<Dictionary<string, object>> ExecutionMetadata { get; set; } = [];
 
     /// <summary>
     /// Gets the elapsed time in milliseconds.
@@ -767,7 +767,7 @@ public sealed class PipelineExecutionContext : IDisposable
 internal sealed class LinqPipelineMetrics : CorePipelineMetrics
 {
     private readonly ConcurrentDictionary<string, CoreIStageMetrics> _stageMetrics = new();
-    private readonly List<CoreTimeSeriesMetric> _timeSeries = new();
+    private readonly List<CoreTimeSeriesMetric> _timeSeries = [];
     private readonly ConcurrentDictionary<string, double> _customMetrics = new();
 
 
@@ -838,15 +838,23 @@ internal sealed class LinqPipelineMetrics : CorePipelineMetrics
 
 
         if (duration < _minExecutionTime)
+        {
             _minExecutionTime = duration;
-        if (duration > _maxExecutionTime)
-            _maxExecutionTime = duration;
+        }
 
+
+        if (duration > _maxExecutionTime)
+        {
+            _maxExecutionTime = duration;
+        }
 
         var memoryUsage = metrics.MemoryUsage.PeakBytes;
         _totalMemoryUsage += memoryUsage;
         if (memoryUsage > _peakMemoryUsage)
+        {
             _peakMemoryUsage = memoryUsage;
+        }
+
     }
 
 

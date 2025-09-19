@@ -32,9 +32,22 @@ public readonly struct WorkGroupSize : IEquatable<WorkGroupSize>
     /// <param name="z">The Z dimension size</param>
     public WorkGroupSize(int x, int y = 1, int z = 1)
     {
-        if (x <= 0) throw new ArgumentOutOfRangeException(nameof(x), "X dimension must be positive");
-        if (y <= 0) throw new ArgumentOutOfRangeException(nameof(y), "Y dimension must be positive");
-        if (z <= 0) throw new ArgumentOutOfRangeException(nameof(z), "Z dimension must be positive");
+        if (x <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(x), "X dimension must be positive");
+        }
+
+        if (y <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(y), "Y dimension must be positive");
+        }
+
+
+        if (z <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(z), "Z dimension must be positive");
+        }
+
 
         X = x;
         Y = y;
@@ -68,8 +81,18 @@ public readonly struct WorkGroupSize : IEquatable<WorkGroupSize>
     {
         get
         {
-            if (Z > 1) return 3;
-            if (Y > 1) return 2;
+            if (Z > 1)
+            {
+                return 3;
+            }
+
+
+            if (Y > 1)
+            {
+                return 2;
+            }
+
+
             return 1;
         }
     }
@@ -137,7 +160,7 @@ public readonly struct WorkGroupSize : IEquatable<WorkGroupSize>
     public static WorkGroupSize CalculateOptimal(int problemSize, int maxWorkGroupSize = 1024)
     {
         // Find the largest power of 2 that divides the problem size and is <= maxWorkGroupSize
-        int size = Math.Min(maxWorkGroupSize, problemSize);
+        var size = Math.Min(maxWorkGroupSize, problemSize);
 
         // Round down to the nearest power of 2
         size = 1 << (int)Math.Floor(Math.Log2(size));
@@ -158,21 +181,31 @@ public readonly struct WorkGroupSize : IEquatable<WorkGroupSize>
     public static WorkGroupSize CalculateOptimal2D(int width, int height, int maxWorkGroupSize = 1024)
     {
         // Start with square dimensions
-        int size = (int)Math.Sqrt(maxWorkGroupSize);
+        var size = (int)Math.Sqrt(maxWorkGroupSize);
 
         // Find the largest square that fits
         while (size * size > maxWorkGroupSize)
+        {
             size--;
+        }
 
         // Adjust for actual dimensions
-        int x = Math.Min(size, width);
-        int y = Math.Min(size, height);
+
+        var x = Math.Min(size, width);
+        var y = Math.Min(size, height);
 
         // Ensure we don't exceed max work group size
         while (x * y > maxWorkGroupSize)
         {
-            if (x > y) x--;
-            else y--;
+            if (x > y)
+            {
+                x--;
+            }
+            else
+            {
+                y--;
+            }
+
         }
 
         return new WorkGroupSize(x, y);
@@ -186,10 +219,29 @@ public readonly struct WorkGroupSize : IEquatable<WorkGroupSize>
     /// <returns>True if valid, false otherwise</returns>
     public bool IsValidFor(int maxWorkGroupSize, int[] maxWorkItemSizes)
     {
-        if (TotalSize > maxWorkGroupSize) return false;
-        if (maxWorkItemSizes.Length >= 1 && X > maxWorkItemSizes[0]) return false;
-        if (maxWorkItemSizes.Length >= 2 && Y > maxWorkItemSizes[1]) return false;
-        if (maxWorkItemSizes.Length >= 3 && Z > maxWorkItemSizes[2]) return false;
+        if (TotalSize > maxWorkGroupSize)
+        {
+            return false;
+        }
+
+
+        if (maxWorkItemSizes.Length >= 1 && X > maxWorkItemSizes[0])
+        {
+            return false;
+        }
+
+
+        if (maxWorkItemSizes.Length >= 2 && Y > maxWorkItemSizes[1])
+        {
+            return false;
+        }
+
+
+        if (maxWorkItemSizes.Length >= 3 && Z > maxWorkItemSizes[2])
+        {
+            return false;
+        }
+
 
         return true;
     }
@@ -229,8 +281,18 @@ public readonly struct WorkGroupSize : IEquatable<WorkGroupSize>
     /// </summary>
     public override string ToString()
     {
-        if (Is1D) return $"({X})";
-        if (Is2D) return $"({X}, {Y})";
+        if (Is1D)
+        {
+            return $"({X})";
+        }
+
+
+        if (Is2D)
+        {
+            return $"({X}, {Y})";
+        }
+
+
         return $"({X}, {Y}, {Z})";
     }
 

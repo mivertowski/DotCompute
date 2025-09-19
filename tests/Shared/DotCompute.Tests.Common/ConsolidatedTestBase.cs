@@ -119,8 +119,8 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
     {
         Output = output ?? throw new ArgumentNullException(nameof(output));
         Fixture = fixture;
-        _memorySnapshots = new Dictionary<string, GpuMemorySnapshot>();
-        _disposables = new List<IDisposable>();
+        _memorySnapshots = [];
+        _disposables = [];
         
         // Create cancellation token for long operations (5 minute timeout)
         _cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(5));
@@ -306,7 +306,7 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
 
     protected static void SkipIfNoGpu()
     {
-        bool hasAnyGpu = IsCudaAvailable() || IsOpenClAvailable() || IsMetalAvailable();
+        var hasAnyGpu = IsCudaAvailable() || IsOpenClAvailable() || IsMetalAvailable();
         if (!hasAnyGpu)
             throw new SkipException("No GPU hardware detected on this system");
     }
@@ -1047,9 +1047,9 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
         int threadCount = 10)
     {
         var tasks = new List<Task<T>>();
-        for (int i = 0; i < threadCount; i++)
+        for (var i = 0; i < threadCount; i++)
         {
-            int threadId = i;
+            var threadId = i;
             tasks.Add(Task.Run(() => operation(threadId), CancellationToken));
         }
         

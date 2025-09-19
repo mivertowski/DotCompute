@@ -331,7 +331,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         EnsureNotDisposed();
 
 
-        int elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
+        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
         if (_sizeInBytes % elementSize != 0)
         {
 
@@ -340,7 +340,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 
         // Calculate new element count
 
-        int elementCount = (int)(_sizeInBytes / elementSize);
+        var elementCount = (int)(_sizeInBytes / elementSize);
 
         // Create a typed wrapper around the same memory
 

@@ -372,17 +372,17 @@ namespace DotCompute.Backends.CUDA.Persistent
             _state = state;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken = default) =>
-            _manager.StopKernelAsync(_kernelId, cancellationToken);
+        public Task StopAsync(CancellationToken cancellationToken = default)
+            => _manager.StopKernelAsync(_kernelId, cancellationToken);
 
-        public Task<PersistentKernelStatus> GetStatusAsync(CancellationToken cancellationToken = default) =>
-            _manager.GetKernelStatusAsync(_kernelId, cancellationToken);
+        public Task<PersistentKernelStatus> GetStatusAsync(CancellationToken cancellationToken = default)
+            => _manager.GetKernelStatusAsync(_kernelId, cancellationToken);
 
-        public Task UpdateDataAsync(float[] data, int timeSlice = 0, CancellationToken cancellationToken = default) =>
-            _manager.UpdateWaveDataAsync(_kernelId, data, timeSlice, cancellationToken);
+        public Task UpdateDataAsync(float[] data, int timeSlice = 0, CancellationToken cancellationToken = default)
+            => _manager.UpdateWaveDataAsync(_kernelId, data, timeSlice, cancellationToken);
 
-        public Task<float[]> GetDataAsync(int timeSlice = 0, CancellationToken cancellationToken = default) =>
-            _manager.GetWaveDataAsync(_kernelId, timeSlice, cancellationToken);
+        public Task<float[]> GetDataAsync(int timeSlice = 0, CancellationToken cancellationToken = default)
+            => _manager.GetWaveDataAsync(_kernelId, timeSlice, cancellationToken);
 
         public void Dispose()
         {

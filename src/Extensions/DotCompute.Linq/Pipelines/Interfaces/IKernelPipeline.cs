@@ -176,17 +176,17 @@ public class PipelineExecutionResult
     /// <summary>
     /// Gets or sets the stages executed.
     /// </summary>
-    public List<StageExecutionInfo> StagesExecuted { get; set; } = new();
+    public List<StageExecutionInfo> StagesExecuted { get; set; } = [];
 
     /// <summary>
     /// Gets or sets any errors that occurred.
     /// </summary>
-    public List<Exception> Errors { get; set; } = new();
+    public List<Exception> Errors { get; set; } = [];
 
     /// <summary>
     /// Gets or sets execution metrics.
     /// </summary>
-    public Dictionary<string, object> Metrics { get; set; } = new();
+    public Dictionary<string, object> Metrics { get; set; } = [];
 }
 
 /// <summary>
@@ -212,7 +212,7 @@ public class PipelineOptions
     /// <summary>
     /// Gets or sets custom options.
     /// </summary>
-    public Dictionary<string, object> CustomOptions { get; set; } = new();
+    public Dictionary<string, object> CustomOptions { get; set; } = [];
 }
 
 /// <summary>
@@ -274,7 +274,7 @@ public class PipelineEventArgs : EventArgs
     /// <summary>
     /// Gets or sets additional data.
     /// </summary>
-    public Dictionary<string, object> Data { get; set; } = new();
+    public Dictionary<string, object> Data { get; set; } = [];
 }
 
 /// <summary>
@@ -321,7 +321,7 @@ public class StageConfiguration
     /// <summary>
     /// Gets or sets custom configuration.
     /// </summary>
-    public Dictionary<string, object> CustomConfig { get; set; } = new();
+    public Dictionary<string, object> CustomConfig { get; set; } = [];
 }
 
 /// <summary>
@@ -357,5 +357,5 @@ public class StageExecutionInfo
     /// <summary>
     /// Gets or sets stage metrics.
     /// </summary>
-    public Dictionary<string, object> Metrics { get; set; } = new();
+    public Dictionary<string, object> Metrics { get; set; } = [];
 }

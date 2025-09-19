@@ -369,7 +369,7 @@ public class ComplexityAnalysisPipeline
     private readonly List<UnifiedOperatorType> _operators;
     private long _totalOperations = 10000;
     private long _totalMemory = 65536;
-    private readonly Dictionary<string, double> _operationBreakdown = new();
+    private readonly Dictionary<string, double> _operationBreakdown = [];
 
     public ComplexityAnalysisPipeline(IEnumerable<UnifiedOperatorType> operators)
     {
@@ -410,7 +410,7 @@ public class KernelCompilationPipeline
     private string _cpuSource = "";
     private string _gpuSource = "";
     private UnifiedComplexityMetrics? _complexity;
-    private readonly List<(string name, Type type, bool isPointer)> _parameters = new();
+    private readonly List<(string name, Type type, bool isPointer)> _parameters = [];
 
     public KernelCompilationPipeline(string baseName)
     {

@@ -54,7 +54,10 @@ public static class AsyncSynchronizationPatterns
     public static AsyncWorkStealingCoordinator<T> CreateWorkStealingCoordinator<T>(int workerCount = -1)
     {
         if (workerCount <= 0)
+        {
             workerCount = Environment.ProcessorCount;
+        }
+
 
         return new AsyncWorkStealingCoordinator<T>(workerCount);
     }
@@ -181,15 +184,24 @@ public sealed class AsyncChannel<T> : IDisposable
     public void Complete(Exception? error = null)
     {
         if (error != null)
+        {
             _writer.TryComplete(error);
+        }
         else
+        {
             _writer.TryComplete();
+        }
+
     }
 
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(AsyncChannel<T>));
+        }
+
     }
 
     public void Dispose()
@@ -220,7 +232,7 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
         _workQueues = new ConcurrentQueue<T>[workerCount];
         _workAvailable = new SemaphoreSlim[workerCount];
 
-        for (int i = 0; i < workerCount; i++)
+        for (var i = 0; i < workerCount; i++)
         {
             _workQueues[i] = new ConcurrentQueue<T>();
             _workAvailable[i] = new SemaphoreSlim(0);
@@ -236,7 +248,10 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
         ThrowIfDisposed();
 
         if (preferredWorker < 0 || preferredWorker >= _workerCount)
+        {
             preferredWorker = _random.Next(_workerCount);
+        }
+
 
         _workQueues[preferredWorker].Enqueue(work);
         _workAvailable[preferredWorker].Release();
@@ -250,25 +265,40 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
         ThrowIfDisposed();
 
         if (workerId < 0 || workerId >= _workerCount)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(workerId));
+        }
 
         // Try own queue first
+
         if (_workQueues[workerId].TryDequeue(out var work))
+        {
             return work;
+        }
 
         // Wait for work on own queue
+
         await _workAvailable[workerId].WaitAsync(cancellationToken).ConfigureAwait(false);
 
         // Try own queue again
         if (_workQueues[workerId].TryDequeue(out work))
+        {
+
             return work;
+        }
 
         // Work stealing - try other queues
-        for (int i = 1; i < _workerCount; i++)
+
+        for (var i = 1; i < _workerCount; i++)
         {
             var targetQueue = (workerId + i) % _workerCount;
             if (_workQueues[targetQueue].TryDequeue(out work))
+            {
+
                 return work;
+            }
+
         }
 
         return default;
@@ -281,7 +311,7 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
     {
         ThrowIfDisposed();
 
-        int currentWorker = 0;
+        var currentWorker = 0;
         foreach (var work in workItems)
         {
             _workQueues[currentWorker].Enqueue(work);
@@ -302,7 +332,11 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(AsyncWorkStealingCoordinator<T>));
+        }
+
     }
 
     public void Dispose()
@@ -310,7 +344,7 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
         if (!_disposed)
         {
             _disposed = true;
-            for (int i = 0; i < _workerCount; i++)
+            for (var i = 0; i < _workerCount; i++)
             {
                 _workAvailable[i]?.Dispose();
             }
@@ -339,7 +373,10 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
         _semaphore = new SemaphoreSlim(maxResources, maxResources);
 
         if (fairScheduling)
+        {
             _waitQueue = new ConcurrentQueue<TaskCompletionSource<TResource>>();
+        }
+
     }
 
     /// <summary>
@@ -356,7 +393,10 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
             CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         if (timeout != default)
+        {
             timeoutCts.CancelAfter(timeout);
+        }
+
 
         try
         {
@@ -382,9 +422,12 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
     internal void Return(TResource resource)
     {
         if (_disposed || resource == null)
+        {
             return;
+        }
 
         // If using fair scheduling, serve waiting requests first
+
         if (_waitQueue != null && _waitQueue.TryDequeue(out var tcs))
         {
             tcs.SetResult(resource);
@@ -413,7 +456,11 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(AsyncResourcePool<TResource>));
+        }
+
     }
 
     public void Dispose()
@@ -436,7 +483,11 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
             while (_resources.TryPop(out var resource))
             {
                 if (resource is IDisposable disposable)
+                {
+
                     disposable.Dispose();
+                }
+
             }
         }
     }
@@ -499,7 +550,11 @@ public sealed class AsyncBarrier : IDisposable
     internal AsyncBarrier(int participantCount, Action? postPhaseAction = null)
     {
         if (participantCount <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(participantCount));
+        }
+
 
         _participantCount = participantCount;
         _postPhaseAction = postPhaseAction;
@@ -525,7 +580,7 @@ public sealed class AsyncBarrier : IDisposable
         ThrowIfDisposed();
 
         TaskCompletionSource<bool> currentCompletion;
-        bool lastParticipant = false;
+        var lastParticipant = false;
 
         lock (_lock)
         {
@@ -564,7 +619,11 @@ public sealed class AsyncBarrier : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(nameof(AsyncBarrier));
+        }
+
     }
 
     public void Dispose()

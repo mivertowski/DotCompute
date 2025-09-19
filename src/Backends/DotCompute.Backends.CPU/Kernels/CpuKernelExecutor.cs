@@ -55,7 +55,7 @@ internal sealed class CpuKernelExecutor
             var totalWorkItems = CalculateTotalWorkItems(arguments);
             var strategy = DetermineExecutionStrategy(totalWorkItems, executionPlan);
 
-            _logger.LogDebugMessage($"Executing kernel '{definition.Name}' with {totalWorkItems} items using {strategy}");
+            _logger.LogDebug("Executing kernel '{KernelName}' with {TotalWorkItems} items using {Strategy}", definition.Name, totalWorkItems, strategy);
 
             switch (strategy)
             {
@@ -82,11 +82,11 @@ internal sealed class CpuKernelExecutor
             stopwatch.Stop();
             UpdatePerformanceMetrics(stopwatch.Elapsed.TotalMilliseconds);
 
-            _logger.LogDebugMessage($"Kernel '{definition.Name}' executed in {stopwatch.ElapsedMilliseconds}ms");
+            _logger.LogDebug("Kernel '{KernelName}' executed in {ElapsedMs}ms", definition.Name, stopwatch.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Failed to execute kernel '{definition.Name}'");
+            _logger.LogError(ex, "Failed to execute kernel '{KernelName}'", definition.Name);
             throw;
         }
     }

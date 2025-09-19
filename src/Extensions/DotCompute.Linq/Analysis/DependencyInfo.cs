@@ -52,7 +52,7 @@ public class DependencyInfo
     /// <summary>
     /// Gets or sets alternative options for this dependency.
     /// </summary>
-    public List<string> Alternatives { get; set; } = new();
+    public List<string> Alternatives { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the performance impact of this dependency.
@@ -62,7 +62,7 @@ public class DependencyInfo
     /// <summary>
     /// Gets or sets additional metadata for this dependency.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the dependent operation that relies on this dependency.
@@ -72,7 +72,7 @@ public class DependencyInfo
     /// <summary>
     /// Gets or sets the list of dependencies that this dependency depends on.
     /// </summary>
-    public List<string> Dependencies { get; set; } = new();
+    public List<string> Dependencies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether this dependency allows parallelization.

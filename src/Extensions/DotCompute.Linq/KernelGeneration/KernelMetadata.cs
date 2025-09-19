@@ -36,8 +36,8 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
 
         Name = name;
         Language = language;
-        CompilationHints = new Dictionary<string, object>();
-        PerformanceHints = new Dictionary<string, object>();
+        CompilationHints = [];
+        PerformanceHints = [];
         CreatedAt = DateTimeOffset.UtcNow;
     }
 
@@ -149,7 +149,7 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
     /// <summary>
     /// Gets or sets additional properties (alias for CustomMetadata).
     /// </summary>
-    public Dictionary<string, object>? Properties => CustomMetadata ?? new Dictionary<string, object>();
+    public Dictionary<string, object>? Properties => CustomMetadata ?? [];
 
     /// <summary>
     /// Gets or sets the generation timestamp.

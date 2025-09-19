@@ -12,7 +12,9 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 
@@ -52,7 +54,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Profiles a kernel launch with comprehensive metrics
         /// </summary>
-        public async Task<Core.Kernels.KernelProfilingResult> ProfileKernelAsync(
+        public async Task<KernelProfilingResult> ProfileKernelAsync(
             string kernelName,
             IntPtr functionHandle,
             KernelArguments arguments,
@@ -317,7 +319,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Analyzes potential bottlenecks and generates optimization suggestions using real metrics
         /// </summary>
-        private (Core.Kernels.BottleneckAnalysis bottleneck, List<string> suggestions) AnalyzeBottlenecks(
+        private (BottleneckAnalysis bottleneck, List<string> suggestions) AnalyzeBottlenecks(
             ProfilingStatistics stats,
 
             OccupancyMetrics occupancy,

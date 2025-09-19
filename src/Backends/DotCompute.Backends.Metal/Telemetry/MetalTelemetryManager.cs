@@ -103,7 +103,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public void RecordMemoryAllocation(long sizeBytes, TimeSpan duration, bool success = true)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var tags = new Dictionary<string, object?>
         {
@@ -126,7 +130,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         _productionLogger.LogMemoryAllocation(sizeBytes, duration, success);
 
         Interlocked.Increment(ref _totalOperations);
-        if (!success) Interlocked.Increment(ref _totalErrors);
+        if (!success)
+        {
+            Interlocked.Increment(ref _totalErrors);
+        }
+
     }
 
     /// <summary>
@@ -134,7 +142,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public void RecordKernelExecution(string kernelName, TimeSpan duration, long dataSize, bool success = true, Dictionary<string, object>? additionalProperties = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var correlationId = _productionLogger.GenerateCorrelationId();
         
@@ -176,7 +188,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         }
 
         Interlocked.Increment(ref _totalOperations);
-        if (!success) Interlocked.Increment(ref _totalErrors);
+        if (!success)
+        {
+            Interlocked.Increment(ref _totalErrors);
+        }
+
     }
 
     /// <summary>
@@ -184,7 +200,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public void RecordDeviceUtilization(double gpuUtilization, double memoryUtilization, long totalMemory, long usedMemory)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _gpuUtilization.Record(gpuUtilization);
         _memoryUsage.Record(usedMemory);
@@ -228,7 +248,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public void RecordErrorEvent(MetalError error, string context, Dictionary<string, object>? additionalContext = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var correlationId = _productionLogger.GenerateCorrelationId();
         
@@ -248,7 +272,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public void RecordMemoryPressure(MemoryPressureLevel level, double percentage)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _performanceCounters.RecordMemoryPressure(level, percentage);
         _productionLogger.LogMemoryPressure(level, percentage);
@@ -266,7 +294,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public void RecordResourceUsage(ResourceType type, long currentUsage, long peakUsage, long limit)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var utilizationPercentage = limit > 0 ? (double)currentUsage / limit * 100.0 : 0.0;
         
@@ -294,7 +326,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public MetalTelemetrySnapshot GetCurrentSnapshot()
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(MetalTelemetryManager));
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(MetalTelemetryManager));
+        }
+
 
         return new MetalTelemetrySnapshot
         {
@@ -315,7 +351,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public MetalProductionReport GenerateProductionReport()
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(MetalTelemetryManager));
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(MetalTelemetryManager));
+        }
+
 
         var snapshot = GetCurrentSnapshot();
         
@@ -335,7 +375,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public async Task ExportMetricsAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -353,7 +397,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
     private void GeneratePeriodicReport(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -379,7 +427,11 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
     private void PerformCleanup(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -498,7 +550,12 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         return recommendations;
     }
 
-    public void Dispose()
+    protected override string GetBackendType()
+    {
+        return "Metal";
+    }
+
+    public override void Dispose()
     {
         if (!_disposed)
         {

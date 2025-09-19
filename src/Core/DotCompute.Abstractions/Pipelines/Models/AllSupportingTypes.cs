@@ -136,7 +136,7 @@ public sealed class OptimizationValidationResult
     public bool IsValid { get; set; }
     public string? Message { get; set; }
     public double AccuracyScore { get; set; } = 1.0;
-    public IList<string> Warnings { get; set; } = new List<string>();
+    public IList<string> Warnings { get; set; } = [];
 }
 
 public sealed class OptimizationImpactEstimate
@@ -150,8 +150,8 @@ public sealed class OptimizationImpactEstimate
 public sealed class PipelineAnalysisResult
 {
     public bool Success { get; set; }
-    public IList<string> Issues { get; set; } = new List<string>();
-    public IList<string> Recommendations { get; set; } = new List<string>();
+    public IList<string> Issues { get; set; } = [];
+    public IList<string> Recommendations { get; set; } = [];
     public IDictionary<string, object> Metrics { get; set; } = new Dictionary<string, object>();
 }
 

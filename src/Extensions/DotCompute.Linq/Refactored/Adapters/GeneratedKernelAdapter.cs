@@ -154,7 +154,11 @@ public static class GeneratedKernelAdapter
     public static UnifiedGeneratedKernel FromAny(object legacyKernel)
     {
         if (legacyKernel == null)
+        {
+
             throw new ArgumentNullException(nameof(legacyKernel));
+        }
+
 
         var name = GetPropertyValue<string>(legacyKernel, "Name") ?? "converted_kernel";
         var sourceCode = GetPropertyValue<string>(legacyKernel, "Source", "SourceCode") ?? "";
@@ -271,7 +275,11 @@ public static class GeneratedKernelAdapter
     /// </summary>
     private static object? GetPropertyValue(object obj, string propertyName)
     {
-        if (obj == null) return null;
+        if (obj == null)
+        {
+            return null;
+        }
+
 
         var type = obj.GetType();
         var property = type.GetProperty(propertyName);

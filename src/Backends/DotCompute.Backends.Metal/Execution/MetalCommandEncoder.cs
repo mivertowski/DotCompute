@@ -425,8 +425,8 @@ public readonly struct MetalDispatchSize : IEquatable<MetalDispatchSize>
 
     public long TotalThreads => (long)Width * Height * Depth;
 
-    public bool Equals(MetalDispatchSize other) =>
-        Width == other.Width && Height == other.Height && Depth == other.Depth;
+    public bool Equals(MetalDispatchSize other)
+        => Width == other.Width && Height == other.Height && Depth == other.Depth;
 
     public override bool Equals(object? obj) => obj is MetalDispatchSize other && Equals(other);
 

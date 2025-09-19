@@ -274,7 +274,7 @@ namespace DotCompute.Core.Pipelines
                 Gen0Collections = GC.CollectionCount(0),
                 Gen1Collections = GC.CollectionCount(1),
                 Gen2Collections = GC.CollectionCount(2),
-                HardwareCounters = new Dictionary<string, double>()
+                HardwareCounters = []
             };
         }
     }

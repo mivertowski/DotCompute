@@ -101,7 +101,7 @@ public sealed class RecoveryStrategyTests : IDisposable
 
         // Act - Simulate multiple failures
         var results = new List<RecoveryResult>();
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             context.FailureCount = i + 1;
             var result = await fallbackStrategy.AttemptRecoveryAsync(context);
@@ -614,7 +614,7 @@ public sealed class RecoveryStrategyTests : IDisposable
 
         // Act - Measure recovery performance
         var stopwatch = Stopwatch.StartNew();
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             await memoryRecovery.AttemptRecoveryAsync(context);
         }
@@ -686,7 +686,7 @@ public sealed class RecoveryStrategyTests : IDisposable
         };
 
         // Act - Simulate repeated failures of same type
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             context.FailureCount = i + 1;
             await patternDetector.AttemptRecoveryAsync(context);
@@ -724,7 +724,7 @@ public sealed class RecoveryStrategyTests : IDisposable
 
         // Act - Simulate escalating failures
         var results = new List<RecoveryResult>();
-        for (int i = 1; i <= 4; i++)
+        for (var i = 1; i <= 4; i++)
         {
             context.FailureCount = i;
             var result = await escalatingRecovery.AttemptRecoveryAsync(context);
@@ -783,7 +783,7 @@ public sealed class RecoveryStrategyTests : IDisposable
     public async Task RecoveryCoordinator_EmptyStrategies_ReturnsFailure()
     {
         // Arrange
-        var coordinator = new TestRecoveryCoordinator(_mockLogger.Object, new List<IRecoveryStrategy>());
+        var coordinator = new TestRecoveryCoordinator(_mockLogger.Object, []);
         _disposables.Add(coordinator);
 
         var context = new RecoveryContext
@@ -1039,7 +1039,7 @@ public class TestRecoveryCoordinator : IRecoveryStrategy, IDisposable
     private readonly List<IRecoveryStrategy> _strategies;
     private bool _disposed;
 
-    public List<string> StrategiesAttempted { get; } = new();
+    public List<string> StrategiesAttempted { get; } = [];
 
     public TestRecoveryCoordinator(ILogger logger, List<IRecoveryStrategy> strategies)
     {
@@ -1109,7 +1109,7 @@ public class TestAlwaysFailingStrategy : IRecoveryStrategy
 public class TestPatternDetectingRecovery : IRecoveryStrategy, IDisposable
 {
     private readonly ILogger _logger;
-    private readonly Dictionary<string, int> _failurePatterns = new();
+    private readonly Dictionary<string, int> _failurePatterns = [];
 
     public bool PatternDetected { get; private set; }
     public bool AdaptiveStrategy { get; private set; }
@@ -1210,7 +1210,7 @@ public class RecoveryContext
     public string AttemptedOperation { get; set; } = string.Empty;
     public string ComponentName { get; set; } = string.Empty;
     public int FailureCount { get; set; } = 1;
-    public Dictionary<string, object> AdditionalData { get; set; } = new();
+    public Dictionary<string, object> AdditionalData { get; set; } = [];
 }
 
 public class RecoveryResult

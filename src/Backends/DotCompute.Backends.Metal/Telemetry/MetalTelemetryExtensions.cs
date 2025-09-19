@@ -208,13 +208,20 @@ public static class MetalTelemetryExtensions
         TimeSpan? exportInterval = null)
     {
         if (reportingInterval.HasValue)
+        {
             options.ReportingInterval = reportingInterval.Value;
+        }
 
         if (cleanupInterval.HasValue)
+        {
             options.CleanupInterval = cleanupInterval.Value;
+        }
 
         if (exportInterval.HasValue)
+        {
             options.ExportOptions.AutoExportInterval = exportInterval.Value;
+        }
+
 
         return options;
     }

@@ -6,6 +6,11 @@ namespace DotCompute.Abstractions.Pipelines.Enums;
 public enum ErrorHandlingAction
 {
     /// <summary>
+    /// No action specified
+    /// </summary>
+    None = -1,
+
+    /// <summary>
     /// Stop pipeline execution and propagate the error
     /// </summary>
     Stop = 0,
@@ -63,5 +68,10 @@ public enum ErrorHandlingAction
     /// <summary>
     /// Abort the entire pipeline execution immediately
     /// </summary>
-    Abort = 11
+    Abort = 11,
+
+    /// <summary>
+    /// The operation failed
+    /// </summary>
+    Failed = 12
 }

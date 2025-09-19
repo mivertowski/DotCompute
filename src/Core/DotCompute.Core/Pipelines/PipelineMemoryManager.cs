@@ -11,7 +11,7 @@ using MemoryLockMode = DotCompute.Abstractions.Interfaces.Pipelines.MemoryLockMo
 using MemoryLayoutHint = DotCompute.Abstractions.Interfaces.Pipelines.MemoryLayoutHint;
 using MemoryManagerStats = DotCompute.Abstractions.Interfaces.Pipelines.MemoryManagerStats;
 using MemoryPoolOptions = DotCompute.Abstractions.Interfaces.Pipelines.MemoryPoolOptions;
-// MemoryLock<T> is defined in DotCompute.Abstractions.Interfaces.Pipelines namespace - no using alias needed
+// MemoryLock<T> is generic and cannot be aliased without type arguments - use full name when needed
 using MemoryHint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint;
 using DotCompute.Abstractions;
 
@@ -476,7 +476,7 @@ namespace DotCompute.Core.Pipelines
                 }
             };
 
-            return new MemoryLock<T>(this, mode, unlockAction);
+            return new DotCompute.Abstractions.Interfaces.Pipelines.MemoryLock<T>(this, mode, unlockAction);
         }
 
         /// <inheritdoc/>
@@ -742,7 +742,7 @@ namespace DotCompute.Core.Pipelines
 
             // Try to find memory with compatible size (within 25% tolerance)
             var maxAttempts = Math.Min(_pool.Count, 10); // Limit search to prevent blocking
-            for (int i = 0; i < maxAttempts; i++)
+            for (var i = 0; i < maxAttempts; i++)
             {
                 if (_pool.TryDequeue(out var entry))
                 {

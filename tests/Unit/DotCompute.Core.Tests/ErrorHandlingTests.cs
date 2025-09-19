@@ -1343,7 +1343,7 @@ public sealed class ErrorHandlingTests : IDisposable
                 if (EnableRetryPolicy && SimulateKernelLaunchFailure)
                 {
                     // Retry logic for kernel launch failures
-                    int attempts = 0;
+                    var attempts = 0;
                     while (attempts < MaxRetryAttempts)
                     {
                         try

@@ -82,7 +82,12 @@ namespace DotCompute.Abstractions.Memory
         /// <summary>
         /// Memory should be allocated from a memory pool for better performance.
         /// </summary>
-        Pooled = 1 << 13
+        Pooled = 1 << 13,
+
+        /// <summary>
+        /// Memory should be allocated local to the device for optimal access.
+        /// </summary>
+        DeviceLocal = 1 << 14
     }
 
     /// <summary>

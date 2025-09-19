@@ -49,5 +49,5 @@ public class KernelParameter
     /// <summary>
     /// Gets or sets additional parameter metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }

@@ -649,8 +649,12 @@ public sealed class MetalCommandStream : IDisposable
 
     private static bool DetectAppleSilicon()
     {
-        if (!OperatingSystem.IsMacOS()) return false;
-        
+        if (!OperatingSystem.IsMacOS())
+        {
+            return false;
+        }
+
+
         try
         {
             return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == 

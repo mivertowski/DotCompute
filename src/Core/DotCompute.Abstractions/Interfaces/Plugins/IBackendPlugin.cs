@@ -264,17 +264,17 @@ public class PluginValidationResult
     /// <summary>
     /// Gets the validation errors.
     /// </summary>
-    public IList<string> Errors { get; } = new List<string>();
+    public IList<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets the validation warnings.
     /// </summary>
-    public IList<string> Warnings { get; } = new List<string>();
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets additional validation metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = new();
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>
@@ -320,7 +320,7 @@ public class PluginMetrics
     /// <summary>
     /// Gets custom plugin-specific metrics.
     /// </summary>
-    public Dictionary<string, object> CustomMetrics { get; } = new();
+    public Dictionary<string, object> CustomMetrics { get; } = [];
 }
 
 /// <summary>
@@ -372,7 +372,7 @@ public class PluginErrorEventArgs(Exception exception, string context, Dictionar
     /// <summary>
     /// Gets additional error data.
     /// </summary>
-    public Dictionary<string, object> AdditionalData { get; } = additionalData ?? new();
+    public Dictionary<string, object> AdditionalData { get; } = additionalData ?? [];
 }
 
 /// <summary>
@@ -403,5 +403,5 @@ public class PluginHealthChangedEventArgs(PluginHealth oldHealth, PluginHealth n
     /// <summary>
     /// Gets additional health data.
     /// </summary>
-    public Dictionary<string, object> HealthData { get; } = healthData ?? new();
+    public Dictionary<string, object> HealthData { get; } = healthData ?? [];
 }

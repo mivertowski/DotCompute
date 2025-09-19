@@ -51,7 +51,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public LogContext StartContext(string operationType, string? correlationId = null)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(MetalProductionLogger));
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(MetalProductionLogger));
+        }
+
 
         correlationId ??= GenerateCorrelationId();
         
@@ -77,7 +81,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void EndContext(LogContext context, bool success = true, Dictionary<string, object>? additionalProperties = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var duration = DateTimeOffset.UtcNow - context.StartTime;
         
@@ -112,7 +120,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void LogMemoryAllocation(long sizeBytes, TimeSpan duration, bool success, string? correlationId = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         correlationId ??= GenerateCorrelationId();
 
@@ -144,7 +156,11 @@ public sealed class MetalProductionLogger : IDisposable
     public void LogKernelExecution(string correlationId, string kernelName, TimeSpan duration, long dataSize, 
         bool success, Dictionary<string, object>? additionalProperties = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var throughputMBps = dataSize > 0 && duration.TotalSeconds > 0 
             ? (dataSize / (1024.0 * 1024.0)) / duration.TotalSeconds 
@@ -192,7 +208,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void LogDeviceUtilization(Dictionary<string, object> utilizationMetrics, string? correlationId = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         correlationId ??= GenerateCorrelationId();
 
@@ -210,7 +230,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void LogError(string correlationId, MetalError error, string context, Dictionary<string, object>? additionalContext = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var properties = new Dictionary<string, object>
         {
@@ -252,7 +276,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void LogMemoryPressure(MemoryPressureLevel level, double percentage, string? correlationId = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         correlationId ??= GenerateCorrelationId();
 
@@ -282,7 +310,11 @@ public sealed class MetalProductionLogger : IDisposable
     public void LogResourceUsage(ResourceType type, long currentUsage, long peakUsage, long limit, 
         double utilizationPercentage, string? correlationId = null)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         correlationId ??= GenerateCorrelationId();
 
@@ -333,7 +365,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     private void LogStackTrace(string correlationId, string stackTrace)
     {
-        if (!_options.EnableStackTraceLogging) return;
+        if (!_options.EnableStackTraceLogging)
+        {
+            return;
+        }
+
 
         var properties = new Dictionary<string, object>
         {
@@ -351,9 +387,13 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     private void LogStructuredEvent(string eventType, LogLevel logLevel, string correlationId, Dictionary<string, object> properties)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         // Add common properties
+
         properties["event_type"] = eventType;
         properties["correlation_id"] = correlationId;
         properties["timestamp"] = DateTimeOffset.UtcNow;
@@ -432,7 +472,11 @@ public sealed class MetalProductionLogger : IDisposable
 
     private void FlushLogBuffer(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var entriesToFlush = new List<StructuredLogEntry>();
         
@@ -454,7 +498,11 @@ public sealed class MetalProductionLogger : IDisposable
 
     private async Task WriteToExternalSystems(StructuredLogEntry entry)
     {
-        if (_options.ExternalLogEndpoints == null) return;
+        if (_options.ExternalLogEndpoints == null)
+        {
+            return;
+        }
+
 
         foreach (var endpoint in _options.ExternalLogEndpoints)
         {
@@ -487,7 +535,11 @@ public sealed class MetalProductionLogger : IDisposable
     /// </summary>
     public void PerformCleanup(DateTimeOffset cutoffTime)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var expiredContexts = _activeContexts
             .Where(kvp => kvp.Value.StartTime < cutoffTime)
@@ -670,9 +722,24 @@ public sealed class MetalProductionLogger : IDisposable
 
     private static string GetPerformanceTier(double durationMs, double throughputMBps)
     {
-        if (durationMs < 10 && throughputMBps > 1000) return "premium";
-        if (durationMs < 50 && throughputMBps > 500) return "high";
-        if (durationMs < 100 && throughputMBps > 100) return "standard";
+        if (durationMs < 10 && throughputMBps > 1000)
+        {
+            return "premium";
+        }
+
+
+        if (durationMs < 50 && throughputMBps > 500)
+        {
+            return "high";
+        }
+
+
+        if (durationMs < 100 && throughputMBps > 100)
+        {
+            return "standard";
+        }
+
+
         return "basic";
     }
 

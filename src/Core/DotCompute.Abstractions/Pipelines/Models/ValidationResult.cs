@@ -29,12 +29,12 @@ public sealed class ValidationResult
     /// <summary>
     /// Gets or sets validation errors.
     /// </summary>
-    public IList<string> Errors { get; set; } = new List<string>();
+    public IList<string> Errors { get; set; } = [];
 
     /// <summary>
     /// Gets or sets validation warnings.
     /// </summary>
-    public IList<string> Warnings { get; set; } = new List<string>();
+    public IList<string> Warnings { get; set; } = [];
 
     /// <summary>
     /// Creates a successful validation result.

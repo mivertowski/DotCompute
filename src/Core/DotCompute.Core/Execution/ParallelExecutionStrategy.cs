@@ -930,7 +930,7 @@ namespace DotCompute.Core.Execution
             {
                 Name = arg.Name,
                 Type = arg.Type,
-                Value = arg.Value,
+                Value = arg.Value!,
                 Size = arg.Size,
                 IsOutput = arg.IsOutput
             }).ToArray();
@@ -938,22 +938,13 @@ namespace DotCompute.Core.Execution
 
         /// <summary>
         /// Creates a Kernels-compatible kernel from an Execution kernel wrapper.
+        /// TODO: Replace with proper implementation when concrete ManagedCompiledKernel is available
         /// </summary>
         private static DotCompute.Abstractions.Kernels.Compilation.ManagedCompiledKernel CreateKernelsCompatibleKernel(DotCompute.Core.Execution.ManagedCompiledKernel executionKernel)
         {
-            return new DotCompute.Abstractions.Kernels.Compilation.ManagedCompiledKernel
-            {
-                Name = executionKernel.Name,
-                Binary = [], // Simplified for demo - TODO
-                Parameters = [], // Simplified for demo - TODO
-                Handle = IntPtr.Zero,
-                SharedMemorySize = 0,
-                PerformanceMetadata = new Dictionary<string, object>
-                {
-                    ["ExecutionCount"] = executionKernel.ExecutionCount,
-                    ["TotalExecutionTime"] = executionKernel.TotalExecutionTime.TotalMilliseconds
-                }
-            };
+            // Temporary stub to allow compilation - TODO: Implement proper conversion
+            // when concrete ManagedCompiledKernel implementation is available
+            throw new NotImplementedException("Kernel conversion not yet implemented - requires concrete ManagedCompiledKernel");
         }
 
         #endregion

@@ -108,22 +108,22 @@ namespace DotCompute.Abstractions.Pipelines.Results
         /// Gets the net memory change (final - initial) in bytes.
         /// Positive values indicate memory growth, negative values indicate memory reduction.
         /// </summary>
-        public long? NetMemoryChange =>
-            (FinalMemoryUsage.HasValue && InitialMemoryUsage.HasValue)
+        public long? NetMemoryChange
+            => (FinalMemoryUsage.HasValue && InitialMemoryUsage.HasValue)
                 ? FinalMemoryUsage.Value - InitialMemoryUsage.Value
                 : null;
 
         /// <summary>
         /// Gets the memory efficiency ratio (useful operations per byte allocated).
         /// </summary>
-        public double? MemoryEfficiency =>
-            TotalMemoryAllocated > 0 ? (double)(TotalMemoryFreed) / TotalMemoryAllocated : null;
+        public double? MemoryEfficiency
+            => TotalMemoryAllocated > 0 ? (double)(TotalMemoryFreed) / TotalMemoryAllocated : null;
 
         /// <summary>
         /// Gets the pool cache hit ratio (when pooling is used).
         /// </summary>
-        public double? PoolCacheHitRatio =>
-            (PoolCacheHits.HasValue && PoolCacheMisses.HasValue && (PoolCacheHits.Value + PoolCacheMisses.Value) > 0)
+        public double? PoolCacheHitRatio
+            => (PoolCacheHits.HasValue && PoolCacheMisses.HasValue && (PoolCacheHits.Value + PoolCacheMisses.Value) > 0)
                 ? (double)PoolCacheHits.Value / (PoolCacheHits.Value + PoolCacheMisses.Value)
                 : null;
 
@@ -232,7 +232,7 @@ namespace DotCompute.Abstractions.Pipelines.Results
         private static string FormatBytes(long bytes)
         {
             string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
-            int counter = 0;
+            var counter = 0;
             double number = bytes;
             while (Math.Round(number / 1024) >= 1)
             {

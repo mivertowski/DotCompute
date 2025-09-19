@@ -518,12 +518,12 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
         var sortedLifetimes = analysis.Lifetimes.OrderBy(l => l.AllocationPoint).ToList();
 
 
-        for (int i = 0; i < sortedLifetimes.Count; i++)
+        for (var i = 0; i < sortedLifetimes.Count; i++)
         {
             var current = sortedLifetimes[i];
 
 
-            for (int j = i + 1; j < sortedLifetimes.Count; j++)
+            for (var j = i + 1; j < sortedLifetimes.Count; j++)
             {
                 var candidate = sortedLifetimes[j];
 
@@ -566,7 +566,7 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
         var scores = new Dictionary<int, double>();
 
 
-        for (int node = 0; node < context.NumaNodeCount; node++)
+        for (var node = 0; node < context.NumaNodeCount; node++)
         {
             var cpuScore = cpuUsage.GetScore(node);
             var memoryScore = memoryBandwidth.GetScore(node);
@@ -1052,7 +1052,7 @@ public class MemoryPoolManager
 // Supporting data structures
 public class MemoryAccessProfile
 {
-    public Dictionary<string, OperationAccessPattern> AccessPatterns { get; set; } = new();
+    public Dictionary<string, OperationAccessPattern> AccessPatterns { get; set; } = [];
 
 
     public OperationAccessPattern GetAccessPattern(QueryOperation operation)
@@ -1109,12 +1109,12 @@ public class CacheBlockingStrategy
 
 public class ExecutionSchedule
 {
-    public List<QueryOperation> Operations { get; set; } = new();
+    public List<QueryOperation> Operations { get; set; } = [];
 }
 
 public class MemoryPoolingStrategy
 {
-    public List<MemoryPool> Pools { get; set; } = new();
+    public List<MemoryPool> Pools { get; set; } = [];
 }
 
 public class MemoryPool
@@ -1127,7 +1127,7 @@ public class MemoryPool
 
 public class BufferLifetimeAnalysis
 {
-    public List<BufferLifetime> Lifetimes { get; set; } = new();
+    public List<BufferLifetime> Lifetimes { get; set; } = [];
 }
 
 public class BufferLifetime
@@ -1141,7 +1141,7 @@ public class BufferLifetime
 
 public class BufferReuseStrategy
 {
-    public Dictionary<string, string> ReuseMapping { get; set; } = new();
+    public Dictionary<string, string> ReuseMapping { get; set; } = [];
 }
 
 public class NumaMemoryPolicy

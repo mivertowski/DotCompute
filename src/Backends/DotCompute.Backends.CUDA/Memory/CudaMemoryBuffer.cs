@@ -281,7 +281,11 @@ namespace DotCompute.Backends.CUDA.Memory
             get
             {
                 if (_acceleratorRef?.TryGetTarget(out var accelerator) == true)
+                {
+
                     return accelerator;
+                }
+
 
                 throw new InvalidOperationException("Accelerator reference is no longer available. Buffer may have been created without accelerator context.");
             }
@@ -818,11 +822,25 @@ namespace DotCompute.Backends.CUDA.Memory
             ArgumentNullException.ThrowIfNull(destination);
 
             if (sourceOffset < 0 || sourceOffset >= Count)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(sourceOffset));
+            }
+
+
             if (destinationOffset < 0 || destinationOffset >= destination.Count)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(destinationOffset));
+            }
+
+
             if (count < 0 || sourceOffset + count > Count || destinationOffset + count > destination.Count)
+            {
+
                 throw new ArgumentOutOfRangeException(nameof(count));
+            }
+
 
             return new ValueTask(Task.Run(() =>
             {

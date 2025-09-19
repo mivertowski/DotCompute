@@ -144,7 +144,7 @@ public record PipelineMetrics
 
 
     /// <summary>Stage-specific metrics</summary>
-    public Dictionary<string, object> StageMetrics { get; init; } = new();
+    public Dictionary<string, object> StageMetrics { get; init; } = [];
 }
 
 /// <summary>
@@ -158,7 +158,7 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     private readonly StreamingPipelineConfig _config;
     private readonly IComputeOrchestrator _orchestrator;
     private readonly ILogger<StreamingPipeline<TInput, TOutput>>? _logger;
-    private readonly List<object> _stages = new();
+    private readonly List<object> _stages = [];
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly Timer _healthCheckTimer;
     private readonly Timer _checkpointTimer;
@@ -187,7 +187,7 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
 
     private long _totalProcessed;
     private long _totalErrors;
-    private readonly List<double> _recentLatencies = new();
+    private readonly List<double> _recentLatencies = [];
     private DateTime _startTime = DateTime.UtcNow;
     private bool _disposed;
 
@@ -414,7 +414,7 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     /// </summary>
     private IObservable<TOutput> BuildPipeline()
     {
-        IObservable<object> pipeline = _inputSubject.Cast<object>();
+        var pipeline = _inputSubject.Cast<object>();
 
         foreach (var stageObj in _stages)
         {

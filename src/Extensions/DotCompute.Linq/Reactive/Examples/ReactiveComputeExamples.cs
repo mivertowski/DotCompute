@@ -366,11 +366,11 @@ public class ReactiveComputeExamples
 
             {
                 if (window.Count() == 0)
-
+                {
                     return new TimeSeriesStatistics
 
                     { Sum = 0, Average = 0, StandardDeviation = 0, Timestamp = DateTime.UtcNow };
-
+                }
 
                 var sum = window.Sum(p => p.Value);
                 var average = window.Average(p => p.Value);

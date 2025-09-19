@@ -64,6 +64,11 @@ public sealed class KernelArgument
     public object? MemoryBuffer { get; set; }
 
     /// <summary>
+    /// Gets or sets whether this argument is an output parameter
+    /// </summary>
+    public bool IsOutput { get; set; }
+
+    /// <summary>
     /// Creates a new KernelArgument
     /// </summary>
     public KernelArgument() { }
@@ -164,12 +169,42 @@ public sealed class KernelArgument
     /// </summary>
     private static int GetElementSize(Type elementType)
     {
-        if (elementType == typeof(byte) || elementType == typeof(sbyte)) return 1;
-        if (elementType == typeof(short) || elementType == typeof(ushort)) return 2;
-        if (elementType == typeof(int) || elementType == typeof(uint) || elementType == typeof(float)) return 4;
-        if (elementType == typeof(long) || elementType == typeof(ulong) || elementType == typeof(double)) return 8;
-        if (elementType == typeof(bool)) return 1;
-        if (elementType == typeof(char)) return 2;
+        if (elementType == typeof(byte) || elementType == typeof(sbyte))
+        {
+            return 1;
+        }
+
+
+        if (elementType == typeof(short) || elementType == typeof(ushort))
+        {
+            return 2;
+        }
+
+
+        if (elementType == typeof(int) || elementType == typeof(uint) || elementType == typeof(float))
+        {
+            return 4;
+        }
+
+
+        if (elementType == typeof(long) || elementType == typeof(ulong) || elementType == typeof(double))
+        {
+            return 8;
+        }
+
+
+        if (elementType == typeof(bool))
+        {
+            return 1;
+        }
+
+
+        if (elementType == typeof(char))
+        {
+            return 2;
+        }
+
+
         return IntPtr.Size;
     }
 

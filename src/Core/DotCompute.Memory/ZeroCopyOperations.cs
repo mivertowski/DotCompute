@@ -4,11 +4,12 @@
 using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
 using global::System.Buffers;
+using global::System.IO.MemoryMappedFiles;
 
 namespace DotCompute.Memory;
 
 /// <summary>
-/// High-performance zero-copy operations using Span<T> and Memory<T>:
+/// High-performance zero-copy operations using Span&lt;T&gt; and Memory&lt;T&gt;:
 /// - Memory-mapped file operations for large datasets
 /// - Pinned memory operations with automatic cleanup
 /// - Vectorized memory operations with SIMD acceleration
@@ -153,9 +154,13 @@ public static class ZeroCopyOperations
             throw new ArgumentException("Source and destination spans must have the same length");
         }
 
-        if (source.IsEmpty) return;
+        if (source.IsEmpty)
+        {
+            return;
+        }
 
         // Use vectorized copy for larger data
+
         if (source.Length >= 64 && Unsafe.SizeOf<T>() >= 4)
         {
             VectorizedCopy(source, destination);
@@ -195,10 +200,19 @@ public static class ZeroCopyOperations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool FastEquals<T>(this ReadOnlySpan<T> left, ReadOnlySpan<T> right) where T : unmanaged
     {
-        if (left.Length != right.Length) return false;
-        if (left.IsEmpty) return true;
-        
+        if (left.Length != right.Length)
+        {
+            return false;
+        }
+
+
+        if (left.IsEmpty)
+        {
+            return true;
+        }
+
         // Use vectorized comparison for byte data
+
         if (typeof(T) == typeof(byte))
         {
             return left.SequenceEqual(right);
@@ -217,9 +231,13 @@ public static class ZeroCopyOperations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void FastFill<T>(this Span<T> span, T value) where T : unmanaged
     {
-        if (span.IsEmpty) return;
-        
+        if (span.IsEmpty)
+        {
+            return;
+        }
+
         // Use optimized fill for primitive types
+
         if (typeof(T) == typeof(byte))
         {
             var byteSpan = MemoryMarshal.AsBytes(span);
@@ -244,8 +262,12 @@ public static class ZeroCopyOperations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void FastClear<T>(this Span<T> span) where T : unmanaged
     {
-        if (span.IsEmpty) return;
-        
+        if (span.IsEmpty)
+        {
+            return;
+        }
+
+
         var byteSpan = MemoryMarshal.AsBytes(span);
         byteSpan.Clear();
     }
@@ -395,12 +417,12 @@ public readonly struct PinnedMemoryHandle<T> : IDisposable where T : unmanaged
 
     internal PinnedMemoryHandle(Span<T> span)
     {
-        _handle = span.Pin();
+        _handle = span.ToArray().AsMemory().Pin();
     }
 
     internal PinnedMemoryHandle(ReadOnlySpan<T> span)
     {
-        _handle = span.Pin();
+        _handle = span.ToArray().AsMemory().Pin();
     }
 
     /// <summary>

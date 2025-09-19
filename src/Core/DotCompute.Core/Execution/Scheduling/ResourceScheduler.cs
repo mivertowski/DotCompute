@@ -21,6 +21,7 @@ namespace DotCompute.Core.Execution.Scheduling
     {
         private readonly ILogger _logger;
         private readonly DevicePerformanceEstimator _performanceEstimator;
+        private static readonly DevicePerformanceEstimator _staticPerformanceEstimator = new();
 
         /// <summary>
         /// Initializes a new instance of the ResourceScheduler class.
@@ -289,7 +290,7 @@ namespace DotCompute.Core.Execution.Scheduling
 
             // Calculate device weights based on performance characteristics
             var deviceWeights = await Task.WhenAll(
-                devices.Select(async d => await _performanceEstimator.CalculateDeviceWeightAsync(d, cancellationToken)).ToList());
+                devices.Select(async d => await _staticPerformanceEstimator.CalculateDeviceWeightAsync(d, cancellationToken)).ToList());
 
             var totalWeight = deviceWeights.Sum();
             if (totalWeight <= 0)

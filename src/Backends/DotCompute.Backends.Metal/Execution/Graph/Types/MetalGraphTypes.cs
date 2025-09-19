@@ -141,8 +141,8 @@ public class MetalGraphAnalysis
     public double OptimizationScore { get; set; }
 
     /// <summary>Gets a value indicating whether the graph has optimization opportunities.</summary>
-    public bool HasOptimizationOpportunities =>
-        FusionOpportunities > 0 ||
+    public bool HasOptimizationOpportunities
+        => FusionOpportunities > 0 ||
         MemoryCoalescingOpportunities > 0 ||
         CommandBufferBatchingOpportunities > 0 ||
         ParallelismOpportunities > 0;
@@ -252,11 +252,18 @@ public class MetalOptimizationParameters
         var errors = new List<string>();
         
         if (MaxFusionDepth < 1 || MaxFusionDepth > 10)
+        {
             errors.Add("MaxFusionDepth must be between 1 and 10");
-            
+        }
+
+
         if (MaxCommandBufferSize < 1 || MaxCommandBufferSize > 1024)
+        {
+
             errors.Add("MaxCommandBufferSize must be between 1 and 1024");
-            
+        }
+
+
         return errors;
     }
 }

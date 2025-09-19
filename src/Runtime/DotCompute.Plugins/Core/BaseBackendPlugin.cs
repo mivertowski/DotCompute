@@ -243,7 +243,13 @@ namespace DotCompute.Plugins.Core
         public AcceleratorInfo Info => _accelerator.Info;
 
         /// <inheritdoc/>
+        public string DeviceType => _accelerator.DeviceType;
+
+        /// <inheritdoc/>
         public IUnifiedMemoryManager Memory => _accelerator.Memory;
+
+        /// <inheritdoc/>
+        public IUnifiedMemoryManager MemoryManager => _accelerator.MemoryManager;
 
         /// <inheritdoc/>
         public AcceleratorContext Context => _accelerator.Context;

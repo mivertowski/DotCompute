@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Models.Pipelines;
+using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Telemetry;
 using DotCompute.Core.Pipelines.Models;
 
@@ -83,7 +84,7 @@ namespace DotCompute.Core.Pipelines.Stages
                                 StageId = Id,
                                 Success = false,
                                 ExecutionTime = stopwatch.Elapsed,
-                                OutputData = new Dictionary<string, object>(),
+                                OutputData = [],
                                 Error = result.Error
                             };
                         }
@@ -106,7 +107,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = true,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = outputs.Count > context.Inputs.Count ? outputs : new Dictionary<string, object>(),
+                    OutputData = outputs.Count > context.Inputs.Count ? outputs : [],
                     Metadata = new Dictionary<string, object>
                     {
                         ["BranchTaken"] = conditionResult ? 1 : 0,
@@ -124,7 +125,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = false,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = new Dictionary<string, object>(),
+                    OutputData = [],
                     Error = ex
                 };
             }
@@ -137,7 +138,7 @@ namespace DotCompute.Core.Pipelines.Stages
 
             if (_condition == null)
             {
-                errors.Add(ValidationIssue.Error("BRANCH_001", "Branch condition is required"));
+                errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Branch condition is required", "BRANCH_001"));
             }
 
             var warnings = new List<string>();

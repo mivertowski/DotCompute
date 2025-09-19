@@ -120,8 +120,8 @@ public sealed class RecoveryCoordinator : IDisposable
 
             var recoveryResult = await _circuitBreaker.ExecuteAsync(
                 $"Recovery_{strategy.GetType().Name}",
-                async ct => await strategy.RecoverAsync(error, context, recoveryOptions, ct),
-                cancellationToken) ?? new RecoveryResult { Success = false, Message = "Circuit breaker returned null", Strategy = strategy.GetType().Name };
+                async ct => await ((dynamic)strategy).RecoverAsync(error, context!, recoveryOptions, ct),
+                cancellationToken) ?? new RecoveryResult { Success = false, Message = "Circuit breaker returned null", Strategy = strategy.GetType().Name, Duration = stopwatch.Elapsed };
 
 
             stopwatch.Stop();
@@ -136,12 +136,12 @@ public sealed class RecoveryCoordinator : IDisposable
             else
             {
                 _globalMetrics.RecordFailure(recoveryResult.Duration, error);
-                _logger.LogError("Recovery failed using {Strategy}: {Message}",
-                    strategy.GetType().Name, recoveryResult.Message);
+                var strategyName = strategy.GetType().Name;
+                _logger.LogErrorMessage($"Recovery failed using {strategyName}: {recoveryResult.Message}");
             }
 
 
-            return recoveryResult;
+            return recoveryResult!;
         }
         catch (Exception ex)
         {

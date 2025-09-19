@@ -538,8 +538,8 @@ public sealed class MetalErrorHandler : IDisposable
     /// <summary>
     /// Gets error statistics
     /// </summary>
-    public IReadOnlyDictionary<MetalError, ErrorStatistics> GetErrorStatistics() => 
-        _errorStats.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    public IReadOnlyDictionary<MetalError, ErrorStatistics> GetErrorStatistics()
+        => _errorStats.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// <summary>
     /// Clears error statistics
@@ -555,8 +555,12 @@ public sealed class MetalErrorHandler : IDisposable
     /// </summary>
     private static bool DetectAppleSilicon()
     {
-        if (!OperatingSystem.IsMacOS()) return false;
-        
+        if (!OperatingSystem.IsMacOS())
+        {
+            return false;
+        }
+
+
         try
         {
             return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == 

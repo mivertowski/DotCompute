@@ -9,6 +9,7 @@ using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Execution.Metrics;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Backends.CUDA.Advanced
 {

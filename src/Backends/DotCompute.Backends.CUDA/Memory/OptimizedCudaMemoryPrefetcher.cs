@@ -27,11 +27,11 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
     private readonly CudaContext _context;
     private readonly ILogger<OptimizedCudaMemoryPrefetcher> _logger;
     private readonly ConcurrentDictionary<IntPtr, AccessPattern> _accessPatterns;
-    private readonly ConcurrentQueue<PrefetchRequest> _pendingRequests;
+    private readonly ConcurrentQueue<OptimizedPrefetchRequest> _pendingRequests;
     private readonly SemaphoreSlim _prefetchSemaphore;
     private readonly Timer _maintenanceTimer;
     private readonly PrefetcherConfiguration _config;
-    private readonly CudaStream _prefetchStream;
+    private readonly CudaStreamHandle _prefetchStream;
     
     // Performance counters
     private long _totalPrefetches;
@@ -56,7 +56,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _config = config ?? PrefetcherConfiguration.Default;
         _accessPatterns = new ConcurrentDictionary<IntPtr, AccessPattern>();
-        _pendingRequests = new ConcurrentQueue<PrefetchRequest>();
+        _pendingRequests = new ConcurrentQueue<OptimizedPrefetchRequest>();
         _prefetchSemaphore = new SemaphoreSlim(_config.MaxConcurrentPrefetches, _config.MaxConcurrentPrefetches);
 
         // Create dedicated stream for prefetch operations
@@ -98,7 +98,11 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RecordAccess(IntPtr devicePtr, long offset, long size, MemoryAccessType accessType)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var pattern = _accessPatterns.GetOrAdd(devicePtr, _ => new AccessPattern(devicePtr));
         pattern.RecordAccess(offset, size, accessType, DateTimeOffset.UtcNow);
@@ -128,7 +132,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
     {
         ThrowIfDisposed();
 
-        var request = new PrefetchRequest
+        var request = new OptimizedPrefetchRequest
         {
             DevicePtr = devicePtr,
             Offset = offset,
@@ -237,16 +241,24 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
     /// </summary>
     public void OptimizePrefetchPatterns()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var optimizedCount = 0;
         var currentTime = DateTimeOffset.UtcNow;
 
         foreach (var pattern in _accessPatterns.Values)
         {
-            if (pattern.AccessCount < _config.MinAccessesForOptimization) continue;
+            if (pattern.AccessCount < _config.MinAccessesForOptimization)
+            {
+                continue;
+            }
 
             // Analyze access pattern
+
             var analysis = AnalyzeAccessPattern(pattern);
             
             // Optimize prefetch distance
@@ -272,7 +284,11 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
 
     private async Task PredictAndPrefetchAsync(AccessPattern pattern)
     {
-        if (!pattern.AutoPrefetchEnabled || _disposed) return;
+        if (!pattern.AutoPrefetchEnabled || _disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -305,9 +321,13 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
     private (long offset, long size)? PredictNextAccess(AccessPattern pattern)
     {
         var recentAccesses = pattern.GetRecentAccesses(_config.PredictionWindowSize);
-        if (recentAccesses.Count < 2) return null;
+        if (recentAccesses.Count < 2)
+        {
+            return null;
+        }
 
         // Simple stride detection
+
         var strides = new List<long>();
         for (var i = 1; i < recentAccesses.Count; i++)
         {
@@ -334,7 +354,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         return null;
     }
 
-    private async Task ExecutePrefetchRequest(PrefetchRequest request)
+    private async Task ExecutePrefetchRequest(OptimizedPrefetchRequest request)
     {
         await _prefetchSemaphore.WaitAsync();
         try
@@ -366,21 +386,21 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         }
     }
 
-    private async Task ExecuteSequentialPrefetch(PrefetchRequest request)
+    private async Task ExecuteSequentialPrefetch(OptimizedPrefetchRequest request)
     {
         // Prefetch with read-ahead for sequential access
         var prefetchSize = Math.Min(request.Size * 2, _config.MaxPrefetchSize);
         await PrefetchToCacheAsync(request.DevicePtr, request.Offset, prefetchSize, CacheLevel.L2);
     }
 
-    private async Task ExecuteRandomPrefetch(PrefetchRequest request)
+    private async Task ExecuteRandomPrefetch(OptimizedPrefetchRequest request)
     {
         // Conservative prefetch for random access
         var prefetchSize = Math.Min(request.Size, _config.MaxPrefetchSize / 2);
         await PrefetchToCacheAsync(request.DevicePtr, request.Offset, prefetchSize, CacheLevel.L1);
     }
 
-    private async Task ExecuteAdaptivePrefetch(PrefetchRequest request)
+    private async Task ExecuteAdaptivePrefetch(OptimizedPrefetchRequest request)
     {
         // Adaptive prefetch based on current bandwidth utilization
         var bandwidthUtil = await EstimateBandwidthUtilization();
@@ -390,12 +410,12 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         await PrefetchToCacheAsync(request.DevicePtr, request.Offset, prefetchSize, cacheLevel);
     }
 
-    private async Task ExecuteDefaultPrefetch(PrefetchRequest request)
+    private async Task ExecuteDefaultPrefetch(OptimizedPrefetchRequest request)
     {
         await PrefetchToCacheAsync(request.DevicePtr, request.Offset, request.Size, CacheLevel.L2);
     }
 
-    private PrefetchStrategy DetermineOptimalStrategy(PrefetchRequest request)
+    private PrefetchStrategy DetermineOptimalStrategy(OptimizedPrefetchRequest request)
     {
         if (_accessPatterns.TryGetValue(request.DevicePtr, out var pattern))
         {
@@ -408,8 +428,18 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
 
     private PrefetchStrategy DetermineOptimalStrategy(AccessPatternAnalysis analysis)
     {
-        if (analysis.IsSequential) return PrefetchStrategy.Sequential;
-        if (analysis.IsRandom) return PrefetchStrategy.Random;
+        if (analysis.IsSequential)
+        {
+            return PrefetchStrategy.Sequential;
+        }
+
+
+        if (analysis.IsRandom)
+        {
+            return PrefetchStrategy.Random;
+        }
+
+
         return PrefetchStrategy.Adaptive;
     }
 
@@ -477,7 +507,11 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
 
     private void PerformMaintenance(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -615,9 +649,9 @@ internal readonly record struct MemoryAccess(
     DateTimeOffset Timestamp);
 
 /// <summary>
-/// Represents a prefetch request.
+/// Represents an optimized prefetch request.
 /// </summary>
-internal sealed class PrefetchRequest
+internal sealed class OptimizedPrefetchRequest
 {
     public IntPtr DevicePtr { get; set; }
     public long Offset { get; set; }

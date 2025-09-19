@@ -19,5 +19,5 @@ public class PerformanceResult
     public bool Success { get; set; }
     public string? ErrorMessage { get; set; }
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
-    public Dictionary<string, object> AdditionalMetrics { get; set; } = new();
+    public Dictionary<string, object> AdditionalMetrics { get; set; } = [];
 }

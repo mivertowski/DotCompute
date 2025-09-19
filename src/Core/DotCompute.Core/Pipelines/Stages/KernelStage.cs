@@ -16,7 +16,7 @@ using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageEx
 using CoreStageExecutionResult = DotCompute.Core.Pipelines.Models.StageExecutionResult;
 using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;
 using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
-using ValidationIssue = DotCompute.Abstractions.ValidationIssue;
+using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 
 namespace DotCompute.Core.Pipelines.Stages
 {
@@ -195,7 +195,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = true,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = outputs.Count > 0 ? outputs : new Dictionary<string, object>(),
+                    OutputData = outputs.Count > 0 ? outputs : [],
                     MemoryUsed = memoryUsed,
                     Metadata = new Dictionary<string, object>
                     {
@@ -218,7 +218,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = false,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = new Dictionary<string, object>(),
+                    OutputData = [],
                     Error = ex
                 };
             }
@@ -233,7 +233,7 @@ namespace DotCompute.Core.Pipelines.Stages
             // Validate kernel
             if (_kernel == null)
             {
-                errors.Add(ValidationIssue.Error("KERNEL_001", "Kernel is required"));
+                errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Kernel is required", "KERNEL_001"));
             }
 
             // Validate work size
@@ -243,7 +243,7 @@ namespace DotCompute.Core.Pipelines.Stages
             }
             else if (_globalWorkSize.Any(size => size <= 0))
             {
-                errors.Add(ValidationIssue.Error("KERNEL_003", "Global work size must be positive"));
+                errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Global work size must be positive", "KERNEL_003"));
             }
 
             // Validate local work size
@@ -251,11 +251,11 @@ namespace DotCompute.Core.Pipelines.Stages
             {
                 if (_localWorkSize.Length != _globalWorkSize?.Length)
                 {
-                    errors.Add(ValidationIssue.Error("KERNEL_004", "Local work size dimensions must match global work size dimensions"));
+                    errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Local work size dimensions must match global work size dimensions", "KERNEL_004"));
                 }
                 else if (_localWorkSize.Any(size => size <= 0))
                 {
-                    errors.Add(ValidationIssue.Error("KERNEL_005", "Local work size must be positive"));
+                    errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Local work size must be positive", "KERNEL_005"));
                 }
             }
 

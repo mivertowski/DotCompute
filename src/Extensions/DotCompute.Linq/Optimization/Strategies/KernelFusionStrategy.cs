@@ -79,14 +79,14 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
 
         // Create nodes for each operation
 
-        for (int i = 0; i < operations.Count; i++)
+        for (var i = 0; i < operations.Count; i++)
         {
             var node = new OperationNode
             {
                 Id = i,
                 Operation = operations[i],
-                Dependencies = new List<int>(),
-                Dependents = new List<int>()
+                Dependencies = [],
+                Dependents = []
             };
             nodes[i] = node;
             graph.Nodes.Add(node);
@@ -94,7 +94,7 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
 
         // Build dependencies based on data flow
 
-        for (int i = 1; i < operations.Count; i++)
+        for (var i = 1; i < operations.Count; i++)
         {
             var current = operations[i];
             var previous = operations[i - 1];
@@ -288,7 +288,7 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
     {
         var group = new FusionGroup
         {
-            Operations = new List<OperationNode> { startNode },
+            Operations = [startNode],
             FusionComplexity = CalculateOperationComplexity(startNode.Operation)
         };
 
@@ -494,7 +494,7 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
         double savings = 0;
 
 
-        for (int i = 0; i < group.Operations.Count - 1; i++)
+        for (var i = 0; i < group.Operations.Count - 1; i++)
         {
             var current = group.Operations[i].Operation;
             var next = group.Operations[i + 1].Operation;
@@ -588,7 +588,7 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
                 IsOutput = p.IsPointer && (p.Name == "output" || p.Name.Contains("result")),
                 ElementType = p.Type.IsArray ? p.Type.GetElementType() : null
             }).ToArray() ?? [],
-            Metadata = source.Metadata ?? new Dictionary<string, object>()
+            Metadata = source.Metadata ?? []
         };
     }
 
@@ -604,8 +604,8 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
                 Name = p.Name,
                 Type = p.Type,
                 IsPointer = p.IsOutput || p.Name.Contains("output") || p.Name.Contains("result")
-            }).ToList() ?? new List<KernelParameter>(),
-            Metadata = source.Metadata ?? new Dictionary<string, object>(),
+            }).ToList() ?? [],
+            Metadata = source.Metadata ?? [],
             TargetBackend = source.TargetBackend
         };
     }
@@ -614,16 +614,16 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
 // Supporting classes
 public class OperationDependencyGraph
 {
-    public List<OperationNode> Nodes { get; set; } = new();
-    public List<DependencyEdge> Edges { get; set; } = new();
+    public List<OperationNode> Nodes { get; set; } = [];
+    public List<DependencyEdge> Edges { get; set; } = [];
 }
 
 public class OperationNode
 {
     public int Id { get; set; }
     public QueryOperation Operation { get; set; } = new();
-    public List<int> Dependencies { get; set; } = new();
-    public List<int> Dependents { get; set; } = new();
+    public List<int> Dependencies { get; set; } = [];
+    public List<int> Dependents { get; set; } = [];
 }
 
 public class DependencyEdge
@@ -635,7 +635,7 @@ public class DependencyEdge
 
 public class FusionGroup
 {
-    public List<OperationNode> Operations { get; set; } = new();
+    public List<OperationNode> Operations { get; set; } = [];
     public long FusionComplexity { get; set; }
     public double EstimatedBenefit { get; set; }
 }
@@ -700,19 +700,20 @@ public class KernelCodeGenerator
 
     private async Task<string> GenerateKernelSource(FusionGroup group, ExecutionContext context)
     {
-        var sourceBuilder = new List<string>();
+        var sourceBuilder = new List<string>
+        {
+            // Generate kernel header
 
-        // Generate kernel header
+            GenerateKernelHeader(group),
 
-        sourceBuilder.Add(GenerateKernelHeader(group));
+            // Generate fused computation logic
 
-        // Generate fused computation logic
+            await GenerateFusedLogic(group, context),
 
-        sourceBuilder.Add(await GenerateFusedLogic(group, context));
+            // Generate kernel footer
 
-        // Generate kernel footer
-
-        sourceBuilder.Add(GenerateKernelFooter());
+            GenerateKernelFooter()
+        };
 
 
         return string.Join("\n", sourceBuilder);
@@ -874,9 +875,9 @@ public record GeneratedKernel
 {
     public string Name { get; init; } = string.Empty;
     public string SourceCode { get; init; } = string.Empty;
-    public List<KernelParameter> Parameters { get; init; } = new();
-    public List<string> Optimizations { get; init; } = new();
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public List<KernelParameter> Parameters { get; init; } = [];
+    public List<string> Optimizations { get; init; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
     public string TargetBackend { get; init; } = "CPU";
 }
 

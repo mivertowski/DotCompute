@@ -70,9 +70,9 @@ namespace DotCompute.Core.Pipelines
             _cacheService = cacheService;
             _logger = logger;
 
-            _steps = new List<KernelChainStep>();
-            _context = new Dictionary<string, object>();
-            _errorHandlers = new List<Func<Exception, ErrorHandlingStrategy>>();
+            _steps = [];
+            _context = [];
+            _errorHandlers = [];
         }
 
         /// <inheritdoc/>
@@ -165,7 +165,7 @@ namespace DotCompute.Core.Pipelines
                 {
                     Condition = condition,
                     TruePath = trueChain._steps,
-                    FalsePath = falseChain?._steps ?? new List<KernelChainStep>()
+                    FalsePath = falseChain?._steps ?? []
                 }
             };
 
@@ -348,7 +348,7 @@ namespace DotCompute.Core.Pipelines
             var stepMetrics = new List<KernelStepMetrics>();
             var errors = new List<Exception>();
             object? finalResult = null;
-            string usedBackend = "Unknown";
+            var usedBackend = "Unknown";
 
             try
             {
@@ -499,7 +499,7 @@ namespace DotCompute.Core.Pipelines
         {
             var stepStopwatch = Stopwatch.StartNew();
             object? result = null;
-            bool wasCached = false;
+            var wasCached = false;
             long memoryUsed = 0;
 
             try
@@ -542,8 +542,10 @@ namespace DotCompute.Core.Pipelines
                 stepMetrics.Add(new KernelStepMetrics
                 {
                     KernelName = step.KernelName ?? $"{step.Type}Step",
+                    StepName = step.KernelName ?? $"{step.Type}Step",
                     StepIndex = step.ExecutionOrder,
                     ExecutionTime = stepStopwatch.Elapsed,
+                    Success = true, // Add required Success property
                     Backend = DetermineUsedBackend(),
                     WasCached = wasCached,
                     MemoryUsed = memoryUsed
@@ -631,7 +633,7 @@ namespace DotCompute.Core.Pipelines
             var errors = new List<Exception>();
 
             // Evaluate condition
-            bool conditionResult = step.BranchCondition.EvaluateCondition(previousResult);
+            var conditionResult = step.BranchCondition.EvaluateCondition(previousResult);
 
 
             var pathToExecute = conditionResult ? step.BranchCondition.TruePath : step.BranchCondition.FalsePath;
@@ -727,10 +729,8 @@ namespace DotCompute.Core.Pipelines
             return new KernelChainValidationResult
             {
                 IsValid = resultsValidation.IsValid,
-                Errors = resultsValidation.Errors?.ToList(),
-                Warnings = resultsValidation.Warnings?.ToList(),
-                ValidationTime = resultsValidation.ValidationTime,
-                StepsValidated = resultsValidation.StepsValidated
+                Errors = resultsValidation.Errors?.ToList() ?? [],
+                Warnings = resultsValidation.Warnings?.ToList() ?? []
             };
         }
 

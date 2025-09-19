@@ -167,11 +167,11 @@ public class PipelineValidationResult
 
 
     /// <summary>Gets validation errors if any.</summary>
-    public List<string> Errors { get; set; } = new();
+    public List<string> Errors { get; set; } = [];
 
 
     /// <summary>Gets validation warnings if any.</summary>
-    public List<string> Warnings { get; set; } = new();
+    public List<string> Warnings { get; set; } = [];
 }
 
 /// <summary>
@@ -254,12 +254,12 @@ public class PipelineErrorRecoveryResult<T>
     /// <summary>
     /// Gets recovery actions that were attempted.
     /// </summary>
-    public List<string> RecoveryActions { get; set; } = new();
+    public List<string> RecoveryActions { get; set; } = [];
 
     /// <summary>
     /// Gets any warnings from the recovery process.
     /// </summary>
-    public List<string> Warnings { get; set; } = new();
+    public List<string> Warnings { get; set; } = [];
 }
 
 /// <summary>
@@ -534,7 +534,7 @@ public class WorkloadCharacteristics
     public MemoryAccessPattern AccessPattern { get; set; }
 
     /// <summary>Additional custom optimization hints.</summary>
-    public List<string> OptimizationHints { get; set; } = new();
+    public List<string> OptimizationHints { get; set; } = [];
 
     /// <summary>Secondary data size in bytes.</summary>
     public long SecondaryDataSize { get; set; }
@@ -570,7 +570,7 @@ public class BackendRecommendation
     public string Reasoning { get; set; } = string.Empty;
 
     /// <summary>Backend performance estimates.</summary>
-    public Dictionary<string, BackendEstimate> BackendEstimates { get; set; } = new();
+    public Dictionary<string, BackendEstimate> BackendEstimates { get; set; } = [];
 }
 
 /// <summary>

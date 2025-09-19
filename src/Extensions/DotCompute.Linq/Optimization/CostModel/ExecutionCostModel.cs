@@ -810,7 +810,7 @@ public sealed class ExecutionCostModel
 // Supporting classes and data structures
 public class PerformanceModelRegistry
 {
-    private readonly Dictionary<string, PerformanceModel> _models = new();
+    private readonly Dictionary<string, PerformanceModel> _models = [];
 
     public bool TryGetModel(string key, out PerformanceModel model)
     {

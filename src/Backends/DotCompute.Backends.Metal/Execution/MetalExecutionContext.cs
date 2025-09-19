@@ -587,8 +587,12 @@ public sealed class MetalExecutionContext : IDisposable
 
     private static bool DetectAppleSilicon()
     {
-        if (!OperatingSystem.IsMacOS()) return false;
-        
+        if (!OperatingSystem.IsMacOS())
+        {
+            return false;
+        }
+
+
         try
         {
             return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == 
@@ -824,9 +828,12 @@ internal sealed class MetalPerformanceCollector : IDisposable
     public void RecordOperation(string operationId, double durationMs, bool success)
     {
         if (!_options.EnablePerformanceTracking || _disposed)
+        {
             return;
+        }
 
         // Record operation metrics
+
         _metrics.AddOrUpdate($"operation_{operationId}_duration", durationMs, (_, _) => durationMs);
         _metrics.AddOrUpdate($"operation_{operationId}_success", success, (_, _) => success);
     }
@@ -834,7 +841,10 @@ internal sealed class MetalPerformanceCollector : IDisposable
     public void RecordResourceAllocation(MetalResourceType type, long sizeInBytes)
     {
         if (!_options.EnablePerformanceTracking || _disposed)
+        {
             return;
+        }
+
 
         var key = $"resource_{type}_allocated";
         _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);
@@ -843,7 +853,10 @@ internal sealed class MetalPerformanceCollector : IDisposable
     public void RecordResourceDeallocation(MetalResourceType type, long sizeInBytes)
     {
         if (!_options.EnablePerformanceTracking || _disposed)
+        {
             return;
+        }
+
 
         var key = $"resource_{type}_deallocated";
         _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);

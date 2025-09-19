@@ -25,9 +25,13 @@ public static class ErrorHandlingUtilities
     /// </summary>
     public static ErrorClassification ClassifyError(Exception exception)
     {
-        if (exception == null) return ErrorClassification.Unknown;
+        if (exception == null)
+        {
+            return ErrorClassification.Unknown;
+        }
 
         // Check cache first for performance
+
         var exceptionType = exception.GetType();
         if (ErrorClassificationCache.TryGetValue(exceptionType, out var cached))
         {
@@ -63,7 +67,7 @@ public static class ErrorHandlingUtilities
             Timestamp = DateTimeOffset.UtcNow,
             StackTrace = exception.StackTrace ?? string.Empty,
             InnerExceptions = CollectInnerExceptions(exception),
-            AdditionalContext = additionalContext ?? new Dictionary<string, object>()
+            AdditionalContext = additionalContext ?? []
         };
 
         // Add runtime context
@@ -266,7 +270,11 @@ public static class ErrorHandlingUtilities
         var errorList = errors.ToList();
 
         if (errorList.Count == 0)
+        {
+
             return new InvalidOperationException($"No errors provided for aggregation in operation: {operation}");
+        }
+
 
         if (errorList.Count == 1)
         {
@@ -363,7 +371,11 @@ public static class ErrorHandlingUtilities
         foreach (var priority in priorityOrder)
         {
             if (innerClassifications.Contains(priority))
+            {
+
                 return priority;
+            }
+
         }
 
         return ErrorClassification.Unknown;
@@ -471,7 +483,10 @@ public static class ErrorHandlingUtilities
     private static Exception EnrichException(Exception exception, ErrorContext context)
     {
         // Add context to exception data without modifying the original exception
-        if (exception.Data.IsReadOnly) return exception;
+        if (exception.Data.IsReadOnly)
+        {
+            return exception;
+        }
 
         exception.Data["ErrorId"] = context.ErrorId;
         exception.Data["Classification"] = context.Classification.ToString();

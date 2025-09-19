@@ -330,8 +330,12 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
 
     private async Task DisposeResourceAsync(LazyResource<T> resource)
     {
-        if (!resource.IsInitialized) return;
-        
+        if (!resource.IsInitialized)
+        {
+            return;
+        }
+
+
         try
         {
             if (_disposer != null)
@@ -358,8 +362,12 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
 
     private void PerformMaintenance(object? state)
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
+
         try
         {
             _ = Task.Run(async () =>
@@ -376,8 +384,12 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
 
     private async Task CleanupExpiredResourcesAsync()
     {
-        if (!_config.ResourceLifetime.HasValue) return;
-        
+        if (!_config.ResourceLifetime.HasValue)
+        {
+            return;
+        }
+
+
         var cutoff = DateTimeOffset.UtcNow - _config.ResourceLifetime.Value;
         var expiredKeys = new List<string>();
         

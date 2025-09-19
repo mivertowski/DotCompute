@@ -20,8 +20,8 @@ internal sealed class ParallelMergingStrategy : IOptimizationStrategy
     public OptimizationType SupportedOptimizations => OptimizationType.ParallelMerging;
     public OptimizationType Type => OptimizationType.ParallelMerging;
 
-    public bool CanOptimize(IKernelPipeline pipeline) =>
-        pipeline?.Stages?.Count > 1;
+    public bool CanOptimize(IKernelPipeline pipeline)
+        => pipeline?.Stages?.Count > 1;
     public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
 
     public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)

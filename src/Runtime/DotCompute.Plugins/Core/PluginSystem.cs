@@ -388,7 +388,7 @@ public class PluginSystem : IDisposable
         if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
         {
             _logger?.LogWarning("Plugin type discovery is not supported in AOT scenarios for assembly {Path}", assemblyPath);
-            return ValueTask.FromResult<string?>(null);
+            return Task.FromResult<string?>(null);
         }
 
         try
@@ -400,12 +400,12 @@ public class PluginSystem : IDisposable
             var pluginTypes = DiscoverPluginTypes(assembly);
             var firstType = pluginTypes.FirstOrDefault();
 
-            return ValueTask.FromResult(firstType?.FullName);
+            return Task.FromResult(firstType?.FullName);
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Failed to discover plugin type in assembly {Path}", assemblyPath);
-            return ValueTask.FromResult<string?>(null);
+            return Task.FromResult<string?>(null);
         }
     }
 

@@ -108,5 +108,15 @@ public enum PipelineEventType
     /// <summary>
     /// Performance metric collected
     /// </summary>
-    PerformanceMetric = 20
+    PerformanceMetric = 20,
+
+    /// <summary>
+    /// Error occurred during execution
+    /// </summary>
+    Error = 21,
+
+    /// <summary>
+    /// Optimization was applied
+    /// </summary>
+    OptimizationApplied = 22
 }

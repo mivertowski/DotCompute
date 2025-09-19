@@ -190,7 +190,7 @@ public static class OptimizationServiceExtensions
                 optimization.EnableDetailedProfiling = false; // Disable for maximum performance
                 optimization.MaxCpuUtilizationThreshold = 0.95;
                 optimization.MaxMemoryUtilizationThreshold = 0.9;
-                optimization.PreferredBackends = new List<string> { "CUDA", "Metal", "OpenCL" }; // Prefer GPU
+                optimization.PreferredBackends = ["CUDA", "Metal", "OpenCL"]; // Prefer GPU
             },
             selection =>
             {
@@ -223,7 +223,7 @@ public static class OptimizationServiceExtensions
                 optimization.EnableDetailedProfiling = false;
                 optimization.MaxCpuUtilizationThreshold = 0.6;
                 optimization.MaxMemoryUtilizationThreshold = 0.5;
-                optimization.PreferredBackends = new List<string> { "CPU" }; // Prefer stable CPU backend
+                optimization.PreferredBackends = ["CPU"]; // Prefer stable CPU backend
             },
             selection =>
             {
@@ -257,7 +257,7 @@ public static class OptimizationServiceExtensions
                 optimization.ProfilingSampleIntervalMs = 200; // Less frequent for long-running kernels
                 optimization.MaxCpuUtilizationThreshold = 0.9;
                 optimization.MaxMemoryUtilizationThreshold = 0.85; // Allow higher memory usage
-                optimization.PreferredBackends = new List<string> { "CUDA", "Metal" }; // Prefer GPU for ML
+                optimization.PreferredBackends = ["CUDA", "Metal"]; // Prefer GPU for ML
             },
             selection =>
             {

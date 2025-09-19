@@ -166,7 +166,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = success,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = outputs.Count > context.Inputs.Count ? outputs : new Dictionary<string, object>(),
+                    OutputData = outputs.Count > context.Inputs.Count ? outputs : [],
                     MemoryUsed = memoryUsed,
                     Metadata = new Dictionary<string, object>
                     {
@@ -189,7 +189,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = false,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = new Dictionary<string, object>(),
+                    OutputData = [],
                     MemoryUsed = 0,
                     Error = ex
                 };

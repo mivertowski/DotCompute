@@ -114,13 +114,19 @@ public enum OptimizationType
     Vectorization = 1 << 15,
 
     /// <summary>
+    /// Parallel merging optimization for combining parallel execution stages.
+    /// Merges independent parallel operations to improve resource utilization.
+    /// </summary>
+    ParallelMerging = 1 << 16,
+
+    /// <summary>
     /// Comprehensive optimization applying all applicable optimizations.
     /// Includes all optimization types that are safe and beneficial.
     /// </summary>
     Comprehensive = KernelFusion | MemoryAccess | LoopOptimization | Parallelization |
                     BackendSpecific | DataLayout | InstructionScheduling | DeadCodeElimination |
                     ConstantFolding | Inlining | MathOptimization | MemoryPooling |
-                    StageReordering | BranchOptimization | CacheOptimization | Vectorization,
+                    StageReordering | BranchOptimization | CacheOptimization | Vectorization | ParallelMerging,
 
     /// <summary>
     /// Conservative optimizations that are safe and unlikely to cause issues.

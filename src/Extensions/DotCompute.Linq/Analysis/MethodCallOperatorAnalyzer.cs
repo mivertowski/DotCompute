@@ -76,7 +76,7 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
 
         // Look for chainable LINQ operations
 
-        for (int i = 0; i < methodCalls.Count - 1; i++)
+        for (var i = 0; i < methodCalls.Count - 1; i++)
         {
             var current = methodCalls[i];
             var next = methodCalls[i + 1];
@@ -145,7 +145,7 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
             IsComputeFriendly = false,
             SupportsVectorization = false,
             OptimalVectorWidth = 1,
-            BackendCompatibility = new Dictionary<BackendType, OperatorCompatibility>(),
+            BackendCompatibility = [],
             OptimizationHints = [],
             Complexity = ComputationalComplexity.Linear,
             FusionOpportunities = []
@@ -227,21 +227,22 @@ public class MethodCallOperatorAnalyzer : IOperatorAnalyzer
     /// </summary>
     private static Dictionary<BackendType, OperatorCompatibility> AnalyzeBackendCompatibility(System.Reflection.MethodInfo method)
     {
-        var compatibility = new Dictionary<BackendType, OperatorCompatibility>();
-
-        // CPU is generally compatible with most methods
-
-        compatibility[BackendType.CPU] = new OperatorCompatibility
+        var compatibility = new Dictionary<BackendType, OperatorCompatibility>
         {
-            IsSupported = true,
-            SupportLevel = SupportLevel.Full,
-            Alternatives = [],
-            Performance = new PerformanceCharacteristics
+            // CPU is generally compatible with most methods
+
+            [BackendType.CPU] = new OperatorCompatibility
             {
-                Throughput = 1000.0,
-                Latency = 0.001,
-                MemoryBandwidth = 100.0,
-                ComputeIntensity = 10.0
+                IsSupported = true,
+                SupportLevel = SupportLevel.Full,
+                Alternatives = [],
+                Performance = new PerformanceCharacteristics
+                {
+                    Throughput = 1000.0,
+                    Latency = 0.001,
+                    MemoryBandwidth = 100.0,
+                    ComputeIntensity = 10.0
+                }
             }
         };
 

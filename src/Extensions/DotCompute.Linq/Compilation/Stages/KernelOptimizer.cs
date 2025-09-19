@@ -238,19 +238,20 @@ internal class OptimizationPipelineBuilder
 
     private IEnumerable<IKernelOptimization> BuildGeneralOptimizations(OptimizationContext context)
     {
-        var optimizations = new List<IKernelOptimization>();
+        var optimizations = new List<IKernelOptimization>
+        {
+            // Dead code elimination
 
-        // Dead code elimination
+            new DeadCodeEliminationOptimization(),
 
-        optimizations.Add(new DeadCodeEliminationOptimization());
+            // Constant folding
 
-        // Constant folding
+            new ConstantFoldingOptimization(),
 
-        optimizations.Add(new ConstantFoldingOptimization());
+            // Common subexpression elimination
 
-        // Common subexpression elimination
-
-        optimizations.Add(new CommonSubexpressionEliminationOptimization());
+            new CommonSubexpressionEliminationOptimization()
+        };
 
         // Memory access pattern optimization
 
@@ -332,15 +333,16 @@ internal class OptimizationPipelineBuilder
 
     private IEnumerable<IKernelOptimization> BuildCudaOptimizations(OptimizationContext context)
     {
-        var optimizations = new List<IKernelOptimization>();
+        var optimizations = new List<IKernelOptimization>
+        {
+            // Memory coalescing
 
-        // Memory coalescing
+            new MemoryCoalescingOptimization(),
 
-        optimizations.Add(new MemoryCoalescingOptimization());
+            // Occupancy optimization
 
-        // Occupancy optimization
-
-        optimizations.Add(new OccupancyOptimization());
+            new OccupancyOptimization()
+        };
 
         // Shared memory utilization
 
@@ -375,15 +377,16 @@ internal class OptimizationPipelineBuilder
 
     private IEnumerable<IKernelOptimization> BuildPostProcessingOptimizations(OptimizationContext context)
     {
-        var optimizations = new List<IKernelOptimization>();
+        var optimizations = new List<IKernelOptimization>
+        {
+            // Code layout optimization
 
-        // Code layout optimization
+            new CodeLayoutOptimization(),
 
-        optimizations.Add(new CodeLayoutOptimization());
+            // Final cleanup
 
-        // Final cleanup
-
-        optimizations.Add(new FinalCleanupOptimization());
+            new FinalCleanupOptimization()
+        };
 
 
         return optimizations;
@@ -647,12 +650,12 @@ internal record OptimizationResult(
         OperatorsGeneratedKernel optimizedKernel,
         string description,
         double estimatedSpeedup,
-        long memoryImpact = 0) =>
-        new(true, optimizedKernel, description, estimatedSpeedup, memoryImpact);
+        long memoryImpact = 0)
+        => new(true, optimizedKernel, description, estimatedSpeedup, memoryImpact);
 
 
-    public static OptimizationResult NotApplied() =>
-        new(false, null, "Optimization not applicable", 1.0, 0);
+    public static OptimizationResult NotApplied()
+        => new(false, null, "Optimization not applicable", 1.0, 0);
 }
 
 internal record AppliedOptimization(
@@ -867,14 +870,14 @@ internal class FinalCleanupOptimization : IKernelOptimization
 /// </summary>
 internal class OptimizationMetrics
 {
-    private readonly Dictionary<BackendType, List<TimeSpan>> _optimizationTimes = new();
-    private readonly Dictionary<BackendType, int> _errorCounts = new();
+    private readonly Dictionary<BackendType, List<TimeSpan>> _optimizationTimes = [];
+    private readonly Dictionary<BackendType, int> _errorCounts = [];
 
     public void RecordOptimization(BackendType backend, TimeSpan duration)
     {
         if (!_optimizationTimes.ContainsKey(backend))
         {
-            _optimizationTimes[backend] = new List<TimeSpan>();
+            _optimizationTimes[backend] = [];
         }
 
 
@@ -959,7 +962,7 @@ internal class DeadCodeAnalyzer
     public async Task<List<DeadCodeSegment>> FindDeadCodeAsync(string sourceCode, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return new List<DeadCodeSegment>();
+        return [];
     }
 }
 
@@ -1182,13 +1185,13 @@ internal class GeneratedCompiledKernel : ICompiledKernel
         // Convert object[] args to KernelExecutionParameters
         var parameters = new KernelExecutionParameters
         {
-            Arguments = new Dictionary<string, object>(),
+            Arguments = [],
             GlobalWorkSize = new[] { globalSize },
             LocalWorkSize = new[] { localSize }
         };
 
         // Add arguments with index-based keys
-        for (int i = 0; i < args.Length; i++)
+        for (var i = 0; i < args.Length; i++)
         {
             parameters.Arguments[$"arg{i}"] = args[i];
         }
@@ -1204,11 +1207,11 @@ internal class GeneratedCompiledKernel : ICompiledKernel
         // Convert object[] args to KernelExecutionParameters
         var parameters = new KernelExecutionParameters
         {
-            Arguments = new Dictionary<string, object>()
+            Arguments = []
         };
 
         // Add arguments with index-based keys
-        for (int i = 0; i < args.Length; i++)
+        for (var i = 0; i < args.Length; i++)
         {
             parameters.Arguments[$"arg{i}"] = args[i];
         }

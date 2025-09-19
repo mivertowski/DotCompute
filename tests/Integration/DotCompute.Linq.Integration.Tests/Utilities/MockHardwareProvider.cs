@@ -18,7 +18,7 @@ public class MockHardwareProvider
     public Mock<IAccelerator> GpuAccelerator { get; }
     public Mock<ICudaRuntime> CudaRuntime { get; }
     public Mock<ICompiledKernel> CompiledKernel { get; }
-    public Mock<IUnifiedBuffer> UnifiedBuffer { get; }
+    public Mock<IUnifiedMemoryBuffer> UnifiedBuffer { get; }
 
     public MockHardwareProvider()
     {
@@ -52,7 +52,7 @@ public class MockHardwareProvider
             {
                 var buffer = CreateMockUnifiedBuffer();
                 buffer.Setup(b => b.Length).Returns(size);
-                return (IUnifiedBuffer<object>)buffer.Object;
+                return (IUnifiedMemoryBuffer<object>)buffer.Object;
             });
 
         return mock;
@@ -87,7 +87,7 @@ public class MockHardwareProvider
                 var buffer = CreateMockUnifiedBuffer();
                 buffer.Setup(b => b.Length).Returns(size);
                 buffer.Setup(b => b.DeviceType).Returns(DeviceType.GPU);
-                return (IUnifiedBuffer<object>)buffer.Object;
+                return (IUnifiedMemoryBuffer<object>)buffer.Object;
             });
 
         return mock;
@@ -162,9 +162,9 @@ public class MockHardwareProvider
         return mock;
     }
 
-    private Mock<IUnifiedBuffer> CreateMockUnifiedBuffer()
+    private Mock<IUnifiedMemoryBuffer> CreateMockUnifiedBuffer()
     {
-        var mock = new Mock<IUnifiedBuffer>();
+        var mock = new Mock<IUnifiedMemoryBuffer>();
         
         mock.Setup(x => x.Length).Returns(1000);
         mock.Setup(x => x.ElementSize).Returns(4); // sizeof(float)

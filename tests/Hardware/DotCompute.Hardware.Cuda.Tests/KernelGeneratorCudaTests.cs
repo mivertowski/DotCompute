@@ -66,7 +66,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Calculate expected results
 
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 expected[i] = a[i] + b[i];
             }
@@ -92,12 +92,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             var expected = new float[m * n];
 
             // Calculate expected result
-            for (int i = 0; i < m; i++)
+            for (var i = 0; i < m; i++)
             {
-                for (int j = 0; j < n; j++)
+                for (var j = 0; j < n; j++)
                 {
-                    float sum = 0.0f;
-                    for (int l = 0; l < k; l++)
+                    var sum = 0.0f;
+                    for (var l = 0; l < k; l++)
                     {
                         sum += a[i * k + l] * b[l * n + j];
                     }
@@ -121,14 +121,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Arrange  
             const int size = 1000; // Smaller for debugging
             var data = Enumerable.Range(1, size).Select(i => (float)i).ToArray(); // 1,2,3...1000
-            float expected = 0.0f;
-            for (int i = 0; i < size; i++)
+            var expected = 0.0f;
+            for (var i = 0; i < size; i++)
             {
                 expected += data[i];
             }
 
             // Act - Execute using generated kernel
-            float result = await ExecuteReductionKernel(data);
+            var result = await ExecuteReductionKernel(data);
 
             // Assert
             result.Should().BeApproximately(expected, 10.0f); // Allow for floating-point precision in atomic operations
@@ -152,10 +152,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             var expected = new float[outputSize];
 
             // Calculate expected result
-            for (int i = 0; i < outputSize; i++)
+            for (var i = 0; i < outputSize; i++)
             {
-                float sum = 0.0f;
-                for (int j = 0; j < kernelSize; j++)
+                var sum = 0.0f;
+                for (var j = 0; j < kernelSize; j++)
                 {
                     sum += input[i + j] * kernel[j];
                 }
@@ -196,7 +196,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 callPrices, putPrices);
 
             // Assert - Basic validation
-            for (int i = 0; i < Math.Min(100, numOptions); i++)
+            for (var i = 0; i < Math.Min(100, numOptions); i++)
             {
                 callPrices[i].Should().BeGreaterThan(0);
                 putPrices[i].Should().BeGreaterThan(0);
@@ -382,7 +382,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         // For testing, we'll use direct kernel definitions
         public static void VectorAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
         {
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -393,12 +393,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result,
             int m, int n, int k)
         {
-            for (int i = 0; i < m; i++)
+            for (var i = 0; i < m; i++)
             {
-                for (int j = 0; j < n; j++)
+                for (var j = 0; j < n; j++)
                 {
-                    float sum = 0.0f;
-                    for (int l = 0; l < k; l++)
+                    var sum = 0.0f;
+                    for (var l = 0; l < k; l++)
                     {
                         sum += a[i * k + l] * b[l * n + j];
                     }
@@ -410,8 +410,8 @@ namespace DotCompute.Hardware.Cuda.Tests
         // [Kernel] attribute would specify memory optimization
         public static void Reduction(ReadOnlySpan<float> data, Span<float> result, int length)
         {
-            float sum = 0.0f;
-            for (int i = 0; i < length; i++)
+            var sum = 0.0f;
+            for (var i = 0; i < length; i++)
             {
                 sum += data[i];
             }
@@ -423,10 +423,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             ReadOnlySpan<float> input, ReadOnlySpan<float> kernel, Span<float> output,
             int inputSize, int kernelSize, int outputSize)
         {
-            for (int i = 0; i < outputSize; i++)
+            for (var i = 0; i < outputSize; i++)
             {
-                float sum = 0.0f;
-                for (int j = 0; j < kernelSize; j++)
+                var sum = 0.0f;
+                for (var j = 0; j < kernelSize; j++)
                 {
                     sum += input[i + j] * kernel[j];
                 }
@@ -440,25 +440,25 @@ namespace DotCompute.Hardware.Cuda.Tests
             Span<float> callPrice, Span<float> putPrice,
             float riskFreeRate, float volatility, int numOptions)
         {
-            for (int i = 0; i < numOptions; i++)
+            for (var i = 0; i < numOptions; i++)
             {
-                float stockPriceValue = stockPrice[i];
-                float strikePriceValue = strikePrice[i];
-                float timeToExpiryValue = timeToExpiry[i];
-                float r = riskFreeRate;
-                float sigma = volatility;
+                var stockPriceValue = stockPrice[i];
+                var strikePriceValue = strikePrice[i];
+                var timeToExpiryValue = timeToExpiry[i];
+                var r = riskFreeRate;
+                var sigma = volatility;
 
 
-                float sqrtT = MathF.Sqrt(timeToExpiryValue);
-                float d1 = (MathF.Log(stockPriceValue / strikePriceValue) + (r + 0.5f * sigma * sigma) * timeToExpiryValue) / (sigma * sqrtT);
-                float d2 = d1 - sigma * sqrtT;
+                var sqrtT = MathF.Sqrt(timeToExpiryValue);
+                var d1 = (MathF.Log(stockPriceValue / strikePriceValue) + (r + 0.5f * sigma * sigma) * timeToExpiryValue) / (sigma * sqrtT);
+                var d2 = d1 - sigma * sqrtT;
 
                 // Approximation of normal CDF
 
-                float nD1 = 0.5f * (1.0f + MathF.Tanh(d1 * 0.7071067811865476f));
-                float nD2 = 0.5f * (1.0f + MathF.Tanh(d2 * 0.7071067811865476f));
-                float nNegD1 = 1.0f - nD1;
-                float nNegD2 = 1.0f - nD2;
+                var nD1 = 0.5f * (1.0f + MathF.Tanh(d1 * 0.7071067811865476f));
+                var nD2 = 0.5f * (1.0f + MathF.Tanh(d2 * 0.7071067811865476f));
+                var nNegD1 = 1.0f - nD1;
+                var nNegD2 = 1.0f - nD2;
 
 
                 callPrice[i] = stockPriceValue * nD1 - strikePriceValue * MathF.Exp(-r * timeToExpiryValue) * nD2;

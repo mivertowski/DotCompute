@@ -24,25 +24,25 @@ public class AnalysisContext
     public Expression? ParentExpression { get; set; }
 
     /// <summary>Gets the operator chain in the expression tree.</summary>
-    public List<ExpressionType> OperatorChain { get; } = new();
+    public List<ExpressionType> OperatorChain { get; } = [];
 
     /// <summary>Gets type usage information.</summary>
-    public Dictionary<Type, TypeUsageInfo> TypeUsage { get; } = new();
+    public Dictionary<Type, TypeUsageInfo> TypeUsage { get; } = [];
 
     /// <summary>Gets parallelization opportunities.</summary>
-    public Dictionary<Expression, ParallelizationOpportunity> ParallelizationOpportunities { get; } = new();
+    public Dictionary<Expression, ParallelizationOpportunity> ParallelizationOpportunities { get; } = [];
 
     /// <summary>Gets data flow bottlenecks.</summary>
-    public List<string> DataFlowBottlenecks { get; } = new();
+    public List<string> DataFlowBottlenecks { get; } = [];
 
     /// <summary>Gets the global memory access pattern.</summary>
     public GlobalMemoryPattern GlobalMemoryPattern { get; set; } = new();
 
     /// <summary>Gets variable dependencies.</summary>
-    public Dictionary<string, DependencyInfo> VariableDependencies { get; } = new();
+    public Dictionary<string, DependencyInfo> VariableDependencies { get; } = [];
 
     /// <summary>Gets method call information.</summary>
-    public Dictionary<string, MethodCallInfo> MethodCalls { get; } = new();
+    public Dictionary<string, MethodCallInfo> MethodCalls { get; } = [];
 
     /// <summary>Gets the estimated computational complexity.</summary>
     public double ComputationalComplexity { get; set; }
@@ -51,7 +51,7 @@ public class AnalysisContext
     public bool IsGpuSuitable { get; set; } = true;
 
     /// <summary>Gets collected optimization hints.</summary>
-    public List<OptimizationHint> OptimizationHints { get; } = new();
+    public List<OptimizationHint> OptimizationHints { get; } = [];
 
     /// <summary>
     /// Adds an optimization hint to the context.
@@ -115,7 +115,7 @@ public class GlobalMemoryPattern
     public double BandwidthUtilization { get; set; } = 1.0;
 
     /// <summary>Gets memory access regions.</summary>
-    public List<MemoryRegion> AccessRegions { get; } = new();
+    public List<MemoryRegion> AccessRegions { get; } = [];
 
     /// <summary>Gets or sets whether memory prefetching would be beneficial.</summary>
     public bool BenefitsFromPrefetching { get; set; }
@@ -157,7 +157,7 @@ public record MethodCallInfo
     public Type? DeclaringType { get; init; }
 
     /// <summary>Gets the parameter types.</summary>
-    public List<Type> ParameterTypes { get; init; } = new();
+    public List<Type> ParameterTypes { get; init; } = [];
 
     /// <summary>Gets the return type.</summary>
     public Type? ReturnType { get; init; }

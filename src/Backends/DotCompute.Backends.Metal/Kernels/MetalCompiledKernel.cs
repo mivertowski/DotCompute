@@ -8,6 +8,8 @@ using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Memory;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
@@ -43,6 +45,12 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
 
     /// <inheritdoc/>
     public string Name => _definition.Name;
+
+    /// <inheritdoc/>
+    public bool IsReady => _disposed == 0 && _pipelineState != IntPtr.Zero;
+
+    /// <inheritdoc/>
+    public string BackendType => "Metal";
 
     /// <inheritdoc/>
     public async ValueTask ExecuteAsync(
@@ -350,6 +358,39 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
         {
             MetalNative.ReleasePipelineState(_pipelineState);
         }
+    }
+
+    /// <inheritdoc/>
+    public async Task ExecuteAsync(object[] parameters, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        // Convert object array to KernelArguments
+        var kernelArguments = new KernelArguments(parameters);
+
+        // Call the existing ExecuteAsync method
+        await ExecuteAsync(kernelArguments, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public object GetMetadata()
+    {
+        return new
+        {
+            Name = Name,
+            BackendType = BackendType,
+            IsReady = IsReady,
+            MaxTotalThreadsPerThreadgroup = _maxTotalThreadsPerThreadgroup,
+            ThreadExecutionWidth = _threadExecutionWidth,
+            CompilationMetadata = _metadata,
+            KernelDefinition = new
+            {
+                _definition.Name,
+                _definition.EntryPoint,
+                _definition.Language,
+                _definition.Parameters?.Count ?? 0
+            }
+        };
     }
 }
 

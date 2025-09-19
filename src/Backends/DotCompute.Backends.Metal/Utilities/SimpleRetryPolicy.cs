@@ -77,8 +77,11 @@ public sealed class SimpleRetryPolicy : IAsyncPolicy, IAsyncPolicy<object>
                     attempts, _maxRetries, ex.Message);
                 
                 if (cancellationToken.IsCancellationRequested)
+                {
                     throw;
-                
+                }
+
+
                 await Task.Delay(_delay, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -101,8 +104,11 @@ public sealed class SimpleRetryPolicy : IAsyncPolicy, IAsyncPolicy<object>
                     attempts, _maxRetries, ex.Message);
                 
                 if (cancellationToken.IsCancellationRequested)
+                {
                     throw;
-                
+                }
+
+
                 await Task.Delay(_delay, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -149,8 +155,11 @@ public sealed class SimpleRetryPolicy<T> : IAsyncPolicy<T>
                     attempts, _maxRetries, ex.Message);
                 
                 if (cancellationToken.IsCancellationRequested)
+                {
                     throw;
-                
+                }
+
+
                 await Task.Delay(_delay, cancellationToken).ConfigureAwait(false);
             }
         }

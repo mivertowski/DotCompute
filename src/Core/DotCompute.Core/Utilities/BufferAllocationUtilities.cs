@@ -25,18 +25,30 @@ public static class BufferAllocationUtilities
     public static void ValidateAllocationParameters<T>(int count, long maxAllocationSize) where T : unmanaged
     {
         if (count <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(count), "Count must be positive");
+        }
+
 
         var elementSize = GetElementSize<T>();
         var totalSize = (long)count * elementSize;
 
         if (totalSize > maxAllocationSize)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(count),
                 $"Requested allocation of {totalSize} bytes exceeds maximum {maxAllocationSize} bytes");
+        }
+
 
         if (totalSize > int.MaxValue && !Environment.Is64BitProcess)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(count),
                 "Allocation size exceeds maximum for 32-bit process");
+        }
+
     }
 
     /// <summary>
@@ -46,15 +58,27 @@ public static class BufferAllocationUtilities
     public static void ValidateRawAllocationParameters(long sizeInBytes, long maxAllocationSize)
     {
         if (sizeInBytes <= 0)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size must be positive");
+        }
+
 
         if (sizeInBytes > maxAllocationSize)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes),
                 $"Requested allocation of {sizeInBytes} bytes exceeds maximum {maxAllocationSize} bytes");
+        }
+
 
         if (sizeInBytes > int.MaxValue && !Environment.Is64BitProcess)
+        {
+
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes),
                 "Allocation size exceeds maximum for 32-bit process");
+        }
+
     }
 
     /// <summary>
@@ -83,23 +107,63 @@ public static class BufferAllocationUtilities
         IUnifiedMemoryBuffer<T> destination, int destinationOffset,
         int count) where T : unmanaged
     {
-        if (source == null) throw new ArgumentNullException(nameof(source));
-        if (destination == null) throw new ArgumentNullException(nameof(destination));
-        if (sourceOffset < 0) throw new ArgumentOutOfRangeException(nameof(sourceOffset));
-        if (destinationOffset < 0) throw new ArgumentOutOfRangeException(nameof(destinationOffset));
-        if (count <= 0) throw new ArgumentOutOfRangeException(nameof(count));
+        if (source == null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
+
+        if (destination == null)
+        {
+            throw new ArgumentNullException(nameof(destination));
+        }
+
+
+        if (sourceOffset < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sourceOffset));
+        }
+
+
+        if (destinationOffset < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(destinationOffset));
+        }
+
+
+        if (count <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(count));
+        }
+
 
         if (sourceOffset + count > source.Length)
+        {
+
             throw new ArgumentException($"Source range [{sourceOffset}, {sourceOffset + count}) exceeds buffer bounds [0, {source.Length})");
+        }
+
 
         if (destinationOffset + count > destination.Length)
+        {
+
             throw new ArgumentException($"Destination range [{destinationOffset}, {destinationOffset + count}) exceeds buffer bounds [0, {destination.Length})");
+        }
+
 
         if (source.IsDisposed)
+        {
+
             throw new ObjectDisposedException(nameof(source), "Source buffer has been disposed");
+        }
+
 
         if (destination.IsDisposed)
+        {
+
             throw new ObjectDisposedException(nameof(destination), "Destination buffer has been disposed");
+        }
+
     }
 
     /// <summary>
@@ -110,15 +174,36 @@ public static class BufferAllocationUtilities
         int offset,
         int count) where T : unmanaged
     {
-        if (buffer == null) throw new ArgumentNullException(nameof(buffer));
-        if (offset < 0) throw new ArgumentOutOfRangeException(nameof(offset));
-        if (count <= 0) throw new ArgumentOutOfRangeException(nameof(count));
+        if (buffer == null)
+        {
+            throw new ArgumentNullException(nameof(buffer));
+        }
+
+        if (offset < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset));
+        }
+
+
+        if (count <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(count));
+        }
+
 
         if (offset + count > buffer.Length)
+        {
+
             throw new ArgumentException($"View range [{offset}, {offset + count}) exceeds buffer bounds [0, {buffer.Length})");
+        }
+
 
         if (buffer.IsDisposed)
+        {
+
             throw new ObjectDisposedException(nameof(buffer), "Buffer has been disposed");
+        }
+
     }
 
     /// <summary>
@@ -262,10 +347,17 @@ public static class BufferAllocationUtilities
 
         // Add options-specific overhead
         if ((options & MemoryOptions.Pinned) != 0)
+        {
             overhead += baseSize * 0.02; // 2% extra for pinned memory
+        }
+
 
         if ((options & MemoryOptions.Unified) != 0)
+        {
+
             overhead += baseSize * 0.03; // 3% extra for unified memory
+        }
+
 
         var totalEstimatedSize = (long)(baseSize + overhead + alignmentPadding);
 

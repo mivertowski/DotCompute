@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Execution;
 using DotCompute.Backends.CUDA.Memory;
@@ -113,7 +114,7 @@ namespace DotCompute.Backends.CUDA.Integration
         /// </summary>
         public async Task<CudaExecutionResult> ExecuteOptimizedKernelAsync(
             CudaCompiledKernel kernel,
-            KernelArgument[] arguments,
+            DotCompute.Abstractions.Kernels.KernelArgument[] arguments,
             CudaExecutionOptions options,
             CancellationToken cancellationToken = default)
         {
@@ -352,7 +353,7 @@ namespace DotCompute.Backends.CUDA.Integration
 
         private static Task ApplyAdvancedOptimizationsAsync(
             CudaCompiledKernel kernel,
-            KernelArgument[] arguments,
+            DotCompute.Abstractions.Kernels.KernelArgument[] arguments,
             CudaExecutionOptions options,
             CancellationToken cancellationToken)
         {
@@ -362,7 +363,7 @@ namespace DotCompute.Backends.CUDA.Integration
 
         private async Task<KernelExecutionConfig> GetOptimalExecutionConfigAsync(
             CudaCompiledKernel kernel,
-            KernelArgument[] arguments,
+            DotCompute.Abstractions.Kernels.KernelArgument[] arguments,
             CudaExecutionOptions options,
             CancellationToken cancellationToken)
         {
@@ -391,7 +392,7 @@ namespace DotCompute.Backends.CUDA.Integration
             return config;
         }
 
-        private static int[] EstimateProblemSize(KernelArgument[] arguments)
+        private static int[] EstimateProblemSize(DotCompute.Abstractions.Kernels.KernelArgument[] arguments)
         {
             // Simple heuristic to estimate problem size from arguments
             foreach (var arg in arguments)
@@ -826,7 +827,7 @@ namespace DotCompute.Backends.CUDA.Integration
                     }
 
                     // Validate each argument for CUDA compatibility
-                    for (int i = 0; i < arguments.Count; i++)
+                    for (var i = 0; i < arguments.Count; i++)
                     {
                         var argument = arguments[i];
                         if (argument == null)

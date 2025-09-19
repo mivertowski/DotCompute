@@ -143,7 +143,7 @@ public sealed class DeviceCapabilities
     /// <summary>
     /// Gets or sets additional vendor-specific properties
     /// </summary>
-    public Dictionary<string, object> VendorProperties { get; set; } = new();
+    public Dictionary<string, object> VendorProperties { get; set; } = [];
 
     /// <summary>
     /// Creates a new instance of DeviceCapabilities
@@ -171,9 +171,12 @@ public sealed class DeviceCapabilities
     public double GetMaxMemoryBandwidth()
     {
         if (MemoryClockFrequency == 0 || MemoryBusWidth == 0)
+        {
             return 0;
+        }
 
         // Memory bandwidth = (Memory Clock * Bus Width * 2) / 8 / 1000
+
         return (MemoryClockFrequency * MemoryBusWidth * 2.0) / (8 * 1000);
     }
 }

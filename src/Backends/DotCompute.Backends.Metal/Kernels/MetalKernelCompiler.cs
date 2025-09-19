@@ -12,6 +12,9 @@ using DotCompute.Abstractions.Types;
 using ValidationResult = DotCompute.Abstractions.Validation.UnifiedValidationResult;
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
+using KernelLanguage = DotCompute.Abstractions.Kernels.KernelLanguage;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
 namespace DotCompute.Backends.Metal.Kernels;
@@ -453,8 +456,9 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 
     /// <inheritdoc/>
     public ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
+    {
         // TODO: Implement Metal-specific optimizations
-
-
-        => ValueTask.FromResult(kernel);
+        // For now, return the kernel as-is since Metal optimization happens at compile time
+        return ValueTask.FromResult(kernel);
+    }
 }

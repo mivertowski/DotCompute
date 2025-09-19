@@ -632,7 +632,11 @@ public static class AsyncEnumerableExtensions
     public static async IAsyncEnumerable<T[]> Buffer<T>(this IAsyncEnumerable<T> source, int batchSize)
     {
         ArgumentNullException.ThrowIfNull(source);
-        if (batchSize <= 0) throw new ArgumentOutOfRangeException(nameof(batchSize));
+        if (batchSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(batchSize));
+        }
+
 
         var buffer = new List<T>(batchSize);
 

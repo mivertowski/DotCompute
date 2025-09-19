@@ -43,5 +43,5 @@ public sealed class ThroughputMetrics
     /// Gets or sets throughput by operation type.
     /// Breakdown of throughput rates by operation category.
     /// </summary>
-    public Dictionary<string, double> ThroughputByOperation { get; set; } = new Dictionary<string, double>();
+    public Dictionary<string, double> ThroughputByOperation { get; set; } = [];
 }

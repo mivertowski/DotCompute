@@ -445,6 +445,9 @@ public class PipelineEvent
     /// <summary>Additional event data.</summary>
     public Dictionary<string, object> Data { get; set; } = new();
 
+    /// <summary>Stage identifier associated with the event (if applicable).</summary>
+    public string? StageId { get; set; }
+
     /// <summary>Additional event metadata.</summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
 }

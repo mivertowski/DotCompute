@@ -55,6 +55,18 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     /// <inheritdoc />
     public bool IsDisposed => _disposed || _parentBuffer.IsDisposed;
 
+    /// <inheritdoc />
+    public bool IsOnHost => _parentBuffer.IsOnHost;
+
+    /// <inheritdoc />
+    public bool IsOnDevice => _parentBuffer.IsOnDevice;
+
+    /// <inheritdoc />
+    public bool IsDirty => _parentBuffer.IsDirty;
+
+    /// <inheritdoc />
+    public BufferState State => _parentBuffer.State;
+
     /// <summary>
     /// Gets the device memory handle for this slice.
     /// </summary>
@@ -65,9 +77,13 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
 
         var parentDeviceMemory = _parentBuffer.GetDeviceMemory();
         if (!parentDeviceMemory.IsValid)
+        {
+
             return DeviceMemory.Invalid;
+        }
 
         // Calculate offset in bytes
+
         var offsetInBytes = _offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var adjustedHandle = IntPtr.Add(parentDeviceMemory.Handle, offsetInBytes);
 
@@ -244,6 +260,62 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
         await _parentBuffer.EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);
 
         return new MappedMemory<T>(AsMemory());
+    }
+
+    /// <inheritdoc />
+    public void EnsureOnHost()
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        _parentBuffer.EnsureOnHost();
+    }
+
+    /// <inheritdoc />
+    public void EnsureOnDevice()
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        _parentBuffer.EnsureOnDevice();
+    }
+
+    /// <inheritdoc />
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        return _parentBuffer.EnsureOnHostAsync(context, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        return _parentBuffer.EnsureOnDeviceAsync(context, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public void Synchronize()
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        _parentBuffer.Synchronize();
+    }
+
+    /// <inheritdoc />
+    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        return _parentBuffer.SynchronizeAsync(context, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public void MarkHostDirty()
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        _parentBuffer.MarkHostDirty();
+    }
+
+    /// <inheritdoc />
+    public void MarkDeviceDirty()
+    {
+        ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
+        _parentBuffer.MarkDeviceDirty();
     }
 
     #region IUnifiedMemoryBuffer (non-generic) Implementation

@@ -89,8 +89,17 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     {
         ThrowIfDisposed();
 
-        if (error == null) throw new ArgumentNullException(nameof(error));
-        if (context == null) throw new ArgumentNullException(nameof(context));
+        if (error == null)
+        {
+            throw new ArgumentNullException(nameof(error));
+        }
+
+
+        if (context == null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
 
         var recoveryOptions = options ?? RecoveryOptions.Default;
         var stopwatch = Stopwatch.StartNew();
@@ -239,9 +248,13 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
         var contextKey = GetContextKey(context);
 
         if (!_recoveryHistory.TryGetValue(contextKey, out var history))
+        {
+
             return true; // No history, allow recovery
+        }
 
         // Check rate limiting
+
         if (IsRateLimited(history, options))
         {
             Logger.LogDebug("Recovery rate limited for context {ContextKey}", contextKey);
@@ -266,7 +279,11 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     protected virtual bool IsRateLimited(RecoveryAttemptHistory history, RecoveryOptions options)
     {
         if (options.RateLimitWindow <= TimeSpan.Zero)
+        {
+
             return false;
+        }
+
 
         var cutoff = DateTimeOffset.UtcNow - options.RateLimitWindow;
         var recentAttempts = history.RecentAttempts.Count(a => a.Timestamp > cutoff);
@@ -453,7 +470,11 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     protected virtual TimeSpan CalculateRetryDelay(TimeSpan baseDelay, int attemptNumber, bool useExponentialBackoff)
     {
         if (!useExponentialBackoff)
+        {
+
             return baseDelay;
+        }
+
 
         var multiplier = Math.Pow(2, attemptNumber - 1);
         var delayMs = baseDelay.TotalMilliseconds * multiplier;
@@ -511,7 +532,11 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     {
         var recentMetrics = _recentMetrics.ToArray();
         if (recentMetrics.Length == 0)
+        {
+
             return TimeSpan.Zero;
+        }
+
 
         var averageTicks = recentMetrics.Average(m => m.Duration.Ticks);
         return TimeSpan.FromTicks((long)averageTicks);
@@ -522,7 +547,11 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     /// </summary>
     protected virtual void PerformCleanup(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -572,7 +601,11 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     protected void ThrowIfDisposed()
     {
         if (_disposed)
+        {
+
             throw new ObjectDisposedException(GetType().Name);
+        }
+
     }
 
     #endregion
@@ -758,7 +791,7 @@ public sealed class RecoveryResult
     public required string Strategy { get; init; }
     public TimeSpan Duration { get; set; }
     public bool RequiresManualIntervention { get; init; }
-    public Dictionary<string, object> Metadata { get; init; } = new();
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>

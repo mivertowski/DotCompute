@@ -266,7 +266,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             return new ValidationResult
             {
 
-                Issues = new List<string> { $"Validation error: {ex.Message}" },
+                Issues = [$"Validation error: {ex.Message}"],
                 HasCriticalIssues = false
 
             };

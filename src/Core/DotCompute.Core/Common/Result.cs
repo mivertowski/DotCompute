@@ -126,11 +126,18 @@ public class Result
     public static Result Combine(params Result[] results)
     {
         if (results.Length == 0)
+        {
             return Success();
+        }
+
 
         var failures = results.Where(r => r.IsFailure).ToList();
         if (failures.Count == 0)
+        {
+
             return Success();
+        }
+
 
         var combinedError = string.Join("; ", failures.Select(f => f.Error));
         var firstException = failures.FirstOrDefault(f => f.Exception != null)?.Exception;
@@ -265,7 +272,11 @@ public class Result<T> : Result
     public Result<TNew> Map<TNew>(Func<T, TNew> mapper)
     {
         if (IsFailure)
+        {
+
             return Result<TNew>.Failure(Error, Exception!);
+        }
+
 
         try
         {
@@ -287,7 +298,11 @@ public class Result<T> : Result
     public Result<TNew> Bind<TNew>(Func<T, Result<TNew>> binder)
     {
         if (IsFailure)
+        {
+
             return Result<TNew>.Failure(Error, Exception!);
+        }
+
 
         try
         {

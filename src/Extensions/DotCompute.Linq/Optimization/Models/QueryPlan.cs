@@ -15,7 +15,7 @@ namespace DotCompute.Linq.Optimization.Models;
 public class QueryPlan
 {
     /// <summary>Gets or sets the list of operations in execution order.</summary>
-    public List<QueryOperation> Operations { get; set; } = new();
+    public List<QueryOperation> Operations { get; set; } = [];
 
     /// <summary>Gets or sets the plan identifier.</summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -33,7 +33,7 @@ public class QueryPlan
     public long EstimatedPeakMemoryUsage { get; set; }
 
     /// <summary>Gets or sets plan-specific metadata.</summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>Gets or sets whether this plan supports parallel execution.</summary>
     public bool SupportsParallelExecution { get; set; } = true;
@@ -45,7 +45,7 @@ public class QueryPlan
     public string TargetBackend { get; set; } = "Auto";
 
     /// <summary>Gets or sets optimization hints for this plan.</summary>
-    public List<string> OptimizationHints { get; set; } = new();
+    public List<string> OptimizationHints { get; set; } = [];
 
     /// <summary>Gets or sets the dynamic scheduling configuration for this plan.</summary>
     public DotCompute.Linq.Optimization.Strategies.DynamicSchedule? DynamicScheduleConfig { get; set; }
@@ -324,9 +324,9 @@ public class QueryPlan
     /// <summary>
     /// Gets whether dynamic scheduling is enabled for this plan.
     /// </summary>
-    public bool IsDynamicSchedulingEnabled =>
+    public bool IsDynamicSchedulingEnabled
 
-        OptimizationHints.Contains("DynamicScheduling") ||
+        => OptimizationHints.Contains("DynamicScheduling") ||
 
         (Metadata.TryGetValue("UseDynamicScheduling", out var value) && value is true);
 }

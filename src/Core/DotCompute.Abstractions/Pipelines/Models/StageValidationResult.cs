@@ -37,22 +37,22 @@ public sealed class StageValidationResult
     /// <summary>
     /// Gets or sets validation errors that prevent execution.
     /// </summary>
-    public IList<ValidationIssue> Errors { get; set; } = new List<ValidationIssue>();
+    public IList<ValidationIssue> Errors { get; set; } = [];
 
     /// <summary>
     /// Gets or sets validation warnings that may affect performance or correctness.
     /// </summary>
-    public IList<ValidationIssue> Warnings { get; set; } = new List<ValidationIssue>();
+    public IList<ValidationIssue> Warnings { get; set; } = [];
 
     /// <summary>
     /// Gets or sets informational messages about the validation.
     /// </summary>
-    public IList<ValidationIssue> Information { get; set; } = new List<ValidationIssue>();
+    public IList<ValidationIssue> Information { get; set; } = [];
 
     /// <summary>
     /// Gets or sets validation suggestions for improvements.
     /// </summary>
-    public IList<ValidationSuggestion> Suggestions { get; set; } = new List<ValidationSuggestion>();
+    public IList<ValidationSuggestion> Suggestions { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the time when validation was performed.
@@ -187,31 +187,50 @@ public sealed class StageValidationResult
     public void Merge(StageValidationResult other)
     {
         foreach (var error in other.Errors)
+        {
             Errors.Add(error);
+        }
+
 
         foreach (var warning in other.Warnings)
+        {
             Warnings.Add(warning);
+        }
+
 
         foreach (var info in other.Information)
+        {
             Information.Add(info);
+        }
 
         foreach (var suggestion in other.Suggestions)
+        {
             Suggestions.Add(suggestion);
+        }
 
         // Update validity and severity
         if (!other.IsValid)
+        {
             IsValid = false;
+        }
 
         if (other.Severity > Severity)
+        {
             Severity = other.Severity;
+        }
 
         // Merge metadata
         foreach (var kvp in other.Metadata)
+        {
             Metadata[kvp.Key] = kvp.Value;
+        }
 
         // Merge backend compatibility
         foreach (var kvp in other.BackendCompatibility)
+        {
             BackendCompatibility[kvp.Key] = kvp.Value;
+        }
+
     }
 
     /// <summary>
@@ -450,7 +469,7 @@ public sealed class BackendCompatibility
     /// <summary>
     /// Gets or sets compatibility limitations or issues.
     /// </summary>
-    public IList<string> Limitations { get; set; } = new List<string>();
+    public IList<string> Limitations { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the estimated performance on this backend.

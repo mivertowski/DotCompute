@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -44,7 +45,7 @@ public static class TestUtilities
         ArgumentNullException.ThrowIfNull(action);
 
         // Warmup
-        for (int i = 0; i < warmupIterations; i++)
+        for (var i = 0; i < warmupIterations; i++)
         {
             await action();
         }
@@ -58,7 +59,7 @@ public static class TestUtilities
         var stopwatch = new Stopwatch();
         var totalStopwatch = Stopwatch.StartNew();
 
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             stopwatch.Restart();
             await action();
@@ -164,7 +165,7 @@ public static class TestUtilities
         var initialMemory = GC.GetTotalMemory(true);
 
         // Run iterations
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             await action();
             if (i % 10 == 0) // Periodic cleanup
@@ -211,7 +212,7 @@ public static class TestUtilities
         {
             try
             {
-                for (int i = 0; i < operationsPerThread; i++)
+                for (var i = 0; i < operationsPerThread; i++)
                 {
                     var result = await action(threadId * operationsPerThread + i);
                     results.Add(result);
@@ -252,7 +253,7 @@ public static class TestUtilities
     {
         ArgumentNullException.ThrowIfNull(action);
 
-        for (int iteration = 0; iteration < iterations; iteration++)
+        for (var iteration = 0; iteration < iterations; iteration++)
         {
             try
             {
@@ -335,9 +336,9 @@ public static class TestUtilities
     /// <summary>
     /// Creates a mock memory buffer for testing.
     /// </summary>
-    public static Mock<IUnifiedBuffer<T>> CreateMockBuffer<T>(int size) where T : unmanaged
+    public static Mock<IUnifiedMemoryBuffer<T>> CreateMockBuffer<T>(int size) where T : unmanaged
     {
-        var mock = new Mock<IUnifiedBuffer<T>>();
+        var mock = new Mock<IUnifiedMemoryBuffer<T>>();
         var data = new T[size];
 
         mock.Setup(b => b.Length).Returns(size);
@@ -363,7 +364,7 @@ public static class TestUtilities
         var random = new Random(seed);
         var data = new T[size];
 
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = generator(i);
         }
@@ -384,7 +385,7 @@ public static class TestUtilities
         var data = new float[size];
         var range = max - min;
 
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = min + (float)random.NextDouble() * range;
         }
@@ -404,7 +405,7 @@ public static class TestUtilities
         var random = new Random(seed);
         var data = new int[size];
 
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = random.Next(min, max + 1);
         }

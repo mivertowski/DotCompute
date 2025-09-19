@@ -42,7 +42,11 @@ public sealed class MetalMetricsExporter : IDisposable
     /// </summary>
     public async Task ExportAsync(MetalTelemetrySnapshot snapshot, CancellationToken cancellationToken = default)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         var exportTasks = new List<Task>();
 
@@ -94,7 +98,11 @@ public sealed class MetalMetricsExporter : IDisposable
     /// </summary>
     public Dictionary<string, object> GetExportableMetrics()
     {
-        if (_disposed) return new Dictionary<string, object>();
+        if (_disposed)
+        {
+            return [];
+        }
+
 
         var exportableMetrics = new Dictionary<string, object>
         {
@@ -373,16 +381,16 @@ public sealed class MetalMetricsExporter : IDisposable
 
     private object[] CreateOTLPMetrics(MetalTelemetrySnapshot snapshot)
     {
-        var metrics = new List<object>();
-
-        // Add system-level metrics
-        metrics.Add(new
+        var metrics = new List<object>
         {
-            name = "metal_operations_total",
-            unit = "1",
-            sum = new
+            // Add system-level metrics
+            new
             {
-                dataPoints = new[]
+                name = "metal_operations_total",
+                unit = "1",
+                sum = new
+                {
+                    dataPoints = new[]
                 {
                     new
                     {
@@ -391,18 +399,17 @@ public sealed class MetalMetricsExporter : IDisposable
                         attributes = new object[] { }
                     }
                 },
-                aggregationTemporality = 2, // Cumulative
-                isMonotonic = true
-            }
-        });
-
-        metrics.Add(new
-        {
-            name = "metal_error_rate",
-            unit = "1",
-            gauge = new
+                    aggregationTemporality = 2, // Cumulative
+                    isMonotonic = true
+                }
+            },
+            new
             {
-                dataPoints = new[]
+                name = "metal_error_rate",
+                unit = "1",
+                gauge = new
+                {
+                    dataPoints = new[]
                 {
                     new
                     {
@@ -411,28 +418,29 @@ public sealed class MetalMetricsExporter : IDisposable
                         attributes = new object[] { }
                     }
                 }
+                }
             }
-        });
+        };
 
         return metrics.ToArray();
     }
 
     private object ConvertToApplicationInsightsFormat(MetalTelemetrySnapshot snapshot, ExporterConfiguration exporter)
     {
-        var telemetryItems = new List<object>();
-
-        // Custom metrics
-        telemetryItems.Add(new
+        var telemetryItems = new List<object>
         {
-            name = "Microsoft.ApplicationInsights.Metric",
-            time = DateTimeOffset.UtcNow,
-            iKey = exporter.Headers?.GetValueOrDefault("instrumentationKey"),
-            data = new
+            // Custom metrics
+            new
             {
-                baseType = "MetricData",
-                baseData = new
+                name = "Microsoft.ApplicationInsights.Metric",
+                time = DateTimeOffset.UtcNow,
+                iKey = exporter.Headers?.GetValueOrDefault("instrumentationKey"),
+                data = new
                 {
-                    metrics = new object[]
+                    baseType = "MetricData",
+                    baseData = new
+                    {
+                        metrics = new object[]
                     {
                         new
                         {
@@ -447,14 +455,15 @@ public sealed class MetalMetricsExporter : IDisposable
                             kind = 1
                         }
                     },
-                    properties = new Dictionary<string, string>
-                    {
-                        ["backend"] = "Metal",
-                        ["version"] = "1.0.0"
+                        properties = new Dictionary<string, string>
+                        {
+                            ["backend"] = "Metal",
+                            ["version"] = "1.0.0"
+                        }
                     }
                 }
             }
-        });
+        };
 
         return new { items = telemetryItems };
     }
@@ -584,7 +593,11 @@ public sealed class MetalMetricsExporter : IDisposable
 
     private void AutoExportMetrics(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {

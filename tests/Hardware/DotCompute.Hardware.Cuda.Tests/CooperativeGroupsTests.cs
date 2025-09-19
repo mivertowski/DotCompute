@@ -100,8 +100,8 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
         const int gridSize = (size + blockSize - 1) / blockSize;
 
 
-        float[] inputData = new float[size];
-        for (int i = 0; i < size; i++)
+        var inputData = new float[size];
+        for (var i = 0; i < size; i++)
         {
             inputData[i] = i + 1.0f; // 1, 2, 3, ..., 1024
         }
@@ -129,13 +129,13 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
 
         // Copy results back
 
-        float[] results = new float[gridSize];
+        var results = new float[gridSize];
         await output.CopyToAsync(results.AsMemory());
 
         // Calculate expected sum: 1 + 2 + ... + 1024 = (1024 * 1025) / 2 = 524800
 
-        float expectedSum = (size * (size + 1)) / 2.0f;
-        float actualSum = results.Sum();
+        var expectedSum = (size * (size + 1)) / 2.0f;
+        var actualSum = results.Sum();
 
 
         _output.WriteLine($"Expected sum: {expectedSum}");
@@ -240,17 +240,17 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
 
         // Download and verify results
 
-        float[] results = new float[size];
+        var results = new float[size];
         await dOutput.CopyToAsync(results.AsMemory());
 
         // Basic verification - check that kernel executed and produced non-zero results
-        bool hasValidResults = false;
-        float sumResults = 0.0f;
+        var hasValidResults = false;
+        var sumResults = 0.0f;
 
 
-        for (int i = 0; i < Math.Min(10, size); i++)
+        for (var i = 0; i < Math.Min(10, size); i++)
         {
-            float result = results[i];
+            var result = results[i];
             _output.WriteLine($"Element {i}: {result:F3}");
 
 

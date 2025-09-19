@@ -200,7 +200,12 @@ namespace DotCompute.Abstractions.Pipelines.Results
         /// </summary>
         public double? GetEfficiencyRatio()
         {
-            if (MemoryUsed <= 0 || Throughput is null) return null;
+            if (MemoryUsed <= 0 || Throughput is null)
+            {
+                return null;
+            }
+
+
             return Throughput.Value / MemoryUsed;
         }
 
@@ -209,9 +214,13 @@ namespace DotCompute.Abstractions.Pipelines.Results
         /// </summary>
         public double GetPerformanceScore()
         {
-            if (!Success) return 0.0;
+            if (!Success)
+            {
+                return 0.0;
+            }
 
             // Base score from execution time (faster = higher score)
+
             var timeScore = Math.Max(0, 10.0 - ExecutionTime.TotalMilliseconds / 100.0);
 
             // Memory efficiency bonus (less memory = higher score)

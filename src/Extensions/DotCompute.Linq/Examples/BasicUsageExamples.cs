@@ -484,7 +484,7 @@ public class BasicUsageExamples
         var random = new Random(42);
 
 
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             // Simulate streaming delay
             await Task.Delay(1);
@@ -615,7 +615,7 @@ public static class ExampleExtensions
         await operation(data);
 
         // Measure iterations
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             var stopwatch = Stopwatch.StartNew();
             await operation(data);

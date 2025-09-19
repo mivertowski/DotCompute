@@ -26,7 +26,7 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
     private readonly SemaphoreSlim _recoveryLock;
     private bool _disposed;
 
-    public override RecoveryCapability Capability => RecoveryCapability.PluginErrors;
+    public override RecoveryCapability Capability => RecoveryCapability.DeviceErrors; // Plugin errors are a subset of device errors
     public override int Priority => 80;
 
     public PluginRecoveryManager(ILogger<PluginRecoveryManager> logger, PluginRecoveryConfiguration? config = null)
@@ -571,7 +571,7 @@ public sealed class PluginRecoveryManager : BaseRecoveryStrategy<PluginRecoveryC
         }
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         if (!_disposed)
         {

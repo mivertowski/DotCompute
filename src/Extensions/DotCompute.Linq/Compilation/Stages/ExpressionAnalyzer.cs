@@ -99,7 +99,7 @@ public sealed class ExpressionAnalyzer
         {
             Name = op.Name,
             OperatorType = UnifiedOperatorType.Custom, // Default to Custom since op.OperatorType is System.Type
-            InputTypes = new List<Type> { typeof(object) }, // Default input type
+            InputTypes = [typeof(object)], // Default input type
             OutputType = typeof(object) // Default output type
         }).ToList();
         context.DataFlowGraph = dataFlowAnalyzer.BuildDataFlowGraph(operatorInfoList);
@@ -333,7 +333,7 @@ public sealed class ExpressionAnalyzer
             VectorizationSuitable = compilationOpportunity.VectorizationSuitable,
             SupportsParallelExecution = compilationOpportunity.SupportsParallelExecution,
             RecommendedParallelism = compilationOpportunity.RecommendedParallelism,
-            DataDependencies = new List<string>(), // Will need to map if properties exist
+            DataDependencies = [], // Will need to map if properties exist
             MemoryRequirements = 0 // Default value
         };
     }
@@ -471,13 +471,13 @@ public sealed class ExpressionAnalyzer
 internal class AnalysisContext
 {
     public CompilationOptions Options { get; }
-    public List<PipelineOperatorInfo> OperatorChain { get; } = new();
-    public Dictionary<Type, TypeUsageInfo> TypeUsage { get; } = new();
-    public HashSet<CompilationDependencyInfo> Dependencies { get; } = new();
-    public Dictionary<PipelineOperatorInfo, DotCompute.Linq.Analysis.ParallelizationOpportunity> ParallelizationOpportunities { get; set; } = new();
-    public Dictionary<PipelineOperatorInfo, DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern> MemoryAccessPatterns { get; } = new();
+    public List<PipelineOperatorInfo> OperatorChain { get; } = [];
+    public Dictionary<Type, TypeUsageInfo> TypeUsage { get; } = [];
+    public HashSet<CompilationDependencyInfo> Dependencies { get; } = [];
+    public Dictionary<PipelineOperatorInfo, DotCompute.Linq.Analysis.ParallelizationOpportunity> ParallelizationOpportunities { get; set; } = [];
+    public Dictionary<PipelineOperatorInfo, DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern> MemoryAccessPatterns { get; } = [];
     public DotCompute.Linq.Analysis.DataFlowGraph DataFlowGraph { get; set; } = new();
-    public List<DotCompute.Linq.Analysis.DataFlowBottleneck> DataFlowBottlenecks { get; set; } = new();
+    public List<DotCompute.Linq.Analysis.DataFlowBottleneck> DataFlowBottlenecks { get; set; } = [];
     public DotCompute.Linq.Compilation.Analysis.GlobalMemoryAccessPattern GlobalMemoryPattern { get; set; } = new();
     public PipelineComplexityMetrics ComplexityMetrics { get; set; } = new();
 
@@ -551,7 +551,7 @@ internal class AnalysisVisitor : ExpressionVisitor
         {
             Type = CompilationDependencyType.Method,
             DependentOperation = node.Method.DeclaringType?.FullName ?? "Unknown",
-            Dependencies = new List<string> { node.Method.Name }
+            Dependencies = [node.Method.Name]
         });
 
         return base.VisitMethodCall(node);
@@ -781,7 +781,7 @@ internal class OperationSignatureBuilder
         {
             Name = op.Name,
             OperatorType = UnifiedOperatorType.Custom, // Default to custom
-            InputTypes = new List<Type> { op.OperatorType },
+            InputTypes = [op.OperatorType],
             OutputType = typeof(object) // Default output type
         }).ToList();
     }
