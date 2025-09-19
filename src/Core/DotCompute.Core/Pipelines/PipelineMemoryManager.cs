@@ -3,7 +3,16 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Core.Memory;
-using DotCompute.Core.Device.Interfaces;
+using DotCompute.Abstractions.Interfaces.Device;
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Pipelines.Models;
+using MemoryLockMode = DotCompute.Abstractions.Interfaces.Pipelines.MemoryLockMode;
+using MemoryLayoutHint = DotCompute.Abstractions.Interfaces.Pipelines.MemoryLayoutHint;
+using MemoryManagerStats = DotCompute.Abstractions.Interfaces.Pipelines.MemoryManagerStats;
+using MemoryPoolOptions = DotCompute.Abstractions.Interfaces.Pipelines.MemoryPoolOptions;
+// MemoryLock<T> is defined in DotCompute.Abstractions.Interfaces.Pipelines namespace - no using alias needed
+using MemoryHint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint;
 using DotCompute.Abstractions;
 
 namespace DotCompute.Core.Pipelines
@@ -43,11 +52,13 @@ namespace DotCompute.Core.Pipelines
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ThrowIfDisposed();
+            ValidateAllocationParameters<T>(elementCount);
 
-            var sizeInBytes = elementCount * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var sizeInBytes = CalculateSizeInBytes<T>(elementCount);
 
-            // Try to get from pool first
-            if (_pools.TryGetValue(typeof(T), out var pool))
+            // Try to get from pool first with size-aware lookup
+            var poolKey = CreatePoolKey<T>(sizeInBytes);
+            if (_pools.TryGetValue(poolKey, out var pool))
             {
                 var pooledMemory = pool.TryRent(sizeInBytes);
                 if (pooledMemory != null)
@@ -59,28 +70,22 @@ namespace DotCompute.Core.Pipelines
 
             UpdateCacheHitRate(false);
 
-            // Allocate new memory
-            var memoryAccess = hint switch
-            {
-                MemoryHint.Sequential => MemoryAccess.ReadWrite,
-                MemoryHint.Random => MemoryAccess.ReadWrite,
-                MemoryHint.Temporary => MemoryAccess.ReadWrite,
-                MemoryHint.Persistent => MemoryAccess.ReadWrite,
-                MemoryHint.Pinned => MemoryAccess.ReadWrite,
-                _ => MemoryAccess.ReadWrite
-            };
+            // Determine optimal memory access pattern based on hints
+            var memoryAccess = DetermineMemoryAccess(hint);
 
-            var deviceMemory = await _device.AllocateMemoryAsync(sizeInBytes, memoryAccess, cancellationToken);
-
-            // Update statistics
-            lock (_statsLock)
+            IDeviceMemory deviceMemory;
+            try
             {
-                _totalAllocatedBytes += sizeInBytes;
-                _currentUsedBytes += sizeInBytes;
-                _peakUsedBytes = Math.Max(_peakUsedBytes, _currentUsedBytes);
-                _activeAllocationCount++;
-                _totalAllocationCount++;
+                deviceMemory = await _device.AllocateMemoryAsync(sizeInBytes, memoryAccess, cancellationToken);
             }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to allocate {sizeInBytes} bytes for {elementCount} elements of type {typeof(T).Name}", ex);
+            }
+
+            // Update statistics atomically
+            UpdateAllocationStatistics(sizeInBytes);
 
             return new PipelineMemory<T>(deviceMemory, elementCount, _device, false);
         }
@@ -93,19 +98,54 @@ namespace DotCompute.Core.Pipelines
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             ThrowIfDisposed();
+            ValidateSharedAllocationParameters<T>(key, elementCount);
 
-            // Check if shared memory already exists
+            // Thread-safe check for existing shared memory with type validation
             if (_sharedMemories.TryGetValue(key, out var existing))
             {
                 if (existing is IPipelineMemory<T> existingTyped)
                 {
+                    // Validate that existing memory has compatible size
+                    if (existingTyped.ElementCount != elementCount)
+                    {
+                        throw new InvalidOperationException(
+                            $"Shared memory '{key}' exists but has different element count. " +
+                            $"Expected: {elementCount}, Actual: {existingTyped.ElementCount}");
+                    }
                     return existingTyped;
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"Shared memory '{key}' exists but has incompatible type. " +
+                        $"Expected: {typeof(IPipelineMemory<T>).Name}, Actual: {existing.GetType().Name}");
                 }
             }
 
-            // Allocate new shared memory
-            var memory = await AllocateAsync<T>(elementCount, hint, cancellationToken);
-            _ = _sharedMemories.TryAdd(key, memory);
+            // Allocate new shared memory with error handling
+            IPipelineMemory<T> memory;
+            try
+            {
+                memory = await AllocateAsync<T>(elementCount, hint, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to allocate shared memory '{key}' for {elementCount} elements of type {typeof(T).Name}", ex);
+            }
+
+            // Atomic add operation with conflict detection
+            if (!_sharedMemories.TryAdd(key, memory))
+            {
+                // Another thread allocated the same key, dispose our allocation and return theirs
+                await memory.DisposeAsync();
+                if (_sharedMemories.TryGetValue(key, out var concurrentAllocation) &&
+                    concurrentAllocation is IPipelineMemory<T> concurrentTyped)
+                {
+                    return concurrentTyped;
+                }
+                throw new InvalidOperationException($"Concurrent allocation conflict for shared memory key '{key}'");
+            }
 
             return memory;
         }
@@ -208,9 +248,21 @@ namespace DotCompute.Core.Pipelines
         public void RegisterPool<T>(MemoryPoolOptions options) where T : unmanaged
         {
             ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(options);
 
+            if (options.BlockSize <= 0)
+            {
+                options.BlockSize = global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>() * 1024; // Default to 1K elements
+            }
+
+            var poolKey = CreatePoolKey<T>(options.BlockSize);
             var pool = new MemoryPool(typeof(T), options);
-            _ = _pools.TryAdd(typeof(T), pool);
+
+            if (!_pools.TryAdd(poolKey, pool))
+            {
+                // Pool already exists for this type and size, dispose the new one
+                pool.Dispose();
+            }
         }
 
         /// <inheritdoc/>
@@ -244,6 +296,68 @@ namespace DotCompute.Core.Pipelines
 
             _pools.Clear();
             _isDisposed = true;
+        }
+
+        private void ValidateAllocationParameters<T>(long elementCount) where T : unmanaged
+        {
+            if (elementCount <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(elementCount), elementCount, "Element count must be positive");
+            }
+
+            var elementSize = global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            if (elementCount > long.MaxValue / elementSize)
+            {
+                throw new ArgumentOutOfRangeException(nameof(elementCount), elementCount,
+                    $"Element count would cause overflow for type {typeof(T).Name} with size {elementSize} bytes");
+            }
+        }
+
+        private void ValidateSharedAllocationParameters<T>(string key, long elementCount) where T : unmanaged
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(key);
+            ValidateAllocationParameters<T>(elementCount);
+        }
+
+        private static long CalculateSizeInBytes<T>(long elementCount) where T : unmanaged
+        {
+            var elementSize = global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            return elementCount * elementSize;
+        }
+
+        private static Type CreatePoolKey<T>(long sizeHint) where T : unmanaged
+        {
+            // For now, use type-based pooling. In future, consider size-based bins
+            return typeof(T);
+        }
+
+        private static MemoryAccess DetermineMemoryAccess(MemoryHint hint)
+        {
+            // Analyze hint flags to determine optimal memory access pattern
+            if (hint.HasFlag(MemoryHint.ReadHeavy) && !hint.HasFlag(MemoryHint.WriteHeavy))
+            {
+                return MemoryAccess.ReadOnly;
+            }
+
+            if (hint.HasFlag(MemoryHint.WriteHeavy) && !hint.HasFlag(MemoryHint.ReadHeavy))
+            {
+                return MemoryAccess.WriteOnly;
+            }
+
+            // Default to ReadWrite for maximum flexibility
+            return MemoryAccess.ReadWrite;
+        }
+
+        private void UpdateAllocationStatistics(long sizeInBytes)
+        {
+            lock (_statsLock)
+            {
+                _totalAllocatedBytes += sizeInBytes;
+                _currentUsedBytes += sizeInBytes;
+                _peakUsedBytes = Math.Max(_peakUsedBytes, _currentUsedBytes);
+                _activeAllocationCount++;
+                _totalAllocationCount++;
+            }
         }
 
         private void UpdateCacheHitRate(bool hit)
@@ -283,7 +397,7 @@ namespace DotCompute.Core.Pipelines
     }
 
     /// <summary>
-    /// Implementation of IPipelineMemory.
+    /// Implementation of IPipelineMemory with production-grade memory management.
     /// </summary>
     internal sealed class PipelineMemory<T> : IPipelineMemory<T> where T : unmanaged
     {
@@ -292,8 +406,9 @@ namespace DotCompute.Core.Pipelines
         private readonly IComputeDevice _device;
         private readonly bool _isFromPool;
         private readonly SemaphoreSlim _lockSemaphore;
+        private readonly object _disposeLock = new();
         private volatile bool _isLocked;
-        private bool _isDisposed;
+        private volatile bool _isDisposed;
 
         public PipelineMemory(IDeviceMemory deviceMemory, long elementCount, IComputeDevice device, bool isFromPool)
         {
@@ -329,14 +444,36 @@ namespace DotCompute.Core.Pipelines
         {
             ThrowIfDisposed();
 
-            await _lockSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                await _lockSemaphore.WaitAsync(cancellationToken);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Handle race condition where disposal occurs during lock acquisition
+                ThrowIfDisposed();
+                throw;
+            }
+
+            // Validate access mode compatibility
+            ValidateLockModeCompatibility(mode);
 
             _isLocked = true;
 
             Action unlockAction = () =>
             {
-                _isLocked = false;
-                _ = _lockSemaphore.Release();
+                if (!_isDisposed)
+                {
+                    _isLocked = false;
+                    try
+                    {
+                        _ = _lockSemaphore.Release();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Semaphore was disposed, which is fine during cleanup
+                    }
+                }
             };
 
             return new MemoryLock<T>(this, mode, unlockAction);
@@ -349,9 +486,19 @@ namespace DotCompute.Core.Pipelines
             CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+            ValidateCopyFromParameters(source, offset);
 
             var byteOffset = offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            await _deviceMemory.WriteAsync(source, byteOffset, cancellationToken);
+
+            try
+            {
+                await _deviceMemory.WriteAsync(source, byteOffset, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to copy {source.Length} elements to device memory at offset {offset}", ex);
+            }
         }
 
         /// <inheritdoc/>
@@ -362,12 +509,21 @@ namespace DotCompute.Core.Pipelines
             CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+            ValidateCopyToParameters(destination, offset, count);
 
             var actualCount = count ?? Math.Min(destination.Length, (int)(_elementCount - offset));
             var actualDestination = destination[..actualCount];
             var byteOffset = offset * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
 
-            await _deviceMemory.ReadAsync(actualDestination, byteOffset, cancellationToken);
+            try
+            {
+                await _deviceMemory.ReadAsync(actualDestination, byteOffset, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to copy {actualCount} elements from device memory at offset {offset}", ex);
+            }
         }
 
         /// <inheritdoc/>
@@ -399,14 +555,104 @@ namespace DotCompute.Core.Pipelines
                 return;
             }
 
+            lock (_disposeLock)
+            {
+                if (_isDisposed)
+                {
+                    return;
+                }
+                _isDisposed = true;
+            }
+
+            // Ensure no locks are held during disposal
+            if (_isLocked)
+            {
+                try
+                {
+                    await _lockSemaphore.WaitAsync(TimeSpan.FromMilliseconds(100));
+                }
+                catch (TimeoutException)
+                {
+                    // Log warning: memory being disposed while locked
+                }
+                finally
+                {
+                    _isLocked = false;
+                }
+            }
+
             _lockSemaphore?.Dispose();
 
             if (!_isFromPool)
             {
-                await _deviceMemory.DisposeAsync();
+                try
+                {
+                    await _deviceMemory.DisposeAsync();
+                }
+                catch (Exception)
+                {
+                    // Swallow disposal exceptions to prevent cascading failures
+                }
+            }
+        }
+
+        private void ValidateLockModeCompatibility(MemoryLockMode mode)
+        {
+            if (mode == MemoryLockMode.ReadOnly && AccessMode == MemoryAccess.WriteOnly)
+            {
+                throw new InvalidOperationException(
+                    "Cannot acquire read lock on write-only memory");
             }
 
-            _isDisposed = true;
+            if ((mode == MemoryLockMode.ReadWrite || mode == MemoryLockMode.Exclusive) &&
+                AccessMode == MemoryAccess.ReadOnly)
+            {
+                throw new InvalidOperationException(
+                    "Cannot acquire write lock on read-only memory");
+            }
+        }
+
+        private void ValidateCopyFromParameters(ReadOnlyMemory<T> source, long offset)
+        {
+            if (offset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offset), offset, "Offset cannot be negative");
+            }
+
+            if (offset + source.Length > _elementCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(source),
+                    $"Source data ({source.Length} elements) with offset {offset} exceeds memory bounds ({_elementCount} elements)");
+            }
+
+            if (AccessMode == MemoryAccess.ReadOnly)
+            {
+                throw new InvalidOperationException("Cannot write to read-only memory");
+            }
+        }
+
+        private void ValidateCopyToParameters(Memory<T> destination, long offset, int? count)
+        {
+            if (offset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offset), offset, "Offset cannot be negative");
+            }
+
+            if (offset >= _elementCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offset), offset,
+                    $"Offset exceeds memory bounds ({_elementCount} elements)");
+            }
+
+            if (count.HasValue && count.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), count.Value, "Count cannot be negative");
+            }
+
+            if (AccessMode == MemoryAccess.WriteOnly)
+            {
+                throw new InvalidOperationException("Cannot read from write-only memory");
+            }
         }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, nameof(PipelineMemory<T>));
@@ -451,23 +697,40 @@ namespace DotCompute.Core.Pipelines
     }
 
     /// <summary>
-    /// Simple memory pool implementation.
+    /// Production-grade memory pool implementation with size tracking and lifecycle management.
     /// </summary>
     internal sealed class MemoryPool : IDisposable
     {
         private readonly Type _elementType;
         private readonly MemoryPoolOptions _options;
-        private readonly ConcurrentQueue<IDeviceMemory> _pool;
+        private readonly ConcurrentQueue<PooledMemoryEntry> _pool;
         private readonly Lock _statsLock = new();
+        private readonly Timer? _cleanupTimer;
         private long _totalRented;
         private long _totalReturned;
-        private bool _isDisposed;
+        private long _totalBytesPooled;
+        private volatile bool _isDisposed;
+
+        private sealed class PooledMemoryEntry
+        {
+            public required IDeviceMemory Memory { get; init; }
+            public required long SizeInBytes { get; init; }
+            public required DateTime CreatedAt { get; init; }
+            public DateTime LastUsed { get; set; }
+        }
 
         public MemoryPool(Type elementType, MemoryPoolOptions options)
         {
-            _elementType = elementType;
-            _options = options;
-            _pool = new();
+            _elementType = elementType ?? throw new ArgumentNullException(nameof(elementType));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+            _pool = new ConcurrentQueue<PooledMemoryEntry>();
+
+            // Setup cleanup timer for retention policies
+            if (options.RetentionPolicy == PoolRetentionPolicy.TimeBasedRelease)
+            {
+                _cleanupTimer = new Timer(PerformScheduledCleanup, null,
+                    TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+            }
         }
 
         public IDeviceMemory? TryRent(long sizeInBytes)
@@ -477,13 +740,36 @@ namespace DotCompute.Core.Pipelines
                 return null;
             }
 
-            if (_pool.TryDequeue(out var memory))
+            // Try to find memory with compatible size (within 25% tolerance)
+            var maxAttempts = Math.Min(_pool.Count, 10); // Limit search to prevent blocking
+            for (int i = 0; i < maxAttempts; i++)
             {
-                lock (_statsLock)
+                if (_pool.TryDequeue(out var entry))
                 {
-                    _totalRented++;
+                    var sizeDiff = Math.Abs(entry.SizeInBytes - sizeInBytes);
+                    var tolerance = sizeInBytes * 0.25; // 25% size tolerance
+
+                    if (sizeDiff <= tolerance)
+                    {
+                        // Good match, update statistics and return
+                        lock (_statsLock)
+                        {
+                            _totalRented++;
+                            _totalBytesPooled -= entry.SizeInBytes;
+                        }
+                        entry.LastUsed = DateTime.UtcNow;
+                        return entry.Memory;
+                    }
+                    else
+                    {
+                        // Size mismatch, put it back and continue searching
+                        _pool.Enqueue(entry);
+                    }
                 }
-                return memory;
+                else
+                {
+                    break; // Pool is empty
+                }
             }
 
             return null;
@@ -491,26 +777,67 @@ namespace DotCompute.Core.Pipelines
 
         public void Return(IDeviceMemory memory)
         {
-            if (_isDisposed || _pool.Count >= _options.MaxSize)
+            if (_isDisposed || memory == null)
             {
-                _ = (memory?.DisposeAsync());
+                _ = memory?.DisposeAsync();
                 return;
             }
 
-            _pool.Enqueue(memory);
+            if (_pool.Count >= _options.MaxSize)
+            {
+                _ = memory.DisposeAsync();
+                return;
+            }
+
+            var entry = new PooledMemoryEntry
+            {
+                Memory = memory,
+                SizeInBytes = memory.SizeInBytes,
+                CreatedAt = DateTime.UtcNow,
+                LastUsed = DateTime.UtcNow
+            };
+
+            _pool.Enqueue(entry);
 
             lock (_statsLock)
             {
                 _totalReturned++;
+                _totalBytesPooled += memory.SizeInBytes;
             }
         }
 
         public void Trim()
         {
-            var targetSize = _options.InitialSize;
-            while (_pool.Count > targetSize && _pool.TryDequeue(out var memory))
+            if (_isDisposed)
             {
-                _ = (memory?.DisposeAsync());
+                return;
+            }
+
+            var targetSize = _options.InitialSize;
+            var entriesToRemove = new List<PooledMemoryEntry>();
+
+            // Collect entries to remove based on retention policy
+            while (_pool.Count > targetSize && _pool.TryDequeue(out var entry))
+            {
+                if (ShouldRetainEntry(entry))
+                {
+                    _pool.Enqueue(entry); // Put back if should retain
+                    break; // Stop trimming to avoid infinite loop
+                }
+                else
+                {
+                    entriesToRemove.Add(entry);
+                }
+            }
+
+            // Dispose removed entries
+            foreach (var entry in entriesToRemove)
+            {
+                _ = entry.Memory.DisposeAsync();
+                lock (_statsLock)
+                {
+                    _totalBytesPooled -= entry.SizeInBytes;
+                }
             }
         }
 
@@ -534,12 +861,41 @@ namespace DotCompute.Core.Pipelines
                 return;
             }
 
-            while (_pool.TryDequeue(out var memory))
+            _isDisposed = true;
+            _cleanupTimer?.Dispose();
+
+            while (_pool.TryDequeue(out var entry))
             {
-                _ = (memory?.DisposeAsync());
+                _ = entry.Memory.DisposeAsync();
             }
 
-            _isDisposed = true;
+            lock (_statsLock)
+            {
+                _totalBytesPooled = 0;
+            }
+        }
+
+        private bool ShouldRetainEntry(PooledMemoryEntry entry)
+        {
+            return _options.RetentionPolicy switch
+            {
+                PoolRetentionPolicy.KeepAll => true,
+                PoolRetentionPolicy.TimeBasedRelease =>
+                    DateTime.UtcNow - entry.LastUsed < TimeSpan.FromMinutes(30),
+                PoolRetentionPolicy.LeastRecentlyUsed =>
+                    DateTime.UtcNow - entry.LastUsed < TimeSpan.FromMinutes(15),
+                PoolRetentionPolicy.Adaptive =>
+                    GetEfficiency() > 0.5 || DateTime.UtcNow - entry.LastUsed < TimeSpan.FromMinutes(10),
+                _ => true
+            };
+        }
+
+        private void PerformScheduledCleanup(object? state)
+        {
+            if (!_isDisposed)
+            {
+                Trim();
+            }
         }
     }
 }

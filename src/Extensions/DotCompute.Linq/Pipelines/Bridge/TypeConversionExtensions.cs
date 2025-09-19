@@ -15,6 +15,7 @@ using LinqParameterDirection = DotCompute.Linq.Operators.Parameters.ParameterDir
 using AbstractionsParameterDirection = DotCompute.Abstractions.Kernels.ParameterDirection;
 using AbstractionsMemoryPattern = DotCompute.Abstractions.Types.MemoryAccessPattern;
 using PipelineMemoryPattern = DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern;
+using DotCompute.Core.Optimization.Enums;
 
 namespace DotCompute.Linq.Pipelines.Bridge;
 
@@ -630,16 +631,16 @@ public static class TypeConversionExtensions
     /// Converts memory access pattern between different type systems.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static DotCompute.Core.Optimization.MemoryAccessPattern ConvertMemoryAccessPattern(DotCompute.Linq.Pipelines.Models.AccessPattern accessPattern)
+    public static MemoryAccessPattern ConvertMemoryAccessPattern(DotCompute.Linq.Pipelines.Models.AccessPattern accessPattern)
     {
         return accessPattern switch
         {
-            DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential => DotCompute.Core.Optimization.MemoryAccessPattern.Sequential,
-            DotCompute.Linq.Pipelines.Models.AccessPattern.Random => DotCompute.Core.Optimization.MemoryAccessPattern.Random,
-            DotCompute.Linq.Pipelines.Models.AccessPattern.Strided => DotCompute.Core.Optimization.MemoryAccessPattern.Strided,
-            DotCompute.Linq.Pipelines.Models.AccessPattern.Coalesced => DotCompute.Core.Optimization.MemoryAccessPattern.Coalesced,
-            DotCompute.Linq.Pipelines.Models.AccessPattern.Scattered => DotCompute.Core.Optimization.MemoryAccessPattern.Scattered,
-            _ => DotCompute.Core.Optimization.MemoryAccessPattern.Sequential
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential => MemoryAccessPattern.Sequential,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Random => MemoryAccessPattern.Random,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Strided => MemoryAccessPattern.Strided,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Coalesced => MemoryAccessPattern.Coalesced,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Scattered => MemoryAccessPattern.Scattered,
+            _ => MemoryAccessPattern.Sequential
         };
     }
 

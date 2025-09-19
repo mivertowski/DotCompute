@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Profiling.Types;
 
 namespace DotCompute.Core.Models

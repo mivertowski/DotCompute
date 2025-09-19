@@ -75,7 +75,7 @@ public class PluginServiceProvider : IPluginServiceProvider, IDisposable
             return existing;
         });
 
-        _logger.LogDebugMessage("Registered {Count} services for plugin {services.Count, pluginId}");
+        _logger.LogDebugMessage($"Registered {services.Count} services for plugin {pluginId}");
     }
 
     public T? GetPluginService<T>(string pluginId) where T : class => (T?)GetPluginService(pluginId, typeof(T));

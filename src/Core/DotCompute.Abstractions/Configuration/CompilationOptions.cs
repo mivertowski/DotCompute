@@ -33,6 +33,11 @@ public class CompilationOptions
     }
 
     /// <summary>
+    /// Generate line information for debugging
+    /// </summary>
+    public bool GenerateLineInfo { get; set; } = false;
+
+    /// <summary>
     /// Enable profiling support during compilation and execution
     /// </summary>
     public bool EnableProfiling { get; set; }
@@ -313,6 +318,7 @@ public class CompilationOptions
         {
             OptimizationLevel = OptimizationLevel,
             EnableDebugInfo = EnableDebugInfo,
+            GenerateLineInfo = GenerateLineInfo,
             EnableFastMath = EnableFastMath,
             AggressiveOptimizations = AggressiveOptimizations,
             TargetArchitecture = TargetArchitecture,

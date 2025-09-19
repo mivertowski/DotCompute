@@ -81,7 +81,7 @@ public class BaseDeviceBufferTests
 
         // Act
 
-        buffer.Dispose();
+        await buffer.DisposeAsync();
 
         // Assert
         _ = buffer.IsDisposed.Should().BeTrue();

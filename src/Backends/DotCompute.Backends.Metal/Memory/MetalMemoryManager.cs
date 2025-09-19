@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Memory;
+using DotCompute.Core.Utilities;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -14,6 +15,7 @@ namespace DotCompute.Backends.Metal.Memory;
 
 /// <summary>
 /// Metal-specific memory manager implementation with real Metal API integration.
+/// Consolidated using BaseMemoryManager to eliminate duplicate patterns.
 /// </summary>
 public sealed class MetalMemoryManager : BaseMemoryManager
 {
@@ -21,11 +23,6 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     private readonly bool _isAppleSilicon;
     private readonly ConcurrentDictionary<IntPtr, MetalAllocationInfo> _activeAllocations;
     private WeakReference<IAccelerator>? _acceleratorRef;
-    
-    private long _totalAllocatedBytes;
-    private long _peakAllocatedBytes;
-    private long _totalAllocations;
-    private volatile bool _disposed;
 
     /// <summary>
     /// Gets the Metal device used by this manager.

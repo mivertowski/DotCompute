@@ -11,7 +11,7 @@ using DotCompute.Linq.Pipelines.Models;
 using DotCompute.Linq.Pipelines.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using CorePipelineMetrics = DotCompute.Core.Pipelines.IPipelineMetrics;
+using CorePipelineMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IPipelineMetrics;
 using KernelPipelineBuilder = DotCompute.Abstractions.Pipelines.IKernelPipelineBuilder;
 using IKernelPipeline = DotCompute.Core.Pipelines.IKernelPipeline;
 using LinqKernelPipeline = DotCompute.Linq.Pipelines.Interfaces.IKernelPipeline;

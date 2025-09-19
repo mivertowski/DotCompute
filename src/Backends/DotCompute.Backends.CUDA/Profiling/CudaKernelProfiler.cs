@@ -115,7 +115,7 @@ namespace DotCompute.Backends.CUDA.Advanced
 
                 // Use real metrics if available, fallback to calculated
 
-                var throughput = new ThroughputMetrics
+                var throughput = new CudaThroughputMetrics
                 {
                     MemoryBandwidth = kernelMetrics.DramReadThroughput > 0
 
@@ -295,7 +295,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Calculates throughput metrics
         /// </summary>
-        private ThroughputMetrics CalculateThroughput(double avgTimeMs, KernelArguments arguments)
+        private CudaThroughputMetrics CalculateThroughput(double avgTimeMs, KernelArguments arguments)
         {
             // Estimate memory bandwidth utilization
             var memorySize = EstimateMemoryFootprint(arguments);
@@ -307,7 +307,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             var peakGFLOPS = smCount * clockRate * 128; // Approximate for Ada
             var achievedGFLOPS = peakGFLOPS * 0.3; // Rough estimate
 
-            return new ThroughputMetrics
+            return new CudaThroughputMetrics
             {
                 MemoryBandwidth = memoryBandwidth,
                 ComputePerformance = achievedGFLOPS
@@ -496,9 +496,9 @@ namespace DotCompute.Backends.CUDA.Advanced
     }
 
     /// <summary>
-    /// Throughput performance metrics
+    /// CUDA-specific throughput performance metrics
     /// </summary>
-    public sealed class ThroughputMetrics
+    public sealed class CudaThroughputMetrics
     {
         public double MemoryBandwidth { get; set; } // GB/s
         public double ComputePerformance { get; set; } // GFLOPS

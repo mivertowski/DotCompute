@@ -18,6 +18,7 @@ using CompilationITypeAnalyzer = DotCompute.Linq.Compilation.Analysis.ITypeAnaly
 using CompilationIOperatorAnalyzer = DotCompute.Linq.Compilation.Analysis.IOperatorAnalyzer;
 using AnalysisIOperatorAnalyzer = DotCompute.Linq.Analysis.IOperatorAnalyzer;
 using CompilationDependencyInfo = DotCompute.Linq.Compilation.Analysis.DependencyInfo;
+using DotCompute.Core.Optimization.Enums;
 using CompilationDependencyType = DotCompute.Linq.Compilation.Analysis.DependencyType;
 using AnalysisDependencyInfo = DotCompute.Linq.Analysis.DependencyInfo;
 using AnalysisDependencyType = DotCompute.Linq.Analysis.DependencyType;
@@ -194,30 +195,30 @@ public sealed class ExpressionAnalyzer
             OptimizationHints: GenerateOptimizationHints(context));
     }
 
-    private static GlobalMemoryAccessPattern ConvertToGlobalMemoryAccessPattern(DotCompute.Core.Optimization.MemoryAccessPattern pattern)
+    private static GlobalMemoryAccessPattern ConvertToGlobalMemoryAccessPattern(MemoryAccessPattern pattern)
     {
         return new GlobalMemoryAccessPattern
         {
             AccessType = pattern switch
             {
-                DotCompute.Core.Optimization.MemoryAccessPattern.Sequential => MemoryAccessType.Sequential,
-                DotCompute.Core.Optimization.MemoryAccessPattern.Random => MemoryAccessType.Random,
-                DotCompute.Core.Optimization.MemoryAccessPattern.Strided => MemoryAccessType.Strided,
+                MemoryAccessPattern.Sequential => MemoryAccessType.Sequential,
+                MemoryAccessPattern.Random => MemoryAccessType.Random,
+                MemoryAccessPattern.Strided => MemoryAccessType.Strided,
                 _ => MemoryAccessType.Sequential
             },
-            IsCoalesced = pattern == DotCompute.Core.Optimization.MemoryAccessPattern.Sequential,
-            CacheEfficiency = pattern == DotCompute.Core.Optimization.MemoryAccessPattern.Sequential ? 0.9 : 0.5
+            IsCoalesced = pattern == MemoryAccessPattern.Sequential,
+            CacheEfficiency = pattern == MemoryAccessPattern.Sequential ? 0.9 : 0.5
         };
     }
 
-    private static DotCompute.Core.Optimization.MemoryAccessPattern ConvertToMemoryAccessPattern(GlobalMemoryAccessPattern pattern)
+    private static MemoryAccessPattern ConvertToMemoryAccessPattern(GlobalMemoryAccessPattern pattern)
     {
         return pattern.AccessType switch
         {
-            MemoryAccessType.Sequential => DotCompute.Core.Optimization.MemoryAccessPattern.Sequential,
-            MemoryAccessType.Random => DotCompute.Core.Optimization.MemoryAccessPattern.Random,
-            MemoryAccessType.Strided => DotCompute.Core.Optimization.MemoryAccessPattern.Strided,
-            _ => DotCompute.Core.Optimization.MemoryAccessPattern.Sequential
+            MemoryAccessType.Sequential => MemoryAccessPattern.Sequential,
+            MemoryAccessType.Random => MemoryAccessPattern.Random,
+            MemoryAccessType.Strided => MemoryAccessPattern.Strided,
+            _ => MemoryAccessPattern.Sequential
         };
     }
 
@@ -227,16 +228,16 @@ public sealed class ExpressionAnalyzer
         return signatureBuilder.Build(expression, context.OperatorChain);
     }
 
-    private DotCompute.Core.Optimization.MemoryAccessPattern ConvertToCompilationMemoryAccessPattern(GlobalMemoryAccessPattern pattern)
+    private MemoryAccessPattern ConvertToCompilationMemoryAccessPattern(GlobalMemoryAccessPattern pattern)
     {
         return pattern.AccessType switch
         {
-            MemoryAccessType.Sequential => DotCompute.Core.Optimization.MemoryAccessPattern.Sequential,
-            MemoryAccessType.Random => DotCompute.Core.Optimization.MemoryAccessPattern.Random,
-            MemoryAccessType.Strided => DotCompute.Core.Optimization.MemoryAccessPattern.Strided,
-            MemoryAccessType.Coalesced => DotCompute.Core.Optimization.MemoryAccessPattern.Coalesced,
-            MemoryAccessType.Scattered => DotCompute.Core.Optimization.MemoryAccessPattern.Scattered,
-            _ => DotCompute.Core.Optimization.MemoryAccessPattern.Sequential
+            MemoryAccessType.Sequential => MemoryAccessPattern.Sequential,
+            MemoryAccessType.Random => MemoryAccessPattern.Random,
+            MemoryAccessType.Strided => MemoryAccessPattern.Strided,
+            MemoryAccessType.Coalesced => MemoryAccessPattern.Coalesced,
+            MemoryAccessType.Scattered => MemoryAccessPattern.Scattered,
+            _ => MemoryAccessPattern.Sequential
         };
     }
 

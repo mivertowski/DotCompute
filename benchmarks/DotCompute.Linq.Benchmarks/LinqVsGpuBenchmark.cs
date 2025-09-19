@@ -326,7 +326,7 @@ public class LinqVsGpuBenchmark
     
     [Benchmark]
     [BenchmarkCategory("Speedup", "Validation")]
-    public SpeedupResult ValidateSpeedupClaim()
+    public async Task<SpeedupResult> ValidateSpeedupClaim()
     {
         var standardTimes = new List<double>();
         var gpuTimes = new List<double>();
@@ -343,13 +343,11 @@ public class LinqVsGpuBenchmark
             // GPU LINQ timing
             var sw2 = Stopwatch.StartNew();
             var queryable = _gpuLinqProvider.CreateQueryable(_floatData, _gpuAccelerator);
-            var gpuTask = ExecuteGpuQuery(queryable.Select(x => x * 2.5f + 1.0f).Where(x => x > 1000f));
-            gpuTask.Wait();
+            var gpuResult = await ExecuteGpuQuery(queryable.Select(x => x * 2.5f + 1.0f).Where(x => x > 1000f)).ConfigureAwait(false);
             sw2.Stop();
             gpuTimes.Add(sw2.Elapsed.TotalMilliseconds);
-            
+
             // Verify results are equivalent
-            var gpuResult = gpuTask.Result;
             if (standardResult.Length != gpuResult.Length)
             {
                 throw new InvalidOperationException(\"Results length mismatch between Standard and GPU LINQ\");

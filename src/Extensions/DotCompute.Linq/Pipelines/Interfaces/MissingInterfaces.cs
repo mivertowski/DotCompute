@@ -5,6 +5,7 @@ using DotCompute.Abstractions.Pipelines;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Optimization.Enums;
 
 namespace DotCompute.Linq.Pipelines.Models;
 
@@ -530,7 +531,7 @@ public class WorkloadCharacteristics
     public long OperationCount { get; set; }
 
     /// <summary>Memory access pattern classification.</summary>
-    public DotCompute.Core.Optimization.MemoryAccessPattern AccessPattern { get; set; }
+    public MemoryAccessPattern AccessPattern { get; set; }
 
     /// <summary>Additional custom optimization hints.</summary>
     public List<string> OptimizationHints { get; set; } = new();

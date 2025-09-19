@@ -229,6 +229,7 @@ namespace DotCompute.Backends.CUDA.Memory
         private bool _isDirty;
         private readonly HashSet<(long start, long end)> _dirtyRanges;
         private readonly object _dirtyLock = new object();
+        private readonly WeakReference<IAccelerator>? _acceleratorRef;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaMemoryBuffer{T}"/> class.
@@ -237,7 +238,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <param name="count">The number of elements.</param>
         /// <param name="context">The CUDA context.</param>
         /// <param name="options">Memory allocation options.</param>
-        public CudaMemoryBuffer(nint devicePointer, long count, CudaContext context, MemoryOptions options = MemoryOptions.None)
+        public CudaMemoryBuffer(nint devicePointer, long count, CudaContext context, MemoryOptions options = MemoryOptions.None, IAccelerator? accelerator = null)
         {
             _devicePointer = devicePointer;
             _count = count;
@@ -246,6 +247,7 @@ namespace DotCompute.Backends.CUDA.Memory
             Options = options;
             _isDirty = false;
             _dirtyRanges = [];
+            _acceleratorRef = accelerator != null ? new WeakReference<IAccelerator>(accelerator) : null;
         }
 
         /// <summary>
@@ -274,7 +276,16 @@ namespace DotCompute.Backends.CUDA.Memory
         public bool IsDisposed => _disposed;
 
         /// <inheritdoc/>
-        public IAccelerator Accelerator => throw new NotImplementedException("Accelerator access not implemented in this context");
+        public IAccelerator Accelerator
+        {
+            get
+            {
+                if (_acceleratorRef?.TryGetTarget(out var accelerator) == true)
+                    return accelerator;
+
+                throw new InvalidOperationException("Accelerator reference is no longer available. Buffer may have been created without accelerator context.");
+            }
+        }
 
         /// <inheritdoc/>
         public bool IsOnHost => false; // CUDA buffers are primarily on device
@@ -802,7 +813,41 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => throw new NotImplementedException("Ranged copy operations not yet implemented");
+        public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(destination);
+
+            if (sourceOffset < 0 || sourceOffset >= Count)
+                throw new ArgumentOutOfRangeException(nameof(sourceOffset));
+            if (destinationOffset < 0 || destinationOffset >= destination.Count)
+                throw new ArgumentOutOfRangeException(nameof(destinationOffset));
+            if (count < 0 || sourceOffset + count > Count || destinationOffset + count > destination.Count)
+                throw new ArgumentOutOfRangeException(nameof(count));
+
+            return new ValueTask(Task.Run(() =>
+            {
+                _context.MakeCurrent();
+                var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var sourceBytes = sourceOffset * elementSize;
+                var destBytes = destinationOffset * elementSize;
+                var copyBytes = count * elementSize;
+
+                if (destination is CudaMemoryBuffer<T> cudaDestination)
+                {
+                    // CUDA to CUDA copy
+                    var result = CudaRuntime.cudaMemcpy(
+                        cudaDestination.DevicePointer + destBytes,
+                        _devicePointer + sourceBytes,
+                        (nuint)copyBytes,
+                        CudaMemcpyKind.DeviceToDevice);
+                    CudaException.ThrowIfFailed(result, "Failed to copy between CUDA buffers");
+                }
+                else
+                {
+                    throw new NotSupportedException($"Ranged copy to {destination.GetType()} not supported. Use host memory intermediary.");
+                }
+            }, cancellationToken));
+        }
 
         // Fill Operations
         /// <inheritdoc/>

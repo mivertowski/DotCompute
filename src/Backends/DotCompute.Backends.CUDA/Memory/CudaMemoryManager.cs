@@ -4,6 +4,8 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Core.Memory;
+using DotCompute.Core.Utilities;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -13,8 +15,9 @@ namespace DotCompute.Backends.CUDA.Memory
 {
     /// <summary>
     /// Manages CUDA device memory allocation and deallocation.
+    /// Consolidated using BaseMemoryManager to eliminate duplicate patterns.
     /// </summary>
-    public sealed class CudaMemoryManager : IDisposable
+    public sealed class CudaMemoryManager : BaseMemoryManager
     {
         private readonly CudaContext _context;
         private readonly CudaDevice _device;
@@ -85,7 +88,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _allocations[devicePtr] = sizeInBytes;
             _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-            _logger.LogDebugMessage(" bytes at {Address:X}");
+            _logger.LogDebugMessage($"Allocated {sizeInBytes} bytes at 0x{devicePtr:X}");
 
             return new CudaMemoryBuffer<T>(devicePtr, count, _context);
         }
@@ -108,7 +111,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 _allocations[devicePtr] = sizeInBytes;
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                _logger.LogDebugMessage(" bytes at {Address:X}");
+                _logger.LogDebugMessage($"Allocated {sizeInBytes} bytes at 0x{devicePtr:X}");
 
                 // Return a non-generic buffer that implements IUnifiedMemoryBuffer
                 return new CudaMemoryBuffer(_device, devicePtr, sizeInBytes);
@@ -216,11 +219,11 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (result == CudaError.Success)
                 {
                     _ = Interlocked.Add(ref _totalAllocated, -size);
-                    _logger.LogDebugMessage(" bytes at {Address:X}");
+                    _logger.LogDebugMessage($"Freed {size} bytes at 0x{devicePtr:X}");
                 }
                 else
                 {
-                    _logger.LogWarningMessage("");
+                    _logger.LogWarningMessage($"Failed to free CUDA memory at 0x{devicePtr:X}: {result}");
                 }
             }
         }

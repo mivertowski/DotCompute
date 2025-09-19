@@ -1259,9 +1259,9 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             };
 
             // Handle both file changes and dependency changes
-            watcher.Changed += OnAssemblyChanged;
-            watcher.Created += OnAssemblyChanged;
-            watcher.Error += OnFileWatcherError;
+            watcher.Changed += (sender, e) => _ = HandleAssemblyChangedAsync(sender, e);
+            watcher.Created += (sender, e) => _ = HandleAssemblyChangedAsync(sender, e);
+            watcher.Error += (sender, e) => _ = HandleFileWatcherErrorAsync(sender, e);
 
             // Also watch for .pdb files (debug symbols) and .json manifest files
             var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
@@ -1274,7 +1274,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                     NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
                     EnableRaisingEvents = true
                 };
-                pdbWatcher.Changed += OnAssemblyChanged;
+                pdbWatcher.Changed += (sender, e) => _ = HandleAssemblyChangedAsync(sender, e);
                 _watchers.TryAdd(pdbPath, pdbWatcher);
             }
             
@@ -1285,7 +1285,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                     NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
                     EnableRaisingEvents = true
                 };
-                manifestWatcher.Changed += OnAssemblyChanged;
+                manifestWatcher.Changed += (sender, e) => _ = HandleAssemblyChangedAsync(sender, e);
                 _watchers.TryAdd(manifestPath, manifestWatcher);
             }
 
@@ -1312,9 +1312,24 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     }
 
     /// <summary>
+    /// Async wrapper for handling assembly file changes.
+    /// </summary>
+    private async Task HandleAssemblyChangedAsync(object sender, FileSystemEventArgs e)
+    {
+        try
+        {
+            await OnAssemblyChanged(sender, e).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error handling assembly change for {FullPath}", e.FullPath);
+        }
+    }
+
+    /// <summary>
     /// Handles assembly file changes for hot reload.
     /// </summary>
-    private async void OnAssemblyChanged(object sender, FileSystemEventArgs e)
+    private async Task OnAssemblyChanged(object sender, FileSystemEventArgs e)
     {
         try
         {
@@ -1357,9 +1372,24 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     }
 
     /// <summary>
+    /// Async wrapper for handling file watcher errors.
+    /// </summary>
+    private async Task HandleFileWatcherErrorAsync(object sender, ErrorEventArgs e)
+    {
+        try
+        {
+            await OnFileWatcherError(sender, e).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error handling file watcher error");
+        }
+    }
+
+    /// <summary>
     /// Handles file watcher errors.
     /// </summary>
-    private async void OnFileWatcherError(object sender, ErrorEventArgs e)
+    private async Task OnFileWatcherError(object sender, ErrorEventArgs e)
     {
         _logger.LogErrorMessage(e.GetException(), "File watcher error occurred");
         

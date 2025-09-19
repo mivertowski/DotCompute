@@ -55,5 +55,11 @@ public enum OptimizationType
     /// Work group size optimization - tunes the parallel execution configuration.
     /// Optimizes resource utilization and occupancy on parallel devices.
     /// </summary>
-    WorkGroupOptimization
+    WorkGroupOptimization,
+
+    /// <summary>
+    /// Parallel merging optimization - combines parallel execution paths efficiently.
+    /// Improves performance by optimizing parallel task coordination and data merging.
+    /// </summary>
+    ParallelMerging
 }

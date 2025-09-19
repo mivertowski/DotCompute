@@ -3,11 +3,21 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Pipelines.Models;
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Models.Pipelines;
+using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Pipelines.Results;
 using DotCompute.Core.Pipelines.Services;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+
+// Type aliases to resolve ambiguous references
+using KernelChainExecutionResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainExecutionResult;
+using KernelStepMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelStepMetrics;
+using KernelChainMemoryMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainMemoryMetrics;
+using ErrorHandlingStrategy = DotCompute.Abstractions.Interfaces.Pipelines.ErrorHandlingStrategy;
+using KernelChainValidationResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainValidationResult;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -415,7 +425,8 @@ namespace DotCompute.Core.Pipelines
                 };
             }
 
-            return await _validator.ValidateChainAsync(_steps);
+            var validationResult = await _validator.ValidateChainAsync(_steps);
+            return ConvertToInterfacesKernelChainValidationResult(validationResult);
         }
 
         /// <summary>
@@ -705,6 +716,21 @@ namespace DotCompute.Core.Pipelines
                 TotalMemoryAllocated = GC.GetTotalMemory(false),
                 GarbageCollections = gc0 + gc1 + gc2,
                 MemoryPoolingUsed = false // Could be determined by checking if memory pools are configured
+            };
+        }
+
+        /// <summary>
+        /// Converts Results KernelChainValidationResult to Interfaces KernelChainValidationResult
+        /// </summary>
+        private static KernelChainValidationResult ConvertToInterfacesKernelChainValidationResult(DotCompute.Abstractions.Pipelines.Results.KernelChainValidationResult resultsValidation)
+        {
+            return new KernelChainValidationResult
+            {
+                IsValid = resultsValidation.IsValid,
+                Errors = resultsValidation.Errors?.ToList(),
+                Warnings = resultsValidation.Warnings?.ToList(),
+                ValidationTime = resultsValidation.ValidationTime,
+                StepsValidated = resultsValidation.StepsValidated
             };
         }
 

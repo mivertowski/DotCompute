@@ -113,29 +113,38 @@ public class UnifiedMemoryManager : IUnifiedMemoryManager
     /// <inheritdoc />
     public IUnifiedMemoryBuffer<T> CreateView<T>(
         IUnifiedMemoryBuffer<T> buffer,
-
         int offset,
-
         int length) where T : unmanaged
     {
         if (_disposed)
         {
-
             throw new ObjectDisposedException(nameof(UnifiedMemoryManager));
         }
 
-
         ArgumentNullException.ThrowIfNull(buffer);
-        if (offset < 0 || length < 0 || offset + length > buffer.Length)
-        {
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-            throw new ArgumentOutOfRangeException();
+        if (offset + length > buffer.Length)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(offset),
+                $"View range ({offset}..{offset + length}) exceeds buffer length ({buffer.Length})");
         }
 
-        // Create a view using UnifiedBuffer's view constructor if available
-        // For now, create a simple wrapper - this would need proper implementation TODO
+        _logger.LogDebug("Creating view of buffer with offset {Offset} and length {Length}", offset, length);
 
-        throw new NotImplementedException("CreateView requires proper buffer view implementation");
+        // Check if the buffer is our own UnifiedBuffer type
+        if (buffer is UnifiedBuffer<T> unifiedBuffer)
+        {
+            return new UnifiedBufferSlice<T>(unifiedBuffer, offset, length);
+        }
+
+        // For other buffer types, we would need to create a generic wrapper
+        // For now, throw an exception indicating unsupported buffer type
+        throw new NotSupportedException(
+            $"Creating views of buffer type {buffer.GetType().Name} is not currently supported. " +
+            "Only UnifiedBuffer<T> instances support view creation.");
     }
 
     /// <inheritdoc />

@@ -38,10 +38,10 @@ public class OptimizationImpactBenchmark
     private IComputeOrchestrator _balancedOrchestrator = null!;
     private IComputeOrchestrator _aggressiveOrchestrator = null!;
     private IComputeOrchestrator _mlOptimizedOrchestrator = null!;
-    
+
     private IAccelerator _cpuAccelerator = null!;
     private IAccelerator _gpuAccelerator = null!;
-    
+
     // Test datasets for different optimization scenarios
     private int[] _smallIntData = null!;
     private int[] _mediumIntData = null!;
@@ -50,17 +50,17 @@ public class OptimizationImpactBenchmark
     private float[] _mediumFloatData = null!;
     private float[] _largeFloatData = null!;
     private double[] _computeIntensiveData = null!;
-    
+
     // Complex workload data
     private ComplexWorkloadData[] _complexWorkload = null!;
     private MatrixData[] _matrixWorkload = null!;
-    
+
     [Params(1000, 10000, 100000, 1000000)]
     public int DataSize { get; set; }
-    
+
     [Params(OptimizationStrategy.None, OptimizationStrategy.KernelFusion, OptimizationStrategy.MemoryOptimization, OptimizationStrategy.MLOptimization, OptimizationStrategy.All)]
     public OptimizationStrategy Strategy { get; set; }
-    
+
     [Params(OptimizationLevel.Conservative, OptimizationLevel.Balanced, OptimizationLevel.Aggressive)]
     public OptimizationLevel Level { get; set; }
 
@@ -73,63 +73,173 @@ public class OptimizationImpactBenchmark
         services.AddDotComputeRuntime();
         services.AddDotComputeLinq();
         services.AddPipelineLinqServices();
-        
+
         // Add optimization services
         services.AddProductionOptimization();
         services.AddProductionDebugging();
-        
+
         var serviceProvider = services.BuildServiceProvider();
-        
+
         // Get providers with different optimization configurations
         _baseProvider = serviceProvider.GetRequiredService<IComputeLinqProvider>();
         _optimizedProvider = serviceProvider.GetService<RuntimeIntegratedLinqProvider>() ?? _baseProvider;
-        
+
         // Get orchestrators with different optimization levels
         var orchestratorFactory = serviceProvider.GetRequiredService<IComputeOrchestratorFactory>();
         _conservativeOrchestrator = orchestratorFactory.CreateOrchestrator(OptimizationLevel.Conservative);
         _balancedOrchestrator = orchestratorFactory.CreateOrchestrator(OptimizationLevel.Balanced);
         _aggressiveOrchestrator = orchestratorFactory.CreateOrchestrator(OptimizationLevel.Aggressive);
         _mlOptimizedOrchestrator = orchestratorFactory.CreateOrchestrator(OptimizationLevel.MLOptimized);
-        
+
         // Get accelerators
         var acceleratorService = serviceProvider.GetRequiredService<IAcceleratorService>();
         _cpuAccelerator = acceleratorService.GetAccelerators().First(a => a.Info.DeviceType == DeviceType.CPU);
-        _gpuAccelerator = acceleratorService.GetAccelerators().FirstOrDefault(a => a.Info.DeviceType == DeviceType.CUDA) 
+        _gpuAccelerator = acceleratorService.GetAccelerators().FirstOrDefault(a => a.Info.DeviceType == DeviceType.CUDA)
                           ?? _cpuAccelerator; // Fallback to CPU if no GPU available
-        
+
         SetupTestData();
     }
-    
+
     private void SetupTestData()
     {
         var random = new Random(42); // Deterministic seed
-        
+
         // Basic numeric arrays of different sizes
         _smallIntData = Enumerable.Range(0, Math.Min(DataSize, 1000))
             .Select(_ => random.Next(1, 10000))
             .ToArray();
-            
+
         _mediumIntData = Enumerable.Range(0, Math.Min(DataSize, 10000))
             .Select(_ => random.Next(1, 10000))
             .ToArray();
-            
+
         _largeIntData = Enumerable.Range(0, DataSize)
             .Select(_ => random.Next(1, 10000))
             .ToArray();
-            
+
         _smallFloatData = Enumerable.Range(0, Math.Min(DataSize, 1000))
             .Select(_ => (float)random.NextDouble() * 10000f)
             .ToArray();
-            
+
         _mediumFloatData = Enumerable.Range(0, Math.Min(DataSize, 10000))
             .Select(_ => (float)random.NextDouble() * 10000f)
             .ToArray();
-            
+
         _largeFloatData = Enumerable.Range(0, DataSize)
             .Select(_ => (float)random.NextDouble() * 10000f)
             .ToArray();
-            
+
         // Compute-intensive data with transcendental operations
         _computeIntensiveData = Enumerable.Range(0, DataSize)
             .Select(_ => random.NextDouble() * Math.PI * 2)
-            .ToArray();\n            \n        // Complex workload data\n        _complexWorkload = Enumerable.Range(0, DataSize)\n            .Select(i => new ComplexWorkloadData\n            {\n                Id = i,\n                Values = Enumerable.Range(0, 10).Select(_ => (float)random.NextDouble() * 100f).ToArray(),\n                Weights = Enumerable.Range(0, 10).Select(_ => (float)random.NextDouble()).ToArray(),\n                Category = random.Next(1, 5),\n                Timestamp = DateTime.Now.AddSeconds(-random.Next(0, 86400))\n            })\n            .ToArray();\n            \n        // Matrix workload data\n        _matrixWorkload = Enumerable.Range(0, Math.Min(DataSize, 10000))\n            .Select(i => new MatrixData\n            {\n                Matrix = GenerateRandomMatrix(8, 8, random),\n                Vector = Enumerable.Range(0, 8).Select(_ => (float)random.NextDouble()).ToArray()\n            })\n            .ToArray();\n    }\n    \n    private float[,] GenerateRandomMatrix(int rows, int cols, Random random)\n    {\n        var matrix = new float[rows, cols];\n        for (int i = 0; i < rows; i++)\n        {\n            for (int j = 0; j < cols; j++)\n            {\n                matrix[i, j] = (float)random.NextDouble();\n            }\n        }\n        return matrix;\n    }\n\n    #region Kernel Fusion Benchmarks\n    \n    [Benchmark(Baseline = true)]\n    [BenchmarkCategory(\"KernelFusion\", \"Separate\")]\n    public int[] SeparateKernels_Baseline()\n    {\n        var data = GetDataBySize();\n        \n        // Simulate separate kernel execution without fusion\n        var step1 = data.Select(x => x * 2).ToArray();\n        var step2 = step1.Select(x => x + 10).ToArray();\n        var step3 = step2.Where(x => x > 100).ToArray();\n        var step4 = step3.Select(x => x / 3).ToArray();\n        \n        return step4;\n    }\n    \n    [Benchmark]\n    [BenchmarkCategory(\"KernelFusion\", \"Fused\")]\n    public async Task<int[]> FusedKernels_Optimized()\n    {\n        var data = GetDataBySize();\n        var queryable = _optimizedProvider.CreateQueryable(data, GetAcceleratorByStrategy());\n        \n        // Single fused operation that should be optimized\n        var result = await ExecuteOptimizedQuery(queryable\n            .Select(x => x * 2)\n            .Select(x => x + 10)\n            .Where(x => x > 100)\n            .Select(x => x / 3));\n            \n        return result;\n    }\n    \n    [Benchmark]\n    [BenchmarkCategory(\"KernelFusion\", \"ChainLength\")]\n    public async Task<int[]> LongChain_FusionImpact()\n    {\n        var data = GetDataBySize();\n        var queryable = _optimizedProvider.CreateQueryable(data, GetAcceleratorByStrategy());\n        \n        // Very long chain to test fusion effectiveness\n        var result = await ExecuteOptimizedQuery(queryable\n            .Select(x => x * 2)\n            .Where(x => x > 50)\n            .Select(x => x + 10)\n            .Where(x => x < 10000)\n            .Select(x => x / 3)\n            .Where(x => x > 20)\n            .Select(x => x * 5)\n            .Where(x => x < 50000));\n            \n        return result;\n    }\n    \n    #endregion\n\n    #region Memory Optimization Benchmarks\n    \n    [Benchmark]\n    [BenchmarkCategory(\"Memory\", \"Standard\")]\n    public float[] StandardMemory_Baseline()\n    {\n        var data = _largeFloatData;\n        \n        // Standard LINQ without memory optimization\n        var result1 = data.Select(x => x * 2.5f).ToArray();\n        var result2 = result1.Select(x => x + 1.0f).ToArray();\n        var result3 = result2.Where(x => x > 1000f).ToArray();\n        \n        return result3;\n    }\n    \n    [Benchmark]\n    [BenchmarkCategory(\"Memory\", \"Optimized\")]\n    public async Task<float[]> OptimizedMemory_Pooled()\n    {\n        var data = _largeFloatData;\n        var queryable = _optimizedProvider.CreateQueryable(data, GetAcceleratorByStrategy());\n        \n        // Memory-optimized execution with pooling\n        var result = await ExecuteOptimizedQuery(queryable\n            .Select(x => x * 2.5f)\n            .Select(x => x + 1.0f)\n            .Where(x => x > 1000f));\n            \n        return result;\n    }\n    \n    [Benchmark]\n    [BenchmarkCategory(\"Memory\", \"LargeDataset\")]\n    public async Task<MemoryOptimizationResult> LargeDataset_MemoryImpact()\n    {\n        var data = _largeFloatData;\n        var baseline = GC.GetTotalMemory(true);\n        \n        var stopwatch = Stopwatch.StartNew();\n        \n        var queryable = _optimizedProvider.CreateQueryable(data, GetAcceleratorByStrategy());\n        var result = await ExecuteOptimizedQuery(queryable\n            .Select(x => x * 2.5f)\n            .Where(x => x > 5000f)\n            .Select(x => Math.Sqrt(x))\n            .Where(x => x < 100f));\n            \n        stopwatch.Stop();\n        \n        var peakMemory = GC.GetTotalMemory(false) - baseline;\n        GC.Collect();\n        var finalMemory = GC.GetTotalMemory(true) - baseline;\n        \n        return new MemoryOptimizationResult\n        {\n            ExecutionTime = stopwatch.Elapsed,\n            PeakMemoryUsage = peakMemory,\n            FinalMemoryUsage = finalMemory,\n            ResultSize = result.Length,\n            MemoryEfficiency = (double)result.Length / peakMemory\n        };\n    }\n    \n    #endregion\n\n    #region ML-Based Optimization Benchmarks\n    \n    [Benchmark]\n    [BenchmarkCategory(\"MLOptimization\", \"AdaptiveSelection\")]\n    public async Task<MLOptimizationResult> MLBased_BackendSelection()\n    {\n        var data = GetDataBySize();\n        var results = new List<(string Backend, TimeSpan ExecutionTime, bool Success)>();\n        \n        // Test different backends with ML-guided selection\n        var backends = new[] { \"CPU\", \"CUDA\" };\n        \n        foreach (var backend in backends)\n        {\n            try\n            {\n                var accelerator = backend == \"CUDA\" ? _gpuAccelerator : _cpuAccelerator;\n                var queryable = _optimizedProvider.CreateQueryable(data, accelerator);\n                \n                var stopwatch = Stopwatch.StartNew();\n                var result = await ExecuteOptimizedQuery(queryable\n                    .Select(x => x * 2)\n                    .Where(x => x > 1000)\n                    .Select(x => Math.Sqrt(x))\n                    .Where(x => x < 100));\n                stopwatch.Stop();\n                \n                results.Add((backend, stopwatch.Elapsed, true));\n            }\n            catch\n            {\n                results.Add((backend, TimeSpan.Zero, false));\n            }\n        }\n        \n        var bestBackend = results.Where(r => r.Success).OrderBy(r => r.ExecutionTime).FirstOrDefault();\n        \n        return new MLOptimizationResult\n        {\n            OptimalBackend = bestBackend.Backend ?? \"CPU\",\n            OptimalExecutionTime = bestBackend.ExecutionTime,\n            AllResults = results,\n            DataSize = DataSize,\n            OptimizationStrategy = Strategy\n        };\n    }\n    \n    [Benchmark]\n    [BenchmarkCategory(\"MLOptimization\", \"WorkloadCharacterization\")]\n    public async Task<WorkloadCharacterizationResult> MLBased_WorkloadAnalysis()\n    {\n        var data = GetDataBySize();\n        var characteristics = new WorkloadCharacteristics\n        {\n            DataSize = data.Length,\n            ComputeIntensity = CalculateComputeIntensity(),\n            MemoryIntensity = CalculateMemoryIntensity(),\n            ParallelismDegree = Environment.ProcessorCount,\n            WorkloadType = \"LINQ Query\"\n        };\n        \n        // Use ML-optimized orchestrator\n        var context = new KernelExecutionContext\n        {\n            PreferredBackend = \"Auto\",\n            OptimizationLevel = OptimizationLevel.MLOptimized,\n            EnableProfiling = true\n        };\n        \n        var stopwatch = Stopwatch.StartNew();\n        \n        // Execute with ML guidance\n        var queryable = _optimizedProvider.CreateQueryable(data, null); // Let ML choose\n        var result = await ExecuteOptimizedQuery(queryable\n            .Select(x => x * 2)\n            .Where(x => x > 1000)\n            .Select(x => (int)Math.Sqrt(x))\n            .Where(x => x < 100));\n            \n        stopwatch.Stop();\n        \n        return new WorkloadCharacterizationResult\n        {\n            Characteristics = characteristics,\n            ExecutionTime = stopwatch.Elapsed,\n            ResultSize = result.Length,\n            ThroughputOpsPerSec = result.Length / stopwatch.Elapsed.TotalSeconds,\n            OptimizationEffectiveness = CalculateOptimizationEffectiveness(stopwatch.Elapsed)\n        };\n    }\n    \n    #endregion\n\n    #region Optimization Profile Comparison\n    \n    [Benchmark]\n    [BenchmarkCategory(\"Profile\", \"Conservative\")]\n    public async Task<float[]> Conservative_OptimizationProfile()\n    {\n        var data = _mediumFloatData;\n        var queryable = _baseProvider.CreateQueryable(data, _cpuAccelerator);\n        \n        return await ExecuteWithOrchestrator(_conservativeOrchestrator, queryable\n            .Select(x => x * 2.5f)\n            .Where(x => x > 1000f)\n            .Select(x => (float)Math.Sin(x))\n            .Where(x => x > 0f));\n    }\n    \n    [Benchmark]\n    [BenchmarkCategory(\"Profile\", \"Balanced\")]\n    public async Task<float[]> Balanced_OptimizationProfile()\n    {\n        var data = _mediumFloatData;\n        var queryable = _baseProvider.CreateQueryable(data, GetOptimalAccelerator());\n        \n        return await ExecuteWithOrchestrator(_balancedOrchestrator, queryable\n            .Select(x => x * 2.5f)\n            .Where(x => x > 1000f)\n            .Select(x => (float)Math.Sin(x))\n            .Where(x => x > 0f));\n    }\n    \n    [Benchmark]\n    [BenchmarkCategory(\"Profile\", \"Aggressive\")]\n    public async Task<float[]> Aggressive_OptimizationProfile()\n    {\n        var data = _mediumFloatData;\n        var queryable = _baseProvider.CreateQueryable(data, _gpuAccelerator);\n        \n        return await ExecuteWithOrchestrator(_aggressiveOrchestrator, queryable\n            .Select(x => x * 2.5f)\n            .Where(x => x > 1000f)\n            .Select(x => (float)Math.Sin(x))\n            .Where(x => x > 0f));\n    }\n    \n    [Benchmark]\n    [BenchmarkCategory(\"Profile\", \"MLOptimized\")]\n    public async Task<float[]> MLOptimized_OptimizationProfile()\n    {\n        var data = _mediumFloatData;\n        var queryable = _baseProvider.CreateQueryable(data, null); // Let ML choose\n        \n        return await ExecuteWithOrchestrator(_mlOptimizedOrchestrator, queryable\n            .Select(x => x * 2.5f)\n            .Where(x => x > 1000f)\n            .Select(x => (float)Math.Sin(x))\n            .Where(x => x > 0f));\n    }\n    \n    #endregion\n\n    #region Complex Workload Optimization\n    \n    [Benchmark]\n    [BenchmarkCategory(\"Complex\", \"Standard\")]\n    public ComplexWorkloadResult[] ComplexWorkload_Standard()\n    {\n        return _complexWorkload\n            .Where(w => w.Category > 2)\n            .Select(w => new ComplexWorkloadResult\n            {\n                Id = w.Id,\n                ProcessedValue = w.Values.Zip(w.Weights, (v, weight) => v * weight).Sum(),\n                Category = w.Category\n            })\n            .ToArray();\n    }\n    \n    [Benchmark]\n    [BenchmarkCategory(\"Complex\", \"Optimized\")]\n    public async Task<ComplexWorkloadResult[]> ComplexWorkload_Optimized()\n    {\n        // Use optimized LINQ with kernel fusion and memory optimization\n        var ids = _complexWorkload.Select(w => w.Id).ToArray();\n        var categories = _complexWorkload.Select(w => w.Category).ToArray();\n        var processedValues = _complexWorkload.Select(w => w.Values.Zip(w.Weights, (v, weight) => v * weight).Sum()).ToArray();\n        \n        var queryable = _optimizedProvider.CreateQueryable(Enumerable.Range(0, _complexWorkload.Length).ToArray(), GetAcceleratorByStrategy());\n        \n        var filteredIndices = await ExecuteOptimizedQuery(queryable.Where(i => categories[i] > 2));\n        \n        return filteredIndices.Select(i => new ComplexWorkloadResult\n        {\n            Id = ids[i],\n            ProcessedValue = processedValues[i],\n            Category = categories[i]\n        }).ToArray();\n    }\n    \n    #endregion\n\n    #region Real-World Optimization Scenarios\n    \n    [Benchmark]\n    [BenchmarkCategory(\"RealWorld\", \"ImageProcessing\")]\n    public async Task<double[]> ImageProcessing_OptimizationImpact()\n    {\n        // Simulate image processing pipeline\n        var imageData = _computeIntensiveData; // Simulated pixel values\n        var queryable = _optimizedProvider.CreateQueryable(imageData, GetAcceleratorByStrategy());\n        \n        // Image processing pipeline with multiple transformations\n        var result = await ExecuteOptimizedQuery(queryable\n            .Select(pixel => Math.Max(0, Math.Min(1, pixel))) // Clamp to [0,1]\n            .Select(pixel => Math.Pow(pixel, 2.2)) // Gamma correction\n            .Select(pixel => pixel * 255.0) // Scale to [0,255]\n            .Select(pixel => Math.Round(pixel)) // Quantize\n            .Where(pixel => pixel > 10)); // Filter dark pixels\n            \n        return result;\n    }\n    \n    [Benchmark]\n    [BenchmarkCategory(\"RealWorld\", \"FinancialAnalysis\")]\n    public async Task<FinancialResult> FinancialAnalysis_OptimizationImpact()\n    {\n        var prices = _largeFloatData; // Simulated stock prices\n        var queryable = _optimizedProvider.CreateQueryable(prices, GetAcceleratorByStrategy());\n        \n        // Financial analysis pipeline\n        var returns = await ExecuteOptimizedQuery(queryable\n            .Zip(queryable.Skip(1), (current, next) => (next - current) / current));\n            \n        var volatility = await ExecuteOptimizedQuery(queryable\n            .Select(price => Math.Log(price))\n            .Zip(queryable.Skip(1).Select(price => Math.Log(price)), (current, next) => Math.Pow(next - current, 2))\n            .Take(returns.Length));\n            \n        return new FinancialResult\n        {\n            AverageReturn = returns.Average(),\n            Volatility = Math.Sqrt(volatility.Average()),\n            Sharpe = returns.Average() / Math.Sqrt(volatility.Average()),\n            DataPoints = returns.Length\n        };\n    }\n    \n    #endregion\n\n    #region Helper Methods\n    \n    private int[] GetDataBySize()\n    {\n        return DataSize switch\n        {\n            <= 1000 => _smallIntData,\n            <= 10000 => _mediumIntData,\n            _ => _largeIntData\n        };\n    }\n    \n    private IAccelerator GetAcceleratorByStrategy()\n    {\n        return Strategy switch\n        {\n            OptimizationStrategy.None => _cpuAccelerator,\n            OptimizationStrategy.KernelFusion => _cpuAccelerator,\n            OptimizationStrategy.MemoryOptimization => _cpuAccelerator,\n            OptimizationStrategy.MLOptimization => null!, // Let ML choose\n            OptimizationStrategy.All => null!, // Let ML choose\n            _ => _cpuAccelerator\n        };\n    }\n    \n    private IAccelerator GetOptimalAccelerator()\n    {\n        // Simple heuristic: use GPU for large datasets, CPU for small\n        return DataSize > 10000 ? _gpuAccelerator : _cpuAccelerator;\n    }\n    \n    private async Task<T[]> ExecuteOptimizedQuery<T>(IQueryable<T> queryable)\n    {\n        if (queryable.Provider is IComputeQueryProvider provider)\n        {\n            var result = await provider.ExecuteAsync<IEnumerable<T>>(queryable.Expression);\n            return result.ToArray();\n        }\n        \n        return queryable.ToArray();\n    }\n    \n    private async Task<T[]> ExecuteWithOrchestrator<T>(IComputeOrchestrator orchestrator, IQueryable<T> queryable)\n    {\n        // This would require integration with the orchestrator for query execution\n        // For now, fall back to standard execution\n        return await ExecuteOptimizedQuery(queryable);\n    }\n    \n    private double CalculateComputeIntensity()\n    {\n        // Heuristic based on data size and operation complexity\n        return Strategy switch\n        {\n            OptimizationStrategy.None => 0.1,\n            OptimizationStrategy.KernelFusion => 0.5,\n            OptimizationStrategy.MemoryOptimization => 0.3,\n            OptimizationStrategy.MLOptimization => 0.8,\n            OptimizationStrategy.All => 0.9,\n            _ => 0.1\n        };\n    }\n    \n    private double CalculateMemoryIntensity()\n    {\n        return (double)DataSize / 1000000.0; // Normalized by 1M elements\n    }\n    \n    private double CalculateOptimizationEffectiveness(TimeSpan executionTime)\n    {\n        // Heuristic: faster execution = better optimization\n        var baselineTime = DataSize / 1000.0; // Assume 1ms per 1000 elements as baseline\n        return Math.Max(0, (baselineTime - executionTime.TotalMilliseconds) / baselineTime);\n    }\n    \n    #endregion\n}\n\n#region Supporting Types\n\n/// <summary>\n/// Optimization strategies for benchmarking.\n/// </summary>\npublic enum OptimizationStrategy\n{\n    None,\n    KernelFusion,\n    MemoryOptimization,\n    MLOptimization,\n    All\n}\n\n/// <summary>\n/// Complex workload data structure.\n/// </summary>\npublic class ComplexWorkloadData\n{\n    public int Id { get; set; }\n    public float[] Values { get; set; } = Array.Empty<float>();\n    public float[] Weights { get; set; } = Array.Empty<float>();\n    public int Category { get; set; }\n    public DateTime Timestamp { get; set; }\n}\n\n/// <summary>\n/// Matrix data for linear algebra workloads.\n/// </summary>\npublic class MatrixData\n{\n    public float[,] Matrix { get; set; } = new float[0,0];\n    public float[] Vector { get; set; } = Array.Empty<float>();\n}\n\n/// <summary>\n/// Complex workload processing result.\n/// </summary>\npublic class ComplexWorkloadResult\n{\n    public int Id { get; set; }\n    public float ProcessedValue { get; set; }\n    public int Category { get; set; }\n}\n\n/// <summary>\n/// Memory optimization benchmark result.\n/// </summary>\npublic class MemoryOptimizationResult\n{\n    public TimeSpan ExecutionTime { get; set; }\n    public long PeakMemoryUsage { get; set; }\n    public long FinalMemoryUsage { get; set; }\n    public int ResultSize { get; set; }\n    public double MemoryEfficiency { get; set; }\n}\n\n/// <summary>\n/// ML optimization benchmark result.\n/// </summary>\npublic class MLOptimizationResult\n{\n    public string OptimalBackend { get; set; } = string.Empty;\n    public TimeSpan OptimalExecutionTime { get; set; }\n    public List<(string Backend, TimeSpan ExecutionTime, bool Success)> AllResults { get; set; } = new();\n    public int DataSize { get; set; }\n    public OptimizationStrategy OptimizationStrategy { get; set; }\n}\n\n/// <summary>\n/// Workload characterization result.\n/// </summary>\npublic class WorkloadCharacterizationResult\n{\n    public WorkloadCharacteristics Characteristics { get; set; } = new();\n    public TimeSpan ExecutionTime { get; set; }\n    public int ResultSize { get; set; }\n    public double ThroughputOpsPerSec { get; set; }\n    public double OptimizationEffectiveness { get; set; }\n}\n\n/// <summary>\n/// Financial analysis result.\n/// </summary>\npublic class FinancialResult\n{\n    public double AverageReturn { get; set; }\n    public double Volatility { get; set; }\n    public double Sharpe { get; set; }\n    public int DataPoints { get; set; }\n}\n\n/// <summary>\n/// Custom benchmark configuration for optimization impact tests.\n/// </summary>\npublic class OptimizationImpactConfig : ManualConfig\n{\n    public OptimizationImpactConfig()\n    {\n        AddJob(Job.Default\n            .WithRuntime(CoreRuntime.Core90)\n            .WithJit(Jit.RyuJit)\n            .WithPlatform(Platform.X64)\n            .WithWarmupCount(3)\n            .WithIterationCount(7)\n            .WithInvocationCount(1)\n            .WithStrategy(RunStrategy.Throughput));\n            \n        AddDiagnoser(MemoryDiagnoser.Default);\n        AddDiagnoser(ThreadingDiagnoser.Default);\n        \n        // Add columns for optimization analysis\n        AddColumn(StatisticColumn.Mean);\n        AddColumn(StatisticColumn.StdDev);\n        AddColumn(StatisticColumn.Median);\n        AddColumn(BaselineRatioColumn.RatioMean);\n        AddColumn(RankColumn.Arabic);\n        \n        // Custom optimization impact column\n        AddColumn(new OptimizationImpactColumn());\n        \n        AddOrderer(DefaultOrderer.Instance);\n        \n        WithOptions(ConfigOptions.DisableOptimizationsValidator);\n    }\n}\n\n/// <summary>\n/// Custom column to display optimization impact in benchmark results.\n/// </summary>\npublic class OptimizationImpactColumn : IColumn\n{\n    public string Id => nameof(OptimizationImpactColumn);\n    public string ColumnName => \"Impact\";\n    public bool AlwaysShow => true;\n    public ColumnCategory Category => ColumnCategory.Custom;\n    public int PriorityInCategory => 0;\n    public bool IsNumeric => true;\n    public UnitType UnitType => UnitType.Dimensionless;\n    public string Legend => \"Optimization impact as speedup factor\";\n\n    public string GetValue(Summary summary, BenchmarkCase benchmarkCase)\n    {\n        var baseline = summary.GetBaseline();\n        if (baseline == null) return \"-\";\n        \n        var baselineResult = summary[baseline];\n        var currentResult = summary[benchmarkCase];\n        \n        if (baselineResult?.ResultStatistics?.Mean == null || \n            currentResult?.ResultStatistics?.Mean == null)\n            return \"-\";\n            \n        var impact = baselineResult.ResultStatistics.Mean / currentResult.ResultStatistics.Mean;\n        return $\"{impact:F2}x\";\n    }\n\n    public string GetValue(Summary summary, BenchmarkCase benchmarkCase, SummaryStyle style) => GetValue(summary, benchmarkCase);\n    public bool IsAvailable(Summary summary) => true;\n    public bool IsDefault(Summary summary, BenchmarkCase benchmarkCase) => false;\n}\n\n#endregion"
+            .ToArray();
+
+        // Complex workload data
+        _complexWorkload = Enumerable.Range(0, DataSize)
+            .Select(i => new ComplexWorkloadData
+            {
+                Id = i,
+                Values = Enumerable.Range(0, 10).Select(_ => (float)random.NextDouble() * 100f).ToArray(),
+                Weights = Enumerable.Range(0, 10).Select(_ => (float)random.NextDouble()).ToArray(),
+                Category = random.Next(1, 5),
+                Timestamp = DateTime.Now.AddSeconds(-random.Next(0, 86400))
+            })
+            .ToArray();
+
+        // Matrix workload data
+        _matrixWorkload = Enumerable.Range(0, Math.Min(DataSize, 10000))
+            .Select(i => new MatrixData
+            {
+                Matrix = GenerateRandomMatrix(8, 8, random),
+                Vector = Enumerable.Range(0, 8).Select(_ => (float)random.NextDouble()).ToArray()
+            })
+            .ToArray();
+    }
+
+    private float[,] GenerateRandomMatrix(int rows, int cols, Random random)
+    {
+        var matrix = new float[rows, cols];
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                matrix[i, j] = (float)random.NextDouble();
+            }
+        }
+        return matrix;
+    }
+
+    #region Kernel Fusion Benchmarks
+
+    [Benchmark(Baseline = true)]
+    [BenchmarkCategory("KernelFusion", "Separate")]
+    public int[] SeparateKernels_Baseline()
+    {
+        var data = GetDataBySize();
+
+        // Simulate separate kernel execution without fusion
+        var step1 = data.Select(x => x * 2).ToArray();
+        var step2 = step1.Select(x => x + 10).ToArray();
+        var step3 = step2.Where(x => x > 100).ToArray();
+        var step4 = step3.Select(x => x / 3).ToArray();
+
+        return step4;
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("KernelFusion", "Fused")]
+    public async Task<int[]> FusedKernels_Optimized()
+    {
+        var data = GetDataBySize();
+        var queryable = _optimizedProvider.CreateQueryable(data, GetAcceleratorByStrategy());
+
+        // Single fused operation that should be optimized
+        var result = await ExecuteOptimizedQuery(queryable
+            .Select(x => x * 2)
+            .Select(x => x + 10)
+            .Where(x => x > 100)
+            .Select(x => x / 3));
+
+        return result;
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private int[] GetDataBySize()
+    {
+        return DataSize switch
+        {
+            <= 1000 => _smallIntData,
+            <= 10000 => _mediumIntData,
+            _ => _largeIntData
+        };
+    }
+
+    private IAccelerator GetAcceleratorByStrategy()
+    {
+        return Strategy switch
+        {
+            OptimizationStrategy.None => _cpuAccelerator,
+            OptimizationStrategy.KernelFusion => _cpuAccelerator,
+            OptimizationStrategy.MemoryOptimization => _cpuAccelerator,
+            OptimizationStrategy.MLOptimization => null!, // Let ML choose
+            OptimizationStrategy.All => null!, // Let ML choose
+            _ => _cpuAccelerator
+        };
+    }
+
+    private async Task<T[]> ExecuteOptimizedQuery<T>(IQueryable<T> queryable)
+    {
+        if (queryable.Provider is IComputeQueryProvider provider)
+        {
+            var result = await provider.ExecuteAsync<IEnumerable<T>>(queryable.Expression);
+            return result.ToArray();
+        }
+
+        return queryable.ToArray();
+    }
+
+    #endregion
+}

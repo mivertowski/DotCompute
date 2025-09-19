@@ -286,38 +286,38 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
     protected void RequireHighMemory() => Fixture?.RequireHighMemory();
 
     // Additional hardware requirement methods
-    protected void RequireMetal()
+    protected static void RequireMetal()
     {
         if (!IsMetalAvailable())
             throw new SkipException("Metal is not available on this system");
     }
 
-    protected void RequireAppleSilicon()
+    protected static void RequireAppleSilicon()
     {
         if (!IsAppleSilicon())
             throw new SkipException("Apple Silicon (M1/M2/M3) is required for this test");
     }
 
-    protected void SkipIfNoCuda()
+    protected static void SkipIfNoCuda()
     {
         if (!IsCudaAvailable())
             throw new SkipException("CUDA is not available on this system");
     }
 
-    protected void SkipIfNoGpu()
+    protected static void SkipIfNoGpu()
     {
         bool hasAnyGpu = IsCudaAvailable() || IsOpenClAvailable() || IsMetalAvailable();
         if (!hasAnyGpu)
             throw new SkipException("No GPU hardware detected on this system");
     }
 
-    protected void SkipIfNoOpenCL()
+    protected static void SkipIfNoOpenCL()
     {
         if (!IsOpenClAvailable())
             throw new SkipException("OpenCL is not available on this system");
     }
 
-    protected void SkipIfNoMetal()
+    protected static void SkipIfNoMetal()
     {
         if (!IsMetalAvailable())
             throw new SkipException("Metal is not available on this system");
@@ -967,7 +967,7 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
     /// <summary>
     /// Initializes configuration from test settings.
     /// </summary>
-    protected virtual void InitializeConfiguration()
+    protected void InitializeConfiguration()
     {
         try
         {
@@ -984,11 +984,12 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Configures services - override in derived classes for custom services.
+    /// Configures services - override ConfigureAdditionalServices for custom services.
     /// </summary>
-    protected virtual void ConfigureServices()
+    protected void ConfigureServices()
     {
-        if (Configuration == null) return;
+        if (Configuration == null)
+            return;
 
         try
         {

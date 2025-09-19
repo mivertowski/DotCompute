@@ -82,22 +82,240 @@ namespace DotCompute.Core.Compute
 
         private static string GetProcessorName()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            try
             {
-                return Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ?? "Unknown CPU";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    return GetWindowsCpuName();
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    return GetLinuxCpuName();
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    return GetMacOsCpuName();
+                }
+                else
+                {
+                    return GetFallbackCpuName();
+                }
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            catch
             {
-                return "Linux CPU"; // Would need to parse /proc/cpuinfo - TODO
+                return GetFallbackCpuName();
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        }
+
+        private static string GetWindowsCpuName()
+        {
+            try
             {
-                return "macOS CPU"; // Would need to use sysctl - TODO
+                // Try WMI first for detailed CPU information
+                using var process = new Process();
+                process.StartInfo.FileName = "wmic";
+                process.StartInfo.Arguments = "cpu get name /value";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+
+                if (process.Start())
+                {
+                    process.WaitForExit(5000); // 5 second timeout
+                    if (process.ExitCode == 0)
+                    {
+                        var output = process.StandardOutput.ReadToEnd();
+                        var lines = output.Split('\n');
+
+                        foreach (var line in lines)
+                        {
+                            if (line.StartsWith("Name=") && line.Length > 5)
+                            {
+                                var cpuName = line[5..].Trim();
+                                if (!string.IsNullOrWhiteSpace(cpuName))
+                                {
+                                    return cpuName;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Fallback to environment variable
+                var processorId = Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER");
+                if (!string.IsNullOrWhiteSpace(processorId))
+                {
+                    return processorId;
+                }
+
+                // Last resort: registry-based detection
+                try
+                {
+                    using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
+                    var processorName = key?.GetValue("ProcessorNameString")?.ToString();
+                    if (!string.IsNullOrWhiteSpace(processorName))
+                    {
+                        return processorName;
+                    }
+                }
+                catch
+                {
+                    // Registry access failed
+                }
+
+                return "Windows CPU (Unknown Model)";
             }
-            else
+            catch
             {
-                return "Unknown CPU";
+                return "Windows CPU (Detection Failed)";
             }
+        }
+
+        private static string GetLinuxCpuName()
+        {
+            try
+            {
+                if (File.Exists("/proc/cpuinfo"))
+                {
+                    var lines = File.ReadAllLines("/proc/cpuinfo");
+
+                    // Look for model name
+                    var modelNameLine = lines.FirstOrDefault(l => l.StartsWith("model name", StringComparison.OrdinalIgnoreCase));
+                    if (modelNameLine != null)
+                    {
+                        var colonIndex = modelNameLine.IndexOf(':');
+                        if (colonIndex >= 0 && colonIndex < modelNameLine.Length - 1)
+                        {
+                            var modelName = modelNameLine[(colonIndex + 1)..].Trim();
+                            if (!string.IsNullOrWhiteSpace(modelName))
+                            {
+                                return modelName;
+                            }
+                        }
+                    }
+
+                    // Fallback to processor line
+                    var processorLine = lines.FirstOrDefault(l => l.StartsWith("processor", StringComparison.OrdinalIgnoreCase));
+                    if (processorLine != null)
+                    {
+                        return "Linux CPU (from /proc/cpuinfo)";
+                    }
+                }
+
+                // Try lscpu command as fallback
+                try
+                {
+                    using var process = new Process();
+                    process.StartInfo.FileName = "lscpu";
+                    process.StartInfo.Arguments = "-p=ModelName";
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.CreateNoWindow = true;
+
+                    if (process.Start())
+                    {
+                        process.WaitForExit(3000); // 3 second timeout
+                        if (process.ExitCode == 0)
+                        {
+                            var output = process.StandardOutput.ReadToEnd();
+                            var lines = output.Split('\n');
+                            var modelLine = lines.FirstOrDefault(l => !l.StartsWith("#") && !string.IsNullOrWhiteSpace(l));
+                            if (!string.IsNullOrWhiteSpace(modelLine))
+                            {
+                                return modelLine.Trim();
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // lscpu not available
+                }
+
+                return "Linux CPU (Unknown Model)";
+            }
+            catch
+            {
+                return "Linux CPU (Detection Failed)";
+            }
+        }
+
+        private static string GetMacOsCpuName()
+        {
+            try
+            {
+                // Try sysctl for CPU brand string
+                using var process = new Process();
+                process.StartInfo.FileName = "sysctl";
+                process.StartInfo.Arguments = "-n machdep.cpu.brand_string";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.CreateNoWindow = true;
+
+                if (process.Start())
+                {
+                    process.WaitForExit(5000); // 5 second timeout
+                    if (process.ExitCode == 0)
+                    {
+                        var output = process.StandardOutput.ReadToEnd().Trim();
+                        if (!string.IsNullOrWhiteSpace(output))
+                        {
+                            return output;
+                        }
+                    }
+                }
+
+                // Fallback to CPU vendor and family info
+                try
+                {
+                    using var vendorProcess = new Process();
+                    vendorProcess.StartInfo.FileName = "sysctl";
+                    vendorProcess.StartInfo.Arguments = "-n machdep.cpu.vendor";
+                    vendorProcess.StartInfo.UseShellExecute = false;
+                    vendorProcess.StartInfo.RedirectStandardOutput = true;
+                    vendorProcess.StartInfo.CreateNoWindow = true;
+
+                    if (vendorProcess.Start())
+                    {
+                        vendorProcess.WaitForExit(3000);
+                        if (vendorProcess.ExitCode == 0)
+                        {
+                            var vendor = vendorProcess.StandardOutput.ReadToEnd().Trim();
+                            if (!string.IsNullOrWhiteSpace(vendor))
+                            {
+                                return $"macOS CPU ({vendor})";
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Vendor detection failed
+                }
+
+                return "macOS CPU (Unknown Model)";
+            }
+            catch
+            {
+                return "macOS CPU (Detection Failed)";
+            }
+        }
+
+        private static string GetFallbackCpuName()
+        {
+            var arch = RuntimeInformation.ProcessArchitecture;
+            var archString = arch switch
+            {
+                Architecture.X64 => "x64",
+                Architecture.X86 => "x86",
+                Architecture.Arm => "ARM",
+                Architecture.Arm64 => "ARM64",
+                _ => "Unknown Architecture"
+            };
+
+            var cores = Environment.ProcessorCount;
+            return $"Generic CPU ({archString}, {cores} cores)";
         }
 
         private static string GetProcessorVendor()
@@ -274,7 +492,11 @@ namespace DotCompute.Core.Compute
 
         public AcceleratorType Type => AcceleratorType.CPU;
 
+        public string DeviceType => "CPU";
+
         public IUnifiedMemoryManager Memory => _memoryManager;
+
+        public IUnifiedMemoryManager MemoryManager => _memoryManager;
 
         public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
 

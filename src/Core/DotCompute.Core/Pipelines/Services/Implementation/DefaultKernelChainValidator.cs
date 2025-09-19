@@ -1,8 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Pipelines.Models;
+using DotCompute.Abstractions.Models.Pipelines;
 using Microsoft.Extensions.Logging;
+
+using DotCompute.Abstractions.Pipelines.Results;
 
 namespace DotCompute.Core.Pipelines.Services.Implementation
 {

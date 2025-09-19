@@ -4,6 +4,7 @@
 using DotCompute.Core.Pipelines.Metrics;
 using DotCompute.Core.Pipelines.Analysis;
 using DotCompute.Core.Pipelines.Recommendations;
+using DotCompute.Abstractions.Pipelines.Models;
 
 namespace DotCompute.Core.Pipelines.Results;
 

@@ -261,13 +261,9 @@ public static class CorePipelineLinqExtensions
         ArgumentNullException.ThrowIfNull(pipeline);
 
         // Create execution context with input data
-        var context = new PipelineExecutionContext
-        {
-            Inputs = new Dictionary<string, object> { ["input"] = input! },
-            MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)new DefaultPipelineMemoryManager(),
-            Device = (DotCompute.Core.Device.Interfaces.IComputeDevice)new DefaultComputeDevice(),
-            Options = new PipelineExecutionOptions { EnableProfiling = true }
-        };
+        var context = new DotCompute.Core.Pipelines.Models.PipelineExecutionContext();
+        context.Inputs["input"] = input!;
+        context.Options = new DotCompute.Core.Pipelines.Models.PipelineExecutionOptions { EnableProfiling = true };
 
         var result = await pipeline.ExecuteAsync(context, cancellationToken);
 

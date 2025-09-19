@@ -1,203 +1,152 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Models.Pipelines;
+
 namespace DotCompute.Core.Pipelines.Models;
 
 /// <summary>
-/// Result of pipeline stage execution.
+/// Result of pipeline stage execution in the Core pipeline system.
+/// Composes the base StageExecutionResult with additional Core-specific functionality.
 /// </summary>
 public sealed class StageExecutionResult
 {
     /// <summary>
-    /// Gets or sets whether the stage execution was successful.
+    /// Gets the base stage execution result.
     /// </summary>
-    public bool Success { get; set; }
+    public required Abstractions.Models.Pipelines.StageExecutionResult BaseResult { get; init; }
 
     /// <summary>
-    /// Gets or sets the stage identifier.
+    /// Gets whether the stage execution was successful.
     /// </summary>
-    public required string StageId { get; set; }
+    public bool Success => BaseResult.Success;
 
-    /// <summary>
-    /// Gets or sets the execution time.
-    /// </summary>
-    public TimeSpan ExecutionTime { get; set; }
-
-    /// <summary>
-    /// Gets or sets the output data produced by the stage.
-    /// </summary>
-    public required Dictionary<string, object> OutputData { get; set; }
-
-    /// <summary>
-    /// Gets or sets the amount of memory used during execution.
-    /// </summary>
-    public long MemoryUsed { get; set; }
-
-    /// <summary>
-    /// Gets or sets any error that occurred during execution.
-    /// </summary>
-    public Exception? Error { get; set; }
-
-    /// <summary>
-    /// Gets or sets additional execution metadata.
-    /// </summary>
-    public Dictionary<string, object>? Metadata { get; set; }
-}
-
-/// <summary>
-/// Result of stage validation.
-/// </summary>
-public sealed class StageValidationResult
-{
-    /// <summary>
-    /// Gets or sets whether the stage configuration is valid.
-    /// </summary>
-    public bool IsValid { get; set; }
-
-    /// <summary>
-    /// Gets or sets validation issues.
-    /// </summary>
-    public List<DotCompute.Abstractions.Validation.ValidationIssue>? Issues { get; set; }
-}
-
-/// <summary>
-/// Interface for stage performance metrics.
-/// </summary>
-public interface IStageMetrics
-{
     /// <summary>
     /// Gets the stage identifier.
     /// </summary>
-    string StageId { get; }
+    public string StageId => BaseResult.StageId;
 
     /// <summary>
-    /// Gets the stage name.
+    /// Gets the execution time.
     /// </summary>
-    string StageName { get; }
+    public TimeSpan ExecutionTime => BaseResult.ExecutionTime;
 
     /// <summary>
-    /// Gets the total number of executions.
+    /// Gets the output data produced by the stage.
     /// </summary>
-    int ExecutionCount { get; }
+    public Dictionary<string, object> OutputData => BaseResult.OutputData;
 
     /// <summary>
-    /// Gets the total execution time.
+    /// Gets the amount of memory used during execution.
     /// </summary>
-    TimeSpan TotalExecutionTime { get; }
+    public long MemoryUsed => BaseResult.MemoryUsed;
 
     /// <summary>
-    /// Gets the average execution time.
+    /// Gets any error that occurred during execution.
     /// </summary>
-    TimeSpan AverageExecutionTime { get; }
+    public Exception? Error => BaseResult.Error;
 
     /// <summary>
-    /// Gets the memory usage in bytes.
+    /// Gets whether this stage was skipped during execution.
     /// </summary>
-    long MemoryUsage { get; }
+    public bool Skipped => BaseResult.Skipped;
 
     /// <summary>
-    /// Gets the throughput in items per second.
+    /// Gets additional execution metadata.
     /// </summary>
-    double ThroughputItemsPerSecond { get; }
-}
+    public Dictionary<string, object>? Metadata => BaseResult.Metadata;
 
-/// <summary>
-/// Default implementation of stage metrics.
-/// </summary>
-public sealed class DefaultStageMetrics : IStageMetrics
-{
-    /// <inheritdoc />
-    public required string StageId { get; set; }
+    /// <summary>
+    /// Gets or sets the stage name.
+    /// </summary>
+    public string? StageName { get; set; }
 
-    /// <inheritdoc />
-    public required string StageName { get; set; }
+    /// <summary>
+    /// Gets or sets the input data processed by the stage.
+    /// </summary>
+    public Dictionary<string, object>? InputData { get; set; }
 
-    /// <inheritdoc />
-    public int ExecutionCount { get; set; }
+    /// <summary>
+    /// Gets or sets stage-specific metrics.
+    /// </summary>
+    public StageMetrics? CoreMetrics { get; set; }
 
-    /// <inheritdoc />
-    public TimeSpan TotalExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the execution start time.
+    /// </summary>
+    public DateTimeOffset StartTime { get; set; }
 
-    /// <inheritdoc />
-    public TimeSpan AverageExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the execution end time.
+    /// </summary>
+    public DateTimeOffset EndTime { get; set; }
 
-    /// <inheritdoc />
-    public long MemoryUsage { get; set; }
+    /// <summary>
+    /// Gets or sets the number of items processed.
+    /// </summary>
+    public long ItemsProcessed { get; set; }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets or sets the throughput in items per second.
+    /// </summary>
     public double ThroughputItemsPerSecond { get; set; }
-}
-
-// Note: PipelineError is already defined in PipelineError.cs
-
-/// <summary>
-/// Pipeline execution metrics.
-/// </summary>
-public sealed class PipelineExecutionMetrics
-{
-    /// <summary>
-    /// Gets or sets the total execution time.
-    /// </summary>
-    public TimeSpan TotalExecutionTime { get; set; }
 
     /// <summary>
-    /// Gets or sets the peak memory usage.
+    /// Creates a successful stage execution result.
     /// </summary>
-    public long PeakMemoryUsage { get; set; }
+    /// <param name="stageId">The stage identifier</param>
+    /// <param name="outputData">The output data</param>
+    /// <param name="executionTime">The execution time</param>
+    /// <returns>A successful result</returns>
+    public static StageExecutionResult CreateSuccess(
+        string stageId,
+        Dictionary<string, object> outputData,
+        TimeSpan executionTime)
+    {
+        var baseResult = new Abstractions.Models.Pipelines.StageExecutionResult
+        {
+            Success = true,
+            StageId = stageId,
+            OutputData = outputData,
+            ExecutionTime = executionTime
+        };
+
+        return new StageExecutionResult
+        {
+            BaseResult = baseResult,
+            EndTime = DateTimeOffset.UtcNow,
+            StartTime = DateTimeOffset.UtcNow.Subtract(executionTime)
+        };
+    }
 
     /// <summary>
-    /// Gets or sets the number of stages executed.
+    /// Creates a failed stage execution result.
     /// </summary>
-    public int StageCount { get; set; }
+    /// <param name="stageId">The stage identifier</param>
+    /// <param name="error">The error that occurred</param>
+    /// <param name="executionTime">The execution time</param>
+    /// <param name="partialOutputs">Any partial outputs</param>
+    /// <returns>A failed result</returns>
+    public static StageExecutionResult CreateFailure(
+        string stageId,
+        Exception error,
+        TimeSpan executionTime,
+        Dictionary<string, object>? partialOutputs = null)
+    {
+        var baseResult = new Abstractions.Models.Pipelines.StageExecutionResult
+        {
+            Success = false,
+            StageId = stageId,
+            OutputData = partialOutputs ?? new Dictionary<string, object>(),
+            ExecutionTime = executionTime,
+            Error = error
+        };
 
-    /// <summary>
-    /// Gets or sets the number of parallel stages.
-    /// </summary>
-    public int ParallelStageCount { get; set; }
-
-    /// <summary>
-    /// Gets or sets the average stage execution time.
-    /// </summary>
-    public TimeSpan AverageStageExecutionTime { get; set; }
-
-    /// <summary>
-    /// Gets or sets the pipeline efficiency score.
-    /// </summary>
-    public double EfficiencyScore { get; set; }
-
-    /// <summary>
-    /// Gets or sets additional metrics.
-    /// </summary>
-    public Dictionary<string, object>? AdditionalMetrics { get; set; }
-}
-
-/// <summary>
-/// Interface for pipeline metrics.
-/// </summary>
-public interface IPipelineMetrics
-{
-    /// <summary>
-    /// Gets the pipeline identifier.
-    /// </summary>
-    string PipelineId { get; }
-
-    /// <summary>
-    /// Gets the total execution time.
-    /// </summary>
-    TimeSpan TotalExecutionTime { get; }
-
-    /// <summary>
-    /// Gets the peak memory usage.
-    /// </summary>
-    long PeakMemoryUsage { get; }
-
-    /// <summary>
-    /// Gets the number of stages.
-    /// </summary>
-    int StageCount { get; }
-
-    /// <summary>
-    /// Gets stage-specific metrics.
-    /// </summary>
-    IReadOnlyList<IStageMetrics> StageMetrics { get; }
+        return new StageExecutionResult
+        {
+            BaseResult = baseResult,
+            EndTime = DateTimeOffset.UtcNow,
+            StartTime = DateTimeOffset.UtcNow.Subtract(executionTime)
+        };
+    }
 }

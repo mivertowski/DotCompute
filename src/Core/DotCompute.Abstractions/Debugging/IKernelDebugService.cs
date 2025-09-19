@@ -114,7 +114,7 @@ public class KernelValidationResult
     public bool IsValid { get; init; }
     public string[] BackendsTested { get; init; } = Array.Empty<string>();
     public Dictionary<string, object> Results { get; init; } = new();
-    public List<ValidationIssue> Issues { get; init; } = new();
+    public List<DebugValidationIssue> Issues { get; init; } = new();
     public TimeSpan TotalValidationTime { get; init; }
     public float MaxDifference { get; init; }
     public string RecommendedBackend { get; init; } = string.Empty;
@@ -203,6 +203,12 @@ public class BackendInfo
     public Dictionary<string, object> Properties { get; init; } = new();
     public string? UnavailabilityReason { get; init; }
     public int Priority { get; init; }
+
+    /// <summary>Gets the backend type (e.g., "CPU", "CUDA", "Metal").</summary>
+    public string Type { get; init; } = string.Empty;
+
+    /// <summary>Gets the maximum memory available on this backend in bytes.</summary>
+    public long MaxMemory { get; init; }
 }
 
 /// <summary>
@@ -222,13 +228,29 @@ public class DebugServiceOptions
 /// <summary>
 /// Represents a validation issue found during kernel testing.
 /// </summary>
-public class ValidationIssue
+public class DebugValidationIssue
 {
     public ValidationSeverity Severity { get; init; }
     public string Message { get; init; } = string.Empty;
     public string BackendAffected { get; init; } = string.Empty;
     public string? Suggestion { get; init; }
     public Dictionary<string, object> Details { get; init; } = new();
+
+    /// <summary>
+    /// Creates a new debug validation issue.
+    /// </summary>
+    public DebugValidationIssue(ValidationSeverity severity, string message, string backendAffected = "", string? suggestion = null)
+    {
+        Severity = severity;
+        Message = message;
+        BackendAffected = backendAffected;
+        Suggestion = suggestion;
+    }
+
+    /// <summary>
+    /// Parameterless constructor for object initialization.
+    /// </summary>
+    public DebugValidationIssue() { }
 }
 
 /// <summary>

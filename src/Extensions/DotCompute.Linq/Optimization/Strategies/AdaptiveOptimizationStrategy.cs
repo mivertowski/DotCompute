@@ -5,7 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Core.Optimization;
+using DotCompute.Core.Optimization.Enums;
+using DotCompute.Core.Optimization.Models;
 using DotCompute.Linq.Execution;
 using DotCompute.Linq.Optimization.CostModel;
 using DotCompute.Linq.Optimization.Models;
@@ -19,13 +20,13 @@ namespace DotCompute.Linq.Optimization.Strategies;
 
 internal static class AccessPatternConverter
 {
-    internal static DotCompute.Linq.Pipelines.Models.AccessPattern ConvertToAccessPattern(DotCompute.Core.Optimization.MemoryAccessPattern pattern)
+    internal static DotCompute.Linq.Pipelines.Models.AccessPattern ConvertToAccessPattern(MemoryAccessPattern pattern)
     {
         return pattern switch
         {
-            DotCompute.Core.Optimization.MemoryAccessPattern.Sequential => DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential,
-            DotCompute.Core.Optimization.MemoryAccessPattern.Random => DotCompute.Linq.Pipelines.Models.AccessPattern.Random,
-            DotCompute.Core.Optimization.MemoryAccessPattern.Strided => DotCompute.Linq.Pipelines.Models.AccessPattern.Strided,
+            MemoryAccessPattern.Sequential => DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential,
+            MemoryAccessPattern.Random => DotCompute.Linq.Pipelines.Models.AccessPattern.Random,
+            MemoryAccessPattern.Strided => DotCompute.Linq.Pipelines.Models.AccessPattern.Strided,
             _ => DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential
         };
     }
@@ -541,10 +542,10 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     /// <summary>
     /// Converts pipeline workload characteristics to core workload characteristics.
     /// </summary>
-    private static DotCompute.Core.Optimization.WorkloadCharacteristics ConvertWorkloadCharacteristics(
+    private static WorkloadCharacteristics ConvertWorkloadCharacteristics(
         Pipelines.Models.WorkloadCharacteristics pipelineCharacteristics)
     {
-        return new DotCompute.Core.Optimization.WorkloadCharacteristics
+        return new WorkloadCharacteristics
         {
             DataSize = pipelineCharacteristics.DataSize,
             OperationCount = pipelineCharacteristics.OperationCount,
@@ -559,17 +560,17 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     /// <summary>
     /// Converts pipeline access pattern to core optimization memory access pattern.
     /// </summary>
-    private static DotCompute.Core.Optimization.MemoryAccessPattern ConvertAccessPattern(
+    private static MemoryAccessPattern ConvertAccessPattern(
         DotCompute.Linq.Pipelines.Models.AccessPattern pipelinePattern)
     {
         return pipelinePattern switch
         {
-            DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential => DotCompute.Core.Optimization.MemoryAccessPattern.Sequential,
-            DotCompute.Linq.Pipelines.Models.AccessPattern.Random => DotCompute.Core.Optimization.MemoryAccessPattern.Random,
-            DotCompute.Linq.Pipelines.Models.AccessPattern.Strided => DotCompute.Core.Optimization.MemoryAccessPattern.Strided,
-            DotCompute.Linq.Pipelines.Models.AccessPattern.Coalesced => DotCompute.Core.Optimization.MemoryAccessPattern.Coalesced,
-            DotCompute.Linq.Pipelines.Models.AccessPattern.Scattered => DotCompute.Core.Optimization.MemoryAccessPattern.Scattered,
-            _ => DotCompute.Core.Optimization.MemoryAccessPattern.Sequential
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential => MemoryAccessPattern.Sequential,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Random => MemoryAccessPattern.Random,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Strided => MemoryAccessPattern.Strided,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Coalesced => MemoryAccessPattern.Coalesced,
+            DotCompute.Linq.Pipelines.Models.AccessPattern.Scattered => MemoryAccessPattern.Scattered,
+            _ => MemoryAccessPattern.Sequential
         };
     }
 }
@@ -585,7 +586,7 @@ public interface ILinqOptimizationStrategy
 public class OptimizationModel
 {
     public string Signature { get; set; } = string.Empty;
-    public DotCompute.Core.Optimization.WorkloadCharacteristics BaseCharacteristics { get; set; } = new();
+    public WorkloadCharacteristics BaseCharacteristics { get; set; } = new();
     public Dictionary<string, double> Predictions { get; set; } = new();
     public Dictionary<string, double> Weights { get; set; } = new();
     public DateTime LastUpdated { get; set; }

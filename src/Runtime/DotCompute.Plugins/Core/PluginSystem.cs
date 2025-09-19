@@ -173,7 +173,7 @@ public class PluginSystem : IDisposable
     /// </summary>
     [RequiresUnreferencedCode("Plugin loading from assembly path requires runtime type loading and is not AOT-compatible")]
     [RequiresDynamicCode("Plugin loading requires dynamic assembly loading and is not AOT-compatible")]
-    public Task<IBackendPlugin?> LoadPluginAsync(string assemblyPath, string pluginTypeName, CancellationToken cancellationToken = default)
+    public ValueTask<IBackendPlugin?> LoadPluginAsync(string assemblyPath, string pluginTypeName, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -181,7 +181,7 @@ public class PluginSystem : IDisposable
         if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
         {
             _logger.LogWarningMessage($"Plugin loading from assembly path is not supported in AOT scenarios. ");
-            return Task.FromResult<IBackendPlugin?>(null);
+            return ValueTask.FromResult<IBackendPlugin?>(null);
         }
 
         try
@@ -199,14 +199,14 @@ public class PluginSystem : IDisposable
             if (pluginType == null)
             {
                 _logger.LogError("Plugin type {Type} not found in assembly", pluginTypeName);
-                return Task.FromResult<IBackendPlugin?>(null);
+                return ValueTask.FromResult<IBackendPlugin?>(null);
             }
 
             // Verify it implements IBackendPlugin
             if (!typeof(IBackendPlugin).IsAssignableFrom(pluginType))
             {
                 _logger.LogError("Type {Type} does not implement IBackendPlugin", pluginTypeName);
-                return Task.FromResult<IBackendPlugin?>(null);
+                return ValueTask.FromResult<IBackendPlugin?>(null);
             }
 
             // Create instance - use factory method for AOT compatibility
@@ -214,7 +214,7 @@ public class PluginSystem : IDisposable
             if (instance == null)
             {
                 _logger.LogError("Failed to create instance of {Type}", pluginTypeName);
-                return Task.FromResult<IBackendPlugin?>(null);
+                return ValueTask.FromResult<IBackendPlugin?>(null);
             }
 
             // Store loaded plugin info
@@ -236,19 +236,19 @@ public class PluginSystem : IDisposable
             }
 
             _logger.LogInfoMessage("Successfully loaded plugin {Id} ({instance.Id, instance.Name})");
-            return Task.FromResult<IBackendPlugin?>(instance);
+            return ValueTask.FromResult<IBackendPlugin?>(instance);
         }
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, $"Failed to load plugin from {assemblyPath}");
-            return Task.FromResult<IBackendPlugin?>(null);
+            return ValueTask.FromResult<IBackendPlugin?>(null);
         }
     }
 
     /// <summary>
     /// Unloads a plugin.
     /// </summary>
-    public Task<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken = default)
+    public ValueTask<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -262,7 +262,7 @@ public class PluginSystem : IDisposable
             if (!_plugins.TryGetValue(pluginId, out var loadedPlugin))
             {
                 _logger.LogWarningMessage("Plugin {pluginId} not found");
-                return Task.FromResult(false);
+                return ValueTask.FromResult(false);
             }
 
             try
@@ -313,7 +313,7 @@ public class PluginSystem : IDisposable
                 }
 
 
-                return Task.FromResult(success);
+                return ValueTask.FromResult(success);
             }
             catch (Exception ex)
             {
@@ -331,7 +331,7 @@ public class PluginSystem : IDisposable
                 }
 
 
-                return Task.FromResult(false);
+                return ValueTask.FromResult(false);
             }
         }
     }
@@ -388,7 +388,7 @@ public class PluginSystem : IDisposable
         if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
         {
             _logger?.LogWarning("Plugin type discovery is not supported in AOT scenarios for assembly {Path}", assemblyPath);
-            return Task.FromResult<string?>(null);
+            return ValueTask.FromResult<string?>(null);
         }
 
         try
@@ -400,12 +400,12 @@ public class PluginSystem : IDisposable
             var pluginTypes = DiscoverPluginTypes(assembly);
             var firstType = pluginTypes.FirstOrDefault();
 
-            return Task.FromResult(firstType?.FullName);
+            return ValueTask.FromResult(firstType?.FullName);
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Failed to discover plugin type in assembly {Path}", assemblyPath);
-            return Task.FromResult<string?>(null);
+            return ValueTask.FromResult<string?>(null);
         }
     }
 

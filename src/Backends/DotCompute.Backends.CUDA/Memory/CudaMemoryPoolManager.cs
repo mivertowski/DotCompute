@@ -239,7 +239,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var block = new MemoryBlock(devicePtr, poolSize);
 
 
-                _logger.LogDebugMessage("Allocated new {poolSize} byte block for pool");
+                _logger.LogDebugMessage($"Allocated new {poolSize} byte block for pool");
 
 
                 return new PooledMemoryBuffer(this, block, requestedSize, poolSize);
@@ -472,14 +472,21 @@ namespace DotCompute.Backends.CUDA.Memory
                     {
                         freed++;
                         freedBytes += block.Size;
-                        _lock.Wait();
-                        try
+                        if (_lock.Wait(100)) // Wait with timeout to avoid deadlock
                         {
-                            _ = _allBlocks.Remove(block.DevicePointer);
+                            try
+                            {
+                                _ = _allBlocks.Remove(block.DevicePointer);
+                            }
+                            finally
+                            {
+                                _ = _lock.Release();
+                            }
                         }
-                        finally
+                        else
                         {
-                            _ = _lock.Release();
+                            // Timeout - couldn't acquire lock, skip this cleanup iteration
+                            break;
                         }
                     }
                 }

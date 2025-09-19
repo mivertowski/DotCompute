@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
 
@@ -121,7 +122,7 @@ public sealed class MetalKernelCache : IDisposable
                 {
                     // Update access time and count for LRU
                     entry.LastAccessTime = DateTimeOffset.UtcNow;
-                    Interlocked.Increment(ref entry.AccessCount);
+                    entry.AccessCount = entry.AccessCount + 1;
                     
                     library = entry.Library;
                     function = entry.Function;
@@ -360,10 +361,10 @@ public sealed class MetalKernelCache : IDisposable
         inputBuilder.Append('|');
         inputBuilder.Append(options.TargetArchitecture ?? "default");
         
-        // Add custom flags if any
-        if (options.CustomFlags != null)
+        // Add additional flags if any
+        if (options.AdditionalFlags != null)
         {
-            foreach (var flag in options.CustomFlags)
+            foreach (var flag in options.AdditionalFlags)
             {
                 inputBuilder.Append('|');
                 inputBuilder.Append(flag);

@@ -419,23 +419,32 @@ public interface IPipelineExecutionResult<TOutput>
 /// <summary>
 /// Base class for all pipeline-related events.
 /// </summary>
-public abstract class PipelineEvent
+public class PipelineEvent
 {
     /// <summary>Unique identifier for the event.</summary>
     public Guid EventId { get; } = Guid.NewGuid();
-    
+
     /// <summary>Timestamp when the event occurred.</summary>
-    public DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
-    
+    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
+
     /// <summary>Pipeline identifier associated with the event.</summary>
     public Guid PipelineId { get; set; }
-    
+
     /// <summary>Event severity level.</summary>
     public EventSeverity Severity { get; set; } = EventSeverity.Information;
-    
+
     /// <summary>Human-readable description of the event.</summary>
     public string Description { get; set; } = string.Empty;
-    
+
+    /// <summary>Event type identifier.</summary>
+    public PipelineEventType Type { get; set; }
+
+    /// <summary>Event message text.</summary>
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>Additional event data.</summary>
+    public Dictionary<string, object> Data { get; set; } = new();
+
     /// <summary>Additional event metadata.</summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
@@ -516,18 +525,48 @@ public enum EventSeverity
 {
     /// <summary>Verbose debugging information.</summary>
     Verbose,
-    
+
     /// <summary>General informational messages.</summary>
     Information,
-    
+
     /// <summary>Warning conditions that don't prevent execution.</summary>
     Warning,
-    
+
     /// <summary>Error conditions that may affect execution.</summary>
     Error,
-    
+
     /// <summary>Critical errors that prevent execution.</summary>
     Critical
+}
+
+/// <summary>
+/// Types of pipeline events.
+/// </summary>
+public enum PipelineEventType
+{
+    /// <summary>Pipeline execution started.</summary>
+    Started,
+
+    /// <summary>Pipeline execution completed.</summary>
+    Completed,
+
+    /// <summary>Pipeline execution failed.</summary>
+    Failed,
+
+    /// <summary>Pipeline stage started.</summary>
+    StageStarted,
+
+    /// <summary>Pipeline stage completed.</summary>
+    StageCompleted,
+
+    /// <summary>Pipeline stage failed.</summary>
+    StageFailed,
+
+    /// <summary>Pipeline was optimized.</summary>
+    Optimized,
+
+    /// <summary>Pipeline validation occurred.</summary>
+    Validated
 }
 
 #endregion

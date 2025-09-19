@@ -153,7 +153,17 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             // Post-execution validation (if enabled)
             if (_options.ValidateAfterExecution)
             {
-                _ = Task.Run(async () => await ValidateKernelPostExecution(kernelName, args, result, executionId));
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await ValidateKernelPostExecution(kernelName, args, result, executionId).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error during kernel post-execution validation for {KernelName}", kernelName);
+                    }
+                });
             }
 
             // Cross-backend validation (if enabled)
@@ -162,7 +172,17 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 var shouldValidate = new Random().NextDouble() < _options.CrossValidationProbability;
                 if (shouldValidate)
                 {
-                    _ = Task.Run(async () => await PerformCrossBackendValidation(kernelName, args, executionId));
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await PerformCrossBackendValidation(kernelName, args, executionId).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error during cross-backend validation for {KernelName}", kernelName);
+                        }
+                    });
                 }
             }
 
@@ -181,7 +201,17 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             // Error analysis (if enabled)
             if (_options.AnalyzeErrorsOnFailure)
             {
-                _ = Task.Run(async () => await AnalyzeExecutionError(kernelName, args, ex, executionId));
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await AnalyzeExecutionError(kernelName, args, ex, executionId).ConfigureAwait(false);
+                    }
+                    catch (Exception analysisEx)
+                    {
+                        _logger.LogError(analysisEx, "Error during execution error analysis for {KernelName}", kernelName);
+                    }
+                });
             }
 
             throw;

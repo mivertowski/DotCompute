@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Core.Kernels;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Execution.Types;

@@ -184,7 +184,7 @@ public class PipelineErrorHandler : IPipelineErrorHandler
             validationResult.IsValid = false;
             validationResult.Errors.Add(new ValidationError
             {
-                Severity = ErrorSeverity.Critical,
+                Severity = PipelineErrorSeverity.Critical,
                 Message = "Pipeline validation failed with exception",
                 Details = ex.Message,
                 ErrorCode = "VALIDATION_EXCEPTION"
@@ -290,17 +290,17 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         return PipelineErrorType.Unknown;
     }
 
-    private ErrorSeverity DetermineSeverity(Exception exception, PipelineExecutionContext context)
+    private PipelineErrorSeverity DetermineSeverity(Exception exception, PipelineExecutionContext context)
     {
         return exception switch
         {
-            OutOfMemoryException => ErrorSeverity.Critical,
-            PipelineOrchestrationException => ErrorSeverity.High,
-            TimeoutException when context.CriticalPath => ErrorSeverity.High,
-            TimeoutException => ErrorSeverity.Medium,
-            NotSupportedException => ErrorSeverity.Medium,
-            ArgumentException => ErrorSeverity.Low,
-            _ => ErrorSeverity.Medium
+            OutOfMemoryException => PipelineErrorSeverity.Critical,
+            PipelineOrchestrationException => PipelineErrorSeverity.High,
+            TimeoutException when context.CriticalPath => PipelineErrorSeverity.High,
+            TimeoutException => PipelineErrorSeverity.Medium,
+            NotSupportedException => PipelineErrorSeverity.Medium,
+            ArgumentException => PipelineErrorSeverity.Low,
+            _ => PipelineErrorSeverity.Medium
         };
     }
 
@@ -475,7 +475,7 @@ public class PipelineErrorHandler : IPipelineErrorHandler
         {
             result.Errors.Add(new ValidationError
             {
-                Severity = ErrorSeverity.High,
+                Severity = PipelineErrorSeverity.High,
                 Message = "Pipeline has no stages defined",
                 Details = "A valid pipeline must contain at least one execution stage",
                 ErrorCode = "PIPELINE_EMPTY"
@@ -740,9 +740,9 @@ public enum PipelineErrorType
 }
 
 /// <summary>
-/// Error severity levels.
+/// Pipeline-specific error severity levels.
 /// </summary>
-public enum ErrorSeverity
+public enum PipelineErrorSeverity
 {
     Low,
     Medium,
@@ -791,7 +791,7 @@ public enum ExpressionErrorCategory
 public class PipelineErrorResult
 {
     public PipelineErrorType ErrorType { get; set; }
-    public ErrorSeverity Severity { get; set; }
+    public PipelineErrorSeverity Severity { get; set; }
     public Exception Exception { get; set; } = new();
     public PipelineExecutionContext Context { get; set; } = new();
     public List<RecoveryStrategy> RecoveryStrategies { get; set; } = new();
@@ -856,7 +856,7 @@ public class PipelineValidationResult
 /// </summary>
 public class ValidationError
 {
-    public ErrorSeverity Severity { get; set; }
+    public PipelineErrorSeverity Severity { get; set; }
     public string Message { get; set; } = string.Empty;
     public string Details { get; set; } = string.Empty;
     public string ErrorCode { get; set; } = string.Empty;

@@ -1,10 +1,18 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Pipelines.Results;
 using DotCompute.Core.Pipelines;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+// Type aliases to resolve ambiguous references
+using ErrorHandlingStrategy = DotCompute.Abstractions.Interfaces.Pipelines.ErrorHandlingStrategy;
+using KernelChainExecutionResult = DotCompute.Abstractions.Pipelines.Results.KernelChainExecutionResult;
+using KernelStepMetrics = DotCompute.Abstractions.Pipelines.Results.KernelStepMetrics;
+using KernelChainMemoryMetrics = DotCompute.Abstractions.Pipelines.Results.KernelChainMemoryMetrics;
 
 namespace DotCompute.Core.Pipelines.Examples
 {
@@ -225,11 +233,11 @@ namespace DotCompute.Core.Pipelines.Examples
             {
                 Success = executionResult.Success,
                 TotalExecutionTime = executionResult.ExecutionTime,
-                StepMetrics = executionResult.StepMetrics.ToList(),
-                MemoryMetrics = executionResult.MemoryMetrics,
+                StepMetrics = executionResult.StepMetrics.Select(ConvertToResultsKernelStepMetrics).ToList(),
+                MemoryMetrics = ConvertToResultsKernelChainMemoryMetrics(executionResult.MemoryMetrics),
                 BackendUsed = executionResult.Backend,
                 Errors = executionResult.Errors?.ToList() ?? new List<Exception>(),
-                Recommendations = await GenerateOptimizationRecommendations(executionResult)
+                Recommendations = await GenerateOptimizationRecommendations(ConvertToResultsKernelChainExecutionResult(executionResult))
             };
 
             return report;
@@ -324,6 +332,62 @@ namespace DotCompute.Core.Pipelines.Examples
 
             await Task.CompletedTask; // Simulate async analysis
             return recommendations;
+        }
+
+        /// <summary>
+        /// Converts Interface KernelStepMetrics to Results KernelStepMetrics
+        /// </summary>
+        private static KernelStepMetrics ConvertToResultsKernelStepMetrics(DotCompute.Abstractions.Interfaces.Pipelines.KernelStepMetrics interfaceMetrics)
+        {
+            return new KernelStepMetrics
+            {
+                KernelName = interfaceMetrics.KernelName,
+                StepIndex = interfaceMetrics.StepIndex,
+                ExecutionTime = interfaceMetrics.ExecutionTime,
+                Success = interfaceMetrics.Success,
+                Backend = interfaceMetrics.Backend,
+                WasCached = interfaceMetrics.WasCached,
+                MemoryUsed = interfaceMetrics.MemoryUsed,
+                StartTime = DateTime.UtcNow.Subtract(interfaceMetrics.ExecutionTime),
+                EndTime = DateTime.UtcNow,
+                Error = string.IsNullOrEmpty(interfaceMetrics.ErrorMessage) ? null : new Exception(interfaceMetrics.ErrorMessage),
+                Throughput = interfaceMetrics.ThroughputOpsPerSecond
+            };
+        }
+
+        /// <summary>
+        /// Converts Interface KernelChainMemoryMetrics to Results KernelChainMemoryMetrics
+        /// </summary>
+        private static KernelChainMemoryMetrics? ConvertToResultsKernelChainMemoryMetrics(DotCompute.Abstractions.Interfaces.Pipelines.KernelChainMemoryMetrics? interfaceMetrics)
+        {
+            if (interfaceMetrics == null) return null;
+
+            return new KernelChainMemoryMetrics
+            {
+                TotalMemoryAllocated = interfaceMetrics.TotalMemoryAllocated,
+                PeakMemoryUsage = interfaceMetrics.PeakMemoryUsage,
+                TotalMemoryFreed = 0, // Default value as not available in interface
+                GarbageCollections = interfaceMetrics.GarbageCollections,
+                MemoryPoolingUsed = interfaceMetrics.MemoryPoolingUsed,
+                AllocationCount = 1, // Estimated default
+                DeallocationCount = 1  // Estimated default
+            };
+        }
+
+        /// <summary>
+        /// Converts Interface KernelChainExecutionResult to Results KernelChainExecutionResult
+        /// </summary>
+        private static KernelChainExecutionResult ConvertToResultsKernelChainExecutionResult(DotCompute.Abstractions.Interfaces.Pipelines.KernelChainExecutionResult interfaceResult)
+        {
+            return new KernelChainExecutionResult
+            {
+                Success = interfaceResult.Success,
+                ExecutionTime = interfaceResult.ExecutionTime,
+                Backend = interfaceResult.Backend,
+                StepMetrics = interfaceResult.StepMetrics.Select(ConvertToResultsKernelStepMetrics).ToList(),
+                MemoryMetrics = ConvertToResultsKernelChainMemoryMetrics(interfaceResult.MemoryMetrics),
+                Errors = interfaceResult.Errors?.ToList()
+            };
         }
     }
 

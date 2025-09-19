@@ -7,6 +7,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Telemetry;
+using DotCompute.Core.Optimization.Configuration;
+using DotCompute.Core.Optimization.Performance;
 
 namespace DotCompute.Core.Optimization;
 

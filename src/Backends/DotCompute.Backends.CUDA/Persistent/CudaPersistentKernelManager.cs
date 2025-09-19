@@ -249,7 +249,7 @@ namespace DotCompute.Backends.CUDA.Persistent
             }
 
             await waveBuffer.CopyToSliceAsync(timeSlice, newData);
-            _logger.LogDebugMessage("Updated wave data for kernel {KernelId} at slice {kernelId, timeSlice}");
+            _logger.LogDebugMessage($"Updated wave data for kernel {kernelId} at slice {timeSlice}");
         }
 
         /// <summary>

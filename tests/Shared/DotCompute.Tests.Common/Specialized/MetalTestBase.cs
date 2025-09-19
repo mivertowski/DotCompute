@@ -409,13 +409,13 @@ public abstract class MetalTestBase : ConsolidatedTestBase
         if (!IsMetalAvailable())
             return false;
 
-        return featureName.ToLowerInvariant() switch
+        return featureName.ToUpperInvariant() switch
         {
-            "compute_shaders" => true,
-            "tessellation" => IsAppleSilicon() || HasMinimumMacOSVersion(new Version(10, 12)),
-            "ray_tracing" => IsAppleSilicon() && HasMinimumMacOSVersion(new Version(13, 0)),
-            "machine_learning" => IsAppleSilicon(),
-            "unified_memory" => IsAppleSilicon(),
+            "COMPUTE_SHADERS" => true,
+            "TESSELLATION" => IsAppleSilicon() || HasMinimumMacOSVersion(new Version(10, 12)),
+            "RAY_TRACING" => IsAppleSilicon() && HasMinimumMacOSVersion(new Version(13, 0)),
+            "MACHINE_LEARNING" => IsAppleSilicon(),
+            "UNIFIED_MEMORY" => IsAppleSilicon(),
             _ => false
         };
     }

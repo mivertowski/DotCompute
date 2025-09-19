@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 
-using DotCompute.Core.Execution.Types;
+using DotCompute.Abstractions.Types;
 
 using System;
 namespace DotCompute.Core.Execution.Metrics
@@ -186,10 +186,11 @@ namespace DotCompute.Core.Execution.Metrics
 
             // Update strategy metrics
 
-            if (!MetricsByStrategy.TryGetValue(result.Strategy, out var strategyMetrics))
+            var abstractionsStrategy = (DotCompute.Abstractions.Types.ExecutionStrategyType)(int)result.Strategy;
+            if (!MetricsByStrategy.TryGetValue(abstractionsStrategy, out var strategyMetrics))
             {
                 strategyMetrics = new StrategyMetrics();
-                MetricsByStrategy[result.Strategy] = strategyMetrics;
+                MetricsByStrategy[abstractionsStrategy] = strategyMetrics;
             }
             strategyMetrics.AddExecution(result);
 

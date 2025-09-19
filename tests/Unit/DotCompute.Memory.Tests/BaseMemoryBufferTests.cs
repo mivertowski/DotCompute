@@ -347,7 +347,7 @@ public class BaseMemoryBufferTests
     {
         // Arrange
         var buffer = new TestMemoryBuffer<float>(1024);
-        buffer.Dispose();
+        await buffer.DisposeAsync();
 
         // Act & Assert - Test multiple operations throw when disposed
 

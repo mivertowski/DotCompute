@@ -856,6 +856,7 @@ public sealed class BaseAcceleratorTests : IDisposable
     public async Task CompileKernelAsync_WithInvalidKernelNames_HandlesCorrectly(string kernelName, string description)
     {
         // Arrange
+        Output.WriteLine($"Testing kernel name handling: {description}");
         var definition = new KernelDefinition(kernelName, "__kernel void test() {}", "test");
 
         // Act

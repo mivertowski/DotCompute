@@ -1,8 +1,23 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Pipelines.Models;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Pipelines.Stages;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using System.Collections.Generic;
+
+// Type aliases to resolve ambiguous references
+using ErrorHandlingStrategy = DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy;
+using PipelineEvent = DotCompute.Abstractions.Pipelines.Enums.PipelineEvent;
+using ErrorHandlingResult = DotCompute.Abstractions.Pipelines.Models.ErrorHandlingResult;
+using PipelineOptimizationSettings = DotCompute.Abstractions.Pipelines.Models.PipelineOptimizationSettings;
+using SynchronizationMode = DotCompute.Abstractions.Types.SynchronizationMode;
+using IKernelPipeline = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipeline;
+using PipelineExecutionContext = DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext;
+using MemoryHint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -14,6 +29,7 @@ namespace DotCompute.Core.Pipelines
     public sealed class KernelPipelineBuilder : IKernelPipelineBuilder
     {
         private readonly List<IPipelineStage> _stages;
+        private readonly List<IPipelineStage> _kernelStages;
         private readonly Dictionary<string, object> _metadata;
         private readonly List<Action<PipelineEvent>> _eventHandlers;
         private string _name;
@@ -26,6 +42,7 @@ namespace DotCompute.Core.Pipelines
         public KernelPipelineBuilder()
         {
             _stages = [];
+            _kernelStages = [];
             _metadata = [];
             _eventHandlers = [];
             _name = $"Pipeline_{Guid.NewGuid():N}";
@@ -178,18 +195,39 @@ namespace DotCompute.Core.Pipelines
         private readonly Dictionary<string, string> _inputMappings = [];
         private readonly Dictionary<string, string> _outputMappings = [];
         private readonly Dictionary<string, object> _parameters = [];
+        private readonly List<MemoryHint> _memoryHints = [];
 
         private long[]? _globalWorkSize;
         private long[]? _localWorkSize;
         private MemoryHint _memoryHint = MemoryHint.None;
         private int _priority;
+        private string? _preferredBackend;
+        private BackendFallbackStrategy _fallbackStrategy = BackendFallbackStrategy.Auto;
+        private TimeSpan? _timeout;
+        private int _maxRetries = 0;
+        private RetryStrategy _retryStrategy = RetryStrategy.ExponentialBackoff;
+        private string? _cacheKey;
+        private TimeSpan? _cacheTtl;
+        private ExecutionPriority _executionPriority = ExecutionPriority.Normal;
+        private Func<object[], ValidationResult>? _inputValidator;
+        private Func<object, object>? _outputTransformer;
+        private bool _profilingEnabled = false;
+        private readonly List<string> _customMetrics = [];
+        private ResourceRequirements? _resourceRequirements;
+        private Func<Exception, ErrorHandlingResult>? _errorHandler;
+        private Func<PipelineExecutionMetrics, bool>? _conditionalExecution;
+        private PipelineStageType _stageType = PipelineStageType.Computation;
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Sets the name for this stage. Note: Name is set in constructor and cannot be changed.
+        /// </summary>
+        /// <param name="name">The stage name (ignored in this implementation)</param>
+        /// <returns>The stage builder for fluent configuration</returns>
         public IKernelStageBuilder WithName(string name)
+        {
             // Name is set in constructor and cannot be changed
-
-
-            => this;
+            return this;
+        }
 
         /// <inheritdoc/>
         public IKernelStageBuilder WithWorkSize(params long[] globalWorkSize)
@@ -247,10 +285,130 @@ namespace DotCompute.Core.Pipelines
             return this;
         }
 
-        /// <inheritdoc/>
-        public IKernelStageBuilder WithPriority(int priority)
+        /// <summary>
+        /// Sets the integer priority for this stage. Use WithPriority(ExecutionPriority) for enum-based priority.
+        /// </summary>
+        /// <param name="priority">Numeric priority value</param>
+        /// <returns>The stage builder for fluent configuration</returns>
+        public IKernelStageBuilder WithNumericPriority(int priority)
         {
             _priority = priority;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithParameters(params object[] parameters)
+        {
+            _parameters.Clear();
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                _parameters[$"param{i}"] = parameters[i];
+            }
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder PreferBackend(string backendName, BackendFallbackStrategy fallbackStrategy = BackendFallbackStrategy.Auto)
+        {
+            _preferredBackend = backendName;
+            _fallbackStrategy = fallbackStrategy;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithTimeout(TimeSpan timeout)
+        {
+            _timeout = timeout;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithMemoryHints(params MemoryHint[] hints)
+        {
+            _memoryHints.Clear();
+            _memoryHints.AddRange(hints);
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithRetryPolicy(int maxRetries, RetryStrategy retryStrategy = RetryStrategy.ExponentialBackoff)
+        {
+            _maxRetries = maxRetries;
+            _retryStrategy = retryStrategy;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithCaching(string cacheKey, TimeSpan? ttl = null)
+        {
+            _cacheKey = cacheKey;
+            _cacheTtl = ttl;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithPriority(ExecutionPriority priority)
+        {
+            _executionPriority = priority;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithInputValidation(Func<object[], ValidationResult> validator)
+        {
+            _inputValidator = validator;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithOutputTransform(Func<object, object> transformer)
+        {
+            _outputTransformer = transformer;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithProfiling(bool enableProfiling = true, params string[] customMetrics)
+        {
+            _profilingEnabled = enableProfiling;
+            _customMetrics.Clear();
+            _customMetrics.AddRange(customMetrics);
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithDependencies(params string[] dependencies)
+        {
+            _dependencies.Clear();
+            _dependencies.AddRange(dependencies);
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithResourceRequirements(ResourceRequirements requirements)
+        {
+            _resourceRequirements = requirements;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WithErrorHandler(Func<Exception, ErrorHandlingResult> errorHandler)
+        {
+            _errorHandler = errorHandler;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder WhenCondition(Func<PipelineExecutionMetrics, bool> condition)
+        {
+            _conditionalExecution = condition;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IKernelStageBuilder OfType(PipelineStageType stageType)
+        {
+            _stageType = stageType;
             return this;
         }
 
@@ -281,6 +439,19 @@ namespace DotCompute.Core.Pipelines
         private int _maxDegreeOfParallelism = Environment.ProcessorCount;
         private SynchronizationMode _synchronizationMode = SynchronizationMode.WaitAll;
         private bool _hasBarrier;
+        private LoadBalancingStrategy _loadBalancingStrategy = LoadBalancingStrategy.RoundRobin;
+        private Func<IEnumerable<object>, object>? _resultAggregator;
+        private ParallelErrorStrategy _errorStrategy = ParallelErrorStrategy.FailFast;
+        private bool _continueOnError = false;
+        private TimeSpan? _timeout;
+        private MemorySharingMode _memorySharingMode = MemorySharingMode.None;
+        private Func<object, IEnumerable<object>>? _workPartitioner;
+        private ExecutionPriority _priority = ExecutionPriority.Normal;
+        private readonly List<string> _barrierPoints = new();
+        private ResourceAllocationStrategy _resourceAllocationStrategy = ResourceAllocationStrategy.FirstFit;
+        private bool _enableDetailedMetrics = false;
+        private readonly List<AffinityRule> _affinityRules = new();
+        private AdaptationPolicy _adaptationPolicy = AdaptationPolicy.Conservative;
 
         public ParallelStageBuilder()
         {
@@ -299,6 +470,138 @@ namespace DotCompute.Core.Pipelines
             var stage = stageBuilder.Build();
             _parallelStages.Add(stage);
 
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder AddKernel(string kernelName, Action<IKernelStageBuilder>? stageBuilder = null)
+        {
+            // Create a kernel stage builder for the named kernel
+            var kernelStageBuilder = new KernelStageBuilder(kernelName);
+
+            // Apply any additional configuration if provided
+            stageBuilder?.Invoke(kernelStageBuilder);
+
+            // Add the kernel stage to the parallel stage
+            var kernelStage = kernelStageBuilder.Build();
+            _kernelStages.Add(kernelStage);
+
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder AddKernels(IEnumerable<ParallelKernelConfig> kernelConfigs)
+        {
+            foreach (var config in kernelConfigs)
+            {
+                // Create kernel stage from configuration
+                var kernelStageBuilder = new KernelStageBuilder(config.KernelName);
+
+                // Apply configuration-specific settings
+                if (config.Arguments != null)
+                {
+                    foreach (var arg in config.Arguments)
+                    {
+                        kernelStageBuilder.WithArgument(arg.Key, arg.Value);
+                    }
+                }
+
+                if (config.GlobalWorkSize != null)
+                {
+                    kernelStageBuilder.WithWorkSize(config.GlobalWorkSize.Value);
+                }
+
+                // Build and add the kernel stage
+                var kernelStage = kernelStageBuilder.Build();
+                _kernelStages.Add(kernelStage);
+            }
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithLoadBalancing(LoadBalancingStrategy strategy)
+        {
+            _loadBalancingStrategy = strategy;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithResultAggregation(Func<IEnumerable<object>, object> aggregator)
+        {
+            _resultAggregator = aggregator;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithErrorHandling(ParallelErrorStrategy strategy, bool continueOnError = false)
+        {
+            _errorStrategy = strategy;
+            _continueOnError = continueOnError;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithTimeout(TimeSpan timeout)
+        {
+            _timeout = timeout;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithMemorySharing(MemorySharingMode sharingMode)
+        {
+            _memorySharingMode = sharingMode;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithWorkPartitioning(Func<object, IEnumerable<object>> partitioner)
+        {
+            _workPartitioner = partitioner;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithPriority(ExecutionPriority priority)
+        {
+            _priority = priority;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithBarriers(params string[] barrierPoints)
+        {
+            _barrierPoints.Clear();
+            _barrierPoints.AddRange(barrierPoints);
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithResourceAllocation(ResourceAllocationStrategy strategy)
+        {
+            _resourceAllocationStrategy = strategy;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithMonitoring(bool enableDetailedMetrics = true)
+        {
+            _enableDetailedMetrics = enableDetailedMetrics;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithAffinity(IEnumerable<AffinityRule> affinityRules)
+        {
+            _affinityRules.Clear();
+            _affinityRules.AddRange(affinityRules);
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IParallelStageBuilder WithAdaptiveExecution(AdaptationPolicy adaptationPolicy)
+        {
+            _adaptationPolicy = adaptationPolicy;
             return this;
         }
 

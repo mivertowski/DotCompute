@@ -2,14 +2,29 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Pipelines;
 using System.Diagnostics;
 using DotCompute.Core.Pipelines.Exceptions;
 using DotCompute.Core.Pipelines.Stages;
 using DotCompute.Core.Pipelines.Types;
-using DotCompute.Core.Pipelines.Models;
+using DotCompute.Abstractions.Models.Pipelines;
 using DotCompute.Core.Validation;
+using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Pipelines;
+using AbstractionsPipelineExecutionMetrics = DotCompute.Abstractions.Pipelines.Models.PipelineExecutionMetrics;
+using System.Linq;
+using CorePipelineExecutionContext = DotCompute.Core.Pipelines.Models.PipelineExecutionContext;
+using AbstractPipelineError = DotCompute.Abstractions.Models.Pipelines.PipelineError;
 using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 using ValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
+using IPipelineMetricsInterface = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IPipelineMetrics;
+
+// Additional type aliases to resolve ambiguous references
+using PipelineOptimizationSettings = DotCompute.Abstractions.Pipelines.Models.PipelineOptimizationSettings;
+using PipelineExecutionResult = DotCompute.Abstractions.Pipelines.Results.PipelineExecutionResult;
+using PipelineEvent = DotCompute.Abstractions.Pipelines.Enums.PipelineEvent;
+using ErrorHandlingResult = DotCompute.Abstractions.Pipelines.Models.ErrorHandlingResult;
+using StageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -24,7 +39,7 @@ namespace DotCompute.Core.Pipelines
         private readonly PipelineMetrics _metrics;
         private readonly SemaphoreSlim _executionSemaphore;
         private readonly List<Action<PipelineEvent>> _eventHandlers;
-        private readonly Func<Exception, PipelineExecutionContext, ErrorHandlingResult>? _errorHandler;
+        private readonly Func<Exception, CorePipelineExecutionContext, ErrorHandlingResult>? _errorHandler;
         private bool _isDisposed;
 
         /// <summary>
@@ -37,7 +52,7 @@ namespace DotCompute.Core.Pipelines
             PipelineOptimizationSettings optimizationSettings,
             Dictionary<string, object> metadata,
             List<Action<PipelineEvent>> eventHandlers,
-            Func<Exception, PipelineExecutionContext, ErrorHandlingResult>? errorHandler)
+            Func<Exception, CorePipelineExecutionContext, ErrorHandlingResult>? errorHandler)
         {
             Id = id;
             Name = name;
@@ -107,7 +122,7 @@ namespace DotCompute.Core.Pipelines
                 {
                     throw new PipelineValidationException(
                         "Pipeline validation failed",
-                        validationResult.Errors ?? [],
+                        ConvertValidationIssues(validationResult.Errors ?? []),
                         validationResult.Warnings);
                 }
 
@@ -154,10 +169,10 @@ namespace DotCompute.Core.Pipelines
                             break;
                         }
                     }
-                    else if (stageResult.Outputs != null)
+                    else if (stageResult.OutputData != null)
                     {
                         // Merge stage outputs
-                        foreach (var (key, value) in stageResult.Outputs)
+                        foreach (var (key, value) in stageResult.OutputData)
                         {
                             outputs[key] = value;
                         }
@@ -179,17 +194,26 @@ namespace DotCompute.Core.Pipelines
                 stopwatch.Stop();
                 var endTime = DateTime.UtcNow;
 
-                var metrics = new PipelineExecutionMetrics
+                var metrics = new AbstractionsPipelineExecutionMetrics
                 {
-                    ExecutionId = executionId,
-                    StartTime = startTime,
-                    EndTime = endTime,
-                    Duration = stopwatch.Elapsed,
-                    MemoryUsage = memoryStats,
-                    ComputeUtilization = CalculateComputeUtilization(stageResults),
-                    MemoryBandwidthUtilization = CalculateMemoryBandwidthUtilization(stageResults),
-                    StageExecutionTimes = stageResults.ToDictionary(r => r.StageId, r => r.Duration),
-                    DataTransferTimes = ExtractDataTransferTimes(stageResults)
+                    ExecutionId = Guid.NewGuid().ToString(),
+                    PipelineName = Id,
+                    StartTime = DateTime.UtcNow.Subtract(stopwatch.Elapsed),
+                    EndTime = DateTime.UtcNow,
+                    TotalExecutionTime = stopwatch.Elapsed,
+                    StageExecutions = stageResults.Count,
+                    ComputationTime = (long?)stageResults.Sum(r => r.ExecutionTime.TotalMilliseconds),
+                    DataTransferTime = ExtractDataTransferTimes(stageResults).Values.Aggregate(TimeSpan.Zero, (sum, time) => sum + time),
+                    ParallelExecutions = stageResults.Count(r => r.Metadata?.ContainsKey("IsParallel") == true),
+                    Throughput = stageResults.Count > 0 ? stageResults.Count / stopwatch.Elapsed.TotalSeconds : 0,
+                    ExecutionStatus = errors.Count == 0 ? ExecutionStatus.Completed : ExecutionStatus.Failed,
+                    AdditionalMetrics = new Dictionary<string, object>
+                    {
+                        ["ComputeUtilization"] = CalculateComputeUtilization(stageResults),
+                        ["MemoryBandwidthUtilization"] = CalculateMemoryBandwidthUtilization(stageResults),
+                        ["MemoryUsage"] = memoryStats,
+                        ["StageExecutionTimes"] = stageResults.ToDictionary(r => r.StageId, r => r.ExecutionTime.TotalMilliseconds)
+                    }
                 };
 
                 _metrics.RecordExecution(metrics, errors.Count == 0);
@@ -214,10 +238,14 @@ namespace DotCompute.Core.Pipelines
                 return new PipelineExecutionResult
                 {
                     Success = success,
+                    PipelineId = Id,
+                    PipelineName = Name,
                     Outputs = outputs,
-                    Metrics = metrics,
+                    Metrics = ConvertToModelsPipelineExecutionMetrics(metrics),
                     Errors = errors.Count > 0 ? errors : null,
-                    StageResults = stageResults
+                    StageResults = stageResults,
+                    StartTime = startTime,
+                    EndTime = endTime
                 };
             }
             catch (Exception ex)
@@ -347,14 +375,14 @@ namespace DotCompute.Core.Pipelines
         }
 
         /// <inheritdoc/>
-        public IPipelineMetrics GetMetrics() => _metrics;
+        public IPipelineMetricsInterface GetMetrics() => _metrics;
 
         /// <inheritdoc/>
         public async ValueTask<IKernelPipeline> OptimizeAsync(IPipelineOptimizer optimizer)
         {
             ThrowIfDisposed();
 
-            var result = await optimizer.OptimizeAsync(this, OptimizationSettings);
+            var result = await optimizer.OptimizeAsync(this, OptimizationSettings.OptimizationType);
 
             PublishEvent(new PipelineEvent
             {
@@ -404,14 +432,14 @@ namespace DotCompute.Core.Pipelines
             Dictionary<string, object> currentOutputs,
             CancellationToken cancellationToken)
         {
-            var stageContext = new PipelineExecutionContext
+            var stageContext = new CorePipelineExecutionContext();
+            foreach (var kvp in currentOutputs)
             {
-                Inputs = currentOutputs,
-                MemoryManager = context.MemoryManager,
-                Device = context.Device,
-                Options = context.Options,
-                Profiler = context.Profiler
-            };
+                stageContext.Inputs[kvp.Key] = kvp.Value;
+            }
+            stageContext.SetMemoryManager(context.MemoryManager);
+            stageContext.SetDevice(context.Device);
+            stageContext.Options = context.Options;
 
             // Copy state
             foreach (var (key, value) in context.State)
@@ -444,7 +472,7 @@ namespace DotCompute.Core.Pipelines
                     Data = new Dictionary<string, object>
                     {
                         ["Success"] = result.Success,
-                        ["Duration"] = result.Duration.TotalMilliseconds
+                        ["Duration"] = result.ExecutionTime.TotalMilliseconds
                     }
                 });
 
@@ -462,32 +490,37 @@ namespace DotCompute.Core.Pipelines
 
                 if (_errorHandler != null)
                 {
-                    var errorResult = _errorHandler(ex, context);
+                    var errorResult = _errorHandler(ex, ConvertToCorePipelineExecutionContext(context));
 
-                    switch (errorResult)
+                    switch (errorResult.Action)
                     {
-                        case ErrorHandlingResult.Continue:
+                        case ErrorHandlingAction.None:
+                        case ErrorHandlingAction.Failed:
                             return new StageExecutionResult
                             {
                                 StageId = stage.Id,
                                 Success = false,
-                                Duration = TimeSpan.Zero,
+                                ExecutionTime = TimeSpan.Zero,
+                                OutputData = new Dictionary<string, object>(),
                                 Error = ex
                             };
 
-                        case ErrorHandlingResult.Retry:
+                        case ErrorHandlingAction.Retry:
                             // Simple retry - in production, add backoff
                             return await ExecuteStageAsync(stage, context, executionId, currentOutputs, cancellationToken);
 
-                        case ErrorHandlingResult.Skip:
+                        case ErrorHandlingAction.Skip:
+                        case ErrorHandlingAction.Ignored:
                             return new StageExecutionResult
                             {
                                 StageId = stage.Id,
                                 Success = true,
-                                Duration = TimeSpan.Zero
+                                ExecutionTime = TimeSpan.Zero,
+                                OutputData = new Dictionary<string, object>()
                             };
 
-                        case ErrorHandlingResult.Abort:
+                        case ErrorHandlingAction.Abort:
+                        default:
                             throw;
                     }
                 }
@@ -561,7 +594,7 @@ namespace DotCompute.Core.Pipelines
             return false;
         }
 
-        private bool CanMergeParallelStages() => _stages.Any(s => s.Type == PipelineStageType.Parallel);
+        private bool CanMergeParallelStages() => _stages.Any(s => s.Type == PipelineStageType.ParallelExecution);
 
         private static double CalculateComputeUtilization(List<StageExecutionResult> results)
         {
@@ -571,10 +604,10 @@ namespace DotCompute.Core.Pipelines
             }
 
             var utilizationSum = results
-                .Where(r => r.Metrics?.ContainsKey("ComputeUtilization") == true)
-                .Sum(r => r.Metrics!["ComputeUtilization"]);
+                .Where(r => r.Metadata?.ContainsKey("ComputeUtilization") == true)
+                .Sum(r => (double)r.Metadata!["ComputeUtilization"]);
 
-            var count = results.Count(r => r.Metrics?.ContainsKey("ComputeUtilization") == true);
+            var count = results.Count(r => r.Metadata?.ContainsKey("ComputeUtilization") == true);
 
             return count > 0 ? utilizationSum / count : 0;
         }
@@ -587,10 +620,10 @@ namespace DotCompute.Core.Pipelines
             }
 
             var utilizationSum = results
-                .Where(r => r.Metrics?.ContainsKey("MemoryBandwidthUtilization") == true)
-                .Sum(r => r.Metrics!["MemoryBandwidthUtilization"]);
+                .Where(r => r.Metadata?.ContainsKey("MemoryBandwidthUtilization") == true)
+                .Sum(r => (double)r.Metadata!["MemoryBandwidthUtilization"]);
 
-            var count = results.Count(r => r.Metrics?.ContainsKey("MemoryBandwidthUtilization") == true);
+            var count = results.Count(r => r.Metadata?.ContainsKey("MemoryBandwidthUtilization") == true);
 
             return count > 0 ? utilizationSum / count : 0;
         }
@@ -601,14 +634,64 @@ namespace DotCompute.Core.Pipelines
 
             foreach (var result in results)
             {
-                if (result.Metrics?.ContainsKey("DataTransferTime") == true)
+                if (result.Metadata?.ContainsKey("DataTransferTime") == true)
                 {
-                    var duration = TimeSpan.FromMilliseconds(result.Metrics["DataTransferTime"]);
+                    var duration = TimeSpan.FromMilliseconds((double)result.Metadata["DataTransferTime"]);
                     transferTimes[$"{result.StageId}_transfer"] = duration;
                 }
             }
 
             return transferTimes;
+        }
+
+        /// <summary>
+        /// Converts Models.Pipelines.PipelineExecutionContext to Core.Pipelines.Models.PipelineExecutionContext
+        /// </summary>
+        private static CorePipelineExecutionContext ConvertToCorePipelineExecutionContext(DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext modelsContext)
+        {
+            return new CorePipelineExecutionContext
+            {
+                PipelineId = modelsContext.PipelineId,
+                SessionId = modelsContext.SessionId,
+                Options = modelsContext.Options,
+                Profiler = modelsContext.Profiler
+            };
+        }
+
+        /// <summary>
+        /// Converts Pipelines.Models.PipelineExecutionMetrics to Models.Pipelines.PipelineExecutionMetrics
+        /// </summary>
+        private static DotCompute.Abstractions.Models.Pipelines.PipelineExecutionMetrics ConvertToModelsPipelineExecutionMetrics(AbstractionsPipelineExecutionMetrics pipelineMetrics)
+        {
+            return new DotCompute.Abstractions.Models.Pipelines.PipelineExecutionMetrics
+            {
+                ExecutionId = pipelineMetrics.ExecutionId,
+                PipelineName = pipelineMetrics.PipelineName,
+                StartTime = pipelineMetrics.StartTime,
+                EndTime = pipelineMetrics.EndTime,
+                TotalExecutionTime = pipelineMetrics.TotalExecutionTime,
+                StageExecutions = pipelineMetrics.StageExecutions,
+                ComputationTime = pipelineMetrics.ComputationTime,
+                DataTransferTime = pipelineMetrics.DataTransferTime,
+                ParallelExecutions = pipelineMetrics.ParallelExecutions,
+                Throughput = pipelineMetrics.Throughput,
+                ExecutionStatus = pipelineMetrics.ExecutionStatus,
+                AdditionalMetrics = pipelineMetrics.AdditionalMetrics
+            };
+        }
+
+        /// <summary>
+        /// Converts ValidationIssue from Abstractions to Validation namespace
+        /// </summary>
+        private static IReadOnlyList<DotCompute.Abstractions.Validation.ValidationIssue> ConvertValidationIssues(IReadOnlyList<DotCompute.Abstractions.ValidationIssue> issues)
+        {
+            return issues.Select(issue => new DotCompute.Abstractions.Validation.ValidationIssue
+            {
+                Code = issue.Code,
+                Message = issue.Message,
+                Severity = (DotCompute.Abstractions.Types.ErrorSeverity)(int)issue.Severity,
+                Source = issue.Source
+            }).ToList();
         }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, nameof(KernelPipeline));

@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#pragma warning disable CA2000 // Dispose objects before losing scope - Test implementations don't require disposal
+
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
@@ -670,11 +672,11 @@ internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmana
     }
 
 
-    protected override ValueTask DisposeCoreAsync()
+    protected override async ValueTask DisposeCoreAsync()
     {
         // Call base implementation to ensure proper disposal chain
+        await base.DisposeCoreAsync();
         DisposeCore();
-        return ValueTask.CompletedTask;
     }
 }
 

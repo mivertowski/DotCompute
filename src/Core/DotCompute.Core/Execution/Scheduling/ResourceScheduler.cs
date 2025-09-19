@@ -76,7 +76,7 @@ namespace DotCompute.Core.Execution.Scheduling
                 deviceCandidates.Select(async d => new
                 {
                     Device = d,
-                    Score = await DevicePerformanceEstimator.CalculateDeviceScoreAsync(d, cancellationToken)
+                    Score = await _performanceEstimator.CalculateDeviceScoreAsync(d, cancellationToken)
                 }));
 
             var selectedDevices = deviceScores
@@ -289,7 +289,7 @@ namespace DotCompute.Core.Execution.Scheduling
 
             // Calculate device weights based on performance characteristics
             var deviceWeights = await Task.WhenAll(
-                devices.Select(async d => await DevicePerformanceEstimator.CalculateDeviceWeightAsync(d, cancellationToken)).ToList());
+                devices.Select(async d => await _performanceEstimator.CalculateDeviceWeightAsync(d, cancellationToken)).ToList());
 
             var totalWeight = deviceWeights.Sum();
             if (totalWeight <= 0)
@@ -423,7 +423,7 @@ namespace DotCompute.Core.Execution.Scheduling
                 {
                     Device = d,
                     MemoryCapacity = d.Info.AvailableMemory,
-                    ComputeCapability = await DevicePerformanceEstimator.EstimateComputeCapabilityAsync(d, cancellationToken)
+                    ComputeCapability = await _performanceEstimator.EstimateComputeCapabilityAsync(d, cancellationToken)
                 }));
 
             // Sort devices by capability

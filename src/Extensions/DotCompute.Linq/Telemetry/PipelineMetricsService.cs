@@ -8,7 +8,7 @@ using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Interfaces;
 using DotCompute.Core.Telemetry;
 using DotCompute.Linq.Pipelines.Models;
-using CorePipelineMetrics = DotCompute.Core.Pipelines.Interfaces.IPipelineMetrics;
+using CorePipelineMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IPipelineMetrics;
 using CorePipelineExecutionContext = DotCompute.Core.Telemetry.PipelineExecutionContext;
 using CorePipelineExecutionMetrics = DotCompute.Core.Pipelines.PipelineExecutionMetrics;
 using CoreMemoryUsageStats = DotCompute.Core.Pipelines.MemoryUsageStats;

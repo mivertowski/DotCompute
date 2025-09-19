@@ -5,6 +5,7 @@ using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
@@ -59,9 +60,14 @@ public abstract class BaseAccelerator : IAccelerator
     /// <inheritdoc/>
     public AcceleratorType Type { get; }
 
+    /// <inheritdoc/>
+    public string DeviceType => Type.ToString();
 
     /// <inheritdoc/>
     public IUnifiedMemoryManager Memory { get; }
+
+    /// <inheritdoc/>
+    public IUnifiedMemoryManager MemoryManager => Memory;
 
 
     /// <inheritdoc/>

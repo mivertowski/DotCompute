@@ -162,9 +162,8 @@ public static class HardwareDetection
 
         try
         {
-            // This would typically use CUDA API calls
-            // For now, we'll use a heuristic approach. TODO: Use proper CUDA device enumeration API
-            return GetNvidiaGpuCount();
+            // Try to use nvidia-ml-py equivalent or nvidia-smi for accurate CUDA device counting
+            return GetNvidiaGpuCountViaNvidiaSmi() ?? GetNvidiaGpuCount();
         }
         catch
         {
@@ -184,8 +183,12 @@ public static class HardwareDetection
 
         try
         {
-            // This would typically enumerate OpenCL platforms and devices
-            // For now, we'll return a conservative estimate. TODO: Use proper OpenCL device enumeration
+            // Enumerate OpenCL platforms and devices using system commands
+            var openClDeviceCount = GetOpenClDeviceCountViaSystemInfo();
+            if (openClDeviceCount > 0)
+                return openClDeviceCount;
+
+            // Fallback: estimate based on GPU counts from different vendors
             return Math.Max(GetNvidiaGpuCount() + GetAmdGpuCount() + GetIntelGpuCount(), 1);
         }
         catch
@@ -559,7 +562,15 @@ public static class HardwareDetection
             {
                 gpuNames.AddRange(GetWindowsGpuNames());
             }
-            // Add Linux and macOS implementations as needed
+            // Add Linux and macOS implementations
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                gpuNames.AddRange(GetLinuxGpuNames());
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                gpuNames.AddRange(GetMacOSGpuNames());
+            }
         }
         catch
         {
@@ -579,7 +590,15 @@ public static class HardwareDetection
             {
                 return GetWindowsCpuName();
             }
-            // Add Linux and macOS implementations as needed
+            // Add Linux and macOS implementations
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return GetLinuxCpuName();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetMacOSCpuName();
+            }
         }
         catch
         {
@@ -602,7 +621,7 @@ public static class HardwareDetection
             using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%NVIDIA%'");
             var hasNvidiaGpu = searcher.Get().Cast<ManagementObject>().Any();
 #else
-            var hasNvidiaGpu = false; // TODO: Implement GPU detection for non-Windows platforms
+            var hasNvidiaGpu = GetNvidiaGpuCountLinux() > 0;
 #endif
 
 
@@ -710,11 +729,17 @@ public static class HardwareDetection
                 using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%NVIDIA%'");
                 return searcher.Get().Cast<ManagementObject>().Count();
 #else
-                return 0; // TODO: Implement cross-platform GPU detection
+                return 0;
 #endif
             }
-
-            // For Linux/macOS, we'd need different approaches
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return GetNvidiaGpuCountLinux();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetNvidiaGpuCountMacOS();
+            }
 
             return 0;
         }
@@ -735,8 +760,16 @@ public static class HardwareDetection
                 using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%AMD%' OR Name LIKE '%Radeon%'");
                 return searcher.Get().Cast<ManagementObject>().Count();
 #else
-                return 0; // TODO: Implement cross-platform GPU detection
+                return GetAmdGpuCountLinux();
 #endif
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return GetAmdGpuCountLinux();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetAmdGpuCountMacOS();
             }
 
 
@@ -759,8 +792,16 @@ public static class HardwareDetection
                 using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController WHERE Name LIKE '%Intel%'");
                 return searcher.Get().Cast<ManagementObject>().Count();
 #else
-                return 0; // TODO: Implement cross-platform GPU detection
+                return GetIntelGpuCountLinux();
 #endif
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return GetIntelGpuCountLinux();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetIntelGpuCountMacOS();
             }
 
 
@@ -941,7 +982,8 @@ public static class HardwareDetection
             }
 #else
             // On non-Windows platforms, GPU enumeration is not implemented
-            // Could use nvidia-ml or other platform-specific APIs TODO
+            // Use cross-platform GPU enumeration
+            names.AddRange(GetCrossPlatformGpuNames());
 #endif
         }
         catch
@@ -963,7 +1005,7 @@ public static class HardwareDetection
             var cpu = searcher.Get().Cast<ManagementObject>().FirstOrDefault();
             return cpu?["Name"]?.ToString() ?? "Unknown CPU";
 #else
-            return "Unknown CPU"; // TODO: Implement cross-platform CPU name detection
+            return "Unknown CPU";
 #endif
         }
         catch
@@ -998,6 +1040,501 @@ public static class HardwareDetection
 
     #endregion
 
+    #region Cross-Platform GPU Detection Methods
+
+    /// <summary>
+    /// Gets NVIDIA GPU count via nvidia-smi command.
+    /// </summary>
+    private static int? GetNvidiaGpuCountViaNvidiaSmi()
+    {
+        try
+        {
+            var output = ExecuteCommand("nvidia-smi", "--query-gpu=name --format=csv,noheader");
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                return lines.Length;
+            }
+        }
+        catch
+        {
+            // nvidia-smi not available or failed
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Gets OpenCL device count via system information.
+    /// </summary>
+    private static int GetOpenClDeviceCountViaSystemInfo()
+    {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                // Try clinfo command
+                var output = ExecuteCommand("clinfo", "--list");
+                if (!string.IsNullOrWhiteSpace(output))
+                {
+                    var deviceLines = output.Split('\n')
+                        .Where(line => line.Contains("Device", StringComparison.OrdinalIgnoreCase))
+                        .Count();
+                    return deviceLines;
+                }
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                // On macOS, OpenCL is deprecated but we can check system_profiler
+                var output = ExecuteCommand("system_profiler", "SPDisplaysDataType");
+                if (!string.IsNullOrWhiteSpace(output))
+                {
+                    // Count graphics cards that support OpenCL
+                    return output.Split('\n')
+                        .Count(line => line.Contains("Chipset Model:", StringComparison.OrdinalIgnoreCase));
+                }
+            }
+        }
+        catch
+        {
+            // Commands not available
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Gets NVIDIA GPU count on Linux systems.
+    /// </summary>
+    private static int GetNvidiaGpuCountLinux()
+    {
+        try
+        {
+            // Method 1: nvidia-smi
+            var nvidiaSmiCount = GetNvidiaGpuCountViaNvidiaSmi();
+            if (nvidiaSmiCount.HasValue)
+                return nvidiaSmiCount.Value;
+
+            // Method 2: Check /proc/driver/nvidia/gpus
+            if (Directory.Exists("/proc/driver/nvidia/gpus"))
+            {
+                return Directory.GetDirectories("/proc/driver/nvidia/gpus").Length;
+            }
+
+            // Method 3: lspci command
+            var output = ExecuteCommand("lspci", "-nn");
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                return output.Split('\n')
+                    .Count(line => line.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase) &&
+                                   line.Contains("VGA", StringComparison.OrdinalIgnoreCase));
+            }
+        }
+        catch
+        {
+            // Commands failed
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Gets NVIDIA GPU count on macOS systems.
+    /// </summary>
+    private static int GetNvidiaGpuCountMacOS()
+    {
+        try
+        {
+            // NVIDIA GPUs are rare on modern Macs, but check system_profiler
+            var output = ExecuteCommand("system_profiler", "SPDisplaysDataType");
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                return output.Split('\n')
+                    .Count(line => line.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase));
+            }
+        }
+        catch
+        {
+            // Command failed
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Gets AMD GPU count on Linux systems.
+    /// </summary>
+    private static int GetAmdGpuCountLinux()
+    {
+        try
+        {
+            // Method 1: lspci command
+            var output = ExecuteCommand("lspci", "-nn");
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                var amdCount = output.Split('\n')
+                    .Count(line => (line.Contains("AMD", StringComparison.OrdinalIgnoreCase) ||
+                                    line.Contains("ATI", StringComparison.OrdinalIgnoreCase) ||
+                                    line.Contains("Radeon", StringComparison.OrdinalIgnoreCase)) &&
+                                   line.Contains("VGA", StringComparison.OrdinalIgnoreCase));
+                if (amdCount > 0)
+                    return amdCount;
+            }
+
+            // Method 2: Check /sys/class/drm
+            if (Directory.Exists("/sys/class/drm"))
+            {
+                return Directory.GetDirectories("/sys/class/drm", "card*")
+                    .Count(dir => {
+                        try
+                        {
+                            var devicePath = Path.Combine(dir, "device", "vendor");
+                            if (File.Exists(devicePath))
+                            {
+                                var vendor = File.ReadAllText(devicePath).Trim();
+                                return vendor.Equals("0x1002", StringComparison.OrdinalIgnoreCase); // AMD vendor ID
+                            }
+                        }
+                        catch { }
+                        return false;
+                    });
+            }
+        }
+        catch
+        {
+            // Commands failed
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Gets AMD GPU count on macOS systems.
+    /// </summary>
+    private static int GetAmdGpuCountMacOS()
+    {
+        try
+        {
+            var output = ExecuteCommand("system_profiler", "SPDisplaysDataType");
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                return output.Split('\n')
+                    .Count(line => line.Contains("AMD", StringComparison.OrdinalIgnoreCase) ||
+                                   line.Contains("Radeon", StringComparison.OrdinalIgnoreCase));
+            }
+        }
+        catch
+        {
+            // Command failed
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Gets Intel GPU count on Linux systems.
+    /// </summary>
+    private static int GetIntelGpuCountLinux()
+    {
+        try
+        {
+            // Method 1: lspci command
+            var output = ExecuteCommand("lspci", "-nn");
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                var intelCount = output.Split('\n')
+                    .Count(line => line.Contains("Intel", StringComparison.OrdinalIgnoreCase) &&
+                                   (line.Contains("VGA", StringComparison.OrdinalIgnoreCase) ||
+                                    line.Contains("Display", StringComparison.OrdinalIgnoreCase)));
+                if (intelCount > 0)
+                    return intelCount;
+            }
+
+            // Method 2: Check /sys/class/drm for Intel graphics
+            if (Directory.Exists("/sys/class/drm"))
+            {
+                return Directory.GetDirectories("/sys/class/drm", "card*")
+                    .Count(dir => {
+                        try
+                        {
+                            var devicePath = Path.Combine(dir, "device", "vendor");
+                            if (File.Exists(devicePath))
+                            {
+                                var vendor = File.ReadAllText(devicePath).Trim();
+                                return vendor.Equals("0x8086", StringComparison.OrdinalIgnoreCase); // Intel vendor ID
+                            }
+                        }
+                        catch { }
+                        return false;
+                    });
+            }
+        }
+        catch
+        {
+            // Commands failed
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Gets Intel GPU count on macOS systems.
+    /// </summary>
+    private static int GetIntelGpuCountMacOS()
+    {
+        try
+        {
+            var output = ExecuteCommand("system_profiler", "SPDisplaysDataType");
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                return output.Split('\n')
+                    .Count(line => line.Contains("Intel", StringComparison.OrdinalIgnoreCase) &&
+                                   (line.Contains("Iris", StringComparison.OrdinalIgnoreCase) ||
+                                    line.Contains("HD Graphics", StringComparison.OrdinalIgnoreCase) ||
+                                    line.Contains("UHD Graphics", StringComparison.OrdinalIgnoreCase)));
+            }
+        }
+        catch
+        {
+            // Command failed
+        }
+        return 0;
+    }
+
+    #endregion
+
+    #region Cross-Platform GPU Detection Methods
+
+    /// <summary>
+    /// Gets cross-platform GPU names for non-Windows systems.
+    /// </summary>
+    private static List<string> GetCrossPlatformGpuNames()
+    {
+        var names = new List<string>();
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                names.AddRange(GetLinuxGpuNames());
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                names.AddRange(GetMacOSGpuNames());
+            }
+        }
+        catch
+        {
+            // Ignore errors in GPU name detection
+        }
+        return names;
+    }
+
+    /// <summary>
+    /// Gets Linux GPU names using lspci and system commands.
+    /// </summary>
+    private static List<string> GetLinuxGpuNames()
+    {
+        var names = new List<string>();
+        try
+        {
+            // Method 1: lspci command for PCI GPU devices
+            var output = ExecuteCommand("lspci", "-nn");
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                var gpuLines = output.Split('\n')
+                    .Where(line => line.Contains("VGA", StringComparison.OrdinalIgnoreCase) ||
+                                   line.Contains("3D", StringComparison.OrdinalIgnoreCase) ||
+                                   line.Contains("Display", StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+
+                foreach (var line in gpuLines)
+                {
+                    // Extract GPU name from lspci output
+                    var parts = line.Split(':');
+                    if (parts.Length >= 3)
+                    {
+                        var gpuInfo = string.Join(":", parts.Skip(2)).Trim();
+                        if (!string.IsNullOrEmpty(gpuInfo))
+                        {
+                            names.Add(gpuInfo);
+                        }
+                    }
+                }
+            }
+
+            // Method 2: Check /proc/driver/nvidia/gpus for NVIDIA GPUs
+            if (Directory.Exists("/proc/driver/nvidia/gpus"))
+            {
+                var nvidiaGpuDirs = Directory.GetDirectories("/proc/driver/nvidia/gpus");
+                foreach (var gpuDir in nvidiaGpuDirs)
+                {
+                    try
+                    {
+                        var infoFile = Path.Combine(gpuDir, "information");
+                        if (File.Exists(infoFile))
+                        {
+                            var info = File.ReadAllText(infoFile);
+                            var nameLine = info.Split('\n')
+                                .FirstOrDefault(line => line.StartsWith("Model:", StringComparison.OrdinalIgnoreCase));
+                            if (nameLine != null)
+                            {
+                                var gpuName = nameLine.Substring(6).Trim();
+                                if (!names.Contains(gpuName))
+                                {
+                                    names.Add($"NVIDIA {gpuName}");
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Skip problematic GPU directories
+                    }
+                }
+            }
+
+            // Method 3: nvidia-smi for NVIDIA GPU names
+            var nvidiaOutput = ExecuteCommand("nvidia-smi", "--query-gpu=name --format=csv,noheader,nounits");
+            if (!string.IsNullOrWhiteSpace(nvidiaOutput))
+            {
+                var nvidiaGpus = nvidiaOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var gpu in nvidiaGpus)
+                {
+                    var gpuName = gpu.Trim();
+                    if (!string.IsNullOrEmpty(gpuName) && !names.Contains(gpuName))
+                    {
+                        names.Add(gpuName);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Ignore command errors
+        }
+        return names;
+    }
+
+    /// <summary>
+    /// Gets macOS GPU names using system_profiler.
+    /// </summary>
+    private static List<string> GetMacOSGpuNames()
+    {
+        var names = new List<string>();
+        try
+        {
+            var output = ExecuteCommand("system_profiler", "SPDisplaysDataType");
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                var lines = output.Split('\n');
+                foreach (var line in lines)
+                {
+                    if (line.Contains("Chipset Model:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var parts = line.Split(':');
+                        if (parts.Length >= 2)
+                        {
+                            var gpuName = parts[1].Trim();
+                            if (!string.IsNullOrEmpty(gpuName))
+                            {
+                                names.Add(gpuName);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Ignore command errors
+        }
+        return names;
+    }
+
+    /// <summary>
+    /// Gets Linux CPU name from /proc/cpuinfo.
+    /// </summary>
+    private static string GetLinuxCpuName()
+    {
+        try
+        {
+            var cpuInfo = File.ReadAllText("/proc/cpuinfo");
+            var nameLine = cpuInfo.Split('\n')
+                .FirstOrDefault(line => line.StartsWith("model name", StringComparison.OrdinalIgnoreCase));
+            if (nameLine != null)
+            {
+                var parts = nameLine.Split(':');
+                if (parts.Length >= 2)
+                {
+                    return parts[1].Trim();
+                }
+            }
+        }
+        catch
+        {
+            // Fallback to generic detection
+        }
+
+        // Try alternative command
+        try
+        {
+            var result = ExecuteCommand("cat", "/proc/cpuinfo | grep 'model name' | head -1");
+            if (!string.IsNullOrEmpty(result))
+            {
+                var parts = result.Split(':');
+                if (parts.Length >= 2)
+                {
+                    return parts[1].Trim();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+
+        return "Unknown Linux CPU";
+    }
+
+    /// <summary>
+    /// Gets macOS CPU name using system_profiler.
+    /// </summary>
+    private static string GetMacOSCpuName()
+    {
+        try
+        {
+            var result = ExecuteCommand("sysctl", "-n machdep.cpu.brand_string");
+            if (!string.IsNullOrEmpty(result))
+            {
+                return result.Trim();
+            }
+        }
+        catch
+        {
+            // Try alternative method
+        }
+
+        try
+        {
+            var output = ExecuteCommand("system_profiler", "SPHardwareDataType");
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                var lines = output.Split('\n');
+                foreach (var line in lines)
+                {
+                    if (line.Contains("Processor Name:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var parts = line.Split(':');
+                        if (parts.Length >= 2)
+                        {
+                            return parts[1].Trim();
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+
+        return "Unknown macOS CPU";
+    }
+
+    #endregion
 
     #endregion
 }

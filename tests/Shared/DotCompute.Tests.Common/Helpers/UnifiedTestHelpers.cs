@@ -539,9 +539,10 @@ public static class UnifiedTestHelpers
     /// <summary>
     /// Factory for creating test loggers.
     /// </summary>
-    public class TestLoggerFactory : ILoggerFactory
+    public sealed class TestLoggerFactory : ILoggerFactory
     {
         private readonly ITestOutputHelper _output;
+        private bool _disposed;
 
         public TestLoggerFactory(ITestOutputHelper output)
         {
@@ -550,7 +551,25 @@ public static class UnifiedTestHelpers
 
         public ILogger CreateLogger(string categoryName) => new TestLogger(_output, categoryName);
         public void AddProvider(ILoggerProvider provider) { }
-        public void Dispose() { }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // Dispose managed resources here if any
+                    // TestLoggerFactory doesn't have any managed resources to dispose
+                }
+                _disposed = true;
+            }
+        }
     }
 
     #endregion

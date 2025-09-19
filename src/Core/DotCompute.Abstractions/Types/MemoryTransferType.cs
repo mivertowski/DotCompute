@@ -1,4 +1,4 @@
-namespace DotCompute.Backends.CUDA.Profiling.Types
+namespace DotCompute.Abstractions.Types
 {
     /// <summary>
     /// Defines the types of memory transfers in CUDA.

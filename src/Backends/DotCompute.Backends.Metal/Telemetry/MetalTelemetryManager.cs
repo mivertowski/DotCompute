@@ -8,13 +8,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Execution;
+using DotCompute.Core.Telemetry;
 
 namespace DotCompute.Backends.Metal.Telemetry;
 
 /// <summary>
-/// Central telemetry coordination for Metal backend with production-grade monitoring
+/// Central telemetry coordination for Metal backend with production-grade monitoring.
+/// Consolidated using BaseTelemetryProvider to eliminate duplicate patterns.
 /// </summary>
-public sealed class MetalTelemetryManager : IDisposable
+public sealed class MetalTelemetryManager : BaseTelemetryProvider
 {
     private readonly ILogger<MetalTelemetryManager> _logger;
     private readonly MetalTelemetryOptions _options;

@@ -5,19 +5,22 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Recovery;
 using DotCompute.Core.Recovery.Models;
 using DotCompute.Core.Recovery.Memory;
 using DotCompute.Core.Recovery.Types;
 using DotCompute.Core.Recovery.Exceptions;
+using DotCompute.Core.Utilities;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Recovery;
 
 /// <summary>
 /// Comprehensive memory error recovery strategy with allocation retry,
-/// defragmentation, and emergency memory reserve management
+/// defragmentation, and emergency memory reserve management.
+/// Consolidated using BaseRecoveryStrategy to eliminate duplicate patterns.
 /// </summary>
-public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryRecoveryContext>, IDisposable
+public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryRecoveryContext>
 {
     private readonly ConcurrentDictionary<string, Models.MemoryPoolState> _memoryPools;
     private readonly Models.MemoryRecoveryConfiguration _config;
@@ -539,7 +542,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         }
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         if (!_disposed)
         {

@@ -460,9 +460,9 @@ public class MemoryManagementTests
         for (var i = 0; i < 100; i++)
         {
             using var memoryManager = new TestUnifiedMemoryManager();
-            var buffer = new UnifiedBuffer<byte>(memoryManager, 1024);
+            using var buffer = new UnifiedBuffer<byte>(memoryManager, 1024);
             buffers.Add(new WeakReference(buffer));
-            // Not disposing buffer intentionally
+            // Buffer will be disposed by using statement, but WeakReference tracks the object
         }
 
         // Force garbage collection

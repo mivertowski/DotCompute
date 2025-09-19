@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Core.Kernels;
 using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Configuration;
@@ -638,7 +639,7 @@ namespace DotCompute.Core.Execution
                         var kernelsCompiledKernel = CreateKernelsCompatibleKernel(task.CompiledKernel);
                         var executionResult = await _kernelManager.ExecuteKernelAsync(
                             kernelsCompiledKernel,
-                            kernelArgs,
+                            ConvertKernelArguments(kernelArgs),
                             task.Device,
                             null,
                             cancellationToken);
@@ -680,13 +681,13 @@ namespace DotCompute.Core.Execution
             return results!;
         }
 
-        private static KernelArgument[] CreateKernelArguments<T>(AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers, AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers) where T : unmanaged
+        private static DotCompute.Abstractions.Kernels.KernelArgument[] CreateKernelArguments<T>(AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers, AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers) where T : unmanaged
         {
-            var args = new KernelArgument[inputBuffers.Length + outputBuffers.Length];
+            var args = new DotCompute.Abstractions.Kernels.KernelArgument[inputBuffers.Length + outputBuffers.Length];
 
             for (var i = 0; i < inputBuffers.Length; i++)
             {
-                args[i] = new KernelArgument
+                args[i] = new DotCompute.Abstractions.Kernels.KernelArgument
                 {
                     Name = $"input_{i}",
                     Value = inputBuffers[i],
@@ -698,7 +699,7 @@ namespace DotCompute.Core.Execution
 
             for (var i = 0; i < outputBuffers.Length; i++)
             {
-                args[inputBuffers.Length + i] = new KernelArgument
+                args[inputBuffers.Length + i] = new DotCompute.Abstractions.Kernels.KernelArgument
                 {
                     Name = $"output_{i}",
                     Value = outputBuffers[i],
@@ -921,11 +922,26 @@ namespace DotCompute.Core.Execution
         }
 
         /// <summary>
+        /// Converts Abstractions KernelArgument[] to Interfaces KernelArgument[]
+        /// </summary>
+        private static DotCompute.Abstractions.Interfaces.Kernels.KernelArgument[] ConvertKernelArguments(DotCompute.Abstractions.Kernels.KernelArgument[] abstractionsArgs)
+        {
+            return abstractionsArgs.Select(arg => new DotCompute.Abstractions.Interfaces.Kernels.KernelArgument
+            {
+                Name = arg.Name,
+                Type = arg.Type,
+                Value = arg.Value,
+                Size = arg.Size,
+                IsOutput = arg.IsOutput
+            }).ToArray();
+        }
+
+        /// <summary>
         /// Creates a Kernels-compatible kernel from an Execution kernel wrapper.
         /// </summary>
-        private static DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel CreateKernelsCompatibleKernel(DotCompute.Core.Execution.ManagedCompiledKernel executionKernel)
+        private static DotCompute.Abstractions.Kernels.Compilation.ManagedCompiledKernel CreateKernelsCompatibleKernel(DotCompute.Core.Execution.ManagedCompiledKernel executionKernel)
         {
-            return new DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel
+            return new DotCompute.Abstractions.Kernels.Compilation.ManagedCompiledKernel
             {
                 Name = executionKernel.Name,
                 Binary = [], // Simplified for demo - TODO

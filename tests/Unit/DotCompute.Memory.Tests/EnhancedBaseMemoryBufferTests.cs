@@ -58,8 +58,13 @@ public class EnhancedBaseMemoryBufferTests
 
         // Assert
         _ = buffer.SizeInBytes.Should().Be(sizeInBytes);
-        // Verify size is aligned (should be multiple of element size)
-        _ = (buffer.SizeInBytes % sizeof(byte)).Should().Be(0);
+        // Verify buffer address is aligned to the specified alignment
+        var address = buffer.GetPinnableReference();
+        unsafe
+        {
+            var addressValue = (long)&address;
+            _ = (addressValue % alignment).Should().Be(0, $"buffer should be aligned to {alignment} bytes");
+        }
     }
 
     [Fact]
@@ -365,7 +370,7 @@ public class EnhancedBaseMemoryBufferTests
     {
         // Arrange
         var returnCount = 0;
-        var buffer = new TestPooledBuffer<int>(1024, b => returnCount++);
+        using var buffer = new TestPooledBuffer<int>(1024, b => returnCount++);
 
         // Act - Multiple dispose/reset cycles
 
@@ -439,7 +444,7 @@ public class EnhancedBaseMemoryBufferTests
     {
         // Arrange
         var buffer = new TestMemoryBuffer<float>(1024);
-        buffer.Dispose();
+        await buffer.DisposeAsync();
 
         // Act & Assert - Test all operations throw on disposed buffer
 
@@ -527,7 +532,7 @@ public class EnhancedBaseMemoryBufferTests
             // Cleanup
             foreach (var buffer in buffers)
             {
-                buffer.Dispose();
+                await buffer.DisposeAsync();
             }
         }
     }
@@ -679,7 +684,7 @@ public class EnhancedBaseMemoryBufferTests
         {
             foreach (var buffer in buffers)
             {
-                buffer.Dispose();
+                await buffer.DisposeAsync();
             }
         }
     }
@@ -915,7 +920,7 @@ public class EnhancedBaseMemoryBufferTests
 
     [Fact]
     [Trait("Category", "MemoryPatterns")]
-    public async Task MemoryInitialization_NewBuffer_IsZeroed()
+    public void MemoryInitialization_NewBuffer_IsZeroed()
     {
         // Arrange & Act
         using var buffer = new TestMemoryBuffer<double>(1024); // 128 elements
@@ -931,7 +936,7 @@ public class EnhancedBaseMemoryBufferTests
     [InlineData(4, 250)]       // 4-byte pattern, fewer repetitions
     [InlineData(16, 62)]       // 16-byte pattern, minimal repetitions
     [Trait("Category", "MemoryPatterns")]
-    public async Task RepeatingPattern_FillAndVerify_MaintainsConsistency(int patternSize, int repetitions)
+    public void RepeatingPattern_FillAndVerify_MaintainsConsistency(int patternSize, int repetitions)
     {
         // Arrange
         var bufferSize = patternSize * repetitions;
@@ -1132,6 +1137,12 @@ public class EnhancedBaseMemoryBufferTests
         public void TestThrowIfDisposed() => ThrowIfDisposed();
         public void TestValidateCopyParameters(long sourceLength, long sourceOffset, long destinationLength, long destinationOffset, long count)
             => ValidateCopyParameters(sourceLength, sourceOffset, destinationLength, destinationOffset, count);
+
+        public ref T GetPinnableReference()
+        {
+            ThrowIfDisposed();
+            return ref _hostMemory[0];
+        }
     }
 
     private sealed class TestDeviceBuffer<T> : BaseDeviceBuffer<T> where T : unmanaged

@@ -9,7 +9,8 @@ using System.Text;
 using System.Text.Json;
 using DotCompute.Core.Aot;
 using DotCompute.Core.Pipelines;
-using DotCompute.Core.Pipelines.Interfaces;
+using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Pipelines.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -200,10 +201,13 @@ public sealed class PipelineTelemetryCollector : IDisposable
         {
             _eventQueue.Enqueue(new TelemetryEvent
             {
+                Name = "PipelineCompleted",
+                Timestamp = new DateTimeOffset(DateTime.UtcNow),
+                Attributes = new Dictionary<string, object?>(),
+                Source = nameof(PipelineTelemetryCollector),
                 EventType = TelemetryEventType.PipelineCompleted,
                 PipelineId = context.PipelineId,
                 CorrelationId = context.CorrelationId,
-                Timestamp = DateTime.UtcNow,
                 Duration = duration,
                 Success = success,
                 ItemsProcessed = itemsProcessed,
@@ -587,7 +591,7 @@ public sealed class PipelineTelemetryOptions
 }
 
 /// <summary>
-/// Context information for pipeline execution tracking.
+/// Simple telemetry context for pipeline execution tracking.
 /// </summary>
 public sealed class PipelineExecutionContext : IDisposable
 {
@@ -836,30 +840,4 @@ public sealed class StageMetricsSnapshot
     }
 }
 
-/// <summary>
-/// Telemetry event for detailed pipeline analysis.
-/// </summary>
-public sealed class TelemetryEvent
-{
-    public TelemetryEventType EventType { get; set; }
-    public string PipelineId { get; set; } = string.Empty;
-    public string CorrelationId { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; }
-    public TimeSpan Duration { get; set; }
-    public bool Success { get; set; }
-    public long ItemsProcessed { get; set; }
-    public Exception? Exception { get; set; }
-}
-
-/// <summary>
-/// Types of telemetry events.
-/// </summary>
-public enum TelemetryEventType
-{
-    PipelineStarted,
-    PipelineCompleted,
-    StageStarted,
-    StageCompleted,
-    CacheAccess,
-    Error
-}
+// TelemetryEvent and TelemetryEventType are defined in BaseTelemetryProvider.cs to avoid duplication

@@ -6,6 +6,11 @@
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Validation;
 
+// Using aliases to resolve ValidationIssue conflicts
+using CoreValidationIssue = DotCompute.Abstractions.ValidationIssue;
+using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
+using ValidationValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
+
 namespace DotCompute.Core.Kernels.Validation;
 
 /// <summary>
@@ -30,7 +35,7 @@ public sealed class KernelValidationResult
     /// Gets validation warnings that don't prevent compilation.
     /// Warnings indicate potential issues or optimization opportunities.
     /// </summary>
-    public List<ValidationWarning> Warnings { get; init; } = [];
+    public List<DotCompute.Abstractions.Validation.ValidationWarning> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets resource usage estimates for the kernel.

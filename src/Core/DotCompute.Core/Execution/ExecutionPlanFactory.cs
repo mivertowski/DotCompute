@@ -3,12 +3,14 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
-using DotCompute.Core.Execution.Types;
+using CoreWorkloadType = DotCompute.Core.Execution.Types.WorkloadType;
+using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
 using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Execution.Analysis;
 using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Optimization;
+using DotCompute.Core.Execution.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 
@@ -170,12 +172,12 @@ namespace DotCompute.Core.Execution
                 return ExecutionStrategyType.Single;
             }
 
-            if (workloadAnalysis.WorkloadType == WorkloadType.Pipeline)
+            if (workloadAnalysis.WorkloadType == CoreWorkloadType.Pipeline)
             {
                 return ExecutionStrategyType.PipelineParallel;
             }
 
-            if (workloadAnalysis.WorkloadType == WorkloadType.ModelParallel)
+            if (workloadAnalysis.WorkloadType == CoreWorkloadType.ModelParallel)
             {
                 return ExecutionStrategyType.ModelParallel;
             }
@@ -361,12 +363,12 @@ namespace DotCompute.Core.Execution
                 strategies.Add(ExecutionStrategyType.DataParallel);
                 strategies.Add(ExecutionStrategyType.WorkStealing);
 
-                if (workload.WorkloadType == WorkloadType.ModelParallel)
+                if (workload.WorkloadType == CoreWorkloadType.ModelParallel)
                 {
                     strategies.Add(ExecutionStrategyType.ModelParallel);
                 }
 
-                if (workload.WorkloadType == WorkloadType.Pipeline)
+                if (workload.WorkloadType == CoreWorkloadType.Pipeline)
                 {
                     strategies.Add(ExecutionStrategyType.PipelineParallel);
                 }

@@ -377,13 +377,8 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
             throw new NotSupportedException(
                 "Dynamic backend loading is not supported in AOT scenarios. " +
-                "Use static backend registration via dependency injection instead.");
-
-            // TODO: Production - Implement proper CUDA backend initialization
-            // Missing: Device enumeration, capability detection, context creation
-            // Missing: Multi-GPU support, P2P capability detection
-
-            throw new NotImplementedException("CUDA backend initialization not yet implemented");
+                "Use static backend registration via dependency injection instead. " +
+                "For CUDA backend, register CudaAccelerator through DI container.");
         });
 
         // Additional backends can be registered here

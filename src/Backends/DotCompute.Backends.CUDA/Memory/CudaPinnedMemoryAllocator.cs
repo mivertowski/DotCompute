@@ -152,11 +152,11 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (result == CudaError.Success)
                 {
                     _ = Interlocked.Add(ref _totalAllocated, -allocation.Size);
-                    _logger.LogDebugMessage("Freed {Size:N0} bytes of pinned memory at {allocation.Size, hostPtr}");
+                    _logger.LogDebugMessage($"Freed {allocation.Size:N0} bytes of pinned memory at 0x{hostPtr:X}");
                 }
                 else
                 {
-                    _logger.LogWarningMessage("");
+                    _logger.LogWarningMessage($"Failed to free pinned memory at 0x{hostPtr:X}: {result}");
                 }
             }
         }
@@ -178,7 +178,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 CudaRuntime.CheckError(result, "registering host memory");
             }, cancellationToken);
 
-            _logger.LogDebugMessage("Registered {Size:N0} bytes of host memory at {sizeInBytes, hostPtr}");
+            _logger.LogDebugMessage($"Registered {sizeInBytes:N0} bytes of host memory at 0x{hostPtr:X}");
 
 
             return new PinnedMemoryRegistration(hostPtr, sizeInBytes, this);
