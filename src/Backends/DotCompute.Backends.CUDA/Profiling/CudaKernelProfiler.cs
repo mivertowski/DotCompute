@@ -15,6 +15,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
+using DotCompute.Core.Pipelines.Analysis;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 
@@ -150,7 +151,7 @@ namespace DotCompute.Backends.CUDA.Advanced
                 };
                 _ = _profileData.AddOrUpdate(kernelName, profileData, (k, v) => profileData);
 
-                return new Core.Kernels.KernelProfilingResult
+                return new KernelProfilingResult
                 {
                     Iterations = iterations,
                     AverageTimeMs = stats.AverageTime,
@@ -162,7 +163,20 @@ namespace DotCompute.Backends.CUDA.Advanced
                     AchievedOccupancy = occupancy.TheoreticalOccupancy,
                     MemoryThroughputGBps = throughput.MemoryBandwidth,
                     ComputeThroughputGFLOPS = throughput.ComputePerformance,
-                    Bottleneck = bottlenecks,
+                    Bottleneck = new DotCompute.Abstractions.Interfaces.Kernels.BottleneckAnalysis
+                    {
+                        Type = bottlenecks.PrimaryBottleneck switch
+                        {
+                            BottleneckType.None => DotCompute.Abstractions.Types.BottleneckType.None,
+                            BottleneckType.Occupancy => DotCompute.Abstractions.Types.BottleneckType.Cpu,
+                            BottleneckType.MemoryBandwidth => DotCompute.Abstractions.Types.BottleneckType.Memory,
+                            BottleneckType.Compute => DotCompute.Abstractions.Types.BottleneckType.Gpu,
+                            BottleneckType.ThreadDivergence => DotCompute.Abstractions.Types.BottleneckType.Gpu,
+                            _ => DotCompute.Abstractions.Types.BottleneckType.None
+                        },
+                        Severity = bottlenecks.Severity,
+                        Details = bottlenecks.Details
+                    },
                     OptimizationSuggestions = optimizationSuggestions
                 };
             }
@@ -327,14 +341,14 @@ namespace DotCompute.Backends.CUDA.Advanced
             KernelMetrics kernelMetrics)
         {
             var suggestions = new List<string>();
-            var primaryBottleneck = Core.Kernels.BottleneckType.None;
+            var primaryBottleneck = BottleneckType.None;
             var severity = 0.0;
             var details = "No significant bottleneck detected";
 
             // Check for thermal throttling using real metrics
             if (gpuMetrics.IsAvailable && gpuMetrics.IsThrottling)
             {
-                primaryBottleneck = Core.Kernels.BottleneckType.Throttling;
+                primaryBottleneck = BottleneckType.Compute;
                 severity = 0.8;
                 details = $"GPU is throttling: {gpuMetrics.ThrottleReasons}";
                 suggestions.Add($"GPU throttling detected. Temperature: {gpuMetrics.Temperature}°C, Power: {gpuMetrics.PowerUsage:F1}W");
@@ -342,7 +356,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Check for memory bandwidth bottleneck
             else if (gpuMetrics.IsAvailable && gpuMetrics.MemoryBandwidthUtilization > 80)
             {
-                primaryBottleneck = Core.Kernels.BottleneckType.MemoryBandwidth;
+                primaryBottleneck = BottleneckType.MemoryBandwidth;
                 severity = gpuMetrics.MemoryBandwidthUtilization / 100.0;
                 details = $"High memory bandwidth utilization: {gpuMetrics.MemoryBandwidthUtilization}%";
                 suggestions.Add("Memory bandwidth saturated. Consider data compression or reducing memory accesses");
@@ -350,7 +364,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Check for low SM efficiency
             else if (kernelMetrics.SmEfficiency > 0 && kernelMetrics.SmEfficiency < 0.6)
             {
-                primaryBottleneck = Core.Kernels.BottleneckType.Divergence;
+                primaryBottleneck = BottleneckType.ThreadDivergence;
                 severity = 1.0 - kernelMetrics.SmEfficiency;
                 details = $"Low SM efficiency: {kernelMetrics.SmEfficiency:P1}";
                 suggestions.Add("Low SM efficiency detected. Check for thread divergence and uncoalesced memory access");
@@ -358,7 +372,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Check occupancy with real metrics
             else if (kernelMetrics.AchievedOccupancy > 0 && kernelMetrics.AchievedOccupancy < 0.5)
             {
-                primaryBottleneck = Core.Kernels.BottleneckType.RegisterPressure;
+                primaryBottleneck = BottleneckType.Occupancy;
                 severity = 1.0 - kernelMetrics.AchievedOccupancy;
                 details = $"Low achieved occupancy: {kernelMetrics.AchievedOccupancy:P1}";
                 suggestions.Add("Low occupancy detected. Consider adjusting block size or reducing register/shared memory usage");
@@ -400,9 +414,9 @@ namespace DotCompute.Backends.CUDA.Advanced
                 suggestions.Add("Consider Ada-specific optimizations: use 512-thread blocks and leverage 100KB shared memory");
             }
 
-            var bottleneckAnalysis = new Core.Kernels.BottleneckAnalysis
+            var bottleneckAnalysis = new BottleneckAnalysis
             {
-                Type = primaryBottleneck,
+                PrimaryBottleneck = primaryBottleneck,
                 Severity = severity,
                 Details = details
             };
@@ -513,6 +527,8 @@ namespace DotCompute.Backends.CUDA.Advanced
     {
         public BottleneckType PrimaryBottleneck { get; set; }
         public List<string> Suggestions { get; set; } = [];
+        public double Severity { get; set; }
+        public string Details { get; set; } = string.Empty;
     }
 
     /// <summary>

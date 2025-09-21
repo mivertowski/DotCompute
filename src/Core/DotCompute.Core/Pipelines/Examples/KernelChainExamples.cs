@@ -4,6 +4,8 @@
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Results;
 using DotCompute.Core.Pipelines;
+using DotCompute.Core.Pipelines.Examples.Models;
+using DotCompute.Core.Pipelines.Examples.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -395,63 +397,5 @@ namespace DotCompute.Core.Pipelines.Examples
             };
         }
     }
-
-    // Supporting classes for examples
-    public class RawInputData { }
-    public class AnalysisResult { public bool RequiresGpuProcessing { get; set; } }
-    public class ProcessedData { }
-    public class MLInputData { public override int GetHashCode() => base.GetHashCode(); }
-    public class MLPrediction { }
-    public class SimulationParameters { }
-    public class GridState { public bool RequiresHighPrecision { get; set; } }
-    public class SimulationResult { }
-    public class DataChunk { public string Id { get; set; } = string.Empty; }
-    public class ProcessingMetrics
-    {
-
-        public int TotalChunksProcessed { get; set; }
-        public int TotalErrors { get; set; }
-        public TimeSpan ProcessingTime { get; set; }
-        public double ThroughputPerSecond { get; set; }
-    }
-    public class ComplexWorkload { }
-    public class DetailedExecutionReport
-
-    {
-        public bool Success { get; set; }
-        public TimeSpan TotalExecutionTime { get; set; }
-        public List<KernelStepMetrics> StepMetrics { get; set; } = [];
-        public KernelChainMemoryMetrics? MemoryMetrics { get; set; }
-        public string BackendUsed { get; set; } = string.Empty;
-        public List<Exception> Errors { get; set; } = [];
-        public List<string> Recommendations { get; set; } = [];
-    }
-
-    // Example service classes that would use kernel chains
-    public class ImageProcessingService
-    {
-        public async Task<byte[]> ProcessImageAsync(byte[] imageData)
-        {
-            return await KernelChainExamples.ImageProcessingChainExample(imageData);
-        }
-    }
-
-    public class DataAnalysisService
-    {
-        public async Task<float[]> AnalyzeDataAsync(float[] data)
-        {
-            return await KernelChainExamples.ParallelDataProcessingExample(data);
-        }
-    }
-
-    public class MLInferenceService
-    {
-        public async Task<MLPrediction> PredictAsync(MLInputData input)
-        {
-            return await KernelChainExamples.MachineLearningInferenceExample(input);
-        }
-    }
-
-    // Placeholder for Program class in examples
-    public class Program { }
 }
+

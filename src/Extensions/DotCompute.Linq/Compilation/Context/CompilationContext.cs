@@ -4,9 +4,7 @@
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using LinqCompilationOptions = DotCompute.Linq.Compilation.Options.CompilationOptions;
-
 namespace DotCompute.Linq.Compilation.Context;
-
 /// <summary>
 /// Represents the context for compiling a LINQ expression.
 /// </summary>
@@ -32,40 +30,22 @@ public class CompilationContext
         Parameters = [];
         Options = new DotCompute.Abstractions.CompilationOptions();
     }
-
-    /// <summary>
     /// Gets the target accelerator for compilation and execution.
-    /// </summary>
     /// <value>
     /// The accelerator that will execute the compiled compute plan.
     /// </value>
     public IAccelerator Accelerator { get; }
-
-    /// <summary>
     /// Gets the expression tree to compile.
-    /// </summary>
-    /// <value>
     /// The LINQ expression tree representing the query to be compiled.
-    /// </value>
     public Expression Expression { get; }
-
-    /// <summary>
     /// Gets the compilation parameters.
-    /// </summary>
-    /// <value>
     /// A dictionary containing parameters that will be passed to the compiled kernels.
-    /// </value>
     /// <remarks>
     /// These parameters typically include constant values and external data
     /// referenced in the expression tree.
     /// </remarks>
     public Dictionary<string, object> Parameters { get; }
-
-    /// <summary>
     /// Gets or sets the compilation options.
-    /// </summary>
-    /// <value>
     /// The options that control various aspects of the compilation process.
-    /// </value>
     public DotCompute.Abstractions.CompilationOptions Options { get; set; }
 }

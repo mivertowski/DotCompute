@@ -3,7 +3,6 @@
 
 using System;
 using System.Threading.Tasks;
-
 namespace DotCompute.Linq.Pipelines.Interfaces.Compute
 {
     /// <summary>
@@ -13,13 +12,10 @@ namespace DotCompute.Linq.Pipelines.Interfaces.Compute
     {
         /// <summary>Device name.</summary>
         string Name { get; }
-
         /// <summary>Device type.</summary>
         string Type { get; }
-
         /// <summary>Whether device is available.</summary>
         bool IsAvailable { get; }
-
         /// <summary>Initialize the device.</summary>
         Task InitializeAsync();
     }

@@ -5,9 +5,7 @@
 
 using System;
 using DotCompute.Linq.Operators.Execution;
-
 namespace DotCompute.Linq.Operators.Models;
-
 /// <summary>
 /// Represents the result of a kernel compilation operation.
 /// </summary>
@@ -17,19 +15,10 @@ public class KernelCompilationResult
     /// Gets or sets a value indicating whether the compilation was successful.
     /// </summary>
     public bool Success { get; set; }
-
-    /// <summary>
     /// Gets or sets the compiled kernel if compilation was successful.
-    /// </summary>
     public ICompiledKernel? CompiledKernel { get; set; }
-
-    /// <summary>
     /// Gets or sets the error message if compilation failed.
-    /// </summary>
     public string? ErrorMessage { get; set; }
-
-    /// <summary>
     /// Gets or sets the time taken for compilation.
-    /// </summary>
     public TimeSpan CompilationTime { get; set; }
 }

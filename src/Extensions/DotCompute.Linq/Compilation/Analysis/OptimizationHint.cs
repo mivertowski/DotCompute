@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-
 namespace DotCompute.Linq.Compilation.Analysis;
-
 /// <summary>
 /// Represents an optimization hint generated during expression analysis.
 /// </summary>
@@ -14,19 +12,14 @@ public record OptimizationHint
 {
     /// <summary>Gets the type of optimization hint.</summary>
     public OptimizationHintType Type { get; init; }
-
     /// <summary>Gets the human-readable description of the hint.</summary>
     public string Description { get; init; }
-
     /// <summary>Gets the estimated impact of applying this optimization.</summary>
     public OptimizationImpact Impact { get; init; }
-
     /// <summary>Gets the confidence level in this hint (0.0 to 1.0).</summary>
     public double Confidence { get; init; } = 1.0;
-
     /// <summary>Gets additional metadata associated with this hint.</summary>
     public object? Metadata { get; init; }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="OptimizationHint"/> record.
     /// </summary>
@@ -40,60 +33,37 @@ public record OptimizationHint
         Impact = impact;
     }
 }
-
-/// <summary>
 /// Defines the types of optimization hints that can be generated.
-/// </summary>
 public enum OptimizationHintType
-{
     /// <summary>Vectorization/SIMD optimization opportunity.</summary>
     Vectorization,
-
     /// <summary>Memory access coalescing optimization.</summary>
     MemoryCoalescing,
-
     /// <summary>Kernel fusion optimization.</summary>
     KernelFusion,
-
     /// <summary>Type specialization optimization.</summary>
     TypeSpecialization,
-
     /// <summary>Loop unrolling optimization.</summary>
     LoopUnrolling,
-
     /// <summary>Constant folding optimization.</summary>
     ConstantFolding,
-
     /// <summary>Memory prefetching optimization.</summary>
     MemoryPrefetching,
-
     /// <summary>Parallel execution optimization.</summary>
     Parallelization,
-
     /// <summary>Cache optimization.</summary>
     CacheOptimization,
-
     /// <summary>Backend-specific optimization.</summary>
     BackendSpecific,
-
     /// <summary>General performance optimization.</summary>
     Performance
-}
-
-/// <summary>
 /// Defines the expected impact levels for optimization hints.
-/// </summary>
 public enum OptimizationImpact
-{
     /// <summary>Low impact - minor performance improvement expected.</summary>
     Low,
-
     /// <summary>Medium impact - moderate performance improvement expected.</summary>
     Medium,
-
     /// <summary>High impact - significant performance improvement expected.</summary>
     High,
-
     /// <summary>Critical impact - major performance improvement expected.</summary>
     Critical
-}

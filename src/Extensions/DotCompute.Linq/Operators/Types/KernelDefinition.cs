@@ -4,12 +4,11 @@
 // </copyright>
 
 using System.Collections.Generic;
+using DotCompute.Abstractions.Kernels.Types;
 using System.Linq.Expressions;
 using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Abstractions.Types;
-
 namespace DotCompute.Linq.Operators.Types;
-
 /// <summary>
 /// Defines a kernel with its source expression and metadata.
 /// </summary>
@@ -19,35 +18,18 @@ public class KernelDefinition
     /// Gets or sets the kernel name.
     /// </summary>
     public string Name { get; set; } = string.Empty;
-
-    /// <summary>
     /// Gets or sets the source expression for the kernel.
-    /// </summary>
     public Expression? Expression { get; set; }
-
-    /// <summary>
     /// Gets or sets the compiled source code (if available).
-    /// </summary>
     public string? CompiledSource { get; set; }
-
-
-    /// <summary>
     /// Gets or sets the source code (alias for CompiledSource).
-    /// </summary>
     public string? Source
     {
-
         get => CompiledSource;
         set => CompiledSource = value;
     }
-
-    /// <summary>
     /// Gets or sets the kernel language.
-    /// </summary>
-    public KernelLanguage Language { get; set; } = KernelLanguage.CSharpIL;
-
-    /// <summary>
+    public DotCompute.Abstractions.Kernels.Types.KernelLanguage Language { get; set; } = DotCompute.Abstractions.Kernels.Types.KernelLanguage.CSharpIL;
     /// Gets or sets the kernel parameters.
-    /// </summary>
     public List<KernelParameter> Parameters { get; set; } = [];
 }

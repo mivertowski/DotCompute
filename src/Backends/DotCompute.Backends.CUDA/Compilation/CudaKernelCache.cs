@@ -40,6 +40,7 @@ public sealed class CudaKernelCache : IDisposable
     private long _totalCacheHits;
     private long _totalCacheMisses;
     private long _currentCacheSize;
+    private int _maxCacheSize;
     private bool _disposed;
 
     /// <summary>
@@ -76,6 +77,8 @@ public sealed class CudaKernelCache : IDisposable
             TimeSpan.FromMinutes(5));
 
 
+        _maxCacheSize = _config.MaxCachedKernels;
+
         _logger.LogInformation(
             "Kernel cache initialized - Memory: {MemLimit}MB, Disk: {DiskPath}",
             _config.MaxMemoryCacheSizeMB, _diskCachePath);
@@ -93,6 +96,23 @@ public sealed class CudaKernelCache : IDisposable
         DiskCacheEntries = _metadataCache.Count,
         CurrentMemoryUsageMB = Interlocked.Read(ref _currentCacheSize) / (1024.0 * 1024.0)
     };
+
+    /// <summary>
+    /// Gets cache statistics for optimization purposes.
+    /// </summary>
+    /// <returns>Cache statistics including size and performance metrics.</returns>
+    private KernelCacheStatistics GetCacheStats()
+    {
+        return new KernelCacheStatistics
+        {
+            TotalHits = Interlocked.Read(ref _totalCacheHits),
+            TotalMisses = Interlocked.Read(ref _totalCacheMisses),
+            MemoryCacheEntries = _memoryCache.Count,
+            DiskCacheEntries = _metadataCache.Count,
+            // MemoryUsage property not available in this version
+            CurrentMemoryUsageMB = Interlocked.Read(ref _currentCacheSize) / (1024.0 * 1024.0)
+        };
+    }
 
     /// <summary>
     /// Initializes the disk cache directory.
@@ -973,7 +993,7 @@ public sealed class CudaKernelCache : IDisposable
         ThrowIfDisposed();
 
         var hitRate = CalculateHitRate();
-        var currentSize = GetCacheStats().Size;
+        var currentSize = GetCacheStats().MemoryCacheEntries;
 
         // If hit rate is low and cache isn't full, increase cache size
         if (hitRate < 0.7 && currentSize < _maxCacheSize * 0.8)
@@ -995,7 +1015,7 @@ public sealed class CudaKernelCache : IDisposable
     /// </summary>
     private void ExpandCache()
     {
-        var newSize = Math.Min(_maxCacheSize, (int)(_maxCacheSize * 1.2));
+        var newSize = Math.Max(_maxCacheSize, (int)(_maxCacheSize * 1.2));
         if (newSize > _maxCacheSize)
         {
             _maxCacheSize = newSize;

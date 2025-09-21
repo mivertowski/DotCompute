@@ -10,11 +10,12 @@ using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Types;
 using ValidationResult = DotCompute.Abstractions.Validation.UnifiedValidationResult;
+// Fully qualified type names used to avoid ambiguity with Metal-specific UnifiedValidationResult
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
-using KernelLanguage = DotCompute.Abstractions.Kernels.KernelLanguage;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using DotCompute.Abstractions.Kernels.Types;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
 namespace DotCompute.Backends.Metal.Kernels;
@@ -23,7 +24,7 @@ namespace DotCompute.Backends.Metal.Kernels;
 /// <summary>
 /// Compiles kernels to Metal Shading Language and creates compute pipeline states.
 /// </summary>
-public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
+public sealed class MetalKernelCompiler : IUnifiedKernelCompiler<KernelDefinition, DotCompute.Abstractions.ICompiledKernel>, IDisposable
 {
     private readonly IntPtr _device;
     private readonly IntPtr _commandQueue;
@@ -89,7 +90,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     }.AsReadOnly();
 
     /// <inheritdoc/>
-    public async ValueTask<ICompiledKernel> CompileAsync(
+    public async ValueTask<DotCompute.Abstractions.ICompiledKernel> CompileAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
@@ -102,7 +103,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         var validation = Validate(definition);
         if (!validation.IsValid)
         {
-            throw new InvalidOperationException($"Kernel validation failed: {validation.ErrorMessage}");
+            throw new InvalidOperationException($"Kernel validation failed: {validation.ErrorMessage ?? "Unknown validation error"}");
         }
 
         // Check the cache first
@@ -121,7 +122,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
                 Warnings = { "Kernel loaded from cache" }
             };
             
-            return new MetalCompiledKernel(
+            return (DotCompute.Abstractions.ICompiledKernel)new MetalCompiledKernel(
                 definition,
                 cachedPipelineState,
                 _commandQueue,
@@ -205,7 +206,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             // Release function reference (pipeline state retains it)
             MetalNative.ReleaseFunction(function);
             
-            return new MetalCompiledKernel(
+            return (DotCompute.Abstractions.ICompiledKernel)new MetalCompiledKernel(
                 definition,
                 pipelineState,
                 _commandQueue,
@@ -455,7 +456,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     public ValueTask<ValidationResult> ValidateAsync(KernelDefinition kernel, CancellationToken cancellationToken = default) => ValueTask.FromResult(Validate(kernel));
 
     /// <inheritdoc/>
-    public ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
+    public ValueTask<DotCompute.Abstractions.ICompiledKernel> OptimizeAsync(DotCompute.Abstractions.ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
     {
         // TODO: Implement Metal-specific optimizations
         // For now, return the kernel as-is since Metal optimization happens at compile time

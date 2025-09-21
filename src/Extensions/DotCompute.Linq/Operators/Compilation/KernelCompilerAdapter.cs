@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using DotCompute.Abstractions.Kernels.Types;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
@@ -12,9 +13,7 @@ using DotCompute.Linq.Operators.Execution;
 using DotCompute.Linq.Operators.Models;
 using DotCompute.Linq.Operators.Mocks;
 using Microsoft.Extensions.Logging;
-
 namespace DotCompute.Linq.Operators.Compilation;
-
 /// <summary>
 /// Adapter that bridges the Core kernel compilers with the LINQ interface.
 /// </summary>
@@ -22,7 +21,6 @@ internal class KernelCompilerAdapter : IUnifiedKernelCompiler
 {
     private readonly DotCompute.Abstractions.IUnifiedKernelCompiler _coreCompiler;
     private readonly ILogger _logger;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="KernelCompilerAdapter"/> class.
     /// </summary>
@@ -33,15 +31,11 @@ internal class KernelCompilerAdapter : IUnifiedKernelCompiler
         _coreCompiler = coreCompiler ?? throw new ArgumentNullException(nameof(coreCompiler));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
-
-    /// <summary>
     /// Compiles a kernel asynchronously using the adapted core compiler.
-    /// </summary>
     /// <param name="request">The kernel compilation request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task containing the kernel compilation result.</returns>
     public async Task<KernelCompilationResult> CompileKernelAsync(KernelCompilationRequest request, CancellationToken cancellationToken = default)
-    {
         try
         {
             // Create a mock kernel source for compatibility
@@ -49,49 +43,28 @@ internal class KernelCompilerAdapter : IUnifiedKernelCompiler
             {
                 Name = request.Name,
                 Code = request.Source,
-                Language = DotCompute.Abstractions.Types.KernelLanguage.CSharpIL,
+                Language = DotCompute.Abstractions.Types.DotCompute.Abstractions.Kernels.Types.KernelLanguage.CSharpIL,
                 EntryPoint = request.Name
             };
-
             var options = new DotCompute.Abstractions.CompilationOptions
-            {
                 OptimizationLevel = ConvertOptimizationLevel(request.OptimizationLevel)
-            };
-
             var kernelDefinition = new DotCompute.Abstractions.Kernels.KernelDefinition(request.Name, kernelSource.Code, kernelSource.EntryPoint ?? "main")
-
-            {
                 Name = request.Name
-            };
-
             var compiledKernel = await _coreCompiler.CompileAsync(kernelDefinition, options, cancellationToken);
-
             return new KernelCompilationResult
-            {
                 Success = true,
                 CompiledKernel = new CompiledKernelAdapter(compiledKernel),
                 CompilationTime = TimeSpan.FromMilliseconds(0) // TODO: Get actual time
-            };
         }
         catch (Exception ex)
-        {
-            return new KernelCompilationResult
-            {
                 Success = false,
                 ErrorMessage = ex.Message
-            };
-        }
-    }
-
     private static DotCompute.Abstractions.Types.OptimizationLevel ConvertOptimizationLevel(Models.OptimizationLevel level)
-    {
         return level switch
-        {
             Models.OptimizationLevel.Debug => DotCompute.Abstractions.Types.OptimizationLevel.None,
             Models.OptimizationLevel.Default => DotCompute.Abstractions.Types.OptimizationLevel.Default,
             Models.OptimizationLevel.Release => DotCompute.Abstractions.Types.OptimizationLevel.Moderate,
             Models.OptimizationLevel.Aggressive => DotCompute.Abstractions.Types.OptimizationLevel.Aggressive,
             _ => DotCompute.Abstractions.Types.OptimizationLevel.Default
         };
-    }
 }

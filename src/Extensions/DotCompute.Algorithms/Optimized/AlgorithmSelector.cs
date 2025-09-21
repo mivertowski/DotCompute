@@ -6,13 +6,15 @@ using System.Diagnostics;
 using global::System.Runtime.CompilerServices;
 using global::System.Runtime.Intrinsics.X86;
 using DotCompute.Algorithms.LinearAlgebra;
+using DotCompute.Algorithms.Selection.Enums;
+using DotCompute.Algorithms.Selection.Models;
 
 namespace DotCompute.Algorithms.Optimized;
 
 /// <summary>
 /// Intelligent algorithm selector that automatically chooses the most efficient
 /// algorithm implementation based on input size, hardware capabilities, and
-/// empirical performance data with auto-tuning.
+/// empirical performance data with machine learning-based auto-tuning.
 /// </summary>
 public static class AlgorithmSelector
 {
@@ -38,52 +40,6 @@ public static class AlgorithmSelector
     private static readonly TimeSpan _tuningInterval = TimeSpan.FromHours(24);
 
 
-    /// <summary>
-    /// Hardware capabilities and performance characteristics.
-    /// </summary>
-    public static class HardwareProfile
-    {
-        public static readonly bool HasVectorInstructions = _hasAvx2 || _hasSse42;
-        public static readonly bool SupportsParallelism = _coreCount > 1;
-        public static readonly bool HasHighMemoryBandwidth = DetectHighMemoryBandwidth();
-        public static readonly int OptimalThreadCount = CalculateOptimalThreadCount();
-        public static readonly long L1CacheSize = GetCacheSize(CacheLevel.L1);
-        public static readonly long L2CacheSize = GetCacheSize(CacheLevel.L2);
-        public static readonly long L3CacheSize = GetCacheSize(CacheLevel.L3);
-
-
-        private enum CacheLevel { L1, L2, L3 }
-
-
-        private static bool DetectHighMemoryBandwidth()
-            // Simplified heuristic based on core count and architecture
-
-
-
-            => _coreCount >= 8 && (_hasAvx2 || _hasFma);
-
-
-        private static int CalculateOptimalThreadCount()
-            // Conservative approach: use 75% of available cores for compute-intensive tasks
-
-
-
-            => Math.Max(1, (int)(_coreCount * 0.75));
-
-
-        private static long GetCacheSize(CacheLevel level)
-        {
-            // Platform-specific cache detection would go here
-            // For now, use reasonable defaults based on modern CPUs
-            return level switch
-            {
-                CacheLevel.L1 => 32 * 1024,      // 32KB
-                CacheLevel.L2 => 256 * 1024,     // 256KB
-                CacheLevel.L3 => 8 * 1024 * 1024, // 8MB
-                _ => 0
-            };
-        }
-    }
 
 
     /// <summary>
@@ -670,65 +626,3 @@ public static class AlgorithmSelector
     #endregion
 }
 
-/// <summary>
-/// Matrix multiplication algorithm strategies.
-/// </summary>
-public enum MatrixMultiplyStrategy
-{
-    Micro,              // Optimized micro-kernels for very small matrices
-    Standard,           // Standard ijk algorithm
-    SIMD,              // SIMD-optimized algorithm
-    Blocked,           // Cache-blocked algorithm
-    Strassen,          // Strassen's algorithm
-    CacheOblivious,    // Cache-oblivious algorithm
-    ParallelBlocked    // Parallel blocked algorithm
-}
-
-/// <summary>
-/// FFT algorithm strategies.
-/// </summary>
-public enum FFTStrategy
-{
-    Trivial,           // No computation needed
-    DirectDFT,         // Direct DFT for very small sizes
-    CooleyTukey,       // Standard Cooley-Tukey FFT
-    MixedRadix,        // Mixed-radix FFT
-    SimdComplex,       // SIMD-optimized complex FFT
-    SimdReal,          // SIMD-optimized real FFT
-    CacheFriendly,     // Cache-friendly four-step FFT
-    Bluestein          // Bluestein's algorithm for arbitrary sizes
-}
-
-/// <summary>
-/// BLAS algorithm strategies.
-/// </summary>
-public enum BLASStrategy
-{
-    Standard,          // Standard implementation
-    Vectorized,        // Vector-optimized
-    SimdVectorized,    // SIMD-vectorized
-    Blocked,           // Cache-blocked
-    ParallelBlocked    // Parallel blocked
-}
-
-/// <summary>
-/// BLAS operation types.
-/// </summary>
-public enum BLASOperation
-{
-    DOT,    // Dot product
-    AXPY,   // y = ax + y
-    GEMV,   // Matrix-vector multiply
-    GEMM    // Matrix-matrix multiply
-}
-
-/// <summary>
-/// Parallel algorithm strategies.
-/// </summary>
-public enum ParallelStrategy
-{
-    Sequential,        // No parallelization
-    TaskParallel,     // Task-based parallelism
-    ForkJoin,         // Fork-join parallelism
-    WorkStealing      // Work-stealing parallelism
-}

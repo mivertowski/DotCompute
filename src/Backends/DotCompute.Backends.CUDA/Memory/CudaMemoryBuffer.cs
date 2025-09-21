@@ -8,6 +8,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Native.Exceptions;
 
 namespace DotCompute.Backends.CUDA.Memory
 {
@@ -238,6 +239,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <param name="count">The number of elements.</param>
         /// <param name="context">The CUDA context.</param>
         /// <param name="options">Memory allocation options.</param>
+        /// <param name="accelerator">Optional accelerator reference for advanced features.</param>
         public CudaMemoryBuffer(nint devicePointer, long count, CudaContext context, MemoryOptions options = MemoryOptions.None, IAccelerator? accelerator = null)
         {
             _devicePointer = devicePointer;
@@ -316,7 +318,7 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             ArgumentNullException.ThrowIfNull(destination);
 
-            if (destination.Count < Count)
+            if (destination.Length < Count)
             {
 
                 throw new ArgumentException("Destination buffer is too small.", nameof(destination));
@@ -474,7 +476,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
 
-            if (destinationOffset < 0 || destinationOffset >= destination.Count)
+            if (destinationOffset < 0 || destinationOffset >= destination.Length)
             {
 
                 throw new ArgumentOutOfRangeException(nameof(destinationOffset));
@@ -488,7 +490,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
 
-            if (destinationOffset + count > destination.Count)
+            if (destinationOffset + count > destination.Length)
             {
 
                 throw new ArgumentException("Destination buffer is too small for the specified range.");
@@ -534,7 +536,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
 
-            if (destinationOffset < 0 || destinationOffset >= destination.Count)
+            if (destinationOffset < 0 || destinationOffset >= destination.Length)
             {
 
                 throw new ArgumentOutOfRangeException(nameof(destinationOffset));
@@ -548,7 +550,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
 
-            if (destinationOffset + count > destination.Count)
+            if (destinationOffset + count > destination.Length)
             {
 
                 throw new ArgumentException("Destination buffer is too small for the specified range.");
@@ -828,14 +830,14 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
 
-            if (destinationOffset < 0 || destinationOffset >= destination.Count)
+            if (destinationOffset < 0 || destinationOffset >= destination.Length)
             {
 
                 throw new ArgumentOutOfRangeException(nameof(destinationOffset));
             }
 
 
-            if (count < 0 || sourceOffset + count > Count || destinationOffset + count > destination.Count)
+            if (count < 0 || sourceOffset + count > Count || destinationOffset + count > destination.Length)
             {
 
                 throw new ArgumentOutOfRangeException(nameof(count));
@@ -858,7 +860,7 @@ namespace DotCompute.Backends.CUDA.Memory
                         _devicePointer + sourceBytes,
                         (nuint)copyBytes,
                         CudaMemcpyKind.DeviceToDevice);
-                    CudaException.ThrowIfFailed(result, "Failed to copy between CUDA buffers");
+                    CudaRuntime.CheckError(result, "Failed to copy between CUDA buffers");
                 }
                 else
                 {

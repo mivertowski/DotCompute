@@ -39,6 +39,15 @@ public sealed class KernelArgument
     public int Size { get; set; }
 
     /// <summary>
+    /// Gets or sets the size of the argument in bytes (alias for Size).
+    /// </summary>
+    public int SizeInBytes
+    {
+        get => Size;
+        set => Size = value;
+    }
+
+    /// <summary>
     /// Gets or sets whether this argument is a pointer/reference type
     /// </summary>
     public bool IsPointer { get; set; }

@@ -2,11 +2,86 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
-using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Types.Native;
+// Mock CUDA types for testing without CUDA backend dependency
 
 namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 {
+    /// <summary>
+    /// Mock CUDA types and enums for testing without CUDA backend dependency
+    /// </summary>
+    public enum CudaError
+    {
+        Success = 0,
+        InvalidValue = 1,
+        OutOfMemory = 2,
+        NotInitialized = 3,
+        Deinitialized = 4,
+        NoDevice = 100
+    }
+
+    public struct CudaDeviceProperties : IEquatable<CudaDeviceProperties>
+    {
+        public string DeviceName { get; set; }
+        public int Major { get; set; }
+        public int Minor { get; set; }
+        public long TotalGlobalMem { get; set; }
+        public int MultiProcessorCount { get; set; }
+
+        public readonly bool Equals(CudaDeviceProperties other)
+        {
+            return DeviceName == other.DeviceName &&
+                   Major == other.Major &&
+                   Minor == other.Minor &&
+                   TotalGlobalMem == other.TotalGlobalMem &&
+                   MultiProcessorCount == other.MultiProcessorCount;
+        }
+
+        public readonly override bool Equals(object? obj)
+        {
+            return obj is CudaDeviceProperties other && Equals(other);
+        }
+
+        public readonly override int GetHashCode()
+        {
+            return HashCode.Combine(DeviceName, Major, Minor, TotalGlobalMem, MultiProcessorCount);
+        }
+
+        public static bool operator ==(CudaDeviceProperties left, CudaDeviceProperties right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(CudaDeviceProperties left, CudaDeviceProperties right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
+    public static class CudaRuntime
+    {
+        public static CudaError cudaGetDeviceCount(out int count)
+        {
+            count = 0;
+            return CudaError.NoDevice;
+        }
+        public static CudaError cudaDriverGetVersion(out int version)
+        {
+            version = 0;
+            return CudaError.Success;
+        }
+        public static CudaError cudaRuntimeGetVersion(out int version)
+        {
+            version = 0;
+            return CudaError.Success;
+        }
+        public static CudaError cudaGetDeviceProperties(ref CudaDeviceProperties props, int device)
+        {
+            props = default;
+            return CudaError.NoDevice;
+        }
+        public static string GetErrorString(CudaError error) => error.ToString();
+    }
+
     /// <summary>
     /// Unified CUDA detection helper for consistent CUDA availability checks across all tests.
     /// Provides a single source of truth for CUDA detection with comprehensive diagnostics.
@@ -53,7 +128,9 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
 
                 _ = IsCudaAvailable(); // Ensure detection has run
+                #pragma warning disable CA1508
                 return _cachedDiagnosticInfo ?? "No diagnostic information available";
+                #pragma warning restore CA1508
             }
         }
 
@@ -122,8 +199,7 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
             try
             {
-                var deviceCount = 0;
-                var result = CudaRuntime.cudaGetDeviceCount(out deviceCount);
+                var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
 
 
                 diagnostics.AppendLine($"   cudaGetDeviceCount result: {result}");

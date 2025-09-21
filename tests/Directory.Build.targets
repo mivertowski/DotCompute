@@ -5,6 +5,11 @@
   <!-- Import coverage configuration -->
   <Import Project="$(MSBuildThisFileDirectory)coverlet.targets" Condition="Exists('$(MSBuildThisFileDirectory)coverlet.targets')" />
 
+  <!-- Force test projects to be libraries -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
   <!-- Common test package references using centralized version management -->
   <ItemGroup Condition="'$(IsTestProject)' == 'true'">
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

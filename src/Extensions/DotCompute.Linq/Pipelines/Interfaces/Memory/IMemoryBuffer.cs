@@ -3,7 +3,6 @@
 
 using System;
 using System.Threading.Tasks;
-
 namespace DotCompute.Linq.Pipelines.Interfaces.Memory
 {
     /// <summary>
@@ -13,7 +12,6 @@ namespace DotCompute.Linq.Pipelines.Interfaces.Memory
     {
         /// <summary>Buffer size in bytes.</summary>
         long Size { get; }
-
         /// <summary>Copy buffer to another buffer.</summary>
         Task CopyToAsync(IMemoryBuffer destination);
     }

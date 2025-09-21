@@ -3,7 +3,9 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Extensions
 {
@@ -13,6 +15,95 @@ namespace DotCompute.Core.Extensions
     /// </summary>
     public static class IAcceleratorExtensions
     {
+        /// <summary>
+        /// Gets the accelerator name from the Info property.
+        /// </summary>
+        /// <param name="accelerator">The accelerator instance.</param>
+        /// <returns>The accelerator name.</returns>
+        public static string Name(this IAccelerator accelerator)
+        {
+            ArgumentNullException.ThrowIfNull(accelerator);
+            return accelerator.Info.Name;
+        }
+
+        /// <summary>
+        /// Gets the accelerator description by combining vendor and device type.
+        /// </summary>
+        /// <param name="accelerator">The accelerator instance.</param>
+        /// <returns>The accelerator description.</returns>
+        public static string Description(this IAccelerator accelerator)
+        {
+            ArgumentNullException.ThrowIfNull(accelerator);
+            return $"{accelerator.Info.Vendor} {accelerator.Info.DeviceType}";
+        }
+
+        /// <summary>
+        /// Gets whether the accelerator is available for use.
+        /// This is a simplified check that assumes the accelerator is available if it can be accessed.
+        /// </summary>
+        /// <param name="accelerator">The accelerator instance.</param>
+        /// <returns>True if the accelerator is available, false otherwise.</returns>
+        public static bool IsAvailable(this IAccelerator accelerator)
+        {
+            ArgumentNullException.ThrowIfNull(accelerator);
+            try
+            {
+                var _ = accelerator.Info;
+                return !accelerator.IsDisposed();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the accelerator supports a specific feature.
+        /// </summary>
+        /// <param name="accelerator">The accelerator instance.</param>
+        /// <param name="feature">The feature to check.</param>
+        /// <returns>True if the feature is supported, false otherwise.</returns>
+        public static bool SupportsFeature(this IAccelerator accelerator, string feature)
+        {
+            ArgumentNullException.ThrowIfNull(accelerator);
+            ArgumentException.ThrowIfNullOrEmpty(feature);
+
+            // Check if the accelerator has capabilities defined
+            if (accelerator.Info.Capabilities?.ContainsKey(feature) == true)
+            {
+                var value = accelerator.Info.Capabilities[feature];
+                return value is bool supported && supported;
+            }
+
+            // Default feature support based on accelerator type
+            return feature.ToLowerInvariant() switch
+            {
+                "unified_memory" => accelerator.Info.IsUnifiedMemory,
+                "double_precision" => accelerator.Info.SupportsFloat64,
+                "int64" => accelerator.Info.SupportsInt64,
+                "float64" => accelerator.Info.SupportsFloat64,
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// Gets memory information for the accelerator.
+        /// </summary>
+        /// <param name="accelerator">The accelerator instance.</param>
+        /// <returns>A task returning memory information.</returns>
+        public static ValueTask<MemoryInfo> GetMemoryInfoAsync(this IAccelerator accelerator)
+        {
+            ArgumentNullException.ThrowIfNull(accelerator);
+
+            var memoryInfo = new MemoryInfo
+            {
+                TotalMemory = accelerator.Info.TotalMemory,
+                AvailableMemory = accelerator.Info.AvailableMemory,
+                UsedMemory = accelerator.Info.TotalMemory - accelerator.Info.AvailableMemory
+            };
+
+            return ValueTask.FromResult(memoryInfo);
+        }
         /// <summary>
         /// Determines if the accelerator has been disposed.
         /// Since IAccelerator implements IAsyncDisposable, we can't directly check disposal status.

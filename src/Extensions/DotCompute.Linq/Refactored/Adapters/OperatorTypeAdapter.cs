@@ -7,9 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DotCompute.Core.Analysis;
-
 namespace DotCompute.Refactored.Adapters;
-
 /// <summary>
 /// Legacy OperatorType enum from Pipeline analysis for compatibility.
 /// </summary>
@@ -30,38 +28,15 @@ public enum LegacyPipelineOperatorType
     MethodCall,
     Custom
 }
-
-/// <summary>
 /// Legacy OperatorType enum from Compilation analysis for compatibility.
-/// </summary>
 public enum LegacyCompilationOperatorType
-{
-    Unknown,
     Arithmetic,
     Logical,
     Comparison,
     Conditional,
     Assignment,
-    Filter,
-    Projection,
-    Aggregation,
-    Sort,
-    Group,
-    Join,
-    Mathematical,
-    Conversion,
-    Memory,
-    Reduction,
-    Transformation,
-    MethodCall,
-    Custom
-}
-
-/// <summary>
 /// Adapter class that provides conversion between legacy OperatorType enums and UnifiedOperatorType.
-/// </summary>
 public static class OperatorTypeAdapter
-{
     private static readonly Dictionary<LegacyPipelineOperatorType, UnifiedOperatorType> PipelineToUnifiedMapping = new()
     {
         [LegacyPipelineOperatorType.Unknown] = UnifiedOperatorType.Unknown,
@@ -79,9 +54,7 @@ public static class OperatorTypeAdapter
         [LegacyPipelineOperatorType.MethodCall] = UnifiedOperatorType.MethodCall,
         [LegacyPipelineOperatorType.Custom] = UnifiedOperatorType.Custom
     };
-
     private static readonly Dictionary<LegacyCompilationOperatorType, UnifiedOperatorType> CompilationToUnifiedMapping = new()
-    {
         [LegacyCompilationOperatorType.Unknown] = UnifiedOperatorType.Unknown,
         [LegacyCompilationOperatorType.Arithmetic] = UnifiedOperatorType.Arithmetic,
         [LegacyCompilationOperatorType.Logical] = UnifiedOperatorType.Logical,
@@ -101,210 +74,102 @@ public static class OperatorTypeAdapter
         [LegacyCompilationOperatorType.Transformation] = UnifiedOperatorType.Transformation,
         [LegacyCompilationOperatorType.MethodCall] = UnifiedOperatorType.MethodCall,
         [LegacyCompilationOperatorType.Custom] = UnifiedOperatorType.Custom
-    };
-
     private static readonly Dictionary<UnifiedOperatorType, LegacyPipelineOperatorType> UnifiedToPipelineMapping =
         PipelineToUnifiedMapping.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
-
     private static readonly Dictionary<UnifiedOperatorType, LegacyCompilationOperatorType> UnifiedToCompilationMapping =
         CompilationToUnifiedMapping.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
-
     /// <summary>
     /// Converts a legacy pipeline OperatorType to UnifiedOperatorType.
     /// </summary>
     public static UnifiedOperatorType FromPipeline(LegacyPipelineOperatorType legacyType)
-    {
         return PipelineToUnifiedMapping.TryGetValue(legacyType, out var unified) ? unified : UnifiedOperatorType.Unknown;
     }
-
-    /// <summary>
     /// Converts a legacy compilation OperatorType to UnifiedOperatorType.
-    /// </summary>
     public static UnifiedOperatorType FromCompilation(LegacyCompilationOperatorType legacyType)
-    {
         return CompilationToUnifiedMapping.TryGetValue(legacyType, out var unified) ? unified : UnifiedOperatorType.Unknown;
-    }
-
-    /// <summary>
     /// Converts UnifiedOperatorType to legacy pipeline OperatorType.
-    /// </summary>
     public static LegacyPipelineOperatorType ToPipeline(UnifiedOperatorType unifiedType)
-    {
         if (UnifiedToPipelineMapping.TryGetValue(unifiedType, out var legacy))
         {
             return legacy;
         }
-
         // Try to find the closest match by category
         var category = unifiedType.GetCategory();
         return UnifiedToPipelineMapping.TryGetValue(category, out var categoryLegacy) ? categoryLegacy : LegacyPipelineOperatorType.Unknown;
-    }
-
-    /// <summary>
     /// Converts UnifiedOperatorType to legacy compilation OperatorType.
-    /// </summary>
     public static LegacyCompilationOperatorType ToCompilation(UnifiedOperatorType unifiedType)
-    {
         if (UnifiedToCompilationMapping.TryGetValue(unifiedType, out var legacy))
-        {
-            return legacy;
-        }
-
-        // Try to find the closest match by category
-        var category = unifiedType.GetCategory();
         return UnifiedToCompilationMapping.TryGetValue(category, out var categoryLegacy) ? categoryLegacy : LegacyCompilationOperatorType.Unknown;
-    }
-
-    /// <summary>
     /// Converts a string representation to UnifiedOperatorType.
-    /// </summary>
     public static UnifiedOperatorType FromString(string operatorTypeString)
-    {
         if (string.IsNullOrEmpty(operatorTypeString))
-        {
-
             return UnifiedOperatorType.Unknown;
-        }
-
         // Try direct enum parsing first
-
         if (Enum.TryParse<UnifiedOperatorType>(operatorTypeString, true, out var directResult))
-        {
             return directResult;
-        }
-
         // Try legacy pipeline enum parsing
         if (Enum.TryParse<LegacyPipelineOperatorType>(operatorTypeString, true, out var pipelineResult))
-        {
             return FromPipeline(pipelineResult);
-        }
-
         // Try legacy compilation enum parsing
         if (Enum.TryParse<LegacyCompilationOperatorType>(operatorTypeString, true, out var compilationResult))
-        {
             return FromCompilation(compilationResult);
-        }
-
         // Try fuzzy matching
         return FuzzyMatch(operatorTypeString);
-    }
-
-    /// <summary>
     /// Converts any enum value to UnifiedOperatorType using reflection.
-    /// </summary>
     public static UnifiedOperatorType FromEnum(Enum operatorTypeEnum)
-    {
         if (operatorTypeEnum == null)
-        {
-
-            return UnifiedOperatorType.Unknown;
-        }
-
-
         var enumType = operatorTypeEnum.GetType();
         var enumValue = operatorTypeEnum.ToString();
-
         // Check if it's already UnifiedOperatorType
         if (enumType == typeof(UnifiedOperatorType))
-        {
             return (UnifiedOperatorType)operatorTypeEnum;
-        }
-
         // Try string conversion
         return FromString(enumValue);
-    }
-
-    /// <summary>
     /// Gets all possible mappings between legacy types and unified types.
-    /// </summary>
     public static Dictionary<string, UnifiedOperatorType> GetAllMappings()
-    {
         var mappings = new Dictionary<string, UnifiedOperatorType>();
-
         // Add pipeline mappings
         foreach (var kvp in PipelineToUnifiedMapping)
-        {
             mappings[$"Pipeline.{kvp.Key}"] = kvp.Value;
-        }
-
         // Add compilation mappings
         foreach (var kvp in CompilationToUnifiedMapping)
-        {
             mappings[$"Compilation.{kvp.Key}"] = kvp.Value;
-        }
-
         // Add unified mappings
         foreach (var value in Enum.GetValues<UnifiedOperatorType>())
-        {
             mappings[$"Unified.{value}"] = value;
-        }
-
         return mappings;
-    }
-
-    /// <summary>
     /// Creates a migration report showing which legacy types map to which unified types.
-    /// </summary>
     public static string CreateMigrationReport()
-    {
         var report = new System.Text.StringBuilder();
         report.AppendLine("OperatorType Migration Report");
         report.AppendLine("============================");
         report.AppendLine();
-
         report.AppendLine("Pipeline OperatorType → Unified OperatorType:");
         report.AppendLine("-----------------------------------------------");
-        foreach (var kvp in PipelineToUnifiedMapping)
-        {
             report.AppendLine($"  {kvp.Key,-20} → {kvp.Value}");
-        }
-        report.AppendLine();
-
         report.AppendLine("Compilation OperatorType → Unified OperatorType:");
-        report.AppendLine("-----------------------------------------------");
-        foreach (var kvp in CompilationToUnifiedMapping)
-        {
-            report.AppendLine($"  {kvp.Key,-20} → {kvp.Value}");
-        }
-        report.AppendLine();
-
         report.AppendLine("New Unified OperatorTypes (not in legacy):");
         report.AppendLine("------------------------------------------");
         var legacyTypes = PipelineToUnifiedMapping.Values.Concat(CompilationToUnifiedMapping.Values).Distinct().ToHashSet();
         var unifiedTypes = Enum.GetValues<UnifiedOperatorType>();
         
         foreach (var unifiedType in unifiedTypes)
-        {
             if (!legacyTypes.Contains(unifiedType))
             {
                 report.AppendLine($"  {unifiedType}");
             }
-        }
-
         return report.ToString();
-    }
-
-    /// <summary>
     /// Performs fuzzy matching to find the closest UnifiedOperatorType.
-    /// </summary>
     private static UnifiedOperatorType FuzzyMatch(string input)
-    {
         var allValues = Enum.GetValues<UnifiedOperatorType>();
         var inputLower = input.ToLowerInvariant();
-
         // Look for partial matches
         foreach (var value in allValues)
-        {
             var valueLower = value.ToString().ToLowerInvariant();
             if (valueLower.Contains(inputLower) || inputLower.Contains(valueLower))
-            {
                 return value;
-            }
-        }
-
         // Look for specific patterns
         return inputLower switch
-        {
             var s when s.Contains("add") || s.Contains("plus") => UnifiedOperatorType.Add,
             var s when s.Contains("sub") || s.Contains("minus") => UnifiedOperatorType.Subtract,
             var s when s.Contains("mul") || s.Contains("times") => UnifiedOperatorType.Multiply,
@@ -324,53 +189,23 @@ public static class OperatorTypeAdapter
             var s when s.Contains("join") => UnifiedOperatorType.Join,
             _ => UnifiedOperatorType.Unknown
         };
-    }
-}
-
-/// <summary>
 /// Extension methods for seamless operator type conversion.
-/// </summary>
 public static class OperatorTypeExtensions
-{
-    /// <summary>
     /// Converts any operator type to UnifiedOperatorType.
-    /// </summary>
     public static UnifiedOperatorType ToUnified(this Enum operatorType)
-    {
         return OperatorTypeAdapter.FromEnum(operatorType);
-    }
-
-    /// <summary>
     /// Converts a string to UnifiedOperatorType.
-    /// </summary>
     public static UnifiedOperatorType ToUnified(this string operatorTypeString)
-    {
         return OperatorTypeAdapter.FromString(operatorTypeString);
-    }
-
-    /// <summary>
     /// Converts UnifiedOperatorType to a legacy pipeline type.
-    /// </summary>
     public static LegacyPipelineOperatorType ToLegacyPipeline(this UnifiedOperatorType unifiedType)
-    {
         return OperatorTypeAdapter.ToPipeline(unifiedType);
-    }
-
-    /// <summary>
     /// Converts UnifiedOperatorType to a legacy compilation type.
-    /// </summary>
     public static LegacyCompilationOperatorType ToLegacyCompilation(this UnifiedOperatorType unifiedType)
-    {
         return OperatorTypeAdapter.ToCompilation(unifiedType);
-    }
-
-    /// <summary>
     /// Gets a human-readable description of the operator type.
-    /// </summary>
     public static string GetDescription(this UnifiedOperatorType operatorType)
-    {
         return operatorType switch
-        {
             UnifiedOperatorType.Add => "Addition operation",
             UnifiedOperatorType.Subtract => "Subtraction operation",
             UnifiedOperatorType.Multiply => "Multiplication operation",
@@ -388,6 +223,3 @@ public static class OperatorTypeExtensions
             UnifiedOperatorType.MethodCall => "Method call operation",
             UnifiedOperatorType.Custom => "Custom user-defined operation",
             _ => $"{operatorType} operation"
-        };
-    }
-}

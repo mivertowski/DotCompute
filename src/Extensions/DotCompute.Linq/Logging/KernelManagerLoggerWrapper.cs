@@ -3,9 +3,7 @@
 
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-
 namespace DotCompute.Linq.Logging;
-
 /// <summary>
 /// Adapter to use ILogger&lt;GPULINQProvider&gt; as ILogger&lt;KernelManager&gt;.
 /// </summary>
@@ -16,7 +14,6 @@ namespace DotCompute.Linq.Logging;
 internal class KernelManagerLoggerWrapper : ILogger<KernelManager>
 {
     private readonly ILogger<GPULINQProvider> _innerLogger;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="KernelManagerLoggerWrapper"/> class.
     /// </summary>
@@ -26,16 +23,11 @@ internal class KernelManagerLoggerWrapper : ILogger<KernelManager>
     {
         _innerLogger = innerLogger ?? throw new ArgumentNullException(nameof(innerLogger));
     }
-
     /// <inheritdoc />
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
         => _innerLogger.BeginScope(state);
-
-    /// <inheritdoc />
     public bool IsEnabled(LogLevel logLevel)
         => _innerLogger.IsEnabled(logLevel);
-
-    /// <inheritdoc />
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         => _innerLogger.Log(logLevel, eventId, state, exception, formatter);
 }

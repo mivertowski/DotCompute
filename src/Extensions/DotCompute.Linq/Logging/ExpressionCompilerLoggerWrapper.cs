@@ -3,9 +3,7 @@
 
 using DotCompute.Linq.Compilation;
 using Microsoft.Extensions.Logging;
-
 namespace DotCompute.Linq.Logging;
-
 /// <summary>
 /// Adapter for ExpressionToKernelCompiler logger.
 /// </summary>
@@ -16,7 +14,6 @@ namespace DotCompute.Linq.Logging;
 internal class ExpressionCompilerLoggerWrapper : ILogger<ExpressionToKernelCompiler>
 {
     private readonly ILogger<GPULINQProvider> _innerLogger;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ExpressionCompilerLoggerWrapper"/> class.
     /// </summary>
@@ -26,16 +23,11 @@ internal class ExpressionCompilerLoggerWrapper : ILogger<ExpressionToKernelCompi
     {
         _innerLogger = innerLogger ?? throw new ArgumentNullException(nameof(innerLogger));
     }
-
     /// <inheritdoc />
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
         => _innerLogger.BeginScope(state);
-
-    /// <inheritdoc />
     public bool IsEnabled(LogLevel logLevel)
         => _innerLogger.IsEnabled(logLevel);
-
-    /// <inheritdoc />
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         => _innerLogger.Log(logLevel, eventId, state, exception, formatter);
 }

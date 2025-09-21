@@ -3,14 +3,17 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Core.Extensions;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -24,6 +27,10 @@ namespace DotCompute.Tests.Common.Utilities;
 /// </summary>
 public static class TestUtilities
 {
+    /// <summary>
+    /// Dictionary to store log entries for mock loggers.
+    /// </summary>
+    private static readonly ConditionalWeakTable<object, List<LogEntry>> _mockLoggerEntries = new();
     private static readonly ConcurrentDictionary<string, object> _testCache = new();
 
     #region Performance Testing Utilities
@@ -225,7 +232,7 @@ public static class TestUtilities
             }
         });
 
-        var completed = await Task.WhenAll(tasks).WaitAsync(actualTimeout);
+        await Task.WhenAll(tasks).WaitAsync(actualTimeout);
         stopwatch.Stop();
 
         return new ConcurrencyTestResult
@@ -239,7 +246,7 @@ public static class TestUtilities
             ExecutionTimeMs = stopwatch.Elapsed.TotalMilliseconds,
             OperationsPerSecond = completedOperations / stopwatch.Elapsed.TotalSeconds,
             Success = exceptions.IsEmpty && completedOperations == threadCount * operationsPerThread,
-            Results = results.ToArray()
+            Results = results.Cast<object>().ToArray()
         };
     }
 
@@ -287,18 +294,21 @@ public static class TestUtilities
     {
         var mock = new Mock<IAccelerator>();
 
-        mock.Setup(a => a.Name).Returns(name);
-        mock.Setup(a => a.Description).Returns(description);
-        mock.Setup(a => a.IsAvailable).Returns(isAvailable);
-
-        var memoryInfo = new MemoryInfo
+        var acceleratorInfo = new AcceleratorInfo
         {
+            Id = "test-" + name.ToUpperInvariant().Replace(" ", "-", StringComparison.Ordinal),
+            Name = name,
+            DeviceType = description,
+            Vendor = "Test Vendor",
+            DriverVersion = "1.0",
             TotalMemory = totalMemory,
-            AvailableMemory = (long)(totalMemory * availableMemoryRatio),
-            UsedMemory = (long)(totalMemory * (1 - availableMemoryRatio))
+            AvailableMemory = (long)(totalMemory * availableMemoryRatio)
         };
 
-        mock.Setup(a => a.GetMemoryInfoAsync()).ReturnsAsync(memoryInfo);
+        mock.Setup(a => a.Info).Returns(acceleratorInfo);
+        mock.Setup(a => a.DeviceType).Returns(description);
+
+        // The IAccelerator interface doesn't have GetMemoryInfoAsync - memory info is in Info property
 
         return mock;
     }
@@ -329,8 +339,21 @@ public static class TestUtilities
                 });
             });
 
-        mock.SetupGet(l => l.LogEntries).Returns(logEntries);
+        // Return a mock that includes a way to access log entries
+        // Note: The logEntries list can be accessed through the GetLogEntries helper method
+        _mockLoggerEntries.Add(mock, logEntries);
         return mock;
+    }
+
+    /// <summary>
+    /// Gets the log entries captured by a mock logger created with CreateMockLogger.
+    /// </summary>
+    /// <typeparam name="T">The logger type.</typeparam>
+    /// <param name="mockLogger">The mock logger to get entries from.</param>
+    /// <returns>The list of captured log entries.</returns>
+    public static List<LogEntry> GetLogEntries<T>(Mock<ILogger<T>> mockLogger)
+    {
+        return _mockLoggerEntries.TryGetValue(mockLogger, out var entries) ? entries : new List<LogEntry>();
     }
 
     /// <summary>
@@ -342,10 +365,12 @@ public static class TestUtilities
         var data = new T[size];
 
         mock.Setup(b => b.Length).Returns(size);
-        mock.Setup(b => b.SizeInBytes).Returns(size * sizeof(T));
+        mock.Setup(b => b.SizeInBytes).Returns(size * Marshal.SizeOf<T>());
         mock.Setup(b => b.IsDisposed).Returns(false);
-        mock.Setup(b => b.GetSpan()).Returns(data.AsSpan());
-        mock.Setup(b => b.GetReadOnlySpan()).Returns(data.AsSpan());
+        // Note: Cannot directly mock Span<T> returns as they are ref structs
+        // Use AsMemory() instead which returns Memory<T> and can be mocked
+        mock.Setup(b => b.AsMemory()).Returns(data.AsMemory());
+        mock.Setup(b => b.AsReadOnlyMemory()).Returns(data.AsMemory());
 
         return mock;
     }
@@ -361,7 +386,6 @@ public static class TestUtilities
     {
         ArgumentNullException.ThrowIfNull(generator);
 
-        var random = new Random(seed);
         var data = new T[size];
 
         for (var i = 0; i < size; i++)
@@ -550,16 +574,6 @@ public class LogEntry
 /// </summary>
 public interface IMockLogger<T> : ILogger<T>
 {
-    List<LogEntry> LogEntries { get; }
+    public List<LogEntry> LogEntries { get; }
 }
 
-/// <summary>
-/// Memory info implementation for testing
-/// </summary>
-public class MemoryInfo
-{
-    public long TotalMemory { get; set; }
-    public long AvailableMemory { get; set; }
-    public long UsedMemory { get; set; }
-    public double UsagePercentage => TotalMemory > 0 ? (double)UsedMemory / TotalMemory * 100 : 0;
-}

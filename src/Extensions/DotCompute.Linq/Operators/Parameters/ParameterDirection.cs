@@ -4,7 +4,6 @@
 // </copyright>
 
 namespace DotCompute.Linq.Operators.Parameters;
-
 /// <summary>
 /// Defines the direction of data flow for kernel parameters.
 /// </summary>
@@ -14,24 +13,12 @@ public enum ParameterDirection
     /// Input parameter - data flows into the kernel.
     /// </summary>
     In,
-
-    /// <summary>
     /// Output parameter - data flows out of the kernel.
-    /// </summary>
     Out,
-
-    /// <summary>
     /// Input/output parameter - data flows both into and out of the kernel.
-    /// </summary>
     InOut,
-
-    /// <summary>
     /// Input parameter (alias for In).
-    /// </summary>
     Input = In,
-
-    /// <summary>
     /// Output parameter (alias for Out).
-    /// </summary>
     Output = Out
 }

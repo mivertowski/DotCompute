@@ -6,7 +6,6 @@ using DotCompute.Linq.Operators.Models;
 using DotCompute.Linq.Operators.Execution;
 using System.Collections.Immutable;
 using ICompiledKernel = DotCompute.Linq.Operators.Execution.ICompiledKernel;
-
 namespace DotCompute.Linq.Types
 {
     /// <summary>
@@ -20,7 +19,6 @@ namespace DotCompute.Linq.Types
     public sealed class OptimizedKernel : IDisposable
     {
         private bool _disposed;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="OptimizedKernel"/> class.
         /// </summary>
@@ -39,7 +37,6 @@ namespace DotCompute.Linq.Types
             PerformanceMetrics = new KernelPerformanceMetrics();
             CreatedAt = DateTimeOffset.UtcNow;
         }
-
         /// <summary>
         /// Gets the underlying compiled kernel.
         /// </summary>
@@ -94,26 +91,22 @@ namespace DotCompute.Linq.Types
         /// Gets the timestamp when this optimized kernel was created.
         /// </summary>
         public DateTimeOffset CreatedAt { get; }
-
         /// <summary>
         /// Gets optimization metadata as key-value pairs.
         /// </summary>
         public ImmutableDictionary<string, object> Metadata { get; init; } =
-
             ImmutableDictionary<string, object>.Empty;
 
         /// <summary>
         /// Gets the list of optimization techniques that were applied to this kernel.
         /// </summary>
         public ImmutableArray<string> AppliedOptimizations { get; init; } =
-
             ImmutableArray<string>.Empty;
 
         /// <summary>
         /// Gets a value indicating whether this kernel is valid and ready for execution.
         /// </summary>
         public bool IsValid => !_disposed && CompiledKernel != null;
-
         /// <summary>
         /// Disposes the optimized kernel and its resources.
         /// </summary>
@@ -132,37 +125,19 @@ namespace DotCompute.Linq.Types
     /// </summary>
     public enum OptimizationStrategy
     {
-        /// <summary>
-        /// Optimize for maximum performance regardless of resource usage.
-        /// </summary>
+        /// <summary>Optimize for maximum performance regardless of resource usage.</summary>
         Performance,
-
-        /// <summary>
-        /// Optimize for minimal memory usage.
-        /// </summary>
+        /// <summary>Optimize for minimal memory usage.</summary>
         Memory,
-
-        /// <summary>
-        /// Optimize for minimal power consumption.
-        /// </summary>
+        /// <summary>Optimize for minimal power consumption.</summary>
         Power,
-
-        /// <summary>
-        /// Balance performance, memory, and power considerations.
-        /// </summary>
+        /// <summary>Balance performance, memory, and power considerations.</summary>
         Balanced,
-
-        /// <summary>
-        /// Optimize for concurrent execution scenarios.
-        /// </summary>
+        /// <summary>Optimize for concurrent execution scenarios.</summary>
         Concurrency,
-
-        /// <summary>
-        /// Custom optimization strategy defined by user hints.
-        /// </summary>
+        /// <summary>Custom optimization strategy defined by user hints.</summary>
         Custom
     }
-
     /// <summary>
     /// Tracks performance metrics for an optimized kernel.
     /// </summary>
@@ -172,7 +147,6 @@ namespace DotCompute.Linq.Types
         private readonly List<double> _throughputs = [];
         private long _totalExecutions;
         private long _failedExecutions;
-
         /// <summary>
         /// Gets the total number of executions.
         /// </summary>
@@ -187,7 +161,6 @@ namespace DotCompute.Linq.Types
         /// Gets the success rate as a percentage.
         /// </summary>
         public double SuccessRate => _totalExecutions > 0 ?
-
             ((double)(_totalExecutions - _failedExecutions) / _totalExecutions) * 100.0 : 0.0;
 
         /// <summary>
@@ -195,7 +168,6 @@ namespace DotCompute.Linq.Types
         /// </summary>
         public TimeSpan AverageExecutionTime => _executionTimes.Count > 0 ?
             TimeSpan.FromTicks((long)_executionTimes.Average(t => t.Ticks)) : TimeSpan.Zero;
-
         /// <summary>
         /// Records a successful execution.
         /// </summary>
@@ -204,8 +176,6 @@ namespace DotCompute.Linq.Types
         public void RecordExecution(TimeSpan executionTime, long workItems)
         {
             Interlocked.Increment(ref _totalExecutions);
-
-
             lock (_executionTimes)
             {
                 _executionTimes.Add(executionTime);
@@ -213,7 +183,6 @@ namespace DotCompute.Linq.Types
                 {
                     _throughputs.Add(workItems / executionTime.TotalSeconds);
                 }
-
                 // Keep only recent executions to avoid unbounded growth
                 if (_executionTimes.Count > 1000)
                 {
@@ -222,22 +191,14 @@ namespace DotCompute.Linq.Types
                 }
             }
         }
-
         /// <summary>
         /// Records a failed execution.
         /// </summary>
         /// <param name="executionTime">The time until failure.</param>
         public void RecordFailure(TimeSpan executionTime)
         {
-            Interlocked.Increment(ref _totalExecutions);
             Interlocked.Increment(ref _failedExecutions);
-
-            lock (_executionTimes)
-            {
-                _executionTimes.Add(executionTime);
-            }
         }
-
         /// <summary>
         /// Resets all performance metrics.
         /// </summary>

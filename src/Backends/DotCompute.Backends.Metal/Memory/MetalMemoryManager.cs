@@ -24,6 +24,12 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     private readonly ConcurrentDictionary<IntPtr, MetalAllocationInfo> _activeAllocations;
     private WeakReference<IAccelerator>? _acceleratorRef;
 
+    // Private fields for BaseMemoryManager
+    private long _totalAllocatedBytes;
+    private long _peakAllocatedBytes;
+    private long _totalAllocations;
+    private bool _disposed;
+
     /// <summary>
     /// Gets the Metal device used by this manager.
     /// </summary>

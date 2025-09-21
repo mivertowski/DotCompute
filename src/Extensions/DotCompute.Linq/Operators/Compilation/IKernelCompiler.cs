@@ -6,9 +6,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Linq.Operators.Models;
-
 namespace DotCompute.Linq.Operators.Compilation;
-
 /// <summary>
 /// Interface for kernel compilers used by LINQ operations.
 /// </summary>

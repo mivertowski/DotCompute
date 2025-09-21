@@ -8,6 +8,10 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces;
 
 using System;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 namespace DotCompute.Core.Kernels.Compilation;
 
 /// <summary>
@@ -118,12 +122,155 @@ public sealed class ManagedCompiledKernel : DotCompute.Abstractions.ICompiledKer
             throw new InvalidOperationException($"Kernel '{Name}' is not compiled and cannot be executed.");
         }
 
-        // Platform-specific execution logic would go here
-        // This is a placeholder for the actual implementation
-        // STUB - TODO
-        await Task.Yield();
+        // Execute the managed compiled kernel
+        // The binary should contain IL code or delegate reference for managed execution
+
+        try
+        {
+            // Validate parameters against kernel definition
+            if (arguments.Count != Parameters.Length)
+            {
+                throw new ArgumentException(
+                    $"Kernel '{Name}' expects {Parameters.Length} parameters but received {arguments.Count}");
+            }
+
+            // For managed kernels, the Handle should point to a delegate or reflection method
+            if (Handle == IntPtr.Zero)
+            {
+                throw new InvalidOperationException(
+                    $"Kernel '{Name}' handle is null. Cannot execute uninitialized managed kernel.");
+            }
+
+            // Convert the handle back to a managed delegate or MethodInfo
+            // This is a production pattern for managed kernel execution
+            var kernelDelegate = GetKernelDelegate();
+
+            if (kernelDelegate != null)
+            {
+                // Execute using delegate
+                await ExecuteWithDelegateAsync(kernelDelegate, arguments, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                // Fallback: execute using reflection on the binary
+                await ExecuteWithReflectionAsync(arguments, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw; // Re-throw cancellation as expected
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Failed to execute managed kernel '{Name}': {ex.Message}", ex);
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
+    }
+
+    /// <summary>
+    /// Gets the kernel delegate from the handle for managed execution.
+    /// </summary>
+    /// <returns>The kernel delegate if available, null otherwise.</returns>
+    private Delegate? GetKernelDelegate()
+    {
+        try
+        {
+            // For managed kernels, the handle can be a GCHandle to a delegate
+            if (Handle != IntPtr.Zero)
+            {
+                var gcHandle = GCHandle.FromIntPtr(Handle);
+                if (gcHandle.IsAllocated && gcHandle.Target is Delegate kernelDelegate)
+                {
+                    return kernelDelegate;
+                }
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // Handle is not a valid GCHandle, fallback to reflection
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Executes the kernel using a managed delegate.
+    /// </summary>
+    /// <param name="kernelDelegate">The delegate to execute.</param>
+    /// <param name="arguments">The kernel arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous execution.</returns>
+    private static async ValueTask ExecuteWithDelegateAsync(Delegate kernelDelegate, KernelArguments arguments, CancellationToken cancellationToken)
+    {
+        await Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Convert KernelArguments to object array for delegate invocation
+            var args = new object[arguments.Count];
+            for (int i = 0; i < arguments.Count; i++)
+            {
+                args[i] = arguments.Arguments[i] ?? throw new ArgumentNullException($"Argument {i} is null");
+            }
+
+            // Invoke the delegate
+            kernelDelegate.DynamicInvoke(args);
+
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes the kernel using reflection on the compiled binary.
+    /// </summary>
+    /// <param name="arguments">The kernel arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous execution.</returns>
+    private async ValueTask ExecuteWithReflectionAsync(KernelArguments arguments, CancellationToken cancellationToken)
+    {
+        await Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                // Load assembly from binary data
+                var assembly = Assembly.Load(Binary);
+
+                // Find the kernel entry point (typically the first public method in the first type)
+                var types = assembly.GetTypes();
+                var kernelType = types.FirstOrDefault(t => t.IsPublic)
+                    ?? throw new InvalidOperationException($"No public types found in kernel '{Name}' assembly");
+
+                var methods = kernelType.GetMethods(BindingFlags.Public | BindingFlags.Static);
+                var entryMethod = methods.FirstOrDefault(m => m.IsStatic && m.IsPublic)
+                    ?? throw new InvalidOperationException($"No suitable entry method found in kernel '{Name}' type '{kernelType.Name}'");
+
+                // Convert KernelArguments to object array for method invocation
+                var args = new object[arguments.Count];
+                for (int i = 0; i < arguments.Count; i++)
+                {
+                    args[i] = arguments.Arguments[i] ?? throw new ArgumentNullException($"Argument {i} is null");
+                }
+
+                // Invoke the method
+                entryMethod.Invoke(null, args);
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                var loaderExceptions = string.Join(", ", ex.LoaderExceptions.Select(e => e?.Message ?? "Unknown"));
+                throw new InvalidOperationException(
+                    $"Failed to load kernel '{Name}' types: {loaderExceptions}", ex);
+            }
+            catch (TargetInvocationException ex)
+            {
+                throw new InvalidOperationException(
+                    $"Kernel '{Name}' execution failed: {ex.InnerException?.Message ?? ex.Message}",
+                    ex.InnerException ?? ex);
+            }
+
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -138,13 +285,29 @@ public sealed class ManagedCompiledKernel : DotCompute.Abstractions.ICompiledKer
             return;
         }
 
-        // Release native handle if allocated
+        // Release managed handle if allocated
         if (Handle != IntPtr.Zero)
         {
-            // Platform-specific cleanup would go here
-            // STUB - TODO
-            await Task.Yield();
+            try
+            {
+                // If the handle is a GCHandle, free it properly
+                var gcHandle = GCHandle.FromIntPtr(Handle);
+                if (gcHandle.IsAllocated)
+                {
+                    gcHandle.Free();
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Handle was not a valid GCHandle - this is acceptable for managed kernels
+                // that might use other handle types
+            }
+
+            // Note: Handle is init-only and cannot be cleared, but GCHandle has been freed
         }
+
+        // Allow derived classes to perform additional cleanup
+        await Task.Yield();
 
         _disposed = true;
         GC.SuppressFinalize(this);
@@ -160,11 +323,25 @@ public sealed class ManagedCompiledKernel : DotCompute.Abstractions.ICompiledKer
             return;
         }
 
-        // Release native handle if allocated
+        // Release managed handle if allocated
         if (Handle != IntPtr.Zero)
         {
-            // Platform-specific cleanup would go here
-            // STUB - TODO
+            try
+            {
+                // If the handle is a GCHandle, free it properly
+                var gcHandle = GCHandle.FromIntPtr(Handle);
+                if (gcHandle.IsAllocated)
+                {
+                    gcHandle.Free();
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Handle was not a valid GCHandle - this is acceptable for managed kernels
+                // that might use other handle types
+            }
+
+            // Note: Handle is init-only and cannot be cleared, but GCHandle has been freed
         }
 
         _disposed = true;

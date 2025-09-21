@@ -5,9 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation.Execution;
 using DotCompute.Linq.Operators.Interfaces;
 using DotCompute.Linq.Operators.Execution;
-
 namespace DotCompute.Linq.Compilation.Plans;
-
 /// <summary>
 /// Implementation of a compute stage.
 /// </summary>
@@ -30,7 +28,6 @@ internal class ComputeStage : IComputeStage
     /// </exception>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="id"/> or <paramref name="outputBuffer"/> is empty.
-    /// </exception>
     public ComputeStage(
         string id,
         DotCompute.Linq.Operators.Interfaces.IKernel kernel,
@@ -44,19 +41,10 @@ internal class ComputeStage : IComputeStage
         OutputBuffer = !string.IsNullOrEmpty(outputBuffer) ? outputBuffer : throw new ArgumentException("Output buffer cannot be null or empty.", nameof(outputBuffer));
         Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
-
     /// <inheritdoc />
     public string Id { get; }
-
-    /// <inheritdoc />
     public DotCompute.Linq.Operators.Interfaces.IKernel Kernel { get; }
-
-    /// <inheritdoc />
     public IReadOnlyList<string> InputBuffers { get; }
-
-    /// <inheritdoc />
     public string OutputBuffer { get; }
-
-    /// <inheritdoc />
     public ExecutionConfiguration Configuration { get; }
 }

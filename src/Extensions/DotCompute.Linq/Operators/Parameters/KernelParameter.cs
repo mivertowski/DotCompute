@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-
 namespace DotCompute.Linq.Operators.Parameters;
-
 /// <summary>
 /// Represents kernel parameter information with direction.
 /// </summary>
@@ -25,29 +23,14 @@ public class KernelParameter
         Type = type ?? throw new ArgumentNullException(nameof(type));
         Direction = direction;
     }
-
-    /// <summary>
     /// Gets the parameter name.
-    /// </summary>
     public string Name { get; }
-
-    /// <summary>
     /// Gets the parameter type.
-    /// </summary>
     public Type Type { get; }
-
-    /// <summary>
     /// Gets the parameter direction.
-    /// </summary>
     public ParameterDirection Direction { get; }
-
-    /// <summary>
     /// Gets or sets the parameter size in bytes.
-    /// </summary>
     public long Size { get; set; }
-
-    /// <summary>
     /// Gets or sets additional parameter metadata.
-    /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = [];
 }

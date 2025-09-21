@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Compilation.Plans;
-
 /// <summary>
 /// Implementation of a compute plan.
 /// </summary>
@@ -40,22 +39,11 @@ internal class ComputePlan : IComputePlan
             ["Version"] = "1.0"
         };
     }
-
     /// <inheritdoc />
     public Guid Id { get; }
-
-    /// <inheritdoc />
     public IReadOnlyList<IComputeStage> Stages { get; }
-
-    /// <inheritdoc />
     public IReadOnlyDictionary<string, Type> InputParameters { get; }
-
-    /// <inheritdoc />
     public Type OutputType { get; }
-
-    /// <inheritdoc />
     public long EstimatedMemoryUsage { get; }
-
-    /// <inheritdoc />
     public IReadOnlyDictionary<string, object> Metadata { get; }
 }

@@ -3,7 +3,6 @@
 
 using System;
 using System.Threading.Tasks;
-
 namespace DotCompute.Linq.Pipelines.Interfaces.Memory
 {
     /// <summary>
@@ -13,7 +12,6 @@ namespace DotCompute.Linq.Pipelines.Interfaces.Memory
     {
         /// <summary>Allocates memory buffer of specified size.</summary>
         Task<IMemoryBuffer> AllocateAsync(long size);
-
         /// <summary>Releases allocated memory buffer.</summary>
         Task ReleaseAsync(IMemoryBuffer buffer);
     }

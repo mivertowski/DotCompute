@@ -18,8 +18,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
+using System.Linq;
 // Resolve ICompiledKernel ambiguity
 using AbstractionsCompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+// Resolve KernelArgument ambiguity
+using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
+using InterfacesKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 namespace DotCompute.Backends.CUDA.Integration
 {
 
@@ -114,7 +118,7 @@ namespace DotCompute.Backends.CUDA.Integration
         /// </summary>
         public async Task<CudaExecutionResult> ExecuteOptimizedKernelAsync(
             CudaCompiledKernel kernel,
-            DotCompute.Abstractions.Kernels.KernelArgument[] arguments,
+            AbstractionsKernelArgument[] arguments,
             CudaExecutionOptions options,
             CancellationToken cancellationToken = default)
         {
@@ -137,8 +141,9 @@ namespace DotCompute.Backends.CUDA.Integration
 
                 // Execute with the kernel executor
                 var compiledKernel = kernel.ToCompiledKernel();
+                var convertedArguments = ConvertKernelArguments(arguments);
                 var executionResult = await _kernelExecutor.ExecuteAndWaitAsync(
-                    compiledKernel, arguments, execConfig, cancellationToken)
+                    compiledKernel, convertedArguments, execConfig, cancellationToken)
                     .ConfigureAwait(false);
 
                 var endTime = DateTimeOffset.UtcNow;
@@ -353,7 +358,7 @@ namespace DotCompute.Backends.CUDA.Integration
 
         private static Task ApplyAdvancedOptimizationsAsync(
             CudaCompiledKernel kernel,
-            DotCompute.Abstractions.Kernels.KernelArgument[] arguments,
+            AbstractionsKernelArgument[] arguments,
             CudaExecutionOptions options,
             CancellationToken cancellationToken)
         {
@@ -363,7 +368,7 @@ namespace DotCompute.Backends.CUDA.Integration
 
         private async Task<KernelExecutionConfig> GetOptimalExecutionConfigAsync(
             CudaCompiledKernel kernel,
-            DotCompute.Abstractions.Kernels.KernelArgument[] arguments,
+            AbstractionsKernelArgument[] arguments,
             CudaExecutionOptions options,
             CancellationToken cancellationToken)
         {
@@ -392,7 +397,7 @@ namespace DotCompute.Backends.CUDA.Integration
             return config;
         }
 
-        private static int[] EstimateProblemSize(DotCompute.Abstractions.Kernels.KernelArgument[] arguments)
+        private static int[] EstimateProblemSize(AbstractionsKernelArgument[] arguments)
         {
             // Simple heuristic to estimate problem size from arguments
             foreach (var arg in arguments)
@@ -491,6 +496,23 @@ namespace DotCompute.Backends.CUDA.Integration
             {
                 _logger.LogWarning(ex, "Error during health check");
             }
+        }
+
+        /// <summary>
+        /// Converts AbstractionsKernelArgument[] to InterfacesKernelArgument[] for executor compatibility
+        /// </summary>
+        private static InterfacesKernelArgument[] ConvertKernelArguments(AbstractionsKernelArgument[] arguments)
+        {
+            return arguments.Select(arg => new InterfacesKernelArgument
+            {
+                Name = arg.Name,
+                Value = arg.Value ?? new object(),
+                Type = arg.Type,
+                IsDeviceMemory = arg.IsDeviceMemory,
+                MemoryBuffer = arg.MemoryBuffer as IUnifiedMemoryBuffer,
+                SizeInBytes = arg.SizeInBytes,
+                IsOutput = arg.IsOutput
+            }).ToArray();
         }
 
         private void PerformMaintenance()
@@ -1019,7 +1041,7 @@ namespace DotCompute.Backends.CUDA.Integration
                         var props = new CudaDeviceProperties();
                         if (CudaRuntime.cudaGetDeviceProperties(ref props, deviceId) == CudaError.Success)
                         {
-                            return props.maxThreadsPerBlock;
+                            return props.MaxThreadsPerBlock;
                         }
                         return 1024; // Fallback for older devices
                     }
@@ -1033,7 +1055,9 @@ namespace DotCompute.Backends.CUDA.Integration
 
             public AcceleratorInfo Info => _info;
             public AcceleratorType Type => AcceleratorType.CUDA;
+            public string DeviceType => "GPU";
             public IUnifiedMemoryManager Memory => _memoryManager;
+            public IUnifiedMemoryManager MemoryManager => _memoryManager;
             public AcceleratorContext Context => _acceleratorContext;
 
             public ValueTask<AbstractionsCompiledKernel> CompileKernelAsync(

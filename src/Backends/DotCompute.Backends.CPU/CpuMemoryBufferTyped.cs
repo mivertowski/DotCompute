@@ -14,7 +14,7 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// <summary>
 /// Provides a typed view of a CpuMemoryBuffer for strongly-typed element access.
 /// </summary>
-internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDisposable
+public sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDisposable
     where T : unmanaged
 {
     private readonly CpuMemoryBuffer _parentBuffer;
@@ -290,6 +290,18 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
         return new CpuMemoryBufferTypedSlice<T>(_parentBuffer, byteOffset, length, _memoryManager, _logger);
     }
 
+    /// <summary>
+    /// Creates a view of this buffer with the specified offset and length.
+    /// This is an alias for Slice for backward compatibility.
+    /// </summary>
+    /// <param name="offset">The element offset.</param>
+    /// <param name="length">The number of elements in the view.</param>
+    /// <returns>A view of this buffer.</returns>
+    public IUnifiedMemoryBuffer<T> CreateView(int offset, int length)
+    {
+        return Slice(offset, length);
+    }
+
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
         EnsureNotDisposed();
@@ -364,7 +376,7 @@ internal sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDispos
 /// <summary>
 /// Provides a typed slice view of a CpuMemoryBuffer for strongly-typed element access.
 /// </summary>
-internal sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, IDisposable
+public sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, IDisposable
     where T : unmanaged
 {
     private readonly CpuMemoryBuffer _parentBuffer;

@@ -619,7 +619,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
             var basePtr = GetDevicePointer(buffer);
-            var viewPtr = basePtr + offset;
+            var viewPtr = (nint)(basePtr.ToInt64() + offset);
 
             // Create a view buffer that doesn't own the memory
             return new CudaMemoryBufferView(viewPtr, length, buffer);
@@ -691,7 +691,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
 
                 CleanupUnusedBuffers();
-                var activeBuffers = _activeBuffers.Count;
+                var activeBuffers = _allocations.Count;
                 var allocationCount = AllocationCount;
                 var averageAllocationSize = allocationCount > 0 ? (double)TotalAllocatedBytes / allocationCount : 0.0;
 

@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Compilation.Plans;
-
 /// <summary>
 /// Represents an executable compute plan generated from a LINQ expression.
 /// </summary>
@@ -20,54 +19,27 @@ public interface IComputePlan
     /// A unique GUID that identifies this specific compute plan instance.
     /// </value>
     public Guid Id { get; }
-
-    /// <summary>
     /// Gets the stages in the compute plan.
-    /// </summary>
-    /// <value>
     /// An ordered list of compute stages that will be executed sequentially
     /// or in parallel as determined by their dependencies.
-    /// </value>
     public IReadOnlyList<IComputeStage> Stages { get; }
-
-    /// <summary>
     /// Gets the input parameters required by the plan.
-    /// </summary>
-    /// <value>
     /// A dictionary mapping parameter names to their expected types.
-    /// </value>
     /// <remarks>
     /// These parameters must be provided when executing the compute plan
     /// and typically correspond to constants and external data from the original expression.
     /// </remarks>
     public IReadOnlyDictionary<string, Type> InputParameters { get; }
-
-    /// <summary>
     /// Gets the output type of the compute plan.
-    /// </summary>
-    /// <value>
     /// The type of data that will be produced by executing this compute plan.
-    /// </value>
     public Type OutputType { get; }
-
-    /// <summary>
     /// Gets the estimated memory requirements in bytes.
-    /// </summary>
-    /// <value>
     /// An estimate of the total memory (device and host) required to execute this plan.
-    /// </value>
-    /// <remarks>
     /// This estimate includes input buffers, output buffers, intermediate storage,
     /// and any temporary memory needed during execution.
-    /// </remarks>
     public long EstimatedMemoryUsage { get; }
-
-    /// <summary>
     /// Gets metadata about the compute plan.
-    /// </summary>
-    /// <value>
     /// A dictionary containing additional information about the plan,
     /// such as optimization settings, performance hints, and debug information.
-    /// </value>
     public IReadOnlyDictionary<string, object> Metadata { get; }
 }

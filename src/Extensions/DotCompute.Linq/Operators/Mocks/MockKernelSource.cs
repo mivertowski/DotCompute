@@ -4,10 +4,9 @@
 // </copyright>
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
-
 namespace DotCompute.Linq.Operators.Mocks;
-
 /// <summary>
 /// Mock kernel source implementation for testing purposes.
 /// </summary>
@@ -17,29 +16,14 @@ internal class MockKernelSource : IKernelSource
     /// Gets or sets the kernel name.
     /// </summary>
     public string Name { get; set; } = string.Empty;
-
-    /// <summary>
     /// Gets or sets the kernel source code.
-    /// </summary>
     public string Code { get; set; } = string.Empty;
-
-    /// <summary>
     /// Gets or sets the kernel language.
-    /// </summary>
-    public KernelLanguage Language { get; set; } = KernelLanguage.CSharpIL;
-
-    /// <summary>
+    public DotCompute.Abstractions.Kernels.Types.KernelLanguage Language { get; set; } = DotCompute.Abstractions.Kernels.Types.KernelLanguage.CSharpIL;
     /// Gets or sets the kernel entry point.
-    /// </summary>
     public string EntryPoint { get; set; } = "Main";
-
-    /// <summary>
     /// Gets or sets the source metadata.
-    /// </summary>
     public object? Metadata { get; set; }
-
-    /// <summary>
     /// Gets or sets the kernel dependencies.
-    /// </summary>
     public string[] Dependencies { get; set; } = [];
 }

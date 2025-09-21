@@ -87,7 +87,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
         ThrowIfDisposed();
         
         var startTime = DateTimeOffset.UtcNow;
-        var context = _threadContext.Value;
+        var context = _threadContext.Value ?? throw new InvalidOperationException("Failed to get thread context");
         
         try
         {
@@ -146,7 +146,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
             return default(T);
         }
 
-        var context = _threadContext.Value;
+        var context = _threadContext.Value ?? throw new InvalidOperationException("Failed to get thread context");
         return operation switch
         {
             ReductionOperation.Sum => ExecuteVectorizedSum<T>(input, context),
@@ -360,30 +360,37 @@ public sealed class OptimizedSimdExecutor : IDisposable
             return;
         }
 
-        fixed (T* ptr1 = input1, ptr2 = input2, ptrOut = output)
+        // Use type-specific NEON processing for optimal performance
+        if (typeof(T) == typeof(float))
         {
-            var vectorSize = Vector128<T>.Count;
-            var vectorCount = elementCount / vectorSize;
-            var remainder = elementCount % vectorSize;
-
-            // ARM NEON processing
-            for (long i = 0; i < vectorCount; i++)
-            {
-                var offset = i * vectorSize;
-                var v1 = AdvSimd.LoadVector128(ptr1 + offset);
-                var v2 = AdvSimd.LoadVector128(ptr2 + offset);
-                var result = AdvSimd.Add(v1, v2);
-                AdvSimd.Store(ptrOut + offset, result);
-            }
-
-            // Handle scalar remainder
-            var scalarStart = vectorCount * vectorSize;
-            ExecuteScalarRemainder(ptr1 + scalarStart, ptr2 + scalarStart, 
-                                 ptrOut + scalarStart, remainder);
-
-            Interlocked.Add(ref _vectorizedElements, vectorCount * vectorSize);
-            Interlocked.Add(ref _scalarElements, remainder);
+            ExecuteNeonFloat32(
+                System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(input1),
+                System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(input2),
+                System.Runtime.InteropServices.MemoryMarshal.Cast<T, float>(output),
+                elementCount, context);
+            return;
         }
+        else if (typeof(T) == typeof(int))
+        {
+            ExecuteNeonInt32(
+                System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(input1),
+                System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(input2),
+                System.Runtime.InteropServices.MemoryMarshal.Cast<T, int>(output),
+                elementCount, context);
+            return;
+        }
+        else if (typeof(T) == typeof(double))
+        {
+            ExecuteNeonFloat64(
+                System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(input1),
+                System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(input2),
+                System.Runtime.InteropServices.MemoryMarshal.Cast<T, double>(output),
+                elementCount, context);
+            return;
+        }
+
+        // Fallback for unsupported types
+        ExecuteScalar(input1, input2, output, elementCount, context);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1230,6 +1237,115 @@ public sealed class OptimizedSimdExecutor : IDisposable
     private unsafe int VectorizedMinInt32(ReadOnlySpan<int> input) => input.IsEmpty ? 0 : input[0];
     private unsafe int VectorizedMaxInt32(ReadOnlySpan<int> input) => input.IsEmpty ? 0 : input[0];
     private unsafe int VectorizedProductInt32(ReadOnlySpan<int> input) => input.IsEmpty ? 1 : input[0];
+
+    #endregion
+
+    #region ARM NEON Type-Specific Methods
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void ExecuteNeonFloat32(
+        ReadOnlySpan<float> input1,
+        ReadOnlySpan<float> input2,
+        Span<float> output,
+        long elementCount,
+        ExecutionContext context)
+    {
+        fixed (float* ptr1 = input1, ptr2 = input2, ptrOut = output)
+        {
+            var vectorSize = Vector128<float>.Count;
+            var vectorCount = elementCount / vectorSize;
+            var remainder = elementCount % vectorSize;
+
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = i * vectorSize;
+                var v1 = AdvSimd.LoadVector128(ptr1 + offset);
+                var v2 = AdvSimd.LoadVector128(ptr2 + offset);
+                var result = AdvSimd.Add(v1, v2);
+                AdvSimd.Store(ptrOut + offset, result);
+            }
+
+            // Handle scalar remainder
+            var scalarStart = vectorCount * vectorSize;
+            for (long i = scalarStart; i < elementCount; i++)
+            {
+                ptrOut[i] = ptr1[i] + ptr2[i];
+            }
+
+            Interlocked.Add(ref _vectorizedElements, vectorCount * vectorSize);
+            Interlocked.Add(ref _scalarElements, remainder);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void ExecuteNeonInt32(
+        ReadOnlySpan<int> input1,
+        ReadOnlySpan<int> input2,
+        Span<int> output,
+        long elementCount,
+        ExecutionContext context)
+    {
+        fixed (int* ptr1 = input1, ptr2 = input2, ptrOut = output)
+        {
+            var vectorSize = Vector128<int>.Count;
+            var vectorCount = elementCount / vectorSize;
+            var remainder = elementCount % vectorSize;
+
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = i * vectorSize;
+                var v1 = AdvSimd.LoadVector128(ptr1 + offset);
+                var v2 = AdvSimd.LoadVector128(ptr2 + offset);
+                var result = AdvSimd.Add(v1, v2);
+                AdvSimd.Store(ptrOut + offset, result);
+            }
+
+            // Handle scalar remainder
+            var scalarStart = vectorCount * vectorSize;
+            for (long i = scalarStart; i < elementCount; i++)
+            {
+                ptrOut[i] = ptr1[i] + ptr2[i];
+            }
+
+            Interlocked.Add(ref _vectorizedElements, vectorCount * vectorSize);
+            Interlocked.Add(ref _scalarElements, remainder);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void ExecuteNeonFloat64(
+        ReadOnlySpan<double> input1,
+        ReadOnlySpan<double> input2,
+        Span<double> output,
+        long elementCount,
+        ExecutionContext context)
+    {
+        fixed (double* ptr1 = input1, ptr2 = input2, ptrOut = output)
+        {
+            var vectorSize = Vector128<double>.Count;
+            var vectorCount = elementCount / vectorSize;
+            var remainder = elementCount % vectorSize;
+
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = i * vectorSize;
+                var v1 = AdvSimd.LoadVector128(ptr1 + offset);
+                var v2 = AdvSimd.LoadVector128(ptr2 + offset);
+                var result = AdvSimd.Arm64.Add(v1, v2);
+                AdvSimd.Store(ptrOut + offset, result);
+            }
+
+            // Handle scalar remainder
+            var scalarStart = vectorCount * vectorSize;
+            for (long i = scalarStart; i < elementCount; i++)
+            {
+                ptrOut[i] = ptr1[i] + ptr2[i];
+            }
+
+            Interlocked.Add(ref _vectorizedElements, vectorCount * vectorSize);
+            Interlocked.Add(ref _scalarElements, remainder);
+        }
+    }
 
     #endregion
 

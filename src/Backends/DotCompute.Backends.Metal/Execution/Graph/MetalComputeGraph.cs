@@ -377,7 +377,7 @@ public sealed class MetalComputeGraph : IDisposable
             try
             {
                 var executionOrder = _dependencyGraph.TopologicalSort();
-                Statistics.CriticalPathLength = CalculateCriticalPath();
+                Statistics.CriticalPathLength = CalculateCriticalPathLength();
                 Statistics.ParallelismOpportunities = CalculateParallelismOpportunities();
                 
                 IsBuilt = true;
@@ -424,7 +424,7 @@ public sealed class MetalComputeGraph : IDisposable
         {
             NodeCount = _nodes.Count,
             EstimatedMemoryFootprint = EstimatedMemoryFootprint,
-            CriticalPathLength = CalculateCriticalPath(),
+            CriticalPathLength = CalculateCriticalPathLength(),
             ParallelismOpportunities = CalculateParallelismOpportunities(),
             FusionOpportunities = AnalyzeFusionOpportunities(),
             MemoryCoalescingOpportunities = AnalyzeMemoryCoalescingOpportunities(),
@@ -504,7 +504,9 @@ public sealed class MetalComputeGraph : IDisposable
         };
     }
 
-    private int CalculateCr
+    private int CalculateCriticalPathLength()
+    {
+        if (_nodes.Count == 0)
         {
             return 0;
         }
@@ -519,11 +521,8 @@ public sealed class MetalComputeGraph : IDisposable
                 return pathLengths.GetValueOrDefault(node.Id, 0);
             }
 
-            if (visited.Contains(node.Id))
-                return pathLengths.GetValueOrDefault(node.Id, 0);
-
             visited.Add(node.Id);
-            
+
             var maxDependencyPath = node.Dependencies.Count > 0
                 ? node.Dependencies.Max(dep => CalculateNodePath(dep))
                 : 0;
@@ -578,11 +577,8 @@ public sealed class MetalComputeGraph : IDisposable
         // 2. They have compatible threadgroup configurations
         // 3. Combined resource usage is within Metal limits
 
-        var hasDirectDependency = kernel1.Dependencies.Contains(kernel2) || 
-                                 
-        {
-           kernel2.Depend
-        }
+        var hasDirectDependency = kernel1.Dependencies.Contains(kernel2) ||
+                                 kernel2.Dependencies.Contains(kernel1);
 
         // Check threadgroup compatibility (simplified check)
 
@@ -629,10 +625,6 @@ public sealed class MetalComputeGraph : IDisposable
         var processed = new HashSet<string>();
 
         foreach (var node in _nodes)
-            {
-                continue;
-            }
-
         {
             if (processed.Contains(node.Id)) continue;
 
@@ -641,11 +633,7 @@ public sealed class MetalComputeGraph : IDisposable
 
             // Find nodes that can be batched with this one
             foreach (var other in _nodes)
-                {
-                    continue;
-                }
-
-
+            {
                 if (processed.Contains(other.Id)) continue;
                 
                 if (CanBatchInSameCommandBuffer(node, other))
@@ -675,19 +663,11 @@ public sealed class MetalComputeGraph : IDisposable
     /// <summary>
     /// Releases all resources used by the Metal compute graph.
     /// </summary>
-    public void Dispos
-        {
-            return;
-        }
-
+    public void Dispose()
     {
         if (_disposed) return;
 
         lock (_lock)
-            {
-                return;
-            }
-
         {
             if (_disposed) return;
 

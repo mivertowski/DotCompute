@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Execution;
 using DotCompute.Core.Telemetry;
+using DotCompute.Abstractions.Interfaces.Telemetry;
 
 namespace DotCompute.Backends.Metal.Telemetry;
 
@@ -45,7 +46,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     public MetalTelemetryManager(
         IOptions<MetalTelemetryOptions> options,
         ILogger<MetalTelemetryManager> logger,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory) : base(logger, new TelemetryConfiguration(), "Metal", "1.0.0")
     {
         _options = options.Value;
         _logger = logger;

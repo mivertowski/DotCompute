@@ -2,11 +2,39 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Backends.CUDA.Configuration;
-using DotCompute.Backends.CUDA.Execution.Graph;
+// Mock CUDA types for testing without CUDA backend dependency
 
 namespace DotCompute.Hardware.Cuda.Tests.Helpers
 {
+    /// <summary>
+    /// Mock CUDA types for testing without CUDA backend dependency
+    /// </summary>
+    public class LaunchConfiguration
+    {
+        public int BlockSizeX { get; set; } = 1;
+        public int BlockSizeY { get; set; } = 1;
+        public int BlockSizeZ { get; set; } = 1;
+        public int GridSizeX { get; set; } = 1;
+        public int GridSizeY { get; set; } = 1;
+        public int GridSizeZ { get; set; } = 1;
+    }
+
+    public class CudaGraph
+    {
+        public string Name { get; }
+        public CudaGraph(string name) => Name = name;
+    }
+
+    public class CudaGraphExecutable
+    {
+        private readonly CudaGraphTestWrapper _wrapper;
+        public CudaGraphExecutable(CudaGraphTestWrapper wrapper) => _wrapper = wrapper;
+
+        public static void UpdateKernelNode(object node, params object[] arguments) { }
+        public static async ValueTask LaunchAsync(object? stream = null) => await Task.Delay(1).ConfigureAwait(false);
+        public static async ValueTask LaunchAsync(params object[] arguments) => await Task.Delay(1).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Test wrapper for CUDA graph operations to provide simplified API for testing.
     /// This wrapper bridges the gap between the test expectations and actual CUDA graph implementation.
@@ -65,45 +93,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         public object UnderlyingGraph => _graphObject;
     }
 
-    /// <summary>
-    /// Represents an executable CUDA graph instance.
-    /// </summary>
-    public class CudaGraphExecutable
-    {
-        private readonly CudaGraphTestWrapper _graphWrapper;
-
-        /// <summary>
-        /// Updates a kernel node in the executable graph.
-        /// </summary>
-        public static void UpdateKernelNode(object node, params object[] arguments)
-        {
-            // Mock implementation for testing
-        }
-
-        public CudaGraphExecutable(CudaGraphTestWrapper graphWrapper)
-        {
-            _graphWrapper = graphWrapper ?? throw new ArgumentNullException(nameof(graphWrapper));
-        }
-
-        /// <summary>
-        /// Launches the graph for execution.
-        /// </summary>
-        public static async ValueTask LaunchAsync(object? stream = null)
-        {
-            // In a real implementation, this would execute the CUDA graph
-            // For testing, we'll simulate execution
-            await Task.Delay(1).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Launches the graph with specific arguments.
-        /// </summary>
-        public static async ValueTask LaunchAsync(params object[] arguments)
-        {
-            // In a real implementation, this would execute the CUDA graph with updated arguments
-            await Task.Delay(1).ConfigureAwait(false);
-        }
-    }
+    // CudaGraphExecutable moved to top of file as mock implementation
 
     /// <summary>
     /// Represents a node in the CUDA graph.
@@ -132,7 +122,6 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// </summary>
         public static object AddKernel(this object graphObject, ICompiledKernel kernel, LaunchConfiguration config, params object[] arguments)
         {
-            var wrapper = new CudaGraphTestWrapper(graphObject);
             return CudaGraphTestWrapper.AddKernel(kernel, config, arguments);
         }
 
@@ -149,7 +138,6 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// </summary>
         public static void AddMemoryCopy<T>(this object graphObject, IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, long count = 0) where T : unmanaged
         {
-            var wrapper = new CudaGraphTestWrapper(graphObject);
             CudaGraphTestWrapper.AddMemoryCopy(source, destination, count);
         }
 

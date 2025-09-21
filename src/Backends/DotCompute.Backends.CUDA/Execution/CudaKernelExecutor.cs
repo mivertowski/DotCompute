@@ -10,9 +10,12 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
+using InterfaceKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 using KernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
+using System.Linq;
+using CudaBottleneckType = DotCompute.Backends.CUDA.Advanced.Profiling.Types.BottleneckType;
 namespace DotCompute.Backends.CUDA.Execution
 {
 
@@ -63,7 +66,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// </summary>
         public async ValueTask<KernelExecutionResult> ExecuteAsync(
             CompiledKernel kernel,
-            KernelArgument[] arguments,
+            InterfaceKernelArgument[] arguments,
             KernelExecutionConfig executionConfig,
             CancellationToken cancellationToken = default)
         {
@@ -78,7 +81,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// </summary>
         public async ValueTask<KernelExecutionResult> ExecuteAndWaitAsync(
             CompiledKernel kernel,
-            KernelArgument[] arguments,
+            InterfaceKernelArgument[] arguments,
             KernelExecutionConfig executionConfig,
             CancellationToken cancellationToken = default)
         {
@@ -169,7 +172,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// </summary>
         public KernelExecutionHandle EnqueueExecution(
             CompiledKernel kernel,
-            KernelArgument[] arguments,
+            InterfaceKernelArgument[] arguments,
             KernelExecutionConfig executionConfig)
         {
             ThrowIfDisposed();
@@ -335,7 +338,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// </summary>
         public async ValueTask<KernelProfilingResult> ProfileAsync(
             CompiledKernel kernel,
-            KernelArgument[] arguments,
+            InterfaceKernelArgument[] arguments,
             KernelExecutionConfig executionConfig,
             int iterations = 100,
             CancellationToken cancellationToken = default)
@@ -470,7 +473,7 @@ namespace DotCompute.Backends.CUDA.Execution
             return Math.Max(warpSize, Math.Min(blockSize, maxThreadsPerBlock));
         }
 
-        private static KernelArguments ConvertArgumentsToCuda(KernelArgument[] arguments) => [.. arguments];
+        private static KernelArguments ConvertArgumentsToCuda(InterfaceKernelArgument[] arguments) => [.. arguments.Select(arg => new KernelArgument(arg.Name, arg.Type, arg.Value))];
 
         private async Task LaunchKernelAsync(
         CompiledKernel kernel,
@@ -536,32 +539,40 @@ namespace DotCompute.Backends.CUDA.Execution
             var peakThroughput = CalculateComputeThroughput(1.0); // Peak for 1ms
             var utilization = avgThroughput / peakThroughput;
 
-            BottleneckType type;
+            CudaBottleneckType type;
             double severity;
             string details;
 
             if (utilization < 0.3)
             {
-                type = BottleneckType.Compute;
+                type = CudaBottleneckType.Compute;
                 severity = 1.0 - utilization;
                 details = "Low compute utilization suggests the kernel is not using GPU cores effectively";
             }
             else if (utilization > 0.8)
             {
-                type = BottleneckType.MemoryBandwidth;
+                type = CudaBottleneckType.MemoryBandwidth;
                 severity = utilization - 0.8;
                 details = "High utilization may indicate memory bandwidth limitations";
             }
             else
             {
-                type = BottleneckType.None;
+                type = CudaBottleneckType.None;
                 severity = 0.0;
                 details = "No significant bottleneck detected";
             }
 
             return new BottleneckAnalysis
             {
-                Type = type,
+                Type = type switch
+                {
+                    CudaBottleneckType.None => DotCompute.Abstractions.Types.BottleneckType.None,
+                    CudaBottleneckType.Compute => DotCompute.Abstractions.Types.BottleneckType.Gpu,
+                    CudaBottleneckType.MemoryBandwidth => DotCompute.Abstractions.Types.BottleneckType.Memory,
+                    CudaBottleneckType.Occupancy => DotCompute.Abstractions.Types.BottleneckType.Cpu,
+                    CudaBottleneckType.ThreadDivergence => DotCompute.Abstractions.Types.BottleneckType.Gpu,
+                    _ => DotCompute.Abstractions.Types.BottleneckType.None
+                },
                 Severity = Math.Min(1.0, severity),
                 Details = details,
                 ResourceUtilization = new Dictionary<string, double>
@@ -576,12 +587,12 @@ namespace DotCompute.Backends.CUDA.Execution
         {
             var suggestions = new List<string>();
 
-            if (bottleneck?.Type == BottleneckType.Compute)
+            if (bottleneck?.Type == DotCompute.Abstractions.Types.BottleneckType.Gpu)
             {
                 suggestions.Add("Consider increasing occupancy by reducing register usage or shared memory");
                 suggestions.Add("Optimize thread divergence to improve warp utilization");
             }
-            else if (bottleneck?.Type == BottleneckType.MemoryBandwidth)
+            else if (bottleneck?.Type == DotCompute.Abstractions.Types.BottleneckType.Memory)
             {
                 suggestions.Add("Improve memory coalescing by ensuring contiguous access patterns");
                 suggestions.Add("Consider using shared memory to reduce global memory accesses");

@@ -4,6 +4,7 @@
 using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Threading;
+using DotCompute.Backends.CPU.Extensions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
@@ -73,7 +74,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         var buffer = await CreateNumaAwareBufferAsync(sizeInBytes, options, preferredNode, cancellationToken);
 
         // Apply memory pinning for performance-critical allocations
-        if (options.HasFlag(MemoryOptions.PreferPinned))
+        if (options.HasFlag(MemoryOptions.Pinned))
         {
             await PinBufferMemoryAsync(buffer, cancellationToken);
         }
@@ -605,7 +606,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     {
         try
         {
-            if (buffer is CpuMemoryBuffer<T> typedBuffer)
+            if (buffer is CpuMemoryBufferTyped<T> typedBuffer)
             {
                 // Create a typed view of the existing buffer
                 return typedBuffer.CreateView(offset, count);
@@ -986,7 +987,7 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
     {
         // Convert source to bytes and delegate to view
         var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(source.Span);
-        return _view.CopyFromAsync(sourceBytes.ToArray().AsMemory(), offset * Unsafe.SizeOf<T>(), cancellationToken);
+        return _view.CopyFromAsync<byte>(sourceBytes.ToArray().AsMemory(), offset * Unsafe.SizeOf<T>(), cancellationToken);
     }
 
     public ValueTask CopyToAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged

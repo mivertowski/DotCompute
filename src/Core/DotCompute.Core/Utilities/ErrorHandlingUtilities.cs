@@ -7,13 +7,15 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Utilities.ErrorHandling.Enums;
+using DotCompute.Core.Utilities.ErrorHandling.Models;
 
 namespace DotCompute.Core.Utilities;
 
 /// <summary>
 /// Unified error handling utilities that consolidate common error handling patterns
 /// across all backend implementations. Provides consistent error classification,
-/// logging, and recovery strategies.
+/// logging, and recovery strategies with production-grade reliability.
 /// </summary>
 public static class ErrorHandlingUtilities
 {
@@ -501,69 +503,3 @@ public static class ErrorHandlingUtilities
     #endregion
 }
 
-#region Supporting Types
-
-/// <summary>
-/// Error classification enumeration.
-/// </summary>
-public enum ErrorClassification
-{
-    Unknown,
-    MemoryExhaustion,
-    DeviceNotFound,
-    DeviceBusy,
-    HardwareFailure,
-    InvalidConfiguration,
-    InvalidInput,
-    PermissionDenied,
-    Timeout,
-    DataCorruption,
-    NetworkError,
-    SecurityViolation,
-    SystemFailure,
-    ComputeError,
-    FeatureNotSupported,
-    ResourceContention,
-    TemporaryFailure
-}
-
-/// <summary>
-/// Error severity levels.
-/// </summary>
-public enum ErrorSeverity
-{
-    Low = 1,
-    Medium = 2,
-    High = 3,
-    Critical = 4
-}
-
-/// <summary>
-/// Comprehensive error context information.
-/// </summary>
-public sealed class ErrorContext
-{
-    public required string ErrorId { get; init; }
-    public required Exception Exception { get; init; }
-    public required string Operation { get; init; }
-    public required string BackendType { get; init; }
-    public required ErrorClassification Classification { get; init; }
-    public required ErrorSeverity Severity { get; init; }
-    public required DateTimeOffset Timestamp { get; init; }
-    public required string StackTrace { get; init; }
-    public required List<Exception> InnerExceptions { get; init; }
-    public required Dictionary<string, object> AdditionalContext { get; init; }
-}
-
-/// <summary>
-/// Error pattern for pattern matching and handling.
-/// </summary>
-public sealed class ErrorPattern
-{
-    public required string Pattern { get; init; }
-    public required ErrorClassification Classification { get; init; }
-    public required bool IsTransient { get; init; }
-    public required string RecommendedAction { get; init; }
-}
-
-#endregion

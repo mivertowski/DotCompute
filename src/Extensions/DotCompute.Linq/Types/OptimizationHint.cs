@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Immutable;
-
 namespace DotCompute.Linq.Types
 {
     /// <summary>
@@ -19,7 +18,6 @@ namespace DotCompute.Linq.Types
         /// Gets the type of optimization hint.
         /// </summary>
         public required OptimizationHintType Type { get; init; }
-
         /// <summary>
         /// Gets the priority level of this hint.
         /// </summary>
@@ -34,7 +32,6 @@ namespace DotCompute.Linq.Types
         /// Gets additional metadata associated with this hint.
         /// </summary>
         public ImmutableDictionary<string, object> Metadata { get; init; } =
-
             ImmutableDictionary<string, object>.Empty;
 
         /// <summary>
@@ -64,7 +61,6 @@ namespace DotCompute.Linq.Types
             Priority = OptimizationPriority.High,
             Description = $"Vectorize with width {vectorWidth}"
         };
-
         /// <summary>
         /// Creates a memory coalescing optimization hint.
         /// </summary>
@@ -74,10 +70,8 @@ namespace DotCompute.Linq.Types
         {
             Type = OptimizationHintType.MemoryCoalescing,
             Value = accessPattern,
-            Priority = OptimizationPriority.High,
             Description = $"Coalesce memory accesses for {accessPattern} pattern"
         };
-
         /// <summary>
         /// Creates a workgroup size optimization hint.
         /// </summary>
@@ -90,7 +84,6 @@ namespace DotCompute.Linq.Types
             Priority = OptimizationPriority.Medium,
             Description = $"Use workgroup size of {size}"
         };
-
         /// <summary>
         /// Creates a loop unrolling optimization hint.
         /// </summary>
@@ -100,7 +93,6 @@ namespace DotCompute.Linq.Types
         {
             Type = OptimizationHintType.LoopUnrolling,
             Value = factor,
-            Priority = OptimizationPriority.Medium,
             Description = $"Unroll loops with factor {factor}"
         };
     }
@@ -110,79 +102,35 @@ namespace DotCompute.Linq.Types
     /// </summary>
     public enum OptimizationHintType
     {
-        /// <summary>
-        /// Vectorization optimization for SIMD instructions.
-        /// </summary>
+        /// <summary>Vectorization optimization for SIMD instructions.</summary>
         Vectorization,
-
-        /// <summary>
-        /// Memory access pattern optimization.
-        /// </summary>
+        /// <summary>Memory access pattern optimization.</summary>
         MemoryCoalescing,
-
-        /// <summary>
-        /// Loop unrolling optimization.
-        /// </summary>
+        /// <summary>Loop unrolling optimization.</summary>
         LoopUnrolling,
-
-        /// <summary>
-        /// Workgroup or thread block size optimization.
-        /// </summary>
+        /// <summary>Workgroup or thread block size optimization.</summary>
         WorkgroupSize,
-
-        /// <summary>
-        /// Cache optimization hints.
-        /// </summary>
+        /// <summary>Cache optimization hints.</summary>
         CacheOptimization,
-
-        /// <summary>
-        /// Instruction scheduling optimization.
-        /// </summary>
+        /// <summary>Instruction scheduling optimization.</summary>
         InstructionScheduling,
-
-        /// <summary>
-        /// Register allocation optimization.
-        /// </summary>
+        /// <summary>Register allocation optimization.</summary>
         RegisterAllocation,
-
-        /// <summary>
-        /// Shared memory optimization.
-        /// </summary>
+        /// <summary>Shared memory optimization.</summary>
         SharedMemoryOptimization,
-
-        /// <summary>
-        /// Branch prediction optimization.
-        /// </summary>
+        /// <summary>Branch prediction optimization.</summary>
         BranchPrediction,
-
-        /// <summary>
-        /// Data prefetching optimization.
-        /// </summary>
+        /// <summary>Data prefetching optimization.</summary>
         DataPrefetch,
-
-        /// <summary>
-        /// Custom backend-specific optimization.
-        /// </summary>
+        /// <summary>Custom backend-specific optimization.</summary>
         Custom,
-
-        /// <summary>
-        /// Parallelization optimization hint.
-        /// </summary>
+        /// <summary>Parallelization optimization hint.</summary>
         Parallelization,
-
-        /// <summary>
-        /// Memory layout optimization.
-        /// </summary>
+        /// <summary>Memory layout optimization.</summary>
         MemoryLayout,
-
-        /// <summary>
-        /// GPU execution optimization.
-        /// </summary>
+        /// <summary>GPU execution optimization.</summary>
         GpuExecution,
-
-        /// <summary>
-        /// General performance optimization hint.
-        /// </summary>
+        /// <summary>General performance optimization hint.</summary>
         Performance
     }
 
@@ -191,60 +139,31 @@ namespace DotCompute.Linq.Types
     /// </summary>
     public enum OptimizationPriority
     {
-        /// <summary>
-        /// Low priority hint, may be ignored under resource constraints.
-        /// </summary>
+        /// <summary>Low priority hint, may be ignored under resource constraints.</summary>
         Low,
-
-        /// <summary>
-        /// Medium priority hint, applied when possible.
-        /// </summary>
+        /// <summary>Medium priority hint, applied when possible.</summary>
         Medium,
-
-        /// <summary>
-        /// High priority hint, should be applied if feasible.
-        /// </summary>
+        /// <summary>High priority hint, should be applied if feasible.</summary>
         High,
-
-        /// <summary>
-        /// Critical hint, must be applied for correctness.
-        /// </summary>
+        /// <summary>Critical hint, must be applied for correctness.</summary>
         Critical
     }
-
     /// <summary>
     /// Defines the scope where optimization hints apply.
     /// </summary>
     public enum OptimizationScope
     {
-        /// <summary>
-        /// Applies to the entire kernel.
-        /// </summary>
+        /// <summary>Applies to the entire kernel.</summary>
         Kernel,
-
-        /// <summary>
-        /// Applies to a specific function or method.
-        /// </summary>
+        /// <summary>Applies to a specific function or method.</summary>
         Function,
-
-        /// <summary>
-        /// Applies to a loop or iteration construct.
-        /// </summary>
+        /// <summary>Applies to a loop or iteration construct.</summary>
         Loop,
-
-        /// <summary>
-        /// Applies to a basic block of instructions.
-        /// </summary>
+        /// <summary>Applies to a basic block of instructions.</summary>
         Block,
-
-        /// <summary>
-        /// Applies to memory operations.
-        /// </summary>
+        /// <summary>Applies to memory operations.</summary>
         Memory,
-
-        /// <summary>
-        /// Applies to the entire compilation unit.
-        /// </summary>
+        /// <summary>Applies to the entire compilation unit.</summary>
         Global
     }
 }

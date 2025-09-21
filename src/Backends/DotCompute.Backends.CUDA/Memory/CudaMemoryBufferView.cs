@@ -153,7 +153,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
 
         /// <inheritdoc/>
-        public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
+        public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(IsDisposed, this);
             throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
@@ -171,7 +171,7 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
+        public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(IsDisposed, this);
             throw new NotImplementedException("Buffer view operations should be performed through the memory manager");

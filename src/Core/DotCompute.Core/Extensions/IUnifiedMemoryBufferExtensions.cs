@@ -482,6 +482,34 @@ namespace DotCompute.Core.Extensions
         }
 
         /// <summary>
+        /// Gets a span to the host memory. Will trigger transfer if needed.
+        /// This method is an alias for AsSpan() for backward compatibility.
+        /// </summary>
+        /// <typeparam name="T">The buffer element type.</typeparam>
+        /// <param name="buffer">The buffer to get span from.</param>
+        /// <returns>A span to the host memory.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when buffer is null.</exception>
+        public static Span<T> GetSpan<T>(this IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+            return buffer.AsSpan();
+        }
+
+        /// <summary>
+        /// Gets a read-only span to the host memory. Will trigger transfer if needed.
+        /// This method is an alias for AsReadOnlySpan() for backward compatibility.
+        /// </summary>
+        /// <typeparam name="T">The buffer element type.</typeparam>
+        /// <param name="buffer">The buffer to get read-only span from.</param>
+        /// <returns>A read-only span to the host memory.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when buffer is null.</exception>
+        public static ReadOnlySpan<T> GetReadOnlySpan<T>(this IUnifiedMemoryBuffer<T> buffer) where T : unmanaged
+        {
+            ArgumentNullException.ThrowIfNull(buffer);
+            return buffer.AsReadOnlySpan();
+        }
+
+        /// <summary>
         /// Gets performance metrics for the buffer if available.
         /// This method provides insights commonly needed in performance tests.
         /// </summary>

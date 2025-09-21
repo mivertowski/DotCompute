@@ -3,11 +3,8 @@
 
 // This interface has been moved to DotCompute.Abstractions.Interfaces.Linq
 // to avoid circular dependencies and ensure clean architecture boundaries.
-
 using System;
-
 namespace DotCompute.Linq.Interfaces;
-
 /// <summary>
 /// Re-export for backward compatibility.
 /// Use DotCompute.Abstractions.Interfaces.Linq.IComputeLinqProvider instead.

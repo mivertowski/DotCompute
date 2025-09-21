@@ -220,11 +220,8 @@ public sealed class MetalGraphNode
     /// </summary>
     /// <param name="dependencyId">The ID of the dependency to remove.</param>
     /// <returns><c>true</c> if the dependency was found and removed; otherwise, <c>false</c>.</returns>
-    public bool RemoveDependency(string dependencyId
-        {
-            return false;
-        }
-
+    public bool RemoveDependency(string dependencyId)
+    {
         if (string.IsNullOrWhiteSpace(dependencyId))
             return false;
 
@@ -249,11 +246,7 @@ public sealed class MetalGraphNode
     /// <param name="nodeId">The ID of the node to check for dependency.</param>
     /// <returns><c>true</c> if this node depends on the specified node; otherwise, <c>false</c>.</returns>
     public bool DependsOn(string nodeId)
-        {
-
     {
-        }
-
         if (string.IsNullOrWhiteSpace(nodeId))
             return false;
 
@@ -296,25 +289,24 @@ public sealed class MetalGraphNode
 
         switch (Type)
         {
+            case MetalNodeType.Kernel:
+                if (Kernel == null)
                 {
                     errors.Add("Kernel node must have a valid kernel.");
                 }
 
-if (Kernel == null)
-                    errors.Add("Kernel node must have a valid kernel.");
+                if (ThreadgroupsPerGrid.width == 0 || ThreadgroupsPerGrid.height == 0 || ThreadgroupsPerGrid.depth == 0)
                 {
                     errors.Add("Kernel node must have valid threadgroup dimensions.");
-                }
-
-if (ThreadgroupsPerGrid.width == 0 || ThreadgroupsPerGrid.height == 0 || ThreadgroupsPerGrid.depth == 0)
-                    errors.Add("Kernel node must have valid threadgroup dimensions.");
-                {
-                    errors.Add("Kernel node must have valid threads per threadgroup dimensions.");
                 }
 
                 if (ThreadsPerThreadgroup.width == 0 || ThreadsPerThreadgroup.height == 0 || ThreadsPerThreadgroup.depth == 0)
+                {
                     errors.Add("Kernel node must have valid threads per threadgroup dimensions.");
+                }
 
+                var totalThreadsPerThreadgroup = ThreadsPerThreadgroup.width * ThreadsPerThreadgroup.height * ThreadsPerThreadgroup.depth;
+                if (totalThreadsPerThreadgroup > 1024)
                 {
                     errors.Add($"Total threads per threadgroup ({totalThreadsPerThreadgroup}) exceeds Metal limit of 1024.");
                 }
@@ -350,9 +342,6 @@ if (ThreadgroupsPerGrid.width == 0 || ThreadgroupsPerGrid.height == 0 || Threadg
                     errors.Add("Memory set node must have a positive size.");
                 }
 
-if (CopySize <= 0)
-                    errors.Add("Memory set node must have a positive size.");
-                
                 break;
         }
 

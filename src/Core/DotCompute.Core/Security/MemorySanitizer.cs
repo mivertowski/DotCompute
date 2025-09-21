@@ -7,13 +7,18 @@ using global::System.Runtime.InteropServices;
 using global::System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using DotCompute.Core.Security.Configuration;
+using DotCompute.Core.Security.Enums;
+using DotCompute.Core.Security.Models;
+using DotCompute.Core.Security.Models.Internal;
 
 namespace DotCompute.Core.Security;
 
 /// <summary>
-/// Comprehensive memory sanitization system that provides secure memory wiping, 
+/// Comprehensive memory sanitization system that provides secure memory wiping,
 /// use-after-free detection, double-free prevention, and memory leak detection
 /// with advanced security features for protecting sensitive data in memory.
+/// Implements production-grade memory safety with hardware-accelerated validation.
 /// </summary>
 public sealed class MemorySanitizer : IDisposable
 {
@@ -911,188 +916,3 @@ public sealed class MemorySanitizer : IDisposable
     }
 }
 
-#region Supporting Types and Enums
-
-/// <summary>
-/// Configuration for memory sanitizer behavior.
-/// </summary>
-public sealed class MemorySanitizerConfiguration
-{
-    public static MemorySanitizerConfiguration Default => new()
-    {
-        EnableGuardBytes = true,
-        GuardByteSize = 16,
-        EnableCanaryValues = true,
-        EnableSecureWiping = true,
-        InitializeWithRandomData = false,
-        MaxAllocationSize = 1024 * 1024 * 1024, // 1GB
-        LeakDetectionThreshold = TimeSpan.FromMinutes(30)
-    };
-
-    public bool EnableGuardBytes { get; init; } = true;
-    public nuint GuardByteSize { get; init; } = 16;
-    public bool EnableCanaryValues { get; init; } = true;
-    public bool EnableSecureWiping { get; init; } = true;
-    public bool InitializeWithRandomData { get; init; }
-
-    public nuint MaxAllocationSize { get; init; } = 1024 * 1024 * 1024;
-    public TimeSpan LeakDetectionThreshold { get; init; } = TimeSpan.FromMinutes(30);
-
-    public override string ToString()
-        => $"Guards={EnableGuardBytes}, Canaries={EnableCanaryValues}, SecureWipe={EnableSecureWiping}";
-}
-
-/// <summary>
-/// Data classification levels for secure wiping.
-/// </summary>
-public enum DataClassification
-{
-    Public = 0,
-    Internal = 1,
-    Sensitive = 2,
-    Confidential = 3,
-    Secret = 4,
-    TopSecret = 5
-}
-
-/// <summary>
-/// Types of memory sanitization violations.
-/// </summary>
-public enum SanitizationViolationType
-{
-    UseAfterFree,
-    DoubleFree,
-    BoundsViolation,
-    CorruptionDetected,
-    UnauthorizedAccess
-}
-
-/// <summary>
-/// Result of sanitized memory allocation.
-/// </summary>
-public sealed class SanitizedMemoryResult
-{
-    public nuint RequestedSize { get; init; }
-    public DataClassification Classification { get; init; }
-    public required string Identifier { get; init; }
-    public DateTimeOffset AllocationTime { get; init; }
-    public IntPtr Address { get; set; }
-    public nuint ActualSize { get; set; }
-    public bool IsSuccessful { get; set; }
-    public string? ErrorMessage { get; set; }
-}
-
-/// <summary>
-/// Result of memory deallocation.
-/// </summary>
-public sealed class MemoryDeallocationResult
-{
-    public IntPtr Address { get; init; }
-    public DateTimeOffset DeallocationTime { get; init; }
-    public bool IsSuccessful { get; set; }
-    public string? ErrorMessage { get; set; }
-    public nuint BytesFreed { get; set; }
-    public DataClassification SecurityLevel { get; set; }
-    public bool CorruptionDetected { get; set; }
-}
-
-/// <summary>
-/// Tracked sanitized allocation.
-/// </summary>
-internal sealed class SanitizedAllocation
-{
-    public required IntPtr BaseAddress { get; init; }
-    public required IntPtr UserAddress { get; init; }
-    public required nuint RequestedSize { get; init; }
-    public required nuint TotalSize { get; init; }
-    public required DataClassification Classification { get; init; }
-    public required string Identifier { get; init; }
-    public required DateTimeOffset AllocationTime { get; init; }
-    public required AllocationCallSite CallSite { get; init; }
-    public ulong CanaryValue { get; init; }
-    public long AccessCount { get; set; }
-    public DateTimeOffset LastAccessTime { get; set; }
-}
-
-/// <summary>
-/// Record of freed memory for double-free detection.
-/// </summary>
-internal sealed class FreeRecord
-{
-    public required IntPtr Address { get; init; }
-    public required nuint Size { get; init; }
-    public required DateTimeOffset FreeTime { get; init; }
-    public required AllocationCallSite CallSite { get; init; }
-}
-
-/// <summary>
-/// Call site information for allocations.
-/// </summary>
-public sealed class AllocationCallSite
-{
-    public required string Method { get; init; }
-    public required string File { get; init; }
-    public int Line { get; init; }
-}
-
-/// <summary>
-/// Memory sanitization violation information.
-/// </summary>
-public sealed class MemorySanitizationViolation
-{
-    public required SanitizationViolationType ViolationType { get; init; }
-    public required IntPtr Address { get; init; }
-    public nuint Size { get; init; }
-    public required string Operation { get; init; }
-    public required string Description { get; init; }
-}
-
-/// <summary>
-/// Memory leak detection report.
-/// </summary>
-public sealed class MemoryLeakReport
-{
-    public DateTimeOffset ScanTime { get; init; }
-    public int TotalActiveAllocations { get; init; }
-    public List<LeakSuspect> SuspiciousAllocations { get; set; } = [];
-    public long TotalSuspiciousBytes { get; set; }
-    public int HighSuspicionCount { get; set; }
-}
-
-/// <summary>
-/// Suspected memory leak information.
-/// </summary>
-public sealed class LeakSuspect
-{
-    public IntPtr Address { get; init; }
-    public nuint Size { get; init; }
-    public TimeSpan Age { get; init; }
-    public TimeSpan TimeSinceLastAccess { get; init; }
-    public long AccessCount { get; init; }
-    public required string Identifier { get; init; }
-    public required AllocationCallSite CallSite { get; init; }
-    public DataClassification Classification { get; init; }
-    public double SuspicionLevel { get; set; }
-}
-
-/// <summary>
-/// Memory sanitizer statistics.
-/// </summary>
-public sealed class SanitizerStatistics
-{
-    public long TotalAllocations;
-    public long TotalDeallocations;
-    public long TotalBytesAllocated;
-    public long TotalBytesFreed;
-    public int ActiveAllocations;
-    public long TotalViolations;
-    public long CorruptionDetections;
-    public long DoubleFreeAttempts;
-    public long UseAfterFreeAttempts;
-    public ConcurrentDictionary<DataClassification, long> AllocationsByClassification { get; } = new();
-    public ConcurrentDictionary<SanitizationViolationType, long> ViolationsByType { get; } = new();
-}
-
-
-
-#endregion

@@ -727,6 +727,33 @@ namespace DotCompute.Backends.CUDA.Execution
         public StreamId StreamId { get; }
         public IntPtr Stream { get; }
 
+        /// <summary>
+        /// Gets the CUDA stream handle (alias for Stream).
+        /// </summary>
+        public IntPtr Handle => Stream;
+
+        /// <summary>
+        /// Synchronizes the stream asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A task representing the synchronization operation.</returns>
+        public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+        {
+            if (_disposed)
+                return;
+
+            if (_manager is CudaStreamManager manager)
+            {
+                await manager.SynchronizeStreamAsync(StreamId, cancellationToken: cancellationToken);
+            }
+            else
+            {
+                // Fallback to synchronous CUDA stream synchronization
+                var result = Native.CudaRuntime.cudaStreamSynchronize(Stream);
+                Native.CudaRuntime.CheckError(result, "synchronizing CUDA stream");
+            }
+        }
+
         public void Dispose()
         {
             if (!_disposed)

@@ -6,9 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 namespace DotCompute.Linq.Compilation.Analysis;
-
 /// <summary>
 /// Represents a data flow graph for analyzing dependencies in expressions.
 /// </summary>
@@ -16,13 +14,10 @@ public class DataFlowGraph
 {
     private readonly Dictionary<string, DataFlowNode> _nodes = [];
     private readonly List<DataFlowEdge> _edges = [];
-
     /// <summary>Gets all nodes in the graph.</summary>
     public IReadOnlyCollection<DataFlowNode> Nodes => _nodes.Values;
-
     /// <summary>Gets all edges in the graph.</summary>
     public IReadOnlyCollection<DataFlowEdge> Edges => _edges;
-
     /// <summary>
     /// Adds a node to the graph.
     /// </summary>
@@ -31,7 +26,6 @@ public class DataFlowGraph
     {
         _nodes[node.Id] = node;
     }
-
     /// <summary>
     /// Adds an edge to the graph.
     /// </summary>
@@ -40,7 +34,6 @@ public class DataFlowGraph
     {
         _edges.Add(edge);
     }
-
     /// <summary>
     /// Gets a node by its ID.
     /// </summary>
@@ -50,7 +43,6 @@ public class DataFlowGraph
     {
         return _nodes.GetValueOrDefault(nodeId);
     }
-
     /// <summary>
     /// Gets all dependencies of a node.
     /// </summary>
@@ -63,12 +55,11 @@ public class DataFlowGraph
             .Select(e => _nodes[e.FromNodeId])
             .ToList();
     }
-
     /// <summary>
     /// Gets all dependents of a node.
     /// </summary>
     /// <param name="nodeId">The node ID.</param>
-    /// <returns>List of dependent nodes.</returns>
+    /// <returns>List of nodes that depend on the specified node.</returns>
     public List<DataFlowNode> GetDependents(string nodeId)
     {
         return _edges
@@ -76,7 +67,6 @@ public class DataFlowGraph
             .Select(e => _nodes[e.ToNodeId])
             .ToList();
     }
-
     /// <summary>
     /// Performs topological sort of the graph.
     /// </summary>
@@ -86,7 +76,6 @@ public class DataFlowGraph
         var result = new List<DataFlowNode>();
         var visited = new HashSet<string>();
         var visiting = new HashSet<string>();
-
         foreach (var node in _nodes.Values)
         {
             if (!visited.Contains(node.Id))
@@ -94,30 +83,18 @@ public class DataFlowGraph
                 TopologicalSortDfs(node.Id, visited, visiting, result);
             }
         }
-
         result.Reverse();
         return result;
     }
-
     private void TopologicalSortDfs(string nodeId, HashSet<string> visited, HashSet<string> visiting, List<DataFlowNode> result)
     {
         if (visiting.Contains(nodeId))
-        {
             throw new InvalidOperationException("Circular dependency detected");
-        }
-
         if (visited.Contains(nodeId))
-        {
             return;
-        }
-
         visiting.Add(nodeId);
-
         foreach (var dependent in GetDependents(nodeId))
-        {
             TopologicalSortDfs(dependent.Id, visited, visiting, result);
-        }
-
         visiting.Remove(nodeId);
         visited.Add(nodeId);
         result.Add(_nodes[nodeId]);
@@ -131,13 +108,10 @@ public record DataFlowNode
 {
     /// <summary>Gets the unique node identifier.</summary>
     public string Id { get; init; } = string.Empty;
-
     /// <summary>Gets the node type.</summary>
     public DataFlowNodeType Type { get; init; }
-
     /// <summary>Gets the node value or expression.</summary>
     public object? Value { get; init; }
-
     /// <summary>Gets additional metadata for the node.</summary>
     public Dictionary<string, object> Metadata { get; init; } = [];
 }
@@ -149,17 +123,13 @@ public record DataFlowEdge
 {
     /// <summary>Gets the source node ID.</summary>
     public string FromNodeId { get; init; } = string.Empty;
-
     /// <summary>Gets the target node ID.</summary>
     public string ToNodeId { get; init; } = string.Empty;
-
     /// <summary>Gets the edge type.</summary>
     public DataFlowEdgeType Type { get; init; }
-
     /// <summary>Gets the edge weight or importance.</summary>
     public double Weight { get; init; } = 1.0;
 }
-
 // DataFlowBottleneck is defined in DataFlowBottleneck.cs to avoid duplication
 
 /// <summary>
@@ -169,19 +139,14 @@ public enum DataFlowNodeType
 {
     /// <summary>Input parameter or variable.</summary>
     Input,
-
     /// <summary>Output result.</summary>
     Output,
-
     /// <summary>Computation operation.</summary>
     Operation,
-
     /// <summary>Constant value.</summary>
     Constant,
-
     /// <summary>Memory access.</summary>
     MemoryAccess,
-
     /// <summary>Control flow.</summary>
     ControlFlow
 }
@@ -193,16 +158,12 @@ public enum DataFlowEdgeType
 {
     /// <summary>Data dependency.</summary>
     DataDependency,
-
     /// <summary>Control dependency.</summary>
     ControlDependency,
-
     /// <summary>Memory dependency.</summary>
     MemoryDependency,
-
     /// <summary>Anti-dependency.</summary>
     AntiDependency
 }
-
 
 // BottleneckType is defined in DataFlowBottleneck.cs to avoid duplication

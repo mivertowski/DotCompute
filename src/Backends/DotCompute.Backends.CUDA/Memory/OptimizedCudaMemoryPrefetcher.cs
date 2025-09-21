@@ -7,6 +7,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Execution;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 
@@ -31,7 +32,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
     private readonly SemaphoreSlim _prefetchSemaphore;
     private readonly Timer _maintenanceTimer;
     private readonly PrefetcherConfiguration _config;
-    private readonly CudaStreamHandle _prefetchStream;
+    private readonly IntPtr _prefetchStream;
     
     // Performance counters
     private long _totalPrefetches;
@@ -61,9 +62,10 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
 
         // Create dedicated stream for prefetch operations
         _context.MakeCurrent();
-        var result = CudaRuntime.cudaStreamCreateWithFlags(out var streamHandle, 0x01); // Non-blocking
-        CudaRuntime.CheckError(result, "creating prefetch stream");
-        _prefetchStream = new CudaStream(streamHandle, _context);
+        var streamHandle = IntPtr.Zero;
+        var result = Native.CudaRuntime.cudaStreamCreateWithFlags(ref streamHandle, 0x01); // Non-blocking
+        Native.CudaRuntime.CheckError(result, "creating prefetch stream");
+        _prefetchStream = streamHandle;
 
         // Setup maintenance timer
         _maintenanceTimer = new Timer(PerformMaintenance, null,
@@ -176,7 +178,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
                 address, 
                 (nuint)size, 
                 prefetchLocation, 
-                _prefetchStream.Handle);
+                _prefetchStream);
 
             if (result == CudaError.Success)
             {
@@ -195,7 +197,8 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
             // Synchronize stream to ensure prefetch completion
             if (_config.SynchronousMode)
             {
-                await _prefetchStream.SynchronizeAsync();
+                var syncResult = Native.CudaRuntime.cudaStreamSynchronize(_prefetchStream);
+                Native.CudaRuntime.CheckError(syncResult, "synchronizing prefetch stream");
             }
         }
         finally
@@ -487,11 +490,11 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
                        Math.Min(_config.MaxPrefetchSize, (long)(baseDistance * frequencyFactor)));
     }
 
-    private async Task<double> EstimateBandwidthUtilization()
+    private Task<double> EstimateBandwidthUtilization()
     {
         // Simplified bandwidth estimation based on recent prefetch activity
         var recentPrefetches = Interlocked.Read(ref _totalPrefetches) - Interlocked.Read(ref _successfulPrefetches);
-        return Math.Min(1.0, recentPrefetches / (double)_config.MaxConcurrentPrefetches);
+        return Task.FromResult(Math.Min(1.0, recentPrefetches / (double)_config.MaxConcurrentPrefetches));
     }
 
     private int ConvertCacheLevelToCudaLocation(CacheLevel cacheLevel)
@@ -579,7 +582,11 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
             _disposed = true;
             _maintenanceTimer?.Dispose();
             _prefetchSemaphore?.Dispose();
-            _prefetchStream?.Dispose();
+            if (_prefetchStream != IntPtr.Zero)
+            {
+                var destroyResult = Native.CudaRuntime.cudaStreamDestroy(_prefetchStream);
+                Native.CudaRuntime.CheckError(destroyResult, "destroying prefetch stream");
+            }
             _accessPatterns.Clear();
             
             while (_pendingRequests.TryDequeue(out _)) { }

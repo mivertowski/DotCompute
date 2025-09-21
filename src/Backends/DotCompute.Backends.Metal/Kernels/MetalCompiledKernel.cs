@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.Metal.Memory;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
@@ -28,7 +28,7 @@ int maxTotalThreadsPerThreadgroup,
 (int x, int y, int z) threadExecutionWidth,
 CompilationMetadata metadata,
 ILogger logger,
-MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
+MetalCommandBufferPool? commandBufferPool = null) : DotCompute.Abstractions.ICompiledKernel
 {
     private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
     private readonly IntPtr _pipelineState = pipelineState;
@@ -388,7 +388,8 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
                 _definition.Name,
                 _definition.EntryPoint,
                 _definition.Language,
-                _definition.Parameters?.Count ?? 0
+                // No Parameters property available in KernelDefinition
+                ParameterCount = 0
             }
         };
     }

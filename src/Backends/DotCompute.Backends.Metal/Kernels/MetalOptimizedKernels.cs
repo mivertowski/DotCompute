@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Kernels.Types;
 namespace DotCompute.Backends.Metal.Kernels;
 
 
@@ -37,7 +38,7 @@ kernel void vectorAdd(
             name: "vectorAdd",
             language: KernelLanguage.Metal,
             entryPoint: "vectorAdd",
-            dependencies: []
+            dependencies: new string[0]
         );
         _ = new CompilationOptions
         {
@@ -95,7 +96,7 @@ kernel void matrixMultiply(
             name: "matrixMultiply",
             language: KernelLanguage.Metal,
             entryPoint: "matrixMultiply",
-            dependencies: []
+            dependencies: new string[0]
         );
         _ = new CompilationOptions
         {
@@ -169,7 +170,7 @@ kernel void reduction{operation}(
             name: kernelName,
             language: KernelLanguage.Metal,
             entryPoint: kernelName,
-            dependencies: []
+            dependencies: new string[0]
         );
         _ = new CompilationOptions
         {
@@ -249,7 +250,7 @@ kernel void convolution2D(
             name: "convolution2D",
             language: KernelLanguage.Metal,
             entryPoint: "convolution2D",
-            dependencies: []
+            dependencies: new string[0]
         );
         _ = new CompilationOptions
         {
@@ -306,7 +307,7 @@ kernel void activation{activation}(
             name: kernelName,
             language: KernelLanguage.Metal,
             entryPoint: kernelName,
-            dependencies: []
+            dependencies: new string[0]
         );
         _ = new CompilationOptions
         {
@@ -351,7 +352,7 @@ kernel void {operation}(
             name: operation,
             language: KernelLanguage.Metal,
             entryPoint: operation,
-            dependencies: []
+            dependencies: new string[0]
         );
         _ = new CompilationOptions
         {

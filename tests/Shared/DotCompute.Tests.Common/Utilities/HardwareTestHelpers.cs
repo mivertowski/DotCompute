@@ -8,6 +8,7 @@ using System.Runtime.Intrinsics.X86;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Core.Extensions;
 using DotCompute.Tests.Common.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -43,7 +44,7 @@ public static class HardwareTestHelpers
             HasAvx512Bw = Avx512BW.IsSupported,
             HasAvx512Cd = Avx512CD.IsSupported,
             HasAvx512Dq = Avx512DQ.IsSupported,
-            HasAvx512Vl = Avx512VL.IsSupported,
+            HasAvx512Vl = false, // Avx512VL not available in .NET runtime intrinsics
             VectorSize = System.Numerics.Vector<float>.Count,
             IsHardwareAccelerated = System.Numerics.Vector.IsHardwareAccelerated
         };
@@ -103,7 +104,7 @@ public static class HardwareTestHelpers
         }
 
         var missingRequired = requiredSets.Except(availableSets).ToArray();
-        if (missingRequired.Any())
+        if (missingRequired.Length > 0)
         {
             Skip.If(true, $"Required SIMD instruction sets not available: {string.Join(", ", missingRequired)}");
         }
@@ -113,7 +114,7 @@ public static class HardwareTestHelpers
             SimdCapabilities = capabilities,
             AvailableInstructionSets = availableSets.ToArray(),
             RequiredInstructionSets = requiredSets,
-            IsValidEnvironment = !missingRequired.Any()
+            IsValidEnvironment = missingRequired.Length == 0
         };
     }
 
@@ -228,22 +229,22 @@ public static class HardwareTestHelpers
     /// <summary>
     /// Determines the current platform for platform-specific test logic.
     /// </summary>
-    public static TestPlatform GetCurrentPlatform()
+    public static DotComputeTestPlatform GetCurrentPlatform()
     {
         if (OperatingSystem.IsWindows())
-            return TestPlatform.Windows;
+            return DotComputeTestPlatform.Windows;
         if (OperatingSystem.IsLinux())
-            return TestPlatform.Linux;
+            return DotComputeTestPlatform.Linux;
         if (OperatingSystem.IsMacOS())
-            return TestPlatform.MacOS;
+            return DotComputeTestPlatform.MacOS;
 
-        return TestPlatform.Unknown;
+        return DotComputeTestPlatform.Unknown;
     }
 
     /// <summary>
     /// Skips test if not running on specified platform.
     /// </summary>
-    public static void RequirePlatform(TestPlatform requiredPlatform)
+    public static void RequirePlatform(DotComputeTestPlatform requiredPlatform)
     {
         var currentPlatform = GetCurrentPlatform();
         Skip.IfNot(currentPlatform == requiredPlatform,
@@ -253,7 +254,7 @@ public static class HardwareTestHelpers
     /// <summary>
     /// Skips test if running on specified platform.
     /// </summary>
-    public static void SkipOnPlatform(TestPlatform platformToSkip)
+    public static void SkipOnPlatform(DotComputeTestPlatform platformToSkip)
     {
         var currentPlatform = GetCurrentPlatform();
         Skip.If(currentPlatform == platformToSkip,
@@ -325,7 +326,7 @@ public static class HardwareTestHelpers
         // This would need actual CUDA detection logic
         // For testing purposes, we'll simulate detection
         await Task.Delay(1);
-        return HardwareDetection.HasNvidiaGpu();
+        return HardwareDetection.IsCudaAvailable();
     }
 
     private static async Task<GpuDeviceInfo[]> GetCudaDevicesAsync()
@@ -417,9 +418,9 @@ public enum GpuBackend
 }
 
 /// <summary>
-/// Test platform enumeration
+/// Test platform enumeration for DotCompute tests
 /// </summary>
-public enum TestPlatform
+public enum DotComputeTestPlatform
 {
     Windows,
     Linux,
@@ -483,7 +484,7 @@ public class TestEnvironment
     public SimdInstructionSet[] AvailableInstructionSets { get; set; } = Array.Empty<SimdInstructionSet>();
     public SimdInstructionSet[] RequiredInstructionSets { get; set; } = Array.Empty<SimdInstructionSet>();
     public bool IsValidEnvironment { get; set; }
-    public TestPlatform Platform { get; set; }
+    public DotComputeTestPlatform Platform { get; set; }
 }
 
 /// <summary>

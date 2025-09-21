@@ -326,7 +326,7 @@ public sealed class MetalGraphOptimizer
             var fusedKernel = CreateFusedKernel(kernelGroup);
             
             // Update the primary node to represent the fused operation
-            primaryKernel.Kernel = fusedKernel as ICompiledKernel ?? primaryKernel.Kernel;
+            primaryKernel.Kernel = fusedKernel as DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel ?? primaryKernel.Kernel;
             primaryKernel.OptimizationHints |= MetalOptimizationHints.FusionCandidate;
 
             // Remove the other nodes from the graph (this is a simplified representation)
