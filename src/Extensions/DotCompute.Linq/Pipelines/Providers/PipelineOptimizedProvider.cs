@@ -257,33 +257,58 @@ public class PipelineOptimizedQueryable<T> : IQueryable<T>, IAsyncEnumerable<T>
     public async Task<IEnumerable<T>> ExecuteAsync(CancellationToken cancellationToken = default)
             return await pipelineProvider.ExecuteAsync<IEnumerable<T>>(Expression, cancellationToken);
         return await Task.FromResult(Provider.Execute<IEnumerable<T>>(Expression));
+/// <summary>
 /// Exception thrown when pipeline execution fails.
+/// </summary>
 public class PipelineExecutionException : Exception
+{
+    /// <summary>
     /// Initializes a new instance of the PipelineExecutionException class.
+    /// </summary>
     /// <param name="message">Exception message</param>
     public PipelineExecutionException(string message) : base(message) { }
+
+    /// <summary>
+    /// Initializes a new instance of the PipelineExecutionException class.
+    /// </summary>
+    /// <param name="message">Exception message</param>
     /// <param name="innerException">Inner exception</param>
     public PipelineExecutionException(string message, Exception innerException) : base(message, innerException) { }
+}
 // Placeholder implementations for missing interfaces
 internal class DefaultPipelineConfiguration : IPipelineConfiguration
+{
     public string PreferredBackend { get; set; } = "CPU";
     public bool EnableCaching { get; set; }
     public bool EnableProfiling { get; set; }
     public long MaxMemoryUsage { get; set; }
     public int TimeoutSeconds { get; set; }
     public OptimizationLevel OptimizationLevel { get; set; }
+}
 internal class DefaultPipelineExecutionContext : IPipelineExecutionContext
+{
     public bool EnableDetailedMetrics { get; set; }
     public bool TrackMemoryUsage { get; set; }
     public bool CollectTimingData { get; set; }
+}
 // Extension to buffer async enumerable
 public static class AsyncEnumerableExtensions
+{
     public static async IAsyncEnumerable<T[]> Buffer<T>(this IAsyncEnumerable<T> source, int count)
+    {
         var buffer = new List<T>(count);
         await foreach (var item in source)
+        {
             buffer.Add(item);
             if (buffer.Count >= count)
+            {
                 yield return buffer.ToArray();
                 buffer.Clear();
+            }
+        }
         if (buffer.Count > 0)
+        {
             yield return buffer.ToArray();
+        }
+    }
+}

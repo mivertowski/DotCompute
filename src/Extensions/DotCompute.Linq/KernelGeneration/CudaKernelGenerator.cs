@@ -54,6 +54,7 @@ namespace DotCompute.Linq.KernelGeneration
             Type outputType,
             KernelGenerationOptions? options = null,
             CancellationToken cancellationToken = default)
+        {
             ArgumentNullException.ThrowIfNull(expression);
             var kernelOptions = options ?? new KernelGenerationOptions();
             var cacheKey = GenerateCacheKey(expression, inputType, outputType, kernelOptions);
@@ -65,6 +66,7 @@ namespace DotCompute.Linq.KernelGeneration
             }
             _logger.LogInformation("Generating CUDA kernel for LINQ expression: {Expression}", expression);
             try
+            {
                 // Analyze the expression tree
                 var analysisResult = AnalyzeExpression(expression, inputType, outputType);
                 // Select appropriate kernel template
@@ -88,24 +90,36 @@ namespace DotCompute.Linq.KernelGeneration
                 _kernelCache.TryAdd(cacheKey, cacheEntry);
                 _logger.LogInformation("Successfully generated CUDA kernel: {KernelName}", analysisResult.KernelName);
                 return generatedKernel;
+            }
             catch (Exception ex)
+            {
                 _logger.LogError(ex, "Failed to generate CUDA kernel for expression: {Expression}", expression);
                 throw new KernelGenerationException($"Failed to generate CUDA kernel: {ex.Message}", ex);
+            }
+        }
         /// Generates a batch of kernels for multiple expressions in parallel.
         public async Task<GeneratedKernel[]> GenerateBatchAsync<T>(
             IEnumerable<Expression> expressions,
+            Type inputType,
+            Type outputType,
+            KernelGenerationOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
             var expressionArray = expressions.ToArray();
             var tasks = expressionArray.Select(expr =>
                 GenerateKernelAsync<T>(expr, inputType, outputType, options, cancellationToken));
             return await Task.WhenAll(tasks);
+        }
         /// Analyzes a LINQ expression tree to determine kernel requirements.
         private ExpressionAnalysisResult AnalyzeExpression(Expression expression, Type inputType, Type outputType)
+        {
             var visitor = new LinqExpressionAnalyzer();
             visitor.Visit(expression);
             var operationType = DetermineOperationType(expression);
             var kernelName = GenerateKernelName(operationType, inputType, outputType);
             var dataSize = EstimateDataSize(visitor.Parameters, inputType);
             return new ExpressionAnalysisResult
+            {
                 Expression = expression,
                 OperationType = operationType,
                 KernelName = kernelName,
@@ -117,11 +131,13 @@ namespace DotCompute.Linq.KernelGeneration
                 RequiresSharedMemory = visitor.RequiresSharedMemory,
                 ComplexityLevel = visitor.ComplexityLevel
             };
+        }
         /// Generates optimized CUDA source code from a template and analysis result.
         private async Task<string> GenerateSourceCodeAsync(
             KernelTemplate template,
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
+        {
             var sourceBuilder = new StringBuilder();
             // Add CUDA headers and includes
             AddCudaHeaders(sourceBuilder, analysis, options);
@@ -137,21 +153,27 @@ namespace DotCompute.Linq.KernelGeneration
             var kernelSource = await template.GenerateKernelAsync(analysis, templateOptions);
             sourceBuilder.Append(kernelSource);
             return sourceBuilder.ToString();
+        }
         /// Compiles the generated source code to PTX or CUBIN.
         private async Task<ICompiledKernel> CompileKernelAsync(
             string sourceCode,
             string kernelName,
             KernelGenerationOptions options,
             CancellationToken cancellationToken)
+        {
             var kernelDefinition = new KernelDefinition
+            {
                 Name = kernelName,
                 Code = sourceCode,
                 EntryPoint = kernelName,
                 Language = AbstractionsKernelLanguage.Cuda
+            };
             var compilationOptions = CreateCompilationOptions(options);
             return await _compiler.CompileAsync(kernelDefinition, compilationOptions, cancellationToken);
+        }
         /// Adds CUDA headers and includes to the source code.
         private void AddCudaHeaders(StringBuilder sourceBuilder, ExpressionAnalysisResult analysis, KernelGenerationOptions options)
+        {
             sourceBuilder.AppendLine("// Auto-generated CUDA kernel from LINQ expression");
             sourceBuilder.AppendLine($"// Generated on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
             sourceBuilder.AppendLine($"// Kernel: {analysis.KernelName}");
@@ -163,10 +185,14 @@ namespace DotCompute.Linq.KernelGeneration
             if (analysis.RequiresSharedMemory || options.UseSharedMemory)
                 sourceBuilder.AppendLine("// Shared memory optimization enabled");
             if (options.UseTensorCores)
+            {
                 sourceBuilder.AppendLine("// Tensor Core optimization enabled");
                 sourceBuilder.AppendLine("#include <mma.h>");
+            }
+        }
         /// Adds performance optimization defines based on compute capability.
         private void AddOptimizationDefines(StringBuilder sourceBuilder, KernelGenerationOptions options)
+        {
             var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
             sourceBuilder.AppendLine($"// Target compute capability: {major}.{minor}");
             sourceBuilder.AppendLine("#define WARP_SIZE 32");
@@ -186,42 +212,56 @@ namespace DotCompute.Linq.KernelGeneration
                 sourceBuilder.AppendLine("#define WARP_SHUFFLE_ENABLED 1");
             if (options.EnableAtomics)
                 sourceBuilder.AppendLine("#define ATOMIC_OPERATIONS_ENABLED 1");
+        }
         /// Adds type definitions for input and output types.
         private void AddTypeDefinitions(StringBuilder sourceBuilder, Type inputType, Type outputType)
+        {
             sourceBuilder.AppendLine("// Type definitions");
             var inputTypeName = GetCudaTypeName(inputType);
             var outputTypeName = GetCudaTypeName(outputType);
             sourceBuilder.AppendLine($"typedef {inputTypeName} InputType;");
             sourceBuilder.AppendLine($"typedef {outputTypeName} OutputType;");
+        }
         /// Adds device functions for complex operations.
         private void AddDeviceFunctions(StringBuilder sourceBuilder, ExpressionAnalysisResult analysis)
+        {
             sourceBuilder.AppendLine("// Device functions");
             if (analysis.RequiresCustomMath)
                 AddMathDeviceFunctions(sourceBuilder);
             if (analysis.RequiresStringOperations)
                 AddStringDeviceFunctions(sourceBuilder);
+        }
         /// Adds mathematical device functions.
         private void AddMathDeviceFunctions(StringBuilder sourceBuilder)
+        {
             sourceBuilder.AppendLine("__device__ inline float safe_divide(float a, float b) {");
             sourceBuilder.AppendLine("    return b != 0.0f ? a / b : 0.0f;");
             sourceBuilder.AppendLine("}");
             sourceBuilder.AppendLine("__device__ inline double safe_divide(double a, double b) {");
             sourceBuilder.AppendLine("    return b != 0.0 ? a / b : 0.0;");
+            sourceBuilder.AppendLine("}");
+        }
         /// Adds string operation device functions.
         private void AddStringDeviceFunctions(StringBuilder sourceBuilder)
+        {
             sourceBuilder.AppendLine("__device__ inline int string_length(const char* str) {");
             sourceBuilder.AppendLine("    int len = 0;");
             sourceBuilder.AppendLine("    while (str[len] != '\\0') len++;");
             sourceBuilder.AppendLine("    return len;");
+            sourceBuilder.AppendLine("}");
+        }
         /// Creates compilation options based on kernel generation options.
         private CudaCompilationOptions CreateCompilationOptions(KernelGenerationOptions options)
+        {
             return new CudaCompilationOptions
                 OptimizationLevel = options.OptimizationLevel,
                 EnableDebugInfo = options.EnableDebugInfo,
                 EnableDynamicParallelism = options.EnableDynamicParallelism,
                 AdditionalFlags = new List<string>(BuildAdditionalFlags(options))
+            };
         /// Builds additional compilation flags based on options.
         private string[] BuildAdditionalFlags(KernelGenerationOptions options)
+        {
             var flags = new List<string>();
             if (options.EnableFastMath)
                 flags.Add("--use_fast_math");
@@ -230,8 +270,10 @@ namespace DotCompute.Linq.KernelGeneration
             if (options.EnableLineInfo)
                 flags.Add("--generate-line-info");
             return flags.ToArray();
+        }
         /// Determines the operation type from a LINQ expression.
         private KernelOperationType DetermineOperationType(Expression expression)
+        {
             return expression switch
                 MethodCallExpression methodCall => methodCall.Method.Name switch
                     "Select" => KernelOperationType.Map,
@@ -248,20 +290,27 @@ namespace DotCompute.Linq.KernelGeneration
                     _ => KernelOperationType.Custom
                 },
                 _ => KernelOperationType.Custom
+            };
+        }
         /// Generates a unique kernel name based on operation and types.
         private string GenerateKernelName(KernelOperationType operationType, Type inputType, Type outputType)
+        {
             var inputTypeName = GetSimpleTypeName(inputType);
             var outputTypeName = GetSimpleTypeName(outputType);
             var timestamp = DateTime.UtcNow.Ticks;
             return $"linq_{operationType.ToString().ToLowerInvariant()}_{inputTypeName}_to_{outputTypeName}_{timestamp}";
+        }
         /// Estimates data size for memory optimization.
         private long EstimateDataSize(List<ParameterExpression> parameters, Type inputType)
+        {
             // Basic estimation - can be enhanced with actual data analysis
             var typeSize = GetTypeSize(inputType);
             var estimatedElementCount = 1000; // Default estimation
             return typeSize * estimatedElementCount;
+        }
         /// Gets the CUDA type name for a .NET type.
         private string GetCudaTypeName(Type type)
+        {
             return type switch
                 var t when t == typeof(int) => "int",
                 var t when t == typeof(uint) => "unsigned int",
@@ -275,11 +324,21 @@ namespace DotCompute.Linq.KernelGeneration
                 var t when t == typeof(short) => "short",
                 var t when t == typeof(ushort) => "unsigned short",
                 _ => "void*" // Generic pointer for complex types
+            };
+        }
         /// Gets a simplified type name for kernel naming.
         private string GetSimpleTypeName(Type type)
+        {
+            return type switch
+            {
                 _ => type.Name.ToLowerInvariant()
+            };
+        }
         /// Gets the size in bytes of a type.
         private int GetTypeSize(Type type)
+        {
+            return type switch
+            {
                 var t when t == typeof(int) => 4,
                 var t when t == typeof(uint) => 4,
                 var t when t == typeof(long) => 8,
@@ -292,16 +351,22 @@ namespace DotCompute.Linq.KernelGeneration
                 var t when t == typeof(short) => 2,
                 var t when t == typeof(ushort) => 2,
                 _ => 8 // Default for complex types
+            };
+        }
         /// Gets maximum threads per block for a compute capability.
         private int GetMaxThreadsPerBlock(int major, int minor)
+        {
             return (major, minor) switch
                 ( >= 8, >= 9) => 1024, // Ada Lovelace
                 ( >= 8, _) => 1024,    // Ampere
                 ( >= 7, _) => 1024,    // Volta/Turing
                 ( >= 5, _) => 1024,    // Maxwell/Pascal
                 _ => 512              // Older architectures
+            };
+        }
         /// Converts KernelGenerationOptions to Templates.KernelGenerationOptions.
         private Templates.KernelGenerationOptions ConvertToTemplateOptions(KernelGenerationOptions options)
+        {
             return new Templates.KernelGenerationOptions
                 GenerateDebugInfo = options.EnableDebugInfo, // Note: different property name
                 EnableAggressiveOptimizations = options.OptimizationLevel >= OptimizationLevel.Aggressive,
@@ -313,8 +378,11 @@ namespace DotCompute.Linq.KernelGeneration
                 EnableWarpShuffle = options.EnableWarpShuffle,
                 EnableAtomics = options.EnableAtomics,
                 UseSharedMemory = options.UseSharedMemory
+            };
+        }
         /// Generates a cache key for kernel caching.
         private string GenerateCacheKey(Expression expression, Type inputType, Type outputType, KernelGenerationOptions options)
+        {
             var keyBuilder = new StringBuilder();
             keyBuilder.Append(expression.ToString());
             keyBuilder.Append('_');
@@ -322,23 +390,32 @@ namespace DotCompute.Linq.KernelGeneration
             keyBuilder.Append(outputType.FullName);
             keyBuilder.Append(options.GetHashCode());
             return Convert.ToBase64String(Encoding.UTF8.GetBytes(keyBuilder.ToString()));
+        }
         /// Clears the kernel cache.
         public void ClearCache()
+        {
             foreach (var entry in _kernelCache.Values)
                 entry.Kernel.Dispose();
             _kernelCache.Clear();
+        }
         /// Gets cache statistics.
         public KernelCacheStatistics GetCacheStatistics()
+        {
             var validEntries = _kernelCache.Values.Where(e => !e.IsExpired).ToArray();
             return new KernelCacheStatistics
                 TotalEntries = _kernelCache.Count,
                 ValidEntries = validEntries.Length,
                 ExpiredEntries = _kernelCache.Count - validEntries.Length,
                 HitRate = CalculateHitRate()
+            };
+        }
         private double CalculateHitRate()
+        {
             // Simple implementation - can be enhanced with actual hit/miss tracking
             return _kernelCache.Count > 0 ? 0.85 : 0.0; // 85% estimated hit rate
+        }
         public void Dispose()
+        {
             if (_disposed)
                 return;
             ClearCache();
@@ -346,9 +423,11 @@ namespace DotCompute.Linq.KernelGeneration
             _memoryManager.Dispose();
             _compiler.Dispose();
             _disposed = true;
+        }
     }
     /// Options for kernel generation.
     public class KernelGenerationOptions
+    {
         public OptimizationLevel OptimizationLevel { get; set; } = OptimizationLevel.Default;
         public bool EnableDebugInfo { get; set; } = false;
         public bool EnableDynamicParallelism { get; set; } = false;
@@ -362,8 +441,10 @@ namespace DotCompute.Linq.KernelGeneration
         public int? SharedMemorySize { get; set; }
         public int? BlockSize { get; set; }
         public bool PreferPtx { get; set; } = true;
+    }
     /// Result of expression analysis.
     public class ExpressionAnalysisResult
+    {
         public required Expression Expression { get; set; }
         public required KernelOperationType OperationType { get; set; }
         public required string KernelName { get; set; }
@@ -378,36 +459,54 @@ namespace DotCompute.Linq.KernelGeneration
         public bool RequiresCustomMath { get; set; }
         public bool RequiresStringOperations { get; set; }
         public int ComplexityLevel { get; set; }
+    }
     /// Generated kernel wrapper.
     public class GeneratedKernel : IDisposable
+    {
         public ICompiledKernel CompiledKernel { get; }
         public ExpressionAnalysisResult Analysis { get; }
         public string SourceCode { get; }
         public GpuMemoryManager MemoryManager { get; }
         public GeneratedKernel(
             ICompiledKernel compiledKernel,
+            ExpressionAnalysisResult analysis,
+            string sourceCode,
             GpuMemoryManager memoryManager)
+        {
             CompiledKernel = compiledKernel;
             Analysis = analysis;
             SourceCode = sourceCode;
             MemoryManager = memoryManager;
+        }
+
+        public void Dispose()
+        {
             CompiledKernel.Dispose();
+        }
+    }
     /// Kernel cache entry.
     internal class KernelCacheEntry
+    {
         public GeneratedKernel Kernel { get; }
         public DateTime ExpiryTime { get; }
         public bool IsExpired => DateTime.UtcNow > ExpiryTime;
         public KernelCacheEntry(GeneratedKernel kernel, DateTime expiryTime)
+        {
             Kernel = kernel;
             ExpiryTime = expiryTime;
+        }
+    }
     /// Kernel cache statistics.
     public class KernelCacheStatistics
+    {
         public int TotalEntries { get; set; }
         public int ValidEntries { get; set; }
         public int ExpiredEntries { get; set; }
         public double HitRate { get; set; }
+    }
     /// Kernel operation types.
     public enum KernelOperationType
+    {
         Map,
         Filter,
         Reduce,
@@ -416,21 +515,28 @@ namespace DotCompute.Linq.KernelGeneration
         GroupBy,
         Sort,
         Custom
+    }
     /// Exception thrown during kernel generation.
     public class KernelGenerationException : Exception
+    {
         public KernelGenerationException(string message) : base(message) { }
         public KernelGenerationException(string message, Exception innerException) : base(message, innerException) { }
+    }
     /// LINQ expression analyzer visitor.
     internal class LinqExpressionAnalyzer : ExpressionVisitor
+    {
         public List<ParameterExpression> Parameters { get; } = [];
         public bool HasReduction { get; private set; }
         public bool RequiresSharedMemory { get; private set; }
         public int ComplexityLevel { get; private set; }
         protected override Expression VisitParameter(ParameterExpression node)
+        {
             if (!Parameters.Contains(node))
                 Parameters.Add(node);
             return base.VisitParameter(node);
+        }
         protected override Expression VisitMethodCall(MethodCallExpression node)
+        {
             // Analyze method calls for operation characteristics
             switch (node.Method.Name)
                 case "Sum":
@@ -445,7 +551,12 @@ namespace DotCompute.Linq.KernelGeneration
                 case "GroupBy":
                 case "Join":
                     ComplexityLevel += 3;
+                    break;
                 default:
                     ComplexityLevel += 1;
+                    break;
+            }
             return base.VisitMethodCall(node);
+        }
+    }
 }

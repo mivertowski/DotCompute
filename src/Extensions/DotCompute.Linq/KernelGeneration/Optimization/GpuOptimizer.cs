@@ -32,6 +32,7 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
             string sourceCode,
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
+        {
             ArgumentNullException.ThrowIfNull(sourceCode);
             ArgumentNullException.ThrowIfNull(analysis);
             var cacheKey = GenerateCacheKey(sourceCode, analysis, options);
@@ -42,6 +43,7 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
             }
             _logger.LogInformation("Optimizing CUDA kernel source for {KernelName}", analysis.KernelName);
             try
+            {
                 var optimizedSource = sourceCode;
                 // Get compute capability for architecture-specific optimizations
                 var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
@@ -62,12 +64,19 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
                 _logger.LogInformation("Successfully optimized kernel {KernelName} for compute capability {Major}.{Minor}",
                     analysis.KernelName, major, minor);
                 return optimizedSource;
+            }
             catch (Exception ex)
+            {
                 _logger.LogError(ex, "Failed to optimize kernel source for {KernelName}", analysis.KernelName);
                 return sourceCode; // Return original source if optimization fails
+            }
+        }
         /// Applies memory coalescing and access pattern optimizations.
         private Task<string> ApplyMemoryOptimizationsAsync(
+            string sourceCode,
+            ExpressionAnalysisResult analysis,
             OptimizationProfile profile)
+        {
             if (!profile.EnableMemoryOptimizations)
                 return Task.FromResult(sourceCode);
             var optimizedCode = sourceCode;
@@ -81,62 +90,136 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
             // Add cache optimization directives
             optimizedCode = AddCacheOptimizations(optimizedCode, profile);
             return Task.FromResult(optimizedCode);
+        }
         /// Applies warp-level optimizations including shuffle operations and ballot functions.
         private Task<string> ApplyWarpOptimizationsAsync(
+            string sourceCode,
+            ExpressionAnalysisResult analysis,
+            OptimizationProfile profile)
+        {
             if (!profile.EnableWarpOptimizations)
+                return Task.FromResult(sourceCode);
+
+            var optimizedCode = sourceCode;
             // Add warp shuffle optimizations for reductions
             if (analysis.RequiresReduction)
+            {
                 optimizedCode = AddWarpShuffleOptimizations(optimizedCode);
+            }
             // Add ballot and vote functions for divergent branches
             optimizedCode = AddBallotOptimizations(optimizedCode, analysis);
             // Add warp-level primitives
             optimizedCode = AddWarpPrimitives(optimizedCode, profile);
+            return Task.FromResult(optimizedCode);
+        }
         /// Applies shared memory optimizations including bank conflict avoidance.
         private Task<string> ApplySharedMemoryOptimizationsAsync(
+            string sourceCode,
+            ExpressionAnalysisResult analysis,
+            OptimizationProfile profile)
+        {
             if (!profile.EnableSharedMemoryOptimizations || !analysis.RequiresSharedMemory)
+                return Task.FromResult(sourceCode);
+
+            var optimizedCode = sourceCode;
             // Optimize shared memory bank conflicts
             optimizedCode = OptimizeSharedMemoryBankConflicts(optimizedCode);
             // Add dynamic shared memory allocation
             optimizedCode = AddDynamicSharedMemory(optimizedCode, analysis, profile);
             // Add shared memory padding for alignment
             optimizedCode = AddSharedMemoryPadding(optimizedCode);
+            return Task.FromResult(optimizedCode);
+        }
         /// Applies atomic operation optimizations.
         private Task<string> ApplyAtomicOptimizationsAsync(
+            string sourceCode,
+            ExpressionAnalysisResult analysis,
+            OptimizationProfile profile)
+        {
             if (!profile.EnableAtomicOptimizations)
+                return Task.FromResult(sourceCode);
+
+            var optimizedCode = sourceCode;
             // Replace simple atomics with faster alternatives
             optimizedCode = OptimizeAtomicOperations(optimizedCode, profile);
             // Add atomic reduction optimizations
+            if (analysis.RequiresReduction)
+            {
                 optimizedCode = AddAtomicReductionOptimizations(optimizedCode);
+            }
+            return Task.FromResult(optimizedCode);
+        }
         /// Applies texture memory optimizations for spatial locality.
         private Task<string> ApplyTextureMemoryOptimizationsAsync(
+            string sourceCode,
+            ExpressionAnalysisResult analysis,
+            OptimizationProfile profile)
+        {
             if (!profile.EnableTextureMemory || analysis.EstimatedDataSize < 100_000)
+                return Task.FromResult(sourceCode);
+
+            var optimizedCode = sourceCode;
             // Add texture memory declarations
             optimizedCode = AddTextureMemoryDeclarations(optimizedCode, analysis);
             // Replace global memory accesses with texture fetches
             optimizedCode = ReplaceWithTextureFetches(optimizedCode);
+            return Task.FromResult(optimizedCode);
+        }
         /// Applies constant memory optimizations for read-only data.
         private Task<string> ApplyConstantMemoryOptimizationsAsync(
+            string sourceCode,
+            ExpressionAnalysisResult analysis,
+            OptimizationProfile profile)
+        {
             if (!profile.EnableConstantMemory)
+                return Task.FromResult(sourceCode);
+
+            var optimizedCode = sourceCode;
             // Move constants to constant memory
             optimizedCode = MoveConstantsToConstantMemory(optimizedCode);
             // Add constant memory caching hints
             optimizedCode = AddConstantMemoryCaching(optimizedCode);
+            return Task.FromResult(optimizedCode);
+        }
         /// Applies Tensor Core optimizations for supported operations.
         private Task<string> ApplyTensorCoreOptimizationsAsync(
+            string sourceCode,
+            ExpressionAnalysisResult analysis,
+            OptimizationProfile profile)
+        {
             if (!profile.SupportsTensorCores || !IsTensorCoreCompatible(analysis))
+                return Task.FromResult(sourceCode);
+
+            var optimizedCode = sourceCode;
             // Add Tensor Core includes and types
             optimizedCode = AddTensorCoreIncludes(optimizedCode);
             // Replace matrix operations with Tensor Core calls
             optimizedCode = ReplaceMathWithTensorCores(optimizedCode, analysis);
+            return Task.FromResult(optimizedCode);
+        }
         /// Applies cooperative groups optimizations for advanced synchronization.
         private Task<string> ApplyCooperativeGroupsOptimizationsAsync(
+            string sourceCode,
+            ExpressionAnalysisResult analysis,
+            OptimizationProfile profile)
+        {
             if (!profile.SupportsCooperativeGroups || !analysis.RequiresCooperativeGroups)
+                return Task.FromResult(sourceCode);
+
+            var optimizedCode = sourceCode;
             // Add cooperative groups includes
             optimizedCode = AddCooperativeGroupsIncludes(optimizedCode);
             // Replace synchronization with cooperative groups
             optimizedCode = ReplaceWithCooperativeGroups(optimizedCode);
+            return Task.FromResult(optimizedCode);
+        }
         /// Applies occupancy optimizations for better GPU utilization.
         private async Task<string> ApplyOccupancyOptimizationsAsync(
+            string sourceCode,
+            ExpressionAnalysisResult analysis,
+            OptimizationProfile profile)
+        {
+            var optimizedCode = sourceCode;
             // Add occupancy launch bounds
             optimizedCode = AddOccupancyLaunchBounds(optimizedCode, analysis, profile);
             // Optimize register usage
@@ -144,26 +227,40 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
             return await Task.FromResult(optimizedCode);
         /// Applies instruction-level optimizations including loop unrolling and predication.
         private async Task<string> ApplyInstructionLevelOptimizationsAsync(
+            string sourceCode,
+            ExpressionAnalysisResult analysis,
+            OptimizationProfile profile)
+        {
+            var optimizedCode = sourceCode;
             // Add loop unrolling pragmas
             optimizedCode = AddLoopUnrolling(optimizedCode, profile);
             // Add predication for divergent branches
             optimizedCode = AddPredicationOptimizations(optimizedCode);
             // Add instruction-level parallelism hints
             optimizedCode = AddInstructionLevelParallelism(optimizedCode);
+            return await Task.FromResult(optimizedCode);
+        }
         #region Optimization Implementation Methods
         private string AddMemoryCoalescingHints(string sourceCode)
+        {
             // Add vectorized memory access hints
             var pattern = @"(\s+)(\w+\[\s*i\s*\]\s*=\s*[^;]+;)";
             var replacement = "$1// Coalesced memory access\n$1$2";
             return Regex.Replace(sourceCode, pattern, replacement, RegexOptions.Multiline);
+        }
         private string OptimizeMemoryAccessPatterns(string sourceCode, ExpressionAnalysisResult analysis)
+        {
             // Replace strided access with coalesced access where possible
             if (analysis.OperationType == KernelOperationType.Map)
+            {
                 var pattern = @"input\[i \* stride\]";
                 var replacement = "input[i]";
                 sourceCode = sourceCode.Replace(pattern, replacement);
+            }
             return sourceCode;
+        }
         private string AddMemoryPrefetching(string sourceCode)
+        {
             // Add prefetching directives for large data sets
             var prefetchCode = @"
     // Prefetch next cache line for better memory throughput
@@ -172,12 +269,20 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
     }";
             var pattern = @"(\s+for\s*\([^}]+\{\s*)";
             var replacement = $"$1{prefetchCode}\n";
+            return Regex.Replace(sourceCode, pattern, replacement, RegexOptions.Multiline);
+        }
         private string AddCacheOptimizations(string sourceCode, OptimizationProfile profile)
+        {
             if (profile.CacheLevel >= CacheOptimizationLevel.L2)
+            {
                 // Add L2 cache hints
                 sourceCode = sourceCode.Replace("input[", "__ldg(&input[");
                 sourceCode = sourceCode.Replace("right_input[", "__ldg(&right_input[");
+            }
+            return sourceCode;
+        }
         private string AddWarpShuffleOptimizations(string sourceCode)
+        {
             // Replace simple reductions with warp shuffle
             var shuffleReduction = @"
     // Optimized warp-level reduction using shuffle
@@ -186,7 +291,9 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
         accumulator = reduce_operation(accumulator, __shfl_down_sync(0xFFFFFFFF, accumulator, offset));
             var pattern = @"(\/\/ Warp-level reduction using shuffle[\s\S]*?}[\s\S]*?})";
             return Regex.Replace(sourceCode, pattern, shuffleReduction, RegexOptions.Multiline);
+        }
         private string AddBallotOptimizations(string sourceCode, ExpressionAnalysisResult analysis)
+        {
             if (analysis.OperationType == KernelOperationType.Filter)
                 // Add ballot-based predicate evaluation
                 var ballotCode = @"
@@ -197,6 +304,9 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
                 var pattern = @"(if \(filter_predicate\([^}]+\))";
                 var replacement = $"{ballotCode}\n        $1";
                 sourceCode = Regex.Replace(sourceCode, pattern, replacement, RegexOptions.Multiline);
+            }
+            return sourceCode;
+        }
         private string AddWarpPrimitives(string sourceCode, OptimizationProfile profile)
             // Add warp-level utility functions
             var warpUtilities = @"

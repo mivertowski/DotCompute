@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Optimization;
 using DotCompute.Core.Optimization.Configuration;
 using DotCompute.Core.Optimization.Enums;

@@ -63,6 +63,7 @@ public sealed class ExpressionCompilationPipeline : IDisposable
         IEnumerable<BackendType> targetBackends,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
+    {
         using var activity = CompilationActivity.Start(nameof(CompileAsync));
         try
         {
@@ -76,6 +77,7 @@ public sealed class ExpressionCompilationPipeline : IDisposable
             }
             await _compilationSemaphore.WaitAsync(cancellationToken);
             try
+            {
                 // Double-check cache after acquiring semaphore
                 if (_kernelCache.TryGetValue(cacheKey, out cached) && !cached.IsExpired)
                 {
@@ -88,6 +90,7 @@ public sealed class ExpressionCompilationPipeline : IDisposable
                 var analysisResult = await AnalyzeExpressionAsync(expression, options, cancellationToken);
                 // Stage 2: Code Generation
                 var pipelineAnalysisResult = new PipelineAnalysisResult
+                {
                     OperatorInfo = [],
                     TypeUsage = analysisResult.TypeUsage.Select(kvp => new DotCompute.Linq.Compilation.Analysis.TypeUsageInfo
                     {
@@ -99,19 +102,24 @@ public sealed class ExpressionCompilationPipeline : IDisposable
                         RequiresSpecialization = kvp.Value.RequiresSpecialization
                     }).ToList(),
                     Dependencies = analysisResult.Dependencies.Select(d => new DotCompute.Linq.Compilation.Analysis.DependencyInfo
+                    {
                         DependentOperation = d.DependentOperation ?? string.Empty,
                         Dependencies = d.Dependencies,
                         Type = d.Type,
                         AllowsParallelization = d.AllowsParallelization
+                    }).ToList(),
                     ComplexityMetrics = new PipelineComplexityMetrics
+                    {
                         OverallComplexity = (int)analysisResult.ComplexityScore,
                         MemoryComplexity = (int)(analysisResult.MemoryRequirement / 1024),
                         ComputeComplexity = (int)analysisResult.ParallelizationPotential
                     },
                     ParallelizationInfo = new DotCompute.Linq.Compilation.Analysis.ParallelizationInfo
+                    {
                         CanParallelize = analysisResult.IsGpuCompatible,
                         MaxParallelism = Environment.ProcessorCount,
                         ParallelizationMethod = analysisResult.IsGpuCompatible ? "GPU" : "CPU"
+                    },
                     MemoryAccessPattern = new DotCompute.Linq.Compilation.Analysis.GlobalMemoryAccessPattern(),
                     AnalysisTimestamp = DateTimeOffset.UtcNow
                 };
@@ -129,25 +137,38 @@ public sealed class ExpressionCompilationPipeline : IDisposable
                 _metrics.RecordCompilation(compilationTime);
                 _logger.LogInformation("Compilation completed in {Duration}ms", compilationTime.TotalMilliseconds);
                 return package;
+            }
             finally
+            {
                 _compilationSemaphore.Release();
+            }
         }
         catch (Exception ex)
+        {
             _logger.LogError(ex, "Compilation failed for expression: {ExpressionType}", expression.Type);
             _metrics.RecordError();
             throw new CompilationException("Failed to compile expression tree", ex);
+        }
     /// Compiles a batch of expressions for improved efficiency.
     public async Task<IReadOnlyDictionary<string, CompiledKernelPackage>> CompileBatchAsync(
         IEnumerable<(string Key, Expression Expression)> expressions,
+        IEnumerable<BackendType> targetBackends,
+        CompilationOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
         var tasks = expressions.Select(async expr =>
+        {
             var package = await CompileAsync(expr.Expression, targetBackends, options, cancellationToken);
             return new KeyValuePair<string, CompiledKernelPackage>(expr.Key, package);
         });
         var results = await Task.WhenAll(tasks);
         return results.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    }
     private async Task<Compilation.Analysis.ExpressionAnalysisResult> AnalyzeExpressionAsync(
+        Expression expression,
         CompilationOptions? options,
         CancellationToken cancellationToken)
+    {
         using var activity = CompilationActivity.Start(nameof(AnalyzeExpressionAsync));
         _logger.LogDebug("Analyzing expression tree structure");
         var result = await _analyzer.AnalyzeAsync(expression, options, cancellationToken);
@@ -155,29 +176,49 @@ public sealed class ExpressionCompilationPipeline : IDisposable
             result.OperatorChain.Count, result.ComplexityMetrics.OverallComplexity);
         // Return the compilation analysis result directly
         return result;
+    }
+
     private async Task<IReadOnlyDictionary<BackendType, DotCompute.Linq.Operators.Generation.GeneratedKernel>> GenerateKernelCodeAsync(
         PipelineAnalysisResult analysisResult,
+        IEnumerable<BackendType> targetBackends,
+        CompilationOptions? options,
+        CancellationToken cancellationToken)
+    {
         using var activity = CompilationActivity.Start(nameof(GenerateKernelCodeAsync));
         _logger.LogDebug("Generating kernel code for backends: {Backends}",
             string.Join(", ", targetBackends));
         // Convert pipeline analysis result to compilation analysis result
         var compilationAnalysisResult = ConvertToCompilationAnalysisResult(analysisResult);
         var tasks = targetBackends.Select(async backend =>
+        {
             var kernel = await _codeGenerator.GenerateAsync(
                 compilationAnalysisResult, backend, options, cancellationToken);
             return new KeyValuePair<BackendType, DotCompute.Linq.Operators.Generation.GeneratedKernel>(backend, kernel);
+        });
+        var results = await Task.WhenAll(tasks);
+        return results.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    }
     private async Task<IReadOnlyDictionary<BackendType, OptimizedKernel>> OptimizeKernelsAsync(
         IReadOnlyDictionary<BackendType, DotCompute.Linq.Operators.Generation.GeneratedKernel> generatedKernels,
         ExpressionAnalysisResult analysisResult,
+        CompilationOptions? options,
+        CancellationToken cancellationToken)
+    {
         using var activity = CompilationActivity.Start(nameof(OptimizeKernelsAsync));
         _logger.LogDebug("Optimizing kernels for {Count} backends", generatedKernels.Count);
         var tasks = generatedKernels.Select(async kvp =>
+        {
             var optimized = await _optimizer.OptimizeAsync(
                 kvp.Value, analysisResult, options, cancellationToken);
             return new KeyValuePair<BackendType, OptimizedKernel>(kvp.Key, optimized);
+        });
+        var results = await Task.WhenAll(tasks);
+        return results.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    }
     private static CompiledKernelPackage CreateKernelPackage(
         IReadOnlyDictionary<BackendType, OptimizedKernel> optimizedKernels,
         ExpressionAnalysisResult analysisResult)
+    {
         var kernelDefinitions = optimizedKernels.ToDictionary(
             kvp => kvp.Key,
             kvp => new DotCompute.Abstractions.Kernels.KernelDefinition(
@@ -188,37 +229,57 @@ public sealed class ExpressionCompilationPipeline : IDisposable
         // This is a simplified approach - in production, you'd want to handle multiple kernels
         var firstKernel = optimizedKernels.First();
         return new CompiledKernelPackage
+        {
             CompiledKernel = CreateKernelAdapter(firstKernel.Value.CompiledKernel),
             Backend = DotCompute.Core.Compute.Enums.ComputeBackendType.CPU, // Default to CPU
             Definition = new DotCompute.Linq.Operators.Types.KernelDefinition
+            {
                 Name = kernelDefinitions.First().Value.Name,
                 Source = kernelDefinitions.First().Value.Source ?? string.Empty
             },
             OptimizationHints = ConvertOptimizationHints(analysisResult.OptimizationHints),
             EstimatedCost = analysisResult.ComplexityScore
         };
+    }
+
     private static string GenerateCacheKey(
+        Expression expression,
+        IEnumerable<BackendType> targetBackends,
         CompilationOptions? options)
+    {
         var expressionHash = ExpressionHasher.ComputeHash(expression);
         var backendsStr = string.Join(",", targetBackends.OrderBy(b => b.ToString()));
         var optionsHash = options?.GetHashCode() ?? 0;
         return $"{expressionHash}_{backendsStr}_{optionsHash:X8}";
+    }
+    /// <summary>
     /// Clears the compilation cache.
+    /// </summary>
     public void ClearCache()
+    {
         _kernelCache.Clear();
         _logger.LogInformation("Kernel compilation cache cleared");
+    }
+    /// <summary>
     /// Gets compilation metrics and statistics.
+    /// </summary>
     public CompilationStatistics GetStatistics()
+    {
         return new CompilationStatistics(
             _metrics.CompilationCount,
             _metrics.CacheHitCount,
             _metrics.ErrorCount,
             _metrics.AverageCompilationTime,
             _kernelCache.Count);
+    }
+    /// <summary>
     /// Converts from Compilation.Analysis.ExpressionAnalysisResult to Pipelines.Analysis.ExpressionAnalysisResult.
+    /// </summary>
     private static Pipelines.Analysis.ExpressionAnalysisResult ConvertAnalysisResult(
         Compilation.Analysis.ExpressionAnalysisResult source)
+    {
         return new Pipelines.Analysis.ExpressionAnalysisResult
+        {
             OperationSignature = source.OperationSignature,
             IsCompilable = source.IsCompilable,
             IsGpuCompatible = source.IsGpuCompatible,
@@ -229,18 +290,30 @@ public sealed class ExpressionCompilationPipeline : IDisposable
             Recommendations = source.Recommendations.ToList(),
             Bottlenecks = source.Bottlenecks.ToList(),
             OptimizationHints = source.OptimizationHints?.Select(h => h.Description).ToList() ?? []
+        };
+    }
+    /// <summary>
     /// Converts a list of optimization hint strings to OptimizationHint objects.
+    /// </summary>
     private static ImmutableArray<OptimizationHint> ConvertOptimizationHints(List<string> hintStrings)
+    {
         if (hintStrings == null || hintStrings.Count == 0)
             return ImmutableArray<OptimizationHint>.Empty;
         var hints = hintStrings.Select(hint => new OptimizationHint
+        {
             Type = ParseOptimizationHintType(hint),
             Description = hint,
             Priority = OptimizationPriority.Medium
+        });
         return hints.ToImmutableArray();
+    }
+    /// <summary>
     /// Parses a hint string to determine the optimization hint type.
+    /// </summary>
     private static OptimizationHintType ParseOptimizationHintType(string hint)
+    {
         return hint.ToLowerInvariant() switch
+        {
             var s when s.Contains("vector") => OptimizationHintType.Vectorization,
             var s when s.Contains("memory") || s.Contains("coalesce") => OptimizationHintType.MemoryCoalescing,
             var s when s.Contains("loop") || s.Contains("unroll") => OptimizationHintType.LoopUnrolling,
@@ -250,16 +323,25 @@ public sealed class ExpressionCompilationPipeline : IDisposable
             var s when s.Contains("gpu") => OptimizationHintType.GpuExecution,
             var s when s.Contains("shared") => OptimizationHintType.SharedMemoryOptimization,
             _ => OptimizationHintType.Custom
+        };
+    }
+    /// <summary>
     /// Converts an expression analysis result to a pipeline analysis result.
+    /// </summary>
     private Analysis.PipelineAnalysisResult ConvertToAnalysisResult(Compilation.Analysis.ExpressionAnalysisResult analysisResult)
+    {
         return new Analysis.PipelineAnalysisResult
+        {
             ComplexityMetrics = new Analysis.PipelineComplexityMetrics
+            {
                 TotalComplexity = analysisResult.ComplexityMetrics.OverallComplexity,
                 OperationCount = analysisResult.OperatorChain.Count,
                 EstimatedMemoryUsage = analysisResult.EstimatedMemoryUsage,
                 ParallelizationPotential = analysisResult.IsParallelizable ? 0.8 : 0.2,
                 GpuRecommended = analysisResult.IsGpuSuitable
+            },
             TypeUsage = analysisResult.TypeUsage.Select(kvp => new Analysis.TypeUsageInfo
+            {
                 Type = kvp.Key,
                 UsageCount = kvp.Value.UsageCount,
                 IsGpuCompatible = kvp.Value.IsGpuCompatible,

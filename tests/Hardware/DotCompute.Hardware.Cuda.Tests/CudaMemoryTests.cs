@@ -8,6 +8,9 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Extensions;
+using DotCompute.Tests.Common;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -16,7 +19,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Tests device memory allocation, host-device transfers, unified memory, and memory bandwidth.
     /// </summary>
     [Trait("Category", "RequiresCUDA")]
-    public class CudaMemoryTests : TestBase
+    public class CudaMemoryTests : ConsolidatedTestBase
     {
         public CudaMemoryTests(ITestOutputHelper output) : base(output) { }
 

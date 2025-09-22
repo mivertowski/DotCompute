@@ -43,6 +43,7 @@ public class QueryCompiler : IQueryCompiler
     }
     /// <inheritdoc/>
     public IComputePlan Compile(CompilationContext context)
+    {
         ArgumentNullException.ThrowIfNull(context);
         _logger.LogDebugMessage("Compiling expression of type {context.Expression.NodeType}");
         // Validate the expression
@@ -54,6 +55,7 @@ public class QueryCompiler : IQueryCompiler
         // Optimize the expression tree
         // Convert Abstractions.CompilationOptions to Linq.CompilationOptions
         var linqOptions = new Compilation.CompilationOptions
+        {
             EnableOptimizations = context.Options.OptimizationLevel != OptimizationLevel.None,
             UseSharedMemory = true, // Default value
             EnableCaching = true // Default value
@@ -73,21 +75,35 @@ public class QueryCompiler : IQueryCompiler
             plan.Stages.Count,
             plan.EstimatedMemoryUsage / (1024.0 * 1024.0));
         return plan;
+    }
+
     public DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(Expression expression)
+    {
         ArgumentNullException.ThrowIfNull(expression);
         var errors = new List<ValidationIssue>();
         var validator = new ExpressionValidator();
         try
+        {
             validator.Visit(expression, errors);
+        }
         catch (Exception ex)
+        {
             _logger.LogErrorMessage(ex, "Expression validation failed with exception");
             errors.Add(new ValidationIssue("VALIDATION_ERROR", ex.Message, ValidationSeverity.Error));
+        }
         if (errors.Count > 0)
+        {
             var message = $"Expression validation failed with {errors.Count} errors";
             return DotCompute.Abstractions.Validation.UnifiedValidationResult.Failure(message);
+        }
         return DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
+    }
+
+    /// <summary>
     /// Visitor that builds compute stages from expression trees.
+    /// </summary>
     private class ComputePlanVisitor : ExpressionVisitor
+    {
         private readonly IKernelFactory _kernelFactory;
         private readonly IAccelerator _accelerator;
         private readonly ILogger _logger;
@@ -97,17 +113,22 @@ public class QueryCompiler : IQueryCompiler
         private long _estimatedMemoryUsage;
         private int _stageCounter;
         public ComputePlanVisitor(IKernelFactory kernelFactory, IAccelerator accelerator, ILogger logger)
+        {
             _kernelFactory = kernelFactory;
             _accelerator = accelerator;
             _logger = logger;
+        }
         public IReadOnlyList<IComputeStage> Stages => _stages;
         public IReadOnlyDictionary<string, Type> InputParameters => _inputParameters;
         public Type OutputType => _outputType;
         public long EstimatedMemoryUsage => _estimatedMemoryUsage;
         public new List<IComputeStage> Visit(Expression expression)
+        {
             _ = base.Visit(expression);
             return _stages;
+        }
         protected override Expression VisitMethodCall(MethodCallExpression node)
+        {
             _logger.LogDebugMessage("Visiting method call: {node.Method.Name}");
             // Handle LINQ operators
             if (node.Method.DeclaringType == typeof(Queryable) || node.Method.DeclaringType == typeof(Enumerable))
@@ -261,14 +282,26 @@ public class QueryCompiler : IQueryCompiler
                 _errors.Add(new ValidationIssue("UNSUPPORTED_TYPE", $"Type {node?.Type} is not GPU-compatible", ValidationSeverity.Error));
             return node != null ? base.VisitNew(node) : node!;
         private static bool IsGpuCompatibleType(Type type)
+        {
             // Primitive types are GPU-compatible
             if (type.IsPrimitive || type == typeof(decimal))
+            {
                 return true;
+            }
             // Arrays of primitives are compatible
             var elementType = type.GetElementType();
             if (type.IsArray && elementType != null && IsGpuCompatibleType(elementType))
+            {
+                return true;
+            }
+
             // Simple structs without references are compatible
             if (type.IsValueType && !type.GetFields().Any(f => !IsGpuCompatibleType(f.FieldType)))
+            {
+                return true;
+            }
+
             return false;
-        // Helper method moved to inner class
+        }
+    }
 }

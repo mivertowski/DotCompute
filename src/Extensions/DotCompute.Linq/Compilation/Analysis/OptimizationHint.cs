@@ -33,37 +33,58 @@ public record OptimizationHint
         Impact = impact;
     }
 }
+/// <summary>
 /// Defines the types of optimization hints that can be generated.
+/// </summary>
 public enum OptimizationHintType
+{
     /// <summary>Vectorization/SIMD optimization opportunity.</summary>
     Vectorization,
+
     /// <summary>Memory access coalescing optimization.</summary>
     MemoryCoalescing,
+
     /// <summary>Kernel fusion optimization.</summary>
     KernelFusion,
+
     /// <summary>Type specialization optimization.</summary>
     TypeSpecialization,
+
     /// <summary>Loop unrolling optimization.</summary>
     LoopUnrolling,
+
     /// <summary>Constant folding optimization.</summary>
     ConstantFolding,
+
     /// <summary>Memory prefetching optimization.</summary>
     MemoryPrefetching,
+
     /// <summary>Parallel execution optimization.</summary>
     Parallelization,
+
     /// <summary>Cache optimization.</summary>
     CacheOptimization,
+
     /// <summary>Backend-specific optimization.</summary>
     BackendSpecific,
+
     /// <summary>General performance optimization.</summary>
     Performance
+}
+/// <summary>
 /// Defines the expected impact levels for optimization hints.
+/// </summary>
 public enum OptimizationImpact
+{
     /// <summary>Low impact - minor performance improvement expected.</summary>
     Low,
+
     /// <summary>Medium impact - moderate performance improvement expected.</summary>
     Medium,
+
     /// <summary>High impact - significant performance improvement expected.</summary>
     High,
+
     /// <summary>Critical impact - major performance improvement expected.</summary>
     Critical
+}

@@ -27,6 +27,7 @@ public enum KernelExecutionModel
 /// Represents a kernel entry point with metadata for compilation and execution.
 /// Contains all information needed to call a compiled kernel function.
 public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
+{
     /// <summary>
     /// Initializes a new instance of the <see cref="KernelEntryPoint"/> class.
     /// </summary>
@@ -54,6 +55,7 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
     /// <param name="methodName">The name of the entry method.</param>
     /// <param name="executionModel">The execution model for the kernel.</param>
     public KernelEntryPoint(string kernelName, string methodName, KernelExecutionModel executionModel)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
         ArgumentException.ThrowIfNullOrWhiteSpace(methodName);
         FunctionName = methodName;
@@ -62,6 +64,7 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
         Signature = $"{methodName}()";
         ExecutionModel = executionModel;
         KernelName = kernelName;
+    }
     /// Gets the name of the kernel function.
     public string FunctionName { get; }
     /// Gets the kernel parameters in order.
@@ -80,39 +83,55 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
     /// <param name="direction">The parameter direction to filter by.</param>
     /// <returns>Parameters with the specified direction.</returns>
     public IEnumerable<KernelParameter> GetParametersByDirection(ParameterDirection direction)
+    {
         return Parameters.Where(p => p.Direction == direction);
+    }
     /// Gets input parameters (In and InOut).
     /// <returns>Input parameters.</returns>
     public IEnumerable<KernelParameter> GetInputParameters()
+    {
         return Parameters.Where(p => p.Direction == ParameterDirection.In || p.Direction == ParameterDirection.InOut);
+    }
     /// Gets output parameters (Out and InOut).
     /// <returns>Output parameters.</returns>
     public IEnumerable<KernelParameter> GetOutputParameters()
+    {
         return Parameters.Where(p => p.Direction == ParameterDirection.Out || p.Direction == ParameterDirection.InOut);
+    }
     /// Validates that all required parameters are provided.
     /// <param name="providedParameters">The parameters provided for execution.</param>
     /// <returns>True if all required parameters are provided; otherwise, false.</returns>
     public bool ValidateParameters(IReadOnlyDictionary<string, object> providedParameters)
+    {
         if (providedParameters == null)
             return Parameters.Count == 0;
         foreach (var parameter in Parameters)
+        {
             if (!providedParameters.ContainsKey(parameter.Name))
             {
                 return false;
             }
             var providedValue = providedParameters[parameter.Name];
             if (providedValue != null && !parameter.Type.IsAssignableFrom(providedValue.GetType()))
+            {
+                return false;
+            }
+        }
         return true;
+    }
     /// Generates the function signature string.
     /// <returns>The function signature.</returns>
     private string GenerateSignature()
+    {
         var returnTypeName = GetTypeName(ReturnType);
         var parameterStrings = Parameters.Select(p => $"{GetDirectionString(p.Direction)} {GetTypeName(p.Type)} {p.Name}");
         return $"{returnTypeName} {FunctionName}({string.Join(", ", parameterStrings)})";
+    }
     /// Gets a readable type name for the signature.
     /// <param name="type">The type to get the name for.</param>
     /// <returns>The type name.</returns>
     private static string GetTypeName(Type type)
+    {
         if (type == typeof(void))
             return "void";
         if (type == typeof(int))
@@ -126,22 +145,29 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
         if (type.IsArray)
             return $"{GetTypeName(type.GetElementType()!)}[]";
         if (type.IsGenericType)
+        {
             var genericName = type.Name.Split('`')[0];
             var genericArgs = string.Join(", ", type.GetGenericArguments().Select(GetTypeName));
             return $"{genericName}<{genericArgs}>";
+        }
         return type.Name;
+    }
     /// Gets the direction string for parameter signatures.
     /// <param name="direction">The parameter direction.</param>
     /// <returns>The direction string.</returns>
     private static string GetDirectionString(ParameterDirection direction)
+    {
         return direction switch
+        {
             ParameterDirection.In => "in",
             ParameterDirection.Out => "out",
             ParameterDirection.InOut => "inout",
             _ => string.Empty
         };
+    }
     /// <inheritdoc/>
     public bool Equals(KernelEntryPoint? other)
+    {
         if (other is null)
             return false;
         if (ReferenceEquals(this, other))
@@ -150,25 +176,40 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
                ReturnType == other.ReturnType &&
                Parameters.Count == other.Parameters.Count &&
                Parameters.SequenceEqual(other.Parameters, new KernelParameterComparer());
+    }
     public override bool Equals(object? obj) => obj is KernelEntryPoint other && Equals(other);
     public override int GetHashCode()
+    {
         var hash = new HashCode();
         hash.Add(FunctionName);
         hash.Add(ReturnType);
         hash.Add(Parameters.Count);
+        foreach (var parameter in Parameters)
+        {
             hash.Add(parameter.Name);
             hash.Add(parameter.Type);
             hash.Add(parameter.Direction);
+        }
         return hash.ToHashCode();
+    }
     public override string ToString() => Signature;
     /// Comparer for kernel parameters used in equality checks.
     private sealed class KernelParameterComparer : IEqualityComparer<KernelParameter>
+    {
         public bool Equals(KernelParameter? x, KernelParameter? y)
+        {
             if (ReferenceEquals(x, y))
                 return true;
             if (x is null || y is null)
+                return false;
             return x.Name == y.Name &&
                    x.Type == y.Type &&
                    x.Direction == y.Direction;
+        }
+
         public int GetHashCode(KernelParameter obj)
+        {
             return HashCode.Combine(obj.Name, obj.Type, obj.Direction);
+        }
+    }
+}

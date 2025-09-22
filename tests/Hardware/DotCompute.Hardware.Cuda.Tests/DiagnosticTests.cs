@@ -2,6 +2,9 @@ using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Initialization;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Tests.Common;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -10,7 +13,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// These tests help identify why ManagedMemory is not being detected correctly.
     /// </summary>
     [Trait("Category", "Diagnostic")]
-    public class CudaDiagnosticTests : TestBase
+    public class CudaDiagnosticTests : ConsolidatedTestBase
     {
         public CudaDiagnosticTests(ITestOutputHelper output) : base(output) { }
 

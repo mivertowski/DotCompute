@@ -14,6 +14,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Memory;
 using DotCompute.Tests.Common;
+using DotCompute.Tests.Common.Specialized;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -24,7 +25,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// <summary>
     /// Tests for CUDA kernel persistence and caching functionality
     /// </summary>
-    public class CudaKernelPersistenceTests : CudaTestBase, IDisposable
+    public class CudaKernelPersistenceTests : CudaTestBase
     {
         private readonly CudaAccelerator? _accelerator;
         private readonly CudaKernelCompiler? _compiler;

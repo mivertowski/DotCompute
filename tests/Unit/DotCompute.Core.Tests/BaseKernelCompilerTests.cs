@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Kernels;

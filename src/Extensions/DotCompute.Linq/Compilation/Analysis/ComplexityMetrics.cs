@@ -62,71 +62,115 @@ public record ComplexityMetrics
     } * ComplexityFactor);
 }
 // GlobalMemoryAccessPattern is defined in PipelineAnalysisTypes.cs to avoid duplication
+/// <summary>
 /// Represents memory access complexity for specific patterns.
+/// </summary>
 public record MemoryAccessComplexity
+{
     /// <summary>Gets the access pattern type.</summary>
     public MemoryAccessPattern Pattern { get; init; }
+
     /// <summary>Gets the frequency of this pattern.</summary>
     public int Frequency { get; init; }
+
     /// <summary>Gets the complexity impact factor.</summary>
     public double ComplexityImpact { get; init; }
+
     /// <summary>Gets the memory region size.</summary>
     public long RegionSize { get; init; }
+
     /// <summary>Gets the stride size for strided access.</summary>
     public int StrideSize { get; init; } = 1;
+}
+/// <summary>
 /// Represents a memory access hotspot.
+/// </summary>
 public record MemoryHotspot
+{
     /// <summary>Gets the location of the hotspot.</summary>
     public string Location { get; init; } = string.Empty;
+
     /// <summary>Gets the access frequency.</summary>
     public int AccessFrequency { get; init; }
+
     /// <summary>Gets the memory region accessed.</summary>
     public MemoryRegion Region { get; init; } = new();
+
     /// <summary>Gets the hotspot intensity (0.0 to 1.0).</summary>
     public double Intensity { get; init; }
+
     /// <summary>Gets optimization recommendations.</summary>
     public List<string> OptimizationRecommendations { get; init; } = [];
+}
+/// <summary>
 /// Represents a memory access conflict.
+/// </summary>
 public record MemoryConflict
+{
     /// <summary>Gets the conflicting access locations.</summary>
     public List<string> ConflictingLocations { get; init; } = [];
+
     /// <summary>Gets the conflict type.</summary>
     public ConflictType Type { get; init; }
+
     /// <summary>Gets the severity of the conflict (0.0 to 1.0).</summary>
     public double Severity { get; init; }
+
     /// <summary>Gets the performance impact estimate.</summary>
     public double PerformanceImpact { get; init; }
+
     /// <summary>Gets suggested resolutions.</summary>
     public List<string> Resolutions { get; init; } = [];
+}
+/// <summary>
 /// Defines computational complexity classes.
+/// </summary>
 public enum ComplexityClass
+{
     /// <summary>O(1) - Constant time.</summary>
     Constant,
+
     /// <summary>O(log n) - Logarithmic time.</summary>
     Logarithmic,
+
     /// <summary>O(n) - Linear time.</summary>
     Linear,
+
     /// <summary>O(n log n) - Linearithmic time.</summary>
     Linearithmic,
+
     /// <summary>O(n²) - Quadratic time.</summary>
     Quadratic,
+
     /// <summary>O(n³) - Cubic time.</summary>
     Cubic,
+
     /// <summary>O(2^n) - Exponential time.</summary>
     Exponential,
+
     /// <summary>O(n!) - Factorial time.</summary>
     Factorial
+}
+/// <summary>
 /// Defines types of memory conflicts.
+/// </summary>
 public enum ConflictType
+{
     /// <summary>Bank conflict in shared memory.</summary>
     BankConflict,
+
     /// <summary>Cache line conflict.</summary>
     CacheLineConflict,
+
     /// <summary>False sharing between threads.</summary>
     FalseSharing,
+
     /// <summary>Memory coalescing conflict.</summary>
     CoalescingConflict,
+
     /// <summary>Write-after-read dependency.</summary>
     WriteAfterRead,
+
     /// <summary>Read-after-write dependency.</summary>
     ReadAfterWrite
+}

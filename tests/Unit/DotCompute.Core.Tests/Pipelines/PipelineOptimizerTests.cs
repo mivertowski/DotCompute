@@ -4,9 +4,14 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Interfaces.Pipelines.Interfaces;
 using DotCompute.Abstractions.Pipelines.Models;
 using DotCompute.Abstractions.Pipelines.Results;
 using DotCompute.Core.Pipelines;
+
+// Add using aliases for test interfaces
+using IPipelineAlias = DotCompute.Abstractions.Interfaces.Pipelines.IPipeline;
+using IPipelineMetricsAlias = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IPipelineMetrics;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -986,7 +991,7 @@ public enum StageType
     IO
 }
 
-public class TestPipeline : IPipeline
+public class TestPipeline : IPipelineAlias
 {
     public string Name { get; }
     public IReadOnlyList<IPipelineStage> Stages { get; }

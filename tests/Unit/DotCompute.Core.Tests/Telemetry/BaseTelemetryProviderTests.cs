@@ -12,6 +12,9 @@ using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
+// Alias for timer interface
+using ITelemetryTimer = DotCompute.Abstractions.Interfaces.Telemetry.IOperationTimer;
+
 namespace DotCompute.Core.Tests.Telemetry;
 
 /// <summary>
@@ -804,11 +807,17 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
     // Test tracking
     public int CleanupCount { get; private set; }
 
-    public TestTelemetryProvider(ILogger<BaseTelemetryProvider> logger) : base(logger)
+    public TestTelemetryProvider(ILogger<BaseTelemetryProvider> logger) : base(
+        logger,
+        new TelemetryConfiguration(),
+        "Test",
+        "1.0.0")
     {
     }
 
-    public override void RecordMetric(string metricName, double value, IDictionary<string, string>? tags = null)
+    protected override string GetBackendType() => "Test";
+
+    public new void RecordMetric(string metricName, double value, IDictionary<string, string>? tags = null)
     {
         ThrowIfDisposed();
         ValidateMetricParameters(metricName, value);
@@ -835,7 +844,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         }
     }
 
-    public override void TrackEvent(string eventName, IDictionary<string, object>? properties = null, string? correlationId = null)
+    public new void TrackEvent(string eventName, IDictionary<string, object>? properties = null, string? correlationId = null)
     {
         ThrowIfDisposed();
         if (string.IsNullOrWhiteSpace(eventName))
@@ -855,7 +864,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         }
     }
 
-    public override void TrackException(Exception exception, IDictionary<string, object>? additionalData = null)
+    public new void TrackException(Exception exception, IDictionary<string, object>? additionalData = null)
     {
         ThrowIfDisposed();
         if (exception == null) throw new ArgumentNullException(nameof(exception));
@@ -872,7 +881,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         }
     }
 
-    public override void TrackDependency(string dependencyName, string operationName, TimeSpan duration, bool success)
+    public new void TrackDependency(string dependencyName, string operationName, TimeSpan duration, bool success)
     {
         ThrowIfDisposed();
         if (string.IsNullOrWhiteSpace(dependencyName))
@@ -893,7 +902,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         }
     }
 
-    public override ITelemetryTimer StartTimer(string timerName)
+    public new ITelemetryTimer StartTimer(string timerName)
     {
         ThrowIfDisposed();
         if (string.IsNullOrWhiteSpace(timerName))
@@ -902,7 +911,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         return new TestTelemetryTimer(timerName, this);
     }
 
-    public override void IncrementCounter(string counterName, long increment = 1)
+    public new void IncrementCounter(string counterName, long increment = 1)
     {
         ThrowIfDisposed();
         if (string.IsNullOrWhiteSpace(counterName))
@@ -915,7 +924,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         }
     }
 
-    public override void CaptureSystemMetrics()
+    public new void CaptureSystemMetrics()
     {
         ThrowIfDisposed();
 
@@ -1124,7 +1133,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
             throw new ArgumentException("Metric value cannot be NaN or Infinity", nameof(value));
     }
 
-    protected override void DisposeCoreImpl()
+    protected new void DisposeCoreImpl()
     {
         lock (_lock)
         {
@@ -1180,7 +1189,7 @@ public class MetricStatistics
     public double StandardDeviation { get; set; }
 }
 
-internal class TestTelemetryTimer : ITelemetryTimer
+internal class TestTelemetryTimer : IOperationTimer
 {
     private readonly string _timerName;
     private readonly TestTelemetryProvider _provider;
@@ -1202,6 +1211,44 @@ internal class TestTelemetryTimer : ITelemetryTimer
             _provider.RecordTimerResult(_timerName, _stopwatch.Elapsed);
         }
     }
+
+    public IDisposable StartOperation(string operationName, string? context = null) =>
+        new TestTelemetryTimer(operationName, _provider);
+
+    public IDisposable StartOperationScope(string operationName, string? context = null) =>
+        new TestTelemetryTimer(operationName, _provider);
+
+    public T TimeOperation<T>(string operationName, Func<T> operation)
+    {
+        using var timer = new TestTelemetryTimer(operationName, _provider);
+        return operation();
+    }
+
+    public async Task<T> TimeOperationAsync<T>(string operationName, Func<Task<T>> operation)
+    {
+        using var timer = new TestTelemetryTimer(operationName, _provider);
+        return await operation();
+    }
+
+    public void TimeOperation(string operationName, Action operation)
+    {
+        using var timer = new TestTelemetryTimer(operationName, _provider);
+        operation();
+    }
+
+    public async Task TimeOperationAsync(string operationName, Func<Task> operation)
+    {
+        using var timer = new TestTelemetryTimer(operationName, _provider);
+        await operation();
+    }
+
+    public void RecordTiming(string operationName, TimeSpan duration, string? context = null, IDictionary<string, object>? metadata = null)
+    {
+        _provider.RecordTimerResult(operationName, duration);
+    }
+
+    public OperationStatistics GetStatistics(string operationName) =>
+        new OperationStatistics { OperationName = operationName, TotalOperations = 1, AverageTime = TimeSpan.Zero };
 
     public void Dispose()
     {

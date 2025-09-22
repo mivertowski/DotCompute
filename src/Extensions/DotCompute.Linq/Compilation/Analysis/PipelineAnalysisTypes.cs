@@ -39,8 +39,11 @@ public class PipelineOperatorInfo
     /// <summary>Gets or sets the accuracy level.</summary>
     public double Accuracy { get; set; } = 1.0;
 }
+/// <summary>
 /// Information about type usage in pipeline expressions.
+/// </summary>
 public class TypeUsageInfo
+{
     /// <summary>Gets or sets the type being used.</summary>
     public Type Type { get; set; } = typeof(object);
     /// <summary>Gets or sets the usage frequency.</summary>
@@ -57,8 +60,10 @@ public class TypeUsageInfo
     public int TypeSize { get; set; }
     /// <summary>Gets or sets the estimated size (alias for TypeSize).</summary>
     public int EstimatedSize
+    {
         get => TypeSize;
         set => TypeSize = value;
+    }
     /// <summary>Gets or sets conversion requirements.</summary>
     public List<string> ConversionRequirements { get; set; } = [];
     /// <summary>Gets or sets whether the type requires specialization.</summary>
@@ -69,8 +74,12 @@ public class TypeUsageInfo
     public bool SupportsSimd { get; set; }
     /// <summary>Gets or sets optimization hints for this type.</summary>
     public List<string> Hints { get; set; } = [];
+}
+/// <summary>
 /// Information about dependencies between pipeline operations.
+/// </summary>
 public class DependencyInfo
+{
     /// <summary>Gets or sets the dependent operation name.</summary>
     public string DependentOperation { get; set; } = string.Empty;
     /// <summary>Gets or sets the operations this one depends on.</summary>
@@ -79,34 +88,50 @@ public class DependencyInfo
     public DependencyType Type { get; set; }
     /// <summary>Gets or sets whether the dependency allows parallel execution.</summary>
     public bool AllowsParallelization { get; set; }
+}
+/// <summary>
 /// Types of dependencies between operations.
+/// </summary>
 public enum DependencyType
+{
     /// <summary>Data dependency.</summary>
     Data,
+
     /// <summary>Control flow dependency.</summary>
     Control,
+
     /// <summary>Memory dependency.</summary>
     Memory,
+
     /// <summary>Resource dependency.</summary>
     Resource,
+
     /// <summary>Method call dependency.</summary>
     Method
+}
+/// <summary>
 /// Metrics about pipeline complexity for optimization decisions.
+/// </summary>
 public class PipelineComplexityMetrics
+{
     /// <summary>Gets or sets the total complexity score.</summary>
     public int TotalComplexity { get; set; }
     /// <summary>Gets or sets the overall complexity score (alias for TotalComplexity).</summary>
     public int OverallComplexity
+    {
         get => TotalComplexity;
         set => TotalComplexity = value;
+    }
     /// <summary>Gets or sets the number of operations.</summary>
     public int OperationCount { get; set; }
     /// <summary>Gets or sets the estimated memory usage.</summary>
     public long EstimatedMemoryUsage { get; set; }
     /// <summary>Gets or sets the memory usage (alias for EstimatedMemoryUsage).</summary>
     public long MemoryUsage
+    {
         get => EstimatedMemoryUsage;
         set => EstimatedMemoryUsage = value;
+    }
     /// <summary>Gets or sets the parallelization potential (0.0 to 1.0).</summary>
     public double ParallelizationPotential { get; set; }
     /// <summary>Gets or sets whether GPU execution is recommended.</summary>
@@ -123,16 +148,24 @@ public class PipelineComplexityMetrics
     public int CommunicationComplexity { get; set; }
     /// <summary>Gets or sets the parallelization complexity score.</summary>
     public int ParallelizationComplexity { get; set; }
+}
+
+/// <summary>
 /// Information about parallelization opportunities in pipeline.
+/// </summary>
 public class ParallelizationInfo
+{
     /// <summary>
     /// Initializes a new instance of the ParallelizationInfo class.
     /// </summary>
     public ParallelizationInfo() { }
+    /// <summary>
     /// Initializes a new instance of the ParallelizationInfo class with parallelization opportunities and bottlenecks.
+    /// </summary>
     /// <param name="parallelizationOpportunities">Collection of parallelization opportunities</param>
     /// <param name="dataFlowBottlenecks">Collection of data flow bottlenecks</param>
     public ParallelizationInfo(IEnumerable<object> parallelizationOpportunities, IEnumerable<object> dataFlowBottlenecks)
+    {
         // Convert opportunities to operations list
         if (parallelizationOpportunities != null)
         {
@@ -141,16 +174,23 @@ public class ParallelizationInfo
                 ParallelizableOperations.Add(opportunity.ToString() ?? "Unknown");
             }
         }
+
         // Convert bottlenecks to bottlenecks list
         if (dataFlowBottlenecks != null)
+        {
             foreach (var bottleneck in dataFlowBottlenecks)
+            {
                 Bottlenecks.Add(bottleneck.ToString() ?? "Unknown");
+            }
+        }
+
         // Set defaults based on the data
         CanParallelize = ParallelizableOperations.Count > 0;
         DegreeOfParallelism = CanParallelize ? Math.Max(1, ParallelizableOperations.Count) : 1;
         MaxParallelism = Environment.ProcessorCount;
         ParallelEfficiency = CanParallelize ? Math.Max(0.1, 1.0 - (Bottlenecks.Count * 0.2)) : 0.0;
         ParallelizationMethod = CanParallelize ? "DataParallel" : "None";
+    }
     /// <summary>Gets or sets the degree of parallelism.</summary>
     public int DegreeOfParallelism { get; set; }
     /// <summary>Gets or sets parallelizable operations.</summary>
@@ -161,25 +201,38 @@ public class ParallelizationInfo
     public double ParallelEfficiency { get; set; }
     /// <summary>Gets or sets bottleneck operations that limit parallelization.</summary>
     public List<string> Bottlenecks { get; set; } = [];
+
     /// <summary>Gets or sets whether this pipeline can be parallelized.</summary>
+    public bool CanParallelize { get; set; }
+
     /// <summary>Gets or sets the maximum degree of parallelism possible.</summary>
     public int MaxParallelism { get; set; }
+
     /// <summary>Gets or sets the parallelization method to use.</summary>
     public string ParallelizationMethod { get; set; } = "None";
+}
+
+/// <summary>
 /// Information about global memory access patterns for optimization.
+/// </summary>
 public class GlobalMemoryAccessPattern
+{
     /// <summary>Gets or sets the access pattern type.</summary>
     public MemoryAccessType AccessType { get; set; }
     /// <summary>Gets or sets the predominant pattern (alias for AccessType).</summary>
     public MemoryAccessPattern PredominantPattern
+    {
         get => (MemoryAccessPattern)(int)AccessType;
         set => AccessType = (MemoryAccessType)(int)value;
+    }
     /// <summary>Gets or sets whether accesses are coalesced.</summary>
     public bool IsCoalesced { get; set; }
     /// <summary>Gets or sets whether there are coalescing opportunities (alias for IsCoalesced).</summary>
     public bool HasCoalescingOpportunities
+    {
         get => IsCoalesced;
         set => IsCoalesced = value;
+    }
     /// <summary>Gets or sets the stride pattern.</summary>
     public int StridePattern { get; set; }
     /// <summary>Gets or sets memory locations accessed.</summary>
@@ -188,8 +241,10 @@ public class GlobalMemoryAccessPattern
     public double CacheEfficiency { get; set; }
     /// <summary>Gets or sets the estimated cache hit ratio (alias for CacheEfficiency).</summary>
     public double EstimatedCacheHitRatio
+    {
         get => CacheEfficiency;
         set => CacheEfficiency = value;
+    }
     /// <summary>Gets or sets the locality factor (0.0 to 1.0).</summary>
     public double LocalityFactor { get; set; } = 0.5;
     /// <summary>Gets or sets whether this pattern benefits from prefetching.</summary>
@@ -202,12 +257,19 @@ public class GlobalMemoryAccessPattern
     public double BandwidthUtilization { get; set; } = 0.5;
     /// <summary>Gets or sets the pattern type as a string.</summary>
     public string PatternType
+    {
         get => AccessType.ToString();
         set => AccessType = Enum.TryParse<MemoryAccessType>(value, true, out var result) ? result : MemoryAccessType.Sequential;
+    }
     /// <summary>Gets or sets the global memory access pattern.</summary>
     public MemoryAccessType Pattern { get; set; } = MemoryAccessType.Sequential;
+}
+
+/// <summary>
 /// Types of memory access patterns.
+/// </summary>
 public enum MemoryAccessType
+{
     /// <summary>Sequential access pattern.</summary>
     Sequential,
     /// <summary>Random access pattern.</summary>
@@ -218,8 +280,13 @@ public enum MemoryAccessType
     Coalesced,
     /// <summary>Scattered access pattern.</summary>
     Scattered
+}
+
+/// <summary>
 /// Represents a memory location in the access pattern.
+/// </summary>
 public class MemoryLocation
+{
     /// <summary>Gets or sets the memory address offset.</summary>
     public long Offset { get; set; }
     /// <summary>Gets or sets the size of the access.</summary>
@@ -228,8 +295,13 @@ public class MemoryLocation
     public int AccessFrequency { get; set; }
     /// <summary>Gets or sets whether this is a read or write access.</summary>
     public bool IsWrite { get; set; }
+}
+
+/// <summary>
 /// Analysis result containing all pipeline analysis information.
+/// </summary>
 public class PipelineAnalysisResult
+{
     /// <summary>Gets or sets pipeline operator information.</summary>
     public List<PipelineOperatorInfo> OperatorInfo { get; set; } = [];
     /// <summary>Gets or sets type usage information.</summary>
@@ -244,3 +316,4 @@ public class PipelineAnalysisResult
     public GlobalMemoryAccessPattern MemoryAccessPattern { get; set; } = new();
     /// <summary>Gets or sets analysis timestamp.</summary>
     public DateTimeOffset AnalysisTimestamp { get; set; } = DateTimeOffset.UtcNow;
+}

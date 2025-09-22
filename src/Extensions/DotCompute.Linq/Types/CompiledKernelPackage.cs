@@ -42,6 +42,7 @@ namespace DotCompute.Linq.Types
     }
     /// Represents performance characteristics of a compiled kernel.
     public sealed record KernelPerformanceProfile
+    {
         /// Gets the estimated compute intensity (operations per memory access).
         public double ComputeIntensity { get; init; }
         /// Gets the estimated memory bandwidth utilization.
@@ -52,8 +53,11 @@ namespace DotCompute.Linq.Types
         public int RegistersPerThread { get; init; }
         /// Gets the shared memory usage in bytes.
         public int SharedMemoryUsage { get; init; }
+    }
+
     /// Represents memory requirements for kernel execution.
     public sealed record KernelMemoryRequirements
+    {
         /// Gets the minimum global memory required in bytes.
         public long MinimumGlobalMemory { get; init; }
         /// Gets the shared memory required per workgroup in bytes.
@@ -64,4 +68,5 @@ namespace DotCompute.Linq.Types
         public int MemoryAlignment { get; init; } = 16;
         /// Gets a value indicating whether peer-to-peer memory access is required.
         public bool RequiresP2PAccess { get; init; }
+    }
 }

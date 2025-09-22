@@ -13,6 +13,7 @@ using DotCompute.Abstractions.Types;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using DotCompute.Tests.Common.Specialized;
 using Xunit;
 using Xunit.Abstractions;
 

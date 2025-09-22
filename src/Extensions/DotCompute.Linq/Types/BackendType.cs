@@ -32,6 +32,7 @@ namespace DotCompute.Linq.Types
     }
     /// Extension methods for converting between BackendType and ComputeBackendType.
     public static class BackendTypeExtensions
+    {
         /// Converts a BackendType to ComputeBackendType.
         /// <param name="backendType">The backend type to convert.</param>
         /// <returns>The corresponding ComputeBackendType.</returns>
@@ -67,4 +68,5 @@ namespace DotCompute.Linq.Types
         /// <returns>True if the string matches the BackendType.</returns>
         public static bool IsBackendType(string stringValue, BackendType backendType)
             => Equals(stringValue, backendType);
+    }
 }

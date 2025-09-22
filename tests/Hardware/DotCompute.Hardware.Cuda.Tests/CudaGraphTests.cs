@@ -8,6 +8,10 @@ using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Extensions;
 using DotCompute.Hardware.Cuda.Tests.Helpers;
+using DotCompute.Tests.Common;
+using Xunit;
+using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -16,7 +20,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Tests graph creation, capture, execution, and performance optimization.
     /// </summary>
     [Trait("Category", "RequiresCUDA")]
-    public class CudaGraphTests : TestBase
+    public class CudaGraphTests : ConsolidatedTestBase
     {
         private const string SimpleKernel = @"
             __global__ void simpleAdd(float* a, float* b, float* c, int n) {

@@ -3,6 +3,7 @@
 
 using System.Globalization;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Exceptions;
 using DotCompute.Tests.Common;

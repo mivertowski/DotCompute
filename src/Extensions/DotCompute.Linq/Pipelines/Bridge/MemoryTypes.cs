@@ -293,14 +293,31 @@ public interface IDeviceSelector
     /// <param name="availableDevices">The available devices to rank</param>
     /// <returns>Devices ranked from best to worst match</returns>
     IReadOnlyList<IComputeDevice> RankDevices(DeviceSelectionCriteria criteria, IReadOnlyList<IComputeDevice> availableDevices);
+}
+
+/// <summary>
 /// Data access patterns for optimization analysis.
+/// </summary>
 public enum DataAccessPattern
+{
+    /// <summary>
     /// Sequential access pattern.
+    /// </summary>
     Sequential,
+    /// <summary>
     /// Random access pattern.
+    /// </summary>
     Random,
+    /// <summary>
     /// Streaming access pattern.
+    /// </summary>
+    Streaming,
+    /// <summary>
     /// Sparse access pattern.
+    /// </summary>
     Sparse,
+    /// <summary>
     /// Cache-friendly access pattern.
+    /// </summary>
     CacheFriendly
+}

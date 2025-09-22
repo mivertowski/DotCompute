@@ -36,24 +36,31 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
         };
     }
     public bool SupportsVectorization()
+    {
         return TargetType == typeof(int) ||
                TargetType == typeof(float) ||
                TargetType == typeof(double) ||
                TargetType == typeof(long) ||
                TargetType == typeof(short) ||
                TargetType == typeof(byte);
+    }
     public int GetOptimalAlignment()
+    {
         var size = Marshal.SizeOf<T>();
         // Align to next power of 2, but at least 4 bytes
         var alignment = Math.Max(4, 1);
         while (alignment < size)
+        {
             alignment *= 2;
         }
         // Cap at 32 bytes for cache line efficiency
         return Math.Min(alignment, 32);
+    }
     public double EstimateOperationComplexity(ExpressionType operation)
+    {
         var baseComplexity = GetBaseComplexity();
         return operation switch
+        {
             ExpressionType.Add or ExpressionType.Subtract => baseComplexity,
             ExpressionType.Multiply => baseComplexity * 2,
             ExpressionType.Divide => baseComplexity * 4,
@@ -65,26 +72,43 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
             ExpressionType.LessThan or ExpressionType.LessThanOrEqual => baseComplexity,
             ExpressionType.GreaterThan or ExpressionType.GreaterThanOrEqual => baseComplexity,
             _ => baseComplexity
+        };
+    }
     public IEnumerable<OptimizationHint> GetOptimizationHints(Expression expression)
+    {
         var hints = new List<OptimizationHint>();
         if (SupportsVectorization())
+        {
             hints.Add(new OptimizationHint(
                 OptimizationHintType.Vectorization,
                 $"Type {TargetType.Name} supports SIMD vectorization",
                 OptimizationImpact.High));
+        }
         if (IsFloatingPoint())
+        {
+            hints.Add(new OptimizationHint(
                 OptimizationHintType.BackendSpecific,
                 "Consider using fast math options for floating-point operations",
                 OptimizationImpact.Medium));
+        }
         if (Marshal.SizeOf<T>() <= 8)
+        {
+            hints.Add(new OptimizationHint(
                 OptimizationHintType.CacheOptimization,
                 "Small numeric type benefits from cache-friendly access patterns",
+                OptimizationImpact.Medium));
+        }
         return hints;
+    }
     public TypeUsageInfo Analyze(Expression expression, object? context = null)
+    {
         var analysisContext = context as AnalysisContext ?? new AnalysisContext();
         return AnalyzeUsage(expression, analysisContext);
+    }
     private double GetBaseComplexity()
+    {
         return TargetType switch
+        {
             Type t when t == typeof(float) => 1.0,
             Type t when t == typeof(double) => 1.2,
             Type t when t == typeof(int) => 0.8,
@@ -93,32 +117,51 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
             Type t when t == typeof(byte) => 0.4,
             Type t when t == typeof(decimal) => 4.0,
             _ => 1.0
+        };
+    }
     private bool IsFloatingPoint()
+    {
         return TargetType == typeof(float) ||
+               TargetType == typeof(double) ||
                TargetType == typeof(decimal);
+    }
     private int CountTypeUsage(Expression expression)
+    {
         var count = 0;
         var visitor = new TypeUsageVisitor(TargetType, () => count++);
         visitor.Visit(expression);
         return count;
+    }
     private MemoryUsagePattern DetermineMemoryPattern(Expression expression)
+    {
         // Simple heuristic - could be more sophisticated
         return expression switch
+        {
             ConstantExpression => MemoryUsagePattern.ReadOnly,
             ParameterExpression => MemoryUsagePattern.ReadWrite,
             _ => MemoryUsagePattern.Sequential
+        };
+    }
     private bool DetermineSpecializationNeed(Expression expression)
+    {
         // Numeric types often benefit from specialization
         return IsFloatingPoint() || Marshal.SizeOf<T>() >= 8;
+    }
 }
 /// Visitor that counts usage of a specific type in an expression tree.
 internal class TypeUsageVisitor : ExpressionVisitor
+{
     private readonly Type _targetType;
     private readonly Action _onTypeFound;
     public TypeUsageVisitor(Type targetType, Action onTypeFound)
+    {
         _targetType = targetType;
         _onTypeFound = onTypeFound;
+    }
     public override Expression? Visit(Expression? node)
+    {
         if (node?.Type == _targetType)
             _onTypeFound();
         return base.Visit(node);
+    }
+}

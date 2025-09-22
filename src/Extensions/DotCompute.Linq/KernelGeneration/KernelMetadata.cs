@@ -88,26 +88,38 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
     /// <param name="key">The hint key.</param>
     /// <param name="value">The hint value.</param>
     public void AddCompilationHint(string key, object value)
+    {
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentException("Hint key cannot be null or whitespace.", nameof(key));
         CompilationHints[key] = value ?? throw new ArgumentNullException(nameof(value));
+    }
     /// Adds a performance optimization hint.
     public void AddPerformanceHint(string key, object value)
+    {
         PerformanceHints[key] = value ?? throw new ArgumentNullException(nameof(value));
+    }
     /// Gets a compilation hint by key.
     /// <typeparam name="T">The type of the hint value.</typeparam>
     /// <returns>The hint value if found; otherwise, default(T).</returns>
     public T? GetCompilationHint<T>(string key)
+    {
         if (CompilationHints.TryGetValue(key, out var value) && value is T typedValue)
             return typedValue;
         return default;
+    }
     /// Gets a performance hint by key.
     public T? GetPerformanceHint<T>(string key)
+    {
         if (PerformanceHints.TryGetValue(key, out var value) && value is T typedValue)
+            return typedValue;
+        return default;
+    }
     /// Creates a copy of the metadata with updated values.
     /// <returns>A new instance with copied values.</returns>
     public KernelMetadata Clone()
+    {
         var clone = new KernelMetadata(Name, Language)
+        {
             OptimizationLevel = OptimizationLevel,
             PrecisionMode = PrecisionMode,
             WorkGroupSize = WorkGroupSize?.ToArray(),
@@ -130,8 +142,10 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
         foreach (var hint in PerformanceHints)
             clone.PerformanceHints[hint.Key] = hint.Value;
         return clone;
+    }
     /// <inheritdoc/>
     public bool Equals(KernelMetadata? other)
+    {
         if (other is null)
             return false;
         if (ReferenceEquals(this, other))
@@ -139,12 +153,14 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
         return Name == other.Name &&
                Language == other.Language &&
                Version == other.Version;
+    }
     public override bool Equals(object? obj) => obj is KernelMetadata other && Equals(other);
     public override int GetHashCode() => HashCode.Combine(Name, Language, Version);
     public override string ToString() => $"KernelMetadata(Name: {Name}, Language: {Language}, Version: {Version})";
 }
 /// Represents computational complexity categories for kernel optimization.
 public enum ComputationalComplexity
+{
     /// Simple operations like element-wise arithmetic.
     Simple,
     /// Moderate complexity operations like reductions.
@@ -153,8 +169,10 @@ public enum ComputationalComplexity
     Complex,
     /// Very complex operations like FFTs or sorting.
     VeryComplex
+}
 /// Represents memory access patterns for optimization hints.
 public enum MemoryAccessPattern
+{
     /// Sequential memory access pattern.
     Sequential,
     /// Random memory access pattern.
@@ -167,3 +185,4 @@ public enum MemoryAccessPattern
     Scattered,
     /// Broadcast memory access pattern.
     Broadcast
+}

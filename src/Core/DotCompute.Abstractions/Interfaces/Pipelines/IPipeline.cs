@@ -1,0 +1,22 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using DotCompute.Abstractions.Interfaces.Pipelines;
+
+namespace DotCompute.Abstractions.Interfaces.Pipelines;
+
+/// <summary>
+/// Simple pipeline interface for test purposes, based on IKernelPipeline.
+/// </summary>
+public interface IPipeline
+{
+    /// <summary>
+    /// Gets the pipeline name.
+    /// </summary>
+    string Name { get; }
+
+    /// <summary>
+    /// Gets the pipeline stages.
+    /// </summary>
+    IReadOnlyList<IPipelineStage> Stages { get; }
+}

@@ -19,15 +19,23 @@ public record DataFlowBottleneck
     /// <summary>Gets suggestions to address this bottleneck.</summary>
     public List<string> Suggestions { get; init; } = [];
 }
+/// <summary>
 /// Types of data flow bottlenecks.
+/// </summary>
 public enum BottleneckType
+{
     /// <summary>Memory bandwidth bottleneck.</summary>
     MemoryBandwidth,
+
     /// <summary>Compute throughput bottleneck.</summary>
     ComputeThroughput,
+
     /// <summary>Data dependency bottleneck.</summary>
     DataDependency,
+
     /// <summary>Control flow bottleneck.</summary>
     ControlFlow,
+
     /// <summary>Resource contention bottleneck.</summary>
     ResourceContention
+}

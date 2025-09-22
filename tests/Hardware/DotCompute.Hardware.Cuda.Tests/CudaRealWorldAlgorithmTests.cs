@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
+using DotCompute.Tests.Common.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
 using DotCompute.Backends.CUDA;

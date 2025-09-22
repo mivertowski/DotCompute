@@ -9,6 +9,7 @@ using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Memory;
 using DotCompute.Tests.Common;
+using DotCompute.Tests.Common.Specialized;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;

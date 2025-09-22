@@ -2,6 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using DotCompute.Tests.Common.Specialized;
+using Xunit.Abstractions;
+using Xunit;
 using DotCompute.Backends.CUDA.Factory;
 // using DotCompute.Backends.CUDA.Kernels; // Not needed
 using DotCompute.Hardware.Cuda.Tests.TestHelpers;

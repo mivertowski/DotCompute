@@ -30,6 +30,7 @@ public sealed class LinqToGpuKernelCompiler
     /// </summary>
     public KernelDefinition CompileExpression<T>(Expression<Func<IEnumerable<T>, IEnumerable<T>>> expression)
         where T : unmanaged
+    {
         _logger.LogDebugMessage("Compiling LINQ expression to CUDA kernel");
         var body = expression.Body;
         var parameter = expression.Parameters[0];
@@ -38,10 +39,14 @@ public sealed class LinqToGpuKernelCompiler
             $"linq_kernel_{Guid.NewGuid():N}",
             kernelCode
         );
+    }
+    /// <summary>
     /// Compiles a Select operation into a CUDA kernel.
+    /// </summary>
     public string CompileSelect<TSource, TResult>(Expression<Func<TSource, TResult>> selector)
         where TSource : unmanaged
         where TResult : unmanaged
+    {
         var sb = new StringBuilder();
         // Generate CUDA kernel header
         _ = sb.AppendLine("extern \"C\" __global__");
@@ -54,10 +59,20 @@ public sealed class LinqToGpuKernelCompiler
         _ = sb.AppendLine($"    output[idx] = {selectorBody};");
         _ = sb.AppendLine("}");
         return sb.ToString();
+    }
+    /// <summary>
     /// Compiles a Where operation into a CUDA kernel.
+    /// </summary>
     public string CompileWhere<T>(Expression<Func<T, bool>> predicate)
+        where T : unmanaged
+    {
+        var sb = new StringBuilder();
         // Generate CUDA kernel with stream compaction
+        _ = sb.AppendLine("extern \"C\" __global__");
         _ = sb.AppendLine($"void where_kernel({GetCudaType<T>()}* input, {GetCudaType<T>()}* output, int* output_count, int count) {{");
+        _ = sb.AppendLine("    int idx = blockIdx.x * blockDim.x + threadIdx.x;");
+        _ = sb.AppendLine("    if (idx >= count) return;");
+        _ = sb.AppendLine();
         _ = sb.AppendLine($"    {GetCudaType<T>()} value = input[idx];");
         // Generate predicate check
         var predicateBody = CompileExpression(predicate.Body, "value");
@@ -65,6 +80,9 @@ public sealed class LinqToGpuKernelCompiler
         _ = sb.AppendLine("        int output_idx = atomicAdd(output_count, 1);");
         _ = sb.AppendLine("        output[output_idx] = value;");
         _ = sb.AppendLine("    }");
+        _ = sb.AppendLine("}");
+        return sb.ToString();
+    }
     /// Compiles an Aggregate operation into a CUDA kernel using parallel reduction.
     public string CompileAggregate<T>(Expression<Func<T, T, T>> aggregator, string operation = "custom")
         // Generate optimized parallel reduction kernel
@@ -90,13 +108,16 @@ public sealed class LinqToGpuKernelCompiler
             _ = sb.AppendLine("        mySum = min(mySum, input[i]);");
             _ = sb.AppendLine("            mySum = min(mySum, input[i + blockDim.x]);");
         else
+        {
             // Custom aggregator
             var aggregatorBody = CompileExpression(aggregator.Body, "mySum", "input[i]");
             _ = sb.AppendLine($"        mySum = {aggregatorBody};");
             _ = sb.AppendLine("        if (i + blockDim.x < count) {");
             _ = sb.AppendLine($"            mySum = {CompileExpression(aggregator.Body, "mySum", "input[i + blockDim.x]")};");
             _ = sb.AppendLine("        }");
+        }
         _ = sb.AppendLine("        i += gridSize;");
+        _ = sb.AppendLine("    }");
         _ = sb.AppendLine("    sdata[tid] = mySum;");
         _ = sb.AppendLine("    __syncthreads();");
         // Parallel reduction in shared memory

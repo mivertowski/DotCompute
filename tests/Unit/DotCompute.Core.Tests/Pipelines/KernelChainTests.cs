@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Models;
 using DotCompute.Tests.Common;

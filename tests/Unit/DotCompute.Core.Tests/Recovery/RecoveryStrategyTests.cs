@@ -883,7 +883,7 @@ public class TestCompilationFallback : IRecoveryStrategy, IDisposable
 
         _logger.LogWarning("Compilation failed, falling back to CPU implementation");
 
-        return RecoveryResult.Success(action, "Successfully fell back to CPU compilation");
+        return RecoveryResult.CreateSuccess(action, "Successfully fell back to CPU compilation");
     }
 
     public void Dispose()
@@ -937,19 +937,19 @@ public class TestMemoryRecoveryStrategy : IRecoveryStrategy, IAsyncDisposable
                     CleanupPerformed = true;
                     GCTriggered = true;
                     _logger.LogInformation("Performing memory cleanup and garbage collection");
-                    return RecoveryResult.Success("MemoryCleanup", "Memory cleaned up successfully");
+                    return RecoveryResult.CreateSuccess("MemoryCleanup", "Memory cleaned up successfully");
 
                 case "MemoryFragmentation":
                     DefragmentationPerformed = true;
-                    return RecoveryResult.Success("MemoryDefragmentation", "Memory defragmented successfully");
+                    return RecoveryResult.CreateSuccess("MemoryDefragmentation", "Memory defragmented successfully");
 
                 case "MemoryLeak":
                     LeakMitigationPerformed = true;
-                    return RecoveryResult.Success("LeakMitigation", "Memory leak mitigated");
+                    return RecoveryResult.CreateSuccess("LeakMitigation", "Memory leak mitigated");
 
                 case "MemoryPressure":
                     MemoryFootprintReduced = true;
-                    return RecoveryResult.Success("ReduceMemoryFootprint", "Memory footprint reduced");
+                    return RecoveryResult.CreateSuccess("ReduceMemoryFootprint", "Memory footprint reduced");
 
                 default:
                     return RecoveryResult.Failure("Unknown memory error type");
@@ -1008,19 +1008,19 @@ public class TestGpuRecoveryManager : IRecoveryStrategy, IDisposable
             case "DeviceHang":
                 DeviceResetPerformed = true;
                 _logger.LogWarning("GPU device hang detected, performing device reset");
-                return RecoveryResult.Success("DeviceReset", "GPU device reset successfully");
+                return RecoveryResult.CreateSuccess("DeviceReset", "GPU device reset successfully");
 
             case "MemoryCorruption":
                 ContextRebuilt = true;
-                return RecoveryResult.Success("RebuildContext", "GPU context rebuilt successfully");
+                return RecoveryResult.CreateSuccess("RebuildContext", "GPU context rebuilt successfully");
 
             case "ThermalThrottling":
                 WorkloadReduced = true;
-                return RecoveryResult.Success("ReduceWorkload", "GPU workload reduced due to thermal limits");
+                return RecoveryResult.CreateSuccess("ReduceWorkload", "GPU workload reduced due to thermal limits");
 
             case "DriverError":
                 DriverReloaded = true;
-                return RecoveryResult.Success("ReloadDriver", "GPU driver reloaded successfully");
+                return RecoveryResult.CreateSuccess("ReloadDriver", "GPU driver reloaded successfully");
 
             default:
                 return RecoveryResult.Failure("Unknown GPU error type");
@@ -1135,7 +1135,7 @@ public class TestPatternDetectingRecovery : IRecoveryStrategy, IDisposable
         }
 
         await Task.Delay(5, cancellationToken);
-        return RecoveryResult.Success("PatternBasedRecovery", "Recovery adapted to pattern");
+        return RecoveryResult.CreateSuccess("PatternBasedRecovery", "Recovery adapted to pattern");
     }
 
     public void Dispose()
@@ -1170,7 +1170,7 @@ public class TestEscalatingRecovery : IRecoveryStrategy, IDisposable
         };
 
         await Task.Delay(5, cancellationToken);
-        return RecoveryResult.Success(action, $"Escalated to level {context.FailureCount}");
+        return RecoveryResult.CreateSuccess(action, $"Escalated to level {context.FailureCount}");
     }
 
     public void Dispose()
@@ -1193,7 +1193,7 @@ public class TestSlowRecoveryStrategy : IRecoveryStrategy, IDisposable
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
         await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken); // Intentionally slow
-        return RecoveryResult.Success("SlowRecovery", "Slow recovery completed");
+        return RecoveryResult.CreateSuccess("SlowRecovery", "Slow recovery completed");
     }
 
     public void Dispose()
@@ -1220,7 +1220,7 @@ public class RecoveryResult
     public string Message { get; set; } = string.Empty;
     public TimeSpan Duration { get; set; }
 
-    public static RecoveryResult Success(string action, string message)
+    public static RecoveryResult CreateSuccess(string action, string message)
     {
         return new RecoveryResult
         {

@@ -17,13 +17,19 @@ public interface IExpressionOptimizer
     /// <param name="options">The compilation options.</param>
     /// <returns>The optimized expression.</returns>
     public Expression Optimize(Expression expression, DotCompute.Linq.Compilation.CompilationOptions options);
+    /// <summary>
     /// Analyzes an expression tree and returns optimization suggestions.
+    /// </summary>
     /// <param name="expression">The expression to analyze.</param>
     /// <returns>A collection of optimization suggestions.</returns>
-    public IEnumerable<OptimizationSuggestion> Analyze(Expression expression);
+    IEnumerable<OptimizationSuggestion> Analyze(Expression expression);
 }
+
+/// <summary>
 /// Represents an optimization suggestion.
+/// </summary>
 public class OptimizationSuggestion
+{
     /// Initializes a new instance of the <see cref="OptimizationSuggestion"/> class.
     /// <param name="type">The type of optimization.</param>
     /// <param name="description">The description of the optimization.</param>
@@ -45,33 +51,69 @@ public class OptimizationSuggestion
     public string Description { get; }
     /// Gets the expected performance impact.
     public PerformanceImpact Impact { get; }
+    /// <summary>
     /// Gets the expression to optimize.
+    /// </summary>
     public Expression? Expression { get; }
+}
+
+/// <summary>
 /// Types of optimizations that can be applied.
+/// </summary>
 public enum OptimizationType
+{
+    /// <summary>
     /// Combine multiple operations into a single kernel.
+    /// </summary>
     OperatorFusion,
+    /// <summary>
     /// Optimize memory access patterns.
+    /// </summary>
     MemoryCoalescing,
+    /// <summary>
     /// Remove redundant operations.
+    /// </summary>
     RedundancyElimination,
+    /// <summary>
     /// Reorder operations for better performance.
+    /// </summary>
     OperationReordering,
+    /// <summary>
     /// Replace operations with more efficient alternatives.
+    /// </summary>
     OperationSubstitution,
+    /// <summary>
     /// Optimize data layout for GPU access.
+    /// </summary>
     DataLayoutOptimization,
+    /// <summary>
     /// Vectorize scalar operations.
+    /// </summary>
     Vectorization,
+    /// <summary>
     /// Optimize loop structures.
+    /// </summary>
     LoopOptimization
+}
+/// <summary>
 /// Expected performance impact of an optimization.
+/// </summary>
 public enum PerformanceImpact
+{
+    /// <summary>
     /// Minor performance improvement (less than 10%).
+    /// </summary>
     Low,
+    /// <summary>
     /// Moderate performance improvement (10-50%).
+    /// </summary>
     Medium,
+    /// <summary>
     /// Significant performance improvement (greater than 50%).
+    /// </summary>
     High,
+    /// <summary>
     /// Critical for performance.
+    /// </summary>
     Critical
+}

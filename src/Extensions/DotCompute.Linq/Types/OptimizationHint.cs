@@ -148,6 +148,7 @@ namespace DotCompute.Linq.Types
         /// <summary>Critical hint, must be applied for correctness.</summary>
         Critical
     }
+
     /// <summary>
     /// Defines the scope where optimization hints apply.
     /// </summary>

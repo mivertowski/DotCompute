@@ -41,6 +41,7 @@ public interface ITypeAnalyzer
 }
 /// Interface for analyzing operators in expression trees.
 public interface IOperatorAnalyzer
+{
     /// <summary>Gets the expression type this analyzer handles.</summary>
     ExpressionType TargetOperator { get; }
     /// Analyzes operator usage within an expression.
@@ -55,9 +56,11 @@ public interface IOperatorAnalyzer
     /// Estimates the execution cost of this operator.
     /// <returns>Relative execution cost.</returns>
     double EstimateExecutionCost(Expression expression);
+}
 // TypeUsageInfo is defined in PipelineAnalysisTypes.cs to avoid duplication
 /// Contains information about operator analysis.
 public record OperatorInfo
+{
     /// <summary>Gets the operator type.</summary>
     public ExpressionType Operator { get; init; }
     /// <summary>Gets the computational complexity.</summary>
@@ -70,8 +73,10 @@ public record OperatorInfo
     public MemoryAccessPattern AccessPattern { get; init; } = MemoryAccessPattern.Sequential;
     /// <summary>Gets parallelization opportunities.</summary>
     public ParallelizationOpportunity ParallelizationOpportunity { get; init; } = new();
+}
 /// Contains information about parallelization opportunities.
 public record ParallelizationOpportunity
+{
     /// <summary>Gets whether the operation is suitable for vectorization.</summary>
     public bool VectorizationSuitable { get; init; }
     /// <summary>Gets whether the operation supports parallel execution.</summary>
@@ -86,9 +91,11 @@ public record ParallelizationOpportunity
     public double ParallelizationPotential { get; init; }
     /// <summary>Gets whether this operation is suitable for parallelization.</summary>
     public bool IsSuitable => VectorizationSuitable || SupportsParallelExecution;
+}
 // DependencyInfo is defined in PipelineAnalysisTypes.cs to avoid duplication
 /// Defines memory usage patterns for types.
 public enum MemoryUsagePattern
+{
     /// <summary>Sequential memory access.</summary>
     Sequential,
     /// <summary>Random memory access.</summary>
@@ -103,11 +110,16 @@ public enum MemoryUsagePattern
     WriteOnly,
     /// <summary>Read-write access.</summary>
     ReadWrite
+}
 /// Defines memory access patterns for operations.
 public enum MemoryAccessPattern
+{
     /// <summary>Sequential access pattern.</summary>
+    Sequential,
     /// <summary>Random access pattern.</summary>
+    Random,
     /// <summary>Strided access pattern.</summary>
+    Strided,
     /// <summary>Broadcast access pattern.</summary>
     Broadcast,
     /// <summary>Gather access pattern.</summary>
@@ -120,3 +132,4 @@ public enum MemoryAccessPattern
     CacheFriendly,
     /// <summary>Cache-unfriendly access pattern.</summary>
     CacheUnfriendly
+}

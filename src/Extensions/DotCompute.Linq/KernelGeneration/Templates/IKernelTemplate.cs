@@ -64,6 +64,7 @@ public interface IKernelTemplate
 }
 /// Contains the result of kernel generation including source code and metadata.
 public sealed class KernelGenerationResult
+{
     /// Initializes a new instance of the <see cref="KernelGenerationResult"/> class.
     /// <param name="sourceCode">The generated kernel source code.</param>
     /// <param name="entryPointName">The name of the kernel entry point function.</param>
@@ -95,14 +96,18 @@ public sealed class KernelGenerationResult
     public ResourceUsageEstimate? EstimatedResourceUsage { get; set; }
     /// Gets or sets warnings generated during code generation.
     public List<string>? Warnings { get; set; }
+}
 /// Contains validation results for kernel template validation.
 public sealed class KernelTemplateValidationResult
+{
     /// Initializes a new instance of the <see cref="KernelTemplateValidationResult"/> class.
     /// <param name="isValid">Whether the validation passed.</param>
     public KernelTemplateValidationResult(bool isValid)
+    {
         IsValid = isValid;
         Errors = [];
         Warnings = [];
+    }
     /// Gets a value indicating whether the validation passed.
     public bool IsValid { get; }
     /// Gets the validation errors.
@@ -112,26 +117,36 @@ public sealed class KernelTemplateValidationResult
     /// Adds a validation error.
     /// <param name="error">The error message.</param>
     public void AddError(string error)
+    {
         if (!string.IsNullOrWhiteSpace(error))
         {
             Errors.Add(error);
         }
+    }
     /// Adds a validation warning.
     /// <param name="warning">The warning message.</param>
     public void AddWarning(string warning)
+    {
         if (!string.IsNullOrWhiteSpace(warning))
+        {
             Warnings.Add(warning);
+        }
+    }
     /// Creates a successful validation result.
     /// <returns>A successful validation result.</returns>
     public static KernelTemplateValidationResult Success() => new(true);
     /// Creates a failed validation result with an error.
     /// <returns>A failed validation result.</returns>
     public static KernelTemplateValidationResult Failure(string error)
+    {
         var result = new KernelTemplateValidationResult(false);
         result.AddError(error);
         return result;
+    }
+}
 /// Contains options for kernel generation.
 public sealed class KernelGenerationOptions
+{
     /// Gets or sets a value indicating whether to generate debug information.
     public bool GenerateDebugInfo { get; set; }
     /// Gets or sets a value indicating whether to enable aggressive optimizations.
@@ -152,8 +167,10 @@ public sealed class KernelGenerationOptions
     public bool EnableAtomics { get; set; }
     /// Gets or sets a value indicating whether to use shared memory optimizations.
     public bool UseSharedMemory { get; set; }
+}
 /// Contains an optimization suggestion for kernel generation.
 public sealed class KernelOptimizationSuggestion
+{
     /// Initializes a new instance of the <see cref="KernelOptimizationSuggestion"/> class.
     /// <param name="type">The type of optimization.</param>
     /// <param name="description">The description of the suggestion.</param>
@@ -162,9 +179,11 @@ public sealed class KernelOptimizationSuggestion
         OptimizationType type,
         string description,
         PerformanceImpact impact)
+    {
         Type = type;
         Description = description ?? throw new ArgumentNullException(nameof(description));
         Impact = impact;
+    }
     /// Gets the type of optimization.
     public OptimizationType Type { get; }
     /// Gets the description of the suggestion.
@@ -173,8 +192,10 @@ public sealed class KernelOptimizationSuggestion
     public PerformanceImpact Impact { get; }
     /// Gets or sets additional parameters for the optimization.
     public Dictionary<string, object>? Parameters { get; set; }
+}
 /// Defines optimization types for kernel generation.
 public enum OptimizationType
+{
     /// Memory access pattern optimization.
     MemoryAccess,
     /// Work group size optimization.
@@ -187,11 +208,14 @@ public enum OptimizationType
     Vectorization,
     /// Shared memory usage optimization.
     SharedMemory
+}
 /// Defines the expected performance impact levels.
 public enum PerformanceImpact
+{
     /// Low performance impact (less than 10% improvement).
     Low,
     /// Medium performance impact (10-50% improvement).
     Medium,
     /// High performance impact (more than 50% improvement).
     High
+}

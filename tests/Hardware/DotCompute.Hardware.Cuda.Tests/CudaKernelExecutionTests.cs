@@ -7,6 +7,10 @@ using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Extensions;
+using DotCompute.Tests.Common;
+using Xunit;
+using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -15,7 +19,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Tests kernel compilation, execution, and performance on real hardware.
     /// </summary>
     [Trait("Category", "RequiresCUDA")]
-    public class CudaKernelExecutionTests : TestBase
+    public class CudaKernelExecutionTests : ConsolidatedTestBase
     {
         private const string VectorAddKernel = @"
             extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n) {
