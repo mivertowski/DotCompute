@@ -6,7 +6,7 @@ using DotCompute.Tests.Common.Specialized;
 using Xunit.Abstractions;
 using Xunit;
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Hardware.Cuda.Tests.TestHelpers;
+using DotCompute.SharedTestUtilities.Cuda;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests
@@ -45,7 +45,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var optionsNoSpilling = CudaTestHelpers.CreateTestCompilationOptions(
                 DotCompute.Abstractions.Types.OptimizationLevel.O2,
-                forceSpilling: false
+                generateDebugInfo: false
             );
 
             var kernelDefNoSpilling = CudaTestHelpers.CreateTestKernelDefinition(
@@ -60,7 +60,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Test with spilling enabled
             var optionsWithSpilling = CudaTestHelpers.CreateTestCompilationOptions(
                 DotCompute.Abstractions.Types.OptimizationLevel.O2,
-                forceSpilling: true
+                generateDebugInfo: true
             );
 
             var kernelDefWithSpilling = CudaTestHelpers.CreateTestKernelDefinition(

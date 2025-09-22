@@ -44,7 +44,7 @@ public static class TestUtilities
     /// <param name="iterations">Number of iterations to run</param>
     /// <param name="warmupIterations">Number of warmup iterations</param>
     /// <returns>Performance measurement results</returns>
-    public static async Task<PerformanceMeasurement> MeasurePerformanceAsync(
+    public static async Task<PerformanceStats> MeasurePerformanceAsync(
         Func<Task> action,
         double? targetTimeMs = null,
         int iterations = 10,
@@ -77,7 +77,7 @@ public static class TestUtilities
 
         totalStopwatch.Stop();
 
-        var result = new PerformanceMeasurement
+        var result = new PerformanceStats
         {
             Iterations = iterations,
             MeanTimeMs = measurements.Average(),
@@ -98,7 +98,7 @@ public static class TestUtilities
     /// <summary>
     /// Measures synchronous execution performance.
     /// </summary>
-    public static PerformanceMeasurement MeasurePerformance(
+    public static PerformanceStats MeasurePerformance(
         Action action,
         double? targetTimeMs = null,
         int iterations = 10,
@@ -552,9 +552,9 @@ public class LogEntry
 }
 
 /// <summary>
-/// Performance measurement results for testing
+/// Performance measurement statistics for testing
 /// </summary>
-public class PerformanceMeasurement
+public class PerformanceStats
 {
     public int Iterations { get; set; }
     public double MeanTimeMs { get; set; }

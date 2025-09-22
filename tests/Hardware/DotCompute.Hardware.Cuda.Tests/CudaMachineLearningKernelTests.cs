@@ -244,7 +244,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteReLU(input, output);
 
             // Assert
-            VerifyFloatArraysMatch(expected, output, 0.0f, context: "ReLU activation");
+            UnifiedTestHelpers.VerifyFloatArraysMatch(expected, output, 0.0f, 1000, "ReLU activation");
         }
 
         [SkippableFact]

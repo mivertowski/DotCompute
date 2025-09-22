@@ -20,7 +20,8 @@ using Xunit;
 using Xunit.Abstractions;
 using DotCompute.Tests.Common.Helpers;
 using Microsoft.Extensions.Logging;
-using PerformanceMeasurement = DotCompute.Tests.Common.Utilities.PerformanceMeasurement;
+using DotCompute.SharedTestUtilities.Performance;
+using SimplePerformanceMeasurement = DotCompute.SharedTestUtilities.Performance.PerformanceMeasurementExtensions.SimplePerformanceMeasurement;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -144,7 +145,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             // Act
-            var perf = new PerformanceMeasurement("Kernel Compilation", trackMemory: false);
+            var perf = new PerformanceMeasurement("Kernel Compilation");
 
             // First compilation - should compile from source
 
@@ -477,7 +478,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
 
             // Act - First compilation pass
-            var firstPassPerf = new PerformanceMeasurement("First Pass Compilation", Output);
+            var firstPassPerf = new SimplePerformanceMeasurement("First Pass Compilation", Output);
             firstPassPerf.Start();
 
 
@@ -493,7 +494,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Act - Second compilation pass (should use cache)
 
-            var secondPassPerf = new PerformanceMeasurement("Second Pass (Cached)", Output);
+            var secondPassPerf = new SimplePerformanceMeasurement("Second Pass (Cached)", Output);
             secondPassPerf.Start();
 
 

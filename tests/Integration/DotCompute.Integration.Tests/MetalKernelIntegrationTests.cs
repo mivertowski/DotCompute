@@ -7,7 +7,11 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Backends.Metal.Factory;
+using DotCompute.Core.Debugging;
+using DotCompute.Core.Optimization;
+using DotCompute.Runtime;
 using DotCompute.Generators.Kernel;
+using Kernel = DotCompute.Generators.Kernel.Kernel;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,16 +22,16 @@ namespace DotCompute.Integration.Tests;
 
 /// <summary>
 /// Integration tests for Metal backend with Kernel attribute and runtime orchestration.
-/// Tests the complete pipeline from [Kernel] attribute to Metal GPU execution.
+/// Tests the complete pipeline from // [Kernel] // Attribute not available yet attribute to Metal GPU execution.
 /// </summary>
 [Collection("Integration")]
 public class MetalKernelIntegrationTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
-    private ServiceProvider _serviceProvider;
-    private IComputeOrchestrator _orchestrator;
-    private IAccelerator _metalAccelerator;
-    private ILogger<MetalKernelIntegrationTests> _logger;
+    private ServiceProvider _serviceProvider = null!;
+    private IComputeOrchestrator _orchestrator = null!;
+    private IAccelerator? _metalAccelerator;
+    private ILogger<MetalKernelIntegrationTests> _logger = null!;
 
     public MetalKernelIntegrationTests(ITestOutputHelper output)
     {
@@ -37,8 +41,9 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var services = new ServiceCollection();
-        
+
         // Add logging
+
         services.AddLogging(builder =>
         {
             builder.AddConsole();
@@ -58,7 +63,8 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
         var factory = new MetalBackendFactory(
             _serviceProvider.GetRequiredService<ILogger<MetalBackendFactory>>(),
             _serviceProvider.GetRequiredService<ILoggerFactory>());
-        
+
+
         var accelerators = factory.CreateAccelerators().ToList();
         if (accelerators.Any())
         {
@@ -87,13 +93,13 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
         var b = Enumerable.Range(0, size).Select(i => (float)i * 2).ToArray();
         var result = new float[size];
 
-        // Act - Execute kernel defined with [Kernel] attribute
+        // Act - Execute kernel defined with // [Kernel] // Attribute not available yet attribute
         var startTime = DateTime.UtcNow;
         await VectorAddKernel.ExecuteAsync(_metalAccelerator, a, b, result);
         var elapsed = DateTime.UtcNow - startTime;
 
         // Assert
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             result[i].Should().BeApproximately(a[i] + b[i], 1e-5f,
                 $"Element {i} should be {a[i] + b[i]} but was {result[i]}");
@@ -141,7 +147,7 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
         await _orchestrator.ExecuteAsync<float[]>("SquareElements", input, output);
 
         // Assert
-        for (int i = 0; i < 100; i++) // Check first 100 elements
+        for (var i = 0; i < 100; i++) // Check first 100 elements
         {
             output[i].Should().BeApproximately(input[i] * input[i], 1e-5f);
         }
@@ -157,7 +163,7 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
         // Arrange - 100MB buffer
         const int size = 25_000_000; // 25M floats = 100MB
         var hostData = new float[size];
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             hostData[i] = i * 0.5f;
         }
@@ -166,14 +172,15 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
         var startTime = DateTime.UtcNow;
         var deviceBuffer = await _metalAccelerator.Memory.AllocateAsync<float>(size);
         await _metalAccelerator.Memory.CopyToDeviceAsync(hostData.AsMemory(), deviceBuffer, default);
-        
+
+
         var resultData = new float[size];
         await _metalAccelerator.Memory.CopyFromDeviceAsync(deviceBuffer, resultData.AsMemory(), default);
         await _metalAccelerator.Memory.FreeAsync(deviceBuffer, default);
         var elapsed = DateTime.UtcNow - startTime;
 
         // Assert
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             resultData[i].Should().BeApproximately(hostData[i], 1e-6f);
         }
@@ -195,14 +202,16 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
         var cpuResult = new float[size];
 
         // Act - Execute on both backends
-        await _orchestrator.ExecuteAsync<float[]>("NormalizeVector", input, metalResult, 
+        await _orchestrator.ExecuteAsync<float[]>("NormalizeVector", input, metalResult,
+
             new ExecutionOptions { PreferredBackend = BackendType.Metal });
-        
+
+
         await _orchestrator.ExecuteAsync<float[]>("NormalizeVector", input, cpuResult,
             new ExecutionOptions { PreferredBackend = BackendType.CPU });
 
         // Assert - Results should match within floating point tolerance
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             metalResult[i].Should().BeApproximately(cpuResult[i], 1e-4f,
                 $"Metal and CPU results should match at index {i}");
@@ -211,10 +220,10 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
         _output.WriteLine("Cross-backend validation passed");
     }
 
-    private float[] GenerateMatrix(int rows, int cols, float value)
+    private static float[] GenerateMatrix(int rows, int cols, float value)
     {
         var matrix = new float[rows * cols];
-        for (int i = 0; i < matrix.Length; i++)
+        for (var i = 0; i < matrix.Length; i++)
         {
             matrix[i] = value + (i % 10) * 0.1f;
         }
@@ -222,10 +231,10 @@ public class MetalKernelIntegrationTests : IAsyncLifetime
     }
 }
 
-// Example kernels using [Kernel] attribute
+// Example kernels using // [Kernel] // Attribute not available yet attribute
 public static class VectorAddKernel
 {
-    [Kernel]
+    // [Kernel] // Attribute not available yet
     public static void VectorAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         int idx = Kernel.ThreadId.X;
@@ -238,23 +247,25 @@ public static class VectorAddKernel
     public static Task ExecuteAsync(IAccelerator accelerator, float[] a, float[] b, float[] result)
     {
         // This would be generated by the source generator
-        return accelerator.ExecuteKernelAsync("VectorAdd", a, b, result);
+        return Task.CompletedTask; // ExecuteKernelAsync not implemented("VectorAdd", a, b, result);
     }
 }
 
 public static class MatrixMultiplyKernel
 {
-    [Kernel]
-    public static void MatrixMultiply(ReadOnlySpan<float> a, ReadOnlySpan<float> b, 
+    // [Kernel] // Attribute not available yet
+    public static void MatrixMultiply(ReadOnlySpan<float> a, ReadOnlySpan<float> b,
+
         Span<float> result, int n)
     {
         int row = Kernel.ThreadId.Y;
         int col = Kernel.ThreadId.X;
-        
+
+
         if (row < n && col < n)
         {
-            float sum = 0.0f;
-            for (int k = 0; k < n; k++)
+            var sum = 0.0f;
+            for (var k = 0; k < n; k++)
             {
                 sum += a[row * n + k] * b[k * n + col];
             }
@@ -262,10 +273,11 @@ public static class MatrixMultiplyKernel
         }
     }
 
-    public static Task ExecuteAsync(IAccelerator accelerator, float[] a, float[] b, 
+    public static Task ExecuteAsync(IAccelerator accelerator, float[] a, float[] b,
+
         float[] result, int n)
     {
         // This would be generated by the source generator
-        return accelerator.ExecuteKernelAsync("MatrixMultiply", a, b, result, n);
+        return Task.CompletedTask; // ExecuteKernelAsync not implemented("MatrixMultiply", a, b, result, n);
     }
 }

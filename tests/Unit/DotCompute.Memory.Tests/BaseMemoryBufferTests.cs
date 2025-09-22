@@ -132,7 +132,7 @@ public class BaseMemoryBufferTests
 
         // Act & Assert
 
-        var act = () => buffer.TestValidateCopyParameters(100, sourceOffset, 100, destOffset, 10);
+        var act = () => buffer.TestValidateCopyParameters(100, (int)sourceOffset, 100, (int)destOffset, 10);
         _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
@@ -151,7 +151,7 @@ public class BaseMemoryBufferTests
 
         // Act & Assert
 
-        var act = () => buffer.TestValidateCopyParameters(sourceLength, sourceOffset, destLength, destOffset, count);
+        var act = () => buffer.TestValidateCopyParameters((int)sourceLength, (int)sourceOffset, (int)destLength, (int)destOffset, (int)count);
         _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .Which.Message.Should().Contain("overflow");
     }

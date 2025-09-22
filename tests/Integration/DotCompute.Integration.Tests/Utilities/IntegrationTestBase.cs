@@ -14,6 +14,9 @@ using DotCompute.Core.Debugging;
 using DotCompute.Core.Optimization;
 using DotCompute.Memory;
 using DotCompute.Runtime.Services;
+using DotCompute.Runtime.Extensions;
+using DotCompute.Tests.Common.Helpers;
+using DotCompute.Abstractions.Memory;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -74,15 +77,13 @@ public abstract class IntegrationTestBase : IAsyncDisposable
         services.AddProductionDebugging();
         
         // Memory management
-        services.AddSingleton<IUnifiedMemoryManager, UnifiedMemoryManager>();
+        services.AddSingleton<UnifiedMemoryManager>();
         
         // Backend services
         services.AddSingleton<CpuAccelerator>();
         
         // Test utilities
         services.AddSingleton(TestSettings);
-        services.AddSingleton<TestDataGenerator>();
-        services.AddSingleton<MockAcceleratorProvider>();
     }
 
     protected T GetService<T>() where T : notnull => ServiceProvider.GetRequiredService<T>();

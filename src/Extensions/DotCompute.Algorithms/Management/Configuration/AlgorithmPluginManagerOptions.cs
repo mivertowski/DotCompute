@@ -127,4 +127,33 @@ public sealed class AlgorithmPluginManagerOptions
     /// Requires plugins to be marked with SecurityTransparent attributes for enhanced security.
     /// </summary>
     public bool RequireSecurityTransparency { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether retry policies are enabled for plugin execution.
+    /// When enabled, failed plugin executions will be retried based on configured settings.
+    /// </summary>
+    public bool EnableRetryPolicies { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the maximum number of retry attempts for failed plugin executions.
+    /// </summary>
+    public int MaxRetryAttempts { get; set; } = 3;
+
+    /// <summary>
+    /// Gets or sets the base retry delay in milliseconds.
+    /// Actual delay will be calculated using exponential backoff.
+    /// </summary>
+    public int RetryDelayMilliseconds { get; set; } = 100;
+
+    /// <summary>
+    /// Gets or sets the circuit breaker threshold.
+    /// Number of failures before the circuit breaker opens.
+    /// </summary>
+    public int CircuitBreakerThreshold { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets the circuit breaker duration in seconds.
+    /// How long the circuit breaker stays open before attempting to reset.
+    /// </summary>
+    public int CircuitBreakerDurationSeconds { get; set; } = 30;
 }

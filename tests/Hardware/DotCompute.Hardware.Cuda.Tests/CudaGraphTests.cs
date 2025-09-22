@@ -7,13 +7,14 @@ using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Extensions;
-using DotCompute.Hardware.Cuda.Tests.Helpers;
+using DotCompute.SharedTestUtilities.Performance;
 using DotCompute.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 using LaunchConfiguration = DotCompute.Backends.CUDA.Configuration.LaunchConfiguration;
-using HelpersLaunchConfiguration = DotCompute.Hardware.Cuda.Tests.Helpers.LaunchConfiguration;
+using DotCompute.Hardware.Cuda.Tests.Helpers;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -97,14 +98,25 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration
+            var launchConfig = new DotCompute.Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
             };
 
+            // Convert to test helpers LaunchConfiguration
+            var testLaunchConfig = new LaunchConfiguration
+            {
+                GridSizeX = launchConfig.GridSize.X,
+                GridSizeY = launchConfig.GridSize.Y,
+                GridSizeZ = launchConfig.GridSize.Z,
+                BlockSizeX = launchConfig.BlockSize.X,
+                BlockSizeY = launchConfig.BlockSize.Y,
+                BlockSizeZ = launchConfig.BlockSize.Z
+            };
+
             // Add kernel to graph
-            _ = graph.AddKernel(kernel, new HelpersLaunchConfiguration { GridDim = launchConfig.GridSize, BlockDim = launchConfig.BlockSize }, deviceA, deviceB, deviceC, elementCount);
+            _ = CudaGraphTestWrapper.AddKernel(kernel, testLaunchConfig, deviceA, deviceB, deviceC, elementCount);
 
             // Instantiate graph
 
@@ -113,7 +125,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Execute graph
 
-            await executableGraph.LaunchAsync();
+            await CudaGraphExecutable.LaunchAsync(executableGraph);
 
             // Verify results
 
@@ -165,8 +177,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             var gridSize = (elementCount + blockSize - 1) / blockSize;
             var launchConfig = new LaunchConfiguration
             {
-                GridSize = new Dim3(gridSize),
-                BlockSize = new Dim3(blockSize)
+                GridSize = new Dim3(gridSize, 1, 1),
+                BlockSize = new Dim3(blockSize, 1, 1)
             };
 
             // Create and start graph capture
@@ -187,7 +199,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Execute the captured graph
 
             var executableGraph = capturedGraph.Instantiate();
-            await executableGraph.LaunchAsync();
+            await CudaGraphExecutable.LaunchAsync(executableGraph);
 
             // Verify results (should be scaled by 2.0 * 1.5 = 3.0)
 
@@ -253,8 +265,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             var gridSize = (elementCount + blockSize - 1) / blockSize;
             var launchConfig = new LaunchConfiguration
             {
-                GridSize = new Dim3(gridSize),
-                BlockSize = new Dim3(blockSize)
+                GridSize = new Dim3(gridSize, 1, 1),
+                BlockSize = new Dim3(blockSize, 1, 1)
             };
 
             // Create graph with multiple operations
@@ -262,12 +274,12 @@ namespace DotCompute.Hardware.Cuda.Tests
             var graph = accelerator.CreateGraph();
 
             // Step 1: Multiply A and B, store in C
-            _ = graph.AddKernel(multiplyKernel, launchConfig, deviceA, deviceB, deviceC, elementCount);
+            _ = CudaGraphTestWrapper.AddKernel(multiplyKernel, launchConfig, deviceA, deviceB, deviceC, elementCount);
 
             // Step 2: Scale C by 2.0, store in D  
 
-            graph.AddMemoryCopy(deviceC, deviceD, elementCount * sizeof(float));
-            _ = graph.AddKernel(scaleKernel, launchConfig, deviceD, 2.0f, elementCount);
+            CudaGraphTestWrapper.AddMemoryCopy(deviceC, deviceD, elementCount * sizeof(float));
+            _ = CudaGraphTestWrapper.AddKernel(scaleKernel, launchConfig, deviceD, 2.0f, elementCount);
 
 
             var executableGraph = graph.Instantiate();
@@ -275,7 +287,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Execute the multi-kernel graph
 
             var stopwatch = Stopwatch.StartNew();
-            await executableGraph.LaunchAsync();
+            await CudaGraphExecutable.LaunchAsync(executableGraph);
             stopwatch.Stop();
 
             // Verify results
@@ -330,8 +342,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             var gridSize = (elementCount + blockSize - 1) / blockSize;
             var launchConfig = new LaunchConfiguration
             {
-                GridSize = new Dim3(gridSize),
-                BlockSize = new Dim3(blockSize)
+                GridSize = new Dim3(gridSize, 1, 1),
+                BlockSize = new Dim3(blockSize, 1, 1)
             };
 
             // Test individual kernel launches
@@ -373,7 +385,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
-                await executableGraph.LaunchAsync();
+                await CudaGraphExecutable.LaunchAsync(executableGraph);
                 stopwatch.Stop();
                 // Divide by kernelsPerGraph to get per-kernel time for fair comparison
                 graphTimes[i] = stopwatch.Elapsed.TotalMicroseconds / kernelsPerGraph;
@@ -435,8 +447,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             var gridSize = (elementCount + blockSize - 1) / blockSize;
             var launchConfig = new LaunchConfiguration
             {
-                GridSize = new Dim3(gridSize),
-                BlockSize = new Dim3(blockSize)
+                GridSize = new Dim3(gridSize, 1, 1),
+                BlockSize = new Dim3(blockSize, 1, 1)
             };
 
             // Create graph with dependencies:
@@ -447,12 +459,12 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Copy input to temp, then scale temp
 
-            graph.AddMemoryCopy(deviceInput, deviceTemp, elementCount * sizeof(float));
-            var scaleNode = graph.AddKernel(scaleKernel, launchConfig, deviceTemp, 2.0f, elementCount);
+            CudaGraphTestWrapper.AddMemoryCopy(deviceInput, deviceTemp, elementCount * sizeof(float));
+            var scaleNode = CudaGraphTestWrapper.AddKernel(scaleKernel, launchConfig, deviceTemp, 2.0f, elementCount);
 
             // Add original input to scaled temp
 
-            var addNode = graph.AddKernel(addKernel, launchConfig, deviceInput, deviceTemp, deviceOutput, elementCount);
+            var addNode = CudaGraphTestWrapper.AddKernel(addKernel, launchConfig, deviceInput, deviceTemp, deviceOutput, elementCount);
 
             // Set dependency: add must wait for scale
 
@@ -460,7 +472,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             var executableGraph = graph.Instantiate();
-            await executableGraph.LaunchAsync();
+            await CudaGraphExecutable.LaunchAsync(executableGraph);
 
             // Verify results (should be input * 3)
 
@@ -513,15 +525,15 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Copy src -> dst1
 
-            graph.AddMemoryCopy(deviceSrc, deviceDst1, elementCount * sizeof(float));
+            CudaGraphTestWrapper.AddMemoryCopy(deviceSrc, deviceDst1, elementCount * sizeof(float));
 
             // Copy dst1 -> dst2 
 
-            graph.AddMemoryCopy(deviceDst1, deviceDst2, elementCount * sizeof(float));
+            CudaGraphTestWrapper.AddMemoryCopy(deviceDst1, deviceDst2, elementCount * sizeof(float));
 
 
             var executableGraph = graph.Instantiate();
-            await executableGraph.LaunchAsync();
+            await CudaGraphExecutable.LaunchAsync(executableGraph);
 
             // Verify both destinations have correct data
 
@@ -579,18 +591,18 @@ namespace DotCompute.Hardware.Cuda.Tests
             var gridSize = (elementCount + blockSize - 1) / blockSize;
             var launchConfig = new LaunchConfiguration
             {
-                GridSize = new Dim3(gridSize),
-                BlockSize = new Dim3(blockSize)
+                GridSize = new Dim3(gridSize, 1, 1),
+                BlockSize = new Dim3(blockSize, 1, 1)
             };
 
             // Create initial graph with scale factor 2.0
 
             var graph = accelerator.CreateGraph();
-            var kernelNode = graph.AddKernel(kernel, launchConfig, deviceData, 2.0f, elementCount);
+            var kernelNode = CudaGraphTestWrapper.AddKernel(kernel, launchConfig, deviceData, 2.0f, elementCount);
 
 
             var executableGraph = graph.Instantiate();
-            await executableGraph.LaunchAsync();
+            await CudaGraphExecutable.LaunchAsync(executableGraph);
 
             // Verify initial results (scaled by 2.0)
 
@@ -608,7 +620,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // Reset data and execute updated graph
 
                 await deviceData.WriteAsync(hostData.AsSpan(), 0);
-                await executableGraph.LaunchAsync();
+                await CudaGraphExecutable.LaunchAsync(executableGraph);
 
 
                 var result2 = new float[elementCount];

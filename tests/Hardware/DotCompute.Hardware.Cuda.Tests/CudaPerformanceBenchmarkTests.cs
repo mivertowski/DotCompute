@@ -14,7 +14,7 @@ using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
 using DotCompute.Tests.Common.Helpers;
 using DotCompute.SharedTestUtilities.Performance;
-using PerformanceMeasurement = DotCompute.SharedTestUtilities.Performance.PerformanceMeasurement;
+// Using SharedTestUtilities.Performance for PerformanceMeasurement
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests
@@ -125,7 +125,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration
+            var launchConfig = new DotCompute.Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
@@ -219,7 +219,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration
+            var launchConfig = new DotCompute.Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
@@ -324,7 +324,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             var gridDim = (matrixSize + 15) / 16; // 16x16 blocks
-            var launchConfig = new LaunchConfiguration
+            var launchConfig = new DotCompute.Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridDim, gridDim),
                 BlockSize = new Dim3(16, 16)
@@ -501,7 +501,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new LaunchConfiguration
+            var launchConfig = new DotCompute.Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)

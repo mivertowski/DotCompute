@@ -572,6 +572,31 @@ public static class UnifiedTestHelpers
         }
     }
 
+    /// <summary>
+    /// Compares two performance results for test assertions.
+    /// </summary>
+    /// <param name="expected">Expected performance result</param>
+    /// <param name="actual">Actual performance result</param>
+    /// <param name="tolerancePercent">Tolerance percentage for comparison (default 10%)</param>
+    public static void ComparePerformanceResults(
+        DotCompute.SharedTestUtilities.Performance.PerformanceResult expected,
+        DotCompute.SharedTestUtilities.Performance.PerformanceResult actual,
+        double tolerancePercent = 10.0)
+    {
+        // Allow for some variation in performance measurements
+        var tolerance = expected.Duration.TotalMilliseconds * (tolerancePercent / 100.0);
+        var actualMs = actual.Duration.TotalMilliseconds;
+        var expectedMs = expected.Duration.TotalMilliseconds;
+
+        // Performance can be better than expected, so only check if it's too slow
+        if (actualMs > expectedMs + tolerance)
+        {
+            throw new InvalidOperationException(
+                $"Performance test failed: actual duration {actualMs:F2}ms exceeded expected {expectedMs:F2}ms " +
+                $"by more than {tolerancePercent}% tolerance ({tolerance:F2}ms)");
+        }
+    }
+
     #endregion
 }
 

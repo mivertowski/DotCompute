@@ -9,6 +9,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Integration.Tests.Utilities;
+using DotCompute.Tests.Common.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -40,9 +41,10 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
     {
         // Arrange
         const int size = 1000;
-        var testData = GetService<TestDataGenerator>();
-        var a = testData.GenerateFloatArray(size, 1f, 10f);
-        var b = testData.GenerateFloatArray(size, 1f, 10f);
+
+
+        var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size, 1f, 10f);
+        var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size, 1f, 10f);
         var result = new float[size];
 
         _logger.LogInformation("Testing simple vector addition with {Size} elements", size);
@@ -54,7 +56,7 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         }, "VectorAdd");
 
         // Assert
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             result[i].Should().BeApproximately(a[i] + b[i], 1e-5f,
                 $"Element {i}: expected {a[i] + b[i]}, got {result[i]}");
@@ -64,7 +66,8 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         measurement.ElapsedTime.Should().BeLessThan(TimeSpan.FromSeconds(5),
             "Vector addition should complete quickly");
 
-        _logger.LogInformation("Vector addition completed in {Time}ms", 
+        _logger.LogInformation("Vector addition completed in {Time}ms",
+
             measurement.ElapsedTime.TotalMilliseconds);
     }
 
@@ -73,14 +76,17 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
     {
         // Arrange
         const int size = 100;
-        var testData = GetService<TestDataGenerator>();
-        var input = testData.GenerateFloatArray(size);
+
+
+        var input = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
         var result = new float[size];
 
         // Act & Assert - CPU preference
         await _orchestrator.ExecuteAsync<float[]>("ArrayCopy", "CPU", input, result);
-        
-        result.Should().BeEquivalentTo(input, 
+
+
+        result.Should().BeEquivalentTo(input,
+
             "Array copy with CPU preference should produce correct results");
 
         // Reset result
@@ -116,13 +122,15 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         foreach (var kernelName in kernelsToTest)
         {
             var accelerator = await _orchestrator.GetOptimalAcceleratorAsync(kernelName);
-            
+
+
             if (accelerator != null)
             {
                 accelerator.Should().NotBeNull($"Should find an accelerator for {kernelName}");
                 accelerator.Info.Should().NotBeNull("Accelerator should have valid info");
                 accelerator.Type.Should().BeOneOf(AcceleratorType.CPU, AcceleratorType.GPU);
-                
+
+
                 _logger.LogInformation("Optimal accelerator for {Kernel}: {Type} - {Name}",
                     kernelName, accelerator.Type, accelerator.Info.Name);
             }
@@ -145,13 +153,15 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         // Assert
         accelerators.Should().NotBeNull("Should return accelerator list");
         accelerators.Should().NotBeEmpty("Should have at least one supported accelerator");
-        
+
+
         foreach (var accelerator in accelerators)
         {
             accelerator.Info.Should().NotBeNull("Each accelerator should have valid info");
             accelerator.Info.Name.Should().NotBeNullOrEmpty("Accelerator should have a name");
             accelerator.Type.Should().BeOneOf(AcceleratorType.CPU, AcceleratorType.GPU, AcceleratorType.Other);
-            
+
+
             _logger.LogInformation("Supported accelerator: {Type} - {Name} (Memory: {Memory:N0} bytes)",
                 accelerator.Type, accelerator.Info.Name, accelerator.Info.TotalMemory);
         }
@@ -179,9 +189,10 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         // Verify that subsequent execution is faster (due to compilation cache)
         var executionMeasurement = await MeasurePerformanceAsync(async () =>
         {
-            var testData = GetService<TestDataGenerator>();
-            var a = testData.GenerateFloatArray(100);
-            var b = testData.GenerateFloatArray(100);
+
+
+            var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(100);
+            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(100);
             var result = new float[100];
             await _orchestrator.ExecuteAsync<float[]>(kernelName, a, b, result);
         }, "ExecutePrecompiledKernel");
@@ -196,11 +207,12 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
     {
         // Arrange
         const string kernelName = "VectorAdd";
-        var testData = GetService<TestDataGenerator>();
+
+
         var validArgs = new object[]
         {
-            testData.GenerateFloatArray(100),
-            testData.GenerateFloatArray(100),
+            UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(100),
+            UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(100),
             new float[100]
         };
 
@@ -235,7 +247,8 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
     {
         // Arrange
         const int size = 1000;
-        var testData = GetService<TestDataGenerator>();
+
+
 
         var buffer1 = await CreateTestBufferAsync<float>(size, i => i * 2.0f);
         var buffer2 = await CreateTestBufferAsync<float>(size, i => i * 3.0f);
@@ -256,7 +269,7 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         var expectedSpan = await buffer1.GetHostSpanAsync();
         var buffer2Span = await buffer2.GetHostSpanAsync();
 
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             resultSpan[i].Should().BeApproximately(expectedSpan[i] + buffer2Span[i], 1e-5f,
                 $"Element {i}: expected {expectedSpan[i] + buffer2Span[i]}, got {resultSpan[i]}");
@@ -285,12 +298,13 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         var allResults = await ExecuteConcurrentlyAsync(async threadId =>
         {
             var results = new List<float[]>();
-            var testData = GetService<TestDataGenerator>();
 
-            for (int i = 0; i < operationsPerThread; i++)
+
+
+            for (var i = 0; i < operationsPerThread; i++)
             {
-                var a = testData.GenerateFloatArray(arraySize, threadId, threadId + 10);
-                var b = testData.GenerateFloatArray(arraySize, threadId + 1, threadId + 11);
+                var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize, threadId, threadId + 10);
+                var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(arraySize, threadId + 1, threadId + 11);
                 var result = new float[arraySize];
 
                 await _orchestrator.ExecuteAsync<float[]>("VectorAdd", a, b, result);
@@ -302,11 +316,13 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
 
         // Assert
         allResults.Should().HaveCount(threadCount, "Should have results from all threads");
-        
+
+
         foreach (var threadResults in allResults)
         {
             threadResults.Should().HaveCount(operationsPerThread, "Each thread should complete all operations");
-            
+
+
             foreach (var result in threadResults)
             {
                 result.Should().NotBeNull("Results should not be null");
@@ -329,11 +345,12 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         // Arrange
         const string kernelName = "VectorAdd";
         const int size = 500;
-        var testData = GetService<TestDataGenerator>();
+
+
         var inputs = new object[]
         {
-            testData.GenerateFloatArray(size, 1f, 100f),
-            testData.GenerateFloatArray(size, 1f, 100f),
+            UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size, 1f, 100f),
+            UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size, 1f, 100f),
             new float[size]
         };
 
@@ -344,7 +361,8 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
 
         // Assert
         validationResult.Should().NotBeNull("Validation result should not be null");
-        
+
+
         if (validationResult.IsSuccessful)
         {
             _logger.LogInformation("Cross-backend validation successful");
@@ -365,9 +383,10 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
     {
         // Arrange
         const int size = 200;
-        var testData = GetService<TestDataGenerator>();
-        var a = testData.GenerateFloatArray(size);
-        var b = testData.GenerateFloatArray(size);
+
+
+        var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+        var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
         var result = new float[size];
 
         // Try to force GPU execution first, then allow fallback
@@ -377,7 +396,7 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         await _orchestrator.ExecuteAsync<float[]>("VectorAdd", a, b, result);
 
         // Assert
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             result[i].Should().BeApproximately(a[i] + b[i], 1e-5f,
                 $"Fallback execution should produce correct results at index {i}");
@@ -396,9 +415,10 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         // Act
         foreach (var size in sizes)
         {
-            var testData = GetService<TestDataGenerator>();
-            var a = testData.GenerateFloatArray(size);
-            var b = testData.GenerateFloatArray(size);
+
+
+            var a = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
+            var b = UnifiedTestHelpers.TestDataGenerator.GenerateFloatArray(size);
             var result = new float[size];
 
             var measurement = await MeasurePerformanceAsync(async () =>
@@ -412,11 +432,12 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         }
 
         // Assert - Performance should scale reasonably (not exponentially)
-        for (int i = 1; i < timings.Count; i++)
+        for (var i = 1; i < timings.Count; i++)
         {
             var prevTiming = timings[i - 1];
             var currentTiming = timings[i];
-            
+
+
             var sizeRatio = (double)currentTiming.size / prevTiming.size;
             var timeRatio = currentTiming.duration.TotalMilliseconds / prevTiming.duration.TotalMilliseconds;
 

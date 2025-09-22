@@ -1013,7 +1013,7 @@ public class TestPipelineStage : IPipelineStage
     public IReadOnlyList<string> Dependencies { get; }
     public IReadOnlyDictionary<string, object> Metadata { get; }
 
-    public TestPipelineStage(string id, string name, PipelineStageType type = PipelineStageType.Kernel)
+    public TestPipelineStage(string id, string name, PipelineStageType type = PipelineStageType.Computation)
     {
         Id = id;
         Name = name;
@@ -1024,12 +1024,17 @@ public class TestPipelineStage : IPipelineStage
 
     public ValueTask<Abstractions.Models.Pipelines.StageExecutionResult> ExecuteAsync(Abstractions.Models.Pipelines.PipelineExecutionContext context, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult(new Abstractions.Models.Pipelines.StageExecutionResult { Success = true });
+        return ValueTask.FromResult(new Abstractions.Models.Pipelines.StageExecutionResult
+        {
+            Success = true,
+            StageId = Id,
+            OutputData = new Dictionary<string, object>()
+        });
     }
 
-    public Abstractions.Pipelines.Models.StageValidationResult Validate()
+    public DotCompute.Abstractions.Models.Pipelines.StageValidationResult Validate()
     {
-        return new Abstractions.Pipelines.Models.StageValidationResult { IsValid = true };
+        return new DotCompute.Abstractions.Models.Pipelines.StageValidationResult { IsValid = true };
     }
 
     public IStageMetrics GetMetrics()
@@ -1047,7 +1052,14 @@ public class TestStageMetrics : IStageMetrics
     public TimeSpan AverageExecutionTime => TimeSpan.FromMilliseconds(100);
     public TimeSpan MinExecutionTime => TimeSpan.FromMilliseconds(100);
     public TimeSpan MaxExecutionTime => TimeSpan.FromMilliseconds(100);
-    public Abstractions.Pipelines.Results.MemoryUsageStats MemoryUsage => new Abstractions.Pipelines.Results.MemoryUsageStats { AllocatedBytes = 1024, PeakBytes = 2048, AllocationCount = 1, DeallocationCount = 0 };
+    public Abstractions.Pipelines.Results.MemoryUsageStats MemoryUsage => new Abstractions.Pipelines.Results.MemoryUsageStats
+    {
+        AllocatedBytes = 1024,
+        PeakBytes = 2048,
+        AllocationCount = 1,
+        DeallocationCount = 0,
+        UsageByType = null
+    };
     public double ThroughputOpsPerSecond => 1000.0;
     public long AverageMemoryUsage => 1024;
     public double SuccessRate => 1.0;
@@ -1075,7 +1087,7 @@ public class ExtendedTestPipelineStage : TestPipelineStage
     public ExtendedTestPipelineStage[]? Branches { get; set; }
 
     public ExtendedTestPipelineStage(string name, StageType type)
-        : base(name + "_ext", name, PipelineStageType.Kernel)
+        : base(name + "_ext", name, PipelineStageType.Computation)
     {
         // Base class constructor handles the core properties
     }

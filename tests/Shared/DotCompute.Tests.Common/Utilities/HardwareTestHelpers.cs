@@ -8,7 +8,7 @@ using System.Runtime.Intrinsics.X86;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.SharedTestUtilities.Performance;
+// using DotCompute.SharedTestUtilities.Performance; // Removed to avoid confusion with PerformanceStats
 using DotCompute.Core.Extensions;
 using DotCompute.Tests.Common.Helpers;
 using Microsoft.Extensions.Logging;
@@ -498,8 +498,8 @@ public class SimdPerformanceResult
     public double SpeedupRatio { get; set; }
     public double ExpectedSpeedupRatio { get; set; }
     public bool MeetsExpectation { get; set; }
-    public PerformanceMeasurement ScalarResult { get; set; } = new();
-    public PerformanceMeasurement VectorResult { get; set; } = new();
+    public PerformanceStats ScalarResult { get; set; } = new();
+    public PerformanceStats VectorResult { get; set; } = new();
 }
 
 /// <summary>
@@ -512,8 +512,8 @@ public class GpuPerformanceResult
     public double SpeedupRatio { get; set; }
     public double ExpectedSpeedupRatio { get; set; }
     public bool MeetsExpectation { get; set; }
-    public PerformanceMeasurement CpuResult { get; set; } = new();
-    public PerformanceMeasurement GpuResult { get; set; } = new();
+    public PerformanceStats CpuResult { get; set; } = new();
+    public PerformanceStats GpuResult { get; set; } = new();
 }
 
 #endregion

@@ -15,7 +15,7 @@ using Xunit;
 using Xunit.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Tests.Common.Helpers;
-using PerformanceMeasurement = DotCompute.Tests.Common.Utilities.PerformanceMeasurement;
+using DotCompute.SharedTestUtilities.Performance;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {

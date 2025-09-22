@@ -90,8 +90,7 @@ public sealed class NuGetPluginService : INuGetPluginService, IDisposable
         {
             IsValid = true,
             PackageId = packageSource,
-            Version = "1.0.0",
-            ValidationIssue = null
+            Version = "1.0.0"
         });
     }
 

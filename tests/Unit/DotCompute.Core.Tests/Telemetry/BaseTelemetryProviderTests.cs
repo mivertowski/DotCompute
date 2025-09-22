@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Telemetry;
+using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Telemetry;
 using DotCompute.Core.Telemetry;
 using FluentAssertions;
@@ -1193,62 +1194,207 @@ internal class TestTelemetryTimer : IOperationTimer
 {
     private readonly string _timerName;
     private readonly TestTelemetryProvider _provider;
-    private readonly Stopwatch _stopwatch;
+    private readonly Dictionary<string, OperationStatistics> _statistics = new();
     private bool _disposed;
+
+    public bool IsEnabled { get; private set; } = true;
+    public TimeSpan MinimumDurationThreshold { get; private set; } = TimeSpan.Zero;
+    public event EventHandler<OperationTimingEventArgs>? OperationCompleted;
 
     public TestTelemetryTimer(string timerName, TestTelemetryProvider provider)
     {
         _timerName = timerName;
         _provider = provider;
+    }
+
+    public ITimerHandle StartOperation(string operationName, string? operationId = null)
+    {
+        return new TestTimerHandle(operationName, operationId ?? Guid.NewGuid().ToString(), this);
+    }
+
+    public IDisposable StartOperationScope(string operationName, string? operationId = null)
+    {
+        return StartOperation(operationName, operationId);
+    }
+
+    public (T result, TimeSpan duration) TimeOperation<T>(string operationName, Func<T> operation)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var result = operation();
+        stopwatch.Stop();
+        RecordTiming(operationName, stopwatch.Elapsed);
+        return (result, stopwatch.Elapsed);
+    }
+
+    public async Task<(T result, TimeSpan duration)> TimeOperationAsync<T>(string operationName, Func<Task<T>> operation)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var result = await operation();
+        stopwatch.Stop();
+        RecordTiming(operationName, stopwatch.Elapsed);
+        return (result, stopwatch.Elapsed);
+    }
+
+    public TimeSpan TimeOperation(string operationName, Action operation)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        operation();
+        stopwatch.Stop();
+        RecordTiming(operationName, stopwatch.Elapsed);
+        return stopwatch.Elapsed;
+    }
+
+    public async Task<TimeSpan> TimeOperationAsync(string operationName, Func<Task> operation)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        await operation();
+        stopwatch.Stop();
+        RecordTiming(operationName, stopwatch.Elapsed);
+        return stopwatch.Elapsed;
+    }
+
+    public void RecordTiming(string operationName, TimeSpan duration, string? operationId = null, IDictionary<string, object>? metadata = null)
+    {
+        if (!IsEnabled || duration < MinimumDurationThreshold) return;
+
+        _provider.RecordTimerResult(operationName, duration);
+
+        // Update statistics
+        if (!_statistics.ContainsKey(operationName))
+        {
+            _statistics[operationName] = new OperationStatistics
+            {
+                OperationName = operationName,
+                ExecutionCount = 0,
+                TotalDuration = TimeSpan.Zero,
+                AverageDuration = TimeSpan.Zero,
+                MinimumDuration = TimeSpan.MaxValue,
+                MaximumDuration = TimeSpan.Zero,
+                StandardDeviation = TimeSpan.Zero,
+                MedianDuration = TimeSpan.Zero,
+                P95Duration = TimeSpan.Zero,
+                P99Duration = TimeSpan.Zero,
+                FirstExecution = DateTime.UtcNow,
+                LastExecution = DateTime.UtcNow
+            };
+        }
+
+        var stats = _statistics[operationName];
+        var newCount = stats.ExecutionCount + 1;
+        var newTotal = stats.TotalDuration + duration;
+
+        _statistics[operationName] = stats with
+        {
+            ExecutionCount = newCount,
+            TotalDuration = newTotal,
+            AverageDuration = TimeSpan.FromTicks(newTotal.Ticks / newCount),
+            MinimumDuration = duration < stats.MinimumDuration ? duration : stats.MinimumDuration,
+            MaximumDuration = duration > stats.MaximumDuration ? duration : stats.MaximumDuration,
+            LastExecution = DateTime.UtcNow
+        };
+
+        OperationCompleted?.Invoke(this, new OperationTimingEventArgs
+        {
+            OperationName = operationName,
+            OperationId = operationId ?? Guid.NewGuid().ToString(),
+            Duration = duration,
+            StartTime = DateTime.UtcNow - duration,
+            EndTime = DateTime.UtcNow,
+            Metadata = metadata
+        });
+    }
+
+    public OperationStatistics? GetStatistics(string operationName)
+    {
+        return _statistics.TryGetValue(operationName, out var stats) ? stats : null;
+    }
+
+    public IDictionary<string, OperationStatistics> GetAllStatistics()
+    {
+        return new Dictionary<string, OperationStatistics>(_statistics);
+    }
+
+    public void ClearStatistics(string operationName)
+    {
+        _statistics.Remove(operationName);
+    }
+
+    public void ClearAllStatistics()
+    {
+        _statistics.Clear();
+    }
+
+    public string ExportData(MetricsExportFormat format, Func<string, bool>? operationFilter = null)
+    {
+        var filteredStats = _statistics.Where(kvp => operationFilter?.Invoke(kvp.Key) ?? true);
+        return format switch
+        {
+            MetricsExportFormat.Json => System.Text.Json.JsonSerializer.Serialize(filteredStats),
+            MetricsExportFormat.Csv => string.Join("\n", filteredStats.Select(kvp => $"{kvp.Key},{kvp.Value.ExecutionCount},{kvp.Value.AverageDuration.TotalMilliseconds}")),
+            _ => string.Join("\n", filteredStats.Select(kvp => $"{kvp.Key}: {kvp.Value.ExecutionCount} executions, avg {kvp.Value.AverageDuration.TotalMilliseconds}ms"))
+        };
+    }
+
+    public void SetEnabled(bool enabled)
+    {
+        IsEnabled = enabled;
+    }
+
+    public void SetMinimumDurationThreshold(TimeSpan threshold)
+    {
+        MinimumDurationThreshold = threshold;
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+        }
+    }
+}
+
+internal class TestTimerHandle : ITimerHandle
+{
+    private readonly TestTelemetryTimer _timer;
+    private readonly Stopwatch _stopwatch;
+    private readonly Dictionary<string, TimeSpan> _checkpoints = new();
+    private bool _disposed;
+
+    public string OperationName { get; }
+    public string OperationId { get; }
+    public DateTime StartTime { get; }
+    public TimeSpan Elapsed => _stopwatch.Elapsed;
+
+    public TestTimerHandle(string operationName, string operationId, TestTelemetryTimer timer)
+    {
+        OperationName = operationName;
+        OperationId = operationId;
+        _timer = timer;
+        StartTime = DateTime.UtcNow;
         _stopwatch = Stopwatch.StartNew();
     }
 
-    public void Stop()
+    public TimeSpan Stop(IDictionary<string, object>? metadata = null)
     {
-        if (!_disposed && _stopwatch.IsRunning)
-        {
-            _stopwatch.Stop();
-            _provider.RecordTimerResult(_timerName, _stopwatch.Elapsed);
-        }
+        if (_disposed) return _stopwatch.Elapsed;
+
+        _stopwatch.Stop();
+        _timer.RecordTiming(OperationName, _stopwatch.Elapsed, OperationId, metadata);
+        return _stopwatch.Elapsed;
     }
 
-    public IDisposable StartOperation(string operationName, string? context = null) =>
-        new TestTelemetryTimer(operationName, _provider);
-
-    public IDisposable StartOperationScope(string operationName, string? context = null) =>
-        new TestTelemetryTimer(operationName, _provider);
-
-    public T TimeOperation<T>(string operationName, Func<T> operation)
+    public TimeSpan AddCheckpoint(string checkpointName)
     {
-        using var timer = new TestTelemetryTimer(operationName, _provider);
-        return operation();
+        var elapsed = _stopwatch.Elapsed;
+        _checkpoints[checkpointName] = elapsed;
+        return elapsed;
     }
 
-    public async Task<T> TimeOperationAsync<T>(string operationName, Func<Task<T>> operation)
+    public IDictionary<string, TimeSpan> GetCheckpoints()
     {
-        using var timer = new TestTelemetryTimer(operationName, _provider);
-        return await operation();
+        return new Dictionary<string, TimeSpan>(_checkpoints);
     }
-
-    public void TimeOperation(string operationName, Action operation)
-    {
-        using var timer = new TestTelemetryTimer(operationName, _provider);
-        operation();
-    }
-
-    public async Task TimeOperationAsync(string operationName, Func<Task> operation)
-    {
-        using var timer = new TestTelemetryTimer(operationName, _provider);
-        await operation();
-    }
-
-    public void RecordTiming(string operationName, TimeSpan duration, string? context = null, IDictionary<string, object>? metadata = null)
-    {
-        _provider.RecordTimerResult(operationName, duration);
-    }
-
-    public OperationStatistics GetStatistics(string operationName) =>
-        new OperationStatistics { OperationName = operationName, TotalOperations = 1, AverageTime = TimeSpan.Zero };
 
     public void Dispose()
     {

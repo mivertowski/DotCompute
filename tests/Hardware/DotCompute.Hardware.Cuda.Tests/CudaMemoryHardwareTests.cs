@@ -13,7 +13,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 using DotCompute.Tests.Common.Helpers;
-using PerformanceMeasurement = DotCompute.SharedTestUtilities.Performance.PerformanceMeasurement;
+using DotCompute.SharedTestUtilities.Performance;
 using Microsoft.Extensions.Logging;
 using MemoryTracker = DotCompute.SharedTestUtilities.Performance.MemoryTracker;
 
@@ -233,7 +233,21 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
                 var dataSize = elementCount * sizeof(float);
-                UnifiedTestHelpers.ComparePerformanceResults(new DotCompute.SharedTestUtilities.Performance.PerformanceResult { Duration = perfMeasurement.Duration }, new DotCompute.SharedTestUtilities.Performance.PerformanceResult { Duration = TimeSpan.FromMilliseconds(100) });
+                UnifiedTestHelpers.ComparePerformanceResults(
+                    new DotCompute.SharedTestUtilities.Performance.PerformanceResult
+                    {
+                        OperationName = "Host-to-Device Copy",
+                        Duration = perfMeasurement.Duration,
+                        Checkpoints = Array.Empty<DotCompute.SharedTestUtilities.Performance.Checkpoint>(),
+                        Timestamp = DateTime.UtcNow
+                    },
+                    new DotCompute.SharedTestUtilities.Performance.PerformanceResult
+                    {
+                        OperationName = "Expected Performance",
+                        Duration = TimeSpan.FromMilliseconds(100),
+                        Checkpoints = Array.Empty<DotCompute.SharedTestUtilities.Performance.Checkpoint>(),
+                        Timestamp = DateTime.UtcNow
+                    });
             }
         }
 
@@ -424,10 +438,24 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var dataSize = elementCount * sizeof(float);
             var totalDataTransferred = dataSize * copyIterations;
-            var bandwidth = totalDataTransferred / (copyResult.Duration.TotalSeconds * 1024 * 1024 * 1024);
+            var bandwidth = totalDataTransferred / (copyResult.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
 
 
-            UnifiedTestHelpers.ComparePerformanceResults(new DotCompute.SharedTestUtilities.Performance.PerformanceResult { Duration = copyResult.Duration }, new DotCompute.SharedTestUtilities.Performance.PerformanceResult { Duration = TimeSpan.FromMilliseconds(100) });
+            UnifiedTestHelpers.ComparePerformanceResults(
+                new DotCompute.SharedTestUtilities.Performance.PerformanceResult
+                {
+                    OperationName = "Device-to-Device Copy",
+                    Duration = copyResult.Duration,
+                    Checkpoints = Array.Empty<DotCompute.SharedTestUtilities.Performance.Checkpoint>(),
+                    Timestamp = DateTime.UtcNow
+                },
+                new DotCompute.SharedTestUtilities.Performance.PerformanceResult
+                {
+                    OperationName = "Expected Performance",
+                    Duration = TimeSpan.FromMilliseconds(100),
+                    Checkpoints = Array.Empty<DotCompute.SharedTestUtilities.Performance.Checkpoint>(),
+                    Timestamp = DateTime.UtcNow
+                });
             Output.WriteLine($"Device-to-Device Copy Bandwidth: {bandwidth:F2} GB/s");
 
             // Device-to-device copies should be very fast
