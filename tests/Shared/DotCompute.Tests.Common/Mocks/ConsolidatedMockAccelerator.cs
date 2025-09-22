@@ -11,6 +11,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Memory;
+using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -26,19 +27,20 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
     private readonly Mock<IUnifiedMemoryManager> _memoryManagerMock;
     private readonly Mock<ICompiledKernel> _compiledKernelMock;
     private readonly List<Action> _disposeActions = new();
-    private bool _disposed = false;
+    private bool _disposed;
 
     public AcceleratorInfo Info => _info;
     public AcceleratorType Type { get; }
     public string DeviceType => _info.DeviceType;
     public IUnifiedMemoryManager Memory => _memoryManagerMock.Object;
     public IUnifiedMemoryManager MemoryManager => Memory;
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily", Justification = "AcceleratorContext() constructor is not equivalent to default")]
     public AcceleratorContext Context { get; } = new();
 
     // Configuration properties for testing scenarios
-    public bool ShouldFailCompilation { get; set; } = false;
-    public bool ShouldFailExecution { get; set; } = false;
-    public bool ShouldFailMemoryAllocation { get; set; } = false;
+    public bool ShouldFailCompilation { get; set; }
+    public bool ShouldFailExecution { get; set; }
+    public bool ShouldFailMemoryAllocation { get; set; }
     public TimeSpan ExecutionDelay { get; set; } = TimeSpan.Zero;
     public Exception? CompilationException { get; set; }
     public Exception? ExecutionException { get; set; }
@@ -157,43 +159,47 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
     {
         var mock = new Mock<IUnifiedMemoryManager>();
 
-        // Setup memory allocation with failure simulation
-        mock.Setup(m => m.AllocateAsync<It.IsAnyType>(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .Returns<int, CancellationToken>((size, ct) =>
+        // Setup memory allocation with failure simulation for common types
+        SetupAllocateAsync<float>(mock);
+        SetupAllocateAsync<int>(mock);
+        SetupAllocateAsync<double>(mock);
+        SetupAllocateAsync<byte>(mock);
+
+        // Setup memory statistics
+        mock.Setup(m => m.Statistics)
+            .Returns(() => new DotCompute.Memory.MemoryStatistics());
+
+        // Setup memory properties
+        mock.Setup(m => m.TotalAvailableMemory)
+            .Returns(() => ShouldFailMemoryAllocation ? 0L : _info.AvailableMemory);
+
+        mock.Setup(m => m.CurrentAllocatedMemory)
+            .Returns(() => ShouldFailMemoryAllocation ? _info.TotalMemory : 0L);
+
+        mock.Setup(m => m.MaxAllocationSize)
+            .Returns(() => _info.MaxMemoryAllocationSize);
+
+        return mock;
+    }
+
+    private void SetupAllocateAsync<T>(Mock<IUnifiedMemoryManager> mock) where T : unmanaged
+    {
+        mock.Setup(m => m.AllocateAsync<T>(It.IsAny<int>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
+            .Returns<int, MemoryOptions, CancellationToken>((size, options, ct) =>
             {
                 if (ShouldFailMemoryAllocation)
                 {
-                    var exception = MemoryException ?? new OutOfMemoryException("Mock memory allocation failure");
-                    return ValueTask.FromException<IUnifiedMemoryBuffer<It.IsAnyType>>(exception);
+                    var exception = MemoryException ?? new InvalidOperationException("Mock memory allocation failure");
+                    return ValueTask.FromException<IUnifiedMemoryBuffer<T>>(exception);
                 }
 
-                var buffer = Mock.Of<IUnifiedMemoryBuffer<It.IsAnyType>>(b =>
-                    b.SizeInBytes == size * sizeof(It.IsAnyType) &&
+                var buffer = Mock.Of<IUnifiedMemoryBuffer<T>>(b =>
+                    b.SizeInBytes == size * System.Runtime.InteropServices.Marshal.SizeOf<T>() &&
                     b.State == BufferState.Allocated &&
                     b.IsDisposed == false);
 
                 return ValueTask.FromResult(buffer);
             });
-
-        // Setup memory usage tracking
-        mock.Setup(m => m.GetTotalMemoryUsage())
-            .Returns(() => ShouldFailMemoryAllocation ? _info.TotalMemory : 0L);
-
-        mock.Setup(m => m.GetAvailableMemory())
-            .Returns(() => ShouldFailMemoryAllocation ? 0L : _info.AvailableMemory);
-
-        // Setup memory pool operations
-        mock.Setup(m => m.RentAsync<It.IsAnyType>(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .Returns<int, CancellationToken>((size, ct) =>
-            {
-                var buffer = Mock.Of<IUnifiedMemoryBuffer<It.IsAnyType>>();
-                return ValueTask.FromResult(buffer);
-            });
-
-        mock.Setup(m => m.ReturnAsync<It.IsAnyType>(It.IsAny<IUnifiedMemoryBuffer<It.IsAnyType>>(), It.IsAny<CancellationToken>()))
-            .Returns(ValueTask.CompletedTask);
-
-        return mock;
     }
 
     private Mock<ICompiledKernel> CreateCompiledKernelMock()
@@ -361,7 +367,8 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
 
     public ValueTask DisposeAsync()
     {
-        if (_disposed) return ValueTask.CompletedTask;
+        if (_disposed)
+            return ValueTask.CompletedTask;
 
         _disposed = true;
         DisposeCallCount++;
@@ -426,6 +433,7 @@ public static class MockAcceleratorFactory
     /// <summary>
     /// Creates a collection with one accelerator configured to fail for testing error scenarios.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2000:Dispose objects before losing scope", Justification = "Factory method returns objects for caller to manage")]
     public static List<IAccelerator> CreateFailureTestCollection()
     {
         return new List<IAccelerator>

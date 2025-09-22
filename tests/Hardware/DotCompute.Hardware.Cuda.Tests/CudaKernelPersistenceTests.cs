@@ -142,21 +142,21 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             // Act
-            var perf = new PerformanceMeasurement("Kernel Compilation", Output);
+            var perf = new PerformanceMeasurement("Kernel Compilation", trackMemory: false);
 
             // First compilation - should compile from source
 
             perf.Start();
             var compiled1 = await _compiler.CompileAsync(kernel);
             perf.Stop();
-            var firstCompileTime = perf.ElapsedTime;
+            var firstCompileTime = perf.Elapsed;
 
             // Second compilation - should load from cache
 
             perf.Start();
             var compiled2 = await _compiler.CompileAsync(kernel);
             perf.Stop();
-            var secondCompileTime = perf.ElapsedTime;
+            var secondCompileTime = perf.Elapsed;
 
             // Assert
 

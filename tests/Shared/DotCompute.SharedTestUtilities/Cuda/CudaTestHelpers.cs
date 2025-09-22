@@ -7,6 +7,10 @@ using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA;
+using DotCompute.Backends.CUDA.Types;
+using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.SharedTestUtilities.Cuda;
@@ -16,7 +20,83 @@ namespace DotCompute.SharedTestUtilities.Cuda;
 /// </summary>
 public static class CudaTestHelpers
 {
-    private static readonly ILogger Logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<string>();
+    private static readonly Lazy<ILoggerFactory> s_loggerFactory = new(() => LoggerFactory.Create(builder => builder.AddConsole()));
+    private static readonly Lazy<ILogger> s_logger = new(() => s_loggerFactory.Value.CreateLogger(typeof(CudaTestHelpers)));
+
+    // High-performance LoggerMessage delegates
+    private static readonly Action<ILogger, string, Exception?> s_logFailedToGetDeviceCount =
+        LoggerMessage.Define<string>(
+            LogLevel.Debug,
+            new EventId(1, "FailedToGetDeviceCount"),
+            "Failed to get CUDA device count: {Error}");
+
+    private static readonly Action<ILogger, string, Exception?> s_logFailedToGetComputeCapability =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(2, "FailedToGetComputeCapability"),
+            "Failed to get compute capability: {Error}");
+
+    private static readonly Action<ILogger, string, Exception?> s_logKernelCompilationValidationFailed =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(3, "KernelCompilationValidationFailed"),
+            "Kernel compilation validation failed: {Error}");
+
+    private static readonly Action<ILogger, int, Exception?> s_logCudaDeviceCapabilities =
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(4, "CudaDeviceCapabilities"),
+            "CUDA Device {DeviceId} Capabilities:");
+
+    private static readonly Action<ILogger, int, int, Exception?> s_logComputeCapability =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(5, "ComputeCapability"),
+            "  Compute Capability: {Major}.{Minor}");
+
+    private static readonly Action<ILogger, string, Exception?> s_logArchitecture =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(6, "Architecture"),
+            "  Architecture: {Arch}");
+
+    private static readonly Action<ILogger, string, Exception?> s_logSmString =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(7, "SmString"),
+            "  SM String: {Sm}");
+
+    private static readonly Action<ILogger, Exception?> s_logCudaBackendAvailable =
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(8, "CudaBackendAvailable"),
+            "  CUDA Backend: Available");
+
+    private static readonly Action<ILogger, int, Exception?> s_logDeviceCount =
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(9, "DeviceCount"),
+            "  Device Count: {Count}");
+
+    private static readonly Action<ILogger, Exception?> s_logCudaBackendNotAvailable =
+        LoggerMessage.Define(
+            LogLevel.Warning,
+            new EventId(10, "CudaBackendNotAvailable"),
+            "  CUDA Backend: Not Available");
+
+    private static readonly Action<ILogger, string, Exception?> s_logFailedToLogDeviceCapabilities =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(11, "FailedToLogDeviceCapabilities"),
+            "Failed to log device capabilities: {Error}");
+
+    private static readonly Action<ILogger, string, Exception?> s_logMemoryValidationFailed =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(12, "MemoryValidationFailed"),
+            "Memory validation failed: {Error}");
+
+    private static ILogger Logger => s_logger.Value;
 
     /// <summary>
     /// Checks if CUDA is available and accessible.
@@ -56,8 +136,7 @@ public static class CudaTestHelpers
         catch (Exception ex)
         {
             // Log the error for debugging purposes
-            var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<string>();
-            logger.LogDebug("Failed to get CUDA device count: {Error}", ex.Message);
+            s_logFailedToGetDeviceCount(Logger, ex.Message, ex);
             return 0;
         }
     }
@@ -73,7 +152,7 @@ public static class CudaTestHelpers
         }
         catch (Exception ex)
         {
-            Logger.LogWarning("Failed to get compute capability: {Error}", ex.Message);
+            s_logFailedToGetComputeCapability(Logger, ex.Message, ex);
         }
 
         return (0, 0);
@@ -92,7 +171,7 @@ public static class CudaTestHelpers
         }
         catch (Exception ex)
         {
-            Logger.LogError("Kernel compilation validation failed: {Error}", ex.Message);
+            s_logKernelCompilationValidationFailed(Logger, ex.Message, ex);
             return false;
         }
     }
@@ -141,24 +220,24 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
         try
         {
             var capability = CudaCapabilityManager.GetTargetComputeCapability();
-            Logger.LogInformation("CUDA Device {DeviceId} Capabilities:", deviceId);
-            Logger.LogInformation("  Compute Capability: {Major}.{Minor}", capability.major, capability.minor);
-            Logger.LogInformation("  Architecture: {Arch}", CudaCapabilityManager.GetArchitectureString(capability));
-            Logger.LogInformation("  SM String: {Sm}", CudaCapabilityManager.GetSmString(capability));
+            s_logCudaDeviceCapabilities(Logger, deviceId, null);
+            s_logComputeCapability(Logger, capability.major, capability.minor, null);
+            s_logArchitecture(Logger, CudaCapabilityManager.GetArchitectureString(capability), null);
+            s_logSmString(Logger, CudaCapabilityManager.GetSmString(capability), null);
 
             if (IsCudaAvailable())
             {
-                Logger.LogInformation("  CUDA Backend: Available");
-                Logger.LogInformation("  Device Count: {Count}", GetDeviceCount());
+                s_logCudaBackendAvailable(Logger, null);
+                s_logDeviceCount(Logger, GetDeviceCount(), null);
             }
             else
             {
-                Logger.LogWarning("  CUDA Backend: Not Available");
+                s_logCudaBackendNotAvailable(Logger, null);
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError("Failed to log device capabilities: {Error}", ex.Message);
+            s_logFailedToLogDeviceCapabilities(Logger, ex.Message, ex);
         }
     }
 
@@ -181,7 +260,7 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
         }
         catch (Exception ex)
         {
-            Logger.LogError("Memory validation failed: {Error}", ex.Message);
+            s_logMemoryValidationFailed(Logger, ex.Message, ex);
             return false;
         }
     }
@@ -243,5 +322,108 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
         }
 
         return (isValid, issues.ToArray());
+    }
+
+    /// <summary>
+    /// Creates a test kernel definition with the specified name and source code.
+    /// </summary>
+    /// <param name="name">The kernel name.</param>
+    /// <param name="source">The kernel source code.</param>
+    /// <param name="entryPoint">The entry point function name. Defaults to the kernel name.</param>
+    /// <returns>A KernelDefinition instance configured for testing.</returns>
+    public static KernelDefinition CreateTestKernelDefinition(string name, string source, string? entryPoint = null)
+    {
+        return new KernelDefinition(name, source, entryPoint ?? name)
+        {
+            Language = DotCompute.Abstractions.Kernels.Types.KernelLanguage.Cuda,
+            Metadata = new Dictionary<string, object>
+            {
+                ["test_kernel"] = true,
+                ["created_at"] = DateTime.UtcNow
+            }
+        };
+    }
+
+    /// <summary>
+    /// Creates kernel arguments for CUDA kernel execution.
+    /// </summary>
+    /// <param name="arguments">The arguments to pass to the kernel.</param>
+    /// <param name="gridSize">The grid dimensions (optional).</param>
+    /// <param name="blockSize">The block dimensions (optional).</param>
+    /// <returns>A KernelArguments instance configured for CUDA execution.</returns>
+    public static KernelArguments CreateKernelArguments(object[] arguments, Dim3? gridSize = null, Dim3? blockSize = null)
+    {
+        var kernelArgs = new KernelArguments(arguments);
+
+        if (gridSize.HasValue || blockSize.HasValue)
+        {
+            kernelArgs.LaunchConfiguration = new KernelLaunchConfiguration
+            {
+                GridSize = gridSize.HasValue ? ((uint)gridSize.Value.X, (uint)gridSize.Value.Y, (uint)gridSize.Value.Z) : (1, 1, 1),
+                BlockSize = blockSize.HasValue ? ((uint)blockSize.Value.X, (uint)blockSize.Value.Y, (uint)blockSize.Value.Z) : (256, 1, 1),
+                SharedMemoryBytes = 0,
+                Stream = IntPtr.Zero
+            };
+        }
+
+        return kernelArgs;
+    }
+
+    /// <summary>
+    /// Creates a launch configuration with the specified grid and block dimensions.
+    /// </summary>
+    /// <param name="gridX">Grid X dimension.</param>
+    /// <param name="gridY">Grid Y dimension.</param>
+    /// <param name="gridZ">Grid Z dimension.</param>
+    /// <param name="blockX">Block X dimension.</param>
+    /// <param name="blockY">Block Y dimension.</param>
+    /// <param name="blockZ">Block Z dimension.</param>
+    /// <returns>A tuple containing the grid and block dimensions.</returns>
+    public static (Dim3 grid, Dim3 block) CreateLaunchConfig(int gridX, int gridY, int gridZ, int blockX, int blockY, int blockZ)
+    {
+        return (new Dim3(gridX, gridY, gridZ), new Dim3(blockX, blockY, blockZ));
+    }
+
+    /// <summary>
+    /// Creates a launch configuration with optimal settings for the given problem size.
+    /// </summary>
+    /// <param name="problemSize">The total number of elements to process.</param>
+    /// <param name="maxThreadsPerBlock">Maximum threads per block (default 1024).</param>
+    /// <returns>A tuple containing the optimized grid and block dimensions.</returns>
+    public static (Dim3 grid, Dim3 block) CreateOptimalLaunchConfig(int problemSize, int maxThreadsPerBlock = 1024)
+    {
+        var (blockSize, gridSize) = CalculateOptimalLaunchConfig(problemSize, maxThreadsPerBlock);
+        return (new Dim3(gridSize), new Dim3(blockSize));
+    }
+
+    /// <summary>
+    /// Creates test compilation options for CUDA kernels.
+    /// </summary>
+    /// <param name="optimizationLevel">The optimization level to use.</param>
+    /// <param name="generateDebugInfo">Whether to generate debug information.</param>
+    /// <returns>A CompilationOptions instance configured for testing.</returns>
+    public static DotCompute.Abstractions.CompilationOptions CreateTestCompilationOptions(DotCompute.Abstractions.Types.OptimizationLevel optimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.O2, bool generateDebugInfo = false)
+    {
+        return new DotCompute.Abstractions.CompilationOptions
+        {
+            OptimizationLevel = optimizationLevel,
+            GenerateDebugInfo = generateDebugInfo,
+            AdditionalFlags = new List<string> { "--std=c++17" },
+            Defines = new Dictionary<string, string>
+            {
+                ["__CUDA_ARCH__"] = "750" // Default to compute capability 7.5
+            }
+        };
+    }
+
+    /// <summary>
+    /// Disposes the logger factory resources when no longer needed.
+    /// </summary>
+    public static void DisposeLogger()
+    {
+        if (s_loggerFactory.IsValueCreated)
+        {
+            s_loggerFactory.Value.Dispose();
+        }
     }
 }

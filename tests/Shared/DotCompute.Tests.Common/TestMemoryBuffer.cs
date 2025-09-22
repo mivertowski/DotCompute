@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Memory;
 
 namespace DotCompute.Tests.Common;
 
@@ -98,6 +99,10 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
     public MemoryOptions Options => _options.MemoryOptions;
     public bool IsDisposed => _disposed;
     public BufferState State => _state;
+
+    // Additional test-specific properties for compatibility
+    public MemoryType MemoryType => MemoryType.Host;
+    public IntPtr DevicePointer => _options.PinMemory ? _pinnedHandle.AddrOfPinnedObject() : IntPtr.Zero;
 
     public Span<T> AsSpan()
     {
@@ -193,6 +198,7 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
         });
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2000:Dispose objects before losing scope", Justification = "Map method returns a disposable object for caller to manage")]
     public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         return ValueTask.FromResult(Map(mode));
@@ -427,7 +433,6 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
             throw new InvalidOperationException($"Buffer size not compatible with element size of {typeof(TNew).Name}");
         }
 
-        var newLength = (int)(SizeInBytes / newElementSize);
         var bytes = MemoryMarshal.AsBytes(_data.AsSpan());
         var newData = MemoryMarshal.Cast<byte, TNew>(bytes);
 
@@ -494,6 +499,29 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
     public ReadOnlySpan<T> GetTestData() => _data.AsSpan();
 
     /// <summary>
+    /// Test helper method to validate copy parameters.
+    /// Exposed for testing boundary conditions.
+    /// </summary>
+    public void TestValidateCopyParameters(int sourceLength, int sourceOffset, int destLength, int destOffset, int count)
+    {
+        if (sourceOffset < 0 || sourceOffset >= sourceLength)
+            throw new ArgumentOutOfRangeException(nameof(sourceOffset));
+        if (destOffset < 0 || destOffset >= destLength)
+            throw new ArgumentOutOfRangeException(nameof(destOffset));
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        if (sourceOffset + count > sourceLength)
+            throw new ArgumentException("Source range exceeds buffer bounds");
+        if (destOffset + count > destLength)
+            throw new ArgumentException("Destination range exceeds buffer bounds");
+    }
+
+    /// <summary>
+    /// Test helper method to throw if disposed.
+    /// Exposed for testing disposal validation.
+    /// </summary>
+    public void TestThrowIfDisposed() => ThrowIfDisposed();
+
+    /// <summary>
     /// Resets the operation counter.
     /// </summary>
     public void ResetOperationCount()
@@ -512,7 +540,7 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
             var random = new Random();
             var bytes = MemoryMarshal.AsBytes(_data.AsSpan());
             random.NextBytes(bytes);
-            _state = BufferState.Corrupted;
+            _state = BufferState.Disposed; // Use Disposed instead of non-existent Corrupted
         }
     }
 
@@ -574,10 +602,7 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(TestMemoryBuffer<T>));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     #endregion
@@ -693,7 +718,7 @@ public sealed class TestMemoryBufferSlice<T> : IUnifiedMemoryBuffer<T>, IDisposa
     {
         if (offset < 0 || length < 0 || offset + length > _length)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(offset), "Offset and length are out of range");
         }
 
         return new TestMemoryBufferSlice<T>(_parent, _offset + offset, length);
@@ -782,12 +807,12 @@ public sealed class TestMemoryBufferOptions
     /// <summary>
     /// Whether to initialize the buffer with a test pattern.
     /// </summary>
-    public bool InitializeWithPattern { get; set; } = false;
+    public bool InitializeWithPattern { get; set; }
 
     /// <summary>
     /// Whether to simulate slow transfer operations.
     /// </summary>
-    public bool SimulateSlowTransfers { get; set; } = false;
+    public bool SimulateSlowTransfers { get; set; }
 
     /// <summary>
     /// Delay in milliseconds for transfer operations when simulating slow transfers.
@@ -797,17 +822,17 @@ public sealed class TestMemoryBufferOptions
     /// <summary>
     /// Whether to throw exceptions when accessing spans.
     /// </summary>
-    public bool ThrowOnSpanAccess { get; set; } = false;
+    public bool ThrowOnSpanAccess { get; set; }
 
     /// <summary>
     /// Whether to throw exceptions when accessing memory.
     /// </summary>
-    public bool ThrowOnMemoryAccess { get; set; } = false;
+    public bool ThrowOnMemoryAccess { get; set; }
 
     /// <summary>
     /// Whether to throw exceptions on copy operations.
     /// </summary>
-    public bool ThrowOnCopyOperations { get; set; } = false;
+    public bool ThrowOnCopyOperations { get; set; }
 
     /// <summary>
     /// Number of operations after which the buffer should start failing.
@@ -818,7 +843,7 @@ public sealed class TestMemoryBufferOptions
     /// <summary>
     /// Whether to allow corruption simulation for testing error handling.
     /// </summary>
-    public bool AllowCorruption { get; set; } = false;
+    public bool AllowCorruption { get; set; }
 }
 
 /// <summary>
@@ -828,4 +853,163 @@ public sealed class TestMemoryBufferOptions
 public sealed class TestAccelerator
 {
     public static readonly IAccelerator Instance = Mocks.ConsolidatedMockAccelerator.CreateCpuMock();
+}
+
+/// <summary>
+/// Test pooled buffer implementation that extends BasePooledBuffer.
+/// Used for testing memory pooling scenarios.
+/// </summary>
+public sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanaged
+{
+    private readonly Memory<T> _memory;
+    private readonly MemoryType _memoryType;
+    private bool _isDisposed;
+
+    public TestPooledBuffer(int sizeInElements, Action<BasePooledBuffer<T>>? returnAction)
+        : base(sizeInElements * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), returnAction)
+    {
+        _memory = new T[sizeInElements];
+        _memoryType = MemoryType.Host;
+    }
+
+    public TestPooledBuffer(long sizeInBytes, Action<BasePooledBuffer<T>>? returnAction)
+        : base(sizeInBytes, returnAction)
+    {
+        var elementCount = (int)(sizeInBytes / System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+        _memory = new T[elementCount];
+        _memoryType = MemoryType.Host;
+    }
+
+    public override IntPtr DevicePointer => IntPtr.Zero;
+    public override MemoryType MemoryType => _memoryType;
+    public override bool IsOnHost => true;
+    public override bool IsOnDevice => false;
+    public override bool IsDirty => false;
+    public override bool IsDisposed => _isDisposed;
+    public override Memory<T> Memory => _memory;
+
+    public override Span<T> AsSpan()
+    {
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
+        return _memory.Span;
+    }
+
+    public override ReadOnlySpan<T> AsReadOnlySpan()
+    {
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
+        return _memory.Span;
+    }
+
+    public override Memory<T> AsMemory()
+    {
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
+        return _memory;
+    }
+
+    public override ReadOnlyMemory<T> AsReadOnlyMemory()
+    {
+        ObjectDisposedException.ThrowIf(IsDisposed, GetType());
+        return _memory;
+    }
+
+    public override DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
+
+    public override MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => new(_memory, null);
+
+    public override MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+        => new(_memory.Slice(offset, length), null);
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2000:Dispose objects before losing scope", Justification = "MappedMemory is returned to caller for disposal")]
+    public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+        => ValueTask.FromResult(new MappedMemory<T>(_memory, null));
+
+    public override void EnsureOnHost() { }
+    public override void EnsureOnDevice() { }
+
+    public override ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        => ValueTask.CompletedTask;
+
+    public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        => ValueTask.CompletedTask;
+
+    public override void Synchronize() { }
+
+    public override ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        => ValueTask.CompletedTask;
+
+    public override void MarkHostDirty() { }
+    public override void MarkDeviceDirty() { }
+
+    // Implement the required abstract methods from BaseMemoryBuffer
+    public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
+    {
+        source.CopyTo(_memory);
+        return ValueTask.CompletedTask;
+    }
+
+    public override ValueTask CopyFromAsync(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default)
+    {
+        source.CopyTo(_memory.Slice((int)offset));
+        return ValueTask.CompletedTask;
+    }
+
+    public override ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
+    {
+        _memory.CopyTo(destination);
+        return ValueTask.CompletedTask;
+    }
+
+    public override ValueTask CopyToAsync(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default)
+    {
+        _memory.Slice((int)offset).CopyTo(destination);
+        return ValueTask.CompletedTask;
+    }
+
+    public override ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
+    {
+        return destination.CopyFromAsync(_memory, cancellationToken);
+    }
+
+    public override ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
+    {
+        var sourceData = _memory.Slice(sourceOffset, count);
+        return destination.CopyFromAsync<T>(sourceData, destinationOffset, cancellationToken);
+    }
+
+    public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
+    {
+        _memory.Span.Fill(value);
+        return ValueTask.CompletedTask;
+    }
+
+    public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
+    {
+        _memory.Span.Slice(offset, count).Fill(value);
+        return ValueTask.CompletedTask;
+    }
+
+    public override ValueTask CopyFromAsync(IUnifiedMemoryBuffer<T> source, long sourceOffset = 0, long destinationOffset = 0, long count = -1, CancellationToken cancellationToken = default)
+        => ValueTask.CompletedTask;
+
+
+    public override IUnifiedMemoryBuffer<T> Slice(int offset, int length)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, Length);
+
+        return new TestPooledBuffer<T>(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), null);
+    }
+
+    public override IUnifiedMemoryBuffer<TNew> AsType<TNew>() => throw new NotSupportedException();
+
+    public override IAccelerator Accelerator => TestAccelerator.Instance;
+    public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
+    public override MemoryOptions Options => MemoryOptions.None;
+
+    protected override void DisposeCore()
+    {
+        _isDisposed = true;
+        base.DisposeCore();
+    }
 }

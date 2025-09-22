@@ -685,7 +685,7 @@ public class MemoryManagementTests
 
         // IUnifiedMemoryManager properties
         public IAccelerator Accelerator => null!;
-        public MemoryStatistics Statistics => new()
+        public DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new()
         {
             TotalAllocated = _allocatedBuffers.Sum(b => b.SizeInBytes),
             AllocationCount = _allocatedBuffers.Count,

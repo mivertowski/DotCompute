@@ -12,17 +12,94 @@ namespace DotCompute.SharedTestUtilities.Performance;
 public sealed class MemoryTracker : IDisposable
 {
     private readonly ILogger<MemoryTracker> _logger;
+    private readonly ILoggerFactory? _loggerFactory;
     private readonly long _initialMemory;
     private readonly Dictionary<string, long> _checkpoints = new();
     private readonly List<MemorySnapshot> _snapshots = new();
     private bool _disposed;
 
+    // High-performance LoggerMessage delegates
+    private static readonly Action<ILogger, long, Exception?> s_logMemoryTrackingStarted =
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(1, "MemoryTrackingStarted"),
+            "Memory tracking started. Initial memory: {Memory:N0} bytes");
+
+    private static readonly Action<ILogger, string, long, long, Exception?> s_logMemoryCheckpoint =
+        LoggerMessage.Define<string, long, long>(
+            LogLevel.Debug,
+            new EventId(2, "MemoryCheckpoint"),
+            "Memory checkpoint '{Name}': {Memory:N0} bytes ({Delta:+N0} from start)");
+
+    private static readonly Action<ILogger, Exception?> s_logMemoryUsageSummary =
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(3, "MemoryUsageSummary"),
+            "Memory Usage Summary:");
+
+    private static readonly Action<ILogger, long, Exception?> s_logInitialMemory =
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(4, "InitialMemory"),
+            "  Initial: {Initial:N0} bytes");
+
+    private static readonly Action<ILogger, long, Exception?> s_logCurrentMemory =
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(5, "CurrentMemory"),
+            "  Current: {Current:N0} bytes");
+
+    private static readonly Action<ILogger, long, Exception?> s_logPeakMemory =
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(6, "PeakMemory"),
+            "  Peak: {Peak:N0} bytes");
+
+    private static readonly Action<ILogger, long, Exception?> s_logTotalDelta =
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(7, "TotalDelta"),
+            "  Total Delta: {Delta:+N0} bytes");
+
+    private static readonly Action<ILogger, Exception?> s_logCheckpointsHeader =
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(8, "CheckpointsHeader"),
+            "  Checkpoints:");
+
+    private static readonly Action<ILogger, string, long, long, Exception?> s_logCheckpointDetail =
+        LoggerMessage.Define<string, long, long>(
+            LogLevel.Information,
+            new EventId(9, "CheckpointDetail"),
+            "    {Name}: {Memory:N0} bytes ({Delta:+N0})");
+
+    private static readonly Action<ILogger, int, int, int, Exception?> s_logGcCollections =
+        LoggerMessage.Define<int, int, int>(
+            LogLevel.Information,
+            new EventId(10, "GcCollections"),
+            "  GC Collections: Gen0={Gen0}, Gen1={Gen1}, Gen2={Gen2}");
+
+    private static readonly Action<ILogger, long, long, Exception?> s_logMemoryExceededLimit =
+        LoggerMessage.Define<long, long>(
+            LogLevel.Warning,
+            new EventId(11, "MemoryExceededLimit"),
+            "Memory usage exceeded limit. Delta: {Delta:N0} bytes, Limit: {Limit:N0} bytes");
+
     public MemoryTracker(ILogger<MemoryTracker>? logger = null)
     {
-        _logger = logger ?? LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<MemoryTracker>();
+        if (logger == null)
+        {
+            _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            _logger = _loggerFactory.CreateLogger<MemoryTracker>();
+        }
+        else
+        {
+            _logger = logger;
+            _loggerFactory = null;
+        }
         _initialMemory = GC.GetTotalMemory(false);
 
-        _logger.LogInformation("Memory tracking started. Initial memory: {Memory:N0} bytes", _initialMemory);
+        s_logMemoryTrackingStarted(_logger, _initialMemory, null);
     }
 
     /// <summary>
@@ -53,8 +130,7 @@ public sealed class MemoryTracker : IDisposable
 
         _snapshots.Add(snapshot);
 
-        _logger.LogDebug("Memory checkpoint '{Name}': {Memory:N0} bytes ({Delta:+N0} from start)",
-            name, currentMemory, currentMemory - _initialMemory);
+        s_logMemoryCheckpoint(_logger, name, currentMemory, currentMemory - _initialMemory, null);
     }
 
     /// <summary>
@@ -128,25 +204,23 @@ public sealed class MemoryTracker : IDisposable
     {
         var report = GetReport();
 
-        _logger.LogInformation("Memory Usage Summary:");
-        _logger.LogInformation("  Initial: {Initial:N0} bytes", report.InitialMemory);
-        _logger.LogInformation("  Current: {Current:N0} bytes", report.CurrentMemory);
-        _logger.LogInformation("  Peak: {Peak:N0} bytes", report.PeakMemory);
-        _logger.LogInformation("  Total Delta: {Delta:+N0} bytes", report.TotalDelta);
+        s_logMemoryUsageSummary(_logger, null);
+        s_logInitialMemory(_logger, report.InitialMemory, null);
+        s_logCurrentMemory(_logger, report.CurrentMemory, null);
+        s_logPeakMemory(_logger, report.PeakMemory, null);
+        s_logTotalDelta(_logger, report.TotalDelta, null);
 
         if (_checkpoints.Count > 0)
         {
-            _logger.LogInformation("  Checkpoints:");
+            s_logCheckpointsHeader(_logger, null);
             foreach (var checkpoint in _checkpoints.OrderBy(c => c.Value))
             {
-                _logger.LogInformation("    {Name}: {Memory:N0} bytes ({Delta:+N0})",
-                    checkpoint.Key, checkpoint.Value, checkpoint.Value - _initialMemory);
+                s_logCheckpointDetail(_logger, checkpoint.Key, checkpoint.Value, checkpoint.Value - _initialMemory, null);
             }
         }
 
         var stats = report.CurrentStatistics;
-        _logger.LogInformation("  GC Collections: Gen0={Gen0}, Gen1={Gen1}, Gen2={Gen2}",
-            stats.Generation0Collections, stats.Generation1Collections, stats.Generation2Collections);
+        s_logGcCollections(_logger, stats.Generation0Collections, stats.Generation1Collections, stats.Generation2Collections, null);
     }
 
     /// <summary>
@@ -159,8 +233,7 @@ public sealed class MemoryTracker : IDisposable
 
         if (!acceptable)
         {
-            _logger.LogWarning("Memory usage exceeded limit. Delta: {Delta:N0} bytes, Limit: {Limit:N0} bytes",
-                report.TotalDelta, maxMemoryIncrease);
+            s_logMemoryExceededLimit(_logger, report.TotalDelta, maxMemoryIncrease, null);
         }
 
         return acceptable;
@@ -171,6 +244,7 @@ public sealed class MemoryTracker : IDisposable
         if (!_disposed)
         {
             LogSummary();
+            _loggerFactory?.Dispose();
             _disposed = true;
         }
     }

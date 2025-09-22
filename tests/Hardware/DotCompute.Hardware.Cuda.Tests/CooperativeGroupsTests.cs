@@ -88,8 +88,7 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
 
 
         var options = CudaTestHelpers.CreateTestCompilationOptions(
-            CudaOptimizationLevel.O3,
-            enableRegisterSpilling: true
+            DotCompute.Abstractions.Types.OptimizationLevel.O3
         );
 
         var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
@@ -207,7 +206,7 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
         );
 
         var options = CudaTestHelpers.CreateTestCompilationOptions(
-            CudaOptimizationLevel.O3,
+            DotCompute.Abstractions.Types.OptimizationLevel.O3,
             enableRegisterSpilling: true  // Enable register spilling for shared memory pressure
         );
 

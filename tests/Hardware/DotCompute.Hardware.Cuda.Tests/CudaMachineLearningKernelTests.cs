@@ -10,6 +10,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Memory;
 using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Specialized;
+using DotCompute.Tests.Common.Helpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -72,22 +73,22 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Create input image (batch size = 1)
 
-            var input = TestDataGenerator.CreateRandomData(inputHeight * inputWidth * inputChannels, 42);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(inputHeight * inputWidth * inputChannels, 42);
 
             // Create convolution kernels
 
-            var kernels = TestDataGenerator.CreateRandomData(
+            var kernels = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(
                 outputChannels * inputChannels * kernelSize * kernelSize, 43, -0.1f, 0.1f);
 
             // Create bias
 
-            var bias = TestDataGenerator.CreateRandomData(outputChannels, 44, -0.1f, 0.1f);
+            var bias = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(outputChannels, 44, -0.1f, 0.1f);
 
 
             var output = new float[outputHeight * outputWidth * outputChannels];
 
             // Act
-            var perf = new PerformanceMeasurement("2D Convolution", Output);
+            var perf = new PerformanceMeasurement("2D Convolution", true);
             perf.Start();
             await ExecuteConvolution2D(
                 input, kernels, bias, output,
@@ -99,7 +100,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var ops = (long)outputHeight * outputWidth * outputChannels *
 
                       inputChannels * kernelSize * kernelSize * 2; // multiply-add
-            perf.LogResults(ops);
+            perf.LogResults();
 
             // Assert - verify output is reasonable
             output.Should().NotContain(float.NaN);

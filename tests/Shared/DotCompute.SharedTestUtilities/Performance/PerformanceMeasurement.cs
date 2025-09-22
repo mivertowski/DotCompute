@@ -12,12 +12,98 @@ namespace DotCompute.SharedTestUtilities.Performance;
 public sealed class PerformanceMeasurement : IDisposable
 {
     private readonly ILogger<PerformanceMeasurement> _logger;
+    private readonly ILoggerFactory? _loggerFactory;
     private readonly string _operationName;
     private readonly Stopwatch _stopwatch;
     private readonly MemoryTracker? _memoryTracker;
     private readonly List<Checkpoint> _checkpoints = new();
     private bool _disposed;
     private bool _isRunning;
+
+    // High-performance LoggerMessage delegates
+    private static readonly Action<ILogger, string, Exception?> s_logPerformanceMeasurementInitialized =
+        LoggerMessage.Define<string>(
+            LogLevel.Debug,
+            new EventId(1, "PerformanceMeasurementInitialized"),
+            "Performance measurement initialized for '{Operation}'");
+
+    private static readonly Action<ILogger, string, Exception?> s_logAlreadyRunning =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(2, "AlreadyRunning"),
+            "Performance measurement for '{Operation}' is already running");
+
+    private static readonly Action<ILogger, string, Exception?> s_logStartedMeasuring =
+        LoggerMessage.Define<string>(
+            LogLevel.Debug,
+            new EventId(3, "StartedMeasuring"),
+            "Started measuring '{Operation}'");
+
+    private static readonly Action<ILogger, string, Exception?> s_logNotRunning =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(4, "NotRunning"),
+            "Performance measurement for '{Operation}' is not running");
+
+    private static readonly Action<ILogger, string, double, Exception?> s_logCompletedMeasuring =
+        LoggerMessage.Define<string, double>(
+            LogLevel.Information,
+            new EventId(5, "CompletedMeasuring"),
+            "Completed measuring '{Operation}': {Duration:F3}ms");
+
+    private static readonly Action<ILogger, string, Exception?> s_logCannotAddCheckpoint =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(6, "CannotAddCheckpoint"),
+            "Cannot add checkpoint '{Name}' - measurement is not running");
+
+    private static readonly Action<ILogger, string, double, Exception?> s_logAddedCheckpoint =
+        LoggerMessage.Define<string, double>(
+            LogLevel.Debug,
+            new EventId(7, "AddedCheckpoint"),
+            "Added checkpoint '{Name}' at {Elapsed:F3}ms");
+
+    private static readonly Action<ILogger, string, Exception?> s_logPerformanceResults =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(8, "PerformanceResults"),
+            "Performance Results for '{Operation}':");
+
+    private static readonly Action<ILogger, double, Exception?> s_logDuration =
+        LoggerMessage.Define<double>(
+            LogLevel.Information,
+            new EventId(9, "Duration"),
+            "  Duration: {Duration:F3}ms");
+
+    private static readonly Action<ILogger, Exception?> s_logCheckpoints =
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(10, "Checkpoints"),
+            "  Checkpoints:");
+
+    private static readonly Action<ILogger, string, double, double, Exception?> s_logCheckpointDetail =
+        LoggerMessage.Define<string, double, double>(
+            LogLevel.Information,
+            new EventId(11, "CheckpointDetail"),
+            "    {Name}: {Elapsed:F3}ms (+{Delta:F3}ms)");
+
+    private static readonly Action<ILogger, Exception?> s_logMemoryUsage =
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(12, "MemoryUsage"),
+            "  Memory Usage:");
+
+    private static readonly Action<ILogger, long, Exception?> s_logMemoryDelta =
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(13, "MemoryDelta"),
+            "    Delta: {Delta:+N0} bytes");
+
+    private static readonly Action<ILogger, long, Exception?> s_logMemoryPeak =
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(14, "MemoryPeak"),
+            "    Peak: {Peak:N0} bytes");
 
     public string OperationName => _operationName;
     public TimeSpan Elapsed => _stopwatch.Elapsed;
@@ -26,7 +112,16 @@ public sealed class PerformanceMeasurement : IDisposable
     public PerformanceMeasurement(string operationName, bool trackMemory = true, ILogger<PerformanceMeasurement>? logger = null)
     {
         _operationName = operationName;
-        _logger = logger ?? LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<PerformanceMeasurement>();
+        if (logger == null)
+        {
+            _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            _logger = _loggerFactory.CreateLogger<PerformanceMeasurement>();
+        }
+        else
+        {
+            _logger = logger;
+            _loggerFactory = null;
+        }
         _stopwatch = new Stopwatch();
 
         if (trackMemory)
@@ -34,7 +129,7 @@ public sealed class PerformanceMeasurement : IDisposable
             _memoryTracker = new MemoryTracker();
         }
 
-        _logger.LogDebug("Performance measurement initialized for '{Operation}'", operationName);
+        s_logPerformanceMeasurementInitialized(_logger, operationName, null);
     }
 
     /// <summary>
@@ -44,7 +139,7 @@ public sealed class PerformanceMeasurement : IDisposable
     {
         if (_isRunning)
         {
-            _logger.LogWarning("Performance measurement for '{Operation}' is already running", _operationName);
+            s_logAlreadyRunning(_logger, _operationName, null);
             return;
         }
 
@@ -52,7 +147,7 @@ public sealed class PerformanceMeasurement : IDisposable
         _stopwatch.Start();
         _isRunning = true;
 
-        _logger.LogDebug("Started measuring '{Operation}'", _operationName);
+        s_logStartedMeasuring(_logger, _operationName, null);
     }
 
     /// <summary>
@@ -62,7 +157,7 @@ public sealed class PerformanceMeasurement : IDisposable
     {
         if (!_isRunning)
         {
-            _logger.LogWarning("Performance measurement for '{Operation}' is not running", _operationName);
+            s_logNotRunning(_logger, _operationName, null);
             return CreateResult();
         }
 
@@ -71,8 +166,7 @@ public sealed class PerformanceMeasurement : IDisposable
         _isRunning = false;
 
         var result = CreateResult();
-        _logger.LogInformation("Completed measuring '{Operation}': {Duration:F3}ms",
-            _operationName, result.Duration.TotalMilliseconds);
+        s_logCompletedMeasuring(_logger, _operationName, result.Duration.TotalMilliseconds, null);
 
         return result;
     }
@@ -84,7 +178,7 @@ public sealed class PerformanceMeasurement : IDisposable
     {
         if (!_isRunning)
         {
-            _logger.LogWarning("Cannot add checkpoint '{Name}' - measurement is not running", name);
+            s_logCannotAddCheckpoint(_logger, name, null);
             return;
         }
 
@@ -98,7 +192,7 @@ public sealed class PerformanceMeasurement : IDisposable
         _checkpoints.Add(checkpoint);
         _memoryTracker?.Checkpoint(name);
 
-        _logger.LogDebug("Added checkpoint '{Name}' at {Elapsed:F3}ms", name, checkpoint.ElapsedTime.TotalMilliseconds);
+        s_logAddedCheckpoint(_logger, name, checkpoint.ElapsedTime.TotalMilliseconds, null);
     }
 
     /// <summary>
@@ -161,28 +255,27 @@ public sealed class PerformanceMeasurement : IDisposable
     /// </summary>
     public void LogResults(PerformanceResult result)
     {
-        _logger.LogInformation("Performance Results for '{Operation}':", result.OperationName);
-        _logger.LogInformation("  Duration: {Duration:F3}ms", result.Duration.TotalMilliseconds);
+        s_logPerformanceResults(_logger, result.OperationName, null);
+        s_logDuration(_logger, result.Duration.TotalMilliseconds, null);
 
         if (result.Checkpoints.Length > 0)
         {
-            _logger.LogInformation("  Checkpoints:");
+            s_logCheckpoints(_logger, null);
             TimeSpan previousTime = TimeSpan.Zero;
 
             foreach (var checkpoint in result.Checkpoints)
             {
                 var delta = checkpoint.ElapsedTime - previousTime;
-                _logger.LogInformation("    {Name}: {Elapsed:F3}ms (+{Delta:F3}ms)",
-                    checkpoint.Name, checkpoint.ElapsedTime.TotalMilliseconds, delta.TotalMilliseconds);
+                s_logCheckpointDetail(_logger, checkpoint.Name, checkpoint.ElapsedTime.TotalMilliseconds, delta.TotalMilliseconds, null);
                 previousTime = checkpoint.ElapsedTime;
             }
         }
 
         if (result.MemoryReport != null)
         {
-            _logger.LogInformation("  Memory Usage:");
-            _logger.LogInformation("    Delta: {Delta:+N0} bytes", result.MemoryReport.TotalDelta);
-            _logger.LogInformation("    Peak: {Peak:N0} bytes", result.MemoryReport.PeakMemory);
+            s_logMemoryUsage(_logger, null);
+            s_logMemoryDelta(_logger, result.MemoryReport.TotalDelta, null);
+            s_logMemoryPeak(_logger, result.MemoryReport.PeakMemory, null);
         }
     }
 
@@ -208,6 +301,7 @@ public sealed class PerformanceMeasurement : IDisposable
             }
 
             _memoryTracker?.Dispose();
+            _loggerFactory?.Dispose();
             _disposed = true;
         }
     }

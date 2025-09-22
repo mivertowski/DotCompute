@@ -11,7 +11,6 @@ using DotCompute.Runtime.Services.Statistics.Compilation;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 
 namespace DotCompute.Runtime.Services.Compilation;
 
@@ -57,10 +56,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionKernelCompiler));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(definition);
 
@@ -85,7 +81,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             _statistics.RecordCompilation(elapsedMs, success: true);
 
             // Cache the compiled kernel
-            _ = _kernelCache.TryAdd(cacheKey, new WeakReference<ProductionCompiledKernel>(compiledKernel));
+            _kernelCache.TryAdd(cacheKey, new WeakReference<ProductionCompiledKernel>(compiledKernel));
 
             _logger.LogDebugMessage($"Compiled kernel {definition.Name} in {elapsedMs}ms");
             return compiledKernel;
@@ -161,10 +157,22 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         return Validate(definition);
     }
 
+    ValueTask<ICompiledKernel> IUnifiedKernelCompiler<KernelDefinition, ICompiledKernel>.CompileAsync(
+        KernelDefinition definition,
+        CompilationOptions? options,
+        CancellationToken cancellationToken)
+    {
+        return CompileAsync(definition, options, cancellationToken);
+    }
 
-    public async ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
+    ValueTask<ICompiledKernel> IUnifiedKernelCompiler<KernelDefinition, ICompiledKernel>.OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(kernel);
+        return new ValueTask<ICompiledKernel>(OptimizeInternalAsync(kernel, level, cancellationToken));
+    }
+
+    private async Task<ICompiledKernel> OptimizeInternalAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken)
+    {
         await Task.Delay(Random.Shared.Next(10, 50), cancellationToken);
         _logger.LogDebugMessage($"Optimized kernel {kernel.Id} with level {level}");
         return kernel; // Return same kernel for production implementation

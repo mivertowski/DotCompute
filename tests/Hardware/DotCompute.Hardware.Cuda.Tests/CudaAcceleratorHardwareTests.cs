@@ -36,7 +36,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            using var memoryTracker = new MemoryTracker(Output);
+            using var memoryTracker = new MemoryTracker();
 
 
             var factory = new CudaAcceleratorFactory(new NullLogger<CudaAcceleratorFactory>());
@@ -49,8 +49,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = accelerator.IsDisposed().Should().BeFalse();
 
 
-            LogDeviceCapabilities();
-            memoryTracker.LogCurrentUsage("After Initialization");
+            CudaTestHelpers.LogDeviceCapabilities();
+            memoryTracker.Checkpoint("After Initialization");
         }
 
         [SkippableFact]
@@ -110,7 +110,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            using var memoryTracker = new MemoryTracker(Output);
+            using var memoryTracker = new MemoryTracker();
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
@@ -139,7 +139,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await buffer2.CopyFromAsync(testData2);
 
 
-            memoryTracker.LogCurrentUsage("After Data Upload");
+            memoryTracker.Checkpoint("After Data Upload");
 
             // Create and compile kernel
 
@@ -175,7 +175,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await resultBuffer.CopyToAsync(results);
 
 
-            memoryTracker.LogCurrentUsage("After Kernel Execution");
+            memoryTracker.Checkpoint("After Kernel Execution");
 
             // Verify results
 
