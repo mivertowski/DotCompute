@@ -37,10 +37,10 @@
 
   <ItemGroup>
     <!-- AOT-friendly dependencies only -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.8" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.9" />
     <PackageReference Include="System.Memory" Version="4.6.3" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
   </ItemGroup>
@@ -50,7 +50,7 @@
     <!-- <PackageReference Include="Microsoft.DotNet.ApiCompat" PrivateAssets="all" /> -->
   
     <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
-  <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
+  <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.9" />
   </ItemGroup>
 
   <ItemGroup>
