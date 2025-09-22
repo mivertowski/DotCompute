@@ -14,6 +14,8 @@ using Xunit;
 using Xunit.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using DotCompute.Tests.Common.Helpers;
+using DotCompute.Tests.Common.Utilities;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -60,8 +62,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int size = 10000;
-            var a = TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
-            var b = TestDataGenerator.CreateLinearSequence(size, 10.0f, 2.0f);
+            var a = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
+            var b = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(size, 10.0f, 2.0f);
             var result = new float[size];
             var expected = new float[size];
 
@@ -76,7 +78,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteVectorAddKernel(a, b, result);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.0001f, context: "VectorAdd kernel");
+            VerifyFloatArraysMatch(expected, result, 0.0001f);
         }
 
         [SkippableFact]
@@ -87,8 +89,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int m = 64, n = 128, k = 96;
-            var a = TestDataGenerator.CreateRandomData(m * k, 42);
-            var b = TestDataGenerator.CreateRandomData(k * n, 43);
+            var a = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(m * k, 42);
+            var b = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(k * n, 43);
             var result = new float[m * n];
             var expected = new float[m * n];
 
@@ -110,7 +112,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteMatrixMultiplyKernel(a, b, result, m, n, k);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.001f, context: "MatrixMultiply kernel");
+            VerifyFloatArraysMatch(expected, result, 0.001f);
         }
 
         [SkippableFact]
@@ -147,7 +149,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int outputSize = inputSize - kernelSize + 1;
 
 
-            var input = TestDataGenerator.CreateSinusoidalData(inputSize, 0.01, 1.0f);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateSinusoidalData(inputSize, 0.01, 1.0f);
             var kernel = new float[] { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f }; // Simple averaging kernel
             var result = new float[outputSize];
             var expected = new float[outputSize];
@@ -167,7 +169,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteConvolutionKernel(input, kernel, result);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.0001f, context: "Convolution kernel");
+            VerifyFloatArraysMatch(expected, result, 0.0001f);
         }
 
         [SkippableFact]
@@ -178,9 +180,9 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int numOptions = 10000;
-            var stockPrices = TestDataGenerator.CreateRandomData(numOptions, 42, 50.0f, 150.0f);
-            var strikePrices = TestDataGenerator.CreateRandomData(numOptions, 43, 50.0f, 150.0f);
-            var timeToExpiry = TestDataGenerator.CreateRandomData(numOptions, 44, 0.1f, 2.0f);
+            var stockPrices = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(numOptions, 42, 50.0f, 150.0f);
+            var strikePrices = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(numOptions, 43, 50.0f, 150.0f);
+            var timeToExpiry = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(numOptions, 44, 0.1f, 2.0f);
             var riskFreeRate = 0.05f;
             var volatility = 0.3f;
 

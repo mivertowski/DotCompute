@@ -135,7 +135,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var outputWidth = inputWidth / stride;
 
 
-            var input = TestDataGenerator.CreateRandomData(inputHeight * inputWidth * channels, 42);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(inputHeight * inputWidth * channels, 42);
             var output = new float[outputHeight * outputWidth * channels];
             var indices = new int[outputHeight * outputWidth * channels]; // For backprop
 
@@ -193,11 +193,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             const float momentum = 0.9f;
 
 
-            var input = TestDataGenerator.CreateRandomData(batchSize * features, 42, -2.0f, 2.0f);
-            var gamma = TestDataGenerator.CreateConstantData(features, 1.0f); // Scale
-            var beta = TestDataGenerator.CreateConstantData(features, 0.0f);  // Shift
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(batchSize * features, 42, -2.0f, 2.0f);
+            var gamma = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(features, 1.0f); // Scale
+            var beta = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(features, 0.0f);  // Shift
             var runningMean = new float[features];
-            var runningVar = TestDataGenerator.CreateConstantData(features, 1.0f);
+            var runningVar = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(features, 1.0f);
             var output = new float[batchSize * features];
 
             // Act
@@ -236,7 +236,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int size = 10000;
-            var input = TestDataGenerator.CreateRandomData(size, 42, -2.0f, 2.0f);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(size, 42, -2.0f, 2.0f);
             var output = new float[size];
             var expected = input.Select(x => MathF.Max(0.0f, x)).ToArray();
 
@@ -257,7 +257,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Arrange
             const int batchSize = 16;
             const int numClasses = 100;
-            var logits = TestDataGenerator.CreateRandomData(batchSize * numClasses, 42, -5.0f, 5.0f);
+            var logits = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(batchSize * numClasses, 42, -5.0f, 5.0f);
             var probabilities = new float[batchSize * numClasses];
 
             // Act
@@ -362,7 +362,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Arrange
             const int size = 10000;
             const float dropoutRate = 0.5f;
-            var input = TestDataGenerator.CreateConstantData(size, 1.0f);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(size, 1.0f);
             var output = new float[size];
             var mask = new float[size];
 
@@ -403,16 +403,16 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Input sequence
 
-            var input = TestDataGenerator.CreateRandomData(
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(
                 seqLength * batchSize * inputSize, 42, -1.0f, 1.0f);
 
             // LSTM weights (simplified - normally would have separate gates)
 
-            var weightsIH = TestDataGenerator.CreateRandomData(
+            var weightsIH = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(
                 4 * hiddenSize * inputSize, 43, -0.1f, 0.1f);
-            var weightsHH = TestDataGenerator.CreateRandomData(
+            var weightsHH = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(
                 4 * hiddenSize * hiddenSize, 44, -0.1f, 0.1f);
-            var bias = TestDataGenerator.CreateRandomData(4 * hiddenSize, 45, -0.1f, 0.1f);
+            var bias = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(4 * hiddenSize, 45, -0.1f, 0.1f);
 
             // Initial states
 

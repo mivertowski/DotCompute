@@ -12,6 +12,10 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
+using DotCompute.Tests.Common.Helpers;
+using DotCompute.SharedTestUtilities.Performance;
+using PerformanceMeasurement = DotCompute.SharedTestUtilities.Performance.PerformanceMeasurement;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -96,12 +100,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            using var memoryTracker = new MemoryTracker(Output);
+            using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            var logger = loggerFactory.CreateLogger<MemoryTracker>();
+            using var memoryTracker = new MemoryTracker(logger);
             var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
-            LogDeviceCapabilities();
+            // LogDeviceCapabilities();
 
 
             const int elementCount = 16 * 1024 * 1024; // 16M float4s = 256MB
@@ -144,7 +150,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 measure.Start();
                 await kernel.LaunchAsync(launchConfig, deviceInput, deviceOutput, elementCount);
                 measure.Stop();
-                times[i] = measure.ElapsedTime.TotalSeconds;
+                times[i] = measure.Duration.TotalSeconds;
             }
 
 
@@ -179,7 +185,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = peakBandwidthGBps.Should().BeGreaterThan(avgBandwidthGBps, "Peak should exceed average");
 
 
-            memoryTracker.LogCurrentUsage("After benchmark");
+            // memoryTracker.LogCurrentUsage("After benchmark");
         }
 
         [SkippableFact]
@@ -197,7 +203,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int operationsPerElement = 1000;
 
 
-            var hostInput = TestDataGenerator.CreateRandomData(elementCount, seed: 42, min: 0.1f, max: 10.0f);
+            var hostInput = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount, seed: 42, min: 0.1f, max: 10.0f);
 
 
             await using var deviceInput = await accelerator.Memory.AllocateAsync<float>(elementCount);
@@ -300,8 +306,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             var elementCount = matrixSize * matrixSize;
 
 
-            var hostA = TestDataGenerator.CreateRandomData(elementCount, seed: 42);
-            var hostB = TestDataGenerator.CreateRandomData(elementCount, seed: 43);
+            var hostA = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount, seed: 42);
+            var hostB = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount, seed: 43);
 
 
             await using var deviceA = await accelerator.Memory.AllocateAsync<float>(elementCount);
@@ -420,7 +426,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var elementCount = (int)(sizeBytes / sizeof(float));
 
 
-                var hostData = TestDataGenerator.CreateRandomData(elementCount);
+                var hostData = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount);
                 await using var deviceBuffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
 
                 // Host to Device
@@ -513,8 +519,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             for (var i = 0; i < numStreams; i++)
             {
-                hostDataA[i] = TestDataGenerator.CreateLinearSequence(elementCount, i * 1000);
-                hostDataB[i] = TestDataGenerator.CreateLinearSequence(elementCount, i * 2000);
+                hostDataA[i] = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(elementCount, i * 1000);
+                hostDataB[i] = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(elementCount, i * 2000);
                 deviceBuffersA[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);
                 deviceBuffersB[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);
                 deviceBuffersC[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);

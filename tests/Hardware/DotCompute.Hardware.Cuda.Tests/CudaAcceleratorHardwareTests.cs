@@ -13,6 +13,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Tests.Common.Helpers;
+using PerformanceMeasurement = DotCompute.SharedTestUtilities.Performance.PerformanceMeasurement;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -116,8 +118,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             const int elementCount = 1024 * 1024; // 1M elements
-            var testData1 = TestDataGenerator.CreateLinearSequence(elementCount, 1.0f, 2.0f);
-            var testData2 = TestDataGenerator.CreateLinearSequence(elementCount, 0.5f, 1.5f);
+            var testData1 = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(elementCount, 1.0f, 2.0f);
+            var testData2 = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(elementCount, 0.5f, 1.5f);
             var expected = new float[elementCount];
 
             // Calculate expected results
@@ -179,12 +181,12 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Verify results
 
-            VerifyFloatArraysMatch(expected, results, tolerance: 0.001f, context: "Vector Addition");
+            VerifyFloatArraysMatch(expected, results, tolerance: 0.001f, "Vector Addition");
 
             // Log performance metrics
 
             var dataSize = elementCount * sizeof(float) * 3; // 3 arrays accessed
-            perfMeasurement.LogResults(dataSize);
+            UnifiedTestHelpers.ComparePerformanceResults(new DotCompute.SharedTestUtilities.Performance.PerformanceResult { Duration = perfMeasurement.Duration }, new DotCompute.SharedTestUtilities.Performance.PerformanceResult { Duration = TimeSpan.FromMilliseconds(100) });
         }
 
         [SkippableFact]
@@ -203,8 +205,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Generate test matrices
 
-            var matrixA = TestDataGenerator.CreateRandomData(elementCount, seed: 123, min: 0.1f, max: 1.0f);
-            var matrixB = TestDataGenerator.CreateRandomData(elementCount, seed: 456, min: 0.1f, max: 1.0f);
+            var matrixA = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount, seed: 123, min: 0.1f, max: 1.0f);
+            var matrixB = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount, seed: 456, min: 0.1f, max: 1.0f);
 
             // Create GPU buffers
 
@@ -284,7 +286,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             await accelerator.SynchronizeAsync();
-            perfMeasurement.Stop();
+            var matrixResult = perfMeasurement.Stop();
 
             // Download and verify results (simplified verification)
 
@@ -307,7 +309,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Calculate theoretical FLOPS
 
             var operations = 2L * matrixSize * matrixSize * matrixSize; // 2N³ operations
-            var gflops = operations / (perfMeasurement.ElapsedTime.TotalSeconds * 1e9);
+            var gflops = operations / (matrixResult.Duration.TotalSeconds * 1e9);
 
 
             Output.WriteLine($"Matrix Multiplication Performance:");
@@ -553,7 +555,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int elementCount = (int)(dataSize / sizeof(float));
 
 
-            var testData = TestDataGenerator.CreateRandomData(elementCount);
+            var testData = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(elementCount);
             await using var buffer = await accelerator.Memory.AllocateAsync<float>(elementCount);
 
             // Test host-to-device transfer
@@ -567,11 +569,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await buffer.CopyFromAsync(testData);
                 await accelerator.SynchronizeAsync();
             }
-            perfMeasurement.Stop();
+            var hostToDeviceResult = perfMeasurement.Stop();
 
 
-            var hostToDeviceBandwidth = (dataSize * 10L) / (perfMeasurement.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
-            perfMeasurement.LogResults(dataSize * 10);
+            var hostToDeviceBandwidth = (dataSize * 10L) / (hostToDeviceResult.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
 
             // Test device-to-host transfer
 
@@ -585,11 +586,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await buffer.CopyToAsync(results);
                 await accelerator.SynchronizeAsync();
             }
-            perfMeasurement.Stop();
+            var deviceToHostResult = perfMeasurement.Stop();
 
 
-            var deviceToHostBandwidth = (dataSize * 10L) / (perfMeasurement.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
-            perfMeasurement.LogResults(dataSize * 10);
+            var deviceToHostBandwidth = (dataSize * 10L) / (deviceToHostResult.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
 
             // Verify reasonable transfer rates (should be > 1 GB/s for modern hardware)
             _ = hostToDeviceBandwidth.Should().BeGreaterThan(1.0, "H2D transfer should be > 1 GB/s");

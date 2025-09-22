@@ -14,6 +14,8 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 using Microsoft.Extensions.Logging;
+using DotCompute.Tests.Common.Helpers;
+using PerformanceMeasurement = DotCompute.Tests.Common.Utilities.PerformanceMeasurement;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -59,8 +61,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int m = 512, n = 768, k = 384;
-            var a = TestDataGenerator.CreateRandomData(m * k, 42);
-            var b = TestDataGenerator.CreateRandomData(k * n, 43);
+            var a = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(m * k, 42);
+            var b = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(k * n, 43);
             var result = new float[m * n];
 
             // Calculate expected result (CPU reference)
@@ -91,9 +93,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             perf.LogResults(m * n * k * 2L);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.001f, maxElementsToCheck: 1000,
-
-                context: "Tiled matrix multiplication");
+            VerifyFloatArraysMatch(expected, result, 0.001f, "Tiled matrix multiplication");
         }
 
         [SkippableFact]
@@ -105,7 +105,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int size = 1_000_000;
-            var data = TestDataGenerator.CreateRandomData(size, 42, 0.0f, 1.0f);
+            var data = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(size, 42, 0.0f, 1.0f);
 
             // Calculate expected sum
 
@@ -139,7 +139,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange
             const int size = 10000;
-            var input = TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
+            var input = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
             var result = new float[size];
 
             // Calculate expected prefix sum
@@ -155,9 +155,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecutePrefixSum(input, result);
 
             // Assert
-            VerifyFloatArraysMatch(expected, result, 0.001f,
-
-                context: "Prefix sum (inclusive scan)");
+            VerifyFloatArraysMatch(expected, result, 0.001f, "Prefix sum (inclusive scan)");
         }
 
         [SkippableFact]
@@ -169,7 +167,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Arrange - Use power of 2 size for bitonic sort
             const int size = 8192;
-            var data = TestDataGenerator.CreateRandomData(size, 42);
+            var data = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(size, 42);
             var gpuData = (float[])data.Clone();
             var expected = (float[])data.Clone();
             Array.Sort(expected);
@@ -182,10 +180,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             perf.LogResults(size * sizeof(float));
 
             // Assert
-            VerifyFloatArraysMatch(expected, gpuData, 0.0f,
-
-                maxElementsToCheck: Math.Min(1000, size),
-                context: "Bitonic sort");
+            VerifyFloatArraysMatch(expected, gpuData, 0.0f, "Bitonic sort");
         }
 
         [SkippableFact]

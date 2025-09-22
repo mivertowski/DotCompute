@@ -18,7 +18,9 @@ using DotCompute.Tests.Common.Specialized;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using DotCompute.Tests.Common.Helpers;
 using Microsoft.Extensions.Logging;
+using PerformanceMeasurement = DotCompute.Tests.Common.Utilities.PerformanceMeasurement;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -218,8 +220,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Test that both versions work correctly
 
             const int size = 100;
-            var testData1 = TestDataGenerator.CreateConstantData(size, 1.0f);
-            var testData2 = TestDataGenerator.CreateConstantData(size, 1.0f);
+            var testData1 = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(size, 1.0f);
+            var testData2 = UnifiedTestHelpers.TestDataGenerator.CreateConstantData(size, 1.0f);
 
 
             await using var buffer1 = await _accelerator.Memory.AllocateAsync<float>(size);
@@ -315,14 +317,14 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Loading from cache should be fast
 
-            perf.ElapsedTime.TotalMilliseconds.Should().BeLessThan(100,
+            perf.Duration.TotalMilliseconds.Should().BeLessThan(100,
 
                 "Loading cached kernel should be very fast");
 
             // Test functionality
 
             const int size = 100;
-            var testData = TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
+            var testData = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
             var expected = testData.Select(x => MathF.Sqrt(x)).ToArray();
 
 
@@ -343,7 +345,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await buffer.CopyToAsync(result);
 
 
-            VerifyFloatArraysMatch(expected, result, 0.0001f, context: "Cross-session kernel execution");
+            VerifyFloatArraysMatch(expected, result, 0.0001f, "Cross-session kernel execution");
         }
 
         [SkippableFact]
@@ -487,7 +489,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             firstPassPerf.Stop();
-            firstPassPerf.LogResults();
+            // firstPassPerf.LogResults();
 
             // Act - Second compilation pass (should use cache)
 
@@ -503,7 +505,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             secondPassPerf.Stop();
-            secondPassPerf.LogResults();
+            // secondPassPerf.LogResults();
 
             // Assert
 
@@ -512,7 +514,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Cached compilation should be significantly faster
 
-            var speedup = firstPassPerf.ElapsedTime.TotalMilliseconds / secondPassPerf.ElapsedTime.TotalMilliseconds;
+            var speedup = firstPassPerf.Duration.TotalMilliseconds / secondPassPerf.Duration.TotalMilliseconds;
             Output.WriteLine($"Cache speedup: {speedup:F1}x");
             speedup.Should().BeGreaterThan(5.0, "Cache should provide significant speedup for kernel library");
 
@@ -566,7 +568,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Test functionality to ensure it recompiled correctly
 
             const int size = 10;
-            var testData = TestDataGenerator.CreateLinearSequence(size, 0.0f, 0.1f);
+            var testData = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(size, 0.0f, 0.1f);
             var expected = testData.Select(x => MathF.Exp(x)).ToArray();
 
 
@@ -587,7 +589,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await buffer.CopyToAsync(result);
 
 
-            VerifyFloatArraysMatch(expected, result, 0.001f, context: "Kernel execution after cache corruption");
+            VerifyFloatArraysMatch(expected, result, 0.001f, "Kernel execution after cache corruption");
         }
     }
 }

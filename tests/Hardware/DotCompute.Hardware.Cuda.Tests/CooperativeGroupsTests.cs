@@ -207,7 +207,7 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
 
         var options = CudaTestHelpers.CreateTestCompilationOptions(
             DotCompute.Abstractions.Types.OptimizationLevel.O3,
-            enableRegisterSpilling: true  // Enable register spilling for shared memory pressure
+            forceSpilling: true  // Enable register spilling for shared memory pressure
         );
 
         var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());

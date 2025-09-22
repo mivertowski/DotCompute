@@ -12,6 +12,8 @@ using DotCompute.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using LaunchConfiguration = DotCompute.Backends.CUDA.Configuration.LaunchConfiguration;
+using HelpersLaunchConfiguration = DotCompute.Hardware.Cuda.Tests.Helpers.LaunchConfiguration;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -102,7 +104,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             // Add kernel to graph
-            _ = graph.AddKernel(kernel, launchConfig, deviceA, deviceB, deviceC, elementCount);
+            _ = graph.AddKernel(kernel, new HelpersLaunchConfiguration { GridDim = launchConfig.GridSize, BlockDim = launchConfig.BlockSize }, deviceA, deviceB, deviceC, elementCount);
 
             // Instantiate graph
 
@@ -111,7 +113,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Execute graph
 
-            await CudaGraphExecutable.LaunchAsync(null);
+            await executableGraph.LaunchAsync();
 
             // Verify results
 
@@ -185,7 +187,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Execute the captured graph
 
             var executableGraph = capturedGraph.Instantiate();
-            await CudaGraphExecutable.LaunchAsync(null);
+            await executableGraph.LaunchAsync();
 
             // Verify results (should be scaled by 2.0 * 1.5 = 3.0)
 
@@ -273,7 +275,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Execute the multi-kernel graph
 
             var stopwatch = Stopwatch.StartNew();
-            await CudaGraphExecutable.LaunchAsync(null);
+            await executableGraph.LaunchAsync();
             stopwatch.Stop();
 
             // Verify results
@@ -371,7 +373,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             for (var i = 0; i < iterations; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
-                await CudaGraphExecutable.LaunchAsync(null);
+                await executableGraph.LaunchAsync();
                 stopwatch.Stop();
                 // Divide by kernelsPerGraph to get per-kernel time for fair comparison
                 graphTimes[i] = stopwatch.Elapsed.TotalMicroseconds / kernelsPerGraph;
@@ -458,7 +460,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             var executableGraph = graph.Instantiate();
-            await CudaGraphExecutable.LaunchAsync(null);
+            await executableGraph.LaunchAsync();
 
             // Verify results (should be input * 3)
 
@@ -519,7 +521,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             var executableGraph = graph.Instantiate();
-            await CudaGraphExecutable.LaunchAsync(null);
+            await executableGraph.LaunchAsync();
 
             // Verify both destinations have correct data
 
@@ -588,7 +590,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             var executableGraph = graph.Instantiate();
-            await CudaGraphExecutable.LaunchAsync(null);
+            await executableGraph.LaunchAsync();
 
             // Verify initial results (scaled by 2.0)
 
@@ -606,7 +608,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // Reset data and execute updated graph
 
                 await deviceData.WriteAsync(hostData.AsSpan(), 0);
-                await CudaGraphExecutable.LaunchAsync(null);
+                await executableGraph.LaunchAsync();
 
 
                 var result2 = new float[elementCount];

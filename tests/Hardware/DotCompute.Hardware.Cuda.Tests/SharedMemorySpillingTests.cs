@@ -26,7 +26,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
         public SharedMemorySpillingTests(ITestOutputHelper output) : base(output)
         {
-            _logger = new DotCompute.Tests.Common.Helpers.TestLogger(output) as ILogger<SharedMemorySpillingTests>;
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            _logger = loggerFactory.CreateLogger<SharedMemorySpillingTests>();
         }
 
         [SkippableFact]
@@ -44,7 +45,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var optionsNoSpilling = CudaTestHelpers.CreateTestCompilationOptions(
                 DotCompute.Abstractions.Types.OptimizationLevel.O2,
-                enableRegisterSpilling: false
+                forceSpilling: false
             );
 
             var kernelDefNoSpilling = CudaTestHelpers.CreateTestKernelDefinition(
@@ -59,7 +60,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Test with spilling enabled
             var optionsWithSpilling = CudaTestHelpers.CreateTestCompilationOptions(
                 DotCompute.Abstractions.Types.OptimizationLevel.O2,
-                enableRegisterSpilling: true
+                forceSpilling: true
             );
 
             var kernelDefWithSpilling = CudaTestHelpers.CreateTestKernelDefinition(
